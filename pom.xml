@@ -56,7 +56,6 @@
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
-        <version.dnsjava>3.6.3</version.dnsjava>
         <version.commons-codec>1.12</version.commons-codec>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.3</version.commons-collections4>
@@ -81,6 +80,7 @@
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
+        <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
         <version.geoserver>2.25.2</version.geoserver>
@@ -252,11 +252,6 @@
                 <version>${version.mysql-connector}</version>
             </dependency>
             <dependency>
-                <groupId>dnsjava</groupId>
-                <artifactId>dnsjava</artifactId>
-                <version>${version.dnsjava}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.spotify</groupId>
                 <artifactId>dns</artifactId>
                 <version>${version.spotify-dns}</version>
@@ -358,6 +353,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${version.dnsjava}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
