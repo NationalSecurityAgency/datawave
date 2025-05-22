@@ -20,10 +20,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Predicate;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import datawave.query.config.ShardQueryConfiguration;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -310,6 +317,87 @@ public class QueryOptionsTest {
                         .equalsDefaultValue(QueryOptions.LIMIT_FIELDS, limitFields));
 
     }
+
+    /**
+     *     private void testValues(ShardQueryConfiguration config, Map<String,Object> values, Map<String,Predicate> predicates) throws Exception {
+     *         ObjectMapper mapper = JsonMapper.builder().enable(MapperFeature.PROPAGATE_TRANSIENT_MARKER).build();
+     *         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
+     *         Set<String> fieldsFound = new HashSet<>();
+     *         for (Iterator<String> it = root.fieldNames(); it.hasNext();) {
+     *             String fieldName = it.next();
+     *             Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
+     *                             values.containsKey(fieldName));
+     *             fieldsFound.add(fieldName);
+     *             Object value = getValue(config, fieldName);
+     *             if (predicates.containsKey(fieldName)) {
+     *                 Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+     *             } else if (fieldName.endsWith("AsString")) {
+     *                 Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+     *             } else {
+     *                 Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+     *             }
+     *         }
+     *         for (String fieldName : alreadySet) {
+     *             Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
+     *                             values.containsKey(fieldName));
+     *             fieldsFound.add(fieldName);
+     *             Object value = getValue(config, fieldName);
+     *             if (predicates.containsKey(fieldName)) {
+     *                 Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+     *             } else if (fieldName.endsWith("AsString")) {
+     *                 Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+     *             } else {
+     *                 Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+     *             }
+     *         }
+     *         Assert.assertEquals("Unexpected additional entries in defaultValues: " + Sets.difference(values.keySet(), fieldsFound), values.size(),
+     *                         fieldsFound.size());
+     *     }
+     */
+
+    /**
+     * Verifies that all default options are present in the configuration when initializing.
+     */
+//    @Test
+//    public void testAllDefaultQueryOptionsPresent(){
+//
+//
+//        QueryOptions.DefaultOptions q = QueryOptions.getDefaultOptions("QueryOptions");
+//
+//        ObjectMapper mapper = JsonMapper.builder().enable(MapperFeature.PROPAGATE_TRANSIENT_MARKER).build();
+//        JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
+//        Set<String> fieldsFound = new HashSet<>();
+//        for (Iterator<String> it = root.fieldNames(); it.hasNext();) {
+//            String fieldName = it.next();
+//            Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
+//                    values.containsKey(fieldName));
+//            fieldsFound.add(fieldName);
+//            Object value = getValue(config, fieldName);
+//            if (predicates.containsKey(fieldName)) {
+//                Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+//            } else if (fieldName.endsWith("AsString")) {
+//                Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+//            } else {
+//                Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+//            }
+//        }
+//        for (String fieldName : alreadySet) {
+//            Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
+//                    values.containsKey(fieldName));
+//            fieldsFound.add(fieldName);
+//            Object value = getValue(config, fieldName);
+//            if (predicates.containsKey(fieldName)) {
+//                Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+//            } else if (fieldName.endsWith("AsString")) {
+//                Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+//            } else {
+//                Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+//            }
+//        }
+//        Assert.assertEquals("Unexpected additional entries in defaultValues: " + Sets.difference(values.keySet(), fieldsFound), values.size(),
+//                fieldsFound.size());
+//
+//    }
 
     public static class QueryOptionsWithNonEmptyCollectionsAsDefaultValues extends QueryOptions {
 

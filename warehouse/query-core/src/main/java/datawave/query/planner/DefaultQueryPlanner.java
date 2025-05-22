@@ -763,7 +763,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
-        addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
@@ -2688,18 +2687,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public static <T> void addOption(IteratorSetting cfg, String option, T value, boolean allowBlankValues) {
         QueryOptions.addOption(cfg, option, value, allowBlankValues);
     }
-
-    // public static void addOption(IteratorSetting cfg, String option, String value, boolean allowBlankValue) {
-    // if (StringUtils.isNotBlank(option) && (allowBlankValue || StringUtils.isNotBlank(value))) {
-    // // If blank value, then we need to change it to something else or it
-    // // will fail in InputFormatBase when run
-    // // through the MapReduce api.
-    // if (StringUtils.isBlank(value) && allowBlankValue) {
-    // value = " ";
-    // }
-    // cfg.addOption(option, value);
-    // }
-    // }
 
     /**
      * Load the common iterator options for both the optimized and non-optimized query paths. Said options include: enrichers, filters (post-processing and

@@ -642,6 +642,7 @@ public class ShardQueryConfigurationTest {
     private void testValues(ShardQueryConfiguration config, Map<String,Object> values, Map<String,Predicate> predicates) throws Exception {
         ObjectMapper mapper = JsonMapper.builder().enable(MapperFeature.PROPAGATE_TRANSIENT_MARKER).build();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
+        System.out.println(root);
         Set<String> fieldsFound = new HashSet<>();
         for (Iterator<String> it = root.fieldNames(); it.hasNext();) {
             String fieldName = it.next();
