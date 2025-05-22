@@ -22,6 +22,10 @@ else
 
 fi
 
+if [ -z "${NUM_SHARDS}" ] ; then
+      error "Will not start ingest unless NUM_SHARDS is defined. Exiting..."
+      return 1
+fi
+
 echo "Starting ingesters..."
-echo "number of shards: ${NUM_SHARDS}"
 ./start-ingest.sh $CRON
