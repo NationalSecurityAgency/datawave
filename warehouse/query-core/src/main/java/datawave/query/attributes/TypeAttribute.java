@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Set;
@@ -22,6 +23,7 @@ import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.util.cache.ClassCache;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
@@ -29,6 +31,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     private static final long serialVersionUID = 7264249641813898860L;
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
+
+    private static final ClassCache classCache = new ClassCache();
 
     private Type<T> datawaveType;
 
@@ -157,7 +161,9 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     private void setDatawaveType(String datawaveTypeString)
                     throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-        this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).getDeclaredConstructor().newInstance();
+        Class<?> clazz = classCache.get(datawaveTypeString);
+        Constructor<Type> constructor = (Constructor<Type>) clazz.getDeclaredConstructor();
+        this.datawaveType = constructor.newInstance();
     }
 
     /*
