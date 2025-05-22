@@ -1,5 +1,6 @@
 package datawave.query.util.cache;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.cache.CacheBuilder;
@@ -30,7 +31,11 @@ public class ClassCache {
 
     public ClassCache() {}
 
-    public Class<?> get(String clazz) {
-        return clazzCache.getUnchecked(clazz);
+    public Class<?> get(String clazz) throws ClassNotFoundException {
+        try {
+            return clazzCache.get(clazz);
+        } catch (ExecutionException e) {
+            throw new ClassNotFoundException(clazz, e);
+        }
     }
 }

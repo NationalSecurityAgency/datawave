@@ -20,7 +20,7 @@ public class ClassCacheTest {
     private final ClassCache classCache = new ClassCache();
 
     @Test
-    public void testCacheActuallyWorks() {
+    public void testCacheActuallyWorks() throws Exception {
         String name = NoOpType.class.getTypeName();
         ClassCache localCache = new ClassCache();
         Class<?> one = localCache.get(name);

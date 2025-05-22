@@ -137,7 +137,12 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             // Get the name of the concrete Attribute
 
             String attrClassName = WritableUtils.readString(in);
-            Class<?> clz = classCache.get(attrClassName);
+            Class<?> clz = null;
+            try {
+                clz = classCache.get(attrClassName);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
 
             if (!Attribute.class.isAssignableFrom(clz)) {
                 throw new ClassCastException("Found class that was not an instance of Attribute");
@@ -300,7 +305,12 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         for (int i = 0; i < numAttrs; i++) {
             // Get the name of the concrete Attribute
             String attrClassName = input.readString();
-            Class<?> clz = classCache.get(attrClassName);
+            Class<?> clz = null;
+            try {
+                clz = classCache.get(attrClassName);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
 
             if (!Attribute.class.isAssignableFrom(clz)) {
                 throw new ClassCastException("Found class that was not an instance of Attribute");
