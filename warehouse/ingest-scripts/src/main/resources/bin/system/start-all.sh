@@ -23,4 +23,5 @@ else
 fi
 
 echo "Starting ingesters..."
+echo "number of shards: ${NUM_SHARDS}"
 ./start-ingest.sh $CRON
