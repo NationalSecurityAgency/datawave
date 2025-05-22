@@ -43,6 +43,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 
 import datawave.core.iterators.querylock.QueryLock;
@@ -64,15 +65,14 @@ import datawave.query.util.sortedset.HdfsBackedSortedSet;
 
 /**
  * The Ivarator base class
- *
+ * <p>
  * An iterator for the Datawave shard table, it searches FieldIndex keys and returns Event keys (its topKey must be an Event key).
- *
+ * <p>
  * This version will cache the values in an underlying HDFS file backed sorted set before returning the first top key.
- *
+ * <p>
  * FieldIndex keys: fi\0{fieldName}:{fieldValue}\0datatype\0uid
- *
+ * <p>
  * Event key: CF, {datatype}\0{UID}
- *
  */
 public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator {
 
@@ -565,7 +565,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     @Override
     public void seek(Range r, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-
         if (log.isTraceEnabled()) {
             log.trace("begin seek, range: " + r);
         }
@@ -616,16 +615,15 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     querySpan = ((SourceTrackingIterator) source).getQuerySpan();
                 }
 
-                // seek our underlying source to the start of the incoming range
-                // expand the range as the underlying table may not actually contain the keys in this range as we are only returning keys
-                // as specified by the returnKeyType
-                Range seekRange = new Range(r.getStartKey(), r.isStartKeyInclusive(),
-                                (r.getEndKey() == null ? null : new Key(r.getEndKey().getRow()).followingKey(PartialKey.ROW)), false);
+                // seek the source to the start of the field index that matches the specified field
+                // this initial seek ensures that data for the field is actually present
+                // if data is present, then bounding ranges are generated
+                Range seekRange = buildInitialSeekRange(startKey, r);
                 source.seek(seekRange, EMPTY_CFS, false);
                 scannedKeys.incrementAndGet();
                 if (log.isTraceEnabled()) {
                     try {
-                        log.trace("lastRangeSeeked: " + r + "  source.getTopKey(): " + source != null ? source.getTopKey() : null);
+                        log.trace("lastRangeSeeked: " + seekRange + "  source.getTopKey(): " + source.getTopKey());
                     } catch (Exception ex) {
                         log.trace("Ignoring this while logging a trace message:", ex);
                         // let's not ruin everything when trace is on...
@@ -702,6 +700,39 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 querySpanCollector.addQuerySpan(querySpan);
             }
         }
+    }
+
+    /**
+     * It is imperative to construct an initial seek range with a non-empty column qualifier. Seeking a range that consists of only a row will open sources and
+     * read in keys that are unrelated to the field index, and other terms in the query may deep-copy this source which can lead to additional problems. In
+     * summary: always build the most restrictive seek range possible.
+     *
+     * @param startKey
+     *            the range stat key, possibly stripped of any yielding information
+     * @param range
+     *            the initial seek range
+     * @return a better initial seek range
+     */
+    protected Range buildInitialSeekRange(Key startKey, Range range) {
+        Preconditions.checkNotNull(startKey, "start key should be non-null");
+
+        // If this seek is part of an iterator teardown/rebuild, do not modify the range. The column qualifier should already be non-null.
+        if (!range.isStartKeyInclusive()) {
+            return range;
+        }
+
+        if (fieldName.toString().equals(Constants.ANY_FIELD)) {
+            // in the case of an ANYFIELD, which should only happen during unit tests, restrict the scan range
+            // to just the fi prefix.
+            Key start = new Key(startKey.getRow(), new Text("fi\0"));
+            Key stop = new Key(startKey.getRow(), new Text("fi\0\uffff"));
+            return new Range(start, range.isStartKeyInclusive(), stop, false);
+        }
+
+        // otherwise restrict the scan range to the full fi prefix and field name
+        Key start = new Key(startKey.getRow(), this.fiName);
+        Key stop = start.followingKey(PartialKey.ROW_COLFAM);
+        return new Range(start, range.isStartKeyInclusive(), stop, false);
     }
 
     @Override

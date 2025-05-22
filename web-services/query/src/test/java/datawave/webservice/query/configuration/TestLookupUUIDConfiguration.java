@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +22,7 @@ public class TestLookupUUIDConfiguration {
         LookupUUIDConfiguration subject = new LookupUUIDConfiguration();
         subject.setBeginDate(SimpleDateFormat.getDateInstance().format(new Date()));
         subject.setColumnVisibility("A&B");
-        subject.setUuidTypes(Arrays.asList(new UUIDType()));
+        subject.setUuidTypes(List.of(new UUIDType()));
 
         // Verify results
         assertNotNull("Test subject should not be null", subject);

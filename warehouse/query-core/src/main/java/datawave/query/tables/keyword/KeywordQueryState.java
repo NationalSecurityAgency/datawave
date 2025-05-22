@@ -3,30 +3,57 @@ package datawave.query.tables.keyword;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Range;
 
+/** Captures the internal state of a single keyword query */
 public class KeywordQueryState {
-    final Set<String> viewNames = new HashSet<>();
-    final Map<String,String> documentLanguageMap = new HashMap<>();
-    final Collection<Range> ranges = new TreeSet<>();
 
-    public Map<String,String> getDocumentLanguageMap() {
-        return documentLanguageMap;
+    /**
+     * if true, generate cloud that consolidates keyword extraction results for all retrieved documents, if false will generate a tag cloud for each individual
+     * document.
+     */
+    private boolean generateCloud = false;
+
+    /** a list of view names we will attempt to use for content */
+    private final List<String> viewNames = new ArrayList<>();
+
+    /**
+     * a map between document uids (shard/datatype/uid) and desired language, populated by parsing the query and used to configure the keyword extraction
+     * algorithm
+     */
+    private final Map<String,String> languageMap = new HashMap<>();
+
+    /**
+     * a map between document uids (shard/datatype/uid) and the identifer used to find that uid (e.g., PAGE_ID:1234) used for display in the sources field of
+     * the generated tag clouds
+     */
+    private final Map<String,String> identifierMap = new HashMap<>();
+
+    /** the ranges to scan based on the query terms */
+    private final Collection<Range> ranges = new TreeSet<>();
+
+    public boolean isGenerateCloud() {
+        return generateCloud;
     }
 
-    public Set<String> getViewNames() {
+    public void setGenerateCloud(boolean generateCloud) {
+        this.generateCloud = generateCloud;
+    }
+
+    public Map<String,String> getLanguageMap() {
+        return languageMap;
+    }
+
+    public Map<String,String> getIdentifierMap() {
+        return identifierMap;
+    }
+
+    public List<String> getPreferredViews() {
         return viewNames;
-    }
-
-    public void addRange(final Range range) {
-        if (null != range) {
-            this.ranges.add(range);
-        }
     }
 
     public Collection<Range> getRanges() {
@@ -34,7 +61,7 @@ public class KeywordQueryState {
     }
 
     public void setRanges(final Collection<Range> ranges) {
-        // As a single atomic operation, clear the range and add all of the
+        // As a single atomic operation, clear the range and add all the
         // specified ranges
         this.ranges.clear();
         if (null != ranges) {

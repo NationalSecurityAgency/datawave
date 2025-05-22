@@ -1,6 +1,7 @@
 package datawave.query.config;
 
 import java.io.Serializable;
+import java.util.List;
 
 import com.google.common.base.Objects;
 
@@ -8,6 +9,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.keyword.KeywordQueryLogic;
 import datawave.query.tables.keyword.KeywordQueryState;
 import datawave.util.keyword.YakeKeywordExtractor;
@@ -19,11 +21,13 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 1678850178943683419L;
 
-    int minNgrams = YakeKeywordExtractor.DEFAULT_MIN_NGRAMS;
-    int maxNgrams = YakeKeywordExtractor.DEFAULT_MAX_NGRAMS;
-    int maxKeywords = YakeKeywordExtractor.DEFAULT_KEYWORD_COUNT;
-    float maxScore = YakeKeywordExtractor.DEFAULT_MAX_SCORE_THRESHOLD;
-    int maxContentChars = YakeKeywordExtractor.DEFAULT_MAX_CONTENT_LENGTH;
+    private int minNgrams = YakeKeywordExtractor.DEFAULT_MIN_NGRAMS;
+    private int maxNgrams = YakeKeywordExtractor.DEFAULT_MAX_NGRAMS;
+    private int maxKeywords = YakeKeywordExtractor.DEFAULT_KEYWORD_COUNT;
+    private float maxScore = YakeKeywordExtractor.DEFAULT_MAX_SCORE_THRESHOLD;
+    private int maxContentChars = YakeKeywordExtractor.DEFAULT_MAX_CONTENT_LENGTH;
+
+    private List<String> viewNameList = List.of(KeywordExtractingIterator.DEFAULT_VIEW_NAMES);
 
     private transient KeywordQueryState state;
 
@@ -100,6 +104,14 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
         this.state = state;
     }
 
+    public List<String> getPreferredViews() {
+        return viewNameList;
+    }
+
+    public void setPreferredViews(List<String> viewNameList) {
+        this.viewNameList = viewNameList;
+    }
+
     /**
      * Factory method that instantiates a fresh KeywordQueryConfiguration
      *
@@ -125,5 +137,5 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
         return Objects.hashCode(super.hashCode(), minNgrams, maxNgrams, maxKeywords, maxScore, maxContentChars, state);
     }
 
-    // todo: implement serialization methods
+    // todo: implement serialization methods?
 }
