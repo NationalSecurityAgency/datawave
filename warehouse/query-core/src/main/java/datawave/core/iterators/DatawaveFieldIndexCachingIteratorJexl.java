@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -1274,6 +1275,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     canResume = false;
                     break;
                 }
+            }
+        }
+
+        if (previousIvarator != null) {
+            Set<String> currentUriSet = this.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
+            Set<String> previousUriSet = previousIvarator.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
+            // this condition doesn't fail the resumeFromIvaratorFutures call, but is cause for concern and should be investigated
+            if (!currentUriSet.equals(previousUriSet)) {
+                log.warn(String.format("Resuming Ivarator %s suspicious condition - currentUriSet != previousUriSet, %s != %s", ivaratorInfo, currentUriSet,
+                                previousUriSet));
             }
         }
 
