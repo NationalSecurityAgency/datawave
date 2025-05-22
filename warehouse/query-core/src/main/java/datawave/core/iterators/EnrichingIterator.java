@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import datawave.query.Constants;
 import datawave.query.enrich.DataEnricher;
+import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -87,8 +88,8 @@ public class EnrichingIterator implements SortedKeyValueIterator<Key,Value>, Opt
         String fields = options.get(UNEVALUATED_FIELDS);
         String classes = options.get(ENRICHMENT_CLASSES);
         String subClass = options.get(SUB_ITERATOR_CLASS);
-        String[] classNames = classes.split(Constants.PARAM_VALUE_SEP);
-        String[] unevaluatedFields = fields.split(Constants.PARAM_VALUE_SEP);
+        String[] classNames = StringUtils.split(classes, Constants.PARAM_VALUE_SEP);
+        String[] unevaluatedFields = StringUtils.split(fields, Constants.PARAM_VALUE_SEP);
 
         Map<String,Object> enricherOptions = new HashMap<>();
         enricherOptions.put("query", query);

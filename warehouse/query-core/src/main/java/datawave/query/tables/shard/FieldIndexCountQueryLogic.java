@@ -43,6 +43,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.CompositeTimestamp;
+import datawave.util.StringUtils;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -361,7 +362,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         HashSet<String> typeFilter;
         if (null != typeList && !typeList.isEmpty()) {
             typeFilter = new HashSet<>();
-            typeFilter.addAll(Arrays.asList(typeList.split(Constants.PARAM_VALUE_SEP)));
+            typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
 
             if (!typeFilter.isEmpty()) {
                 config.setDatatypeFilter(typeFilter);

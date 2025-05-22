@@ -1541,7 +1541,7 @@ public class QueryOptions implements OptionDescriber {
                 this.allowListedFields = UniversalSet.instance();
             } else if (fieldList != null && !fieldList.trim().equals("")) {
                 this.allowListedFields = new HashSet<>();
-                Collections.addAll(this.allowListedFields, fieldList.split(Constants.PARAM_VALUE_SEP));
+                Collections.addAll(this.allowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
                 this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
@@ -1560,7 +1560,7 @@ public class QueryOptions implements OptionDescriber {
             String fieldList = options.get(DISALLOWLISTED_FIELDS);
             if (fieldList != null && !fieldList.trim().equals("")) {
                 this.disallowListedFields = new HashSet<>();
-                Collections.addAll(this.disallowListedFields, fieldList.split(Constants.PARAM_VALUE_SEP));
+                Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
         }
 
