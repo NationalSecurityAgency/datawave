@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -865,8 +864,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     throw new RuntimeException("Ivarator query was cancelled");
                 }
 
-                // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
-                if (this.set != null && (this.set.hasPersistedData() || (this.scannedKeys.get() >= this.scanThreshold))) {
+                // persist set to disk so we can reuse it on a rebuild or yield
+                if (this.set != null) {
                     forcePersistence();
                 }
 
@@ -890,24 +889,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     private void fillSortedSets() throws IOException {
         String sourceRow = this.fiRow.toString();
-        // if we are running fillSortedSets as part of a re-seek after yield, then the fillSet threads would not have
-        // completed when a WaitWindowOverrunException was thrown and therefore the set would not have been marked as
-        // complete when setupRowBasedHdfsBackedSet was called at the top of this method. We will try to copy the
-        // RowBasedHdfsBackedSet from the previously used Ivarator and resume processing.
-        // If this re-seek is from an Ivarator yielding, the startKey will have a yield marker in either the
-        // colFam (for a shard range) or colQual (for a document range)
-        boolean usePreviousSortedSet = WaitWindowObserver.hasMarker(this.lastRangeSeeked.getStartKey());
-        if (usePreviousSortedSet) {
-            if (!resumeFromPreviousCall()) {
-                // if resuming from the previous call fails, then set usePreviousSortedSet=false
-                // to force setup of a new HDFS backed set
-                usePreviousSortedSet = false;
-            }
-        }
-        if (!usePreviousSortedSet) {
+        // If we are running fillSortedSets as part of a re-seek after yield, then the fillSet threads would not have
+        // completed when a WaitWindowOverrunException was thrown. Therefore, the set will not have been marked as
+        // complete when setupRowBasedHdfsBackedSet is called. We will try to copy the RowBasedHdfsBackedSet from
+        // the previously used Ivarator and resume processing.
+        boolean resumeFromIvaratorFutures = resumeFromIvaratorFutures();
+        if (!resumeFromIvaratorFutures) {
+            // If resuming from IvaratorFutures fails, then create and try to reuse a previous HDFS backed set.
             setupRowBasedHdfsBackedSet(sourceRow);
-            // if keys is not null, then we already had a completed set which was loaded in setupRowBasedHdfsBackedSet
-            if (keys != null) {
+            // If this.keys != null, then we have a persisted and completed set from a previous Ivarator call.
+            // We are done with fillSortedSet for this row and should advance this.fiRow or set it to null
+            if (this.keys != null) {
                 moveToNextRow();
                 return;
             }
@@ -917,7 +909,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (log.isDebugEnabled()) {
             log.debug("Processing " + this.boundingFiRanges + " for " + this);
         }
-        long startFillSets = System.currentTimeMillis();
 
         TotalResults totalResults = new TotalResults(this.maxResults);
 
@@ -928,7 +919,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             // For each range, get either a new or pre-existing IvaratorFuture
             futures.add(fillSet(range, totalResults));
         }
-        if (!usePreviousSortedSet) {
+        if (!resumeFromIvaratorFutures) {
             log.info(String.format("Started Ivarator %s IvaratorRunnables created:%d", getIvaratorInfo(fiRow.toString(), true), futures.size()));
         }
 
@@ -1010,11 +1001,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (failed) {
             log.error(String.format("Failed Ivarator %s fillSortedSets: %s", ivaratorInfo, result), exception);
             throw new IvaratorException("Failed Ivarator fillSortedSets: " + result, exception);
-        }
-
-        if (usePreviousSortedSet) {
-            forcePersistence();
-            setupRowBasedHdfsBackedSet(sourceRow);
         }
 
         // now reset the current source to the next viable range
@@ -1246,18 +1232,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
 
     /**
-     * Clear out the current row based hdfs backed set
+     * Clear out the current row-based hdfs backed set
      *
-     * @throws IOException
-     *             for issues with read/write
      */
-    protected void clearRowBasedHdfsBackedSet() throws IOException {
+    protected void clearRowBasedHdfsBackedSet() {
         this.keys = null;
         this.currentRow = null;
         this.set = null;
     }
 
-    protected boolean resumeFromPreviousCall() throws IOException {
+    protected boolean resumeFromIvaratorFutures() {
         boolean canResume = true;
         String ivaratorInfo = getIvaratorInfo(this.fiRow.toString(), true);
         // Only copy previous Ivarator's RowBasedHdfsBackedSet if all futures are available
@@ -1290,16 +1274,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     canResume = false;
                     break;
                 }
-            }
-        }
-
-        if (previousIvarator != null) {
-            Set<String> currentUriSet = this.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
-            Set<String> previousUriSet = previousIvarator.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
-            // ivaratorCacheDirs is declared final, but must be the same
-            if (!currentUriSet.equals(previousUriSet)) {
-                log.error(String.format("Resuming Ivarator %s failed - currentUriSet != previousUriSet", ivaratorInfo));
-                canResume = false;
             }
         }
 
@@ -1361,15 +1335,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         try {
             // for each of the ivarator cache dirs
-            for (IvaratorCacheDir ivaratorCacheDir : this.ivaratorCacheDirs) {
-                // get the row specific dir
-                Path rowDir = getRowDir(new Path(ivaratorCacheDir.getPathURI()), row);
+            if (!this.allowDirReuse) {
+                for (IvaratorCacheDir ivaratorCacheDir : this.ivaratorCacheDirs) {
+                    // get the row specific dir
+                    Path rowDir = getRowDir(new Path(ivaratorCacheDir.getPathURI()), row);
+                    FileSystem fs = ivaratorCacheDir.getFs();
 
-                FileSystem fs = ivaratorCacheDir.getFs();
-
-                // if we are not allowing reuse of directories, then delete it
-                if (!this.allowDirReuse && fs.exists(rowDir)) {
-                    fs.delete(rowDir, true);
+                    // if we are not allowing reuse of directories, then delete it
+                    if (fs.exists(rowDir)) {
+                        fs.delete(rowDir, true);
+                    }
                 }
             }
 
@@ -1395,8 +1370,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             if (!this.setControl.isCompleteAndPersisted(row)) {
                 this.set.clear();
                 this.keys = null;
+                log.info(String.format("Creating empty HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s", getIvaratorInfo(row, false),
+                                ivaratorCacheDirs));
             } else {
                 this.keys = new CachingIterator<>(this.set.iterator());
+                log.info(String.format("Reusing completed HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s", getIvaratorInfo(row, false),
+                                ivaratorCacheDirs));
             }
 
             // reset the keyValues counter as we have a new set here
