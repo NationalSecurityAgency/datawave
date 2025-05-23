@@ -9,13 +9,14 @@
 # to read from input files use --inputFiles parameter instead to read the glob paths
 #
 
-if [[ `uname` == "Darwin" ]]; then
-        THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-        THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 #
 # Get the classpath
@@ -43,9 +44,9 @@ done
 #
 # Transform the classpath into a comma-separated list also
 #
-LIBJARS=`echo $CLASSPATH | sed 's/:/,/g'`
+LIBJARS=$(echo $CLASSPATH | sed 's/:/,/g')
 
-DATE=`date "+%Y%m%d%H%M%S"`
+DATE=$(date "+%Y%m%d%H%M%S")
 REDUCERS=$1
 WORKDIR=$2
 WORKDIR=${WORKDIR}/${DATE}-$$/
@@ -58,7 +59,7 @@ export HADOOP_OPTS="-Dfile.encoding=UTF8 -Duser.timezone=GMT $HADOOP_INGEST_OPTS
 # update the config to be comma separated
 RESOURCES=$(echo ${INGEST_CONFIG[@]} | tr ' ' ',')
 
-CMD="$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.ShardReindexJob --cacheDir $JOB_CACHE_DIR --cacheJars $LIBJARS --username $USERNAME --password $PASSWORD --instance $WAREHOUSE_INSTANCE_NAME --zookeepers $WAREHOUSE_ZOOKEEPERS --reducers $REDUCERS --outputDir $OUTPUT_DIR --workDir $WORKDIR --resources $RESOURCES  --sourceHdfs $INGEST_HDFS_NAME_NODE --destHdfs $INGEST_HDFS_NAME_NODE $EXTRA_OPTS"
+CMD="$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.reindex.ShardReindexJob --cacheDir $JOB_CACHE_DIR --cacheJars $LIBJARS --username $USERNAME --password $PASSWORD --instance $WAREHOUSE_INSTANCE_NAME --zookeepers $WAREHOUSE_ZOOKEEPERS --reducers $REDUCERS --outputDir $OUTPUT_DIR --workDir $WORKDIR --resources $RESOURCES  --sourceHdfs $INGEST_HDFS_NAME_NODE --destHdfs $INGEST_HDFS_NAME_NODE $EXTRA_OPTS"
 
 echo $CMD
 $CMD

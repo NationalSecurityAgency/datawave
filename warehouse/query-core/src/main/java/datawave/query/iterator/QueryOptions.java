@@ -38,7 +38,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-import org.springframework.beans.FatalBeanException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CharMatcher;
@@ -61,9 +60,11 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -79,6 +80,7 @@ import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
@@ -86,6 +88,7 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.visitors.CardinalityVisitor;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
@@ -147,11 +150,15 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
+    public static final String UNIQUE_CACHE_BUFFER_SIZE = "unique.cache.buffer.size";
+
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
     public static final String END_TIME = "end.time";
     public static final String YIELD_THRESHOLD_MS = "yield.threshold.ms";
+    public static final String MAX_YIELDS = "max.yields";
 
     public static final String FILTER_MASKED_VALUES = "filter.masked.values";
     public static final String INCLUDE_DATATYPE = "include.datatype";
@@ -259,6 +266,12 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
 
+    public static final String SUMMARY_OPTIONS = "summary.options";
+
+    public static final String SUMMARY_ITERATOR = "summary.iterator.class";
+
+    public static final String SUMMARY_FIELD_NAME = "summary.field.name";
+
     // field and next thresholds before a seek is issued
     public static final String FI_FIELD_SEEK = "fi.field.seek";
     public static final String FI_NEXT_SEEK = "fi.next.seek";
@@ -275,11 +288,15 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
+    public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
+
+    public static final Object LOCK = new Object();
 
     protected Map<String,String> options;
 
     protected String scanId;
     protected String query;
+    private ASTJexlScript script;
     protected String queryId;
     protected boolean disableEvaluation = false;
     protected boolean disableFiEval = false;
@@ -309,6 +326,7 @@ public class QueryOptions implements OptionDescriber {
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
+    protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
@@ -379,6 +397,7 @@ public class QueryOptions implements OptionDescriber {
     protected long maxIvaratorResults = -1;
 
     protected long yieldThresholdMs = Long.MAX_VALUE;
+    protected long maxYields = 10;
 
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
     protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
@@ -431,6 +450,12 @@ public class QueryOptions implements OptionDescriber {
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
+    protected SummaryOptions summaryOptions;
+
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
+
+    protected String summaryFieldname;
+
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
     private int fiNextSeek = -1;
@@ -448,10 +473,13 @@ public class QueryOptions implements OptionDescriber {
     private CountMap fieldCounts;
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
+    private long cardinality = Long.MAX_VALUE;
+    private long cardinalityThreshold = Long.MIN_VALUE;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
+        this.script = other.script;
         this.queryId = other.queryId;
         this.scanId = other.scanId;
         this.disableEvaluation = other.disableEvaluation;
@@ -511,6 +539,7 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
+        this.uniqueCacheBufferSize = other.uniqueCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
         this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
@@ -521,6 +550,7 @@ public class QueryOptions implements OptionDescriber {
         this.maxIvaratorResults = other.maxIvaratorResults;
 
         this.yieldThresholdMs = other.yieldThresholdMs;
+        this.maxYields = other.maxYields;
 
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
@@ -549,6 +579,9 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = other.excerptFields;
         this.excerptFieldsNoHitCallout = other.excerptFieldsNoHitCallout;
         this.excerptIterator = other.excerptIterator;
+        this.summaryOptions = other.summaryOptions;
+        this.summaryIterator = other.summaryIterator;
+        this.summaryFieldname = other.summaryFieldname;
 
         this.fiFieldSeek = other.fiFieldSeek;
         this.fiNextSeek = other.fiNextSeek;
@@ -564,6 +597,7 @@ public class QueryOptions implements OptionDescriber {
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
+        this.cardinality = other.cardinality;
     }
 
     public String getQuery() {
@@ -732,8 +766,8 @@ public class QueryOptions implements OptionDescriber {
                         throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e);
                     } catch (NoSuchMethodException e) {
                         try {
-                            list.add(clazz.newInstance());
-                        } catch (InstantiationException | IllegalAccessException e2) {
+                            list.add(clazz.getDeclaredConstructor().newInstance());
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e2) {
                             log.error("Unable to construct " + classname + " as a DocumentPermutation", e2);
                             throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e2);
                         }
@@ -793,6 +827,15 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public EventDataQueryFilter getEventEvaluationFilter() {
+        if (evaluationFilter == null) {
+            // allows standard event queries to perform a seeking aggregation with field filtering
+            evaluationFilter = getEventFilter();
+        }
+
+        if (evaluationFilter != null) {
+            eventEvaluationFilter = evaluationFilter.clone();
+        }
+
         return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }
 
@@ -869,13 +912,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     private Set<String> getQueryFields() {
-        try {
-            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            return JexlASTHelper.getIdentifierNames(script);
-        } catch (ParseException e) {
-            // ignore
-            throw new FatalBeanException("Could not parse query");
-        }
+        return JexlASTHelper.getIdentifierNames(getScript());
     }
 
     public TimeFilter getTimeFilter() {
@@ -1051,6 +1088,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
@@ -1196,7 +1241,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public Set<String> getHitsOnlySet() {
@@ -1261,6 +1306,30 @@ public class QueryOptions implements OptionDescriber {
 
     public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
         this.excerptIterator = excerptIterator;
+    }
+
+    public SummaryOptions getSummaryOptions() {
+        return summaryOptions;
+    }
+
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        this.summaryOptions = summaryOptions;
+    }
+
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
+        return summaryIterator;
+    }
+
+    public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
+        this.summaryIterator = summaryIterator;
+    }
+
+    public String getSummaryFieldName() {
+        return summaryFieldname;
+    }
+
+    public void setSummaryFieldName(String summaryFieldname) {
+        this.summaryFieldname = summaryFieldname;
     }
 
     @Override
@@ -1334,6 +1403,7 @@ public class QueryOptions implements OptionDescriber {
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
                         "The threshold in milliseconds that the query iterator will evaluate consecutive documents to false before yielding the scan.");
+        options.put(MAX_YIELDS, "The maximum number of times to yield on the same startKey without making progress.");
         options.put(COMPRESS_SERVER_SIDE_RESULTS, "GZIP compress the serialized Documents before returning to the webserver");
         options.put(MAX_EVALUATION_PIPELINES, "The max number of evaluation pipelines");
         options.put(SERIAL_EVALUATION_PIPELINE, "Forces us to use the serial pipeline. Allows us to still have a single thread for evaluation");
@@ -1356,6 +1426,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_FIELDS, "excerpt fields");
         options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
+        options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
+        options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.ContentSummaryIterator");
+        options.put(SUMMARY_FIELD_NAME, "The name of the field we want to write a requested summary to");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
         options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
@@ -1499,6 +1572,17 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TERM_COUNTS)) {
             String serializedMap = options.get(TERM_COUNTS);
             this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
+        }
+
+        // parse out cardinality threshold
+        if (options.containsKey(CARDINALITY_THRESHOLD)) {
+            String option = options.get(CARDINALITY_THRESHOLD);
+            this.cardinalityThreshold = Long.parseLong(option);
+        }
+
+        // cardinality requires term counts and a threshold
+        if (termCounts != null && !termCounts.isEmpty() && cardinalityThreshold > 0) {
+            cardinality = CardinalityVisitor.cardinality(getScript(), termCounts);
         }
 
         this.evaluationFilter = null;
@@ -1681,6 +1765,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
+            if (options.containsKey(MOST_RECENT_UNIQUE)) {
+                this.getUniqueFields().setMostRecent(Boolean.valueOf(options.get(MOST_RECENT_UNIQUE)));
+                if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
+                    this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
+                }
+            }
         }
 
         if (options.containsKey(HIT_LIST)) {
@@ -1808,6 +1898,10 @@ public class QueryOptions implements OptionDescriber {
             this.setYieldThresholdMs(Long.parseLong(options.get(YIELD_THRESHOLD_MS)));
         }
 
+        if (options.containsKey(MAX_YIELDS)) {
+            this.setMaxYields(Long.parseLong(options.get(MAX_YIELDS)));
+        }
+
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
             this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
         }
@@ -1860,6 +1954,22 @@ public class QueryOptions implements OptionDescriber {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(EXCERPT_ITERATOR), e);
             }
+        }
+
+        if (options.containsKey(SUMMARY_OPTIONS)) {
+            setSummaryOptions(SummaryOptions.from(options.get(SUMMARY_OPTIONS)));
+        }
+
+        if (options.containsKey(SUMMARY_ITERATOR)) {
+            try {
+                setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(SUMMARY_ITERATOR)));
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Could not get class for " + options.get(SUMMARY_ITERATOR), e);
+            }
+        }
+
+        if (options.containsKey(SUMMARY_FIELD_NAME)) {
+            setSummaryFieldName(options.get(SUMMARY_FIELD_NAME));
         }
 
         return true;
@@ -2230,7 +2340,7 @@ public class QueryOptions implements OptionDescriber {
     public QueryStatsDClient getStatsdClient() {
         if (statsdHostAndPort != null && queryId != null) {
             if (statsdClient == null) {
-                synchronized (queryId) {
+                synchronized (LOCK) {
                     if (statsdClient == null) {
                         setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort),
                                         getStatsdMaxQueueSize()));
@@ -2281,6 +2391,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setYieldThresholdMs(long yieldThresholdMs) {
         this.yieldThresholdMs = yieldThresholdMs;
+    }
+
+    public long getMaxYields() {
+        return maxYields;
+    }
+
+    public void setMaxYields(long maxYields) {
+        this.maxYields = maxYields;
     }
 
     public int getFiFieldSeek() {
@@ -2361,5 +2479,25 @@ public class QueryOptions implements OptionDescriber {
 
     public boolean isSeekingEventAggregation() {
         return seekingEventAggregation;
+    }
+
+    public ASTJexlScript getScript() {
+        if (script == null) {
+            try {
+                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            } catch (ParseException e) {
+                log.error("Failed to parse query", e);
+                throw new DatawaveFatalQueryException("Failed to parse query");
+            }
+        }
+        return script;
+    }
+
+    public long getCardinality() {
+        return cardinality;
+    }
+
+    public long getCardinalityThreshold() {
+        return cardinalityThreshold;
     }
 }

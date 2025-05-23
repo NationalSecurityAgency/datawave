@@ -23,16 +23,18 @@ import com.esotericsoftware.kryo.io.Output;
 import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.util.cache.ClassCache;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4677957768640489928L;
     private static final Logger log = Logger.getLogger(Attributes.class);
     private Set<Attribute<? extends Comparable<?>>> attributes;
     private int _count = 0;
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
-    private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
+
+    private static final ClassCache classCache = new ClassCache();
 
     /**
      * Should sizes of documents be tracked
@@ -111,11 +113,6 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
         out.writeBoolean(trackSizes);
         // Write out the number of Attributes we're going to store
@@ -126,7 +123,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             WritableUtils.writeString(out, attr.getClass().getName());
 
             // Defer to the concrete instance to write() itself
-            attr.write(out, reducedResponse);
+            attr.write(out);
         }
     }
 
@@ -137,14 +134,14 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         int numAttrs = WritableUtils.readVInt(in);
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
-            String attrClassName = WritableUtils.readString(in);
-            Class<?> clz;
-
             // Get the name of the concrete Attribute
+
+            String attrClassName = WritableUtils.readString(in);
+            Class<?> clz = null;
             try {
-                clz = Class.forName(attrClassName);
+                clz = classCache.get(attrClassName);
             } catch (ClassNotFoundException e) {
-                throw new IOException(e);
+                throw new RuntimeException(e);
             }
 
             if (!Attribute.class.isAssignableFrom(clz)) {
@@ -284,11 +281,6 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
         output.writeBoolean(this.trackSizes);
         // Write out the number of Attributes we're going to store
@@ -299,7 +291,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             output.writeString(attr.getClass().getName());
 
             // Defer to the concrete instance to write() itself
-            attr.write(kryo, output, reducedResponse);
+            attr.write(kryo, output);
         }
     }
 
@@ -311,14 +303,12 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
-            String attrClassName = input.readString();
-            Class<?> clz;
-
             // Get the name of the concrete Attribute
+            String attrClassName = input.readString();
+            Class<?> clz = null;
             try {
-                clz = Class.forName(attrClassName);
+                clz = classCache.get(attrClassName);
             } catch (ClassNotFoundException e) {
-                log.error("could not find class for \"" + attrClassName + "\"");
                 throw new RuntimeException(e);
             }
 
@@ -329,8 +319,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             // Get the Class for the name of the class of the concrete Attribute
             Attribute<?> attr;
             try {
-                attr = (Attribute<?>) clz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
 

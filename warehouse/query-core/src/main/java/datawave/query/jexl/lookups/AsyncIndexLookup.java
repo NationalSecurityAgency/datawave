@@ -1,5 +1,6 @@
 package datawave.query.jexl.lookups;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +49,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             try {
                 startedLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new UnsupportedOperationException("Interrupted while waiting for IndexLookup to start", e);
             }
         } else {
@@ -80,14 +82,18 @@ public abstract class AsyncIndexLookup extends IndexLookup {
                 break;
             }
 
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
-        } catch (TimeoutException e) {
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException | CancellationException e) {
             future.cancel(true);
 
             try {
                 stoppedLatch.await();
             } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
                 log.error("Interrupted waiting for canceled AsyncIndexLookup to complete.");
                 throw new RuntimeException(ex);
             }

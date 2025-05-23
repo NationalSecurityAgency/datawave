@@ -44,14 +44,15 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             throw new IllegalStateException("Root node cannot be a negation");
         }
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
-        builder.setSource(source.deepCopy(env));
+        builder.setSource(deepCopySource());
         builder.setTypeMetadata(typeMetadata);
         builder.setDatatypeFilter(getDatatypeFilter());
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(getFiAggregator());
         builder.setTimeFilter(timeFilter);
         builder.setNode(node);
         node.childrenAccept(this, builder);
+
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
 
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
@@ -94,7 +95,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (null == op || null == op.getLiteralValue()) {
             // deep copy since this is likely a null literal
-            return source.deepCopy(env);
+            return deepCopySource();
         }
 
         String fn = op.deconstructIdentifier();
@@ -111,7 +112,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             SortedKeyValueIterator<Key,Value> mySource = limitedSource;
             // if source size > 0, we are free to use up to that number for this query
             if (source.getSourceSize() > 0)
-                mySource = source.deepCopy(env);
+                mySource = deepCopySource();
 
             mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
 
@@ -126,63 +127,50 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        /**
-         * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
-         */
-        if (isUnindexed(node)) {
-            if (isQueryFullySatisfied == true) {
+
+        TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
+        node.childrenAccept(this, builder);
+
+        // verify that the field exists and is indexed
+        if (builder.getField() == null || isUnindexed(builder.getField())) {
+            if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             return null;
         }
 
-        TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
-        boolean isNegation = false;
-        if (data instanceof AbstractIteratorBuilder) {
-            AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
-            isNegation = oib.isInANot();
-        }
-        builder.setSource(getSourceIterator(node, isNegation));
-        builder.setTimeFilter(getTimeFilter(node));
-        builder.setTypeMetadata(typeMetadata);
-        builder.setDatatypeFilter(getDatatypeFilter());
-        builder.setFieldsToAggregate(fieldsToAggregate);
-        builder.setKeyTransform(getFiAggregator());
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
-        builder.setNode(node);
-        node.childrenAccept(this, builder);
-
-        // A EQNode may be of the form FIELD == null. The evaluation can
-        // handle this, so we should just not build an IndexIterator for it.
-        if (null == builder.getValue()) {
-            if (isQueryFullySatisfied == true) {
+        // check for the case 'FIELD == null'
+        if (builder.getValue() == null) {
+            if (isQueryFullySatisfied) {
                 throw new RuntimeException("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
             }
             return null;
         }
 
+        // check to see if there is a mismatch between included and exclude references.
+        // note: this is a lift and shift of old code and probably doesn't work as intended..
+        if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
+            throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
+        }
+
         // We have no parent already defined
         if (data == null) {
             // Make this EQNode the root
-            if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
-            } else {
-                root = builder.build();
-
-                if (log.isTraceEnabled()) {
-                    log.trace("Build IndexIterator: " + root);
-                }
+            loadBuilder(builder, data, node);
+            root = builder.build();
+            if (log.isTraceEnabled()) {
+                log.trace("Build IndexIterator: " + root);
             }
         } else {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
                             && !excludeReferences.contains(builder.getField())) {
+                loadBuilder(builder, data, node);
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied == true) {
-                    throw new RuntimeException(
-                                    "Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
+                if (isQueryFullySatisfied) {
+                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
                 }
             }
         }

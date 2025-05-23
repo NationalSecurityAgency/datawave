@@ -48,7 +48,7 @@ public class LoadAverageWatchIterator extends WrappingIterator {
 
         if (null != options.get(SYSTEM_LOAD_THRESHOLD)) {
             try {
-                loadThresholdAboveProcs = Double.valueOf(options.get(SYSTEM_LOAD_THRESHOLD));
+                loadThresholdAboveProcs = Double.parseDouble(options.get(SYSTEM_LOAD_THRESHOLD));
             } catch (NumberFormatException e) {
                 // no worries, keep default
             }
@@ -59,10 +59,7 @@ public class LoadAverageWatchIterator extends WrappingIterator {
 
     protected boolean loadExceedThreshold() {
 
-        if (OS_BEAN.getSystemLoadAverage() / OS_BEAN.getAvailableProcessors() > loadThresholdAboveProcs) {
-            return true;
-        }
-        return false;
+        return OS_BEAN.getSystemLoadAverage() / OS_BEAN.getAvailableProcessors() > loadThresholdAboveProcs;
 
     }
 

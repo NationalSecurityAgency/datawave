@@ -134,6 +134,11 @@ public class QueryParameters {
     public static final String CONTENT_VIEW_ALL = "content.view.all";
 
     /**
+     * Used by the ContentQueryLogic to determine if views should be decoded from base64
+     */
+    public static final String DECODE_VIEW = "content.view.decode";
+
+    /**
      * Used to specify the class used to perform visibility interpretations into markings.
      */
     public static final String VISIBILITY_INTERPRETER = "visibility.interpreter";
@@ -179,6 +184,7 @@ public class QueryParameters {
 
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
 
     /**
      * Used to specify fields which are excluded from QueryModel expansion
@@ -212,6 +218,11 @@ public class QueryParameters {
     public static final String EXCERPT_FIELDS = "excerpt.fields";
 
     /**
+     * Used to specify summaries that should be returned.
+     */
+    public static final String SUMMARY_OPTIONS = "summary.options";
+
+    /**
      * Used to specify model or DB fields that should be treated as lenient (can be skipped if normalization fails)
      */
     public static final String LENIENT_FIELDS = "lenient.fields";
@@ -220,4 +231,10 @@ public class QueryParameters {
      * Used to specify model or DB fields that must be treated as strict (cannot be skipped if normalization fails)
      */
     public static final String STRICT_FIELDS = "strict.fields";
+
+    /**
+     * Used to specify that a tag cloud should consist of merged results for all documents or for individual results for individual documents.
+     */
+    public static final String TAG_CLOUD_CREATE = "tag.cloud.create";
+
 }

@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Set;
@@ -22,13 +23,16 @@ import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.util.cache.ClassCache;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7264249641813898860L;
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
+
+    private static final ClassCache classCache = new ClassCache();
 
     private Type<T> datawaveType;
 
@@ -58,13 +62,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeString(out, datawaveType.getClass().toString());
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -131,13 +130,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeString(datawaveType.getClass().getName());
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         output.writeString(this.datawaveType.getDelegateAsString());
         output.writeBoolean(this.toKeep);
     }
@@ -167,7 +161,9 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     private void setDatawaveType(String datawaveTypeString)
                     throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-        this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).getDeclaredConstructor().newInstance();
+        Class<?> clazz = classCache.get(datawaveTypeString);
+        Constructor<Type> constructor = (Constructor<Type>) clazz.getDeclaredConstructor();
+        this.datawaveType = constructor.newInstance();
     }
 
     /*

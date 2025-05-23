@@ -68,8 +68,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
         HashSet<String> filterFields = new HashSet<>();
         for (EdgeDefinition edgeDef : edges) {
             if (edgeDef.hasJexlPrecondition()) {
-
-                script = engine.createScript(edgeDef.getJexlPrecondition());
+                script = engine.createScript(EdgeJexlHelper.jexlFeatures(), EdgeJexlHelper.jexlInfo(), edgeDef.getJexlPrecondition(), (String[]) null);
                 filterFields.addAll(extractTermsFromJexlScript(script));
             }
         }

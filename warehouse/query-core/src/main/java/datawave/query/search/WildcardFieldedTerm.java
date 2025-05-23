@@ -158,7 +158,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
             termNoQuotes = termString;
         }
 
-        int firstColonIndex = termNoQuotes.indexOf(":");
+        int firstColonIndex = termNoQuotes.indexOf(':');
         if (firstColonIndex != -1) {
             return termNoQuotes.substring(0, firstColonIndex);
         }
@@ -175,7 +175,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
             termNoQuotes = termString;
         }
 
-        int firstColonIndex = termNoQuotes.indexOf(":");
+        int firstColonIndex = termNoQuotes.indexOf(':');
         if (firstColonIndex == -1) {
             return termNoQuotes;
         } else {

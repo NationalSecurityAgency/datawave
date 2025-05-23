@@ -202,6 +202,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
 
         } catch (InterruptedException e) {
             close();
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } finally {
             writeControl.unlock();
