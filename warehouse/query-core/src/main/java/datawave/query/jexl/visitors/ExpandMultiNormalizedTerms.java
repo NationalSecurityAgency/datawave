@@ -44,7 +44,6 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.GeoType;
 import datawave.data.type.IpAddressType;
-import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.Constants;
