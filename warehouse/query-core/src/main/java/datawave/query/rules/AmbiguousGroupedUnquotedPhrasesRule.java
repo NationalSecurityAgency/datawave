@@ -56,7 +56,7 @@ public class AmbiguousGroupedUnquotedPhrasesRule extends ShardQueryRule {
     // Return a message about the given nodes.
     private String formatMessage(QueryNode node) {
         // @formatter:off
-                    // issue is not the GROUP -> AND . it is the GROUP -> FIELD AND...
+                    // issue is not the GROUP -> AND . it is the GROUP -> FIELD AND -> FIELD AND ...
                     // check for same field names conjoined with AND and combine?
                     // maybe a loop : however many fields and combine them with their operator and grouped
         return new StringBuilder()

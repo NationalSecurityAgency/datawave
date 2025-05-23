@@ -137,6 +137,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         return sb;
     }
 
+    // this is where it closes adds the parentheses
     @Override
     public Object visit(GroupQueryNode node, Object data) {
         QueryNode child = node.getChild();
@@ -144,6 +145,11 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
             StringBuilder sb = (StringBuilder) data;
             sb.append("( ");
             visit(child, sb);
+            if (newParenthesis == true) {
+                // this places the group start after the field FOO: (
+                sb.insert((sb.indexOf(":") + 1), "( ");
+                sb.delete(0, 2);
+            }
             sb.append(" )");
         }
         return data;
@@ -425,11 +431,22 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         return visit((BooleanQueryNode) node, data);
     }
 
+    private boolean newParenthesis;
     private Object visitJunctionNode(QueryNode node, Object data, String junction) {
         StringBuilder sb = (StringBuilder) data;
         List<QueryNode> children = node.getChildren();
         if (children != null && !children.isEmpty()) {
             boolean requiresGrouping = !isRootOrHasParentGroup(node);
+            // if requires grouping then add a loop checking the children's fields to see if there are same fields and then add the
+            // parentheses with the boolean, use string builder to find index of first colon to add opening parenthesis after, do at the last if line 440
+            for (QueryNode child : children) {
+                if (((FieldQueryNode) child).getFieldAsString().isEmpty()) {
+                    // this means there is (an) unfielded term(s)
+                    newParenthesis = true;
+                } else {
+                    newParenthesis = false;
+                }
+            }
             if (requiresGrouping) {
                 sb.append("( ");
             }

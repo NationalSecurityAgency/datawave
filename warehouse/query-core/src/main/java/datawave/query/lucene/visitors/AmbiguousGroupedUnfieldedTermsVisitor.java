@@ -1,14 +1,12 @@
 package datawave.query.lucene.visitors;
 
 import org.apache.lucene.queryparser.flexible.core.nodes.*;
-import org.apache.lucene.queryparser.surround.query.AndQuery;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static datawave.query.lucene.visitors.QueryNodeType.AND;
 import static datawave.query.lucene.visitors.QueryNodeType.GROUP;
 
 /**
@@ -38,13 +36,15 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
         }
     }
 
+//    public static QueryNode NoSameFields() {
+//        return noSameFields;
+//    }
+
     /**
      * Returns a list of copies of nodes representing fielded terms with unfielded terms directly following them that are conjoined by the specified junction.
      *
-     * @param node
-     *            the node
-     * @param junction
-     *            the junction type AND/OR
+     * @param node     the node
+     * @param junction the junction type AND/OR
      * @return the list of ambiguous nodes
      */
     public static List<QueryNode> check(QueryNode node, JUNCTION junction) {
@@ -71,7 +71,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
 
     @Override
     public Object visit(GroupQueryNode node, Object data) {
-        // If the group node consists entirely of a single fielded term with ambiguously ORed unfielded phrases, add a copy of the group node to the data.
+        // If the group node consists entirely of a single fielded term with ambiguously ANDed unfielded phrases, add a copy of the group node to the data.
         if (groupConsistsOfUnfieldedTerms(node, false)) {
             // noinspection unchecked
             ((List<QueryNode>) data).add(copy(node));
@@ -83,7 +83,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
     }
 
     /**
-     * Checks the given junction (AND/OR) node for any unfielded terms directly following a fielded term.
+     * Checks the AND node for any unfielded terms directly following a fielded term.
      *
      * @param node
      *            the node
@@ -98,7 +98,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
         // The first fielded term that should be part of the list above.
         QueryNode fieldedTerm = null;
 
-        // Examine each child of the OR.
+        // Examine each child of the AND.
         for (QueryNode child : node.getChildren()) {
             QueryNodeType type = QueryNodeType.get(child.getClass());
             switch (type) {
@@ -189,12 +189,10 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
     }
 
     /**
-     * Return whether the given {@link GroupQueryNode} consists entirely of ambiguously ORed unfielded phrases.
+     * Return whether the given {@link GroupQueryNode} consists entirely of ambiguously ANDed unfielded phrases.
      *
-     * @param node
-     *            the group node
-     * @param fieldedTermFound
-     *            whether a fielded term has already been found
+     * @param node             the group node
+     * @param fieldedTermFound whether a fielded term has already been found
      * @return true if the group node consists of ambiguously ORed phrases, or false otherwise
      */
     private boolean groupConsistsOfUnfieldedTerms(GroupQueryNode node, boolean fieldedTermFound) {
@@ -204,9 +202,9 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
         if (type == GROUP) {
             // The child is a nested group. Examine it.
             return groupConsistsOfUnfieldedTerms((GroupQueryNode) child, fieldedTermFound);
-        } else if (type == junction.getType()) {
-            // The child is an OR. Examine the OR's children.
-            return junctionConsistsOfUnfieldedTerms(child, fieldedTermFound);
+        } else if (type == JUNCTION.AND.getType()) {
+            // The child is an AND. Examine the AND's children.
+            return junctionConsistsOfUnfieldedAndTerms(child, fieldedTermFound);
         } else if (type == QueryNodeType.FIELD) {
             // If the child is a single field term, return true if it is unfielded and we have found a fieldedTerm. Otherwise, return false.
             return fieldedTermFound && ((FieldQueryNode) child).getFieldAsString().isEmpty();
@@ -216,30 +214,19 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
         }
     }
 
-    /**
-     * Return whether the given {@link OrQueryNode} consists entirely of ambiguously ORed unfielded phrases.
-     *
-     * @param node
-     *            the OR node
-     * @param fieldedTermFound
-     *            whether a fielded term has already been found.
-     * @return true if the OR node consists of ambiguously ORed phrases, or false otherwise
-     */
-    private boolean junctionConsistsOfUnfieldedTerms(QueryNode node, boolean fieldedTermFound) {
+    private boolean junctionConsistsOfUnfieldedAndTerms(QueryNode node, boolean fieldedTermFound) {
         List<QueryNode> children = node.getChildren();
         boolean unfieldedTermsFound = false;
         boolean fieldTermFoundInGroupSibling = false;
         String prevField = "";
 
-        QueryNode noSameFields = null;
         // Examine the children.
         for (QueryNode child : children) {
             QueryNodeType type = QueryNodeType.get(child.getClass());
-            // If the child is a group, check if it consists of ambiguously ORed phrases.
-            // If the child is a group, check if it consists of ambiguous phrases.
+            // If the child is a group, check if it consists of ambiguously ANDed phrases.
             if (type == QueryNodeType.GROUP) {
-                // If we found the field term specifically in a previous GROUP sibling, the top-level group cannot consist of ambiguously ORed unfielded phrases.
-                // Instead, we have something like ((FOO:abc OR def) OR (aaa OR bbb)) which cannot be flattened to FOO:(abc OR def OR aaa OR bbb).
+                // If we found the field term specifically in a previous GROUP sibling, the top-level group cannot consist of ambiguously ANDed unfielded phrases.
+                // Instead, we have something like ((FOO:abc AND def) AND (aaa AND bbb)) which cannot be flattened to FOO:(abc AND def AND aaa AND bbb).
                 if (fieldTermFoundInGroupSibling) {
                     return false;
                 }
@@ -247,34 +234,11 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                     // If it does, we know the group is something like: FOO:(abc def ghi)
                     // maybe use the loop to make a new group to be used by AmbiguousGroupedUnquotedPhrasesRule.java
                     // depending on if it is a) a group b) using AND junction c) using repeated fields
-               // new test parent; query = FOO:(abc def ghi)
-//<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-//<boolean operation="and">
-//
-//    <field end="8" field="FOO" start="5" text="abc"/>
-//
-//    <field end="12" field="FOO" start="9" text="def"/>
-//
-//    <field end="16" field="FOO" start="13" text="ghi"/>
-//
-//</boolean>
-                    // FOO: abc def ghi
-//<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-//<boolean operation="and">
-//
-//    <field end="7" field="FOO" start="4" text="abc"/>
-//
-//    <field end="11" field="" start="8" text="def"/>
-//
-//    <field end="15" field="" start="12" text="ghi"/>
-//
-//</boolean>
+                    // need to move the group to be after the field...
                     ((FieldQueryNode) child).setField("");
-                    // noSameFields.set();
                     unfieldedTermsFound = true;
                 } else {
                     prevField = ((FieldQueryNode) child).getFieldAsString();
-                    //noSameFields.add(child);
                 }
                 if (groupConsistsOfUnfieldedTerms((GroupQueryNode) child, fieldedTermFound)) {
                     // If it does, we know the group is something like one of the following:
@@ -298,12 +262,12 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                         prevField = ((FieldQueryNode) child).getFieldAsString();
                     } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
                         // If it does, we know the group is something like: FOO:(abc def ghi)
-                        // ( FOO:abc AND def AND ghi ). needs to be FIELD -> GROUP -> JUNCTIONS
+                        // ( FOO:abc AND def AND ghi ). needs to be GROUP -> JUNCTION
                         ((FieldQueryNode) child).setField("");
                         unfieldedTermsFound = true;
                     } else {
                         prevField = ((FieldQueryNode) child).getFieldAsString();
-                        // If a fielded term was found previously, then we have may something like (FOO:abc OR BAR:abc).
+                        // If a fielded term was found previously, then we have may something like (FOO:abc AND BAR:abc).
                         return false;
                     }
                 } else {
@@ -319,8 +283,6 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                 return false;
             }
         }
-        // Return whether we found at least one unfielded term following the fielded term like (FOO:abc OR def).
         return unfieldedTermsFound;
     }
-
 }
