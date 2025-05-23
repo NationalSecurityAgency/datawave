@@ -6,7 +6,6 @@ import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.MET
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,7 +23,6 @@ import java.util.regex.Pattern;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl3.JexlScript;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -33,8 +30,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.util.Assert;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
@@ -111,7 +106,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected BloomFilter<Key> activityLogBloom = null;
     protected BloomFilter<Key> durationLogBloom = null;
 
-    Map<Key,Set<Metadata>> eventMetadataRegistry;
+    Map<Key,Set<Metadata>> eventMetadataRegistry = new HashMap<>();
     EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
 
     private static final String NO_GROUP = "";
@@ -186,7 +181,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         List<EdgeDefinition> edgeDefs = edgeDefConfigs.getEdges();
 
         // Track metadata for this event
-        eventMetadataRegistry = new HashMap<>();
+        eventMetadataRegistry.clear();
 
         /**
          * If enabled, set the filtered context from the NormalizedContentInterface and create the script cache
@@ -202,8 +197,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
         edgeEventFieldUtil.normalizeAndGroupFields(fields);
         EdgeDataBundle baseEdgeBundle = new EdgeDataBundle(event);
-        edgeEventFieldUtil.setEdgeInfoFromEventFields(baseEdgeBundle, edgeDefConfigs, event, edgeConfig, newFormatStartDate, context.getConfiguration(),
-                        typeName);
+        edgeEventFieldUtil.setEdgeInfoFromEventFields(baseEdgeBundle, edgeDefConfigs, event, edgeConfig, newFormatStartDate);
 
         // Is this an edge to delete?
         baseEdgeBundle.setIsDeleting(this.getHelper(event.getDataType()).getDeleteMode());
@@ -284,9 +278,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             }
 
             // setup duration
-            if (edgeDef.hasDuration()) {
-                edgeEventFieldUtil.setEdgeDuration(edgeDef, baseEdgeBundle);
-            }
+
+            edgeEventFieldUtil.setEdgeDuration(edgeDef, baseEdgeBundle);
 
             if (null != edgeDef.getEnrichmentField()) {
                 if (edgeEventFieldUtil.getNormalizedFields().containsKey(edgeDef.getEnrichmentField())

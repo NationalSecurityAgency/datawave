@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +36,7 @@ public class EdgeEventFieldUtil {
     protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
 
     SimpleGroupFieldNameParser fieldParser = new SimpleGroupFieldNameParser();
-    protected boolean trimFieldGroup = false;
+    protected boolean trimFieldGroup;
 
     public EdgeEventFieldUtil(boolean trimFieldGroup) {
         this.trimFieldGroup = trimFieldGroup;
@@ -46,7 +45,7 @@ public class EdgeEventFieldUtil {
     }
 
     public void normalizeAndGroupFields(Multimap<String,NormalizedContentInterface> fields) {
-        Multimap<String,NormalizedContentInterface> tmp = null;
+        Multimap<String,NormalizedContentInterface> tmp;
         for (Map.Entry<String,NormalizedContentInterface> e : fields.entries()) {
             NormalizedContentInterface value = e.getValue();
             String subGroup = null;
@@ -174,17 +173,21 @@ public class EdgeEventFieldUtil {
     }
 
     public void setEdgeDuration(EdgeDefinition edgeDef, EdgeDataBundle edgeDataBundle) {
-        if (edgeDef.getUDDuration()) {
-            NormalizedContentInterface upnci = getNullKeyedNCI(edgeDef.getUpTime(), normalizedFields);
-            NormalizedContentInterface downnci = getNullKeyedNCI(edgeDef.getDownTime(), normalizedFields);
-            if (null != upnci && null != downnci) {
-                edgeDataBundle.initDuration(upnci, downnci);
+        if (edgeDef.hasDuration()) {
+            if (edgeDef.getUDDuration()) {
+                NormalizedContentInterface upnci = getNullKeyedNCI(edgeDef.getUpTime(), normalizedFields);
+                NormalizedContentInterface downnci = getNullKeyedNCI(edgeDef.getDownTime(), normalizedFields);
+                if (null != upnci && null != downnci) {
+                    edgeDataBundle.initDuration(upnci, downnci);
+                }
+            } else {
+                NormalizedContentInterface elnci = getNullKeyedNCI(edgeDef.getElapsedTime(), normalizedFields);
+                if (null != elnci) {
+                    edgeDataBundle.initDuration(elnci);
+                }
             }
         } else {
-            NormalizedContentInterface elnci = getNullKeyedNCI(edgeDef.getElapsedTime(), normalizedFields);
-            if (null != elnci) {
-                edgeDataBundle.initDuration(elnci);
-            }
+            edgeDataBundle.setDurationValue(null);
         }
     }
 
@@ -205,8 +208,8 @@ public class EdgeEventFieldUtil {
         bundle.setDateType(dateType);
     }
 
-    public EdgeDataBundle setEdgeInfoFromEventFields(EdgeDataBundle bundle, EdgeDefinitionConfigurationHelper edgeDefConfigs, RawRecordContainer event,
-                    EdgeIngestConfiguration edgeConfig, long newFormatStartDate, Configuration conf, String typeName) {
+    public void setEdgeInfoFromEventFields(EdgeDataBundle bundle, EdgeDefinitionConfigurationHelper edgeDefConfigs, RawRecordContainer event,
+                    EdgeIngestConfiguration edgeConfig, long newFormatStartDate) {
 
         // Get the load date of the event from the fields map
         String loadDateStr = getLoadDateString(normalizedFields);
@@ -234,8 +237,7 @@ public class EdgeEventFieldUtil {
         bundle.setEdgeAttribute2(getEdgeAttr2(edgeDefConfigs));
         bundle.setEdgeAttribute3(getEdgeAttr3(edgeDefConfigs));
         bundle.setRequiresMasking(event.isRequiresMasking());
-        bundle.setHelper(event.getDataType().getIngestHelper(conf));
+        bundle.setHelper(event.getDataType().getIngestHelper(edgeConfig.getConf()));
 
-        return bundle;
     }
 }

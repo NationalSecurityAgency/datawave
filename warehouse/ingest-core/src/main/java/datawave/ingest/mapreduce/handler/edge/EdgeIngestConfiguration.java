@@ -9,7 +9,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.apache.commons.jexl3.JexlScript;
-import org.apache.commons.jexl3.internal.Script;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +41,9 @@ public class EdgeIngestConfiguration {
     public static final String INCLUDE_ALL_EDGES = "protobufedge.include.all.edges";
     public static final String EDGE_DEFAULT_DATA_TYPE = "default";
     public static final String TRIM_FIELD_GROUP = ".trim.field.group";
+    private final Configuration conf;
 
-    private boolean enableDisallowist = false;
+    private boolean enableDisallowList = false;
     private boolean enableMetadata;
     private boolean evaluatePreconditions = false;
     private boolean includeAllEdges;
@@ -73,7 +73,8 @@ public class EdgeIngestConfiguration {
 
     public EdgeIngestConfiguration(Configuration conf) {
 
-        this.enableDisallowist = ConfigurationHelper.isNull(conf, EDGE_TABLE_DISALLOWLIST_ENABLE, Boolean.class);
+        this.conf = conf;
+        this.enableDisallowList = ConfigurationHelper.isNull(conf, EDGE_TABLE_DISALLOWLIST_ENABLE, Boolean.class);
         this.enableMetadata = ConfigurationHelper.isNull(conf, EDGE_TABLE_METADATA_ENABLE, Boolean.class);
 
         springConfigFile = ConfigurationHelper.isNull(conf, EDGE_SPRING_CONFIG, String.class);
@@ -89,6 +90,10 @@ public class EdgeIngestConfiguration {
         readEdgeConfigFile(registry, springConfigFile);
         pruneEdges();
 
+    }
+
+    public Configuration getConf() {
+        return this.conf;
     }
 
     /**
@@ -199,7 +204,7 @@ public class EdgeIngestConfiguration {
 
     private void removeDisallowListedEdges() {
         // loop through edge definitions and collect any ones that have disallowlisted fields
-        if (this.enableDisallowist) {
+        if (this.enableDisallowList) {
             Map<String,Set<EdgeDefinition>> disallowlistedEdges = new HashMap<>();
             for (String dType : edges.keySet()) {
                 if (!disallowlistedEdges.containsKey(dType)) {
@@ -346,7 +351,7 @@ public class EdgeIngestConfiguration {
     }
 
     public boolean enableDisallowist() {
-        return enableDisallowist;
+        return enableDisallowList;
     }
 
     public Map<String,Map<String,String>> getEdgeEnrichmentTypeLookup() {

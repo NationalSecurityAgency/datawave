@@ -81,7 +81,7 @@ public class EdgeDataBundle {
 
     public EdgeDataBundle(EdgeDefinition edgeDef, NormalizedContentInterface ifaceSource, NormalizedContentInterface ifaceSink, RawRecordContainer event,
                     IngestHelperInterface helper) {
-        this(event, edgeDef.getEdgeType().toString(), null, helper);
+        this(event, edgeDef.getEdgeType(), null, helper);
 
         this.setSource(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSourceIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(),
                         edgeDef.getSourceRelationship(), edgeDef.getSourceCollection(), ifaceSource));
@@ -559,7 +559,8 @@ public class EdgeDataBundle {
     public void setEdgeDefinition(EdgeDefinition edgeDef) {
         this.edgeDefinition = edgeDef;
         this.edgeDirection = edgeDef.getDirection();
-        this.edgeType = edgeDef.getEdgeType().toString();
+        this.edgeType = edgeDef.getEdgeType();
+
     }
 
     public void setUUID(String uuid) {
