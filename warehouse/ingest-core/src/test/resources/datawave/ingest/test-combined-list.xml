@@ -2,10 +2,12 @@
 <fieldConfig>
     <!-- fields not listed here are not indexed or tokenized. By default fields listed here are indexed
          (forward and reverse) but >not< tokenized unless explicitly stated as such. This is an allowlist -->
-    <default stored="true" indexed="true" reverseIndexed="true" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.LcNoDiacriticsType"/>
+    <default stored="true" indexed="true" reverseIndexed="true" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.LcNoDiacriticsType" groupingPolicy="SAME_GROUP_ONLY" allowMissing="false"/>
     <nomatch stored="false" indexed="false" reverseIndexed="false" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.HexStringType"/>
     <field name="A" combine="B.C"/>
     <field name="D" combine="E.F"/>
-    <field name="G" indexed="false"/>
-    <field name="H" stored="false" />
+    <field name="G" combine="X.Y" indexed="false" groupingPolicy="IGNORE_GROUPS"/>
+    <field name="H" combine="B.DNE" stored="false" />
+    <field name="I" combine="B.DNE" stored="false" groupingPolicy="IGNORE_GROUPS" allowMissing="true"/>
+
 </fieldConfig>

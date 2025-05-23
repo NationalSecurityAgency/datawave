@@ -14,7 +14,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.hadoop.conf.Configuration;
@@ -255,22 +254,30 @@ public class XMLFieldConfigHelperTest {
         conf.set("test" + VirtualIngest.VirtualFieldNormalizer.VIRTUAL_FIELD_VALUE_END_SEPATATOR, ")");
         ingestHelper.setup(conf);
 
-        assertTrue(ingestHelper.getVirtualFieldDefinitions().size() == 2);
+        assertTrue(ingestHelper.getVirtualFieldDefinitions().size() == 5);
         assertTrue(Arrays.equals(expectedMap.get(field1), ingestHelper.getVirtualFieldDefinitions().get(field1)));
         assertTrue(Arrays.equals(expectedMap.get(field2), ingestHelper.getVirtualFieldDefinitions().get(field2)));
 
         Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
-        eventFields.put("B", new NormalizedFieldAndValue("B", "banana"));
-        eventFields.put("C", new NormalizedFieldAndValue("C", "cantaloupe"));
-        eventFields.put("E", new NormalizedFieldAndValue("E", "elderberry"));
-        eventFields.put("F", new NormalizedFieldAndValue("F", "fig"));
+        eventFields.put("B", new NormalizedFieldAndValue("B", "banana", "FRUIT", "0"));
+        eventFields.put("C", new NormalizedFieldAndValue("C", "cantaloupe", "FRUIT", "0"));
+        eventFields.put("E", new NormalizedFieldAndValue("E", "elderberry", "WINE", "0"));
+        eventFields.put("F", new NormalizedFieldAndValue("F", "fig", "FRUIT", "0"));
+        eventFields.put("X", new NormalizedFieldAndValue("X", "ketchup", "CONDIMENT", "0"));
+        eventFields.put("Y", new NormalizedFieldAndValue("Y", "meatball", "SUB", "0"));
 
         Multimap<String,NormalizedContentInterface> results = ingestHelper.getVirtualFields(eventFields);
 
         assertTrue(results.containsKey("A"));
-        assertTrue(results.containsKey("D"));
+        assertFalse(results.containsKey("D"));// different groups
+        assertTrue(results.containsKey("G"));// different groups but with groupingPolicy override
+        assertFalse(results.containsKey("H"));// default allowMissing=false
+        assertTrue(results.containsKey("I"));// override allowMissing=true
+
         assertEquals("banana(cantaloupe)", results.get("A").iterator().next().getEventFieldValue());
-        assertEquals("elderberry(fig)", results.get("D").iterator().next().getEventFieldValue());
+        assertEquals("ketchup(meatball)", results.get("G").iterator().next().getEventFieldValue());
+        assertEquals("banana", results.get("I").iterator().next().getEventFieldValue());
+
     }
 
     @Test
