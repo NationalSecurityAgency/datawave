@@ -230,16 +230,6 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                 if (fieldTermFoundInGroupSibling) {
                     return false;
                 }
-                if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
-                    // If it does, we know the group is something like: FOO:(abc def ghi)
-                    // maybe use the loop to make a new group to be used by AmbiguousGroupedUnquotedPhrasesRule.java
-                    // depending on if it is a) a group b) using AND junction c) using repeated fields
-                    // need to move the group to be after the field...
-                    ((FieldQueryNode) child).setField("");
-                    unfieldedTermsFound = true;
-                } else {
-                    prevField = ((FieldQueryNode) child).getFieldAsString();
-                }
                 if (groupConsistsOfUnfieldedTerms((GroupQueryNode) child, fieldedTermFound)) {
                     // If it does, we know the group is something like one of the following:
                     // (FOO:abc OR def).
@@ -262,8 +252,6 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                         prevField = ((FieldQueryNode) child).getFieldAsString();
                     } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
                         // If it does, we know the group is something like: FOO:(abc def ghi)
-                        // ( FOO:abc AND def AND ghi ). needs to be GROUP -> JUNCTION
-                        ((FieldQueryNode) child).setField("");
                         unfieldedTermsFound = true;
                     } else {
                         prevField = ((FieldQueryNode) child).getFieldAsString();

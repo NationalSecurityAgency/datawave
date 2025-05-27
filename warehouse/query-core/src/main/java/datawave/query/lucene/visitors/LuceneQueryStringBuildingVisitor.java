@@ -2,6 +2,7 @@ package datawave.query.lucene.visitors;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AnyQueryNode;
@@ -138,17 +139,23 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
     }
 
     // this is where it closes adds the parentheses
+    private boolean newParenthesis;
+    private QueryNodeType type;
     @Override
     public Object visit(GroupQueryNode node, Object data) {
+        type = QueryNodeType.get(node.getClass());
         QueryNode child = node.getChild();
+        List<QueryNode> children = node.getChildren();
         if (child != null) {
             StringBuilder sb = (StringBuilder) data;
             sb.append("( ");
             visit(child, sb);
             if (newParenthesis == true) {
-                // this places the group start after the field FOO: (
-                sb.insert((sb.indexOf(":") + 1), "( ");
-                sb.delete(0, 2);
+                // this moves the parenthesis from the beginning to after the field ( FOO: -> FOO:(
+                if (sb.indexOf("(") == 0) {
+                    sb.insert((sb.indexOf(":") + 1), "( ");
+                    sb.delete(0, 2);
+                }
             }
             sb.append(" )");
         }
@@ -431,20 +438,32 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         return visit((BooleanQueryNode) node, data);
     }
 
-    private boolean newParenthesis;
     private Object visitJunctionNode(QueryNode node, Object data, String junction) {
         StringBuilder sb = (StringBuilder) data;
         List<QueryNode> children = node.getChildren();
+        String prevField = "";
         if (children != null && !children.isEmpty()) {
             boolean requiresGrouping = !isRootOrHasParentGroup(node);
             // if requires grouping then add a loop checking the children's fields to see if there are same fields and then add the
             // parentheses with the boolean, use string builder to find index of first colon to add opening parenthesis after, do at the last if line 440
-            for (QueryNode child : children) {
-                if (((FieldQueryNode) child).getFieldAsString().isEmpty()) {
-                    // this means there is (an) unfielded term(s)
-                    newParenthesis = true;
-                } else {
-                    newParenthesis = false;
+            if (type == QueryNodeType.GROUP) {
+                for (QueryNode child : children) {
+                    QueryNodeType type = QueryNodeType.get(child.getClass());
+                    // need to add a way to make this only for grouped unfielded terms
+                    // add an if to check if there is a nested group
+                    if (type == QueryNodeType.GROUP) {
+                        newParenthesis = false;
+                    } else if (type == QueryNodeType.FIELD) {
+                        if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
+                            // If it does, we know the group is something like: FOO:(abc def ghi)
+                            ((FieldQueryNode) child).setField("");
+                            // this means there is (an) unfielded term(s)
+                            newParenthesis = true;
+                        } else {
+                            prevField = ((FieldQueryNode) child).getFieldAsString();
+                            newParenthesis = false;
+                        }
+                    }
                 }
             }
             if (requiresGrouping) {
