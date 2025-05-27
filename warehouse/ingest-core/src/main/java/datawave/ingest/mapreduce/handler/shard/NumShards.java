@@ -212,7 +212,8 @@ public class NumShards {
 
     public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
 
-        List<String> nsEntries = NumShardMetadataHelper.updateCache(numShardsCachePath, conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF, MAX_NUMBER_OF_RETRIES_CACHEFILE);
+        List<String> nsEntries = NumShardMetadataHelper.updateCache(numShardsCachePath, conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF,
+                        MAX_NUMBER_OF_RETRIES_CACHEFILE);
         FileSystem fs = numShardsCachePath.getFileSystem(conf);
 
         // create a new temporary file
@@ -235,7 +236,7 @@ public class NumShards {
             boolean isCacheLoaded = false;
             int numOfTries = 0;
 
-            while (!isCacheLoaded && numOfTries++ <  MAX_NUMBER_OF_RETRIES_CACHEFILE) {
+            while (!isCacheLoaded && numOfTries++ < MAX_NUMBER_OF_RETRIES_CACHEFILE) {
                 // now move the temporary file to the file cache
                 try {
                     fs.delete(numShardsCachePath, false);
