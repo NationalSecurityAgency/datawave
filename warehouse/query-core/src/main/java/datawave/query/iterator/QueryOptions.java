@@ -25,7 +25,8 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.management.Query;
+
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -42,6 +43,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
@@ -107,8 +109,6 @@ import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
-
-import javax.management.Query;
 
 /**
  * QueryOptions are set on the iterators.
@@ -750,6 +750,7 @@ public class QueryOptions implements OptionDescriber {
     public Predicate<Key> getFieldIndexKeyDataTypeFilter() {
         return this.fieldIndexKeyDataTypeFilter;
     }
+
     @JsonIgnore
     public Predicate<Key> getEventEntryKeyDataTypeFilter() {
         return this.eventEntryKeyDataTypeFilter;
@@ -870,14 +871,17 @@ public class QueryOptions implements OptionDescriber {
 
         return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }
+
     @JsonIgnore
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
         this.evaluationFilter = evaluationFilter;
     }
+
     @JsonIgnore
     public void setFiEvaluationFilter(EventDataQueryFilter fiEvaluationFilter) {
         this.fiEvaluationFilter = fiEvaluationFilter;
     }
+
     @JsonIgnore
     public void setEventEvaluationFilter(EventDataQueryFilter eventEvaluationFilter) {
         this.eventEvaluationFilter = eventEvaluationFilter;
@@ -946,10 +950,12 @@ public class QueryOptions implements OptionDescriber {
     private Set<String> getQueryFields() {
         return JexlASTHelper.getIdentifierNames(getScript());
     }
+
     @JsonIgnore
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
+
     @JsonIgnore
     public void setTimeFilter(TimeFilter timeFilter) {
         this.timeFilter = timeFilter;
@@ -1085,6 +1091,7 @@ public class QueryOptions implements OptionDescriber {
         }
         return this.fsCache;
     }
+
     @JsonIgnore
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
         return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
@@ -2632,7 +2639,8 @@ public class QueryOptions implements OptionDescriber {
                         .putDefaultValue(QueryOptions.TERM_FREQUENCY_FIELDS, queryOptions.termFrequencyFields)
                         .putDefaultValue(QueryOptions.CARDINALITY_THRESHOLD, queryOptions.cardinalityThreshold)
                         .putDefaultValue(QueryOptions.SUMMARY_FIELD_NAME, queryOptions.summaryFieldname == null ? "" : queryOptions.summaryFieldname)
-                        .putDefaultValue(QueryOptions.CONTENT_EXPANSION_FIELDS, queryOptions.contentExpansionFields == null ? Collections.emptySet() : queryOptions.contentExpansionFields)
+                        .putDefaultValue(QueryOptions.CONTENT_EXPANSION_FIELDS,
+                                        queryOptions.contentExpansionFields == null ? Collections.emptySet() : queryOptions.contentExpansionFields)
                         .putDefaultValue(QueryOptions.TYPE_METADATA, queryOptions.typeMetadata == null ? new TypeMetadata() : queryOptions.typeMetadata)
                         .putDefaultValue(QueryOptions.SUMMARY_OPTIONS, queryOptions.summaryOptions == null ? new SummaryOptions() : queryOptions.summaryOptions)
                         .build();
