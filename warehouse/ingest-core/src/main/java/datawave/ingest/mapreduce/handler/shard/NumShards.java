@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -210,7 +211,53 @@ public class NumShards {
     }
 
     public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
-        NumShardMetadataHelper.updateCache(numShardsCachePath, conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF, MAX_NUMBER_OF_RETRIES_CACHEFILE);
+
+        List<String> nsEntries = NumShardMetadataHelper.updateCache(numShardsCachePath, conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF, MAX_NUMBER_OF_RETRIES_CACHEFILE);
+        FileSystem fs = numShardsCachePath.getFileSystem(conf);
+
+        // create a new temporary file
+        int count = 1;
+        Path tmpShardCacheFile = new Path(numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
+
+        while (!fs.createNewFile(tmpShardCacheFile) && count < MAX_NUMBER_OF_RETRIES_CACHEFILE) {
+            count++;
+            tmpShardCacheFile = new Path(numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
+        }
+
+        // now attempt to write them out
+        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpShardCacheFile)))) {
+
+            for (String nsEntry : nsEntries) {
+                out.println(nsEntry);
+            }
+            out.close();
+
+            boolean isCacheLoaded = false;
+            int numOfTries = 0;
+
+            while (!isCacheLoaded && numOfTries++ <  MAX_NUMBER_OF_RETRIES_CACHEFILE) {
+                // now move the temporary file to the file cache
+                try {
+                    fs.delete(numShardsCachePath, false);
+                    // Note this rename will fail if the file already exists (i.e. the delete failed or somebody just replaced it)
+                    // but this is OK...
+                    if (!fs.rename(tmpShardCacheFile, numShardsCachePath)) {
+                        throw new IOException("Failed to rename temporary multiple numshards cache file");
+                    }
+
+                    isCacheLoaded = true;
+                } catch (Exception e) {
+                    log.warn("Unable to rename " + tmpShardCacheFile + " to " + numShardsCachePath + " probably because somebody else replaced it", e);
+                    try {
+                        fs.delete(tmpShardCacheFile, false);
+                    } catch (Exception e2) {
+                        log.error("Unable to clean up " + tmpShardCacheFile, e2);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Unable to create new multiple numshards cache file", e);
+        }
     }
 
     private void ensureTableExists(AccumuloClient client, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
