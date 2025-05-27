@@ -347,7 +347,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // verify we still get our expected results
         runTest(query, expect);
         // and verify that the ivarators indeed persisted
-        assertEquals(1, countComplete(dirs));
+        assertEquals(3, countComplete(dirs));
     }
 
     private int countComplete(List<String> dirs) throws Exception {

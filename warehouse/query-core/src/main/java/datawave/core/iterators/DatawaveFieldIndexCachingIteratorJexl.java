@@ -93,6 +93,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private PartialKey returnKeyType = DEFAULT_RETURN_KEY_TYPE;
         private int maxRangeSplit = 11;
         private List<IvaratorCacheDir> ivaratorCacheDirs;
+        private int termNumber;
         private QueryLock queryLock;
         private boolean allowDirReuse;
         private long maxResults = -1;
@@ -209,6 +210,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             return self();
         }
 
+        public B withTermNumber(int termNumber) {
+            this.termNumber = termNumber;
+            return self();
+        }
+
         public B withQueryLock(QueryLock queryLock) {
             this.queryLock = queryLock;
             return self();
@@ -305,6 +311,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     // The configured ivarator cache paths
     private final List<IvaratorCacheDir> ivaratorCacheDirs;
+    // The number in-order that this term was in the query when built
+    private final int termNumber;
     // The control filesystem to use for this ivarator
     private final FileSystem controlFs;
     // The control directory to use for this ivarator
@@ -402,6 +410,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.datatypeFilter = null;
 
         this.ivaratorCacheDirs = null;
+        this.termNumber = 0;
         this.controlFs = null;
         this.controlDir = null;
         this.queryLock = null;
@@ -446,6 +455,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.datatypeFilter = builder.datatypeFilter;
 
         this.ivaratorCacheDirs = builder.ivaratorCacheDirs;
+        this.termNumber = builder.termNumber;
 
         // Note: We have already selected the control directory at random in the DefaultQueryPlanner
         // @see DefaultQueryPlanner#getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration)
@@ -498,6 +508,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.negated = other.negated;
 
         this.ivaratorCacheDirs = other.ivaratorCacheDirs == null ? null : new ArrayList<>(other.ivaratorCacheDirs);
+        this.termNumber = other.termNumber;
         this.controlFs = other.controlFs;
         this.controlDir = other.controlDir;
         this.queryLock = other.queryLock;
@@ -1215,6 +1226,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         sb.append(" queryId:").append(queryId);
         sb.append(" fiRow:").append(fiRow);
         sb.append(" iHash:").append(getIHash(fiRow));
+        sb.append(" termNumber:").append(termNumber);
         sb.append(" rangeHash:").append(Math.abs(boundingFiRange.hashCode() / 2));
         return sb.toString();
     }
@@ -1268,6 +1280,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     canResume = false;
                     break;
                 }
+                // All IvaratorRunnables from the previous execution must reference the same Ivarator or something is wrong
                 if (previousIvarator == null) {
                     previousIvarator = ivaratorRunnable.getIvarator();
                 } else if (previousIvarator != ivaratorRunnable.getIvarator()) {
@@ -1281,10 +1294,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (previousIvarator != null) {
             Set<String> currentUriSet = this.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
             Set<String> previousUriSet = previousIvarator.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
-            // this condition doesn't fail the resumeFromIvaratorFutures call, but is cause for concern and should be investigated
+            // ivaratorCacheDirs must be the same. If they are different, we probably have multiple copies of identical Ivarators from
+            // different sequenced terms in the same query. If this happens and that is not the case, then it should be investigated.
             if (!currentUriSet.equals(previousUriSet)) {
-                log.warn(String.format("Resuming Ivarator %s suspicious condition - currentUriSet != previousUriSet, %s != %s", ivaratorInfo, currentUriSet,
+                log.debug(String.format("Resuming Ivarator %s failed - currentUriSet != previousUriSet, %s != %s", ivaratorInfo, currentUriSet,
                                 previousUriSet));
+                canResume = false;
             }
         }
 
@@ -1519,8 +1534,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      *             for issues with read/write
      */
     protected void forcePersistence() throws IOException {
-        if (this.set != null && !this.set.isPersisted()) {
-            this.set.persist();
+        if (this.set != null) {
+            if (!this.set.isPersisted()) {
+                this.set.persist();
+            }
             // declare the persisted set complete
             this.setControl.setCompleteAndPersisted(this.currentRow);
         }
@@ -1765,9 +1782,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     public String getIvaratorInfo(String row, boolean includeToString) {
         if (includeToString) {
-            return String.format("queryId:%s fiRow:%s iHash:%s %s", queryId, row, getIHash(row), toStringNoQueryId());
+            return String.format("queryId:%s fiRow:%s iHash:%s termNumber:%d %s", queryId, row, getIHash(row), termNumber, toStringNoQueryId());
         } else {
-            return String.format("queryId:%s fiRow:%s iHash:%s", queryId, row, getIHash(row));
+            return String.format("queryId:%s fiRow:%s iHash:%s termNumber:%d", queryId, row, getIHash(row), termNumber);
         }
     }
 
