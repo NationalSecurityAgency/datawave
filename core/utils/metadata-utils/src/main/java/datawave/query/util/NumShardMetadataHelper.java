@@ -28,8 +28,7 @@ public class NumShardMetadataHelper {
 
     private static final Logger log = Logger.getLogger(NumShardMetadataHelper.class);
 
-    public static ArrayList<String> updateCache(Path numShardsCachePath, Configuration conf, AccumuloHelper aHelper, Text numShards, Text numShardsCF,
-                    int maxNumberOfRetriesCacheFile) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
+    public static ArrayList<String> updateCache(Configuration conf, AccumuloHelper aHelper, Text numShards, Text numShardsCF) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         String metadataTableName = ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
         log.info("Reading the " + metadataTableName + " for multiple numshards configuration");
 
