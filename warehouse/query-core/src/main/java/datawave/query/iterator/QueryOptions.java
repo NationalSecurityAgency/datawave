@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -106,6 +107,8 @@ import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
+
+import javax.management.Query;
 
 /**
  * QueryOptions are set on the iterators.
@@ -301,6 +304,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected String scanId;
     protected String query;
+    @JsonIgnore
     private ASTJexlScript script;
     protected String queryId;
     protected boolean disableEvaluation = false;
@@ -312,6 +316,7 @@ public class QueryOptions implements OptionDescriber {
     protected CompositeMetadata compositeMetadata = null;
     protected int compositeSeekThreshold = 10;
     protected DocumentSerialization.ReturnType returnType = DocumentSerialization.ReturnType.kryo;
+    @JsonIgnore
     private DocumentSerializer documentSerializer;
 
     protected boolean reducedResponse = false;
@@ -333,18 +338,24 @@ public class QueryOptions implements OptionDescriber {
     protected UniqueFields uniqueFields = new UniqueFields();
     protected int uniqueCacheBufferSize = 100;
 
+    @JsonIgnore
     protected Set<String> hitsOnlySet = new HashSet<>();
 
     protected Function<Range,Key> getDocumentKey;
 
+    @JsonIgnore
     protected FieldIndexAggregator fiAggregator;
+    @JsonIgnore
     protected Equality equality;
 
     // filter for any key type (fi, event, tf)
+    @JsonIgnore
     protected EventDataQueryFilter evaluationFilter;
     protected EventDataQueryFilter fiEvaluationFilter;
+    @JsonIgnore
     protected EventDataQueryFilter eventEvaluationFilter;
     // filter specifically for event keys. required when performing a seeking aggregation
+    @JsonIgnore
     protected EventDataQueryFilter eventFilter;
 
     protected int maxEvaluationPipelines = 25;
@@ -357,10 +368,12 @@ public class QueryOptions implements OptionDescriber {
     protected boolean includeGroupingContext = false;
 
     protected List<String> documentPermutationClasses = new ArrayList<>();
+    @JsonIgnore
     protected List<DocumentPermutation> documentPermutations = null;
 
     protected long startTime = 0L;
     protected long endTime = System.currentTimeMillis();
+    @JsonIgnore
     protected TimeFilter timeFilter = null;
 
     // this flag control whether we filter the masked fields for results that
@@ -381,6 +394,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected String hdfsSiteConfigURLs = null;
     protected String hdfsFileCompressionCodec = null;
+    @JsonIgnore
     protected FileSystemCache fsCache = null;
 
     protected String zookeeperConfig = null;
@@ -394,6 +408,7 @@ public class QueryOptions implements OptionDescriber {
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
     protected int ivaratorNumRetries = 2;
+    @JsonIgnore
     protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
     protected int maxIvaratorSources = 33;
@@ -405,6 +420,7 @@ public class QueryOptions implements OptionDescriber {
     protected long maxYields = 10;
 
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
+    @JsonIgnore
     protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
 
     protected String postProcessingFunctions = "";
@@ -428,7 +444,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected String statsdHostAndPort = null;
     protected int statsdMaxQueueSize = 500;
-
+    @JsonIgnore
     protected QueryStatsDClient statsdClient = null;
 
     protected boolean serialEvaluationPipeline = false;
@@ -478,6 +494,7 @@ public class QueryOptions implements OptionDescriber {
     private CountMap fieldCounts;
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
+    @JsonIgnore
     private long cardinality = Long.MAX_VALUE;
     private long cardinalityThreshold = Long.MIN_VALUE;
 
@@ -696,6 +713,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return the document serializer
      */
+    @JsonIgnore
     public DocumentSerializer getDocumentSerializer() {
         if (documentSerializer == null) {
             switch (returnType) {
@@ -716,6 +734,7 @@ public class QueryOptions implements OptionDescriber {
         return documentSerializer;
     }
 
+    @JsonIgnore
     public void setDocumentSerializer(DocumentSerializer documentSerializer) {
         this.documentSerializer = documentSerializer;
     }
@@ -731,7 +750,7 @@ public class QueryOptions implements OptionDescriber {
     public Predicate<Key> getFieldIndexKeyDataTypeFilter() {
         return this.fieldIndexKeyDataTypeFilter;
     }
-
+    @JsonIgnore
     public Predicate<Key> getEventEntryKeyDataTypeFilter() {
         return this.eventEntryKeyDataTypeFilter;
     }
@@ -851,15 +870,15 @@ public class QueryOptions implements OptionDescriber {
 
         return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }
-
+    @JsonIgnore
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
         this.evaluationFilter = evaluationFilter;
     }
-
+    @JsonIgnore
     public void setFiEvaluationFilter(EventDataQueryFilter fiEvaluationFilter) {
         this.fiEvaluationFilter = fiEvaluationFilter;
     }
-
+    @JsonIgnore
     public void setEventEvaluationFilter(EventDataQueryFilter eventEvaluationFilter) {
         this.eventEvaluationFilter = eventEvaluationFilter;
     }
@@ -927,11 +946,11 @@ public class QueryOptions implements OptionDescriber {
     private Set<String> getQueryFields() {
         return JexlASTHelper.getIdentifierNames(getScript());
     }
-
+    @JsonIgnore
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
-
+    @JsonIgnore
     public void setTimeFilter(TimeFilter timeFilter) {
         this.timeFilter = timeFilter;
     }
@@ -952,6 +971,7 @@ public class QueryOptions implements OptionDescriber {
         return this.indexedFields;
     }
 
+    @JsonIgnore
     public Set<String> getAllIndexOnlyFields() {
         Set<String> allIndexOnlyFields = new HashSet<>();
         // index only fields are by definition not in the event
@@ -976,6 +996,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return a set of event fields
      */
+    @JsonIgnore
     public Set<String> getNonEventFields() {
         Set<String> nonEventFields = new HashSet<>();
         // index only fields are by definition not in the event
@@ -1011,6 +1032,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return the union of all configured fields
      */
+    @JsonIgnore
     public Set<String> getAllFields() {
         Set<String> allFields = new HashSet<>();
         // includes index only fields plus composite fields
@@ -1056,13 +1078,14 @@ public class QueryOptions implements OptionDescriber {
         this.hdfsSiteConfigURLs = hadoopConfigURLs;
     }
 
+    @JsonIgnore
     public FileSystemCache getFileSystemCache() throws MalformedURLException {
         if (this.fsCache == null && this.hdfsSiteConfigURLs != null) {
             this.fsCache = new FileSystemCache(this.hdfsSiteConfigURLs);
         }
         return this.fsCache;
     }
-
+    @JsonIgnore
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
         return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
                         .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
@@ -1209,6 +1232,7 @@ public class QueryOptions implements OptionDescriber {
         return matchingFieldSets;
     }
 
+    @JsonIgnore
     public List<String> getMatchingFieldList() {
         return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
     }
@@ -1257,10 +1281,12 @@ public class QueryOptions implements OptionDescriber {
         this.uniqueFields = uniqueFields.clone();
     }
 
+    @JsonIgnore
     public Set<String> getHitsOnlySet() {
         return hitsOnlySet;
     }
 
+    @JsonIgnore
     public void setHitsOnlySet(Set<String> hitsOnlySet) {
         this.hitsOnlySet = hitsOnlySet;
     }
@@ -2599,7 +2625,17 @@ public class QueryOptions implements OptionDescriber {
                         .putDefaultValue(QueryOptions.EXCERPT_FIELDS, queryOptions.excerptFields == null ? new ExcerptFields() : queryOptions.excerptFields)
                         .putDefaultValue(QueryOptions.EXCERPT_FIELDS_NO_HIT_CALLOUT, queryOptions.excerptFieldsNoHitCallout)
                         .putDefaultValue(QueryOptions.EXCERPT_ITERATOR, queryOptions.excerptIterator)
-                        .putDefaultValue(QueryOptions.SEEKING_EVENT_AGGREGATION, queryOptions.seekingEventAggregation).build();
+                        .putDefaultValue(QueryOptions.SEEKING_EVENT_AGGREGATION, queryOptions.seekingEventAggregation)
+                        .putDefaultValue(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, queryOptions.uniqueCacheBufferSize)
+                        .putDefaultValue(QueryOptions.MAX_YIELDS, queryOptions.maxYields)
+                        .putDefaultValue(QueryOptions.SUMMARY_ITERATOR, queryOptions.summaryIterator)
+                        .putDefaultValue(QueryOptions.TERM_FREQUENCY_FIELDS, queryOptions.termFrequencyFields)
+                        .putDefaultValue(QueryOptions.CARDINALITY_THRESHOLD, queryOptions.cardinalityThreshold)
+                        .putDefaultValue(QueryOptions.SUMMARY_FIELD_NAME, queryOptions.summaryFieldname == null ? "" : queryOptions.summaryFieldname)
+                        .putDefaultValue(QueryOptions.CONTENT_EXPANSION_FIELDS, queryOptions.contentExpansionFields == null ? Collections.emptySet() : queryOptions.contentExpansionFields)
+                        .putDefaultValue(QueryOptions.TYPE_METADATA, queryOptions.typeMetadata == null ? new TypeMetadata() : queryOptions.typeMetadata)
+                        .putDefaultValue(QueryOptions.SUMMARY_OPTIONS, queryOptions.summaryOptions == null ? new SummaryOptions() : queryOptions.summaryOptions)
+                        .build();
         // formatter:on
 
         return defaultOptions;
