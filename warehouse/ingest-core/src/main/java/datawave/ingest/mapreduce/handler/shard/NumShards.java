@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import datawave.query.util.NumShardMetadataHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -32,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.query.util.NumShardMetadataHelper;
 import datawave.util.time.DateHelper;
 
 public class NumShards {
