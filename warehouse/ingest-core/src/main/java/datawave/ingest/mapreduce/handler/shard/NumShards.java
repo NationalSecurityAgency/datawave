@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import datawave.query.util.NumShardMetadataHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -209,72 +210,7 @@ public class NumShards {
     }
 
     public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
-        FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
-        String metadataTableName = ConfigurationHelper.isNull(this.conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
-        log.info("Reading the " + metadataTableName + " for multiple numshards configuration");
-
-        if (this.aHelper == null) {
-            this.aHelper = new AccumuloHelper();
-            this.aHelper.setup(conf);
-        }
-
-        ArrayList<String> nsEntries = new ArrayList<>();
-        try (AccumuloClient client = aHelper.newClient()) {
-            ensureTableExists(client, metadataTableName);
-
-            try (Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
-                scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
-
-                for (Map.Entry<Key,Value> entry : scanner) {
-                    nsEntries.add(entry.getKey().getColumnQualifier().toString());
-                }
-            }
-        }
-
-        // create a new temporary file
-        int count = 1;
-        Path tmpShardCacheFile = new Path(this.numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
-
-        while (!fs.createNewFile(tmpShardCacheFile) && count < MAX_NUMBER_OF_RETRIES_CACHEFILE) {
-            count++;
-            tmpShardCacheFile = new Path(this.numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
-        }
-
-        // now attempt to write them out
-        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpShardCacheFile)))) {
-
-            for (String nsEntry : nsEntries) {
-                out.println(nsEntry);
-            }
-            out.close();
-
-            boolean isCacheLoaded = false;
-            int numOfTries = 0;
-
-            while (!isCacheLoaded && numOfTries++ < MAX_NUMBER_OF_RETRIES_CACHEFILE) {
-                // now move the temporary file to the file cache
-                try {
-                    fs.delete(this.numShardsCachePath, false);
-                    // Note this rename will fail if the file already exists (i.e. the delete failed or somebody just replaced it)
-                    // but this is OK...
-                    if (!fs.rename(tmpShardCacheFile, this.numShardsCachePath)) {
-                        throw new IOException("Failed to rename temporary multiple numshards cache file");
-                    }
-
-                    isCacheLoaded = true;
-                } catch (Exception e) {
-                    log.warn("Unable to rename " + tmpShardCacheFile + " to " + this.numShardsCachePath + " probably because somebody else replaced it", e);
-                    try {
-                        fs.delete(tmpShardCacheFile, false);
-                    } catch (Exception e2) {
-                        log.error("Unable to clean up " + tmpShardCacheFile, e2);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("Unable to create new multiple numshards cache file", e);
-        }
-
+        NumShardMetadataHelper.updateCache(numShardsCachePath, conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF, MAX_NUMBER_OF_RETRIES_CACHEFILE);
     }
 
     private void ensureTableExists(AccumuloClient client, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
