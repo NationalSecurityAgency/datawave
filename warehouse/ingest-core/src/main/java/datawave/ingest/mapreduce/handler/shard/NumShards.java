@@ -235,7 +235,7 @@ public class NumShards {
             boolean isCacheLoaded = false;
             int numOfTries = 0;
 
-            while (!isCacheLoaded && numOfTries++ <  MAX_NUMBER_OF_RETRIES_CACHEFILE) {
+            while (!isCacheLoaded && numOfTries++ < MAX_NUMBER_OF_RETRIES_CACHEFILE) {
                 // now move the temporary file to the file cache
                 try {
                     fs.delete(numShardsCachePath, false);
