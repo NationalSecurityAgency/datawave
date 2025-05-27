@@ -1,4 +1,3 @@
 package datawave.query.util;
 
-public class NumShardMetadataHelper {
-}
+public class NumShardMetadataHelper {}
