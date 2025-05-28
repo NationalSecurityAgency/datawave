@@ -141,6 +141,18 @@ public abstract class TypeAttributeIT {
      *            the TypeAttribute
      */
     protected void readWriteKryo(TypeAttribute<?> attribute) {
+        readWriteKryo(attribute, 1);
+    }
+
+    /**
+     * Read and write the provided {@link TypeAttribute} using Kryo, verifying the delegate and normalized value
+     *
+     * @param attribute
+     *            the TypeAttribute
+     * @param serializedLength
+     *            the length of the serialized object, in bytes
+     */
+    protected void readWriteKryo(TypeAttribute<?> attribute, int serializedLength) {
         // The non-normalized value. Sometimes the input value is normalized but not every normalizer can denormalize.
         String delegateValue = attribute.getType().getDelegateAsString();
         // The normalized value. OneToManyNormalizers will return the original delegate value because of some weirdness.
@@ -156,7 +168,11 @@ public abstract class TypeAttributeIT {
         Output output = new Output(1024);
         attribute.write(kryo, output);
         output.flush();
-        byte[] data = output.getBuffer();
+        byte[] data = output.toBytes();
+
+        if (serializedLength > 0) {
+            assertEquals(serializedLength, data.length);
+        }
 
         try (Input input = new Input(data)) {
             TypeAttribute<?> deserialized = new TypeAttribute<>();
@@ -251,6 +267,18 @@ public abstract class TypeAttributeIT {
      *            the TypeAttribute
      */
     protected void readWriteData(TypeAttribute<?> attribute) {
+        readWriteData(attribute, 1);
+    }
+
+    /**
+     * Read and write the provided {@link TypeAttribute} using DataInput/DataOutput, verifying the delegate and normalized value
+     *
+     * @param attribute
+     *            the TypeAttribute
+     * @param serializedLength
+     *            the length of the serialized object, in bytes
+     */
+    protected void readWriteData(TypeAttribute<?> attribute, int serializedLength) {
 
         // The non-normalized value. Sometimes the input value is normalized but not every normalizer can denormalize.
         String delegateValue = attribute.getType().getDelegateAsString();
@@ -271,6 +299,10 @@ public abstract class TypeAttributeIT {
         } catch (IOException e) {
             fail("Failed to write attribute: " + attribute, e);
             throw new RuntimeException(e);
+        }
+
+        if (serializedLength > 0) {
+            assertEquals(serializedLength, data.length);
         }
 
         try {

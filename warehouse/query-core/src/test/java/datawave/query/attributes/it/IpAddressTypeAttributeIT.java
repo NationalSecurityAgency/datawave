@@ -57,8 +57,9 @@ public class IpAddressTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 54, 54
+        readWriteKryo(createNormalizedAttribute(), 23);
+        readWriteKryo(createNonNormalizedAttribute(), 23);
     }
 
     @Test
@@ -75,7 +76,8 @@ public class IpAddressTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 62, 62
+        readWriteData(createNormalizedAttribute(), 27);
+        readWriteData(createNonNormalizedAttribute(), 27);
     }
 }

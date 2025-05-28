@@ -76,8 +76,9 @@ public class DateTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 62, 62
+        readWriteKryo(createNormalizedAttribute(), 36);
+        readWriteKryo(createNonNormalizedAttribute(), 36);
     }
 
     @Test
@@ -94,7 +95,8 @@ public class DateTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 70, 70
+        readWriteData(createNormalizedAttribute(), 40);
+        readWriteData(createNonNormalizedAttribute(), 40);
     }
 }

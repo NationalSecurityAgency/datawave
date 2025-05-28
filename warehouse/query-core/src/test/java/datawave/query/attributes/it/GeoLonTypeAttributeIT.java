@@ -69,8 +69,9 @@ public class GeoLonTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 46, 42
+        readWriteKryo(createNormalizedAttribute(), 18);
+        readWriteKryo(createNonNormalizedAttribute(), 14);
     }
 
     @Test
@@ -87,7 +88,8 @@ public class GeoLonTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 54, 50
+        readWriteData(createNormalizedAttribute(), 22);
+        readWriteData(createNonNormalizedAttribute(), 18);
     }
 }

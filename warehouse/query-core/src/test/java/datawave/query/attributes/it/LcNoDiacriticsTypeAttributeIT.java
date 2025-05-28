@@ -46,8 +46,9 @@ public class LcNoDiacriticsTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre type index was 52, 54
+        readWriteKryo(createNormalizedAttribute(), 16);
+        readWriteKryo(createNonNormalizedAttribute(), 18);
     }
 
     @Test

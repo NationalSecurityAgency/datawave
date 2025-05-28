@@ -60,8 +60,9 @@ public class HexTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 49, 49
+        readWriteKryo(createNormalizedAttribute(), 18);
+        readWriteKryo(createNonNormalizedAttribute(), 18);
     }
 
     @Test
@@ -78,7 +79,8 @@ public class HexTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 57
+        readWriteData(createNormalizedAttribute(), 22);
+        readWriteData(createNonNormalizedAttribute(), 22);
     }
 }

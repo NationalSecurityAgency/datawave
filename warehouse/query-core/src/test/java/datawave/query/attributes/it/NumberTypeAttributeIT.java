@@ -56,8 +56,9 @@ public class NumberTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 42
+        readWriteKryo(createNormalizedAttribute(), 14);
+        readWriteKryo(createNonNormalizedAttribute(), 14);
     }
 
     @Test
@@ -74,7 +75,8 @@ public class NumberTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 50
+        readWriteData(createNormalizedAttribute(), 18);
+        readWriteData(createNonNormalizedAttribute(), 18);
     }
 }

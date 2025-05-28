@@ -46,8 +46,9 @@ public class LcTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 41
+        readWriteKryo(createNormalizedAttribute(), 17);
+        readWriteKryo(createNonNormalizedAttribute(), 17);
     }
 
     @Test
@@ -64,7 +65,8 @@ public class LcTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 49
+        readWriteData(createNormalizedAttribute(), 21);
+        readWriteData(createNonNormalizedAttribute(), 21);
     }
 }

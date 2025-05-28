@@ -72,8 +72,9 @@ public class NoOpTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 43
+        readWriteKryo(createNormalizedAttribute(), 17);
+        readWriteKryo(createNonNormalizedAttribute(), 17);
     }
 
     @Test
@@ -90,7 +91,8 @@ public class NoOpTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 51
+        readWriteData(createNormalizedAttribute(), 21);
+        readWriteData(createNonNormalizedAttribute(), 21);
     }
 }

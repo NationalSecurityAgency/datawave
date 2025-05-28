@@ -63,8 +63,9 @@ public class PointTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        // pre index was 50
+        readWriteKryo(createNormalizedAttribute(), 23);
+        readWriteKryo(createNonNormalizedAttribute(), 23);
     }
 
     @Test
@@ -81,7 +82,8 @@ public class PointTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        // pre index was 58
+        readWriteData(createNormalizedAttribute(), 27);
+        readWriteData(createNonNormalizedAttribute(), 27);
     }
 }
