@@ -42,6 +42,7 @@ import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.TagCloudTransformer;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudUtils;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -67,6 +68,7 @@ import datawave.webservice.query.exception.QueryException;
  * The optional parameter content.view.names can be used provide a prioritized list of views to use to find content. This list of preferred views can also be
  * configured as a part of the logic configuration.
  */
+@SuppressWarnings("unused")
 public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
 
     /**
@@ -182,6 +184,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         } else {
             end = PARENT_ONLY;
         }
+
+        // copy utils instance into the state.
+        state.setTagCloudUtils(config.getTagCloudUtils());
 
         // tag cloud creation should default to true if the parameter is empty (e.g., is not set)
         String tagCloudCreateString = settings.findParameter(TAG_CLOUD_CREATE).getParameterValue().trim();
@@ -439,6 +444,14 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     public void setPreferredViews(List<String> preferredViews) {
         getConfig().setPreferredViews(preferredViews);
+    }
+
+    public TagCloudUtils getTagCloudUtils() {
+        return getConfig().getTagCloudUtils();
+    }
+
+    public void setTagCloudUtils(TagCloudUtils tagCloudUtils) {
+        getConfig().setTagCloudUtils(tagCloudUtils);
     }
 
     @Override
