@@ -5,16 +5,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import datawave.query.util.NumShardMetadataHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -80,7 +88,7 @@ public class NumShards {
 
         this.conf = conf;
         this.numShardsCachePath = new Path(conf.get(MULTIPLE_NUMSHARDS_CACHE_PATH, DEFAULT_NUM_SHARDS_CACHE_DIR),
-                        conf.get(MULTIPLE_NUMSHARDS_CACHE_FILENAME, DEFAULT_NUM_SHARDS_CACHE_FILENAME));
+                conf.get(MULTIPLE_NUMSHARDS_CACHE_FILENAME, DEFAULT_NUM_SHARDS_CACHE_FILENAME));
     }
 
     /**
@@ -102,7 +110,7 @@ public class NumShards {
                 String[] numShardsStringsSplit = multipleNumShardsConfigEntry.split("_");
                 if (numShardsStringsSplit.length != 2) {
                     throw new IllegalArgumentException(
-                                    "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]");
+                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]");
                 }
 
                 int numShardForDay = Integer.parseInt(numShardsStringsSplit[1]);
@@ -117,10 +125,10 @@ public class NumShards {
             initialized = true;
         } catch (NumberFormatException nfe) {
             throw new IllegalArgumentException(
-                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", nfe);
+                    "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", nfe);
         } catch (RuntimeException re) {
             throw new IllegalArgumentException(
-                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", re);
+                    "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", re);
         }
     }
 
@@ -164,7 +172,7 @@ public class NumShards {
         if (isCacheValid()) {
             log.info(String.format("Loading the numshards cache (@ '%s')...", this.numShardsCachePath.toUri().toString()));
             try (BufferedReader in = new BufferedReader(
-                            new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
+                    new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
                 return in.lines().collect(Collectors.joining(","));
             } catch (IOException ioe) {
                 throw new RuntimeException("Could not read numshards cache file. See documentation for using generateMultipleNumShardsCache.sh");
@@ -183,7 +191,7 @@ public class NumShards {
         }
 
         return null != fileStatus && fileStatus.getModificationTime() >= System.currentTimeMillis()
-                        - (conf.getLong(MULTIPLE_NUMSHARDS_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT));
+                - (conf.getLong(MULTIPLE_NUMSHARDS_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT));
     }
 
     public int getMaxNumShards() {
@@ -203,17 +211,17 @@ public class NumShards {
     }
 
     public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
-
-        List<String> nsEntries = null;// NumShardMetadataHelper.getNumShardEntries(conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF);
-        FileSystem fs = numShardsCachePath.getFileSystem(conf);
+        FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
+        String metadataTableName = ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
+        List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(aHelper.newClient(), metadataTableName, NUM_SHARDS, NUM_SHARDS_CF);
 
         // create a new temporary file
         int count = 1;
-        Path tmpShardCacheFile = new Path(numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
+        Path tmpShardCacheFile = new Path(this.numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
 
         while (!fs.createNewFile(tmpShardCacheFile) && count < MAX_NUMBER_OF_RETRIES_CACHEFILE) {
             count++;
-            tmpShardCacheFile = new Path(numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
+            tmpShardCacheFile = new Path(this.numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
         }
 
         // now attempt to write them out
@@ -230,16 +238,16 @@ public class NumShards {
             while (!isCacheLoaded && numOfTries++ < MAX_NUMBER_OF_RETRIES_CACHEFILE) {
                 // now move the temporary file to the file cache
                 try {
-                    fs.delete(numShardsCachePath, false);
+                    fs.delete(this.numShardsCachePath, false);
                     // Note this rename will fail if the file already exists (i.e. the delete failed or somebody just replaced it)
                     // but this is OK...
-                    if (!fs.rename(tmpShardCacheFile, numShardsCachePath)) {
+                    if (!fs.rename(tmpShardCacheFile, this.numShardsCachePath)) {
                         throw new IOException("Failed to rename temporary multiple numshards cache file");
                     }
 
                     isCacheLoaded = true;
                 } catch (Exception e) {
-                    log.warn("Unable to rename " + tmpShardCacheFile + " to " + numShardsCachePath + " probably because somebody else replaced it", e);
+                    log.warn("Unable to rename " + tmpShardCacheFile + " to " + this.numShardsCachePath + " probably because somebody else replaced it", e);
                     try {
                         fs.delete(tmpShardCacheFile, false);
                     } catch (Exception e2) {
@@ -250,6 +258,7 @@ public class NumShards {
         } catch (Exception e) {
             log.error("Unable to create new multiple numshards cache file", e);
         }
+
     }
 
     private void ensureTableExists(AccumuloClient client, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
