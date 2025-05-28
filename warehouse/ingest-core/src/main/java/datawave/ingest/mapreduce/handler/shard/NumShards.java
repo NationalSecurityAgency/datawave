@@ -261,18 +261,6 @@ public class NumShards {
 
     }
 
-    private void ensureTableExists(AccumuloClient client, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
-        TableOperations tops = client.tableOperations();
-        if (!tops.exists(metadataTableName)) {
-            log.info("Creating table: " + metadataTableName);
-            try {
-                tops.create(metadataTableName);
-            } catch (TableExistsException tee) {
-                log.error(metadataTableName + " already exists someone got here first");
-            }
-        }
-    }
-
     public AccumuloHelper getaHelper() {
         return aHelper;
     }
