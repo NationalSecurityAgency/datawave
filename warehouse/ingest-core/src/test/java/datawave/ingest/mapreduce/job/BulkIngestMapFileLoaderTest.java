@@ -808,7 +808,7 @@ public class BulkIngestMapFileLoaderTest {
             }
 
             Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
-            
+
             var failDir = Paths.get(workPath.toString(), jobName, "mapFiles", "failures", METADATA_TABLE);
             var failMatcher = FileSystems.getDefault().getPathMatcher("glob:I*.rf");
             try (DirectoryStream<java.nio.file.Path> dirStream = Files.newDirectoryStream(failDir)) {
