@@ -208,7 +208,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
-            <version>5.3.21</version>
+            <version>6.1.14</version>
         </dependency>
     </dependencies>
     <repositories>
