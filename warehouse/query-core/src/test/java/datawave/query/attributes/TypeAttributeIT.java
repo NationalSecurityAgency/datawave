@@ -1,6 +1,7 @@
 package datawave.query.attributes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -10,7 +11,6 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -37,13 +37,6 @@ public abstract class TypeAttributeIT {
     protected static String NON_NORMALIZED = "non-normalized";
 
     protected static final Key docKey = new Key("row", "dt\0uid");
-
-    // The non-normalized value. Sometimes the input value is normalized but not every normalizer can denormalize.
-    private String delegateValue = null;
-    // The normalized value. OneToManyNormalizers will return the original delegate value because of some weirdness.
-    private String normalizedValue = null;
-    // The list of normalized values, only applicable when the Type is a OneToManyNormalizerType
-    private List<String> normalizedValues = new ArrayList<>();
 
     /**
      * Get the {@link Type} to use for each implementation of the test.
@@ -148,9 +141,12 @@ public abstract class TypeAttributeIT {
      *            the TypeAttribute
      */
     protected void readWriteKryo(TypeAttribute<?> attribute) {
-
-        delegateValue = attribute.getType().getDelegateAsString();
-        normalizedValue = attribute.getType().getNormalizedValue();
+        // The non-normalized value. Sometimes the input value is normalized but not every normalizer can denormalize.
+        String delegateValue = attribute.getType().getDelegateAsString();
+        // The normalized value. OneToManyNormalizers will return the original delegate value because of some weirdness.
+        String normalizedValue = attribute.getType().getNormalizedValue();
+        // The list of normalized values, only applicable when the Type is a OneToManyNormalizerType
+        List<String> normalizedValues = null;
         if (attribute.getType() instanceof ListType) {
             normalizedValues = ((ListType) attribute.getType()).getNormalizedValues();
         }
@@ -173,12 +169,9 @@ public abstract class TypeAttributeIT {
             assertEquals(normalizedValue, deserializedNormalized);
 
             if (deserialized.getType() instanceof ListType) {
+                assertNotNull(normalizedValues, "delegate Type produced normalized values, but none were expected");
                 assertEquals(normalizedValues, ((ListType) deserialized.getType()).getNormalizedValues());
             }
-        } finally {
-            delegateValue = null;
-            normalizedValue = null;
-            normalizedValues.clear();
         }
     }
 
@@ -258,8 +251,13 @@ public abstract class TypeAttributeIT {
      *            the TypeAttribute
      */
     protected void readWriteData(TypeAttribute<?> attribute) {
-        delegateValue = attribute.getType().getDelegateAsString();
-        normalizedValue = attribute.getType().getNormalizedValue();
+
+        // The non-normalized value. Sometimes the input value is normalized but not every normalizer can denormalize.
+        String delegateValue = attribute.getType().getDelegateAsString();
+        // The normalized value. OneToManyNormalizers will return the original delegate value because of some weirdness.
+        String normalizedValue = attribute.getType().getNormalizedValue();
+        // The list of normalized values, only applicable when the Type is a OneToManyNormalizerType
+        List<String> normalizedValues = null;
         if (attribute.getType() instanceof ListType) {
             normalizedValues = ((ListType) attribute.getType()).getNormalizedValues();
         }
@@ -286,15 +284,12 @@ public abstract class TypeAttributeIT {
             assertEquals(delegateValue, deserializedDelegate);
             assertEquals(normalizedValue, deserializedNormalized);
             if (deserialized.getType() instanceof ListType) {
+                assertNotNull(normalizedValues, "delegate Type produced normalized values, but none were expected");
                 assertEquals(normalizedValues, ((ListType) deserialized.getType()).getNormalizedValues());
             }
         } catch (IOException e) {
             fail("Failed to read attribute: " + attribute, e);
             throw new RuntimeException(e);
-        } finally {
-            delegateValue = null;
-            normalizedValue = null;
-            normalizedValues.clear();
         }
     }
 

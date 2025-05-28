@@ -2,6 +2,9 @@ package datawave.query.attributes.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Date;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,13 +22,29 @@ public class DateTypeAttributeIT extends TypeAttributeIT {
 
     private static final Logger log = LoggerFactory.getLogger(DateTypeAttributeIT.class);
 
-    private final DateNormalizer normalizer = new DateNormalizer();
+    @BeforeAll
+    public static void setupClass() {
+        System.setProperty("user.timezone", "GMT");
+    }
 
     @Test
     public void testNormalizer() {
-        String date = "2000-12-28T00:00:05.000Z";
-        assertEquals(date, normalizer.normalize(date));
-        assertEquals("Thu Dec 28 00:00:05 UTC 2000", normalizer.denormalize(date).toString());
+        String data = "2014-10-20T00:00:00.000Z";
+        DateNormalizer normalizer = new DateNormalizer();
+        String normalized = normalizer.normalize(data);
+        assertEquals("2014-10-20T00:00:00.000Z", normalized);
+
+        Date delegate = normalizer.denormalize(data);
+        String normalizedDelegate = normalizer.normalizeDelegateType(delegate);
+        assertEquals("2014-10-20T00:00:00.000Z", normalizedDelegate);
+
+        data = "2014-10-20T00:00:00.000Z";
+        normalized = normalizer.normalize(data);
+        assertEquals("2014-10-20T00:00:00.000Z", normalized);
+
+        delegate = normalizer.denormalize(data);
+        normalizedDelegate = normalizer.normalizeDelegateType(delegate);
+        assertEquals("2014-10-20T00:00:00.000Z", normalizedDelegate);
     }
 
     @Override
@@ -35,12 +54,12 @@ public class DateTypeAttributeIT extends TypeAttributeIT {
 
     @Override
     protected TypeAttribute<?> createNormalizedAttribute() {
-        return createAttribute(normalizer.normalize("2000-12-28T00:00:05.000Z"));
+        return createAttribute("2014-10-20T00:00:00.000Z");
     }
 
     @Override
     protected TypeAttribute<?> createNonNormalizedAttribute() {
-        return createAttribute(normalizer.denormalize("2000-12-28T00:00:05.000Z").toString());
+        return createAttribute("Mon Oct 20 00:00:00 UTC 2014");
     }
 
     @Test
