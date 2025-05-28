@@ -111,21 +111,21 @@ public class SSDeepSimilarityQueryTest {
 
     @Test(expected = DatawaveFatalQueryException.class)
     public void testMaxResultsLimit() throws Exception {
-        logic.setMaxResults(1);
+        logic.setMaxResults(2);
         runSingleQuery(false);
     }
 
     @Test(expected = DatawaveFatalQueryException.class)
     public void testMaxHashLimit() throws Exception {
-        logic.getConfig().setMaxHashes(1);
+        logic.setMaxHashes(1);
         String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[3];
         runSSDeepQuery(query, 0);
     }
 
     @Test
     public void testMaxHashesPerNGram() throws Exception {
-        // don't allow any ngrams through
-        logic.getConfig().setMaxHashesPerNGram(0);
+        // block all hashes
+        logic.setMaxHashesPerNGram(0);
         // this normally would have results [see below]
         String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
         // no ngrams in similarity means no results
@@ -133,7 +133,7 @@ public class SSDeepSimilarityQueryTest {
         assertNull(response.getEvents());
 
         // verify with the value reset its fine
-        logic.getConfig().setMaxHashesPerNGram(10);
+        logic.setMaxHashesPerNGram(10);
         // provate this now has results
         query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
         // no ngrams in similarity means no results

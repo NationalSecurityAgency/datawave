@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: querymetric
+  cloud:
+    config:
+      # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
+      discovery:
+        enabled: false
+      # Always fail fast so we can retry if the config server is not up yet
+      failFast: true
+      # Give the config server time to start up if it hasn't already
+      retry:
+        max-attempts: 60
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
+      allow-override: true
+    stream:
+      rabbit:
+        bindings:
+          queryMetricSource-out-0:
+            producer:
+              # Note: This must match CONFIRM_ACK_CHANNEL in QueryMetricOperations.java or producer confirms will not work.
+              confirmAckChannel: 'confirmAckChannel'
+datawave:
+  table:
+    cache:
+      enabled: false
+
+---
+
+# For the dev profile, check localhost for the config server by default
+spring:
+  config.activate.on-profile: 'dev'
+  cloud:
+    config:
+      uri: '${CONFIG_SERVER_URL:http://localhost:8888/configserver}'
+
+---
+
+spring:
+  config.activate.on-profile: 'consul'
+  cloud:
+    config:
+      # Use Consul to locate the configuration server and bootstrap app config.
+      discovery:
+        enabled: true
+      # Give the config server a long time to come up and register itself in Consul
+      retry:
+        max-attempts: 120
+    # Allow the default Consul host to be overridden via an environment variable
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      discovery:
+        scheme: https
+        instance-id: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
+        health-check-path: ${server.servlet.context-path}${management.endpoints.web.base-path}/health
+        health-check-interval: 15s

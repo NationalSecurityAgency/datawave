@@ -132,6 +132,15 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     }
 
     @Override
+    public Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+        if (!isFiltered()) {
+            return super.validateQuery(client, query, auths);
+        } else {
+            throw new UnsupportedOperationException("Query validation not implemented");
+        }
+    }
+
+    @Override
     public UserOperations getUserOperations() {
         if (!isFiltered()) {
             return super.getUserOperations();

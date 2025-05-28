@@ -325,6 +325,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     currentEntry = resultQueue.poll(getPollTime(), TimeUnit.MILLISECONDS);
 
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     log.trace("hasNext" + isRunning() + " interrupted");
                     log.error("Interrupted before finding next", e);
                     throw new RuntimeException(e);
@@ -570,6 +571,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 try {
                     accepted = resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     // keep trying
                 }
             }

@@ -75,8 +75,7 @@ public class PipelinePool {
                 }
             }
         } else if (checkedIn.size() + checkedOut.size() < maxPipelines) {
-            // this pipeline constructor doesn't actually use any of the objects passed in, so don't even bother
-            pipeline = new Pipeline(this.querySpanCollector, null);
+            pipeline = new Pipeline();
             NestedQueryIterator<Key> nq = pipeline.getDocumentSpecificSource();
             if (null != nestedQuery) {
                 nq.setCurrentQuery(nestedQuery);

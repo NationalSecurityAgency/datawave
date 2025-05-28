@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>7.16.0-SNAPSHOT</version>
+        <version>7.23.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-query</artifactId>
     <packaging>ejb</packaging>
@@ -251,11 +251,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
             <scope>test</scope>
@@ -311,7 +306,8 @@
                     <additionalClasspathElements>
                         <additionalClasspathElement>${basedir}/conf</additionalClasspathElement>
                     </additionalClasspathElements>
-                    <argLine>--add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
+                    <argLine>@{argLine} --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
+                    <skipTests>${skipUTs}</skipTests>
                 </configuration>
             </plugin>
         </plugins>

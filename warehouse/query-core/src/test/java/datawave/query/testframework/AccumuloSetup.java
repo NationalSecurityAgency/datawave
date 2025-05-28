@@ -12,9 +12,11 @@ import java.util.UUID;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -46,6 +48,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.util.TableName;
 
 public class AccumuloSetup extends ExternalResource {
 
@@ -221,6 +224,12 @@ public class AccumuloSetup extends ExternalResource {
                 loader = this.fileFormat.getFileLoader(dt.getIngestFile(), hadoopConfig);
                 ingestTestData(hadoopConfig, loader);
             }
+        }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_1", new Value());
+            bw.addMutation(m);
         }
 
         tableHelper.printTables(auths);

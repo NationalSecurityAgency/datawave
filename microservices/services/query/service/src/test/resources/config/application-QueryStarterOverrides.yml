@@ -1,0 +1,51 @@
+# Use this file to override properties from the QueryStarterDefaults profile (found in the datawave query starter).
+# Make sure that you add the QueryStarterOverrides profile to your tests after the QueryStarterDefaults profile.
+
+datawave:
+  query:
+    cachedResults:
+      enabled: false
+    awaitExecutorCreateResponse: false
+    nextCall:
+      resultPollInterval: 500
+      statusUpdateInterval: 0
+    logic:
+      factory:
+        # Uncomment the following line to override the query logic beans to load
+        xmlBeansPath: "classpath:TestQueryLogicFactory.xml"
+        queryLogicsByName:
+          "AltEventQuery": "AltEventQuery"
+      logics:
+        BaseEventQuery:
+          maxResults: 369
+          auditType: "ACTIVE"
+        ContentQuery:
+          maxResults: 10
+
+    lookup:
+      types:
+        'EVENT_ID':
+          fieldName: 'EVENT_ID'
+          queryLogics:
+            'default': 'LuceneUUIDEventQuery'
+          allowedWildcardAfter: 28
+        'UUID':
+          fieldName: 'UUID'
+          queryLogics:
+            'default': 'LuceneUUIDEventQuery'
+        'PARENT_UUID':
+          fieldName: 'PARENT_UUID'
+          queryLogics:
+            'default': 'LuceneUUIDEventQuery'
+        'PAGE_ID':
+          fieldName: 'PAGE_ID'
+          queryLogics:
+            'default': 'LuceneUUIDEventQuery'
+        'PAGE_TITLE':
+          fieldName: 'PAGE_TITLE'
+          queryLogics:
+            'default': 'LuceneUUIDEventQuery'
+        'PAGE_NUMBER':
+          fieldName: 'PAGE_NUMBER'
+          queryLogics:
+            'default': 'EventQuery'

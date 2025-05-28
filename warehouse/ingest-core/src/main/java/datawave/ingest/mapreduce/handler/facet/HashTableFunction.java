@@ -107,7 +107,10 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
 
             try {
                 contextWriter.write(map, context);
-            } catch (IOException | InterruptedException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 

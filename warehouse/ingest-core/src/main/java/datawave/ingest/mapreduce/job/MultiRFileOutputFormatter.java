@@ -161,7 +161,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected static Set<String> getCompressionTableDisallowList(Configuration conf) {
         String tableListString = conf.get(COMPRESSION_DISALLOWLIST);
         if (tableListString == null) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         } else {
             String[] tables = StringUtils.split(tableListString, ',');
             return new HashSet<>(Arrays.asList(tables));
@@ -496,7 +496,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
 
-        tableIds = tcu.getJobOutputTableNames(conf);
+        tableIds = TableConfigurationUtil.getJobOutputTableNames(conf);
         Set<String> compressionTableDisallowList = getCompressionTableDisallowList(conf);
         String compressionType = getCompressionType(conf);
         for (String tableName : tableIds) {

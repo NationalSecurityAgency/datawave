@@ -94,6 +94,7 @@ import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.logic.RangeFilterIterator;
 import datawave.query.iterator.logic.RegexFilterIterator;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DatawaveJexlEngine;
@@ -150,6 +151,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     protected String queryId;
     protected String scanId;
+    protected WaitWindowObserver waitWindowObserver;
     protected String ivaratorCacheSubDirPrefix = "";
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
@@ -387,12 +389,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // Create an AndIterator and recursively add the children
             AbstractIteratorBuilder andItr = new AndIteratorBuilder();
             andItr.negateAsNeeded(data);
+            andItr.setWaitWindowObserver(this.waitWindowObserver);
             and.childrenAccept(this, andItr);
 
             // If there is no parent
             if (data == null) {
                 // Make this AndIterator the root node
                 if (!andItr.includes().isEmpty()) {
+                    // TODO: if the query is a single marker node an AndIterator is still built with a single source.
+                    // This isn't functionally incorrect, it could be better.
                     root = andItr.build();
                 }
             } else {
@@ -484,7 +489,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setField(identifier);
 
             NestedIterator<Key> tfIterator = builder.build();
-            return new OrIterator<>(Arrays.asList(tfIterator, eventFieldIterator));
+            return new OrIterator<>(Arrays.asList(tfIterator, eventFieldIterator), null, waitWindowObserver);
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "buildExceededFromTermFrequency"));
             throw new DatawaveFatalQueryException(qe);
@@ -535,6 +540,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             // Create an OrIterator and recursively add the children
             AbstractIteratorBuilder orItr = new OrIteratorBuilder();
+            orItr.setWaitWindowObserver(waitWindowObserver);
             orItr.setSortedUIDs(sortedUIDs);
             orItr.negateAsNeeded(data);
             or.childrenAccept(this, orItr);
@@ -638,7 +644,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setQueryId(queryId);
             builder.setSource(deepCopySource());
             builder.setTypeMetadata(typeMetadata);
-            builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
             builder.setDatatypeFilter(getDatatypeFilter());
             builder.setKeyTransform(getFiAggregator());
@@ -740,11 +745,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         builder.setNode(node);
     }
 
@@ -919,7 +923,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setField(identifier);
         builder.setTimeFilter(TimeFilter.alwaysTrue());
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
@@ -947,7 +950,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setQueryId(queryId);
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
@@ -1041,11 +1043,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @throws IOException
      *             for issues with read/write
      */
-    private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
+    private List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber) throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
 
-        // first lets increment the count for a unique subdirectory
-        String subdirectory = ivaratorCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
+        // use the ivaratorCount / term number to create a unique subdirectory
+        String subdirectory = ivaratorCacheSubDirPrefix + "term" + termNumber;
 
         if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
             for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
@@ -1095,7 +1097,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         builder.negateAsNeeded(data);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         ivarate(builder, rootNode, sourceNode, data);
     }
 
@@ -1168,7 +1170,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         builder.negateAsNeeded(data);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
 
         ivarate(builder, rootNode, sourceNode, data);
     }
@@ -1230,7 +1232,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
             throw new DatawaveFatalQueryException(qe);
         }
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         ivarate(builder, rootNode, sourceNode, data);
     }
 
@@ -1439,16 +1442,19 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      *             for issues with read/write
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
+        this.ivaratorCount++;
         builder.setQueryId(queryId);
+        builder.setScanId(scanId);
+        builder.setWaitWindowObserver(waitWindowObserver);
         builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
         builder.setCompositeMetadata(compositeMetadata);
         builder.setCompositeSeekThreshold(compositeSeekThreshold);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
-        builder.setIvaratorCacheDirs(getIvaratorCacheDirs());
+        builder.setIvaratorCacheDirs(getIvaratorCacheDirs(this.ivaratorCount));
+        builder.setTermNumber(this.ivaratorCount);
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
         builder.setQueryLock(queryLock);
         builder.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
@@ -1488,6 +1494,26 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 checkForSatisfactionError();
             }
         }
+    }
+
+    /**
+     * A document should be aggregated if this is a shard range query and the field index fully satisfies the query, OR if the field is in the list of fields to
+     * aggregate (typically index only or non-event fields).
+     *
+     * @return true if documents need to be built
+     */
+    protected boolean shouldBuildDocument(String field) {
+        if (field == null) {
+            throw new IllegalStateException("Must specify a field in order to determine if documents are built");
+        }
+
+        // historically this check always ran first
+        if (!limitLookup && this.isQueryFullySatisfied) {
+            return true;
+        }
+
+        // historically this check was a fail-safe
+        return fieldsToAggregate != null && fieldsToAggregate.contains(field);
     }
 
     protected void checkForSatisfactionError() {
@@ -1745,6 +1771,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setScanId(String scanId) {
         this.scanId = scanId;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setWaitWindowObserver(WaitWindowObserver waitWindowObserver) {
+        this.waitWindowObserver = waitWindowObserver;
         return this;
     }
 
