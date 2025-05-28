@@ -5,23 +5,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -31,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.query.util.NumShardMetadataHelper;
 import datawave.util.time.DateHelper;
 
 public class NumShards {
@@ -212,7 +204,7 @@ public class NumShards {
 
     public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
 
-        List<String> nsEntries = NumShardMetadataHelper.updateCache(conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF);
+        List<String> nsEntries = null;// NumShardMetadataHelper.getNumShardEntries(conf, aHelper, NUM_SHARDS, NUM_SHARDS_CF);
         FileSystem fs = numShardsCachePath.getFileSystem(conf);
 
         // create a new temporary file
