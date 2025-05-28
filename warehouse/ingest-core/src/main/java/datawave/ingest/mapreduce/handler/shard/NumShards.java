@@ -212,7 +212,13 @@ public class NumShards {
 
     public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
-        String metadataTableName = ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
+        String metadataTableName = ConfigurationHelper.isNull(this.conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
+
+        if(aHelper == null){
+            this.aHelper = new AccumuloHelper();
+            this.aHelper.setup(conf);
+        }
+
         List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(aHelper.newClient(), metadataTableName, NUM_SHARDS, NUM_SHARDS_CF);
 
         // create a new temporary file
