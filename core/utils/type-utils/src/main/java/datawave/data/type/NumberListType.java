@@ -8,6 +8,10 @@ public class NumberListType extends ListType {
         super(Normalizer.NUMBER_NORMALIZER);
     }
 
+    public NumberListType(String delegateString) {
+        super(delegateString, Normalizer.NUMBER_NORMALIZER);
+    }
+
     @Override
     public boolean expandAtQueryTime() {
         return true;

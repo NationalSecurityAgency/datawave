@@ -9,6 +9,7 @@ import static datawave.query.iterator.logic.KeywordExtractingIterator.MIN_NGRAMS
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -19,9 +20,9 @@ import datawave.util.keyword.YakeKeywordExtractor;
 import datawave.util.keyword.language.YakeLanguage;
 
 /**
- * The KeywordExtractor serves as the glue between the iterator and the keyword extractor implementation. It interprets the iterator options and translates them
- * into configuration for the extractor, attempts to extract keywords from the view in defined order and then packages the keyword extractor results into
- * something that can be serialized and returned to the query logic.
+ * The KeywordExtractor serves as the glue between the keyword extracting iterator and the keyword extractor implementation. It interprets the iterator options
+ * and translates them into configuration for the extractor, attempts to extract keywords from the view in defined order and then packages the keyword extractor
+ * results into something that can be serialized and returned to the query logic.
  *
  */
 public class KeywordExtractor {
@@ -48,14 +49,23 @@ public class KeywordExtractor {
     /** the maximum number of characters to process as input for keyword extraction */
     private int maxContentLength = YakeKeywordExtractor.DEFAULT_MAX_CONTENT_LENGTH;
 
+    /** the source to record for the extraction */
+    private final String source;
+
+    /** the language to use for extraction */
+    private final String language;
+
     YakeKeywordExtractor yakeKeywordExtractor;
 
-    public KeywordExtractor(List<String> preferredViews, Map<String,byte[]> foundContent, String language, Map<String,String> iteratorOptions) {
+    public KeywordExtractor(String source, List<String> preferredViews, Map<String,byte[]> foundContent, String language, Map<String,String> iteratorOptions) {
+        this.source = source;
         this.preferredViews = preferredViews;
         this.foundContent = foundContent;
+
         parseOptions(iteratorOptions);
 
         YakeLanguage yakeLanguage = YakeLanguage.Registry.find(language);
+        this.language = yakeLanguage.getLanguageName().toUpperCase(Locale.ROOT);
 
         //@formatter:off
         yakeKeywordExtractor = new YakeKeywordExtractor.Builder()
@@ -107,7 +117,7 @@ public class KeywordExtractor {
                         logger.debug("Extracted {} keywords from {} view.", keywords.size(), viewName);
                     }
                     if (!keywords.isEmpty()) {
-                        results = new KeywordResults(viewName, keywords);
+                        results = new KeywordResults(source, viewName, language, keywords);
                         break;
                     }
                 }

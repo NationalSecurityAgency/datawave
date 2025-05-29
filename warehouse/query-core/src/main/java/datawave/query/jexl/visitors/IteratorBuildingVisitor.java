@@ -1043,11 +1043,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @throws IOException
      *             for issues with read/write
      */
-    private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
+    private List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber) throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
 
-        // first lets increment the count for a unique subdirectory
-        String subdirectory = ivaratorCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
+        // use the ivaratorCount / term number to create a unique subdirectory
+        String subdirectory = ivaratorCacheSubDirPrefix + "term" + termNumber;
 
         if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
             for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
@@ -1442,6 +1442,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      *             for issues with read/write
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
+        this.ivaratorCount++;
         builder.setQueryId(queryId);
         builder.setScanId(scanId);
         builder.setWaitWindowObserver(waitWindowObserver);
@@ -1452,7 +1453,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCompositeSeekThreshold(compositeSeekThreshold);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
-        builder.setIvaratorCacheDirs(getIvaratorCacheDirs());
+        builder.setIvaratorCacheDirs(getIvaratorCacheDirs(this.ivaratorCount));
+        builder.setTermNumber(this.ivaratorCount);
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
         builder.setQueryLock(queryLock);
         builder.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);

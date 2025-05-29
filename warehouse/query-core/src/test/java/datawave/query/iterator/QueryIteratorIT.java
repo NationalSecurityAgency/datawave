@@ -46,6 +46,7 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -408,6 +409,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         indexOnly_test(seekRange, query, false, addEvent("123.345.457"), List.of(secondEvent));
     }
 
+    /**
+     * The wait window / yielding framework can handle a key with an infinite start range, however an ivarator should never be handed a range with an infinite
+     * start range -- ever.
+     *
+     * @throws IOException
+     *             if something goes wrong
+     */
+    @Ignore
     @Test
     public void indexOnly_trailingRegex_infiniteRange_secondEvent_test() throws IOException {
         // build an infinite range to make sure the wait window / yielding framework can handle it

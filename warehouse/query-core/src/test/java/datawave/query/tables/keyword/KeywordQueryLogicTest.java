@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
@@ -18,7 +17,6 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 import java.util.AbstractMap;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -50,8 +48,6 @@ import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.keyword.KeywordResults;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.DefaultField;
-import datawave.webservice.query.result.event.EventBase;
 
 @SuppressWarnings("rawtypes")
 public class KeywordQueryLogicTest {
@@ -60,7 +56,6 @@ public class KeywordQueryLogicTest {
     private BatchScanner mockScanner;
     private GenericQueryConfiguration mockGenericConfig;
     private KeywordQueryConfiguration mockKeywordConfig;
-    private KeywordQueryState mockKeywordState;
     @Mock
     Query query;
 
@@ -71,7 +66,7 @@ public class KeywordQueryLogicTest {
         mockScanner = mock(BatchScanner.class);
         mockGenericConfig = mock(GenericQueryConfiguration.class);
         mockKeywordConfig = mock(KeywordQueryConfiguration.class);
-        mockKeywordState = mock(KeywordQueryState.class);
+        final KeywordQueryState mockKeywordState = mock(KeywordQueryState.class);
 
         keywordQueryLogic.scannerFactory = mockScannerFactory;
         when(mockScannerFactory.newScanner(any(), any(), anyInt(), any())).thenReturn(mockScanner);
@@ -92,7 +87,7 @@ public class KeywordQueryLogicTest {
     @Test
     public void setupQueryWithViewNameSetsIteratorSetting() throws Exception {
         keywordQueryLogic.setupQuery(mockKeywordConfig);
-        keywordQueryLogic.getConfig().getState().getViewNames().add("FOO");
+        keywordQueryLogic.getConfig().getState().getPreferredViews().add("FOO");
         verify(mockScanner).addScanIterator(any());
     }
 
@@ -164,10 +159,10 @@ public class KeywordQueryLogicTest {
         settings.setQueryAuthorizations("A");
 
         logic.initialize(mockClient, settings, Set.of(auths));
-        Map<String,String> documentLanguageMap = logic.getConfig().getState().getDocumentLanguageMap();
-        String threeLanguage = documentLanguageMap.get("sampleCsv/1.2.3");
-        String fourLanguage = documentLanguageMap.get("sampleCsv/1.2.4");
-        String fiveLanguage = documentLanguageMap.get("sampleCsv/1.2.5");
+        Map<String,String> documentLanguageMap = logic.getConfig().getState().getLanguageMap();
+        String threeLanguage = documentLanguageMap.get("20241218_0/sampleCsv/1.2.3");
+        String fourLanguage = documentLanguageMap.get("20241218_0/sampleCsv/1.2.4");
+        String fiveLanguage = documentLanguageMap.get("20241218_0/sampleCsv/1.2.5");
 
         assertEquals("ENGLISH", threeLanguage);
         assertEquals("UNKNOWN", fourLanguage);
@@ -194,7 +189,7 @@ public class KeywordQueryLogicTest {
         baseResults.put("kind", 0.2546);
         baseResults.put("kind word", 0.2052);
 
-        KeywordResults results = new KeywordResults("someView", baseResults);
+        KeywordResults results = new KeywordResults("someSource", "someView", "someLanguage", baseResults);
 
         Key dataKey = new Key("20241218_0", "d", "sampleCsv" + '\u0000' + "1.2.3" + '\u0000' + "someView", "A");
         Value viewValue = new Value(KeywordResults.serialize(results));
@@ -206,38 +201,11 @@ public class KeywordQueryLogicTest {
         replayAll();
 
         logic.initialize(mockClient, settings, Set.of(auths));
-        QueryLogicTransformer<Map.Entry<Key,Value>,EventBase> transformer = logic.getTransformer(settings);
-        EventBase base = transformer.transform(entry);
-
-        assertEquals(3, base.getFields().size());
-
-        Set<String> expectedFields = Set.of("someView_KEYWORDS", "IDENTIFIER", "LANGUAGE");
-        Set<String> unobservedFields = new HashSet<>(expectedFields);
-
-        for (Object o : base.getFields()) {
-            DefaultField field = (DefaultField) o;
-            String fieldName = field.getName();
-            String fieldValue = (String) field.getTypedValue().getValue();
-
-            switch (fieldName) {
-                case "someView_KEYWORDS":
-                    assertEquals("{get much=0.5903, kind=0.2546, kind word=0.2052}", fieldValue);
-                    break;
-                case "IDENTIFIER":
-                    assertEquals("PAGE_ID:1234", fieldValue);
-                    break;
-                case "LANGUAGE":
-                    assertEquals("ENGLISH", fieldValue);
-                    break;
-                default:
-                    fail("Unexpected field " + fieldName);
-                    break;
-            }
-
-            unobservedFields.remove(fieldName);
-        }
-
-        assertTrue("Did not observe expected fields: " + unobservedFields, unobservedFields.isEmpty());
+        QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> transformer = logic.getTransformer(settings);
+        KeywordResults base = transformer.transform(entry);
+        String json = base.toJson();
+        assertEquals("{\"source\":\"someSource\",\"view\":\"someView\",\"language\":\"someLanguage\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052}}",
+                        json);
         verifyAll();
     }
 
@@ -276,7 +244,7 @@ public class KeywordQueryLogicTest {
         }
 
         @Override
-        public QueryLogicTransformer<Map.Entry<Key,Value>,EventBase> getTransformer(Query settings) {
+        public QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
             return null;
         }
 
