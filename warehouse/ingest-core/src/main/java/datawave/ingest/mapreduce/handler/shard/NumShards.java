@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import datawave.query.util.NumShardMetadataHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -27,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.query.util.NumShardMetadataHelper;
 import datawave.util.time.DateHelper;
 
 public class NumShards {
@@ -83,7 +83,7 @@ public class NumShards {
 
         this.conf = conf;
         this.numShardsCachePath = new Path(conf.get(MULTIPLE_NUMSHARDS_CACHE_PATH, DEFAULT_NUM_SHARDS_CACHE_DIR),
-                conf.get(MULTIPLE_NUMSHARDS_CACHE_FILENAME, DEFAULT_NUM_SHARDS_CACHE_FILENAME));
+                        conf.get(MULTIPLE_NUMSHARDS_CACHE_FILENAME, DEFAULT_NUM_SHARDS_CACHE_FILENAME));
     }
 
     /**
@@ -105,7 +105,7 @@ public class NumShards {
                 String[] numShardsStringsSplit = multipleNumShardsConfigEntry.split("_");
                 if (numShardsStringsSplit.length != 2) {
                     throw new IllegalArgumentException(
-                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]");
+                                    "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]");
                 }
 
                 int numShardForDay = Integer.parseInt(numShardsStringsSplit[1]);
@@ -120,10 +120,10 @@ public class NumShards {
             initialized = true;
         } catch (NumberFormatException nfe) {
             throw new IllegalArgumentException(
-                    "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", nfe);
+                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", nfe);
         } catch (RuntimeException re) {
             throw new IllegalArgumentException(
-                    "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", re);
+                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", re);
         }
     }
 
@@ -167,7 +167,7 @@ public class NumShards {
         if (isCacheValid()) {
             log.info(String.format("Loading the numshards cache (@ '%s')...", this.numShardsCachePath.toUri().toString()));
             try (BufferedReader in = new BufferedReader(
-                    new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
+                            new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
                 return in.lines().collect(Collectors.joining(","));
             } catch (IOException ioe) {
                 throw new RuntimeException("Could not read numshards cache file. See documentation for using generateMultipleNumShardsCache.sh");
@@ -186,7 +186,7 @@ public class NumShards {
         }
 
         return null != fileStatus && fileStatus.getModificationTime() >= System.currentTimeMillis()
-                - (conf.getLong(MULTIPLE_NUMSHARDS_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT));
+                        - (conf.getLong(MULTIPLE_NUMSHARDS_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT));
     }
 
     public int getMaxNumShards() {
