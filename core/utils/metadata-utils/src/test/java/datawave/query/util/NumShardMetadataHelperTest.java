@@ -1,5 +1,7 @@
 package datawave.query.util;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -32,8 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-
-import static org.junit.Assert.assertEquals;
 
 class NumShardMetadataHelperTest {
 
@@ -94,7 +94,6 @@ class NumShardMetadataHelperTest {
         List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(accumuloClient, TABLE_METADATA, NUM_SHARDS, NUM_SHARDS_CF);
         Assertions.assertEquals(2, nsEntries.size());
 
-
     }
 
     @Test
@@ -119,7 +118,6 @@ class NumShardMetadataHelperTest {
 
         List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(accumuloClient, TABLE_METADATA, NUM_SHARDS, NUM_SHARDS_CF);
         Assertions.assertEquals(2, nsEntries.size());
-
 
     }
 

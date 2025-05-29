@@ -44,7 +44,7 @@ public class NumShardMetadataHelper {
         return nsEntries;
 
     }
-    
+
     private static void ensureTableExists(AccumuloClient client, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
         TableOperations tops = client.tableOperations();
         if (!tops.exists(metadataTableName)) {
