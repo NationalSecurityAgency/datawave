@@ -1,18 +1,19 @@
 package datawave.query.rules;
 
-import datawave.query.lucene.visitors.AmbiguousGroupedUnfieldedTermsVisitor;
-import datawave.query.lucene.visitors.BaseVisitor;
-import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
-import java.util.List;
+import datawave.query.lucene.visitors.AmbiguousGroupedUnfieldedTermsVisitor;
+import datawave.query.lucene.visitors.BaseVisitor;
+import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 
 /**
- * An implementation of {@link QueryRule} that checks a LUCENE query for any unquoted grouped phrases that are implicitly ANDED with a preceding fielded terms, e.g.
- * {@code FOO:(term1 term2 term3)} should be {@code FOO:"term1 term2 term3"}.
+ * An implementation of {@link QueryRule} that checks a LUCENE query for any unquoted grouped phrases that are implicitly ANDED with a preceding fielded terms,
+ * e.g. {@code FOO:(term1 term2 term3)} should be {@code FOO:"term1 term2 term3"}.
  */
 public class AmbiguousGroupedUnquotedPhrasesRule extends ShardQueryRule {
 
@@ -75,14 +76,12 @@ public class AmbiguousGroupedUnquotedPhrasesRule extends ShardQueryRule {
             return ((StringBuilder) visitor.visit(node, new StringBuilder())).append("\"").toString();
         }
 
-        private String prevField = "";
         @Override
         public Object visit(FieldQueryNode node, Object data) {
             String field = node.getFieldAsString();
-            if (field.isEmpty() || field.contentEquals(prevField)) {
+            if (field.isEmpty()) {
                 ((StringBuilder) data).append(" ").append(node.getTextAsString());
             } else {
-                prevField = field;
                 ((StringBuilder) data).append(field).append(":\"").append(node.getTextAsString());
             }
             return data;

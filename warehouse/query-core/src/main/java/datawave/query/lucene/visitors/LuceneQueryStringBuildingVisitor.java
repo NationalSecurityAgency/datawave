@@ -141,6 +141,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
     // this is where it closes adds the parentheses
     private boolean newParenthesis;
     private QueryNodeType type;
+
     @Override
     public Object visit(GroupQueryNode node, Object data) {
         type = QueryNodeType.get(node.getClass());
@@ -452,6 +453,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
                     // need to add a way to make this only for grouped unfielded terms
                     // add an if to check if there is a nested group
                     if (type == QueryNodeType.GROUP) {
+                        // this means there is a nested group, will not need to move the parenthesis
                         newParenthesis = false;
                     } else if (type == QueryNodeType.FIELD) {
                         if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
