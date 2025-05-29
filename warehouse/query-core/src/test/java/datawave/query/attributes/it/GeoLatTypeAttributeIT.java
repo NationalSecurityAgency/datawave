@@ -3,8 +3,6 @@ package datawave.query.attributes.it;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.GeoLatNormalizer;
 import datawave.data.normalizer.Normalizer;
@@ -18,11 +16,14 @@ import datawave.query.attributes.TypeAttributeIT;
  */
 public class GeoLatTypeAttributeIT extends TypeAttributeIT {
 
-    private static final Logger log = LoggerFactory.getLogger(GeoLatTypeAttributeIT.class);
-
     @Override
     protected Type<?> getType() {
         return new GeoLatType();
+    }
+
+    @Override
+    protected String getTypeShortName() {
+        return "GEO_LAT";
     }
 
     @Override
@@ -56,40 +57,30 @@ public class GeoLatTypeAttributeIT extends TypeAttributeIT {
     }
 
     @Test
-    public void testKryoSerialization() {
-        writeKryo(NORMALIZED, createNormalizedAttribute(), log);
-        writeKryo(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
-    public void testKryoDeserialization() {
-        readKryo(NORMALIZED, createNormalizedAttribute(), log);
-        readKryo(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
     public void testKryoReadWrite() {
-        // pre index was 44, 42
-        readWriteKryo(createNormalizedAttribute(), 16);
-        readWriteKryo(createNonNormalizedAttribute(), 14);
+        testKryoReadWriteTimes(NORMALIZED, createNormalizedAttribute());
+        testKryoReadWriteTimes(NON_NORMALIZED, createNonNormalizedAttribute());
     }
 
     @Test
-    public void testDataSerialization() {
-        writeDataOutput(NORMALIZED, createNormalizedAttribute(), log);
-        writeDataOutput(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
-    public void testDataDeserialization() {
-        readDataInput(NORMALIZED, createNormalizedAttribute(), log);
-        readDataInput(NON_NORMALIZED, createNonNormalizedAttribute(), log);
+    public void testKryoValuePreservation() {
+        // serializing full type name: 44, 42
+        // serializing type name index: 16, 14
+        verifyKryoPreservesValue(createNormalizedAttribute(), 16);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 14);
     }
 
     @Test
     public void testDataReadWrite() {
-        // pre index was 52, 50
-        readWriteData(createNormalizedAttribute(), 20);
-        readWriteData(createNonNormalizedAttribute(), 18);
+        testDataReadWriteTimes(NORMALIZED, createNormalizedAttribute());
+        testDataReadWriteTimes(NON_NORMALIZED, createNonNormalizedAttribute());
+    }
+
+    @Test
+    public void testDataValuePreservation() {
+        // serializing full type name: 52, 50
+        // serializing type name index: 20, 18
+        verifyDataPreservesValue(createNormalizedAttribute(), 20);
+        verifyDataPreservesValue(createNonNormalizedAttribute(), 18);
     }
 }

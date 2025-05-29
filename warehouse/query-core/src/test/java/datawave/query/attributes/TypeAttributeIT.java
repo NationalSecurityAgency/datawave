@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -30,10 +31,12 @@ import datawave.data.type.Type;
  */
 public abstract class TypeAttributeIT {
 
+    private static final Logger log = LoggerFactory.getLogger(TypeAttributeIT.class);
+
     private static final int MAX_ITERATIONS = 100_000;
 
     // normalization context
-    protected static String NORMALIZED = "normalized";
+    protected static String NORMALIZED = "    normalized";
     protected static String NON_NORMALIZED = "non-normalized";
 
     protected static final Key docKey = new Key("row", "dt\0uid");
@@ -44,6 +47,13 @@ public abstract class TypeAttributeIT {
      * @return the Type
      */
     protected abstract Type<?> getType();
+
+    /**
+     * Provide context for log statements using the Type short name
+     *
+     * @return the Type name
+     */
+    protected abstract String getTypeShortName();
 
     /**
      * Each extending class must provide its own implementation of a normalized attribute
@@ -80,14 +90,10 @@ public abstract class TypeAttributeIT {
      * <p>
      * The elapsed time is logged using the provided logger.
      *
-     * @param context
-     *            data normalization context
      * @param attribute
      *            the TypeAttribute
-     * @param log
-     *            the logger from a subclass
      */
-    protected void writeKryo(String context, TypeAttribute<?> attribute, Logger log) {
+    protected long writeKryo(TypeAttribute<?> attribute) {
         Kryo kryo = new Kryo();
         Output output = new Output(1024);
 
@@ -98,7 +104,7 @@ public abstract class TypeAttributeIT {
             attribute.write(kryo, output);
             elapsed += System.nanoTime() - start;
         }
-        log.info("kryo write ({}): {} ms", context, TimeUnit.NANOSECONDS.toMillis(elapsed));
+        return TimeUnit.NANOSECONDS.toMillis(elapsed);
     }
 
     /**
@@ -107,14 +113,11 @@ public abstract class TypeAttributeIT {
      * <p>
      * The elapsed time is logged using the provided logger.
      *
-     * @param context
-     *            data normalization context
      * @param attribute
      *            the TypeAttribute
-     * @param log
-     *            the logger from a subclass
      */
-    protected void readKryo(String context, TypeAttribute<?> attribute, Logger log) {
+    protected long readKryo(TypeAttribute<?> attribute) {
+
         // first serialize
         Kryo kryo = new Kryo();
         Output output = new Output(1024);
@@ -131,17 +134,7 @@ public abstract class TypeAttributeIT {
                 elapsed += System.nanoTime() - start;
             }
         }
-        log.info("kryo read ({}): {} ms", context, TimeUnit.NANOSECONDS.toMillis(elapsed));
-    }
-
-    /**
-     * Read and write the provided {@link TypeAttribute} using Kryo, verifying the delegate and normalized value
-     *
-     * @param attribute
-     *            the TypeAttribute
-     */
-    protected void readWriteKryo(TypeAttribute<?> attribute) {
-        readWriteKryo(attribute, 1);
+        return TimeUnit.NANOSECONDS.toMillis(elapsed);
     }
 
     /**
@@ -152,7 +145,7 @@ public abstract class TypeAttributeIT {
      * @param serializedLength
      *            the length of the serialized object, in bytes
      */
-    protected void readWriteKryo(TypeAttribute<?> attribute, int serializedLength) {
+    protected void verifyKryoPreservesValue(TypeAttribute<?> attribute, int serializedLength) {
         // The non-normalized value. Sometimes the input value is normalized but not every normalizer can denormalize.
         String delegateValue = attribute.getType().getDelegateAsString();
         // The normalized value. OneToManyNormalizers will return the original delegate value because of some weirdness.
@@ -192,17 +185,41 @@ public abstract class TypeAttributeIT {
     }
 
     /**
+     * Evaluate the read/write times when using {@link Kryo}
+     *
+     * @param context
+     *            the normalization context
+     * @param attribute
+     *            the attribute
+     */
+    protected void testKryoReadWriteTimes(String context, TypeAttribute<?> attribute) {
+        long writeMillis = writeKryo(attribute);
+        long readMillis = readKryo(attribute);
+        log.info("{} kryo {} read: {} write: {} ms", getTypeShortName(), context, readMillis, writeMillis);
+    }
+
+    /**
+     * Evaluate the read/write times when using {@link DataInput} and {@link DataOutput}
+     *
+     * @param context
+     *            the normalization context
+     * @param attribute
+     *            the attribute
+     */
+    protected void testDataReadWriteTimes(String context, TypeAttribute<?> attribute) {
+        long readMillis = readDataInput(attribute);
+        long writeMillis = writeDataOutput(attribute);
+        log.info("{} data {} read: {} write: {} ms", getTypeShortName(), context, readMillis, writeMillis);
+    }
+
+    /**
      * A method that serializes the provided {@link TypeAttribute} using {@link TypeAttribute#write(DataOutput)} a number of times equal to
      * {@link #MAX_ITERATIONS}
      *
-     * @param context
-     *            data normalization context
      * @param attribute
      *            the TypeAttribute
-     * @param log
-     *            the logger from a subclass
      */
-    protected void writeDataOutput(String context, TypeAttribute<?> attribute, Logger log) {
+    protected long writeDataOutput(TypeAttribute<?> attribute) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutput out = new DataOutputStream(baos);
 
@@ -217,21 +234,17 @@ public abstract class TypeAttributeIT {
                 throw new RuntimeException(e);
             }
         }
-        log.info("data write ({}): {}", context, TimeUnit.NANOSECONDS.toMillis(elapsed));
+        return TimeUnit.NANOSECONDS.toMillis(elapsed);
     }
 
     /**
      * A method that deserializes the provided {@link TypeAttribute} using {@link TypeAttribute#readFields(DataInput)} a number of times equal to
      * {@link #MAX_ITERATIONS}
      *
-     * @param context
-     *            data normalization context
      * @param attribute
      *            the TypeAttribute
-     * @param log
-     *            the logger from a subclass
      */
-    protected void readDataInput(String context, TypeAttribute<?> attribute, Logger log) {
+    protected long readDataInput(TypeAttribute<?> attribute) {
         byte[] data;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             DataOutput out = new DataOutputStream(baos);
@@ -253,7 +266,7 @@ public abstract class TypeAttributeIT {
                 deserialized.readFields(in);
                 elapsed += System.nanoTime() - start;
             }
-            log.info("data read ({}): {}", context, TimeUnit.NANOSECONDS.toMillis(elapsed));
+            return TimeUnit.NANOSECONDS.toMillis(elapsed);
         } catch (IOException e) {
             fail("Failed to read attribute: " + attribute, e);
             throw new RuntimeException(e);
@@ -267,7 +280,7 @@ public abstract class TypeAttributeIT {
      *            the TypeAttribute
      */
     protected void readWriteData(TypeAttribute<?> attribute) {
-        readWriteData(attribute, 1);
+        verifyDataPreservesValue(attribute, 1);
     }
 
     /**
@@ -278,7 +291,7 @@ public abstract class TypeAttributeIT {
      * @param serializedLength
      *            the length of the serialized object, in bytes
      */
-    protected void readWriteData(TypeAttribute<?> attribute, int serializedLength) {
+    protected void verifyDataPreservesValue(TypeAttribute<?> attribute, int serializedLength) {
 
         // The non-normalized value. Sometimes the input value is normalized but not every normalizer can denormalize.
         String delegateValue = attribute.getType().getDelegateAsString();
