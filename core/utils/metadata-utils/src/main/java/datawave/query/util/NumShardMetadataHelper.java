@@ -26,25 +26,54 @@ public class NumShardMetadataHelper {
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         log.info("Reading the " + metadataTableName + " for multiple numshards configuration");
 
-        if (accumuloClient == null) {
-            throw new AccumuloException("Accumulo client is null.");
-        }
-
+//        if (accumuloClient == null) {
+//            throw new AccumuloException("Accumulo client is null.");
+//        }
         ArrayList<String> nsEntries = new ArrayList<>();
 
-        ensureTableExists(accumuloClient, metadataTableName);
+            ensureTableExists(accumuloClient, metadataTableName);
 
-        try (Scanner scanner = accumuloClient.createScanner(metadataTableName, new Authorizations())) {
-            scanner.setRange(Range.exact(numShards, numShardsCF));
+            try (Scanner scanner = accumuloClient.createScanner(metadataTableName, new Authorizations())) {
+                scanner.setRange(Range.exact(numShards, numShardsCF));
 
-            for (Map.Entry<Key,Value> entry : scanner) {
-                nsEntries.add(entry.getKey().getColumnQualifier().toString());
+                for (Map.Entry<Key, Value> entry : scanner) {
+                    nsEntries.add(entry.getKey().getColumnQualifier().toString());
+                }
             }
-        }
+
 
         return nsEntries;
 
     }
+
+    /**
+     *     public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
+     *         FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
+     *         String metadataTableName = ConfigurationHelper.isNull(this.conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
+     *         log.info("Reading the " + metadataTableName + " for multiple numshards configuration");
+     *
+     *         if (this.aHelper == null) {
+     *             this.aHelper = new AccumuloHelper();
+     *             this.aHelper.setup(conf);
+     *         }
+     *
+     *         ArrayList<String> nsEntries = new ArrayList<>();
+     *         try (AccumuloClient client = aHelper.newClient()) {
+     *             ensureTableExists(client, metadataTableName);
+     *
+     *             try (Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+     *                 scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
+     *
+     *                 for (Map.Entry<Key,Value> entry : scanner) {
+     *                     nsEntries.add(entry.getKey().getColumnQualifier().toString());
+     *                 }
+     *             }
+     *         }
+     *
+     *         // create a new temporary file
+     *         int count = 1;
+     *         Path tmpShardCacheFile = new Path(this.numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
+     */
 
     private static void ensureTableExists(AccumuloClient client, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
         TableOperations tops = client.tableOperations();

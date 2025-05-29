@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -15,14 +14,10 @@ import datawave.query.util.NumShardMetadataHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableExistsException;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
+
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -214,13 +209,16 @@ public class NumShards {
         FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
         String metadataTableName = ConfigurationHelper.isNull(this.conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
 
-        if(aHelper == null){
+        if (this.aHelper == null) {
             this.aHelper = new AccumuloHelper();
             this.aHelper.setup(conf);
         }
 
-        List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(aHelper.newClient(), metadataTableName, NUM_SHARDS, NUM_SHARDS_CF);
+        List<String> nsEntries = new ArrayList<>();
 
+        try (AccumuloClient client = aHelper.newClient()) {
+            nsEntries = NumShardMetadataHelper.getNumShardEntries(client, metadataTableName, NUM_SHARDS, NUM_SHARDS_CF);
+        }
         // create a new temporary file
         int count = 1;
         Path tmpShardCacheFile = new Path(this.numShardsCachePath.getParent(), numShardsCachePath.getName() + "." + count);
