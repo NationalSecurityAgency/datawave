@@ -376,8 +376,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         this.originalRange = range;
+        this.waitWindowObserver.setSeekRange(range);
         if (WaitWindowObserver.getNumYields(range.getStartKey(), this.collectTimingDetails) < this.maxYields) {
-            this.waitWindowObserver.start(this.queryId, range, this.yieldThresholdMs);
+            this.waitWindowObserver.start(this.queryId, this.yieldThresholdMs);
         }
         getActiveQueryLog().get(this.queryId).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);

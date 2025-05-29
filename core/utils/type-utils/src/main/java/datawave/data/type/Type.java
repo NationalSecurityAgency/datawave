@@ -27,6 +27,9 @@ public interface Type<T extends Comparable<T>> extends Comparable<Type<T>> {
      */
     String getDelegateAsString();
 
+    /**
+     * The primary way to set the delegate value
+     */
     void setDelegateFromString(String str);
 
     T getDelegate();

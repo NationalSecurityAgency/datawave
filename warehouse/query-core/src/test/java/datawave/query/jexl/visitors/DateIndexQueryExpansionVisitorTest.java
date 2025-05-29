@@ -43,7 +43,8 @@ public class DateIndexQueryExpansionVisitorTest {
     private Date startDate;
     private Date endDate;
     private MetadataHelper metadataHelper;
-    private DateIndexHelper dateIndexHelper;
+    private DateIndexHelper dateIndexHelperScanner;
+    private DateIndexHelper dateIndexHelperIterator;
 
     @BeforeClass
     public static void before() throws Exception {
@@ -58,7 +59,13 @@ public class DateIndexQueryExpansionVisitorTest {
         this.deleteAndCreateTable();
         DateIndexTestIngest.writeItAll(client);
         PrintUtility.printTable(client, auths, TableName.DATE_INDEX);
-        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2, 0.9f);
+        dateIndexHelperScanner = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
+                        0.9f);
+
+        // construct a separate DateIndexHelper that is configured to use a server-side iterator
+        dateIndexHelperIterator = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
+                        0.9f);
+        dateIndexHelperIterator.setUseIterator(true);
     }
 
     private void deleteAndCreateTable() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, TableExistsException {
@@ -77,19 +84,22 @@ public class DateIndexQueryExpansionVisitorTest {
         String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100704_0,20100704_2,20100705_1'))";
 
-        assertExpansion(originalQuery, expectedQuery);
+        assertScannerExpansion(originalQuery, expectedQuery);
+        assertIteratorExpansion(originalQuery, expectedQuery);
     }
 
     @Test
     public void testDateIndexExpansionWithTimeTravel() throws Exception {
         givenStartDate("20100701");
         givenEndDate("20100710");
-        dateIndexHelper.setTimeTravel(true);
+        dateIndexHelperScanner.setTimeTravel(true);
+        dateIndexHelperIterator.setTimeTravel(true);
 
         String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100702_0,20100703_0,20100704_0,20100704_2,20100705_1'))";
 
-        assertExpansion(originalQuery, expectedQuery);
+        assertScannerExpansion(originalQuery, expectedQuery);
+        assertIteratorExpansion(originalQuery, expectedQuery);
     }
 
     @Test
@@ -100,7 +110,8 @@ public class DateIndexQueryExpansionVisitorTest {
         String originalQuery = "filter:betweenDates(UPTIME, '20100101', '20100101')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100101', '20100101') && (SHARDS_AND_DAYS = '20100101_1,20100102_2,20100102_4,20100102_5'))";
 
-        assertExpansion(originalQuery, expectedQuery);
+        assertScannerExpansion(originalQuery, expectedQuery);
+        assertIteratorExpansion(originalQuery, expectedQuery);
     }
 
     @Test
@@ -111,7 +122,8 @@ public class DateIndexQueryExpansionVisitorTest {
         String originalQuery = "filter:betweenDates(UPTIME, '20100101_200000', '20100101_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100101_200000', '20100101_210000') && (SHARDS_AND_DAYS = '20100101_1,20100102_2,20100102_4,20100102_5'))";
 
-        assertExpansion(originalQuery, expectedQuery);
+        assertScannerExpansion(originalQuery, expectedQuery);
+        assertIteratorExpansion(originalQuery, expectedQuery);
     }
 
     private void givenStartDate(String startDate) {
@@ -122,14 +134,27 @@ public class DateIndexQueryExpansionVisitorTest {
         this.endDate = DateHelper.parse(endDate);
     }
 
-    private void assertExpansion(String original, String expected) throws ParseException {
+    private void assertScannerExpansion(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
 
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
 
-        ASTJexlScript result = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, originalScript);
+        ASTJexlScript result = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelperScanner, originalScript);
+
+        JexlNodeAssert.assertThat(result).isEqualTo(expected).hasValidLineage();
+        JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
+    }
+
+    private void assertIteratorExpansion(String original, String expected) throws ParseException {
+        ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
+
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setBeginDate(startDate);
+        config.setEndDate(endDate);
+
+        ASTJexlScript result = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelperIterator, originalScript);
 
         JexlNodeAssert.assertThat(result).isEqualTo(expected).hasValidLineage();
         JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
