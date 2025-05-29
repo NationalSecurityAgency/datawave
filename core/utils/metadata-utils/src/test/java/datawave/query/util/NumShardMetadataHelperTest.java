@@ -3,7 +3,10 @@ package datawave.query.util;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -13,9 +16,16 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +33,12 @@ import org.junit.jupiter.api.Test;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 
+import static org.junit.Assert.assertEquals;
+
 class NumShardMetadataHelperTest {
+
+    public static final Text NUM_SHARDS = new Text("num_shards");
+    public static final Text NUM_SHARDS_CF = new Text("ns");
 
     private static final String TABLE_METADATA = "testMetadataTable";
     private AccumuloClient accumuloClient;
@@ -49,8 +64,62 @@ class NumShardMetadataHelperTest {
     }
 
     @Test
-    public void testSingleFieldFilter() throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
-        writeMutation("rowA", "t", "dataTypeA", new Value("value"));
+    public void testSingleEntry() throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
+
+        // write a couple of entries for multiple numshards
+        Mutation m = new Mutation(NUM_SHARDS);
+        m.put(NUM_SHARDS_CF.toString(), "20170101_13", "");
+
+        writeMutation(m);
+
+        List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(accumuloClient, TABLE_METADATA, NUM_SHARDS, NUM_SHARDS_CF);
+        Assertions.assertEquals(1, nsEntries.size());
+
+    }
+
+    @Test
+    public void testMultipleEntries() throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
+
+        // write a couple of entries for multiple numshards
+        Mutation m = new Mutation(NUM_SHARDS);
+        m.put(NUM_SHARDS_CF.toString(), "20170101_13", "");
+
+        writeMutation(m);
+
+        m = new Mutation(NUM_SHARDS);
+        m.put(NUM_SHARDS_CF.toString(), "20171101_17", "");
+
+        writeMutation(m);
+
+        List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(accumuloClient, TABLE_METADATA, NUM_SHARDS, NUM_SHARDS_CF);
+        Assertions.assertEquals(2, nsEntries.size());
+
+
+    }
+
+    @Test
+    public void testMultipleWithInvalidEntries() throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
+
+        // write a couple of entries for multiple numshards
+        Mutation m = new Mutation(NUM_SHARDS);
+        m.put(NUM_SHARDS_CF.toString(), "20170101_13", "");
+
+        writeMutation(m);
+
+        m = new Mutation(NUM_SHARDS);
+        m.put(NUM_SHARDS_CF.toString(), "20171101_17", "");
+
+        writeMutation(m);
+
+        // invalid entry and should be ignored
+        m = new Mutation(NUM_SHARDS);
+        m.put(NUM_SHARDS_CF + "blah", "20171102_19", "");
+
+        writeMutation(m);
+
+        List<String> nsEntries = NumShardMetadataHelper.getNumShardEntries(accumuloClient, TABLE_METADATA, NUM_SHARDS, NUM_SHARDS_CF);
+        Assertions.assertEquals(2, nsEntries.size());
+
 
     }
 
@@ -70,10 +139,5 @@ class NumShardMetadataHelperTest {
             throw new RuntimeException(e);
         }
     }
-    // ensure table exists
-
-    // ensure cache is updated
-
-    // make sure exceptions are thrown correctly
 
 }
