@@ -54,7 +54,7 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
     }
 
     /**
-     * Test a query with ambiguous phrases before a fielded term.
+     * Test a query with grouped ambiguous phrases before a fielded term.
      */
     @Test
     void testMultipleFieldsWithVariousGroupedAmbiguousPhrases() throws Exception {
@@ -68,16 +68,30 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
     }
 
     /**
-     * Test a query with grouped ambiguous terms following a fielded term.
+     * Test a query with grouped ambiguous terms after field
      */
     @Test
-    void testGroupedAmbiguousPhrases() throws Exception {
+    void testGroupedAmbiguousPhrasesAfterField() throws Exception {
         givenQuery("FOO:(abc def ghi)");
         expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: FOO:( abc AND def AND ghi ). Recommended: FOO:\"abc def ghi\"");
 
         assertResult();
     }
 
+    /**
+     * Test a query with grouped ambiguous terms does this really need a test...
+     */
+    @Test
+    void testGroupedAmbiguousPhrases() throws Exception {
+        givenQuery("(FOO:abc def ghi)");
+        expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: ( FOO:abc AND def AND ghi ). Recommended: FOO:\"abc def ghi\"");
+
+        assertResult();
+    }
+
+    /**
+     * Test a query with nested grouped ambiguous terms
+     */
     @Test
     void testNestedFirstGroupedAmbiguousPhrases() throws Exception {
         givenQuery("FOO:((abc) def ghi)");
@@ -86,14 +100,21 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
         assertResult();
     }
 
+    /**
+     * Test a query with multiple nested grouped ambiguous terms
+     */
     @Test
     void testNestedMultipleGroupedAmbiguousPhrases() throws Exception {
-        givenQuery("FOO:(abc (def ghi))");
+        givenQuery("FOO:(abc (def ghi) (jkl mno))");
         expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: FOO:( def AND ghi ). Recommended: FOO:\"def ghi\"");
+        expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: FOO:( jkl AND mno ). Recommended: FOO:\"jkl mno\"");
 
         assertResult();
     }
 
+    /**
+     * Test a query with nested grouped ambiguous terms
+     */
     @Test
     void testNestedLastGroupedAmbiguousPhrases() throws Exception {
         givenQuery("FOO:(abc def (ghi))");
@@ -102,6 +123,9 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
         assertResult();
     }
 
+    /**
+     * Test a query with one grouped ambiguous terms
+     */
     @Test
     void testFirstGroupedAmbiguousPhrases() throws Exception {
         givenQuery("FOO:(abc) def ghi");
@@ -122,7 +146,7 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
     }
 
     /**
-     * Test a query with ambiguous terms that are explicitly ANDed with a preceding fielded term.
+     * Test a query with ambiguous terms that are grouped and explicitly ANDed with a preceding fielded term.
      */
     @Test
     void testAmbiguousGroupedPhrasesAfterExplicitAND() throws Exception {

@@ -261,6 +261,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                     // If the field name is not empty, and we have not found a fielded term yet, mark that we've found one.
                     if (!fieldedTermFound) {
                         fieldedTermFound = true;
+                        // make note of the field
                         prevField = ((FieldQueryNode) child).getFieldAsString();
                     } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
                         // If it does, we know the group is something like: FOO:(abc def ghi)

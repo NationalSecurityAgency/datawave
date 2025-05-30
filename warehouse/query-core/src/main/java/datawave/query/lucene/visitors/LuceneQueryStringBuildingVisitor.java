@@ -54,6 +54,8 @@ import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
 public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
 
     private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
+    private boolean newParenthesis;
+    private QueryNodeType type;
 
     public static String build(QueryNode node) {
         LuceneQueryStringBuildingVisitor visitor = new LuceneQueryStringBuildingVisitor();
@@ -138,10 +140,6 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         return sb;
     }
 
-    // this is where it closes adds the parentheses
-    private boolean newParenthesis;
-    private QueryNodeType type;
-
     @Override
     public Object visit(GroupQueryNode node, Object data) {
         type = QueryNodeType.get(node.getClass());
@@ -151,7 +149,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
             StringBuilder sb = (StringBuilder) data;
             sb.append("( ");
             visit(child, sb);
-            if (newParenthesis == true) {
+            if (newParenthesis) {
                 // this moves the parenthesis from the beginning to after the field ( FOO: -> FOO:(
                 if (sb.indexOf("(") == 0) {
                     sb.insert((sb.indexOf(":") + 1), "( ");
@@ -443,24 +441,24 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         StringBuilder sb = (StringBuilder) data;
         List<QueryNode> children = node.getChildren();
         String prevField = "";
+
         if (children != null && !children.isEmpty()) {
             boolean requiresGrouping = !isRootOrHasParentGroup(node);
-            // if requires grouping then add a loop checking the children's fields to see if there are same fields and then add the
-            // parentheses with the boolean, use string builder to find index of first colon to add opening parenthesis after, do at the last if line 440
             if (type == QueryNodeType.GROUP) {
                 for (QueryNode child : children) {
                     QueryNodeType type = QueryNodeType.get(child.getClass());
-                    // need to add a way to make this only for grouped unfielded terms
-                    // add an if to check if there is a nested group
                     if (type == QueryNodeType.GROUP) {
                         // this means there is a nested group, will not need to move the parenthesis
                         newParenthesis = false;
                     } else if (type == QueryNodeType.FIELD) {
-                        if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
-                            // If it does, we know the group is something like: FOO:(abc def ghi)
-                            ((FieldQueryNode) child).setField("");
+                        if (((FieldQueryNode) child).getFieldAsString().isEmpty()) {
+                            // if it does, we know the group is something like ( FOO: abc def ghi )
+                            newParenthesis = false;
+                        } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
                             // this means there is (an) unfielded term(s)
                             newParenthesis = true;
+                            // if it does, we know the group is something like: FOO:( abc def ghi )
+                            ((FieldQueryNode) child).setField("");
                         } else {
                             prevField = ((FieldQueryNode) child).getFieldAsString();
                             newParenthesis = false;
