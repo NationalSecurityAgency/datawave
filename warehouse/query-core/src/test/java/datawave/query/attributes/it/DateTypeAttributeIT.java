@@ -73,8 +73,9 @@ public class DateTypeAttributeIT extends TypeAttributeIT {
     public void testKryoValuePreservation() {
         // serializing full type name: 62
         // serializing type name index: 36
-        verifyKryoPreservesValue(createNormalizedAttribute(), 36);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 36);
+        // kryo serialization: 60
+        verifyKryoPreservesValue(createNormalizedAttribute(), 60);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 60);
     }
 
     @Test
