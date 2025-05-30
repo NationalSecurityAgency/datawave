@@ -80,6 +80,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 queryStatus = queryStatuses.get(0);
                 queryId = queryStatuses.get(0).getQueryKey().getQueryId();
             } else {
+
                 Thread.sleep(500);
             }
         }
