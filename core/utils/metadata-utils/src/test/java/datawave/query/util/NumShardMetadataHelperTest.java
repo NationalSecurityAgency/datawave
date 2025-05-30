@@ -1,13 +1,10 @@
 package datawave.query.util;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-
 import java.util.List;
 import java.util.Objects;
-
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -17,7 +14,6 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
