@@ -26,9 +26,6 @@ public class NumShardMetadataHelper {
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         log.info("Reading the " + metadataTableName + " for multiple numshards configuration");
 
-        // if (accumuloClient == null) {
-        // throw new AccumuloException("Accumulo client is null.");
-        // }
         ArrayList<String> nsEntries = new ArrayList<>();
 
         ensureTableExists(accumuloClient, metadataTableName);
