@@ -11,6 +11,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+import static datawave.query.util.ValueSerializerType.KRYO;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -609,6 +610,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 uidSetting.addOption(CreateUidsIterator.TERM_COUNTS, Boolean.toString(false));
             }
 
+            uidSetting.addOption(CreateUidsIterator.VALUE_ENCODING, KRYO.name());
+
             /*
              * Create a scanner in the initialized state so that we can scan immediately
              */
@@ -632,7 +635,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             scannerSession.setRanges(Collections.singleton(range));
 
             // Create the EntryParser prior to ScannerStream.
-            EntryParser entryParser = new EntryParser(node, fieldName, literal, indexOnlyFields);
+            EntryParser entryParser = new EntryParser(node, fieldName, literal, indexOnlyFields, KRYO);
 
             return ScannerStream.initialized(scannerSession, entryParser, node);
 
