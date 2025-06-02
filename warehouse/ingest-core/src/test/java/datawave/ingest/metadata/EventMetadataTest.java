@@ -21,7 +21,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,7 +28,6 @@ import org.junit.Test;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.IdentityDataType;
@@ -37,13 +35,11 @@ import datawave.TestAbstractContentIngestHelper;
 import datawave.TestBaseIngestHelper;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
-import datawave.data.type.StringType;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.data.config.ingest.WhindexFieldIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class EventMetadataTest {
