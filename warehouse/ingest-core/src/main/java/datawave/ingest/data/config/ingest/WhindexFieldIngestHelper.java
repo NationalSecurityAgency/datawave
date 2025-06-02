@@ -19,7 +19,6 @@ import com.google.common.collect.Multimap;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import jline.internal.Log;
 
 /**
  * Implements methods provided by the {@link WhindexIngest} interface, enabling parsing and application of Whindex rules defined by the constants:
