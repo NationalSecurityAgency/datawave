@@ -121,15 +121,19 @@ public class DocumentTest {
 
     @Test
     public void testOneOfEverything() {
-        Attribute<?> attr1 = createAttribute("LC", "value-1");
-        Attribute<?> attr2 = createAttribute("NC_ND", "value-2");
-        Attribute<?> attr3 = createAttribute("NUM", "25");
-        Attribute<?> attr4 = createAttribute("HEX", "a1b2c3");
-        d.put("LC", attr1);
-        d.put("NC_ND", attr2);
-        d.put("NUM", attr3);
-        d.put("HEX", attr4);
-        roundTrip(MAX_ITERATIONS, 232);
+        d.put("DATE", createAttribute("DATE", String.valueOf(System.currentTimeMillis())));
+        d.put("GEO_LAT", createAttribute("GEO_LAT", "-90"));
+        d.put("GEO_LON", createAttribute("GEO_LON", "-180"));
+        d.put("HEX", createAttribute("HEX", "a1b2c3"));
+        d.put("IP", createAttribute("IP", "192.168.1.1"));
+        d.put("IPV4", createAttribute("IPV4", "192.168.1.1"));
+        d.put("LC", createAttribute("LC", "value-1"));
+        d.put("NC_ND", createAttribute("NC_ND", "value-2"));
+        d.put("NC_ND_LIST", createAttribute("NC_ND", "value-2"));
+        d.put("NUM", createAttribute("NUM", "25"));
+        d.put("NUM_LIST", createAttribute("NUM_LIST", "22,23,24"));
+        d.put("POINT", createAttribute("POINT", "POINT(10 10)"));
+        roundTrip(MAX_ITERATIONS, 767);
     }
 
     @Test
