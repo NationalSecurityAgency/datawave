@@ -155,13 +155,12 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
-     * Parses the eventMap applying each Whindex rule initalized via {@link #setup(Configuration)} that have <b>all</b> their requirements met by the
-     * entries in the eventMap. Once these rules have been applied, all srcFields that were used to create a new whindexField and are marked as
-     * overloaded are removed from the eventMap.
+     * Parses the eventMap applying each Whindex rule initalized via {@link #setup(Configuration)} that have <b>all</b> their requirements met by the entries in
+     * the eventMap. Once these rules have been applied, all srcFields that were used to create a new whindexField and are marked as overloaded are removed from
+     * the eventMap.
      *
      * @param eventMap
-     *            the original multimap of field to values
-     *            the original multimap of field to values
+     *            the original multimap of field to values the original multimap of field to values
      * @return a new Multimap reflecting added Whindex entries and any removed sources
      */
     @Override
