@@ -33,7 +33,14 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponse;
 import datawave.webservice.result.FacetQueryResponseBase;
+import datawave.webservice.result.keyword.DefaultTagCloud;
+import datawave.webservice.result.keyword.DefaultTagCloudEntry;
+import datawave.webservice.result.keyword.DefaultTagCloudResponse;
+import datawave.webservice.result.keyword.TagCloudBase;
+import datawave.webservice.result.keyword.TagCloudEntryBase;
+import datawave.webservice.result.keyword.TagCloudResponseBase;
 
+@SuppressWarnings("rawtypes")
 public class DefaultResponseObjectFactory extends ResponseObjectFactory {
     @Override
     public EventBase getEvent() {
@@ -78,6 +85,21 @@ public class DefaultResponseObjectFactory extends ResponseObjectFactory {
     @Override
     public FieldCardinalityBase getFieldCardinality() {
         return new DefaultFieldCardinality();
+    }
+
+    @Override
+    public TagCloudBase getTagCloud() {
+        return new DefaultTagCloud();
+    }
+
+    @Override
+    public TagCloudResponseBase getTagCloudQueryResponse() {
+        return new DefaultTagCloudResponse();
+    }
+
+    @Override
+    public TagCloudEntryBase getTagCloudEntry() {
+        return new DefaultTagCloudEntry();
     }
 
     @Override
