@@ -192,6 +192,8 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <configuration>
                         <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                        <skipTests>${skipTests}</skipTests>
+                        <skipITs>${skipITs}</skipITs>
                     </configuration>
                     <executions>
                         <execution>

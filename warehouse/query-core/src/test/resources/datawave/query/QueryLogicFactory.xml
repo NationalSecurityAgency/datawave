@@ -266,6 +266,7 @@
         <property name="reverseIndexTableName" value="shardReverseIndex" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
+        <property name="dateIndexIterator" value="true"/>
         <property name="queryThreads" value="5" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="includeDataTypeAsField" value="false" />

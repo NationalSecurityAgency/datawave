@@ -7,7 +7,7 @@ on:
     - 'integration'
     - 'release/version*'
   pull_request:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', '.github/workflows/microservice*.yaml']
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
   merge_group:
   workflow_dispatch:
 
@@ -19,6 +19,9 @@ env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
+  REGISTRY: ghcr.io
+  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
@@ -50,7 +53,7 @@ jobs:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
         if [[ "${{ github.event_name }}" != "merge_group" ]]; then
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
           git status
           git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
         else
@@ -69,7 +72,7 @@ jobs:
         else
           echo "Nothing to do"
         fi
-        
+
   # Build the code and run the unit/integration tests.
   build-and-test:
     runs-on: ubuntu-latest
@@ -91,52 +94,13 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify -Dutils -Dservices -Dstarters"
-        $RUN_TESTS \
-          || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
-          || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
-
-  # This step can be uncommented to support feature development.  When developing a 
-  # feature which spans multiple repos, you can update the poms to use the latest 
-  # SNAPSHOT across the board, and run this action as a sanity check to ensure 
-  # everything is working in unison.
-
-  # # Build the code and run the microservice unit/integration tests.
-  # build-and-test-microservices:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #     - name: Set up JDK ${{env.JAVA_VERSION}}
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         distribution: ${{env.JAVA_DISTRIBUTION}}
-  #         java-version: ${{env.JAVA_VERSION}}
-  #     - uses: actions/cache@v4
-  #       with:
-  #         path: ~/.m2/repository
-  #         key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-maven-build-
-  #           ${{ runner.os }}-maven-format-
-  #           ${{ runner.os }}-maven-
-  #     - name: Build Project
-  #       env:
-  #         USER_NAME: ${{ secrets.USER_NAME }}
-  #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  #       run: |
-  #         BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dstarters -Dservices -Dutils -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DonlyServiceApis -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
-  #         $BUILD
-  #     - name: Run Microservice Unit Tests
-  #       env:
-  #         USER_NAME: ${{ secrets.USER_NAME }}
-  #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  #       run: |
-  #         RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dstarters -Dservices -Dutils -Dmaven.build.cache.enabled=false verify"
-  #         cd microservices
-  #         $RUN_TESTS \
-  #           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
-  #           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipITs -DskipFormat
+    - name: Run Integration Tests
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      run: |
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples -Dmaven.build.cache.enabled=false -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
 
   quickstart-build-and-test:
     runs-on: ubuntu-latest
@@ -166,7 +130,7 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress -Dstyle.color=always -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
@@ -205,13 +169,13 @@ jobs:
             echo "Nothing to do since this is a release branch."
           else
             # update datawave dependencies to use the latest snapshots
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
           
             # free up some space so that we don't run out
             docker system prune -f
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
           
             cd docker
             ./bootstrap.sh
@@ -282,10 +246,10 @@ jobs:
                      -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
                      -Durl.maven=https://bogus.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz"
           
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh
           attempt=0
@@ -313,25 +277,3 @@ jobs:
         run: |
           cd docker
           docker compose logs
-
-    # Here's an example of how you'd deploy the image to the github package registry.
-    # We don't want to do this by default since packages on github cannot be deleted
-    # or overwritten. So this could only be done for tags, however it seems the quickstart
-    # image may also exceed the maximum size allowed by github.
-    # - name: Deploy Quickstart Image
-    #   env:
-    #     IMAGE_REGISTRY: "docker.pkg.github.com"
-    #     IMAGE_USERNAME: "brianloss"
-    #     IMAGE_NAME: "datawave/quickstart"
-    #     USER_NAME: ${{ secrets.USER_NAME }}
-    #     ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-    #   run: |
-    #     # Set up env vars
-    #     TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
-    #     REMOTE_IMAGE_NAME="${IMAGE_REGISTRY}/${IMAGE_USERNAME}/${IMAGE_NAME}"
-    #     # Log in to the package registry
-    #     echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
-    #     # Tag and push the image
-    #     docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
-    #     docker images
-    #     docker push ${REMOTE_IMAGE_NAME}:${TAG}

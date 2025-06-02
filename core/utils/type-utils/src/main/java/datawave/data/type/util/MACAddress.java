@@ -248,7 +248,7 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
     @Override
     public boolean equals(Object o) {
         if (o instanceof MACAddress) {
-            /**
+            /*
              * Consider the MAC addresses equal if they have the same normalized string
              */
             return this.toNormalizedString("").equals(((MACAddress) o).toNormalizedString(""));

@@ -28,7 +28,7 @@
         <version.datawave.starter>4.0.5</version.datawave.starter>
         <version.datawave.starter-audit>4.0.3</version.datawave.starter-audit>
         <version.datawave.starter-query>1.0.8</version.datawave.starter-query>
-        <version.mysql-connector>8.0.32</version.mysql-connector>
+        <version.mysql-connector>9.3.0</version.mysql-connector>
     </properties>
     <dependencyManagement>
         <dependencies>

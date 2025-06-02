@@ -14,10 +14,10 @@ public class HexStringType extends BaseType<String> {
     /**
      * Two String + normalizer reference
      *
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
-        return STATIC_SIZE + (2 * normalizedValue.length()) + (2 * delegate.length());
+        return STATIC_SIZE + (2L * normalizedValue.length()) + (2L * delegate.length());
     }
 }
