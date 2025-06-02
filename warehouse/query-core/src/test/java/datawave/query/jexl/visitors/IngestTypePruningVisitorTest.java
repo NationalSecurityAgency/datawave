@@ -1,13 +1,30 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static datawave.query.jexl.visitors.IngestTypeVisitor.IGNORED_TYPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.Set;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
+import datawave.data.type.Type;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.index.lookup.RangeStream;
+import datawave.query.planner.QueryPlan;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
@@ -862,6 +879,55 @@ public class IngestTypePruningVisitorTest {
         test(query, expected, metadata);
     }
 
+    @Test
+    public void testAfterRangeStream() throws Exception {
+
+        // Set up range stream
+
+        final String SHARD_INDEX = "shardIndex";
+
+        AccumuloClient client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client.tableOperations().create(SHARD_INDEX);
+
+        String originalQuery = "FOO == 'bag'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setClient(client);
+
+        config.setBeginDate(new Date(0));
+        config.setEndDate(new Date(System.currentTimeMillis()));
+
+        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("NUM", Sets.newHashSet(new NumberType()));
+
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+
+        ScannerFactory scannerFactory = new ScannerFactory(config);
+        RangeStream rangeStream = new RangeStream(config, scannerFactory, helper);
+
+        Set<Range> expectedRanges = Sets.newHashSet(makeTestRange("20190314", "datatype1\u0000234"), makeTestRange("20190314", "datatype1\u0000345"));
+        for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
+            for (Range range : queryPlan.getRanges()) {
+                assertTrue("Tried to remove unexpected range from expected ranges: " + range.toString(), expectedRanges.remove(range));
+            }
+        }
+
+        //Now that the range stream is set up, we need to get the Query in jexl format and send that into the test() method.
+        // this is also a good spot to se what exactly is being produced from the range stream, because that can help us single out if the problem is there in here in ingesttyupepruiningcidistlsesasdf
+
+//        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+
+        // doesn't matter how complex the nesting is, C term should drive pruning
+        String jexlQueryAfterRangeStream = "( && (A == '1'))";
+        test(jexlQueryAfterRangeStream, null);
+    }
+
     private void test(String query, String expected) {
         test(query, expected, typeMetadata);
     }
@@ -976,4 +1042,5 @@ public class IngestTypePruningVisitorTest {
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expected, script);
         assertTrue("Jexl tree comparison failed with reason: " + comparison.getReason(), comparison.isEqual());
     }
+
 }
