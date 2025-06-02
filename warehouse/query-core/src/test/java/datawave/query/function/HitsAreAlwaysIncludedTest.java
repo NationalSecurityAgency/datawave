@@ -325,7 +325,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
         givenQueryParameter(QueryParameters.HIT_LIST, "true");
         givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
         expectEntry("FOO_3_BAR.FOO.3:defg<cat>");
@@ -341,9 +341,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_4.FOO.4.0:purr");
         expectEntry("FOO_4.FOO.4.1:purr");
-        
+
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
-        
+
         runTestQuery();
     }
 
@@ -351,7 +351,7 @@ public abstract class HitsAreAlwaysIncludedTest {
     public void testHitForIndexedQueryTermWithOptionsInQueryFunction() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>' and f:options('include.grouping.context', 'true', "
                         + "'hit.list', 'true', 'limit.fields', 'FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0')");
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
         expectEntry("FOO_3_BAR.FOO.3:defg<cat>");
@@ -367,12 +367,12 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_4.FOO.4.0:purr");
         expectEntry("FOO_4.FOO.4.1:purr");
-        
+
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
-        
+
         runTestQuery();
-        
-        //runTestQuery(expectedHits, goodResults);
+
+        // runTestQuery(expectedHits, goodResults);
     }
 
     @Test
@@ -397,9 +397,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_4.FOO.4.0:purr");
         expectEntry("FOO_4.FOO.4.1:purr");
-        
+
         expectHit("FOO_3.FOO.3.3:defg");
-        
+
         runTestQuery();
     }
 
@@ -410,14 +410,14 @@ public abstract class HitsAreAlwaysIncludedTest {
         givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
         givenQueryParameter(QueryParameters.HIT_LIST, "true");
         givenQueryParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=2,BAR_1=0,BAR_2=0,BAR_3=0");
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
         expectEntry("FOO_3_BAR.FOO.3:defg<cat>");
         expectEntry("FOO_3.FOO.3.3:defg");
         expectEntry("FOO_4.FOO.4.3:yes");
         expectEntry("FOO_1.FOO.1.3:good");
-        
+
         // the additional values included per the limits
         expectEntry("FOO_1.FOO.1.0:yawn");
         expectEntry("FOO_1_BAR.FOO.0:yawn<cat>");
@@ -425,9 +425,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3.FOO.3.0:abcd");
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_4.FOO.4.0:purr");
-        
+
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
-        
+
         runTestQuery();
     }
 
@@ -444,7 +444,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR.FOO.3:defg<cat>");
         expectEntry("FOO_3.FOO.3.3:defg");
         expectEntry("FOO_4.FOO.4.3:yes");
-        
+
         // the additional values included per the limits
         expectEntry("FOO_1.FOO.1.0:yawn");
         expectEntry("FOO_1.FOO.1.3:good");
@@ -453,10 +453,10 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3.FOO.3.0:abcd");
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_4.FOO.4.0:purr");
-        
+
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
         expectHit("FOO_1.FOO.1.3:good");
-        
+
         runTestQuery();
     }
 
@@ -467,11 +467,11 @@ public abstract class HitsAreAlwaysIncludedTest {
         givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
         givenQueryParameter(QueryParameters.HIT_LIST, "true");
         givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
-        
+
         // there is no grouping context so I can expect only the original term, not the related ones (in the same group)
         // the hit
         expectEntry("FOO_3_BAR:defg<cat>");
-        
+
         // the additional values included per the limits
         expectEntry("FOO_1:yawn");
         expectEntry("FOO_1:good");
@@ -483,9 +483,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR:abcd<cat>");
         expectEntry("FOO_4:purr");
         expectEntry("FOO_4:yes");
-        
+
         expectHit("FOO_3_BAR:defg<cat>");
-        
+
         runTestQuery();
 
     }
@@ -500,10 +500,10 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         // there is no grouping context so I can expect only the original term, not the related ones (in the same group)
         expectHit("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
-        
+
         // the hit
         expectEntry("FOO_1_BAR_1:2021-03-24T16:00:00.000Z");
-        
+
         // the additional values included per the limits
         expectEntry("FOO_1:yawn");
         expectEntry("FOO_1:good");
@@ -515,7 +515,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR:bcde<cat>");
         expectEntry("FOO_4:purr");
         expectEntry("FOO_4:yes");
-        
+
         runTestQuery();
     }
 
@@ -526,13 +526,13 @@ public abstract class HitsAreAlwaysIncludedTest {
         givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
         givenQueryParameter(QueryParameters.HIT_LIST, "true");
         givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
-        
+
         // there is no grouping context so I can expect only the original term, not the related ones (in the same group)
         expectHit("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
-        
+
         // the hit
         expectEntry("FOO_1_BAR_1:2021-03-24T16:00:00.000Z");
-        
+
         // the additional values included per the limits
         expectEntry("FOO_1:yawn");
         expectEntry("FOO_1:good");
@@ -544,7 +544,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR:bcde<cat>");
         expectEntry("FOO_4:purr");
         expectEntry("FOO_4:yes");
-        
+
         runTestQuery();
     }
 
@@ -564,7 +564,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         // the hits
         expectEntry("FOO_3_BAR:defg<cat>");
         expectEntry("FOO_3_BAR:abcd<cat>");
-        
+
         // the additional values included per the limits
         expectEntry("FOO_1:yawn");
         expectEntry("FOO_1:good");
@@ -575,10 +575,10 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3:bcde");
         expectEntry("FOO_4:purr");
         expectEntry("FOO_4:yes");
-        
+
         expectHit("FOO_3_BAR:defg<cat>");
         expectHit("FOO_3_BAR:abcd<cat>");
-        
+
         runTestQuery();
     }
 
@@ -597,12 +597,12 @@ public abstract class HitsAreAlwaysIncludedTest {
         // there is no grouping context so I can expect only the original term, not the related ones (in the same group)
         expectEntry("FOO_3_BAR:defg<cat>");
         expectEntry("FOO_3_BAR:abcd<cat>");
-        
+
         expectHit("FOO_3_BAR:defg<cat>");
         expectHit("FOO_3_BAR:abcd<cat>");
-        
+
         runTestQuery();
-        
+
     }
 
     @Test
@@ -616,13 +616,13 @@ public abstract class HitsAreAlwaysIncludedTest {
         logic.setMaxOrExpansionThreshold(1);
 
         ivaratorConfig();
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
         expectEntry("FOO_3_BAR.FOO.3:defg<cat>");
         expectEntry("FOO_3.FOO.3.3:defg");
         expectEntry("FOO_4.FOO.4.3:yes");
-        
+
         // the additional values included per the limits
         expectEntry("FOO_1.FOO.1.3:good");
         expectEntry("FOO_1.FOO.1.0:yawn");
@@ -631,10 +631,10 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_1_BAR.FOO.0:yawn<cat>");
         expectEntry("FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z");
-        
+
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
-        
+
         runTestQuery();
     }
 
@@ -650,7 +650,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         logic.setMaxOrExpansionThreshold(1);
 
         ivaratorConfig();
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_1.FOO.1.0:yawn");
@@ -658,7 +658,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3.FOO.3.0:abcd");
         expectEntry("FOO_1_BAR.FOO.0:yawn<cat>");
         expectEntry("FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z");
-        
+
         // the additional values included per the matching field sets
         expectEntry("FOO_1.FOO.1.1:yawn");
         expectEntry("FOO_4.FOO.4.1:purr");
@@ -670,9 +670,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3.FOO.3.2:cdef");
         expectEntry("FOO_3_BAR.FOO.2:cdef<cat>");
         expectEntry("FOO_1_BAR.FOO.2:yawn<cat>");
-        
+
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
-        
+
         runTestQuery();
     }
 
@@ -688,7 +688,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         logic.setMaxOrExpansionThreshold(1);
 
         ivaratorConfig();
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_1.FOO.1.0:yawn");
@@ -696,7 +696,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3.FOO.3.0:abcd");
         expectEntry("FOO_1_BAR.FOO.0:yawn<cat>");
         expectEntry("FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z");
-        
+
         // the additional values included per the matching field sets
         expectEntry("FOO_1.FOO.1.1:yawn");
         expectEntry("FOO_4.FOO.4.1:purr");
@@ -711,9 +711,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("BAR_1.BAR.1.3:purr");
         expectEntry("BAR_2.BAR.2.3:tiger");
         expectEntry("BAR_3.BAR.3.3:spotted");
-        
+
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
-        
+
         runTestQuery();
     }
 
@@ -729,7 +729,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         logic.setMaxOrExpansionThreshold(1);
 
         ivaratorConfig();
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_1.FOO.1.0:yawn");
@@ -737,7 +737,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3.FOO.3.0:abcd");
         expectEntry("FOO_1_BAR.FOO.0:yawn<cat>");
         expectEntry("FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z");
-        
+
         // the additional values included per the matching field sets
         expectEntry("FOO_1.FOO.1.1:yawn");
         expectEntry("FOO_4.FOO.4.1:purr");
@@ -755,9 +755,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("BAR_1.BAR.1.3:purr");
         expectEntry("BAR_2.BAR.2.3:tiger");
         expectEntry("BAR_3.BAR.3.3:spotted");
-        
+
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
-        
+
         runTestQuery();
     }
 
@@ -773,7 +773,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         logic.setMaxOrExpansionThreshold(1);
 
         ivaratorConfig();
-        
+
         // the hit and associated fields in the same group
         expectEntry("FOO_3_BAR.FOO.0:abcd<cat>");
         expectEntry("FOO_1.FOO.1.0:yawn");
@@ -781,7 +781,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_3.FOO.3.0:abcd");
         expectEntry("FOO_1_BAR.FOO.0:yawn<cat>");
         expectEntry("FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z");
-        
+
         // the additional values included per the matching field sets
         expectEntry("FOO_1.FOO.1.1:yawn");
         expectEntry("FOO_4.FOO.4.1:purr");
@@ -799,9 +799,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("BAR_1.BAR.1.3:purr");
         expectEntry("BAR_2.BAR.2.3:tiger");
         expectEntry("BAR_3.BAR.3.3:spotted");
-        
+
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
-        
+
         runTestQuery();
     }
 
