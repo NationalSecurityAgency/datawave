@@ -155,12 +155,13 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
-     * Parses the {@param eventMap} applying each Whindex rule initalized via {@link #setup(Configuration)} that have <b>all</b> their requirements met by the
-     * entries in the {@param eventMap}. Once these rules have been applied, all srcFields that were used to create a new whindexField and are marked as
+     * Parses the eventMap applying each Whindex rule initalized via {@link #setup(Configuration)} that have <b>all</b> their requirements met by the
+     * entries in the eventMap. Once these rules have been applied, all srcFields that were used to create a new whindexField and are marked as
      * overloaded are removed from the eventMap.
      *
      * @param eventMap
-     *            the original multimap of field -> values
+     *            the original multimap of field to values
+     *            the original multimap of field to values
      * @return a new Multimap reflecting added Whindex entries and any removed sources
      */
     @Override
@@ -221,7 +222,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Retrieves an immutable view of the mapping from trigger fields to configs.
      *
-     * @return a Guava ImmutableMultimap of valueField -> WhindexConfig
+     * @return a Guava ImmutableMultimap of valueField to WhindexConfig
      */
     @Override
     public ImmutableMultimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {

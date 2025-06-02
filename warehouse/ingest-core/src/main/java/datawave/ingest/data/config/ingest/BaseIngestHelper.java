@@ -624,11 +624,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     /**
-     * Returns true if {@param fieldName} is a whindex field.
+     * Returns true if fieldName is a whindex field.
      *
      * @param fieldName
      *            the field to check.
-     * @return true if {@param fieldName} is a whindex field.
+     * @return true if fieldName is a whindex field.
      */
     @Override
     public boolean isWhindexField(String fieldName) {
@@ -1226,7 +1226,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * Returns a multimap containing all WhindexConfigs mapped to their related ValueFields.
      *
-     * @return a multimap of K:ValueFields -> V:WhindexConfig(s)
+     * @return a multimap of K:ValueFields to V:WhindexConfig(s)
      */
     @Override
     public Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {

@@ -133,11 +133,11 @@ public interface IngestHelperInterface extends DataTypeHelper {
     boolean shouldHaveBeenReverseIndexed(String fieldName);
 
     /**
-     * Returns true if {@param fieldName} is a whindex field.
+     * Returns true if fieldName is a whindex field.
      *
      * @param fieldName
      *            the field to check.
-     * @return true if {@param fieldName} is a whindex field.
+     * @return true if fieldName is a whindex field.
      */
     boolean isWhindexField(String fieldName);
 }

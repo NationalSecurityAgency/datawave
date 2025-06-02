@@ -45,7 +45,7 @@ public interface WhindexIngest {
     /**
      * Returns a multimap containing all WhindexConfigs mapped to their related ValueFields.
      *
-     * @return a multimap of K:ValueFields -> V:WhindexConfig(s)
+     * @return a multimap of K:ValueFields to V:WhindexConfig(s)
      */
     Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs();
 }
