@@ -18,6 +18,16 @@ public class KeywordQueryState {
      */
     private boolean generateCloud = false;
 
+    /**
+     * if true, group tags by languge - if not, combine keywords from all languages into a single cloud.
+     */
+    private boolean languagePartitioned = true;
+
+    /**
+     * the maximum number of tags we will generate in the final cloud
+     */
+    private int maxCloudTags = 0;
+
     /** a list of view names we will attempt to use for content */
     private final List<String> viewNames = new ArrayList<>();
 
@@ -42,6 +52,22 @@ public class KeywordQueryState {
 
     public void setGenerateCloud(boolean generateCloud) {
         this.generateCloud = generateCloud;
+    }
+
+    public boolean isLanguagePartitioned() {
+        return languagePartitioned;
+    }
+
+    public void setLanguagePartitioned(boolean languagePartitioned) {
+        this.languagePartitioned = languagePartitioned;
+    }
+
+    public int getMaxCloudTags() {
+        return maxCloudTags;
+    }
+
+    public void setMaxCloudTags(int maxCloudTags) {
+        this.maxCloudTags = maxCloudTags;
     }
 
     public Map<String,String> getLanguageMap() {

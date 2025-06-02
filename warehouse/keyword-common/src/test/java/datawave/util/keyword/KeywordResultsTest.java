@@ -1,4 +1,4 @@
-package datawave.query.util.keyword;
+package datawave.util.keyword;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

@@ -27,10 +27,10 @@ public class DateType extends BaseType<Date> {
     /**
      * One string, one date object, one reference to the normalizer
      *
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
-        return STATIC_SIZE + (2 * normalizedValue.length());
+        return STATIC_SIZE + (2L * normalizedValue.length());
     }
 }

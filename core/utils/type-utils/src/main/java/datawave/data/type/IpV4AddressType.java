@@ -17,11 +17,11 @@ public class IpV4AddressType extends BaseType<IpAddress> {
     /**
      * one String + either IpV4Address or IpV6Address + reference
      *
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
-        long base = STATIC_SIZE + (2 * normalizedValue.length());
+        long base = STATIC_SIZE + (2L * normalizedValue.length());
         long ipSize;
         if (delegate instanceof IpV4Address) {
             ipSize = PrecomputedSizes.IPV4ADDRESS_STATIC_REF;

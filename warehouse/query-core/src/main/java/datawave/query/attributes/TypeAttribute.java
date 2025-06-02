@@ -62,8 +62,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(DataOutput out) throws IOException {
-        WritableUtils.writeString(out, datawaveType.getClass().toString());
-        writeMetadata(out);
+        WritableUtils.writeString(out, datawaveType.getClass().getName());
+        super.writeMetadata(out);
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }

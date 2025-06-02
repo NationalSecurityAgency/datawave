@@ -41,7 +41,7 @@ import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.TagCloudTransformer;
-import datawave.query.util.keyword.KeywordResults;
+import datawave.util.keyword.KeywordResults;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -68,6 +68,21 @@ import datawave.webservice.query.exception.QueryException;
  * configured as a part of the logic configuration.
  */
 public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
+
+    /**
+     * Used to specify that a tag cloud should consist of merged results for all documents or for individual results for individual documents.
+     */
+    public static final String TAG_CLOUD_CREATE = "tag.cloud.create";
+
+    /**
+     * Used to specify that a tag cloud should include as most this many tags.
+     */
+    public static final String TAG_CLOUD_MAX = "tag.cloud.max";
+
+    /**
+     * Used to specify that the tag clouds should be grouped by language.
+     */
+    public static final String TAG_CLOUD_LANGUAGE = "tag.cloud.language";
 
     private static final Logger log = Logger.getLogger(KeywordQueryLogic.class);
 
@@ -169,9 +184,23 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         }
 
         // tag cloud creation should default to true if the parameter is empty (e.g., is not set)
-        String tagCloudCreateString = settings.findParameter(QueryParameters.TAG_CLOUD_CREATE).getParameterValue().trim();
+        String tagCloudCreateString = settings.findParameter(TAG_CLOUD_CREATE).getParameterValue().trim();
         boolean generateTagCloud = tagCloudCreateString.isEmpty() || Boolean.parseBoolean(tagCloudCreateString);
         state.setGenerateCloud(generateTagCloud);
+
+        // tag cloud creation should be grouped by language
+        String tagCloudLanguageString = settings.findParameter(TAG_CLOUD_LANGUAGE).getParameterValue().trim();
+        boolean partitionByLanguage = tagCloudLanguageString.isEmpty() || Boolean.parseBoolean(tagCloudLanguageString);
+        state.setLanguagePartitioned(partitionByLanguage);
+
+        // tag cloud limit is set from configuration and then overridden by the query param, no limit is 0.
+        String maxCloudTagsString = settings.findParameter(TAG_CLOUD_MAX).getParameterValue().trim();
+        try {
+            int tagCloudMax = maxCloudTagsString.isEmpty() ? config.getMaxCloudTags() : Integer.parseInt(maxCloudTagsString);
+            state.setMaxCloudTags(tagCloudMax);
+        } catch (NumberFormatException e) {
+            log.warn("Could not parse parameter " + TAG_CLOUD_MAX + " (value: " + maxCloudTagsString + " as integer, ignoring.");
+        }
 
         // Execute the query logic.
         final Collection<String> queryTerms = extractQueryTerms(settings);

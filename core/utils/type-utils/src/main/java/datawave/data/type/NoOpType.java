@@ -20,10 +20,10 @@ public class NoOpType extends BaseType<String> {
     /**
      * two identical strings + normalizer reference
      *
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
-        return STATIC_SIZE + (4 * normalizedValue.length());
+        return STATIC_SIZE + (4L * normalizedValue.length());
     }
 }

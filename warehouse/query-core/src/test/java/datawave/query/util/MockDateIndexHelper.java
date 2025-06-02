@@ -5,8 +5,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.accumulo.core.client.TableNotFoundException;
-
 import com.google.common.collect.TreeMultimap;
 
 public class MockDateIndexHelper extends DateIndexHelper {
@@ -84,42 +82,30 @@ public class MockDateIndexHelper extends DateIndexHelper {
     }
 
     @Override
-    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
+    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) {
         final DateTypeDescription desc = new DateTypeDescription();
         for (Entry value : entries.values()) {
             if (value.type.equals(dateType) && (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(value.dataType))) {
                 desc.fields.add(value.field);
             }
         }
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 
         for (Map.Entry<String,Entry> entry : entries.entries()) {
             if (entry.getValue().type.equals(dateType)
                             && (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(entry.getValue().dataType))) {
 
                 String date = entry.getValue().getShardDate();
-                if (desc.dateRange[0] == null) {
-                    desc.dateRange[0] = desc.dateRange[1] = date;
-                } else {
-                    if (date.compareTo(desc.dateRange[0]) < 0) {
-                        desc.dateRange[0] = date;
-                    }
-                    if (date.compareTo(desc.dateRange[1]) > 0) {
-                        desc.dateRange[1] = date;
-                    }
-                }
+                desc.ensureStartAndEndDateIsSet(date);
             }
         }
-        if (desc.dateRange[0] == null) {
-            desc.dateRange[0] = formatter.format(begin);
-            desc.dateRange[1] = formatter.format(end);
-        }
+        // update default values if none were found
+        desc.replaceNullDateRange(begin, end);
+
         return desc;
     }
 
     @Override
-    public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
-                    throws TableNotFoundException {
+    public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter) {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         String beginStr = formatter.format(begin);
         String endStr = formatter.format(end);
