@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jline.internal.Log;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -211,6 +212,10 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      */
     @Override
     public boolean isWhindexField(String field) {
+        if(destinationFields == null){
+            log.warn("destinationFields has not been initialized. You probably need to run WhindexFieldIngestHelper's .setup() method first.");
+            return false;
+        }
         return destinationFields.contains(field);
     }
 
