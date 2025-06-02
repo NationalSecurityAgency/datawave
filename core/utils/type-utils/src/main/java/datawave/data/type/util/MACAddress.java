@@ -1,7 +1,6 @@
 package datawave.data.type.util;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Class to hold a MAC Address
@@ -249,7 +248,7 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
     @Override
     public boolean equals(Object o) {
         if (o instanceof MACAddress) {
-            /**
+            /*
              * Consider the MAC addresses equal if they have the same normalized string
              */
             return this.toNormalizedString("").equals(((MACAddress) o).toNormalizedString(""));

@@ -12,11 +12,15 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -83,7 +87,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testLteGteBound() throws Exception {
         log.info("------  testLteGteBound  ------");
-        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "20 " + AND_OP + CityField.NUM.name() + GTE_OP + "20))";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "21 " + AND_OP + CityField.NUM.name() + GTE_OP + "20))";
         runTest(query, query);
     }
 
@@ -169,7 +173,14 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
         }
     }
 
-    @Test
+    /**
+     * This test is now expected to fail because the {@link UnmarkedBoundedRangeDetectionVisitor} was corrected to examine {@link ASTAndNode} instead of
+     * {@link ASTReference} nodes.
+     *
+     * @throws Exception
+     *             because the query is wrong
+     */
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testLtGtNotEq() throws Exception {
         log.info("------  testLtGtNotEq  ------");
         for (final TestCities city : TestCities.values()) {

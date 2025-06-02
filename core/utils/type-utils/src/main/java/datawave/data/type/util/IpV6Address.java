@@ -1,6 +1,7 @@
 package datawave.data.type.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.datasketches.common.SuppressFBWarnings;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -11,7 +12,7 @@ import com.google.common.collect.Iterables;
  */
 public class IpV6Address extends IpAddress {
     private static final long serialVersionUID = -1528748156190096213L;
-    private short[] ipaddress = new short[8];
+    private final short[] ipaddress = new short[8];
 
     public IpV6Address(short[] address) {
         if (address.length != 8) {
@@ -44,6 +45,7 @@ public class IpV6Address extends IpAddress {
      * Parse an address assume the specified base
      *
      * @param address
+     *            the address
      * @return the IpV6 address
      * @throws IllegalArgumentException
      *             if the base is not 10, 8, 16, or the address cannot be parsed using the specified base or dotted/not
@@ -236,6 +238,7 @@ public class IpV6Address extends IpAddress {
     }
 
     @Override
+    @SuppressFBWarnings(value = "EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS", justification = "this has been well tested")
     public boolean equals(Object o) {
         if (o instanceof IpV6Address) {
             return 0 == compareToIpV6Address(((IpV6Address) o));

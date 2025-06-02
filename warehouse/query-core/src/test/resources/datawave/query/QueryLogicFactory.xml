@@ -266,6 +266,7 @@
         <property name="reverseIndexTableName" value="shardReverseIndex" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
+        <property name="dateIndexIterator" value="true"/>
         <property name="queryThreads" value="5" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="includeDataTypeAsField" value="false" />
@@ -494,8 +495,8 @@
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
-        <property name="debugEnabled" value="false"/>
-        <property name="validateAst" value="false"/>
+        <property name="debugEnabled" value="true"/>
+        <property name="validateAst" value="true"/>
         <property name="validator" ref="AstValidator"/>
     </bean>
 

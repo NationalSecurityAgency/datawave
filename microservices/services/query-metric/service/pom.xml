@@ -4,18 +4,18 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.1-SNAPSHOT</version>
+        <version>5.0.1</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-service</artifactId>
-    <version>4.0.17-SNAPSHOT</version>
+    <version>4.1.1-SNAPSHOT</version>
     <description>DATAWAVE Query Metric Microservice</description>
     <url>https://code.nsa.gov/datawave-query-metric-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-query-metric-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-query-metric-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-query-metric-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
@@ -24,15 +24,15 @@
         <version.datawave>7.18.3</version.datawave>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
         <version.datawave.query-metric-api>4.0.14</version.datawave.query-metric-api>
-        <version.datawave.starter>4.0.3</version.datawave.starter>
+        <version.datawave.starter>4.0.5</version.datawave.starter>
         <version.datawave.starter-datawave-query-metric>3.0.3</version.datawave.starter-datawave-query-metric>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
-        <version.protobuf-java>3.7.1</version.protobuf-java>
+        <version.protobuf-java>3.16.3</version.protobuf-java>
         <version.validation-api>2.0.2</version.validation-api>
         <version.webjars.bootstrap>4.3.1</version.webjars.bootstrap>
         <version.webjars.jquery>3.4.1</version.webjars.jquery>
@@ -165,12 +165,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>accumulo-api</artifactId>
-                <version>${version.datawave.accumulo-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.datawave.accumulo-utils}</version>
                 <exclusions>
@@ -181,9 +176,14 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>accumulo-api</artifactId>
+                <version>${version.datawave.accumulo-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -381,6 +381,18 @@
             <artifactId>webjars-locator-core</artifactId>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
     <build>
         <plugins>
             <plugin>

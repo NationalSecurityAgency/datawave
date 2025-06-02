@@ -1035,7 +1035,8 @@ public class MetadataHelper {
      * @throws ExecutionException
      *             it can't, remove this
      */
-    @Cacheable(value = "getEdges", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", sync = true)
+    @Cacheable(value = "getEdges", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public SetMultimap<Key,Value> getEdges() throws TableNotFoundException, ExecutionException {
         log.debug("cache fault for getEdges({})", this.auths);
         SetMultimap<Key,Value> edges = HashMultimap.create();
@@ -1999,23 +2000,7 @@ public class MetadataHelper {
      *             if no table exists
      */
     protected Multimap<String,String> loadTermFrequencyFields() throws TableNotFoundException {
-        Multimap<String,String> fields = HashMultimap.create();
-        if (log.isTraceEnabled()) {
-            log.trace("loadTermFrequencyFields from table: {}", metadataTableName);
-        }
-
-        // Scanner to the provided metadata table
-        try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
-
-            bs.setRange(new Range());
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_TF);
-
-            for (Entry<Key,Value> entry : bs) {
-                fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
-            }
-        }
-
-        return Multimaps.unmodifiableMultimap(fields);
+        return allFieldMetadataHelper.loadTermFrequencyFields();
     }
 
     private static String getKey(String instanceID, String metadataTableName) {

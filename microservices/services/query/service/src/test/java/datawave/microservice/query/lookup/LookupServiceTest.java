@@ -76,7 +76,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && queryId == null) {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() > 0) {
+            if (!queryStatuses.isEmpty()) {
                 queryStatus = queryStatuses.get(0);
                 queryId = queryStatuses.get(0).getQueryKey().getQueryId();
             } else {
@@ -85,6 +85,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         }
 
         // pump enough results into the queue to trigger a complete page
+        Assertions.assertNotNull(queryStatus);
         int pageSize = queryStatus.getQuery().getPagesize();
 
         // test field value pairings
@@ -177,7 +178,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && queryId == null) {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() > 0) {
+            if (!queryStatuses.isEmpty()) {
                 queryStatus = queryStatuses.get(0);
                 queryId = queryStatuses.get(0).getQueryKey().getQueryId();
             } else {
@@ -193,6 +194,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         fieldValues.add("PAGE_TITLE", "anarchy");
         fieldValues.add("PAGE_TITLE", "accessiblecomputing");
 
+        Assertions.assertNotNull(queryStatus);
         // add a config object to the query status, which would normally be added by the executor service
         queryStatus.setConfig(new GenericQueryConfiguration());
         queryStorageCache.updateQueryStatus(queryStatus);
@@ -280,7 +282,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && queryId == null) {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() > 0) {
+            if (!queryStatuses.isEmpty()) {
                 queryStatus = queryStatuses.get(0);
                 queryId = queryStatuses.get(0).getQueryKey().getQueryId();
             } else {
@@ -289,6 +291,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         }
 
         // pump enough results into the queue to trigger a complete page
+        Assertions.assertNotNull(queryStatus);
         int pageSize = queryStatus.getQuery().getPagesize();
 
         // test field value pairings
@@ -355,6 +358,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
 
+        Assertions.assertNotNull(queryResponse);
         String responseQueryId = queryResponse.getQueryId();
 
         Assertions.assertTrue(contentQueryIds.contains(responseQueryId));
@@ -440,7 +444,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && queryId == null) {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() > 0) {
+            if (!queryStatuses.isEmpty()) {
                 queryStatus = queryStatuses.get(0);
                 queryId = queryStatuses.get(0).getQueryKey().getQueryId();
             } else {
@@ -448,6 +452,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             }
         }
 
+        Assertions.assertNotNull(queryStatus);
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStatus.getQuery().getPagesize();
 
@@ -526,6 +531,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
 
+        Assertions.assertNotNull(queryResponse);
         String responseQueryId = queryResponse.getQueryId();
 
         Assertions.assertTrue(contentQueryIds.contains(responseQueryId));
@@ -609,6 +615,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         Assertions.assertEquals(400, response.getStatusCodeValue());
 
+        Assertions.assertNotNull(response.getBody());
         // @formatter:off
         assertQueryException(
                 "Missing required parameter.",
@@ -635,6 +642,8 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
 
         Assertions.assertEquals(400, response.getStatusCodeValue());
+
+        Assertions.assertNotNull(response.getBody());
 
         // @formatter:off
         assertQueryException(
@@ -663,6 +672,8 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         Assertions.assertEquals(400, response.getStatusCodeValue());
 
+        Assertions.assertNotNull(response.getBody());
+
         // @formatter:off
         assertQueryException(
                 "Invalid type 'PAGE' for UUID anarchy not supported with the LuceneToJexlUUIDQueryParser",
@@ -690,6 +701,8 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         Assertions.assertEquals(400, response.getStatusCodeValue());
 
+        Assertions.assertNotNull(response.getBody());
+
         // @formatter:off
         assertQueryException(
                 "Empty UUID type or value extracted from uuidPair :anarchy",
@@ -716,6 +729,8 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
 
         Assertions.assertEquals(400, response.getStatusCodeValue());
+
+        Assertions.assertNotNull(response.getBody());
 
         // @formatter:off
         assertQueryException(
@@ -752,6 +767,8 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         Assertions.assertEquals(400, response.getStatusCodeValue());
 
+        Assertions.assertNotNull(response.getBody());
+
         // @formatter:off
         assertQueryException(
                 "The " + (lookupProperties.getBatchLookupLimit() + 1) + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupLimit() + " allowed for a given lookup request",
@@ -778,6 +795,8 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
 
         Assertions.assertEquals(500, response.getStatusCodeValue());
+
+        Assertions.assertNotNull(response.getBody());
 
         // @formatter:off
         assertQueryException(
@@ -840,25 +859,26 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     protected void publishEventsToQueue(String queryId, int numEvents, MultiValueMap<String,String> fieldValues, String visibility) throws Exception {
-        QueryResultsPublisher publisher = queryQueueManager.createPublisher(queryId);
-        for (int resultId = 0; resultId < numEvents; resultId++) {
-            DefaultEvent event = new DefaultEvent();
-            long currentTime = System.currentTimeMillis();
-            List<DefaultField> fields = new ArrayList<>();
-            for (Map.Entry<String,List<String>> entry : fieldValues.entrySet()) {
-                for (String value : entry.getValue()) {
-                    fields.add(new DefaultField(entry.getKey(), visibility, new HashMap<>(), currentTime, value));
+        try (QueryResultsPublisher publisher = queryQueueManager.createPublisher(queryId)) {
+            for (int resultId = 0; resultId < numEvents; resultId++) {
+                DefaultEvent event = new DefaultEvent();
+                long currentTime = System.currentTimeMillis();
+                List<DefaultField> fields = new ArrayList<>();
+                for (Map.Entry<String,List<String>> entry : fieldValues.entrySet()) {
+                    for (String value : entry.getValue()) {
+                        fields.add(new DefaultField(entry.getKey(), visibility, new HashMap<>(), currentTime, value));
+                    }
                 }
-            }
-            event.setFields(fields);
+                event.setFields(fields);
 
-            Metadata metadata = new Metadata();
-            // tonight i'm gonna party like it's
-            metadata.setRow("19991231_0");
-            metadata.setDataType("prince");
-            metadata.setInternalId(UUID.randomUUID().toString());
-            event.setMetadata(metadata);
-            publisher.publish(new Result(Integer.toString(resultId), event));
+                Metadata metadata = new Metadata();
+                // tonight i'm gonna party like it's
+                metadata.setRow("19991231_0");
+                metadata.setDataType("prince");
+                metadata.setInternalId(UUID.randomUUID().toString());
+                event.setMetadata(metadata);
+                publisher.publish(new Result(Integer.toString(resultId), event));
+            }
         }
     }
 

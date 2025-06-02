@@ -1,6 +1,5 @@
 package datawave.query.model;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Set;
 

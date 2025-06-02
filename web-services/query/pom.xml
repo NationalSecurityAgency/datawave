@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>7.21.0-SNAPSHOT</version>
+        <version>7.24.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-query</artifactId>
     <packaging>ejb</packaging>
@@ -307,6 +307,7 @@
                         <additionalClasspathElement>${basedir}/conf</additionalClasspathElement>
                     </additionalClasspathElements>
                     <argLine>@{argLine} --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
+                    <skipTests>${skipUTs}</skipTests>
                 </configuration>
             </plugin>
         </plugins>

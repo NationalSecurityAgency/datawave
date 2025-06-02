@@ -6,7 +6,6 @@ import static datawave.data.normalizer.regex.RegexParser.parse;
 import org.junit.jupiter.api.Test;
 
 import datawave.data.normalizer.regex.Node;
-import datawave.data.type.util.NumericalEncoder;
 
 class NegativeNumberPatternInverterTest {
 

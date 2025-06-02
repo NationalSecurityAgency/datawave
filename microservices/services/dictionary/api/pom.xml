@@ -4,22 +4,22 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.1-SNAPSHOT</version>
+        <version>4.0.1</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-api</artifactId>
     <version>4.0.6-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-dictionary-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-dictionary-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-dictionary-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
-        <version.datawave.metadata-utils>4.0.5</version.datawave.metadata-utils>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
+        <version.datawave.metadata-utils>4.0.16</version.datawave.metadata-utils>
         <version.guava>31.1-jre</version.guava>
     </properties>
     <dependencyManagement>
@@ -30,7 +30,7 @@
                 <version>${version.guava}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
                 <exclusions>
@@ -45,7 +45,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.datawave.metadata-utils}</version>
                 <exclusions>
@@ -67,11 +67,11 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>metadata-utils</artifactId>
         </dependency>
         <dependency>
@@ -80,6 +80,18 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
     <build>
         <resources>
             <resource>

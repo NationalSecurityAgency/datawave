@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -158,6 +158,7 @@ public class QueryMetricHandlerConfiguration {
 
     // This bean is used via autowire in DateIndexHelper
     @Bean(name = "dateIndexHelperCacheManager")
+    @Qualifier("dateIndexHelperCacheManager")
     public CaffeineCacheManager dateIndexHelperCacheManager(QueryMetricHandlerProperties queryMetricHandlerProperties) {
         System.setProperty(ALL_AUTHS_PROPERTY, queryMetricHandlerProperties.getMetadataDefaultAuths());
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
@@ -165,20 +166,15 @@ public class QueryMetricHandlerConfiguration {
         return caffeineCacheManager;
     }
 
+    // This is necessary because while DateIndexHelper is a @Component,
+    // DateIndexHelperFactory is not but is needed for ShardQueryLogic
     @Bean
-    public DateIndexHelperFactory dateIndexHelperFactory() {
-        DateIndexHelper dateIndexHelper = DateIndexHelper.getInstance();
+    public DateIndexHelperFactory dateIndexHelperFactory(BeanFactory beanFactory) {
         return new DateIndexHelperFactory() {
             @Override
             public DateIndexHelper createDateIndexHelper() {
-                return dateIndexHelper;
+                return beanFactory.getBean(DateIndexHelper.class);
             }
         };
-    }
-
-    @Bean
-    @Qualifier("queryMetrics")
-    public TypeMetadataHelper.Factory typeMetadataFactory(ApplicationContext context) {
-        return new TypeMetadataHelper.Factory(context);
     }
 }

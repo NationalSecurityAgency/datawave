@@ -12,6 +12,9 @@ import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.response.objects.KeyBase;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponseBase;
+import datawave.webservice.result.keyword.TagCloudBase;
+import datawave.webservice.result.keyword.TagCloudEntryBase;
+import datawave.webservice.result.keyword.TagCloudResponseBase;
 
 public abstract class ResponseObjectFactory {
 
@@ -32,6 +35,12 @@ public abstract class ResponseObjectFactory {
     public abstract FacetsBase getFacets();
 
     public abstract FieldCardinalityBase getFieldCardinality();
+
+    public abstract TagCloudResponseBase getTagCloudQueryResponse();
+
+    public abstract TagCloudBase getTagCloud();
+
+    public abstract TagCloudEntryBase getTagCloudEntry();
 
     /**
      * Get a KeyBase implementation. Note that this is currently used by Entry objects which are used in the LookupResponse. If a specific implementation is

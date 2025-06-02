@@ -11,6 +11,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,8 @@ public class MetadataHelperFactory {
         this(null, null);
     }
 
+    // Autowired annotation is necessary here so that the Spring bean factory knows which constructor to use
+    @Autowired
     public MetadataHelperFactory(BeanFactory beanFactory, TypeMetadataHelper.Factory typeMetadataHelperFactory) {
         this.beanFactory = beanFactory;
         this.typeMetadataHelperFactory = typeMetadataHelperFactory;

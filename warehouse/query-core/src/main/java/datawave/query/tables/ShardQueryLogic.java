@@ -467,6 +467,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
+        if (dateIndexHelper != null) {
+            dateIndexHelper.setUseIterator(isDateIndexIterator());
+        }
 
         initializeQueryModel(config, metadataHelper, dateIndexHelper);
 
@@ -555,6 +558,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         DateIndexHelper dateIndexHelper = prepareDateIndexHelper(config.getClient(), this.getDateIndexTableName(), config.getAuthorizations());
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
+        }
+        if (dateIndexHelper != null) {
+            dateIndexHelper.setUseIterator(isDateIndexIterator());
         }
 
         QueryPlanner queryPlanner = getQueryPlanner();
@@ -3410,5 +3416,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         getConfig().setNoExpansionIfCurrentDateTypes(noExpansionIfCurrentDateTypes);
+    }
+
+    public boolean isDateIndexIterator() {
+        return getConfig().isDateIndexIterator();
+    }
+
+    public void setDateIndexIterator(boolean dateIndexIterator) {
+        getConfig().setDateIndexIterator(dateIndexIterator);
     }
 }

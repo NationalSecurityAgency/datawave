@@ -15,7 +15,7 @@ public class ListTypeTest {
 
         LcNoDiacriticsListType t = new LcNoDiacriticsListType(str);
         Assert.equals(6, t.normalizeToMany(str).size());
-        List<String> expected = Arrays.asList(new String[] {"1", "2", "3", "a", "b", "c"});
+        List<String> expected = Arrays.asList("1", "2", "3", "a", "b", "c");
         Assert.equals(expected, t.normalizeToMany(str));
     }
 
@@ -25,14 +25,14 @@ public class ListTypeTest {
 
         LcNoDiacriticsListType t = new LcNoDiacriticsListType();
         Assert.equals(6, t.normalizeToMany(str).size());
-        List<String> expected = Arrays.asList(new String[] {"01", "02", "03", "a", "b", "c"});
+        List<String> expected = Arrays.asList("01", "02", "03", "a", "b", "c");
         Assert.equals(expected, t.normalizeToMany(str));
     }
 
     @Test
     public void testNumberList() {
         String str = "1,2,3,5.5";
-        List<String> expected = Arrays.asList(new String[] {"+aE1", "+aE2", "+aE3", "+aE5.5"});
+        List<String> expected = Arrays.asList("+aE1", "+aE2", "+aE3", "+aE5.5");
 
         NumberListType nt = new NumberListType();
         Assert.equals(4, nt.normalizeToMany(str).size());

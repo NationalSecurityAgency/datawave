@@ -4,18 +4,18 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.1-SNAPSHOT</version>
+        <version>4.0.1</version>
         <relativePath>../microservice-parent</relativePath>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Spring Boot Service Parent</name>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-service-parent.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-service-parent.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-service-parent</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <resource.delimiter>@</resource.delimiter>
@@ -82,6 +82,18 @@
             </exclusions>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
     <build>
         <!-- Turn on filtering by default for application properties -->
         <resources>
@@ -180,6 +192,8 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <configuration>
                         <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                        <skipTests>${skipTests}</skipTests>
+                        <skipITs>${skipITs}</skipITs>
                     </configuration>
                     <executions>
                         <execution>

@@ -160,7 +160,7 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
      * One string (normalizedValue) one unknown object (delegate) one normalizer (singleton reference) ref to object (4) normalizers will not be counted because
      * they are singletons
      *
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
@@ -169,7 +169,7 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
             List<String> values = ((OneToManyNormalizerType<?>) this).getNormalizedValues();
             size += values.stream().map(String::length).map(length -> 2 * length + ObjectSizeOf.Sizer.REFERENCE).reduce(Integer::sum).orElse(0);
         }
-        size += STATIC_SIZE + (2 * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
+        size += STATIC_SIZE + (2L * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
         return size;
     }
 }

@@ -4,22 +4,22 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.1-SNAPSHOT</version>
+        <version>4.0.1</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-executor-api</artifactId>
     <version>1.0.8-SNAPSHOT</version>
     <url>https://github.com/NationalSecurityAgency/datawave-query-executor-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-query-executor-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-query-executor-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-query-executor-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave/v1</datawave.webservice.namespace>
         <version.datawave>7.3.0</version.datawave>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.starter-query>1.0.5</version.datawave.starter-query>
     </properties>
     <dependencyManagement>
@@ -30,6 +30,17 @@
                 <version>${version.datawave.starter-query}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${version.datawave.base-rest-responses}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
@@ -46,27 +57,16 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave.base-rest-responses}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-reload4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>datawave-core-connection-pool</artifactId>
+            <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>base-rest-responses</artifactId>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-connection-pool</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.validation</groupId>
@@ -77,6 +77,18 @@
             <artifactId>spring-context</artifactId>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
     <build>
         <resources>
             <resource>

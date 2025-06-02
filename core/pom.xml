@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.21.0-SNAPSHOT</version>
+        <version>7.24.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.core</groupId>
     <artifactId>datawave-core-parent</artifactId>
@@ -19,12 +19,8 @@
         <module>modification</module>
         <module>query</module>
         <module>utils</module>
+        <module>base-rest-responses</module>
     </modules>
-    <scm>
-        <connection>scm:git:https://fixme/git/core/</connection>
-        <developerConnection>scm:git:ssh://git@fixme/core.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -38,6 +34,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
+                        <skipTests>${skipUTs}</skipTests>
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
@@ -53,17 +50,6 @@
         </pluginManagement>
     </build>
     <profiles>
-        <profile>
-            <id>base-rest-responses</id>
-            <activation>
-                <property>
-                    <name>base-rest-responses</name>
-                </property>
-            </activation>
-            <modules>
-                <module>base-rest-responses</module>
-            </modules>
-        </profile>
         <profile>
             <id>in-memory-accumulo</id>
             <activation>
@@ -94,7 +80,6 @@
                 </property>
             </activation>
             <modules>
-                <module>base-rest-responses</module>
                 <module>in-memory-accumulo</module>
                 <module>metrics-reporter</module>
             </modules>

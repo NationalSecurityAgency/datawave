@@ -83,6 +83,16 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         else if (instance.isType(BOUNDED_RANGE)) {
             LiteralRange<?> range = rangeFinder.getRange(node);
             if (range != null) {
+
+                if (range.areBoundsEquivalent()) {
+                    log.warn("lower and upper bound are equivalent: {}", range);
+                }
+
+                if (range.isLowerBoundGreaterThanUpperBound()) {
+                    log.error("lower bound is greater than the upper bound: {}", range);
+                    throw new IllegalStateException("lower bound is greater than upper bound");
+                }
+
                 try {
                     return buildIndexLookup(node, true, false, () -> createLookup(range));
                 } catch (IllegalRangeArgumentException e) {

@@ -2,78 +2,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>gov.nsa.datawave.microservice</groupId>
-        <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.1-SNAPSHOT</version>
-        <relativePath>../../microservices/microservice-parent/pom.xml</relativePath>
+        <groupId>gov.nsa.datawave.core</groupId>
+        <artifactId>datawave-core-parent</artifactId>
+        <version>7.24.0-SNAPSHOT</version>
     </parent>
     <artifactId>base-rest-responses</artifactId>
-    <version>4.0.2-SNAPSHOT</version>
-    <url>https://code.nsa.gov/datawave-base-rest-responses</url>
-    <licenses>
-        <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-base-rest-responses.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-base-rest-responses.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-base-rest-responses</url>
-    </scm>
+    <name>${project.artifactId}</name>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <version.commons-lang3>3.12.0</version.commons-lang3>
-        <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
-        <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
-        <version.jaxb>2.3.3</version.jaxb>
-        <version.powermock>2.0.9</version.powermock>
-        <version.protobuf>2.5.0</version.protobuf>
-        <version.protostuff>1.6.2</version.protostuff>
-        <version.slf4j>1.7.29</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${version.protobuf}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
-                <version>${version.jaxb}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave.accumulo-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>common-utils</artifactId>
-                <version>${version.datawave.common-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.protostuff</groupId>
-                <artifactId>protostuff-api</artifactId>
-                <version>${version.protostuff}</version>
+                <version>${version.jaxb-impl}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jaxb}</version>
+                <version>${version.jakarta}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.commons-lang3}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${version.slf4j}</version>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>
@@ -101,11 +55,11 @@
             <artifactId>jaxb-impl</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>

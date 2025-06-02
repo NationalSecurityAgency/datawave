@@ -14,10 +14,13 @@ public class AncestorQueryIteratorIT extends QueryIteratorIT {
     @Before
     public void setup() throws IOException {
         super.setup();
-        iterator = new AncestorQueryIterator();
 
         // adding the HIT_LIST option tells the query iterator to use a HitListArithmetic
         options.put(QueryOptions.HIT_LIST, "true");
+    }
+
+    protected Class getIteratorClass() {
+        return AncestorQueryIterator.class;
     }
 
     /**
