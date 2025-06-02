@@ -13,17 +13,17 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
     /**
      * A valid phone number must contain at least 7 digits.
      */
-    private static int MIN_LENGTH = 7;
+    private static final int MIN_LENGTH = 7;
 
     /**
      * Phone numbers cannot have more than 15 digits.
      */
-    private static int MAX_LENGTH = 15;
+    private static final int MAX_LENGTH = 15;
 
     /**
      * Valid digits.
      */
-    private static String DIGITS = "0123456789";
+    private static final String DIGITS = "0123456789";
 
     /**
      * @param number
@@ -96,7 +96,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         int start = 0;
         int end = data.length - 1;
 
-        /**
+        /*
          * This normalizer is just worrying about stripping punctuation from phone numbers, so if this is a string of digits, just return instead of doing the
          * other checks.
          */
@@ -243,7 +243,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
      *             If data does not contain a possible phone number
      */
     private static String basicPhoneNumberCheck(String number) {
-        /**
+        /*
          * This normalizer is just worrying about stripping punctuation from phone numbers, so if this is a string of digits, just return instead of doing the
          * other checks.
          */
@@ -373,7 +373,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
     @Override
     public boolean equals(Object o) {
         if (o instanceof PhoneNumber) {
-            /**
+            /*
              * Consider phone numbers equal if they have the same normalized form.
              */
             return this.toNormalizedString().equals(((PhoneNumber) o).toNormalizedString());
@@ -392,13 +392,10 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
      *
      * @param d
      *            the character to test
-     * @return whether or not the character is a digit
+     * @return whether the character is a digit
      */
     private static boolean isDigit(char d) {
-        if (DIGITS.indexOf(d) >= 0) {
-            return true;
-        }
-        return false;
+        return DIGITS.indexOf(d) >= 0;
     }
 
     /**
@@ -406,7 +403,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
      *
      * @param c
      *            the character to test
-     * @return whether or not the character is a phone number character
+     * @return whether the character is a phone number character
      */
     private static boolean isPhoneNumberCharacter(char c) {
         return ((isDigit(c) || c == ' ' || c == '(' || c == ')' || c == '-' || c == '+' || c == '.'));
@@ -440,7 +437,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
      *
      * @param s
      *            The string to test
-     * @return whether or not the string is an ISBN
+     * @return whether the string is an ISBN
      */
     private static boolean isISBN(String s) {
         if (s.length() == 10) {

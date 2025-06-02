@@ -1,12 +1,5 @@
-package datawave.query.util.keyword;
+package datawave.util.keyword;
 
-import static datawave.query.iterator.logic.KeywordExtractingIterator.MAX_CONTENT_CHARS;
-import static datawave.query.iterator.logic.KeywordExtractingIterator.MAX_KEYWORDS;
-import static datawave.query.iterator.logic.KeywordExtractingIterator.MAX_NGRAMS;
-import static datawave.query.iterator.logic.KeywordExtractingIterator.MAX_SCORE;
-import static datawave.query.iterator.logic.KeywordExtractingIterator.MIN_NGRAMS;
-
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -15,8 +8,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.query.table.parser.ContentKeyValueFactory;
-import datawave.util.keyword.YakeKeywordExtractor;
 import datawave.util.keyword.language.YakeLanguage;
 
 /**
@@ -27,10 +18,16 @@ import datawave.util.keyword.language.YakeLanguage;
  */
 public class KeywordExtractor {
 
+    public static final String MAX_CONTENT_CHARS = "max.content.chars";
     private static final Logger logger = LoggerFactory.getLogger(KeywordExtractor.class);
 
+    public static final String MIN_NGRAMS = "min.ngram.count";
+    public static final String MAX_NGRAMS = "max.ngram.count";
+    public static final String MAX_KEYWORDS = "max.keyword.count";
+    public static final String MAX_SCORE = "max.score";
+
     private final List<String> preferredViews;
-    private final Map<String,byte[]> foundContent;
+    private final Map<String,String> foundContent;
 
     public static final KeywordResults EMPTY_RESULTS = new KeywordResults();
 
@@ -57,12 +54,12 @@ public class KeywordExtractor {
 
     YakeKeywordExtractor yakeKeywordExtractor;
 
-    public KeywordExtractor(String source, List<String> preferredViews, Map<String,byte[]> foundContent, String language, Map<String,String> iteratorOptions) {
+    public KeywordExtractor(String source, List<String> preferredViews, Map<String,String> foundContent, String language, Map<String,String> options) {
         this.source = source;
         this.preferredViews = preferredViews;
         this.foundContent = foundContent;
 
-        parseOptions(iteratorOptions);
+        parseOptions(options);
 
         YakeLanguage yakeLanguage = YakeLanguage.Registry.find(language);
         this.language = yakeLanguage.getLanguageName().toUpperCase(Locale.ROOT);
@@ -80,7 +77,6 @@ public class KeywordExtractor {
     }
 
     public void parseOptions(Map<String,String> iteratorOptions) {
-
         if (iteratorOptions.containsKey(MIN_NGRAMS)) {
             minNGrams = Integer.parseInt(iteratorOptions.get(MIN_NGRAMS));
         }
@@ -97,22 +93,17 @@ public class KeywordExtractor {
             maxScoreThreshold = Float.parseFloat(iteratorOptions.get(MAX_SCORE));
         }
 
-        if (iteratorOptions.containsKey(MAX_CONTENT_CHARS)) {
-            maxContentLength = Integer.parseInt(iteratorOptions.get(MAX_CONTENT_CHARS));
+        if (iteratorOptions.containsKey(KeywordExtractor.MAX_CONTENT_CHARS)) {
+            maxContentLength = Integer.parseInt(iteratorOptions.get(KeywordExtractor.MAX_CONTENT_CHARS));
         }
     }
 
     public KeywordResults extractKeywords() {
         KeywordResults results = EMPTY_RESULTS;
         for (String viewName : preferredViews) {
-            for (Map.Entry<String,byte[]> foundEntry : foundContent.entrySet()) {
-                String[] parts = foundEntry.getKey().split(":");
-                if (parts.length > 0 && viewName.equals(parts[0])) {
-                    final byte[] encodedContent = foundEntry.getValue();
-                    final byte[] decodedContent = ContentKeyValueFactory.decodeAndDecompressContent(encodedContent);
-                    final String decodedString = new String(decodedContent, StandardCharsets.UTF_8);
-                    final String input = decodedString.substring(0, Math.min(decodedString.length(), maxContentLength));
-                    final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(input);
+            for (Map.Entry<String,String> foundEntry : foundContent.entrySet()) {
+                if (viewName.equals(foundEntry.getKey())) {
+                    final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(foundEntry.getValue());
                     if (logger.isDebugEnabled()) {
                         logger.debug("Extracted {} keywords from {} view.", keywords.size(), viewName);
                     }

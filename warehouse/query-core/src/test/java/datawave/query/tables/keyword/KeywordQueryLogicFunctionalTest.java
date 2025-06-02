@@ -40,8 +40,8 @@ import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
-import datawave.query.util.keyword.KeywordResults;
 import datawave.util.TableName;
+import datawave.util.keyword.KeywordResults;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 @RunWith(Arquillian.class)

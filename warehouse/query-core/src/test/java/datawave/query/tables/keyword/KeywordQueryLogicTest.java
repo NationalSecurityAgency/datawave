@@ -46,7 +46,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.util.keyword.KeywordResults;
+import datawave.util.keyword.KeywordResults;
 import datawave.webservice.query.exception.QueryException;
 
 @SuppressWarnings("rawtypes")

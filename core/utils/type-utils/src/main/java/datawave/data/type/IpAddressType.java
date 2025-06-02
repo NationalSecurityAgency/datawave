@@ -26,11 +26,11 @@ public class IpAddressType extends BaseType<IpAddress> {
     /**
      * calculate the size based on the type of ip address type this is. Do not include the normalizer except a reference
      *
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
-        long base = STATIC_SIZE + (2 * normalizedValue.length());
+        long base = STATIC_SIZE + (2L * normalizedValue.length());
         long ipSize;
         if (delegate instanceof IpV4Address) {
             ipSize = PrecomputedSizes.IPV4ADDRESS_STATIC_REF;

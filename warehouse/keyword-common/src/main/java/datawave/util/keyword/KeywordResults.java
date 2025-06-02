@@ -1,4 +1,4 @@
-package datawave.query.util.keyword;
+package datawave.util.keyword;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
