@@ -394,6 +394,7 @@ public class QueryOptionsTest {
     @Test
     public void testAllOptionsHaveDefaultOptionSpecified() throws JsonProcessingException {
         ObjectMapper mapper = JsonMapper.builder().build();
+        mapper.addMixIn(QueryOptions.class, QueryOptionsMixin.class);
         ObjectWriter writer = mapper.writer().withoutAttribute("script");
         JsonNode node = mapper.readTree(writer.writeValueAsString(new QueryOptions()));
         Set<String> properties = new HashSet<>();
