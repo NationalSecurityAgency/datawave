@@ -303,7 +303,7 @@ public class QueryOptions implements OptionDescriber {
     protected String scanId;
     protected String query;
     protected String queryId;
-    
+
     private ASTJexlScript script;
     protected boolean disableEvaluation = false;
     protected boolean disableFiEval = false;
@@ -315,7 +315,6 @@ public class QueryOptions implements OptionDescriber {
     protected int compositeSeekThreshold = 10;
     protected DocumentSerialization.ReturnType returnType = DocumentSerialization.ReturnType.kryo;
 
-    
     private DocumentSerializer documentSerializer;
     protected boolean reducedResponse = false;
     protected boolean fullTableScanOnly = false;
@@ -336,25 +335,21 @@ public class QueryOptions implements OptionDescriber {
     protected UniqueFields uniqueFields = new UniqueFields();
     protected int uniqueCacheBufferSize = 100;
 
-
-    
     protected Set<String> hitsOnlySet = new HashSet<>();
     protected Function<Range,Key> getDocumentKey;
-    
-    protected FieldIndexAggregator fiAggregator;
-    
-    protected Equality equality;
 
+    protected FieldIndexAggregator fiAggregator;
+
+    protected Equality equality;
 
     // filter for any key type (fi, event, tf)
     protected EventDataQueryFilter fiEvaluationFilter;
-    
+
     protected EventDataQueryFilter evaluationFilter;
     // filter specifically for event keys. required when performing a seeking aggregation
-    
+
     protected EventDataQueryFilter eventEvaluationFilter;
 
-    
     protected EventDataQueryFilter eventFilter;
     protected int maxEvaluationPipelines = 25;
     protected int maxPipelineCachedResults = 25;
@@ -367,12 +362,10 @@ public class QueryOptions implements OptionDescriber {
 
     protected List<String> documentPermutationClasses = new ArrayList<>();
 
-    
     protected List<DocumentPermutation> documentPermutations = null;
     protected long startTime = 0L;
     protected long endTime = System.currentTimeMillis();
 
-    
     protected TimeFilter timeFilter = null;
     // this flag control whether we filter the masked fields for results that
     // contain both the unmasked and masked variants. True by default.
@@ -393,7 +386,6 @@ public class QueryOptions implements OptionDescriber {
     protected String hdfsSiteConfigURLs = null;
     protected String hdfsFileCompressionCodec = null;
 
-    
     protected FileSystemCache fsCache = null;
     protected String zookeeperConfig = null;
 
@@ -407,7 +399,6 @@ public class QueryOptions implements OptionDescriber {
     protected int ivaratorMaxOpenFiles = 100;
     protected int ivaratorNumRetries = 2;
 
-    
     protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     protected int maxIvaratorSources = 33;
     protected long maxIvaratorSourceWait = 1000L * 60 * 30;
@@ -419,7 +410,6 @@ public class QueryOptions implements OptionDescriber {
 
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
 
-    
     protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
     protected String postProcessingFunctions = "";
 
@@ -443,7 +433,6 @@ public class QueryOptions implements OptionDescriber {
     protected String statsdHostAndPort = null;
     protected int statsdMaxQueueSize = 500;
 
-    
     protected QueryStatsDClient statsdClient = null;
     protected boolean serialEvaluationPipeline = false;
 
@@ -493,7 +482,7 @@ public class QueryOptions implements OptionDescriber {
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
     private long cardinalityThreshold = Long.MIN_VALUE;
-    
+
     private long cardinality = Long.MAX_VALUE;
 
     public void deepCopy(QueryOptions other) {
@@ -707,7 +696,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return the document serializer
      */
-    
+
     public DocumentSerializer getDocumentSerializer() {
         if (documentSerializer == null) {
             switch (returnType) {
@@ -728,7 +717,6 @@ public class QueryOptions implements OptionDescriber {
         return documentSerializer;
     }
 
-    
     public void setDocumentSerializer(DocumentSerializer documentSerializer) {
         this.documentSerializer = documentSerializer;
     }
@@ -753,7 +741,6 @@ public class QueryOptions implements OptionDescriber {
         return fullTableScanOnly;
     }
 
-    
     public Predicate<Key> getEventEntryKeyDataTypeFilter() {
         return this.eventEntryKeyDataTypeFilter;
     }
@@ -857,12 +844,10 @@ public class QueryOptions implements OptionDescriber {
         return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
     }
 
-    
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
         this.evaluationFilter = evaluationFilter;
     }
 
-    
     public void setFiEvaluationFilter(EventDataQueryFilter fiEvaluationFilter) {
         this.fiEvaluationFilter = fiEvaluationFilter;
     }
@@ -908,7 +893,6 @@ public class QueryOptions implements OptionDescriber {
         return eventFilter == null ? null : eventFilter.clone();
     }
 
-    
     public void setEventEvaluationFilter(EventDataQueryFilter eventEvaluationFilter) {
         this.eventEvaluationFilter = eventEvaluationFilter;
     }
@@ -945,12 +929,10 @@ public class QueryOptions implements OptionDescriber {
         return fields;
     }
 
-    
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
 
-    
     public void setTimeFilter(TimeFilter timeFilter) {
         this.timeFilter = timeFilter;
     }
@@ -971,7 +953,6 @@ public class QueryOptions implements OptionDescriber {
         return this.indexOnlyFields;
     }
 
-    
     public Set<String> getAllIndexOnlyFields() {
         Set<String> allIndexOnlyFields = new HashSet<>();
         // index only fields are by definition not in the event
@@ -996,7 +977,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return a set of event fields
      */
-    
+
     public Set<String> getNonEventFields() {
         Set<String> nonEventFields = new HashSet<>();
         // index only fields are by definition not in the event
@@ -1040,7 +1021,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return the union of all configured fields
      */
-    
+
     public Set<String> getAllFields() {
         Set<String> allFields = new HashSet<>();
         // includes index only fields plus composite fields
@@ -1078,7 +1059,6 @@ public class QueryOptions implements OptionDescriber {
         return hdfsSiteConfigURLs;
     }
 
-    
     public FileSystemCache getFileSystemCache() throws MalformedURLException {
         if (this.fsCache == null && this.hdfsSiteConfigURLs != null) {
             this.fsCache = new FileSystemCache(this.hdfsSiteConfigURLs);
@@ -1086,11 +1066,10 @@ public class QueryOptions implements OptionDescriber {
         return this.fsCache;
     }
 
-    
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
         return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
-                .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
-                .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
+                        .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
+                        .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
     }
 
     public void setHdfsSiteConfigURLs(String hadoopConfigURLs) {
@@ -1241,7 +1220,6 @@ public class QueryOptions implements OptionDescriber {
         this.matchingFieldSets = matchingFieldSets;
     }
 
-    
     public List<String> getMatchingFieldList() {
         return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
     }
@@ -1282,12 +1260,10 @@ public class QueryOptions implements OptionDescriber {
         return uniqueFields;
     }
 
-    
     public Set<String> getHitsOnlySet() {
         return hitsOnlySet;
     }
 
-    
     public void setHitsOnlySet(Set<String> hitsOnlySet) {
         this.hitsOnlySet = hitsOnlySet;
     }
