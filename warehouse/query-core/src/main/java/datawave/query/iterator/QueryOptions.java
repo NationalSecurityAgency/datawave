@@ -302,9 +302,9 @@ public class QueryOptions implements OptionDescriber {
 
     protected String scanId;
     protected String query;
-    @JsonIgnore
-    private ASTJexlScript script;
     protected String queryId;
+    
+    private ASTJexlScript script;
     protected boolean disableEvaluation = false;
     protected boolean disableFiEval = false;
     protected long sourceLimit = -1;
@@ -314,9 +314,9 @@ public class QueryOptions implements OptionDescriber {
     protected CompositeMetadata compositeMetadata = null;
     protected int compositeSeekThreshold = 10;
     protected DocumentSerialization.ReturnType returnType = DocumentSerialization.ReturnType.kryo;
-    @JsonIgnore
-    private DocumentSerializer documentSerializer;
 
+    
+    private DocumentSerializer documentSerializer;
     protected boolean reducedResponse = false;
     protected boolean fullTableScanOnly = false;
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
@@ -336,26 +336,26 @@ public class QueryOptions implements OptionDescriber {
     protected UniqueFields uniqueFields = new UniqueFields();
     protected int uniqueCacheBufferSize = 100;
 
-    @JsonIgnore
+
+    
     protected Set<String> hitsOnlySet = new HashSet<>();
-
     protected Function<Range,Key> getDocumentKey;
-
-    @JsonIgnore
+    
     protected FieldIndexAggregator fiAggregator;
-    @JsonIgnore
+    
     protected Equality equality;
 
-    // filter for any key type (fi, event, tf)
-    @JsonIgnore
-    protected EventDataQueryFilter evaluationFilter;
-    protected EventDataQueryFilter fiEvaluationFilter;
-    @JsonIgnore
-    protected EventDataQueryFilter eventEvaluationFilter;
-    // filter specifically for event keys. required when performing a seeking aggregation
-    @JsonIgnore
-    protected EventDataQueryFilter eventFilter;
 
+    // filter for any key type (fi, event, tf)
+    protected EventDataQueryFilter fiEvaluationFilter;
+    
+    protected EventDataQueryFilter evaluationFilter;
+    // filter specifically for event keys. required when performing a seeking aggregation
+    
+    protected EventDataQueryFilter eventEvaluationFilter;
+
+    
+    protected EventDataQueryFilter eventFilter;
     protected int maxEvaluationPipelines = 25;
     protected int maxPipelineCachedResults = 25;
 
@@ -366,14 +366,14 @@ public class QueryOptions implements OptionDescriber {
     protected boolean includeGroupingContext = false;
 
     protected List<String> documentPermutationClasses = new ArrayList<>();
-    @JsonIgnore
-    protected List<DocumentPermutation> documentPermutations = null;
 
+    
+    protected List<DocumentPermutation> documentPermutations = null;
     protected long startTime = 0L;
     protected long endTime = System.currentTimeMillis();
-    @JsonIgnore
-    protected TimeFilter timeFilter = null;
 
+    
+    protected TimeFilter timeFilter = null;
     // this flag control whether we filter the masked fields for results that
     // contain both the unmasked and masked variants. True by default.
 
@@ -392,9 +392,9 @@ public class QueryOptions implements OptionDescriber {
 
     protected String hdfsSiteConfigURLs = null;
     protected String hdfsFileCompressionCodec = null;
-    @JsonIgnore
-    protected FileSystemCache fsCache = null;
 
+    
+    protected FileSystemCache fsCache = null;
     protected String zookeeperConfig = null;
 
     protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
@@ -406,9 +406,9 @@ public class QueryOptions implements OptionDescriber {
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
     protected int ivaratorNumRetries = 2;
-    @JsonIgnore
-    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
+    
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     protected int maxIvaratorSources = 33;
     protected long maxIvaratorSourceWait = 1000L * 60 * 30;
 
@@ -418,9 +418,9 @@ public class QueryOptions implements OptionDescriber {
     protected long maxYields = 10;
 
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
-    @JsonIgnore
-    protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
 
+    
+    protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
     protected String postProcessingFunctions = "";
 
     protected Map<String,Set<String>> nonIndexedDataTypeMap = Maps.newHashMap();
@@ -442,9 +442,9 @@ public class QueryOptions implements OptionDescriber {
 
     protected String statsdHostAndPort = null;
     protected int statsdMaxQueueSize = 500;
-    @JsonIgnore
-    protected QueryStatsDClient statsdClient = null;
 
+    
+    protected QueryStatsDClient statsdClient = null;
     protected boolean serialEvaluationPipeline = false;
 
     protected String metadataTableName;
@@ -492,9 +492,9 @@ public class QueryOptions implements OptionDescriber {
     private CountMap fieldCounts;
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
-    @JsonIgnore
-    private long cardinality = Long.MAX_VALUE;
     private long cardinalityThreshold = Long.MIN_VALUE;
+    
+    private long cardinality = Long.MAX_VALUE;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -702,16 +702,12 @@ public class QueryOptions implements OptionDescriber {
         return returnType;
     }
 
-    public void setReturnType(DocumentSerialization.ReturnType returnType) {
-        this.returnType = returnType;
-    }
-
     /**
      * Get the document serializer. If no serializer exists, create one based on the return type
      *
      * @return the document serializer
      */
-    @JsonIgnore
+    
     public DocumentSerializer getDocumentSerializer() {
         if (documentSerializer == null) {
             switch (returnType) {
@@ -732,9 +728,13 @@ public class QueryOptions implements OptionDescriber {
         return documentSerializer;
     }
 
-    @JsonIgnore
+    
     public void setDocumentSerializer(DocumentSerializer documentSerializer) {
         this.documentSerializer = documentSerializer;
+    }
+
+    public void setReturnType(DocumentSerialization.ReturnType returnType) {
+        this.returnType = returnType;
     }
 
     public boolean isReducedResponse() {
@@ -749,13 +749,13 @@ public class QueryOptions implements OptionDescriber {
         return this.fieldIndexKeyDataTypeFilter;
     }
 
-    @JsonIgnore
-    public Predicate<Key> getEventEntryKeyDataTypeFilter() {
-        return this.eventEntryKeyDataTypeFilter;
-    }
-
     public boolean isFullTableScanOnly() {
         return fullTableScanOnly;
+    }
+
+    
+    public Predicate<Key> getEventEntryKeyDataTypeFilter() {
+        return this.eventEntryKeyDataTypeFilter;
     }
 
     public void setFullTableScanOnly(boolean fullTableScanOnly) {
@@ -857,6 +857,16 @@ public class QueryOptions implements OptionDescriber {
         return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
     }
 
+    
+    public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
+        this.evaluationFilter = evaluationFilter;
+    }
+
+    
+    public void setFiEvaluationFilter(EventDataQueryFilter fiEvaluationFilter) {
+        this.fiEvaluationFilter = fiEvaluationFilter;
+    }
+
     public EventDataQueryFilter getEventEvaluationFilter() {
         if (evaluationFilter == null) {
             // allows standard event queries to perform a seeking aggregation with field filtering
@@ -868,21 +878,6 @@ public class QueryOptions implements OptionDescriber {
         }
 
         return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
-    }
-
-    @JsonIgnore
-    public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
-        this.evaluationFilter = evaluationFilter;
-    }
-
-    @JsonIgnore
-    public void setFiEvaluationFilter(EventDataQueryFilter fiEvaluationFilter) {
-        this.fiEvaluationFilter = fiEvaluationFilter;
-    }
-
-    @JsonIgnore
-    public void setEventEvaluationFilter(EventDataQueryFilter eventEvaluationFilter) {
-        this.eventEvaluationFilter = eventEvaluationFilter;
     }
 
     /**
@@ -911,6 +906,11 @@ public class QueryOptions implements OptionDescriber {
         }
 
         return eventFilter == null ? null : eventFilter.clone();
+    }
+
+    
+    public void setEventEvaluationFilter(EventDataQueryFilter eventEvaluationFilter) {
+        this.eventEvaluationFilter = eventEvaluationFilter;
     }
 
     /**
@@ -945,18 +945,18 @@ public class QueryOptions implements OptionDescriber {
         return fields;
     }
 
-    private Set<String> getQueryFields() {
-        return JexlASTHelper.getIdentifierNames(getScript());
-    }
-
-    @JsonIgnore
+    
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
 
-    @JsonIgnore
+    
     public void setTimeFilter(TimeFilter timeFilter) {
         this.timeFilter = timeFilter;
+    }
+
+    private Set<String> getQueryFields() {
+        return JexlASTHelper.getIdentifierNames(getScript());
     }
 
     public Map<String,Set<String>> getNonIndexedDataTypeMap() {
@@ -971,11 +971,7 @@ public class QueryOptions implements OptionDescriber {
         return this.indexOnlyFields;
     }
 
-    public Set<String> getIndexedFields() {
-        return this.indexedFields;
-    }
-
-    @JsonIgnore
+    
     public Set<String> getAllIndexOnlyFields() {
         Set<String> allIndexOnlyFields = new HashSet<>();
         // index only fields are by definition not in the event
@@ -1000,7 +996,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return a set of event fields
      */
-    @JsonIgnore
+    
     public Set<String> getNonEventFields() {
         Set<String> nonEventFields = new HashSet<>();
         // index only fields are by definition not in the event
@@ -1024,6 +1020,14 @@ public class QueryOptions implements OptionDescriber {
         return nonEventFields;
     }
 
+    public Set<String> getIndexedFields() {
+        return this.indexedFields;
+    }
+
+    public boolean isContainsIndexOnlyTerms() {
+        return containsIndexOnlyTerms;
+    }
+
     /**
      * Get the union of all fields set via the following QueryOptions
      * <ul>
@@ -1036,7 +1040,7 @@ public class QueryOptions implements OptionDescriber {
      *
      * @return the union of all configured fields
      */
-    @JsonIgnore
+    
     public Set<String> getAllFields() {
         Set<String> allFields = new HashSet<>();
         // includes index only fields plus composite fields
@@ -1048,10 +1052,6 @@ public class QueryOptions implements OptionDescriber {
         // also grab non-indexed fields
         allFields.addAll(getNonIndexedDataTypeMap().keySet());
         return allFields;
-    }
-
-    public boolean isContainsIndexOnlyTerms() {
-        return containsIndexOnlyTerms;
     }
 
     public void setContainsIndexOnlyTerms(boolean containsIndexOnlyTerms) {
@@ -1078,11 +1078,7 @@ public class QueryOptions implements OptionDescriber {
         return hdfsSiteConfigURLs;
     }
 
-    public void setHdfsSiteConfigURLs(String hadoopConfigURLs) {
-        this.hdfsSiteConfigURLs = hadoopConfigURLs;
-    }
-
-    @JsonIgnore
+    
     public FileSystemCache getFileSystemCache() throws MalformedURLException {
         if (this.fsCache == null && this.hdfsSiteConfigURLs != null) {
             this.fsCache = new FileSystemCache(this.hdfsSiteConfigURLs);
@@ -1090,11 +1086,15 @@ public class QueryOptions implements OptionDescriber {
         return this.fsCache;
     }
 
-    @JsonIgnore
+    
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
         return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
-                        .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
-                        .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
+                .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
+                .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
+    }
+
+    public void setHdfsSiteConfigURLs(String hadoopConfigURLs) {
+        this.hdfsSiteConfigURLs = hadoopConfigURLs;
     }
 
     public String getHdfsFileCompressionCodec() {
@@ -1237,13 +1237,13 @@ public class QueryOptions implements OptionDescriber {
         return matchingFieldSets;
     }
 
-    @JsonIgnore
-    public List<String> getMatchingFieldList() {
-        return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
-    }
-
     public void setMatchingFieldSets(Set<Set<String>> matchingFieldSets) {
         this.matchingFieldSets = matchingFieldSets;
+    }
+
+    
+    public List<String> getMatchingFieldList() {
+        return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
     }
 
     public boolean isLimitFieldsPreQueryEvaluation() {
@@ -1282,18 +1282,18 @@ public class QueryOptions implements OptionDescriber {
         return uniqueFields;
     }
 
-    public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields.clone();
-    }
-
-    @JsonIgnore
+    
     public Set<String> getHitsOnlySet() {
         return hitsOnlySet;
     }
 
-    @JsonIgnore
+    
     public void setHitsOnlySet(Set<String> hitsOnlySet) {
         this.hitsOnlySet = hitsOnlySet;
+    }
+
+    public void setUniqueFields(UniqueFields uniqueFields) {
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public boolean isDateIndexTimeTravel() {
