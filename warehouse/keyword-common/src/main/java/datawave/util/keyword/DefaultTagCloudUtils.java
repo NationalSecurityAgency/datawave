@@ -2,6 +2,7 @@ package datawave.util.keyword;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -17,16 +18,16 @@ public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
     private static final long serialVersionUID = 652771994052429009L;
 
     @Override
-    public String generateCombinedVisibility(Set<String> visibilities) {
+    public Map<String,String> generateCombinedVisibility(Set<String> visibilities) {
         final StringBuilder b = new StringBuilder();
         visibilities.forEach(x -> b.append("(").append(x).append(")&"));
         if (b.length() > 0) {
             b.setLength(b.length() - 1);
             ColumnVisibility cv = new ColumnVisibility(b.toString());
             ColumnVisibility flat = new ColumnVisibility(cv.flatten());
-            return flat.toString();
+            return Map.of("visibility", flat.toString());
         } else {
-            return "";
+            return Collections.emptyMap();
         }
     }
 

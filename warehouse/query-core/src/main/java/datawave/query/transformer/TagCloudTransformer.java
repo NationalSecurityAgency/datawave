@@ -3,7 +3,6 @@ package datawave.query.transformer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -161,8 +160,8 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
             if (!tagCloudResult.getName().isBlank()) {
                 tagCloud.setLanguage(tagCloudResult.getName());
             }
-            if (!tagCloudResult.getVisibility().isBlank()) {
-                tagCloud.setMarkings(Map.of("visibility", tagCloudResult.getVisibility()));
+            if (!tagCloudResult.getVisibility().isEmpty()) {
+                tagCloud.setMarkings(tagCloudResult.getVisibility());
             }
             tagCloud.setTags(generateTagCloudEntries(tagCloudResult));
             tagClouds.add(tagCloud);

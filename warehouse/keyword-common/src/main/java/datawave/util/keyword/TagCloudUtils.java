@@ -16,7 +16,7 @@ public interface TagCloudUtils {
      *            a set of valid visibility strings.
      * @return a single visibility
      */
-    String generateCombinedVisibility(Set<String> visibilities);
+    Map<String,String> generateCombinedVisibility(Set<String> visibilities);
 
     /**
      * find the index key from the keyword results and keyword. Usually,the index key just the keyword, but when we're partitioning by language, we'll add the

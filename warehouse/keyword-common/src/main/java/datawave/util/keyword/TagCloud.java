@@ -23,7 +23,7 @@ public class TagCloud {
     final String name;
 
     /** the 'visibility' of this cloud */
-    final String visibility;
+    final Map<String,String> visibility;
 
     /** the sorted set of keywords in this cloud, including scores and sources */
     final SortedSet<TagCloudEntry> results;
@@ -38,7 +38,7 @@ public class TagCloud {
      * @param results
      *            the entries that belong in the tag cloud.
      */
-    protected TagCloud(String name, String visibility, SortedSet<TagCloudEntry> results) {
+    protected TagCloud(String name, Map<String,String> visibility, SortedSet<TagCloudEntry> results) {
         this.name = name;
         this.visibility = visibility;
         this.results = results;
@@ -48,7 +48,7 @@ public class TagCloud {
         return name;
     }
 
-    public String getVisibility() {
+    public Map<String,String> getVisibility() {
         return visibility;
     }
 
@@ -196,7 +196,7 @@ public class TagCloud {
             for (Map.Entry<String,PriorityQueue<TagCloudEntry>> e : queueMap.entrySet()) {
                 final SortedSet<TagCloudEntry> results = new TreeSet<>(comparator);
                 results.addAll(e.getValue());
-                String visibility = utils.generateCombinedVisibility(visibilities.get(e.getKey()));
+                Map<String,String> visibility = utils.generateCombinedVisibility(visibilities.get(e.getKey()));
                 tagClouds.add(new TagCloud(e.getKey(), visibility, results));
             }
 
