@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
@@ -128,7 +130,7 @@ public class DocumentRangeScan implements RunnableWithContext {
         IteratorSetting setting = createScanIterator();
         IteratorSetting appliedSettings = config.getVisitorFunction().apply(setting, ranges);
 
-        try (Scanner scanner = config.getClient().createScanner(keyWithContext.getContext().getTableName(), auths)) {
+        try (Scanner scanner = createScanner()) {
             scanner.addScanIterator(appliedSettings);
 
             for (Range range : ranges) {
@@ -140,6 +142,28 @@ public class DocumentRangeScan implements RunnableWithContext {
             log.error("exception while fetching document", e);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Create a scanner and configure it with an execution hint and consistency level
+     *
+     * @return a configured scanner
+     * @throws Exception
+     *             if something goes wrong
+     */
+    private Scanner createScanner() throws Exception {
+        String tableName = keyWithContext.getContext().getTableName();
+        Scanner scanner = config.getClient().createScanner(tableName, auths);
+
+        if (config.getRetrievalScanHintTable() != null && config.getRetrievalScanHintPool() != null) {
+            Preconditions.checkArgument(tableName.equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
+            scanner.setExecutionHints(Map.of(config.getRetrievalScanHintTable(), config.getRetrievalScanHintPool()));
+        }
+
+        if (config.getSearchConsistencyLevel() != null) {
+            scanner.setConsistencyLevel(ConsistencyLevel.valueOf(config.getRetrievalConsistencyLevel()));
+        }
+        return scanner;
     }
 
     private void executeDocumentScan() {
