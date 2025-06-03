@@ -1,0 +1,10 @@
+androids dream=0.1273
+blade runner=0.0168
+cyberpunk films=0.1386
+film blade=0.133
+japanese cyberpunk=0.0561
+new wave=0.0842
+philip k=0.0346
+science fiction=0.0502
+western cyberpunk=0.1367
+william gibson=0.0951

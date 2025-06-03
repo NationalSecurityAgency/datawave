@@ -80,6 +80,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
@@ -96,7 +97,7 @@ public class MultiValueCompositeIndexTest {
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final int NUM_SHARDS = 241;
+    private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
@@ -310,6 +311,12 @@ public class MultiValueCompositeIndexTest {
             }
             writer.close();
         }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_" + NUM_SHARDS, new Value());
+            bw.addMutation(m);
+        }
     }
 
     @Test
@@ -322,8 +329,13 @@ public class MultiValueCompositeIndexTest {
                 "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
         // @formatter:on
 
-        List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(3, queries.size());
+        if (!logic.isUseDocumentScheduler()) {
+            // the underlying call to getQueryRanges creates the DocumentScheduler which begins pulling ranges
+            // immediately from the ThreadedRangeBundler. The test framework also begins pulling ranges and the
+            // final count is obviously incorrect
+            List<QueryData> queries = getQueryRanges(query, false);
+            Assert.assertEquals(2, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(query, false);
         Assert.assertEquals(3, events.size());
@@ -356,8 +368,13 @@ public class MultiValueCompositeIndexTest {
                        "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
         // @formatter:on
 
-        List<QueryData> queries = getQueryRanges(query, true);
-        Assert.assertEquals(732, queries.size());
+        if (!logic.isUseDocumentScheduler()) {
+            // the underlying call to getQueryRanges creates the DocumentScheduler which begins pulling ranges
+            // immediately from the ThreadedRangeBundler. The test framework also begins pulling ranges and the
+            // final count is obviously incorrect
+            List<QueryData> queries = getQueryRanges(query, true);
+            Assert.assertEquals(2196, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(query, true);
         Assert.assertEquals(3, events.size());
@@ -385,8 +402,14 @@ public class MultiValueCompositeIndexTest {
 
         Iterator iter = getQueryRangesIterator(queryString, logic);
         List<QueryData> queryData = new ArrayList<>();
-        while (iter.hasNext())
+        while (iter.hasNext()) {
             queryData.add((QueryData) iter.next());
+        }
+
+        if (iter instanceof CloseableIterable) {
+            ((CloseableIterable<?>) iter).close();
+        }
+
         return queryData;
     }
 

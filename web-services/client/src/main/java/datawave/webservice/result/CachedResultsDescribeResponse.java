@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.NONE)
 public class CachedResultsDescribeResponse extends BaseResponse {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 8907385255869520517L;
 
     @XmlElement(name = "View")
     private String view = null;

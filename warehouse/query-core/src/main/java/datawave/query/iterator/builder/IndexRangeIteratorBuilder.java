@@ -81,6 +81,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withMaxRangeSplit(maxRangeSplit)
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withTermNumber(termNumber)
                         .withNumRetries(ivaratorNumRetries)
                         .withPersistOptions(ivaratorPersistOptions)
                         .withMaxResults(maxIvaratorResults)
@@ -94,6 +95,9 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withSubRanges(subRanges)
                         .withIteratorEnv(env)
                         .withIvaratorSourcePool(ivaratorSourcePool)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver)
                         .build();
                 // @formatter:on
 

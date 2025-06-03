@@ -30,7 +30,7 @@ public class ContentTransform extends DocumentTransform.DefaultDocumentTransform
             Document document = keyDocumentEntry.getValue();
             Key documentKey = DocumentTransformer.correctKey(keyDocumentEntry.getKey());
             String colf = documentKey.getColumnFamily().toString();
-            int index = colf.indexOf("\0");
+            int index = colf.indexOf('\0');
             String uid = colf.substring(index + 1);
 
             for (String contentFieldName : this.contentFieldNames) {

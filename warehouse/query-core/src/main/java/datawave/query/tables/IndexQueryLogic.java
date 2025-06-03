@@ -25,6 +25,10 @@ public class IndexQueryLogic extends ShardQueryLogic {
         return new IndexQueryLogic(this);
     }
 
+    public boolean isUseDocumentScheduler() {
+        return false;
+    }
+
     @Override
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
         Preconditions.checkArgument(!fullTableScanEnabled, "The IndexQueryLogic does not support full-table scans");

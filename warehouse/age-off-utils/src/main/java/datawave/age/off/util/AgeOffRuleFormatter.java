@@ -50,14 +50,14 @@ public class AgeOffRuleFormatter {
         writer.write(transformToXmlString(ruleConfig));
     }
 
-    private AgeOffRuleLoader.RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig(this.configuration.getFilterClass().getName(), index++);
+    private static AgeOffRuleLoader.RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
+        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig(configuration.getFilterClass().getName(), index++);
         ruleConfig.label(configuration.getRuleLabel());
-        ruleConfig.setIsMerge(this.configuration.shouldMerge());
-        ruleConfig.ttlValue(this.configuration.getTtlDuration());
-        ruleConfig.ttlUnits(this.configuration.getTtlUnits());
-        ruleConfig.matchPattern(buildMatchPattern());
-        ruleConfig.customElements(this.configuration.getCustomElements());
+        ruleConfig.setIsMerge(configuration.shouldMerge());
+        ruleConfig.ttlValue(configuration.getTtlDuration());
+        ruleConfig.ttlUnits(configuration.getTtlUnits());
+        ruleConfig.matchPattern(buildMatchPattern(configuration, configuration.getIndentation()));
+        ruleConfig.customElements(configuration.getCustomElements());
         return ruleConfig;
     }
 
@@ -93,7 +93,7 @@ public class AgeOffRuleFormatter {
         return Integer.toString(length);
     }
 
-    private String buildMatchPattern() throws IOException {
+    private static String buildMatchPattern(AgeOffRuleConfiguration configuration, String indent) throws IOException {
         if (configuration.getPatternConfiguration() == null) {
             return "";
         }
@@ -104,14 +104,14 @@ public class AgeOffRuleFormatter {
         AgeOffCsvToMatchPatternFormatter patternFormatter = new AgeOffCsvToMatchPatternFormatter(configuration.getPatternConfiguration());
 
         // add two indentations: one for items under the rule element and another for items under the matchPattern element
-        String extraIndentation = this.indent + this.indent;
+        String extraIndentation = indent + indent;
         patternFormatter.write(new IndentingDelegatingWriter(extraIndentation, writer));
 
         String result = writer.toString();
 
         // final indentation to precede the closing of matchPattern
         if (result.endsWith("\n")) {
-            return result + this.indent;
+            return result + indent;
         }
         return result;
     }
