@@ -389,6 +389,8 @@
         <!-- cardinality threshold enables running ivarators as filter iterators -->
         <property name="cardinalityThreshold" value="50"/>
         <property name="disableIteratorUniqueFields" value="false"/>
+        <property name="useDocumentScheduler" value="false"/>
+        <property name="documentScannerConfig" ref="DocumentScannerConfig"/>
         <property name="validationRules">
             <list value-type="datawave.query.rules.QueryRule">
                 <ref bean="InvalidQuoteRule"/>
@@ -506,6 +508,25 @@
         <property name="validateJunctions" value="true"/>
         <property name="validateReferenceExpressions" value="true"/>
         <property name="validateQueryPropertyMarkers" value="true"/>
+    </bean>
+
+    <bean id="DocumentScannerConfig" scope="prototype" class="datawave.next.scanner.DocumentScannerConfig">
+        <!-- configure queue capacities, thread pool sizes, and max tasks per thread pool-->
+        <property name="candidateQueueCapacity" value="25"/>
+        <property name="resultQueueCapacity" value="25"/>
+        <property name="searchThreads" value="5"/>
+        <property name="retrievalThreads" value="5"/>
+        <!--    BatchScannerSession max runnable: 25 max batches: 125    -->
+        <property name="maxSearchTasks" value="125"/>
+        <property name="maxRetrievalTasks" value="125"/>
+        <property name="sortedCandidateQueue" value="true"/>
+        <property name="candidateBatchSize" value="25"/>
+        <property name="candidateQueueOfferTimeMillis" value="25"/>
+        <property name="candidateQueuePollTimeMillis" value="25"/>
+        <property name="resultQueueOfferTimeMillis" value="25"/>
+        <property name="resultQueuePollTimeMillis" value="5"/>
+        <property name="scanTimeoutMillis" value="10000"/>
+        <property name="useQueryIterator" value="true" />
     </bean>
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">

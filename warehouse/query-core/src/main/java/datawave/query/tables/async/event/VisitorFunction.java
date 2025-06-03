@@ -164,208 +164,211 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         SessionOptions newOptions = new SessionOptions(options);
 
         for (IteratorSetting setting : options.getIterators()) {
+            IteratorSetting newIteratorSettings = apply(setting, input.getRanges());
 
-            final String query = setting.getOptions().get(QueryOptions.QUERY);
-            if (null != query) {
-                IteratorSetting newIteratorSetting = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
+            newOptions.removeScanIterator(setting.getName());
+            newOptions.addScanIterator(newIteratorSettings);
 
-                newIteratorSetting.addOptions(setting.getOptions());
-                try {
+            if (log.isDebugEnabled()) {
+                log.debug("VisitorFunction result: " + newSettings.getRanges());
+            }
+        }
 
-                    ASTJexlScript script = null;
+        newSettings.setOptions(newOptions);
+        return newSettings;
+    }
 
-                    boolean evaluatedPreviously = true;
-                    String newQuery = queryCache.getIfPresent(query);
-                    if (newQuery == null) {
-                        evaluatedPreviously = false;
-                        newQuery = query;
-                    }
+    public IteratorSetting apply(IteratorSetting setting, Collection<Range> ranges) {
+        final String query = setting.getOptions().get(QueryOptions.QUERY);
+        if (query == null) {
+            return setting;
+        }
 
-                    boolean madeChange = false;
+        IteratorSetting newIteratorSetting = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
 
-                    if (!evaluatedPreviously && config.isCleanupShardsAndDaysQueryHints()) {
-                        script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                        script = DateIndexCleanupVisitor.cleanup(script);
-                        madeChange = true;
-                    }
+        newIteratorSetting.addOptions(setting.getOptions());
+        try {
 
-                    LinkedList<String> debug = null;
+            ASTJexlScript script = null;
+
+            boolean evaluatedPreviously = true;
+            String newQuery = queryCache.getIfPresent(query);
+            if (newQuery == null) {
+                evaluatedPreviously = false;
+                newQuery = query;
+            }
+
+            boolean madeChange = false;
+
+            if (!evaluatedPreviously && config.isCleanupShardsAndDaysQueryHints()) {
+                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                script = DateIndexCleanupVisitor.cleanup(script);
+                madeChange = true;
+            }
+
+            LinkedList<String> debug = null;
+            if (log.isTraceEnabled()) {
+                debug = new LinkedList<>();
+            }
+
+            if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
+                if (null == script) {
+                    script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                }
+
+                // apply the whindex using the shard date
+                ASTJexlScript rebuiltScript = WhindexVisitor.apply(script, config, getEarliestBeginDate(ranges), metadataHelper);
+
+                // if the query changed, save it, and mark it as such
+                if (!TreeEqualityVisitor.isEqual(script, rebuiltScript)) {
+                    log.debug("[" + config.getQuery().getId() + "] The WhindexVisitor updated the query: " + JexlStringBuildingVisitor.buildQuery(script));
+                    script = rebuiltScript;
+                    madeChange = true;
+                }
+            }
+
+            if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
+                // if the script is not set, recreate it using newQuery
+                // if evaluatedPreviously is true, newQuery will be set to the new, expanded query
+                // if evaluatedPreviously is false, newQuery will be set to the original query
+                if (null == script) {
+                    script = JexlASTHelper.parseAndFlattenJexlQuery(newQuery);
+                }
+
+                if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
+                                this.metadataHelper)) {
+
                     if (log.isTraceEnabled()) {
-                        debug = new LinkedList<>();
+                        log.trace("Need to pull up non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
+                        for (String debugStatement : debug) {
+                            log.trace(debugStatement);
+                        }
+                        DefaultQueryPlanner.logQuery(script, "Failing query:");
+                    }
+                    script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, true, config, indexedFields, indexOnlyFields,
+                                    nonEventFields, metadataHelper);
+                    madeChange = true;
+
+                    STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
+                                    metadataHelper);
+
+                    /**
+                     * We could achieve better performance if we live with the small number of queries that error due to the full table scan exception.
+                     *
+                     * Either look at improving PushdownUnexecutableNodesVisitor or avoid the process altogether.
+                     */
+                    if (state != STATE.EXECUTABLE) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Need to push down non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
+                            for (String debugStatement : debug) {
+                                log.trace(debugStatement);
+                            }
+                        }
+                        script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, true, config, indexedFields, indexOnlyFields,
+                                        nonEventFields, metadataHelper);
                     }
 
-                    if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
-                        if (null == script) {
-                            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                    state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
+                                    metadataHelper);
+
+                    if (state != STATE.EXECUTABLE) {
+                        if (state == STATE.ERROR) {
+                            log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
+                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS);
+                            throw new InvalidQueryException(qe);
                         }
-
-                        // apply the whindex using the shard date
-                        ASTJexlScript rebuiltScript = WhindexVisitor.apply(script, config, getEarliestBeginDate(newSettings.getRanges()), metadataHelper);
-
-                        // if the query changed, save it, and mark it as such
-                        if (!TreeEqualityVisitor.isEqual(script, rebuiltScript)) {
-                            log.debug("[" + config.getQuery().getId() + "] The WhindexVisitor updated the query: "
-                                            + JexlStringBuildingVisitor.buildQuery(script));
-                            script = rebuiltScript;
-                            madeChange = true;
-                        }
-                    }
-
-                    if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
-                        // if the script is not set, recreate it using newQuery
-                        // if evaluatedPreviously is true, newQuery will be set to the new, expanded query
-                        // if evaluatedPreviously is false, newQuery will be set to the original query
-                        if (null == script) {
-                            script = JexlASTHelper.parseAndFlattenJexlQuery(newQuery);
-                        }
-
-                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
-                                        this.metadataHelper)) {
+                        log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
+                        if (!config.getFullTableScanEnabled()) {
 
                             if (log.isTraceEnabled()) {
-                                log.trace("Need to pull up non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
+                                log.trace("Full Table fail of " + JexlStringBuildingVisitor.buildQuery(script));
                                 for (String debugStatement : debug) {
                                     log.trace(debugStatement);
                                 }
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
-                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, true, config, indexedFields,
-                                            indexOnlyFields, nonEventFields, metadataHelper);
-                            madeChange = true;
-
-                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
-                                            metadataHelper);
-
-                            /**
-                             * We could achieve better performance if we live with the small number of queries that error due to the full table scan exception.
-                             *
-                             * Either look at improving PushdownUnexecutableNodesVisitor or avoid the process altogether.
-                             */
-                            if (state != STATE.EXECUTABLE) {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Need to push down non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
-                                    for (String debugStatement : debug) {
-                                        log.trace(debugStatement);
-                                    }
-                                }
-                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, true, config, indexedFields,
-                                                indexOnlyFields, nonEventFields, metadataHelper);
-                            }
-
-                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
-                                            metadataHelper);
-
-                            if (state != STATE.EXECUTABLE) {
-                                if (state == STATE.ERROR) {
-                                    log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
-                                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS);
-                                    throw new InvalidQueryException(qe);
-                                }
-                                log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
-                                if (!config.getFullTableScanEnabled()) {
-
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("Full Table fail of " + JexlStringBuildingVisitor.buildQuery(script));
-                                        for (String debugStatement : debug) {
-                                            log.trace(debugStatement);
-                                        }
-                                        DefaultQueryPlanner.logQuery(script, "Failing query:");
-                                    }
-                                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(
-                                                    DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
-                                    throw new DatawaveFatalQueryException(qe);
-                                }
-                            }
-
-                            if (log.isTraceEnabled()) {
-                                for (String debugStatement : debug) {
-                                    log.trace(debugStatement);
-                                }
-                                DefaultQueryPlanner.logQuery(script, "Query pushing down large fielded lists:");
-                            }
+                            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+                            throw new DatawaveFatalQueryException(qe);
                         }
-                    }
-
-                    if (config.getSerializeQueryIterator()) {
-                        serializeQuery(newIteratorSetting);
-                    } else {
-                        if (!evaluatedPreviously && config.getHdfsSiteConfigURLs() != null) {
-                            // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
-                            if (null == script) {
-                                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                            }
-                            try {
-                                script = pushdownLargeFieldedLists(config, script);
-                                madeChange = true;
-                            } catch (IOException ioe) {
-                                log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
-                            }
-                        }
-                    }
-
-                    // only recompile the script if changes were made to the query
-                    if (madeChange) {
-                        newQuery = JexlStringBuildingVisitor.buildQuery(script);
-                    }
-
-                    pruneIvaratorConfigs(script, newIteratorSetting);
-
-                    pruneUniqueOptions(newIteratorSetting, input.getRanges());
-
-                    pruneEmptyOptions(newIteratorSetting);
-
-                    if (config.getReduceQueryFieldsPerShard()) {
-                        reduceQueryFields(script, newIteratorSetting);
-                    }
-
-                    if (config.isRebuildDatatypeFilterPerShard() || config.getReduceIngestTypesPerShard()) {
-                        reduceIngestTypes(script, newIteratorSetting);
-                    }
-
-                    if (config.getReduceTypeMetadataPerShard()) {
-                        reduceTypeMetadata(script, newIteratorSetting);
-                    }
-
-                    if (config.getPruneQueryOptions()) {
-                        pruneQueryOptions(script, newIteratorSetting);
-                    }
-
-                    try {
-                        queryCache.put(query, newQuery);
-                    } catch (NullPointerException npe) {
-                        throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
-                                        setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
-                    }
-
-                    // test the final script for thresholds
-                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold(),
-                                    config.getMaxIvaratorTerms());
-
-                    newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
-                    newOptions.removeScanIterator(setting.getName());
-                    newOptions.addScanIterator(newIteratorSetting);
-
-                    if (log.isDebugEnabled()) {
-                        log.debug("VisitorFunction result: " + newSettings.getRanges());
                     }
 
                     if (log.isTraceEnabled()) {
-                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
-                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
-                    } else if (log.isDebugEnabled()) {
-                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
-                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
+                        for (String debugStatement : debug) {
+                            log.trace(debugStatement);
+                        }
+                        DefaultQueryPlanner.logQuery(script, "Query pushing down large fielded lists:");
                     }
-
-                } catch (ParseException e) {
-                    throw new DatawaveFatalQueryException(e);
                 }
             }
 
+            if (config.getSerializeQueryIterator()) {
+                serializeQuery(newIteratorSetting);
+            } else {
+                if (!evaluatedPreviously && config.getHdfsSiteConfigURLs() != null) {
+                    // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
+                    if (null == script) {
+                        script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                    }
+                    try {
+                        script = pushdownLargeFieldedLists(config, script);
+                        madeChange = true;
+                    } catch (IOException ioe) {
+                        log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
+                    }
+                }
+            }
+
+            // only recompile the script if changes were made to the query
+            if (madeChange) {
+                newQuery = JexlStringBuildingVisitor.buildQuery(script);
+            }
+
+            pruneIvaratorConfigs(script, newIteratorSetting);
+
+            pruneEmptyOptions(newIteratorSetting);
+
+            if (config.getReduceQueryFieldsPerShard()) {
+                reduceQueryFields(script, newIteratorSetting);
+            }
+
+            if (config.isRebuildDatatypeFilterPerShard() || config.getReduceIngestTypesPerShard()) {
+                reduceIngestTypes(script, newIteratorSetting);
+            }
+
+            if (config.getReduceTypeMetadataPerShard()) {
+                reduceTypeMetadata(script, newIteratorSetting);
+            }
+
+            if (config.getPruneQueryOptions()) {
+                pruneQueryOptions(script, newIteratorSetting);
+            }
+
+            try {
+                queryCache.put(query, newQuery);
+            } catch (NullPointerException npe) {
+                throw new DatawaveFatalQueryException(
+                                String.format("New query is null! madeChange: %b, qid: %s", madeChange, setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
+            }
+
+            // test the final script for thresholds
+            DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold(),
+                            config.getMaxIvaratorTerms());
+
+            newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
+
+            if (log.isTraceEnabled()) {
+                DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
+            } else if (log.isDebugEnabled()) {
+                DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
+            }
+
+        } catch (ParseException e) {
+            throw new DatawaveFatalQueryException(e);
         }
 
-        newSettings.setOptions(newOptions);
-        return newSettings;
+        return newIteratorSetting;
     }
 
     /**

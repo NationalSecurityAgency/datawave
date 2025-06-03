@@ -359,8 +359,11 @@ public class CompositeIndexTest {
         ShardQueryLogic logic = getShardQueryLogic(false);
         logic.setIntermediateMaxTermThreshold(50);
         logic.setIndexedMaxTermThreshold(50);
-        List<QueryData> queries = getQueryRanges(logic, query, false);
-        Assert.assertEquals(10, queries.size());
+
+        if (!logic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(logic, query, false);
+            Assert.assertEquals(10, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(logic, query, false);
         Assert.assertEquals(9, events.size());
@@ -405,8 +408,10 @@ public class CompositeIndexTest {
     public void testRecordOfIncorrectQueryStringWorking() throws Exception {
         // original "((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355'))";
         String query = "(((_Bounded_ = true) && GEO >= '0500aa' && GEO <= '050355'))";
-        List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(1, queries.size());
+        if (!logic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(query, false);
+            Assert.assertEquals(1, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(query, false);
         Assert.assertEquals(1, events.size());
@@ -454,8 +459,10 @@ public class CompositeIndexTest {
                 "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
 
-        List<QueryData> queries = getQueryRanges(query, true);
-        Assert.assertEquals(2196, queries.size());
+        if (!logic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(query, true);
+            Assert.assertEquals(2196, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(query, true);
         Assert.assertEquals(9, events.size());
@@ -501,8 +508,9 @@ public class CompositeIndexTest {
     private List<QueryData> getQueryRanges(ShardQueryLogic logic, String queryString, boolean useIvarator) throws Exception {
         Iterator iter = getQueryRangesIterator(queryString, logic);
         List<QueryData> queryData = new ArrayList<>();
-        while (iter.hasNext())
+        while (iter.hasNext()) {
             queryData.add((QueryData) iter.next());
+        }
         return queryData;
     }
 
