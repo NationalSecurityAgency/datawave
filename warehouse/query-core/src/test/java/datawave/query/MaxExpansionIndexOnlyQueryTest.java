@@ -140,7 +140,10 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
 
+        // hit exists in shard 20151010_0
+        // range is 20150404_0 to 20150404 + MAX_VALUE
         this.logic.setMaxValueExpansionThreshold(1);
+        this.logic.setUseDocumentScheduler(false);
         ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);

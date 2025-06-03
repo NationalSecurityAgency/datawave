@@ -10,7 +10,7 @@ import datawave.data.type.util.NumericalEncoder;
 public class NumberNormalizer extends AbstractNormalizer<BigDecimal> {
 
     private static final long serialVersionUID = -2781476072987375820L;
-    private Logger log = Logger.getLogger(NumberNormalizer.class);
+    private static final Logger log = Logger.getLogger(NumberNormalizer.class);
 
     public String normalize(String fv) {
         if (NumericalEncoder.isPossiblyEncoded(fv)) {

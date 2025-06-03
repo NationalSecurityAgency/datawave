@@ -21,12 +21,10 @@ public abstract class ListType extends BaseType implements OneToManyNormalizerTy
     @Override
     public List<String> normalizeToMany(String in) {
         String[] splits = StringUtils.split(in, delimiter);
-        List<String> strings = new ArrayList(splits.length);
+        List<String> strings = new ArrayList<>(splits.length);
         for (String s : splits) {
-
-            String str = normalizer.normalize(s);
-            strings.add(str);
-
+            String normalized = normalizer.normalize(s);
+            strings.add(normalized);
         }
 
         return strings;

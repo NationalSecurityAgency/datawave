@@ -346,8 +346,8 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxIvaratorResults(1);
         // verify we still get our expected results
         runTest(query, expect);
-        // and verify that the ivarators indeed did not complete (i.e. failed)
-        assertEquals(0, countComplete(dirs));
+        // and verify that the ivarators indeed persisted
+        assertEquals(3, countComplete(dirs));
     }
 
     private int countComplete(List<String> dirs) throws Exception {
