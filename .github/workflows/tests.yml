@@ -9,7 +9,7 @@ on:
   merge_group:
   workflow_dispatch:
   workflow_run:
-    workflows: [ "Code Formatting" ]
+    workflows: [Code Formatting]
     types:
       - completed
 
