@@ -18,13 +18,13 @@ import datawave.microservice.query.mapreduce.status.MapReduceQueryStatus;
 @CacheConfig(cacheNames = CACHE_NAME)
 public class MapReduceQueryStatusCache extends LockableCache<MapReduceQueryStatus> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String CACHE_NAME = "mapReduceQueryStatusCache";
-    
+
     public MapReduceQueryStatusCache(LockableCacheInspector cacheInspector) {
         super(cacheInspector, CACHE_NAME);
     }
-    
+
     @CachePut(key = "#id")
     public MapReduceQueryStatus create(String id, String jobName, MultiValueMap<String,String> parameters, Query query, DatawaveUserDetails currentUser) {
         MapReduceQueryStatus mapReduceQueryStatus = new MapReduceQueryStatus();
@@ -39,19 +39,19 @@ public class MapReduceQueryStatusCache extends LockableCache<MapReduceQueryStatu
         mapReduceQueryStatus.setLastUpdatedMillis(System.currentTimeMillis());
         return mapReduceQueryStatus;
     }
-    
+
     @Override
     public MapReduceQueryStatus get(String mrQueryId) {
         return cacheInspector.list(CACHE_NAME, MapReduceQueryStatus.class, mrQueryId);
     }
-    
+
     @Override
     @CachePut(key = "#id")
     public MapReduceQueryStatus update(String id, MapReduceQueryStatus mapReduceQueryStatus) {
         mapReduceQueryStatus.setLastUpdatedMillis(System.currentTimeMillis());
         return mapReduceQueryStatus;
     }
-    
+
     @CacheEvict(key = "#id")
     public void remove(String id) {
         if (log.isDebugEnabled()) {

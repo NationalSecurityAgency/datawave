@@ -19,21 +19,21 @@ import datawave.microservice.query.storage.TaskKey;
 
 public class PlanTask extends ExecutorTask {
     private static final Logger log = Logger.getLogger(PlanTask.class);
-    
+
     private final String originService;
-    
+
     public PlanTask(QueryExecutor source, QueryTask task, String originService) {
         super(source, task);
         this.originService = originService;
     }
-    
+
     @Override
     public boolean executeTask(QueryStatus queryStatus) throws Exception {
-        
+
         assert (QueryRequest.Method.PLAN.equals(task.getAction()));
-        
+
         AccumuloClient client = null;
-        
+
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
         Query query = queryStatus.getQuery();
@@ -49,28 +49,28 @@ public class PlanTask extends ExecutorTask {
                     expandValues = Boolean.parseBoolean(p.getParameterValue());
                 }
             }
-            
+
             client = borrowClient(queryStatus, queryLogic.getConnPoolName(), AccumuloConnectionFactory.Priority.LOW);
-            
+
             String plan = queryLogic.getPlan(client, query, queryStatus.getCalculatedAuthorizations(), expandFields, expandValues);
-            
+
             log.debug("Setting plan for " + queryId);
             queryStatusUpdateUtil.lockedUpdate(queryId, (newQueryStatus) -> newQueryStatus.setPlan(plan));
-            
+
             notifyOriginOfPlan(queryId);
         } finally {
             returnClient(client);
-            
+
             try {
                 queryLogic.close();
             } catch (Exception e) {
                 log.error("Failed to close query logic", e);
             }
         }
-        
+
         return true;
     }
-    
+
     private void notifyOriginOfPlan(String queryId) {
         if (originService != null) {
             log.debug("Publishing a plan request to the originating service: " + originService);

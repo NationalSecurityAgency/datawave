@@ -23,14 +23,14 @@ import datawave.security.authorization.UserOperations;
  */
 @Service("authOperationsV2")
 public class AuthorizationOperationsV2 extends AuthorizationOperationsV1 {
-    
+
     public AuthorizationOperationsV2(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
                     BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnUtils dnUtils,
                     Set<UserOperations> registeredFederatedUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
         super(tokenHandler, cachedDatawaveUserService, appCtx, busProperties, authorizationsListSupplier, dnUtils, registeredFederatedUserOperations,
                         datawaveUserDetailsFactory);
     }
-    
+
     // If there are any proxied users, exclude the last caller from the returned DatawaveUserDetails
     // If there is only one user, return the provided DatawaveUserDetails unchanged
     private DatawaveUserDetails transformCurrentUser(DatawaveUserDetails currentUser) {
@@ -42,19 +42,19 @@ public class AuthorizationOperationsV2 extends AuthorizationOperationsV1 {
                             currentUser.getCreationTime());
         }
     }
-    
+
     public String user(DatawaveUserDetails currentUser) {
         DatawaveUserDetails transformedUser = transformCurrentUser(currentUser);
         return tokenHandler.createTokenFromUsers(transformedUser.getUsername(), transformedUser.getProxiedUsers());
     }
-    
+
     /**
      * Returns the {@link DatawaveUserDetails} that represents the authenticated calling user.
      */
     public DatawaveUserDetails hello(DatawaveUserDetails currentUser) {
         return transformCurrentUser(currentUser);
     }
-    
+
     /**
      * Lists the user, if any, contained in the authentication cache and having a {@link DatawaveUser#getName()} of name.
      * <p>

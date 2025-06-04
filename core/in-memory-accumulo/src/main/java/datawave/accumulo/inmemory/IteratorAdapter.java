@@ -21,9 +21,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 public class IteratorAdapter extends org.apache.accumulo.core.iterators.IteratorAdapter {
-    
+
     public IteratorAdapter(SortedKeyValueIterator<Key,Value> inner) {
         super(inner);
     }
-    
+
 }

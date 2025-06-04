@@ -8,27 +8,32 @@ public final class CachedresultMessages {
 
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
 
-    public interface ColumnVisibilityOrBuilder extends com.google.protobuf.MessageLiteOrBuilder {
+    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {
+        registerAllExtensions((com.google.protobuf.ExtensionRegistryLite) registry);
+    }
 
-        // required string visibility = 1;
+    public interface ColumnVisibilityOrBuilder extends
+                    // @@protoc_insertion_point(interface_extends:datawave.webservice.results.cached.result.ColumnVisibility)
+                    com.google.protobuf.MessageOrBuilder {
+
         /**
          * <code>required string visibility = 1;</code>
          *
-         * @return if it has visibility
+         * @return Whether the visibility field is set.
          */
         boolean hasVisibility();
 
         /**
          * <code>required string visibility = 1;</code>
          *
-         * @return the visibility
+         * @return The visibility.
          */
         java.lang.String getVisibility();
 
         /**
          * <code>required string visibility = 1;</code>
          *
-         * @return the visibility as a byte string
+         * @return The bytes for visibility.
          */
         com.google.protobuf.ByteString getVisibilityBytes();
     }
@@ -36,29 +41,39 @@ public final class CachedresultMessages {
     /**
      * Protobuf type {@code datawave.webservice.results.cached.result.ColumnVisibility}
      */
-    public static final class ColumnVisibility extends com.google.protobuf.GeneratedMessageLite implements ColumnVisibilityOrBuilder {
+    public static final class ColumnVisibility extends com.google.protobuf.GeneratedMessageV3 implements
+                    // @@protoc_insertion_point(message_implements:datawave.webservice.results.cached.result.ColumnVisibility)
+                    ColumnVisibilityOrBuilder {
+        private static final long serialVersionUID = 0L;
+
         // Use ColumnVisibility.newBuilder() to construct.
-        private ColumnVisibility(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private ColumnVisibility(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
-
         }
 
-        private ColumnVisibility(boolean noInit) {}
-
-        private static final ColumnVisibility defaultInstance;
-
-        public static ColumnVisibility getDefaultInstance() {
-            return defaultInstance;
+        private ColumnVisibility() {
+            visibility_ = "";
         }
 
-        public ColumnVisibility getDefaultInstanceForType() {
-            return defaultInstance;
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new ColumnVisibility();
+        }
+
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
 
         private ColumnVisibility(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
-            initFields();
+            this();
+            if (extensionRegistry == null) {
+                throw new java.lang.NullPointerException();
+            }
             int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
             try {
                 boolean done = false;
                 while (!done) {
@@ -67,15 +82,16 @@ public final class CachedresultMessages {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, extensionRegistry, tag)) {
-                                done = true;
-                            }
+                        case 10: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
+                            bitField0_ |= 0x00000001;
+                            visibility_ = bs;
                             break;
                         }
-                        case 10: {
-                            bitField0_ |= 0x00000001;
-                            visibility_ = input.readBytes();
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
                             break;
                         }
                     }
@@ -83,43 +99,44 @@ public final class CachedresultMessages {
             } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                 throw e.setUnfinishedMessage(this);
             } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
+                throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
             } finally {
+                this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
             }
         }
 
-        public static com.google.protobuf.Parser<ColumnVisibility> PARSER = new com.google.protobuf.AbstractParser<ColumnVisibility>() {
-            public ColumnVisibility parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return new ColumnVisibility(input, extensionRegistry);
-            }
-        };
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_ColumnVisibility_descriptor;
+        }
 
         @java.lang.Override
-        public com.google.protobuf.Parser<ColumnVisibility> getParserForType() {
-            return PARSER;
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_ColumnVisibility_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.class,
+                                            datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder.class);
         }
 
         private int bitField0_;
-        // required string visibility = 1;
         public static final int VISIBILITY_FIELD_NUMBER = 1;
-        private java.lang.Object visibility_;
+        private volatile java.lang.Object visibility_;
 
         /**
          * <code>required string visibility = 1;</code>
          *
-         * @return if it has visibility
+         * @return Whether the visibility field is set.
          */
+        @java.lang.Override
         public boolean hasVisibility() {
-            return ((bitField0_ & 0x00000001) == 0x00000001);
+            return ((bitField0_ & 0x00000001) != 0);
         }
 
         /**
          * <code>required string visibility = 1;</code>
          *
-         * @return the visibility
+         * @return The visibility.
          */
+        @java.lang.Override
         public java.lang.String getVisibility() {
             java.lang.Object ref = visibility_;
             if (ref instanceof java.lang.String) {
@@ -137,8 +154,9 @@ public final class CachedresultMessages {
         /**
          * <code>required string visibility = 1;</code>
          *
-         * @return the visibility as a byte string
+         * @return The bytes for visibility.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getVisibilityBytes() {
             java.lang.Object ref = visibility_;
             if (ref instanceof java.lang.String) {
@@ -150,16 +168,15 @@ public final class CachedresultMessages {
             }
         }
 
-        private void initFields() {
-            visibility_ = "";
-        }
-
         private byte memoizedIsInitialized = -1;
 
+        @java.lang.Override
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
 
             if (!hasVisibility()) {
                 memoizedIsInitialized = 0;
@@ -169,33 +186,74 @@ public final class CachedresultMessages {
             return true;
         }
 
+        @java.lang.Override
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            getSerializedSize();
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                output.writeBytes(1, getVisibilityBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 1, visibility_);
             }
+            unknownFields.writeTo(output);
         }
 
-        private int memoizedSerializedSize = -1;
-
+        @java.lang.Override
         public int getSerializedSize() {
-            int size = memoizedSerializedSize;
+            int size = memoizedSize;
             if (size != -1)
                 return size;
 
             size = 0;
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(1, getVisibilityBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, visibility_);
             }
-            memoizedSerializedSize = size;
+            size += unknownFields.getSerializedSize();
+            memoizedSize = size;
             return size;
         }
 
-        private static final long serialVersionUID = 624675560600682014L;
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility other = (datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility) obj;
+
+            if (hasVisibility() != other.hasVisibility())
+                return false;
+            if (hasVisibility()) {
+                if (!getVisibility().equals(other.getVisibility()))
+                    return false;
+            }
+            if (!unknownFields.equals(other.unknownFields))
+                return false;
+            return true;
+        }
 
         @java.lang.Override
-        protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-            return super.writeReplace();
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            if (hasVisibility()) {
+                hash = (37 * hash) + VISIBILITY_FIELD_NUMBER;
+                hash = (53 * hash) + getVisibility().hashCode();
+            }
+            hash = (29 * hash) + unknownFields.hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+
+        public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseFrom(com.google.protobuf.ByteString data)
@@ -220,67 +278,90 @@ public final class CachedresultMessages {
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseFrom(java.io.InputStream input)
                         throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseDelimitedFrom(java.io.InputStream input)
                         throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseFrom(com.google.protobuf.CodedInputStream input)
                         throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
-        public static Builder newBuilder() {
-            return Builder.create();
-        }
-
+        @java.lang.Override
         public Builder newBuilderForType() {
             return newBuilder();
         }
 
-        public static Builder newBuilder(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility prototype) {
-            return newBuilder().mergeFrom(prototype);
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
         }
 
+        public static Builder newBuilder(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+
+        @java.lang.Override
         public Builder toBuilder() {
-            return newBuilder(this);
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
         }
 
         /**
          * Protobuf type {@code datawave.webservice.results.cached.result.ColumnVisibility}
          */
-        public static final class Builder extends
-                        com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,Builder>
-                        implements datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                        // @@protoc_insertion_point(builder_implements:datawave.webservice.results.cached.result.ColumnVisibility)
+                        datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_ColumnVisibility_descriptor;
+            }
+
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_ColumnVisibility_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.class,
+                                                datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder.class);
+            }
+
             // Construct using datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
 
-            private void maybeForceBuilderInitialization() {}
-
-            private static Builder create() {
-                return new Builder();
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
             }
 
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
+            }
+
+            @java.lang.Override
             public Builder clear() {
                 super.clear();
                 visibility_ = "";
@@ -288,14 +369,17 @@ public final class CachedresultMessages {
                 return this;
             }
 
-            public Builder clone() {
-                return create().mergeFrom(buildPartial());
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_ColumnVisibility_descriptor;
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getDefaultInstanceForType() {
                 return datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance();
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility build() {
                 datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility result = buildPartial();
                 if (!result.isInitialized()) {
@@ -304,17 +388,59 @@ public final class CachedresultMessages {
                 return result;
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility buildPartial() {
                 datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility result = new datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility(
                                 this);
                 int from_bitField0_ = bitField0_;
                 int to_bitField0_ = 0;
-                if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                if (((from_bitField0_ & 0x00000001) != 0)) {
                     to_bitField0_ |= 0x00000001;
                 }
                 result.visibility_ = visibility_;
                 result.bitField0_ = to_bitField0_;
+                onBuilt();
                 return result;
+            }
+
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility) {
+                    return mergeFrom((datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
             }
 
             public Builder mergeFrom(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility other) {
@@ -323,19 +449,22 @@ public final class CachedresultMessages {
                 if (other.hasVisibility()) {
                     bitField0_ |= 0x00000001;
                     visibility_ = other.visibility_;
-
+                    onChanged();
                 }
+                this.mergeUnknownFields(other.unknownFields);
+                onChanged();
                 return this;
             }
 
+            @java.lang.Override
             public final boolean isInitialized() {
                 if (!hasVisibility()) {
-
                     return false;
                 }
                 return true;
             }
 
+            @java.lang.Override
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility parsedMessage = null;
@@ -343,7 +472,7 @@ public final class CachedresultMessages {
                     parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                     parsedMessage = (datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility) e.getUnfinishedMessage();
-                    throw e;
+                    throw e.unwrapIOException();
                 } finally {
                     if (parsedMessage != null) {
                         mergeFrom(parsedMessage);
@@ -354,28 +483,30 @@ public final class CachedresultMessages {
 
             private int bitField0_;
 
-            // required string visibility = 1;
             private java.lang.Object visibility_ = "";
 
             /**
              * <code>required string visibility = 1;</code>
              *
-             * @return if it has visibility
+             * @return Whether the visibility field is set.
              */
             public boolean hasVisibility() {
-                return ((bitField0_ & 0x00000001) == 0x00000001);
+                return ((bitField0_ & 0x00000001) != 0);
             }
 
             /**
              * <code>required string visibility = 1;</code>
              *
-             * @return the visibility
+             * @return The visibility.
              */
             public java.lang.String getVisibility() {
                 java.lang.Object ref = visibility_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    visibility_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        visibility_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -385,7 +516,7 @@ public final class CachedresultMessages {
             /**
              * <code>required string visibility = 1;</code>
              *
-             * @return the visibility byte string
+             * @return The bytes for visibility.
              */
             public com.google.protobuf.ByteString getVisibilityBytes() {
                 java.lang.Object ref = visibility_;
@@ -402,9 +533,8 @@ public final class CachedresultMessages {
              * <code>required string visibility = 1;</code>
              *
              * @param value
-             *            the new visibility value
-             *
-             * @return builder to set visibility to the provided value
+             *            The visibility to set.
+             * @return This builder for chaining.
              */
             public Builder setVisibility(java.lang.String value) {
                 if (value == null) {
@@ -412,19 +542,19 @@ public final class CachedresultMessages {
                 }
                 bitField0_ |= 0x00000001;
                 visibility_ = value;
-
+                onChanged();
                 return this;
             }
 
             /**
              * <code>required string visibility = 1;</code>
              *
-             * @return builder to clear visibility
+             * @return This builder for chaining.
              */
             public Builder clearVisibility() {
                 bitField0_ = (bitField0_ & ~0x00000001);
                 visibility_ = getDefaultInstance().getVisibility();
-
+                onChanged();
                 return this;
             }
 
@@ -432,9 +562,8 @@ public final class CachedresultMessages {
              * <code>required string visibility = 1;</code>
              *
              * @param value
-             *            visibility byte string
-             *
-             * @return builder to set the visibility bytes
+             *            The bytes for visibility to set.
+             * @return This builder for chaining.
              */
             public Builder setVisibilityBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -442,42 +571,80 @@ public final class CachedresultMessages {
                 }
                 bitField0_ |= 0x00000001;
                 visibility_ = value;
-
+                onChanged();
                 return this;
+            }
+
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
             }
 
             // @@protoc_insertion_point(builder_scope:datawave.webservice.results.cached.result.ColumnVisibility)
         }
 
+        // @@protoc_insertion_point(class_scope:datawave.webservice.results.cached.result.ColumnVisibility)
+        private static final datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility DEFAULT_INSTANCE;
         static {
-            defaultInstance = new ColumnVisibility(true);
-            defaultInstance.initFields();
+            DEFAULT_INSTANCE = new datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility();
         }
 
-        // @@protoc_insertion_point(class_scope:datawave.webservice.results.cached.result.ColumnVisibility)
+        public static datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+
+        @java.lang.Deprecated
+        public static final com.google.protobuf.Parser<ColumnVisibility> PARSER = new com.google.protobuf.AbstractParser<ColumnVisibility>() {
+            @java.lang.Override
+            public ColumnVisibility parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                return new ColumnVisibility(input, extensionRegistry);
+            }
+        };
+
+        public static com.google.protobuf.Parser<ColumnVisibility> parser() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Parser<ColumnVisibility> getParserForType() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
     }
 
-    public interface AttributeOrBuilder extends com.google.protobuf.MessageLiteOrBuilder {
+    public interface AttributeOrBuilder extends
+                    // @@protoc_insertion_point(interface_extends:datawave.webservice.results.cached.result.Attribute)
+                    com.google.protobuf.MessageOrBuilder {
 
-        // required string name = 1;
         /**
          * <code>required string name = 1;</code>
          *
-         * @return if it has a name
+         * @return Whether the name field is set.
          */
         boolean hasName();
 
         /**
          * <code>required string name = 1;</code>
          *
-         * @return the name
+         * @return The name.
          */
         java.lang.String getName();
 
         /**
          * <code>required string name = 1;</code>
          *
-         * @return the name as a byte string
+         * @return The bytes for name.
          */
         com.google.protobuf.ByteString getNameBytes();
     }
@@ -485,29 +652,39 @@ public final class CachedresultMessages {
     /**
      * Protobuf type {@code datawave.webservice.results.cached.result.Attribute}
      */
-    public static final class Attribute extends com.google.protobuf.GeneratedMessageLite implements AttributeOrBuilder {
+    public static final class Attribute extends com.google.protobuf.GeneratedMessageV3 implements
+                    // @@protoc_insertion_point(message_implements:datawave.webservice.results.cached.result.Attribute)
+                    AttributeOrBuilder {
+        private static final long serialVersionUID = 0L;
+
         // Use Attribute.newBuilder() to construct.
-        private Attribute(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private Attribute(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
-
         }
 
-        private Attribute(boolean noInit) {}
-
-        private static final Attribute defaultInstance;
-
-        public static Attribute getDefaultInstance() {
-            return defaultInstance;
+        private Attribute() {
+            name_ = "";
         }
 
-        public Attribute getDefaultInstanceForType() {
-            return defaultInstance;
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new Attribute();
+        }
+
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
 
         private Attribute(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
-            initFields();
+            this();
+            if (extensionRegistry == null) {
+                throw new java.lang.NullPointerException();
+            }
             int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
             try {
                 boolean done = false;
                 while (!done) {
@@ -516,15 +693,16 @@ public final class CachedresultMessages {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, extensionRegistry, tag)) {
-                                done = true;
-                            }
+                        case 10: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
+                            bitField0_ |= 0x00000001;
+                            name_ = bs;
                             break;
                         }
-                        case 10: {
-                            bitField0_ |= 0x00000001;
-                            name_ = input.readBytes();
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
                             break;
                         }
                     }
@@ -532,43 +710,44 @@ public final class CachedresultMessages {
             } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                 throw e.setUnfinishedMessage(this);
             } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
+                throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
             } finally {
+                this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
             }
         }
 
-        public static com.google.protobuf.Parser<Attribute> PARSER = new com.google.protobuf.AbstractParser<Attribute>() {
-            public Attribute parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return new Attribute(input, extensionRegistry);
-            }
-        };
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Attribute_descriptor;
+        }
 
         @java.lang.Override
-        public com.google.protobuf.Parser<Attribute> getParserForType() {
-            return PARSER;
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Attribute_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.class,
+                                            datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder.class);
         }
 
         private int bitField0_;
-        // required string name = 1;
         public static final int NAME_FIELD_NUMBER = 1;
-        private java.lang.Object name_;
+        private volatile java.lang.Object name_;
 
         /**
          * <code>required string name = 1;</code>
          *
-         * @return if it has a name
+         * @return Whether the name field is set.
          */
+        @java.lang.Override
         public boolean hasName() {
-            return ((bitField0_ & 0x00000001) == 0x00000001);
+            return ((bitField0_ & 0x00000001) != 0);
         }
 
         /**
          * <code>required string name = 1;</code>
          *
-         * @return the name
+         * @return The name.
          */
+        @java.lang.Override
         public java.lang.String getName() {
             java.lang.Object ref = name_;
             if (ref instanceof java.lang.String) {
@@ -586,8 +765,9 @@ public final class CachedresultMessages {
         /**
          * <code>required string name = 1;</code>
          *
-         * @return the name as a byte string
+         * @return The bytes for name.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getNameBytes() {
             java.lang.Object ref = name_;
             if (ref instanceof java.lang.String) {
@@ -599,16 +779,15 @@ public final class CachedresultMessages {
             }
         }
 
-        private void initFields() {
-            name_ = "";
-        }
-
         private byte memoizedIsInitialized = -1;
 
+        @java.lang.Override
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
 
             if (!hasName()) {
                 memoizedIsInitialized = 0;
@@ -618,33 +797,74 @@ public final class CachedresultMessages {
             return true;
         }
 
+        @java.lang.Override
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            getSerializedSize();
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                output.writeBytes(1, getNameBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
             }
+            unknownFields.writeTo(output);
         }
 
-        private int memoizedSerializedSize = -1;
-
+        @java.lang.Override
         public int getSerializedSize() {
-            int size = memoizedSerializedSize;
+            int size = memoizedSize;
             if (size != -1)
                 return size;
 
             size = 0;
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(1, getNameBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
             }
-            memoizedSerializedSize = size;
+            size += unknownFields.getSerializedSize();
+            memoizedSize = size;
             return size;
         }
 
-        private static final long serialVersionUID = -3328980380205664729L;
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.results.cached.result.CachedresultMessages.Attribute)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.results.cached.result.CachedresultMessages.Attribute other = (datawave.webservice.results.cached.result.CachedresultMessages.Attribute) obj;
+
+            if (hasName() != other.hasName())
+                return false;
+            if (hasName()) {
+                if (!getName().equals(other.getName()))
+                    return false;
+            }
+            if (!unknownFields.equals(other.unknownFields))
+                return false;
+            return true;
+        }
 
         @java.lang.Override
-        protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-            return super.writeReplace();
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            if (hasName()) {
+                hash = (37 * hash) + NAME_FIELD_NUMBER;
+                hash = (53 * hash) + getName().hashCode();
+            }
+            hash = (29 * hash) + unknownFields.hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+
+        public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseFrom(com.google.protobuf.ByteString data)
@@ -668,67 +888,90 @@ public final class CachedresultMessages {
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseDelimitedFrom(java.io.InputStream input)
                         throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseFrom(com.google.protobuf.CodedInputStream input)
                         throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
-        public static Builder newBuilder() {
-            return Builder.create();
-        }
-
+        @java.lang.Override
         public Builder newBuilderForType() {
             return newBuilder();
         }
 
-        public static Builder newBuilder(datawave.webservice.results.cached.result.CachedresultMessages.Attribute prototype) {
-            return newBuilder().mergeFrom(prototype);
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
         }
 
+        public static Builder newBuilder(datawave.webservice.results.cached.result.CachedresultMessages.Attribute prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+
+        @java.lang.Override
         public Builder toBuilder() {
-            return newBuilder(this);
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
         }
 
         /**
          * Protobuf type {@code datawave.webservice.results.cached.result.Attribute}
          */
-        public static final class Builder extends
-                        com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,Builder>
-                        implements datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                        // @@protoc_insertion_point(builder_implements:datawave.webservice.results.cached.result.Attribute)
+                        datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Attribute_descriptor;
+            }
+
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Attribute_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.class,
+                                                datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder.class);
+            }
+
             // Construct using datawave.webservice.results.cached.result.CachedresultMessages.Attribute.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
 
-            private void maybeForceBuilderInitialization() {}
-
-            private static Builder create() {
-                return new Builder();
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
             }
 
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
+            }
+
+            @java.lang.Override
             public Builder clear() {
                 super.clear();
                 name_ = "";
@@ -736,14 +979,17 @@ public final class CachedresultMessages {
                 return this;
             }
 
-            public Builder clone() {
-                return create().mergeFrom(buildPartial());
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Attribute_descriptor;
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getDefaultInstanceForType() {
                 return datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance();
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.Attribute build() {
                 datawave.webservice.results.cached.result.CachedresultMessages.Attribute result = buildPartial();
                 if (!result.isInitialized()) {
@@ -752,17 +998,59 @@ public final class CachedresultMessages {
                 return result;
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.Attribute buildPartial() {
                 datawave.webservice.results.cached.result.CachedresultMessages.Attribute result = new datawave.webservice.results.cached.result.CachedresultMessages.Attribute(
                                 this);
                 int from_bitField0_ = bitField0_;
                 int to_bitField0_ = 0;
-                if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                if (((from_bitField0_ & 0x00000001) != 0)) {
                     to_bitField0_ |= 0x00000001;
                 }
                 result.name_ = name_;
                 result.bitField0_ = to_bitField0_;
+                onBuilt();
                 return result;
+            }
+
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.results.cached.result.CachedresultMessages.Attribute) {
+                    return mergeFrom((datawave.webservice.results.cached.result.CachedresultMessages.Attribute) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
             }
 
             public Builder mergeFrom(datawave.webservice.results.cached.result.CachedresultMessages.Attribute other) {
@@ -771,19 +1059,22 @@ public final class CachedresultMessages {
                 if (other.hasName()) {
                     bitField0_ |= 0x00000001;
                     name_ = other.name_;
-
+                    onChanged();
                 }
+                this.mergeUnknownFields(other.unknownFields);
+                onChanged();
                 return this;
             }
 
+            @java.lang.Override
             public final boolean isInitialized() {
                 if (!hasName()) {
-
                     return false;
                 }
                 return true;
             }
 
+            @java.lang.Override
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.webservice.results.cached.result.CachedresultMessages.Attribute parsedMessage = null;
@@ -791,7 +1082,7 @@ public final class CachedresultMessages {
                     parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                     parsedMessage = (datawave.webservice.results.cached.result.CachedresultMessages.Attribute) e.getUnfinishedMessage();
-                    throw e;
+                    throw e.unwrapIOException();
                 } finally {
                     if (parsedMessage != null) {
                         mergeFrom(parsedMessage);
@@ -802,28 +1093,30 @@ public final class CachedresultMessages {
 
             private int bitField0_;
 
-            // required string name = 1;
             private java.lang.Object name_ = "";
 
             /**
              * <code>required string name = 1;</code>
              *
-             * @return if it has a name
+             * @return Whether the name field is set.
              */
             public boolean hasName() {
-                return ((bitField0_ & 0x00000001) == 0x00000001);
+                return ((bitField0_ & 0x00000001) != 0);
             }
 
             /**
              * <code>required string name = 1;</code>
              *
-             * @return the name
+             * @return The name.
              */
             public java.lang.String getName() {
                 java.lang.Object ref = name_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    name_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        name_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -833,7 +1126,7 @@ public final class CachedresultMessages {
             /**
              * <code>required string name = 1;</code>
              *
-             * @return the name as a byte string
+             * @return The bytes for name.
              */
             public com.google.protobuf.ByteString getNameBytes() {
                 java.lang.Object ref = name_;
@@ -850,9 +1143,8 @@ public final class CachedresultMessages {
              * <code>required string name = 1;</code>
              *
              * @param value
-             *            the new name value
-             *
-             * @return builder to set the name
+             *            The name to set.
+             * @return This builder for chaining.
              */
             public Builder setName(java.lang.String value) {
                 if (value == null) {
@@ -860,19 +1152,19 @@ public final class CachedresultMessages {
                 }
                 bitField0_ |= 0x00000001;
                 name_ = value;
-
+                onChanged();
                 return this;
             }
 
             /**
              * <code>required string name = 1;</code>
              *
-             * @return builder to clear the name
+             * @return This builder for chaining.
              */
             public Builder clearName() {
                 bitField0_ = (bitField0_ & ~0x00000001);
                 name_ = getDefaultInstance().getName();
-
+                onChanged();
                 return this;
             }
 
@@ -880,9 +1172,8 @@ public final class CachedresultMessages {
              * <code>required string name = 1;</code>
              *
              * @param value
-             *            the name byte string
-             *
-             * @return builder to set the name to the provided byte string
+             *            The bytes for name to set.
+             * @return This builder for chaining.
              */
             public Builder setNameBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -890,123 +1181,172 @@ public final class CachedresultMessages {
                 }
                 bitField0_ |= 0x00000001;
                 name_ = value;
-
+                onChanged();
                 return this;
+            }
+
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
             }
 
             // @@protoc_insertion_point(builder_scope:datawave.webservice.results.cached.result.Attribute)
         }
 
+        // @@protoc_insertion_point(class_scope:datawave.webservice.results.cached.result.Attribute)
+        private static final datawave.webservice.results.cached.result.CachedresultMessages.Attribute DEFAULT_INSTANCE;
         static {
-            defaultInstance = new Attribute(true);
-            defaultInstance.initFields();
+            DEFAULT_INSTANCE = new datawave.webservice.results.cached.result.CachedresultMessages.Attribute();
         }
 
-        // @@protoc_insertion_point(class_scope:datawave.webservice.results.cached.result.Attribute)
+        public static datawave.webservice.results.cached.result.CachedresultMessages.Attribute getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+
+        @java.lang.Deprecated
+        public static final com.google.protobuf.Parser<Attribute> PARSER = new com.google.protobuf.AbstractParser<Attribute>() {
+            @java.lang.Override
+            public Attribute parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                return new Attribute(input, extensionRegistry);
+            }
+        };
+
+        public static com.google.protobuf.Parser<Attribute> parser() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Parser<Attribute> getParserForType() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
     }
 
-    public interface DescriptionOrBuilder extends com.google.protobuf.MessageLiteOrBuilder {
+    public interface DescriptionOrBuilder extends
+                    // @@protoc_insertion_point(interface_extends:datawave.webservice.results.cached.result.Description)
+                    com.google.protobuf.MessageOrBuilder {
 
-        // required string view = 1;
         /**
          * <code>required string view = 1;</code>
          *
-         * @return if it has a view
+         * @return Whether the view field is set.
          */
         boolean hasView();
 
         /**
          * <code>required string view = 1;</code>
          *
-         * @return the view
+         * @return The view.
          */
         java.lang.String getView();
 
         /**
          * <code>required string view = 1;</code>
          *
-         * @return the view as a byte string
-         *
+         * @return The bytes for view.
          */
         com.google.protobuf.ByteString getViewBytes();
 
-        // repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return list of attributes
          */
         java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList();
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the attribute at the provided index
          */
         datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index);
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return the number of attributes
          */
         int getAttributesCount();
 
-        // repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         */
+        java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         */
+        datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder(int index);
+
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return the visibility list
          */
         java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList();
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the visibility at the provided index
          */
         datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index);
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return the number of visibility
          */
         int getVisibilitiesCount();
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder(int index);
     }
 
     /**
      * Protobuf type {@code datawave.webservice.results.cached.result.Description}
      */
-    public static final class Description extends com.google.protobuf.GeneratedMessageLite implements DescriptionOrBuilder {
+    public static final class Description extends com.google.protobuf.GeneratedMessageV3 implements
+                    // @@protoc_insertion_point(message_implements:datawave.webservice.results.cached.result.Description)
+                    DescriptionOrBuilder {
+        private static final long serialVersionUID = 0L;
+
         // Use Description.newBuilder() to construct.
-        private Description(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private Description(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
-
         }
 
-        private Description(boolean noInit) {}
-
-        private static final Description defaultInstance;
-
-        public static Description getDefaultInstance() {
-            return defaultInstance;
+        private Description() {
+            view_ = "";
+            attributes_ = java.util.Collections.emptyList();
+            visibilities_ = java.util.Collections.emptyList();
         }
 
-        public Description getDefaultInstanceForType() {
-            return defaultInstance;
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new Description();
+        }
+
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
 
         private Description(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
-            initFields();
+            this();
+            if (extensionRegistry == null) {
+                throw new java.lang.NullPointerException();
+            }
             int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
             try {
                 boolean done = false;
                 while (!done) {
@@ -1015,19 +1355,14 @@ public final class CachedresultMessages {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
                         case 10: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000001;
-                            view_ = input.readBytes();
+                            view_ = bs;
                             break;
                         }
                         case 18: {
-                            if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+                            if (!((mutable_bitField0_ & 0x00000002) != 0)) {
                                 attributes_ = new java.util.ArrayList<datawave.webservice.results.cached.result.CachedresultMessages.Attribute>();
                                 mutable_bitField0_ |= 0x00000002;
                             }
@@ -1036,7 +1371,7 @@ public final class CachedresultMessages {
                             break;
                         }
                         case 26: {
-                            if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+                            if (!((mutable_bitField0_ & 0x00000004) != 0)) {
                                 visibilities_ = new java.util.ArrayList<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility>();
                                 mutable_bitField0_ |= 0x00000004;
                             }
@@ -1044,54 +1379,61 @@ public final class CachedresultMessages {
                                             extensionRegistry));
                             break;
                         }
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
+                            break;
+                        }
                     }
                 }
             } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                 throw e.setUnfinishedMessage(this);
             } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
+                throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
             } finally {
-                if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+                if (((mutable_bitField0_ & 0x00000002) != 0)) {
                     attributes_ = java.util.Collections.unmodifiableList(attributes_);
                 }
-                if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+                if (((mutable_bitField0_ & 0x00000004) != 0)) {
                     visibilities_ = java.util.Collections.unmodifiableList(visibilities_);
                 }
+                this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
             }
         }
 
-        public static com.google.protobuf.Parser<Description> PARSER = new com.google.protobuf.AbstractParser<Description>() {
-            public Description parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return new Description(input, extensionRegistry);
-            }
-        };
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Description_descriptor;
+        }
 
         @java.lang.Override
-        public com.google.protobuf.Parser<Description> getParserForType() {
-            return PARSER;
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Description_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.results.cached.result.CachedresultMessages.Description.class,
+                                            datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder.class);
         }
 
         private int bitField0_;
-        // required string view = 1;
         public static final int VIEW_FIELD_NUMBER = 1;
-        private java.lang.Object view_;
+        private volatile java.lang.Object view_;
 
         /**
          * <code>required string view = 1;</code>
          *
-         * @return if there is a view
+         * @return Whether the view field is set.
          */
+        @java.lang.Override
         public boolean hasView() {
-            return ((bitField0_ & 0x00000001) == 0x00000001);
+            return ((bitField0_ & 0x00000001) != 0);
         }
 
         /**
          * <code>required string view = 1;</code>
          *
-         * @return the view
+         * @return The view.
          */
+        @java.lang.Override
         public java.lang.String getView() {
             java.lang.Object ref = view_;
             if (ref instanceof java.lang.String) {
@@ -1109,8 +1451,9 @@ public final class CachedresultMessages {
         /**
          * <code>required string view = 1;</code>
          *
-         * @return the view as a byte string
+         * @return The bytes for view.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getViewBytes() {
             java.lang.Object ref = view_;
             if (ref instanceof java.lang.String) {
@@ -1122,128 +1465,101 @@ public final class CachedresultMessages {
             }
         }
 
-        // repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;
         public static final int ATTRIBUTES_FIELD_NUMBER = 2;
         private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> attributes_;
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return the attributes list
          */
+        @java.lang.Override
         public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList() {
             return attributes_;
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return list of attributes
          */
+        @java.lang.Override
         public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesOrBuilderList() {
             return attributes_;
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return the number of attributes in the list
          */
+        @java.lang.Override
         public int getAttributesCount() {
             return attributes_.size();
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the attribute at the provided index
          */
+        @java.lang.Override
         public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index) {
             return attributes_.get(index);
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the attribute at the provided index
          */
+        @java.lang.Override
         public datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder(int index) {
             return attributes_.get(index);
         }
 
-        // repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;
         public static final int VISIBILITIES_FIELD_NUMBER = 3;
         private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> visibilities_;
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return the visibility list
          */
+        @java.lang.Override
         public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList() {
             return visibilities_;
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return the visibility list
          */
+        @java.lang.Override
         public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesOrBuilderList() {
             return visibilities_;
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return the number of visibilities in the list
          */
+        @java.lang.Override
         public int getVisibilitiesCount() {
             return visibilities_.size();
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the visibility at the provided index
          */
+        @java.lang.Override
         public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index) {
             return visibilities_.get(index);
         }
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return visibility at the provided index
          */
+        @java.lang.Override
         public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder(int index) {
             return visibilities_.get(index);
         }
 
-        private void initFields() {
-            view_ = "";
-            attributes_ = java.util.Collections.emptyList();
-            visibilities_ = java.util.Collections.emptyList();
-        }
-
         private byte memoizedIsInitialized = -1;
 
+        @java.lang.Override
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
 
             if (!hasView()) {
                 memoizedIsInitialized = 0;
@@ -1265,10 +1581,10 @@ public final class CachedresultMessages {
             return true;
         }
 
+        @java.lang.Override
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            getSerializedSize();
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                output.writeBytes(1, getViewBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 1, view_);
             }
             for (int i = 0; i < attributes_.size(); i++) {
                 output.writeMessage(2, attributes_.get(i));
@@ -1276,18 +1592,18 @@ public final class CachedresultMessages {
             for (int i = 0; i < visibilities_.size(); i++) {
                 output.writeMessage(3, visibilities_.get(i));
             }
+            unknownFields.writeTo(output);
         }
 
-        private int memoizedSerializedSize = -1;
-
+        @java.lang.Override
         public int getSerializedSize() {
-            int size = memoizedSerializedSize;
+            int size = memoizedSize;
             if (size != -1)
                 return size;
 
             size = 0;
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(1, getViewBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, view_);
             }
             for (int i = 0; i < attributes_.size(); i++) {
                 size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, attributes_.get(i));
@@ -1295,15 +1611,68 @@ public final class CachedresultMessages {
             for (int i = 0; i < visibilities_.size(); i++) {
                 size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, visibilities_.get(i));
             }
-            memoizedSerializedSize = size;
+            size += unknownFields.getSerializedSize();
+            memoizedSize = size;
             return size;
         }
 
-        private static final long serialVersionUID = -7787558478777504304L;
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.results.cached.result.CachedresultMessages.Description)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.results.cached.result.CachedresultMessages.Description other = (datawave.webservice.results.cached.result.CachedresultMessages.Description) obj;
+
+            if (hasView() != other.hasView())
+                return false;
+            if (hasView()) {
+                if (!getView().equals(other.getView()))
+                    return false;
+            }
+            if (!getAttributesList().equals(other.getAttributesList()))
+                return false;
+            if (!getVisibilitiesList().equals(other.getVisibilitiesList()))
+                return false;
+            if (!unknownFields.equals(other.unknownFields))
+                return false;
+            return true;
+        }
 
         @java.lang.Override
-        protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-            return super.writeReplace();
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            if (hasView()) {
+                hash = (37 * hash) + VIEW_FIELD_NUMBER;
+                hash = (53 * hash) + getView().hashCode();
+            }
+            if (getAttributesCount() > 0) {
+                hash = (37 * hash) + ATTRIBUTES_FIELD_NUMBER;
+                hash = (53 * hash) + getAttributesList().hashCode();
+            }
+            if (getVisibilitiesCount() > 0) {
+                hash = (37 * hash) + VISIBILITIES_FIELD_NUMBER;
+                hash = (53 * hash) + getVisibilitiesList().hashCode();
+            }
+            hash = (29 * hash) + unknownFields.hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+
+        public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseFrom(com.google.protobuf.ByteString data)
@@ -1328,86 +1697,123 @@ public final class CachedresultMessages {
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseFrom(java.io.InputStream input)
                         throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseDelimitedFrom(java.io.InputStream input)
                         throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseFrom(com.google.protobuf.CodedInputStream input)
                         throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.webservice.results.cached.result.CachedresultMessages.Description parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
-        public static Builder newBuilder() {
-            return Builder.create();
-        }
-
+        @java.lang.Override
         public Builder newBuilderForType() {
             return newBuilder();
         }
 
-        public static Builder newBuilder(datawave.webservice.results.cached.result.CachedresultMessages.Description prototype) {
-            return newBuilder().mergeFrom(prototype);
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
         }
 
+        public static Builder newBuilder(datawave.webservice.results.cached.result.CachedresultMessages.Description prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+
+        @java.lang.Override
         public Builder toBuilder() {
-            return newBuilder(this);
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
         }
 
         /**
          * Protobuf type {@code datawave.webservice.results.cached.result.Description}
          */
-        public static final class Builder extends
-                        com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.results.cached.result.CachedresultMessages.Description,Builder>
-                        implements datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                        // @@protoc_insertion_point(builder_implements:datawave.webservice.results.cached.result.Description)
+                        datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Description_descriptor;
+            }
+
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Description_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.results.cached.result.CachedresultMessages.Description.class,
+                                                datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder.class);
+            }
+
             // Construct using datawave.webservice.results.cached.result.CachedresultMessages.Description.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
 
-            private void maybeForceBuilderInitialization() {}
-
-            private static Builder create() {
-                return new Builder();
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
             }
 
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {
+                    getAttributesFieldBuilder();
+                    getVisibilitiesFieldBuilder();
+                }
+            }
+
+            @java.lang.Override
             public Builder clear() {
                 super.clear();
                 view_ = "";
                 bitField0_ = (bitField0_ & ~0x00000001);
-                attributes_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000002);
-                visibilities_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000004);
+                if (attributesBuilder_ == null) {
+                    attributes_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000002);
+                } else {
+                    attributesBuilder_.clear();
+                }
+                if (visibilitiesBuilder_ == null) {
+                    visibilities_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000004);
+                } else {
+                    visibilitiesBuilder_.clear();
+                }
                 return this;
             }
 
-            public Builder clone() {
-                return create().mergeFrom(buildPartial());
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.results.cached.result.CachedresultMessages.internal_static_datawave_webservice_results_cached_result_Description_descriptor;
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.Description getDefaultInstanceForType() {
                 return datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance();
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.Description build() {
                 datawave.webservice.results.cached.result.CachedresultMessages.Description result = buildPartial();
                 if (!result.isInitialized()) {
@@ -1416,27 +1822,77 @@ public final class CachedresultMessages {
                 return result;
             }
 
+            @java.lang.Override
             public datawave.webservice.results.cached.result.CachedresultMessages.Description buildPartial() {
                 datawave.webservice.results.cached.result.CachedresultMessages.Description result = new datawave.webservice.results.cached.result.CachedresultMessages.Description(
                                 this);
                 int from_bitField0_ = bitField0_;
                 int to_bitField0_ = 0;
-                if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                if (((from_bitField0_ & 0x00000001) != 0)) {
                     to_bitField0_ |= 0x00000001;
                 }
                 result.view_ = view_;
-                if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                    attributes_ = java.util.Collections.unmodifiableList(attributes_);
-                    bitField0_ = (bitField0_ & ~0x00000002);
+                if (attributesBuilder_ == null) {
+                    if (((bitField0_ & 0x00000002) != 0)) {
+                        attributes_ = java.util.Collections.unmodifiableList(attributes_);
+                        bitField0_ = (bitField0_ & ~0x00000002);
+                    }
+                    result.attributes_ = attributes_;
+                } else {
+                    result.attributes_ = attributesBuilder_.build();
                 }
-                result.attributes_ = attributes_;
-                if (((bitField0_ & 0x00000004) == 0x00000004)) {
-                    visibilities_ = java.util.Collections.unmodifiableList(visibilities_);
-                    bitField0_ = (bitField0_ & ~0x00000004);
+                if (visibilitiesBuilder_ == null) {
+                    if (((bitField0_ & 0x00000004) != 0)) {
+                        visibilities_ = java.util.Collections.unmodifiableList(visibilities_);
+                        bitField0_ = (bitField0_ & ~0x00000004);
+                    }
+                    result.visibilities_ = visibilities_;
+                } else {
+                    result.visibilities_ = visibilitiesBuilder_.build();
                 }
-                result.visibilities_ = visibilities_;
                 result.bitField0_ = to_bitField0_;
+                onBuilt();
                 return result;
+            }
+
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.results.cached.result.CachedresultMessages.Description) {
+                    return mergeFrom((datawave.webservice.results.cached.result.CachedresultMessages.Description) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
             }
 
             public Builder mergeFrom(datawave.webservice.results.cached.result.CachedresultMessages.Description other) {
@@ -1445,51 +1901,80 @@ public final class CachedresultMessages {
                 if (other.hasView()) {
                     bitField0_ |= 0x00000001;
                     view_ = other.view_;
-
+                    onChanged();
                 }
-                if (!other.attributes_.isEmpty()) {
-                    if (attributes_.isEmpty()) {
-                        attributes_ = other.attributes_;
-                        bitField0_ = (bitField0_ & ~0x00000002);
-                    } else {
-                        ensureAttributesIsMutable();
-                        attributes_.addAll(other.attributes_);
+                if (attributesBuilder_ == null) {
+                    if (!other.attributes_.isEmpty()) {
+                        if (attributes_.isEmpty()) {
+                            attributes_ = other.attributes_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                        } else {
+                            ensureAttributesIsMutable();
+                            attributes_.addAll(other.attributes_);
+                        }
+                        onChanged();
                     }
-
-                }
-                if (!other.visibilities_.isEmpty()) {
-                    if (visibilities_.isEmpty()) {
-                        visibilities_ = other.visibilities_;
-                        bitField0_ = (bitField0_ & ~0x00000004);
-                    } else {
-                        ensureVisibilitiesIsMutable();
-                        visibilities_.addAll(other.visibilities_);
+                } else {
+                    if (!other.attributes_.isEmpty()) {
+                        if (attributesBuilder_.isEmpty()) {
+                            attributesBuilder_.dispose();
+                            attributesBuilder_ = null;
+                            attributes_ = other.attributes_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                            attributesBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getAttributesFieldBuilder() : null;
+                        } else {
+                            attributesBuilder_.addAllMessages(other.attributes_);
+                        }
                     }
-
                 }
+                if (visibilitiesBuilder_ == null) {
+                    if (!other.visibilities_.isEmpty()) {
+                        if (visibilities_.isEmpty()) {
+                            visibilities_ = other.visibilities_;
+                            bitField0_ = (bitField0_ & ~0x00000004);
+                        } else {
+                            ensureVisibilitiesIsMutable();
+                            visibilities_.addAll(other.visibilities_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.visibilities_.isEmpty()) {
+                        if (visibilitiesBuilder_.isEmpty()) {
+                            visibilitiesBuilder_.dispose();
+                            visibilitiesBuilder_ = null;
+                            visibilities_ = other.visibilities_;
+                            bitField0_ = (bitField0_ & ~0x00000004);
+                            visibilitiesBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getVisibilitiesFieldBuilder() : null;
+                        } else {
+                            visibilitiesBuilder_.addAllMessages(other.visibilities_);
+                        }
+                    }
+                }
+                this.mergeUnknownFields(other.unknownFields);
+                onChanged();
                 return this;
             }
 
+            @java.lang.Override
             public final boolean isInitialized() {
                 if (!hasView()) {
-
                     return false;
                 }
                 for (int i = 0; i < getAttributesCount(); i++) {
                     if (!getAttributes(i).isInitialized()) {
-
                         return false;
                     }
                 }
                 for (int i = 0; i < getVisibilitiesCount(); i++) {
                     if (!getVisibilities(i).isInitialized()) {
-
                         return false;
                     }
                 }
                 return true;
             }
 
+            @java.lang.Override
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.webservice.results.cached.result.CachedresultMessages.Description parsedMessage = null;
@@ -1497,7 +1982,7 @@ public final class CachedresultMessages {
                     parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                     parsedMessage = (datawave.webservice.results.cached.result.CachedresultMessages.Description) e.getUnfinishedMessage();
-                    throw e;
+                    throw e.unwrapIOException();
                 } finally {
                     if (parsedMessage != null) {
                         mergeFrom(parsedMessage);
@@ -1508,28 +1993,30 @@ public final class CachedresultMessages {
 
             private int bitField0_;
 
-            // required string view = 1;
             private java.lang.Object view_ = "";
 
             /**
              * <code>required string view = 1;</code>
              *
-             * @return if it has a view
+             * @return Whether the view field is set.
              */
             public boolean hasView() {
-                return ((bitField0_ & 0x00000001) == 0x00000001);
+                return ((bitField0_ & 0x00000001) != 0);
             }
 
             /**
              * <code>required string view = 1;</code>
              *
-             * @return the view
+             * @return The view.
              */
             public java.lang.String getView() {
                 java.lang.Object ref = view_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    view_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        view_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -1539,7 +2026,7 @@ public final class CachedresultMessages {
             /**
              * <code>required string view = 1;</code>
              *
-             * @return the view as a byte string
+             * @return The bytes for view.
              */
             public com.google.protobuf.ByteString getViewBytes() {
                 java.lang.Object ref = view_;
@@ -1556,9 +2043,8 @@ public final class CachedresultMessages {
              * <code>required string view = 1;</code>
              *
              * @param value
-             *            the new view
-             *
-             * @return builder to set the view to the provided value
+             *            The view to set.
+             * @return This builder for chaining.
              */
             public Builder setView(java.lang.String value) {
                 if (value == null) {
@@ -1566,19 +2052,19 @@ public final class CachedresultMessages {
                 }
                 bitField0_ |= 0x00000001;
                 view_ = value;
-
+                onChanged();
                 return this;
             }
 
             /**
              * <code>required string view = 1;</code>
              *
-             * @return builder to clear the view
+             * @return This builder for chaining.
              */
             public Builder clearView() {
                 bitField0_ = (bitField0_ & ~0x00000001);
                 view_ = getDefaultInstance().getView();
-
+                onChanged();
                 return this;
             }
 
@@ -1586,9 +2072,8 @@ public final class CachedresultMessages {
              * <code>required string view = 1;</code>
              *
              * @param value
-             *            the new view value
-             *
-             * @return builder to set view bytes to provided value
+             *            The bytes for view to set.
+             * @return This builder for chaining.
              */
             public Builder setViewBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1596,402 +2081,571 @@ public final class CachedresultMessages {
                 }
                 bitField0_ |= 0x00000001;
                 view_ = value;
-
+                onChanged();
                 return this;
             }
 
-            // repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;
             private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> attributes_ = java.util.Collections.emptyList();
 
             private void ensureAttributesIsMutable() {
-                if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+                if (!((bitField0_ & 0x00000002) != 0)) {
                     attributes_ = new java.util.ArrayList<datawave.webservice.results.cached.result.CachedresultMessages.Attribute>(attributes_);
                     bitField0_ |= 0x00000002;
                 }
             }
 
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> attributesBuilder_;
+
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @return attributes list
              */
             public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList() {
-                return java.util.Collections.unmodifiableList(attributes_);
+                if (attributesBuilder_ == null) {
+                    return java.util.Collections.unmodifiableList(attributes_);
+                } else {
+                    return attributesBuilder_.getMessageList();
+                }
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @return the number of attributes in the list
              */
             public int getAttributesCount() {
-                return attributes_.size();
+                if (attributesBuilder_ == null) {
+                    return attributes_.size();
+                } else {
+                    return attributesBuilder_.getCount();
+                }
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param index
-             *            the index
-             *
-             * @return the attribute at the provided index
              */
             public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index) {
-                return attributes_.get(index);
+                if (attributesBuilder_ == null) {
+                    return attributes_.get(index);
+                } else {
+                    return attributesBuilder_.getMessage(index);
+                }
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param index
-             *            the index
-             * @param value
-             *            the new attribute
-             *
-             * @return builder to set the attribute at the provided index to the provided value
              */
             public Builder setAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (attributesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureAttributesIsMutable();
+                    attributes_.set(index, value);
+                    onChanged();
+                } else {
+                    attributesBuilder_.setMessage(index, value);
                 }
-                ensureAttributesIsMutable();
-                attributes_.set(index, value);
-
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param index
-             *            the index
-             * @param builderForValue
-             *            the new attribute builder
-             *
-             * @return builder to set the attribute at the provided index to the provided value
              */
             public Builder setAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
-                ensureAttributesIsMutable();
-                attributes_.set(index, builderForValue.build());
-
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    attributes_.set(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    attributesBuilder_.setMessage(index, builderForValue.build());
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param value
-             *            the new attribute
-             *
-             * @return builder to add the provided attribute
              */
             public Builder addAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (attributesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureAttributesIsMutable();
+                    attributes_.add(value);
+                    onChanged();
+                } else {
+                    attributesBuilder_.addMessage(value);
                 }
-                ensureAttributesIsMutable();
-                attributes_.add(value);
-
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param index
-             *            the index
-             * @param value
-             *            the attribute to add
-             *
-             * @return builder to add the provided attribute to the provided index
              */
             public Builder addAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (attributesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureAttributesIsMutable();
+                    attributes_.add(index, value);
+                    onChanged();
+                } else {
+                    attributesBuilder_.addMessage(index, value);
                 }
-                ensureAttributesIsMutable();
-                attributes_.add(index, value);
-
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param builderForValue
-             *            builder to create attribute
-             *
-             * @return builder to add attribute provided
              */
             public Builder addAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
-                ensureAttributesIsMutable();
-                attributes_.add(builderForValue.build());
-
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    attributes_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    attributesBuilder_.addMessage(builderForValue.build());
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param index
-             *            the index
-             * @param builderForValue
-             *            builder to create attribute
-             *
-             * @return builder to add attribute at provided index
              */
             public Builder addAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
-                ensureAttributesIsMutable();
-                attributes_.add(index, builderForValue.build());
-
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    attributes_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    attributesBuilder_.addMessage(index, builderForValue.build());
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param values
-             *            iterable of values to add
-             *
-             * @return builder to add iterable of attributes
              */
             public Builder addAllAttributes(java.lang.Iterable<? extends datawave.webservice.results.cached.result.CachedresultMessages.Attribute> values) {
-                ensureAttributesIsMutable();
-                super.addAll(values, attributes_);
-
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, attributes_);
+                    onChanged();
+                } else {
+                    attributesBuilder_.addAllMessages(values);
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @return builder to clear attributes
              */
             public Builder clearAttributes() {
-                attributes_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000002);
-
+                if (attributesBuilder_ == null) {
+                    attributes_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000002);
+                    onChanged();
+                } else {
+                    attributesBuilder_.clear();
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @param index
-             *            the index
-             *
-             * @return builder to remove attributes
              */
             public Builder removeAttributes(int index) {
-                ensureAttributesIsMutable();
-                attributes_.remove(index);
-
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    attributes_.remove(index);
+                    onChanged();
+                } else {
+                    attributesBuilder_.remove(index);
+                }
                 return this;
             }
 
-            // repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder getAttributesBuilder(int index) {
+                return getAttributesFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder(int index) {
+                if (attributesBuilder_ == null) {
+                    return attributes_.get(index);
+                } else {
+                    return attributesBuilder_.getMessageOrBuilder(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesOrBuilderList() {
+                if (attributesBuilder_ != null) {
+                    return attributesBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(attributes_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder addAttributesBuilder() {
+                return getAttributesFieldBuilder().addBuilder(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder addAttributesBuilder(int index) {
+                return getAttributesFieldBuilder().addBuilder(index,
+                                datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder> getAttributesBuilderList() {
+                return getAttributesFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesFieldBuilder() {
+                if (attributesBuilder_ == null) {
+                    attributesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder>(
+                                    attributes_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
+                    attributes_ = null;
+                }
+                return attributesBuilder_;
+            }
+
             private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> visibilities_ = java.util.Collections
                             .emptyList();
 
             private void ensureVisibilitiesIsMutable() {
-                if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+                if (!((bitField0_ & 0x00000004) != 0)) {
                     visibilities_ = new java.util.ArrayList<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility>(visibilities_);
                     bitField0_ |= 0x00000004;
                 }
             }
 
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> visibilitiesBuilder_;
+
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @return list of visibilities
              */
             public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList() {
-                return java.util.Collections.unmodifiableList(visibilities_);
+                if (visibilitiesBuilder_ == null) {
+                    return java.util.Collections.unmodifiableList(visibilities_);
+                } else {
+                    return visibilitiesBuilder_.getMessageList();
+                }
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @return the number of visibilities in the list
              */
             public int getVisibilitiesCount() {
-                return visibilities_.size();
+                if (visibilitiesBuilder_ == null) {
+                    return visibilities_.size();
+                } else {
+                    return visibilitiesBuilder_.getCount();
+                }
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param index
-             *            the index
-             *
-             * @return the visibility at the provided index
              */
             public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index) {
-                return visibilities_.get(index);
+                if (visibilitiesBuilder_ == null) {
+                    return visibilities_.get(index);
+                } else {
+                    return visibilitiesBuilder_.getMessage(index);
+                }
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param index
-             *            the index
-             * @param value
-             *            the visibility to add
-             *
-             * @return builder to set the visibility at the provided index to the provided value
              */
             public Builder setVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (visibilitiesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.set(index, value);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.setMessage(index, value);
                 }
-                ensureVisibilitiesIsMutable();
-                visibilities_.set(index, value);
-
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param index
-             *            the index
-             * @param builderForValue
-             *            visibility builder
-             *
-             * @return builder to set the visibility at the provided index to the provided value
              */
             public Builder setVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
-                ensureVisibilitiesIsMutable();
-                visibilities_.set(index, builderForValue.build());
-
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.set(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.setMessage(index, builderForValue.build());
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param value
-             *            visibility to add
-             *
-             * @return builder to add visibility
              */
             public Builder addVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (visibilitiesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(value);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addMessage(value);
                 }
-                ensureVisibilitiesIsMutable();
-                visibilities_.add(value);
-
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param index
-             *            the index
-             * @param value
-             *            the visibility to add
-             *
-             * @return builder to add visibility
              */
             public Builder addVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (visibilitiesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(index, value);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addMessage(index, value);
                 }
-                ensureVisibilitiesIsMutable();
-                visibilities_.add(index, value);
-
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param builderForValue
-             *            visibility builder
-             *
-             * @return builder to add visibility
              */
             public Builder addVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
-                ensureVisibilitiesIsMutable();
-                visibilities_.add(builderForValue.build());
-
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addMessage(builderForValue.build());
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param index
-             *            the index
-             * @param builderForValue
-             *            visibility builder
-             *
-             * @return builder to add visibility at provided index
              */
             public Builder addVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
-                ensureVisibilitiesIsMutable();
-                visibilities_.add(index, builderForValue.build());
-
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addMessage(index, builderForValue.build());
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param values
-             *            iterable of visilibities
-             *
-             * @return builder to add all visibilities provided
              */
             public Builder addAllVisibilities(
                             java.lang.Iterable<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> values) {
-                ensureVisibilitiesIsMutable();
-                super.addAll(values, visibilities_);
-
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, visibilities_);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addAllMessages(values);
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @return builder to clear visibilities
              */
             public Builder clearVisibilities() {
-                visibilities_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000004);
-
+                if (visibilitiesBuilder_ == null) {
+                    visibilities_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000004);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.clear();
+                }
                 return this;
             }
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @param index
-             *            the index
-             *
-             * @return builder to remove the visibility at the proivided index
              */
             public Builder removeVisibilities(int index) {
-                ensureVisibilitiesIsMutable();
-                visibilities_.remove(index);
-
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.remove(index);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.remove(index);
+                }
                 return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder getVisibilitiesBuilder(int index) {
+                return getVisibilitiesFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder(int index) {
+                if (visibilitiesBuilder_ == null) {
+                    return visibilities_.get(index);
+                } else {
+                    return visibilitiesBuilder_.getMessageOrBuilder(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesOrBuilderList() {
+                if (visibilitiesBuilder_ != null) {
+                    return visibilitiesBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(visibilities_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder addVisibilitiesBuilder() {
+                return getVisibilitiesFieldBuilder()
+                                .addBuilder(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder addVisibilitiesBuilder(int index) {
+                return getVisibilitiesFieldBuilder().addBuilder(index,
+                                datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder> getVisibilitiesBuilderList() {
+                return getVisibilitiesFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesFieldBuilder() {
+                if (visibilitiesBuilder_ == null) {
+                    visibilitiesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder>(
+                                    visibilities_, ((bitField0_ & 0x00000004) != 0), getParentForChildren(), isClean());
+                    visibilities_ = null;
+                }
+                return visibilitiesBuilder_;
+            }
+
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
             }
 
             // @@protoc_insertion_point(builder_scope:datawave.webservice.results.cached.result.Description)
         }
 
+        // @@protoc_insertion_point(class_scope:datawave.webservice.results.cached.result.Description)
+        private static final datawave.webservice.results.cached.result.CachedresultMessages.Description DEFAULT_INSTANCE;
         static {
-            defaultInstance = new Description(true);
-            defaultInstance.initFields();
+            DEFAULT_INSTANCE = new datawave.webservice.results.cached.result.CachedresultMessages.Description();
         }
 
-        // @@protoc_insertion_point(class_scope:datawave.webservice.results.cached.result.Description)
+        public static datawave.webservice.results.cached.result.CachedresultMessages.Description getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+
+        @java.lang.Deprecated
+        public static final com.google.protobuf.Parser<Description> PARSER = new com.google.protobuf.AbstractParser<Description>() {
+            @java.lang.Override
+            public Description parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                return new Description(input, extensionRegistry);
+            }
+        };
+
+        public static com.google.protobuf.Parser<Description> parser() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Parser<Description> getParserForType() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.Description getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
     }
 
-    static {}
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_results_cached_result_ColumnVisibility_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_results_cached_result_ColumnVisibility_fieldAccessorTable;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_results_cached_result_Attribute_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_results_cached_result_Attribute_fieldAccessorTable;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_results_cached_result_Description_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_results_cached_result_Description_fieldAccessorTable;
+
+    public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
+        return descriptor;
+    }
+
+    private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
+    static {
+        java.lang.String[] descriptorData = {"\n\033cachedresult_messages.proto\022)datawave." + "webservice.results.cached.result\"&\n\020Colu"
+                        + "mnVisibility\022\022\n\nvisibility\030\001 \002(\t\"\031\n\tAttr"
+                        + "ibute\022\014\n\004name\030\001 \002(\t\"\270\001\n\013Description\022\014\n\004v"
+                        + "iew\030\001 \002(\t\022H\n\nattributes\030\002 \003(\01324.datawave" + ".webservice.results.cached.result.Attrib"
+                        + "ute\022Q\n\014visibilities\030\003 \003(\0132;.datawave.web" + "service.results.cached.result.ColumnVisi"
+                        + "bilityB-\n)datawave.webservice.results.ca" + "ched.resultH\001"};
+        descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
+                        new com.google.protobuf.Descriptors.FileDescriptor[] {});
+        internal_static_datawave_webservice_results_cached_result_ColumnVisibility_descriptor = getDescriptor().getMessageTypes().get(0);
+        internal_static_datawave_webservice_results_cached_result_ColumnVisibility_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_results_cached_result_ColumnVisibility_descriptor, new java.lang.String[] {"Visibility",});
+        internal_static_datawave_webservice_results_cached_result_Attribute_descriptor = getDescriptor().getMessageTypes().get(1);
+        internal_static_datawave_webservice_results_cached_result_Attribute_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_results_cached_result_Attribute_descriptor, new java.lang.String[] {"Name",});
+        internal_static_datawave_webservice_results_cached_result_Description_descriptor = getDescriptor().getMessageTypes().get(2);
+        internal_static_datawave_webservice_results_cached_result_Description_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_results_cached_result_Description_descriptor,
+                        new java.lang.String[] {"View", "Attributes", "Visibilities",});
+    }
 
     // @@protoc_insertion_point(outer_class_scope)
 }

@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Set;
@@ -17,11 +18,13 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.data.type.DatawaveTypeIndex;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.util.cache.ClassCache;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
@@ -29,6 +32,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     private static final long serialVersionUID = 7264249641813898860L;
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
+
+    private static final ClassCache classCache = new ClassCache();
 
     private Type<T> datawaveType;
 
@@ -58,8 +63,17 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(DataOutput out) throws IOException {
-        WritableUtils.writeString(out, datawaveType.getClass().toString());
-        writeMetadata(out);
+        int index = DatawaveTypeIndex.getIndexForTypeName(datawaveType.getClass().getTypeName());
+        if (index == 0) {
+            // Type name not found in index, must write full name
+            WritableUtils.writeVInt(out, index);
+            WritableUtils.writeString(out, datawaveType.getClass().getName());
+        } else {
+            // Type name is present in index, do not write the full name
+            WritableUtils.writeVInt(out, index);
+        }
+
+        super.writeMetadata(out);
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -67,7 +81,14 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     @Override
     public void readFields(DataInput in) throws IOException {
         try {
-            setDatawaveType(WritableUtils.readString(in));
+            int index = WritableUtils.readVInt(in);
+            String clazzName;
+            if (index == 0) {
+                clazzName = WritableUtils.readString(in);
+            } else {
+                clazzName = DatawaveTypeIndex.getTypeNameForIndex(index);
+            }
+            setDatawaveType(clazzName);
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException ex) {
             log.error("Could not create the datawaveType " + ex);
         }
@@ -126,7 +147,12 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(Kryo kryo, Output output) {
-        output.writeString(datawaveType.getClass().getName());
+        int typeIndex = DatawaveTypeIndex.getIndexForTypeName(datawaveType.getClass().getTypeName());
+        output.writeInt(typeIndex, true);
+        if (typeIndex == 0) {
+            // Type was not found in the TypeIndex, write the class name
+            output.writeString(datawaveType.getClass().getName());
+        }
         super.writeMetadata(kryo, output);
         output.writeString(this.datawaveType.getDelegateAsString());
         output.writeBoolean(this.toKeep);
@@ -135,7 +161,16 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     @Override
     public void read(Kryo kryo, Input input) {
         try {
-            setDatawaveType(input.readString());
+            int typeIndex = input.readInt(true);
+            String clazzName;
+            if (typeIndex == 0) {
+                // Type was not in the TypeIndex, must read the class name
+                clazzName = input.readString();
+            } else {
+                // Type was in the TypeIndex, grab the name from the utility
+                clazzName = DatawaveTypeIndex.getTypeNameForIndex(typeIndex);
+            }
+            setDatawaveType(clazzName);
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
             log.warn("could not read datawateType from input: " + e);
         }
@@ -157,7 +192,9 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     private void setDatawaveType(String datawaveTypeString)
                     throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-        this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).getDeclaredConstructor().newInstance();
+        Class<?> clazz = classCache.get(datawaveTypeString);
+        Constructor<Type> constructor = (Constructor<Type>) clazz.getDeclaredConstructor();
+        this.datawaveType = constructor.newInstance();
     }
 
     /*

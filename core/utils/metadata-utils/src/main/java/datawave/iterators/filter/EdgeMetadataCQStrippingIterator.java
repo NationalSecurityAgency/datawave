@@ -11,7 +11,7 @@ import datawave.util.StringUtils;
  * conjunction with the EdgeMetadataCombiner.
  */
 public class EdgeMetadataCQStrippingIterator extends WrappingIterator {
-    
+
     @Override
     public Key getTopKey() {
         Key key = super.getTopKey();
@@ -20,9 +20,9 @@ public class EdgeMetadataCQStrippingIterator extends WrappingIterator {
         } else {
             return key;
         }
-        
+
     }
-    
+
     public static Key transformKey(Key key) {
         String[] pieces = StringUtils.split(key.getColumnQualifier().toString(), '/');
         Text cq = new Text(pieces[0]);

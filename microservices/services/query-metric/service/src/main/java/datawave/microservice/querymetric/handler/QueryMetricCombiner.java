@@ -17,22 +17,22 @@ import datawave.microservice.querymetric.RangeCounts;
 
 public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializable {
     private static final long serialVersionUID = -5388075643256402640L;
-    
+
     private static final Logger log = LoggerFactory.getLogger(QueryMetricCombiner.class);
-    
+
     public T combineMetrics(T updatedQueryMetric, T cachedQueryMetric, QueryMetricType metricType) {
-        
+
         T combinedMetric = updatedQueryMetric;
         // new metrics coming in may be complete or partial updates
         if (cachedQueryMetric != null) {
             // duplicate cachedQueryMetric so that we leave that object unchanged and return a combined metric
             combinedMetric = (T) cachedQueryMetric.duplicate();
-            
+
             boolean inOrderUpdate = true;
             if (updatedQueryMetric.getLastUpdated() != null && cachedQueryMetric.getLastUpdated() != null) {
                 inOrderUpdate = updatedQueryMetric.getLastUpdated().after(cachedQueryMetric.getLastUpdated());
             }
-            
+
             // only update once
             if (combinedMetric.getQueryType() == null && updatedQueryMetric.getQueryType() != null) {
                 combinedMetric.setQueryType(updatedQueryMetric.getQueryType());
@@ -45,24 +45,24 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             if (combinedMetric.getUserDN() == null && updatedQueryMetric.getUserDN() != null) {
                 combinedMetric.setUserDN(updatedQueryMetric.getUserDN());
             }
-            
+
             // keep the original createDate
             if (cachedQueryMetric.getCreateDate() != null) {
                 combinedMetric.setCreateDate(cachedQueryMetric.getCreateDate());
             }
-            
+
             // Do not update queryId -- shouldn't change anyway
-            
+
             // only update once
             if (combinedMetric.getQuery() == null && updatedQueryMetric.getQuery() != null) {
                 combinedMetric.setQuery(updatedQueryMetric.getQuery());
             }
-            
+
             // only update once
             if (combinedMetric.getHost() == null && updatedQueryMetric.getHost() != null) {
                 combinedMetric.setHost(updatedQueryMetric.getHost());
             }
-            
+
             // Map page numbers to page metrics and update
             Map<Long,PageMetric> storedPagesByPageNumMap = new TreeMap<>();
             Map<String,PageMetric> storedPagesByUuidMap = new TreeMap<>();
@@ -106,7 +106,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
                 }
             }
             combinedMetric.setPageTimes(new ArrayList<>(storedPagesByPageNumMap.values()));
-            
+
             // only update once
             if (combinedMetric.getProxyServers() == null && updatedQueryMetric.getProxyServers() != null) {
                 combinedMetric.setProxyServers(updatedQueryMetric.getProxyServers());
@@ -179,7 +179,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             if (updatedQueryMetric.getLoginTime() > combinedMetric.getLoginTime()) {
                 combinedMetric.setLoginTime(updatedQueryMetric.getLoginTime());
             }
-            
+
             if (metricType.equals(QueryMetricType.DISTRIBUTED)) {
                 combinedMetric.setSourceCount(combinedMetric.getSourceCount() + updatedQueryMetric.getSourceCount());
                 combinedMetric.setNextCount(combinedMetric.getNextCount() + updatedQueryMetric.getNextCount());
@@ -249,7 +249,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
         log.trace("Combined metrics cached: " + cachedQueryMetric + " updated: " + updatedQueryMetric + " combined: " + combinedMetric);
         return combinedMetric;
     }
-    
+
     public long getLastPageNumber(BaseQueryMetric m) {
         long lastPage = 0;
         List<PageMetric> pageMetrics = m.getPageTimes();
@@ -260,7 +260,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
         }
         return lastPage;
     }
-    
+
     protected PageMetric combinePageMetrics(PageMetric updated, PageMetric stored) {
         if (stored == null) {
             return updated;
@@ -301,7 +301,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
         }
         return pm;
     }
-    
+
     protected boolean isChanged(String updated, String stored) {
         if ((StringUtils.isBlank(stored) && StringUtils.isNotBlank(updated)) || (stored != null && updated != null && !stored.equals(updated))) {
             return true;

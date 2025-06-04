@@ -58,6 +58,10 @@ DW_DATAWAVE_INGEST_TEST_SKIP=${DW_DATAWAVE_INGEST_TEST_SKIP:-false}
 DW_DATAWAVE_INGEST_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"}
 DW_DATAWAVE_INGEST_TEST_FILE_CSV=${DW_DATAWAVE_INGEST_TEST_FILE_CSV:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"}
 DW_DATAWAVE_INGEST_TEST_FILE_JSON=${DW_DATAWAVE_INGEST_TEST_FILE_JSON:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-json/src/test/resources/input/tvmaze-api.json"}
+DW_DATAWAVE_INGEST_MEDIUM_FILE_WIKI=${DW_DATAWAVE_INGEST_MEDIUM_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20250519-pages-articles-medium.xml.gz"}
+DW_DATAWAVE_INGEST_DE_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_DE_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/dewiki-20250520-pages-articles-brief.xml"}
+DW_DATAWAVE_INGEST_ES_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_ES_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/eswiki-20250520-pages-articles-brief.xml"}
+DW_DATAWAVE_INGEST_FR_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_FR_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/frwiki-20250520-pages-articles-brief.xml"}
 
 DW_DATAWAVE_INGEST_FLAGMETRICS_DIR="${DW_DATAWAVE_DATA_DIR}/flagMetrics"
 
@@ -349,8 +353,15 @@ function datawaveIngestTarballName() {
 }
 
 function datawaveIngestExamples() {
+   # basic examples of each format
    datawaveIngestWikipedia ${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}
    datawaveIngestJson ${DW_DATAWAVE_INGEST_TEST_FILE_JSON}
    datawaveIngestCsv ${DW_DATAWAVE_INGEST_TEST_FILE_CSV}
+
+   # used for content testing
+   datawaveIngestWikipedia ${DW_DATAWAVE_INGEST_MEDIUM_FILE_WIKI}
+   datawaveIngestWikipedia ${DW_DATAWAVE_INGEST_DE_TEST_FILE_WIKI}
+   datawaveIngestWikipedia ${DW_DATAWAVE_INGEST_ES_TEST_FILE_WIKI}
+   datawaveIngestWikipedia ${DW_DATAWAVE_INGEST_FR_TEST_FILE_WIKI}
 }
 

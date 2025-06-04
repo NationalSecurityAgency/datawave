@@ -7,11 +7,11 @@ import datawave.webservice.query.exception.QueryException;
 
 public class LockedCacheUpdateUtil<T> {
     private final LockableCache<T> lockableCache;
-    
+
     public LockedCacheUpdateUtil(LockableCache<T> lockableCache) {
         this.lockableCache = lockableCache;
     }
-    
+
     public T lockedUpdate(String key, CacheUpdater<T> updater, long waitTimeMillis, long leaseTimeMillis) throws QueryException, InterruptedException {
         T cacheEntry = null;
         if (lockableCache.tryLock(key, waitTimeMillis, leaseTimeMillis)) {

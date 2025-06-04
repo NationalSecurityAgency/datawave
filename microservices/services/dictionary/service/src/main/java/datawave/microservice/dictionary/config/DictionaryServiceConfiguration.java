@@ -36,13 +36,13 @@ public class DictionaryServiceConfiguration {
     public AccumuloProperties warehouseAccumuloProperties(DictionaryServiceProperties dictionaryServiceProperties) {
         return dictionaryServiceProperties.getAccumuloProperties();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public UserAuthFunctions userAuthFunctions() {
         return UserAuthFunctions.getInstance();
     }
-    
+
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean
@@ -50,7 +50,7 @@ public class DictionaryServiceConfiguration {
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory) {
         return new MetadataDescriptionsHelper<>(markingFunctions, responseObjectFactory);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public DataDictionary datawaveDataDictionary(MarkingFunctions markingFunctions,
@@ -58,13 +58,13 @@ public class DictionaryServiceConfiguration {
                     MetadataHelperFactory metadataHelperFactory, MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory) {
         return new DataDictionaryImpl(markingFunctions, responseObjectFactory, metadataHelperFactory, metadataDescriptionsHelperFactory);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public EdgeDictionary datawaveEdgeDictionary(MetadataHelperFactory metadataHelperFactory) {
         return new EdgeDictionaryImpl(metadataHelperFactory);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory(
@@ -75,19 +75,19 @@ public class DictionaryServiceConfiguration {
                 return new DefaultDataDictionary(datawaveServerProperties.getCdnUri() + "webjars/jquery/",
                                 datawaveServerProperties.getCdnUri() + "webjars/datatables/js/");
             }
-            
+
             @Override
             public DefaultDescription getDescription() {
                 return new DefaultDescription();
             }
-            
+
             @Override
             public DefaultFields getFields() {
                 return new DefaultFields();
             }
         };
     }
-    
+
     /**
      * Provides a {@link Jackson2ObjectMapperBuilderCustomizer} that adds the mix-in {@link FieldsBaseMixIn} for {@link FieldsBase} objects. This is here to
      * override Jackson de-serialization behavior for methods that receive a {@link FieldsBase} as a request body. We cannot de-serialize the payload as an
@@ -101,7 +101,7 @@ public class DictionaryServiceConfiguration {
     public Jackson2ObjectMapperBuilderCustomizer dictionaryJacksonCustomizer() {
         return c -> c.mixIn(FieldsBase.class, FieldsBaseMixIn.class);
     }
-    
+
     /**
      * A Jackson mix-in to specify that {@link FieldsBase} parameters should be de-serialized as though the parameter were an instance of {@link DefaultFields}
      * instead.

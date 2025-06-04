@@ -1,7 +1,7 @@
 package datawave.data.normalizer.regex;
 
 public enum NodeType {
-    
+
     ALTERNATION,
     ANY_CHAR,
     CHAR_CLASS,

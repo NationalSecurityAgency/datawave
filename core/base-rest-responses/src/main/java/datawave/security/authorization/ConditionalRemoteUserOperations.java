@@ -20,13 +20,13 @@ import datawave.webservice.result.GenericResponse;
  */
 public class ConditionalRemoteUserOperations implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(ConditionalRemoteUserOperations.class);
-    
+
     private UserOperations delegate;
     private Function<ProxiedUserDetails,Boolean> condition;
     private Supplier<AuthorizationsListBase> authorizationsListBaseSupplier;
-    
+
     private static final GenericResponse<String> EMPTY_RESPONSE = new GenericResponse<>();
-    
+
     public boolean isFiltered(ProxiedUserDetails principal) {
         if (!condition.apply(principal)) {
             if (log.isDebugEnabled()) {
@@ -40,13 +40,13 @@ public class ConditionalRemoteUserOperations implements UserOperations {
             return false;
         }
     }
-    
+
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
         assert (delegate != null);
         assert (condition != null);
         assert (authorizationsListBaseSupplier != null);
-        
+
         if (!isFiltered(callerObject)) {
             return delegate.listEffectiveAuthorizations(callerObject);
         } else {
@@ -55,40 +55,40 @@ public class ConditionalRemoteUserOperations implements UserOperations {
             return response;
         }
     }
-    
+
     @Override
     public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) throws AuthorizationException {
         assert (delegate != null);
         assert (condition != null);
         assert (authorizationsListBaseSupplier != null);
-        
+
         if (!isFiltered(callerObject)) {
             return delegate.flushCachedCredentials(callerObject);
         } else {
             return EMPTY_RESPONSE;
         }
     }
-    
+
     public UserOperations getDelegate() {
         return delegate;
     }
-    
+
     public void setDelegate(UserOperations delegate) {
         this.delegate = delegate;
     }
-    
+
     public Function<ProxiedUserDetails,Boolean> getCondition() {
         return condition;
     }
-    
+
     public void setCondition(Function<ProxiedUserDetails,Boolean> condition) {
         this.condition = condition;
     }
-    
+
     public Supplier<AuthorizationsListBase> getAuthorizationsListBaseSupplier() {
         return authorizationsListBaseSupplier;
     }
-    
+
     public void setAuthorizationsListBaseSupplier(Supplier<AuthorizationsListBase> authorizationsListBaseSupplier) {
         this.authorizationsListBaseSupplier = authorizationsListBaseSupplier;
     }

@@ -33,23 +33,23 @@ import org.apache.accumulo.core.security.SystemPermission;
 import org.apache.accumulo.core.security.TablePermission;
 
 class InMemorySecurityOperations implements SecurityOperations {
-    
+
     final private InMemoryAccumulo acu;
-    
+
     InMemorySecurityOperations(InMemoryAccumulo acu) {
         this.acu = acu;
     }
-    
+
     @Override
     public void createLocalUser(String principal, PasswordToken password) throws AccumuloException, AccumuloSecurityException {
         this.acu.users.put(principal, new InMemoryUser(principal, password, new Authorizations()));
     }
-    
+
     @Override
     public void dropLocalUser(String principal) throws AccumuloException, AccumuloSecurityException {
         this.acu.users.remove(principal);
     }
-    
+
     @Override
     public boolean authenticateUser(String principal, AuthenticationToken token) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
@@ -57,7 +57,7 @@ class InMemorySecurityOperations implements SecurityOperations {
             return false;
         return user.token.equals(token);
     }
-    
+
     @Override
     public void changeLocalUserPassword(String principal, PasswordToken token) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
@@ -66,7 +66,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             throw new AccumuloSecurityException(principal, SecurityErrorCode.USER_DOESNT_EXIST);
     }
-    
+
     @Override
     public void changeUserAuthorizations(String principal, Authorizations authorizations) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
@@ -75,7 +75,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             throw new AccumuloSecurityException(principal, SecurityErrorCode.USER_DOESNT_EXIST);
     }
-    
+
     @Override
     public Authorizations getUserAuthorizations(String principal) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
@@ -84,7 +84,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             throw new AccumuloSecurityException(principal, SecurityErrorCode.USER_DOESNT_EXIST);
     }
-    
+
     @Override
     public boolean hasSystemPermission(String principal, SystemPermission perm) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
@@ -93,7 +93,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             throw new AccumuloSecurityException(principal, SecurityErrorCode.USER_DOESNT_EXIST);
     }
-    
+
     @Override
     public boolean hasTablePermission(String principal, String tableName, TablePermission perm) throws AccumuloException, AccumuloSecurityException {
         InMemoryTable table = acu.tables.get(tableName);
@@ -104,7 +104,7 @@ class InMemorySecurityOperations implements SecurityOperations {
             return false;
         return perms.contains(perm);
     }
-    
+
     @Override
     public boolean hasNamespacePermission(String principal, String namespace, NamespacePermission permission)
                     throws AccumuloException, AccumuloSecurityException {
@@ -116,7 +116,7 @@ class InMemorySecurityOperations implements SecurityOperations {
             return false;
         return perms.contains(permission);
     }
-    
+
     @Override
     public void grantSystemPermission(String principal, SystemPermission permission) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
@@ -125,7 +125,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             throw new AccumuloSecurityException(principal, SecurityErrorCode.USER_DOESNT_EXIST);
     }
-    
+
     @Override
     public void grantTablePermission(String principal, String tableName, TablePermission permission) throws AccumuloException, AccumuloSecurityException {
         if (acu.users.get(principal) == null)
@@ -139,7 +139,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             perms.add(permission);
     }
-    
+
     @Override
     public void grantNamespacePermission(String principal, String namespace, NamespacePermission permission)
                     throws AccumuloException, AccumuloSecurityException {
@@ -154,7 +154,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             perms.add(permission);
     }
-    
+
     @Override
     public void revokeSystemPermission(String principal, SystemPermission permission) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
@@ -163,7 +163,7 @@ class InMemorySecurityOperations implements SecurityOperations {
         else
             throw new AccumuloSecurityException(principal, SecurityErrorCode.USER_DOESNT_EXIST);
     }
-    
+
     @Override
     public void revokeTablePermission(String principal, String tableName, TablePermission permission) throws AccumuloException, AccumuloSecurityException {
         if (acu.users.get(principal) == null)
@@ -174,9 +174,9 @@ class InMemorySecurityOperations implements SecurityOperations {
         EnumSet<TablePermission> perms = table.userPermissions.get(principal);
         if (perms != null)
             perms.remove(permission);
-        
+
     }
-    
+
     @Override
     public void revokeNamespacePermission(String principal, String namespace, NamespacePermission permission)
                     throws AccumuloException, AccumuloSecurityException {
@@ -188,17 +188,17 @@ class InMemorySecurityOperations implements SecurityOperations {
         EnumSet<NamespacePermission> perms = mockNamespace.userPermissions.get(principal);
         if (perms != null)
             perms.remove(permission);
-        
+
     }
-    
+
     @Override
     public Set<String> listLocalUsers() throws AccumuloException, AccumuloSecurityException {
         return acu.users.keySet();
     }
-    
+
     @Override
     public DelegationToken getDelegationToken(DelegationTokenConfig cfg) throws AccumuloException, AccumuloSecurityException {
         return null;
     }
-    
+
 }

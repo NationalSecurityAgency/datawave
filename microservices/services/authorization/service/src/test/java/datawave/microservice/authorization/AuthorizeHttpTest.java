@@ -50,50 +50,50 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"AuthorizationServiceV1HttpTest", "http"})
 public class AuthorizeHttpTest {
-    
+
     private static final SubjectIssuerDNPair ALLOWED_CALLER = SubjectIssuerDNPair.of("cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us",
                     "cn=testcorp ca, ou=security, o=testcorp, c=us");
     private static final SubjectIssuerDNPair NOT_ALOWED_CALLER = SubjectIssuerDNPair.of(
                     "cn=notallowedcaller.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us", "cn=testcorp ca, ou=security, o=testcorp, c=us");
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     private CacheManager cacheManager;
-    
+
     @Autowired
     private JWTTokenHandler jwtTokenHandler;
-    
+
     private AuthorizationTestUtils testUtils;
-    
+
     private DatawaveUserDetails allowedCaller;
     private DatawaveUserDetails notAllowedCaller;
     private RestTemplate restTemplate;
-    
+
     @BeforeEach
     public void setup() {
         cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
         restTemplate = restTemplateBuilder.build(RestTemplate.class);
         testUtils = new AuthorizationTestUtils(jwtTokenHandler, restTemplate, "http", webServicePort);
-        
+
         DatawaveUser allowedDWUser = new DatawaveUser(ALLOWED_CALLER, USER, null, null, null, null, System.currentTimeMillis());
         allowedCaller = new DatawaveUserDetails(Collections.singleton(allowedDWUser), allowedDWUser.getCreationTime());
-        
+
         DatawaveUser notAllowedDWUser = new DatawaveUser(NOT_ALOWED_CALLER, USER, null, null, null, null, System.currentTimeMillis());
         notAllowedCaller = new DatawaveUserDetails(Collections.singleton(notAllowedDWUser), notAllowedDWUser.getCreationTime());
     }
-    
+
     @Test
     public void testAuthorizeNotAllowedCallerTrustedHeader() throws Exception {
         // Use trusted header to authenticate to ProxiedEntityX509Filter
         testUtils.testAuthorizeMethodFailure(notAllowedCaller, "/authorization/v1/authorize", true, false);
         testUtils.testAuthorizeMethodFailure(notAllowedCaller, "/authorization/v2/authorize", true, false);
     }
-    
+
     @Test
     public void testAuthorizeJWTTrustedHeader() throws Exception {
         // Use JWT to authenticate to JWTAuthenticationFilter
@@ -101,7 +101,7 @@ public class AuthorizeHttpTest {
         // authenticate and trustedHeaders are ignored
         testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v1/authorize", true, true);
         testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v2/authorize", true, true);
-        
+
         // Use JWT to authenticate to JWTAuthenticationFilter
         // Since user is already authenticated, ProxiedEntityX509Filter does not
         // authenticate and trustedHeaders are ignored
@@ -109,26 +109,26 @@ public class AuthorizeHttpTest {
         testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v1/authorize", true, true);
         testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v2/authorize", true, true);
     }
-    
+
     @Test
     public void testAuthorizeJWT() throws Exception {
         // Use JWT to authenticate to JWTAuthenticationFilter
         testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v1/authorize", false, true);
         testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v2/authorize", false, true);
-        
+
         // Use JWT to authenticate to JWTAuthenticationFilter
         // allowedCaller is not enforced when accessing using JWT
         testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v1/authorize", false, true);
         testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v2/authorize", false, true);
     }
-    
+
     @Test
     public void testAuthorizeAllowedCallerTrustedHeader() throws Exception {
         // Use trusted header to authenticate to ProxiedEntityX509Filter
         testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v1/authorize", true, false);
         testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v2/authorize", true, false);
     }
-    
+
     @Test
     public void testAuthorizeNoPrincipalChangedCheck() throws Exception {
         // Checking for setCheckForPrincipalChanges(false) in ProxiedEntityX509Filter()
@@ -142,7 +142,7 @@ public class AuthorizeHttpTest {
         ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode(), "Authorized request to " + uri + " did not return a 200.");
     }
-    
+
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})
     @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
     @ComponentScan(basePackages = "datawave.microservice")
@@ -154,7 +154,7 @@ public class AuthorizeHttpTest {
                         @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory) {
             return new AuthorizationTestUserService(Collections.emptyMap(), true);
         }
-        
+
         @Bean
         public HazelcastInstance testHazelcastInstance() {
             Config config = new Config();
@@ -162,7 +162,7 @@ public class AuthorizeHttpTest {
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);
         }
-        
+
         @Bean
         public BusProperties busProperties() {
             return new BusProperties();

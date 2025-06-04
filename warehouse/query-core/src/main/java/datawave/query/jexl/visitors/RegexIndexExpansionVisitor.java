@@ -23,7 +23,6 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
@@ -288,19 +287,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
     }
 
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        ASTReference ref = (ASTReference) super.visit(node, data);
-        if (ref.jjtGetNumChildren() == 0) {
-            return null;
-        } else {
-            return ref;
-        }
-    }
-
     /**
      * Determines if we should expand a regular expression given the current AST.
-     *
+     * <p>
      * A regex doesn't have to be expanded if we can work out the logic such that we can satisfy the query with term equality only. The simple case is when the
      * ERNode and an EQNode share an AND parent. There are more complicated variants involving grand parents and OR nodes that are considered.
      *
@@ -338,7 +327,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     /**
      * Walks up an AST and evaluates subtrees as needed. This method will fail fast if we determine we do not have to process a regex, otherwise the entire tree
      * will be evaluated.
-     *
+     * <p>
      * This method recurses upwards, searching for an AND or OR node in the lineage. Once of those nodes is found, then the subtree rooted at that node is
      * evaluated. The visit map is used to cache already evaluated subtrees, so moving to a parent will not cause a subtree to be evaluated along with its
      * unevaluated siblings.
@@ -371,13 +360,16 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     /**
      * Evaluates a subtree to see if it can prevent the expansion of a regular expression.
-     *
+     * <p>
      * This method recurses down under three conditions:
-     *
-     * 1) An OR is encountered. In this case the result of recursing down the subtrees rooted at each child is OR'd together and returned. 2) An AND is
-     * encountered. In this case the result of recursing down the subtrees rooted at each child is AND'd together and returned. 3) Any node that is not an EQ
-     * node and has only 1 child. If there are multiple children, this method returns true, indicating that the subtree cannot defeat a regex expansion.
-     *
+     * <p>
+     * 1) An OR is encountered. In this case the result of recursing down the subtrees rooted at each child is OR'd together and returned.
+     * <p>
+     * 2) An AND is encountered. In this case the result of recursing down the subtrees rooted at each child is AND'd together and returned.
+     * <p>
+     * 3) Any node that is not an EQ node and has only 1 child. If there are multiple children, this method returns true, indicating that the subtree cannot
+     * defeat a regex expansion.
+     * <p>
      * If an EQ node is encountered, we check if it can defeat an expansion by returning the value of a call to `doesNodeSupportRegexExpansion` on the node.
      *
      * @param node
@@ -691,14 +683,15 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         // If we have no children, it's impossible to find any records, so this query returns no results
         if (fieldsToTerms.isEmpty()) {
-            // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
-            // the query against the document
-            for (ASTIdentifier id : JexlASTHelper.getIdentifiers(currentNode)) {
+            // if there was no field expansion then replace _ANYFIELD_ with _NOFIELD_, the RangeStream will drop
+            // this term from the query
+            JexlNode copy = copy(currentNode);
+            for (ASTIdentifier id : JexlASTHelper.getIdentifiers(copy)) {
                 if (!futureJexlNode.isKeepOriginalNode() && Constants.ANY_FIELD.equals(id.getName())) {
                     JexlNodes.setIdentifier(id, Constants.NO_FIELD);
                 }
             }
-            newNode = currentNode;
+            newNode = copy;
         } else {
             onlyRetainFieldNamesInTheModelForwardMapping(fieldsToTerms);
             if (isNegativeNode(currentNode)) {

@@ -154,6 +154,7 @@ import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
+import datawave.query.jexl.visitors.validate.ValidateBoundedRangeVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.async.AbstractQueryPlannerCallable;
@@ -1252,6 +1253,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
+        // whether bounded ranges were expanded or not, validate all ranges
+        timedValidateBoundedRanges(timers, config.getQueryTree());
+
         // fields may have been added or removed from the query, need to update the field to type map
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
 
@@ -1628,6 +1632,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Validate Filter Functions",
                         () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
+    }
+
+    protected ASTJexlScript timedValidateBoundedRanges(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Validate Bounded Ranges", () -> ValidateBoundedRangeVisitor.validate(queryTree));
     }
 
     protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
@@ -3517,7 +3525,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return serializedIvaratorDirs;
     }
 
-    protected Set<String> getIndexedFields() {
+    public Set<String> getIndexedFields() {
         if (indexedFields == null && indexedFieldsCallable != null) {
             indexedFields = getFieldSet(indexedFieldsCallable.stageName(), indexedFieldsFuture);
         }
@@ -3525,7 +3533,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return Objects.requireNonNullElse(indexedFields, Collections.emptySet());
     }
 
-    protected Set<String> getIndexOnlyFields() {
+    public Set<String> getIndexOnlyFields() {
         if (indexOnlyFields == null && indexOnlyFieldsCallable != null) {
             indexOnlyFields = getFieldSet(indexOnlyFieldsCallable.stageName(), indexOnlyFieldsFuture);
         }
@@ -3533,7 +3541,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return Objects.requireNonNullElse(indexOnlyFields, Collections.emptySet());
     }
 
-    protected Set<String> getNonEventFields() {
+    public Set<String> getNonEventFields() {
         if (nonEventFields == null && nonEventFieldsCallable != null) {
             nonEventFields = getFieldSet(nonEventFieldsCallable.stageName(), nonEventFieldsFuture);
         }

@@ -25,26 +25,26 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 public class UserAuthorizations implements Message<UserAuthorizations>, Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "auth")
     private TreeSet<String> auths;
-    
+
     public UserAuthorizations() {
         auths = new TreeSet<String>();
     }
-    
+
     public UserAuthorizations(String... auths) {
         this.auths = new TreeSet<String>(Arrays.asList(auths));
     }
-    
+
     public UserAuthorizations(Set<String> auths) {
         this.auths = new TreeSet<String>(auths);
     }
-    
+
     public Set<String> getUserAuthorizations() {
         return auths;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -55,38 +55,38 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
         }
         return sb.toString();
     }
-    
+
     public static Schema<UserAuthorizations> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<UserAuthorizations> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<UserAuthorizations> SCHEMA = new Schema<UserAuthorizations>() {
         public UserAuthorizations newMessage() {
             return new UserAuthorizations();
         }
-        
+
         public Class<UserAuthorizations> typeClass() {
             return UserAuthorizations.class;
         }
-        
+
         public String messageName() {
             return UserAuthorizations.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return UserAuthorizations.class.getName();
         }
-        
+
         public boolean isInitialized(UserAuthorizations message) {
             return true;
         }
-        
+
         public void writeTo(Output output, UserAuthorizations message) throws IOException {
             if (message.auths != null) {
                 for (String auths : message.auths) {
@@ -95,7 +95,7 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, UserAuthorizations message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -111,7 +111,7 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -120,12 +120,12 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("auths", 1);
