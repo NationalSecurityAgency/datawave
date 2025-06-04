@@ -133,7 +133,7 @@ public class DocumentTest {
         d.put("NUM", createAttribute("NUM", "25"));
         d.put("NUM_LIST", createAttribute("NUM_LIST", "22,23,24"));
         d.put("POINT", createAttribute("POINT", "POINT(10 10)"));
-        roundTrip(MAX_ITERATIONS, 767);
+        roundTrip(MAX_ITERATIONS, 750);
     }
 
     @Test
@@ -148,7 +148,7 @@ public class DocumentTest {
 
     @Test
     public void testSingleFieldedRoundTrips() {
-        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 22564);
+        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 18314);
         roundTrip("GEO_LAT", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
         roundTrip("GEO_LON", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
         roundTrip("HEX", DOCUMENT_SIZE, MAX_ITERATIONS, 11563);
@@ -185,7 +185,8 @@ public class DocumentTest {
     public void testDateRoundTrip() {
         // original size: 16564
         // kryo optimization: 22564
-        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 22564);
+        // using default DateSerializer dropped the read time by 50%
+        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 18314);
     }
 
     @Test

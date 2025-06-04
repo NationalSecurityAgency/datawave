@@ -1,21 +1,21 @@
 package datawave.data.type;
 
-import static datawave.data.normalizer.DateNormalizer.ISO_8601_FORMAT_STRING;
+import static com.esotericsoftware.kryo.serializers.DefaultSerializers.DateSerializer;
 
-import java.text.ParseException;
 import java.util.Date;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import datawave.data.normalizer.DateNormalizer;
 import datawave.data.normalizer.Normalizer;
 
 public class DateType extends BaseType<Date> {
 
     private static final long serialVersionUID = 936566410691643144L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + PrecomputedSizes.DATE_STATIC_REF + Sizer.REFERENCE;
+
+    private static final DateSerializer serializer = new DateSerializer();
 
     private String normalizedDelegate = null;
 
@@ -49,21 +49,13 @@ public class DateType extends BaseType<Date> {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        output.writeString(getDelegateAsString());
+        kryo.writeObject(output, delegate, serializer);
         output.writeString(getNormalizedValue());
     }
 
     @Override
     public void read(Kryo kryo, Input input) {
-        String delegateString = input.readString();
-        String normalizedValue = input.readString();
-        try {
-            // the method call to getDelegateAsString() uses the ISO 8601 format so in practice
-            // this should never trigger an exception.
-            this.delegate = DateNormalizer.getParser(ISO_8601_FORMAT_STRING).parse(delegateString);
-        } catch (ParseException e) {
-            throw new RuntimeException("Input should have been ISO 8601 normalized: " + delegateString, e);
-        }
-        this.normalizedValue = normalizedValue;
+        this.delegate = kryo.readObject(input, Date.class);
+        this.normalizedValue = input.readString();
     }
 }
