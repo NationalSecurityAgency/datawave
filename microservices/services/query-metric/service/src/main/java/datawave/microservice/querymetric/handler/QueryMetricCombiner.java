@@ -207,7 +207,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             }
             // use the max numUpdates
             combinedMetric.setNumUpdates(Math.max(combinedMetric.getNumUpdates(), updatedQueryMetric.getNumUpdates()));
-            
+
             Map<String,RangeCounts> updatedSubPlans = updatedQueryMetric.getSubPlans();
             Map<String,RangeCounts> combinedSubPlans = combinedMetric.getSubPlans();
             if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {

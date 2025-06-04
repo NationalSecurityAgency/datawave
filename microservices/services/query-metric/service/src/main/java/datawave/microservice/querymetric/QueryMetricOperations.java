@@ -540,7 +540,7 @@ public class QueryMetricOperations {
             return queryGeometryResponse;
         }
     }
-    
+
     /**
      * Returns subplans for the current user's query that is identified by the id
      *
@@ -557,11 +557,11 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/id/{queryId}/subplans", method = {RequestMethod.GET}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView querySubplanWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId) {
-        
+
         BaseQueryMetricListResponse response = query(currentUser, queryId);
         return response.createSubplanModelAndView();
     }
-    
+
     /*
      * Try to determine if cached metric is complete or whether it may be missing pages because it was evicted from the incoming cache
      */

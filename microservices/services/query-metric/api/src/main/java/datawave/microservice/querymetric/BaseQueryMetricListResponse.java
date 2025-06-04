@@ -76,9 +76,9 @@ public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> ext
     }
 
     abstract public ModelAndView createModelAndView();
-    
+
     abstract public ModelAndView createSubplanModelAndView();
-    
+
     public void setHeader(String header) {
         this.header = header;
     }

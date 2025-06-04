@@ -418,7 +418,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             }
 
             output.writeInt64(39, message.docSize, false);
-            
+
             if (message.subPlans != null) {
                 for (Map.Entry<String,RangeCounts> entry : message.subPlans.entrySet()) {
                     output.writeString(40, StringUtils.join(Arrays.asList(entry.getKey(), StringUtils.join(entry.getValue(), ",")), "\0"), true);

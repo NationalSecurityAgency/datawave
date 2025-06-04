@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
  * the "default" one, which when triggered will then assume the "" prefix and push all of our own elements into the "ns2" prefix.
  */
 public class StringRangeCountMapAdapter extends XmlAdapter<StringRangeCountMapAdapter.StringRangeCountMap,Map<String,RangeCounts>> {
-    
+
     @Override
     public Map<String,RangeCounts> unmarshal(StringRangeCountMap v) throws Exception {
         HashMap<String,RangeCounts> map = new HashMap<>();
@@ -27,7 +27,7 @@ public class StringRangeCountMapAdapter extends XmlAdapter<StringRangeCountMapAd
         }
         return map;
     }
-    
+
     @Override
     public StringRangeCountMap marshal(Map<String,RangeCounts> v) throws Exception {
         StringRangeCountMap map = new StringRangeCountMap();
@@ -36,24 +36,24 @@ public class StringRangeCountMapAdapter extends XmlAdapter<StringRangeCountMapAd
         }
         return map;
     }
-    
+
     public String toText(RangeCounts counts) {
         return counts.getDocumentRangeCount() + "," + counts.getShardRangeCount();
     }
-    
+
     public static class StringRangeCountMap {
         @XmlElement(name = "entry")
         private List<StringRangeCountMapEntry> entries = new ArrayList<>();
     }
-    
+
     public static class StringRangeCountMapEntry {
         @XmlAttribute(name = "name")
         private String key;
         @XmlValue
         private String value;
-        
+
         public StringRangeCountMapEntry() {}
-        
+
         public StringRangeCountMapEntry(String key, String value) {
             this.key = key;
             this.value = value;
