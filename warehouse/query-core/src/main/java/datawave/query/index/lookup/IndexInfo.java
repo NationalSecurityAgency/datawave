@@ -106,7 +106,9 @@ public class IndexInfo implements Writable, KryoSerializable, UidIntersector {
             output.writeLong(count, true);
         }
         output.writeInt(uids.size(), true);
-        uids.forEach(v -> v.write(kryo, output));
+        for (IndexMatch uid : uids) {
+            uid.write(kryo, output);
+        }
         fieldCounts.write(kryo, output);
         termCounts.write(kryo, output);
     }
@@ -150,15 +152,15 @@ public class IndexInfo implements Writable, KryoSerializable, UidIntersector {
         this.count = infinite ? -1 : input.readLong(true);
         final int nUids = input.readInt(true);
 
-        ImmutableSortedSet.Builder<IndexMatch> setBuilder = ImmutableSortedSet.naturalOrder();
+        IndexMatch[] uidsLocal = new IndexMatch[nUids];
 
-        for (int i = 0; i < nUids; ++i) {
+        for (int i = 0; i < nUids; i++) {
             IndexMatch index = new IndexMatch();
             index.read(kryo, input);
-            setBuilder.add(index);
+            uidsLocal[i] = index;
         }
 
-        this.uids = setBuilder.build();
+        this.uids = ImmutableSortedSet.copyOf(uidsLocal);
 
         this.fieldCounts = new CountMap();
         this.termCounts = new CountMap();
