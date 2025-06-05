@@ -1,27 +1,22 @@
 package datawave.ingest.mapreduce.job;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-
 import java.io.EOFException;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 
-import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.file.FileSKVIterator;
-import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile;
 import org.apache.accumulo.core.file.rfile.RFile;
-import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
-import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
+import datawave.util.accumulo.RFileUtil;
+
 public class SplittableRFileRecordReader extends RFileRecordReader {
+
     /**
      * Initializes the fileIterator from the split. If split is an RFileSplit the record reader will create an iterator that only covers the content for the
      * split. If instead the split is a FileSplit it will be handled by {@link RFileRecordReader}.
@@ -40,18 +35,6 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
         }
     }
 
-    public static RFile.Reader getRFileReader(Configuration config, Path rfile) throws IOException {
-        FileSystem fs = rfile.getFileSystem(config);
-
-        if (!fs.exists(rfile)) {
-            throw new FileNotFoundException(rfile + " does not exist");
-        }
-
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
-        return new RFile.Reader(cb);
-    }
-
     /**
      * Open an rfile specified by the split, create an iterator to read the region of the rfile configured in the split by reading the rfile index blocks.
      * Delegate to the split to get the seek range.
@@ -66,7 +49,7 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
         long startIndexBlock = split.getStartBlock();
         long numIndexBlocks = split.getNumBlocks();
 
-        RFile.Reader rfileReader = getRFileReader(config, rfile);
+        RFile.Reader rfileReader = RFileUtil.getRFileReader(config, rfile);
         FileSKVIterator iter = rfileReader.getIndex();
 
         Key start = null;

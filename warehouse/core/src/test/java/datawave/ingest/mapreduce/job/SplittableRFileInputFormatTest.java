@@ -206,8 +206,6 @@ public class SplittableRFileInputFormatTest {
      *            the last key of the split
      * @param keyCount
      *            the number of keys in the split
-     * @throws IOException
-     * @throws InterruptedException
      */
     private void verifySplit(RFileSplit split, int startBlk, int blkCount, Key first, Key last, int keyCount) throws IOException {
         // beginning of the file

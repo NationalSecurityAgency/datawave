@@ -1,21 +1,14 @@
 package datawave.ingest.mapreduce.job;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVIterator;
-import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile;
 import org.apache.accumulo.core.file.rfile.RFile;
-import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
-import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -23,6 +16,8 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
+
+import datawave.util.accumulo.RFileUtil;
 
 public class SplittableRFileInputFormat extends RFileInputFormat {
     private static final Logger log = Logger.getLogger(SplittableRFileInputFormat.class);
@@ -81,7 +76,7 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
      */
     public static List<InputSplit> getSplits(Configuration config, FileSplit fileSplit) throws IOException {
         log.info("getting splits for: " + fileSplit);
-        RFile.Reader rfileReader = SplittableRFileRecordReader.getRFileReader(config, fileSplit.getPath());
+        RFile.Reader rfileReader = RFileUtil.getRFileReader(config, fileSplit.getPath());
 
         // get the first and last keys to bound the blocks while creating splits
         Key firstKey = rfileReader.getFirstKey();
