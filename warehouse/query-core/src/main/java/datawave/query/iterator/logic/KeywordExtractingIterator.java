@@ -35,6 +35,7 @@ import datawave.query.Constants;
 import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.util.keyword.KeywordExtractor;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.VisibleContent;
 
 /** An iterator that will execute the keyword extractor when given 'd' column ranges to scan for specific documents */
 public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
@@ -197,7 +198,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         }
 
         // store the content that we'll use for keyword extraction.
-        final Map<String,String> foundContent = new HashMap<>();
+        final Map<String,VisibleContent> foundContent = new HashMap<>();
         Key top = source.getTopKey();
 
         // while we have d keys for the same document
@@ -205,16 +206,17 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
             top = source.getTopKey();
             Value value = source.getTopValue();
             String currentViewName = getViewName(top);
+            String visibility = getVisibility(top);
 
             for (String name : preferredViews) {
                 if (name.endsWith("*")) {
                     String truncatedName = name.substring(0, name.length() - 1);
                     if (currentViewName.startsWith(truncatedName)) {
-                        addFoundContent(foundContent, currentViewName, value.get());
+                        addFoundContent(foundContent, currentViewName, value.get(), visibility);
                     }
                 } else {
                     if (currentViewName.equals(name)) {
-                        addFoundContent(foundContent, currentViewName, value.get());
+                        addFoundContent(foundContent, currentViewName, value.get(), visibility);
                     }
                 }
             }
@@ -256,11 +258,11 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         return dtUid;
     }
 
-    private void addFoundContent(Map<String,String> foundContent, String currentViewName, byte[] encodedContent) {
+    private void addFoundContent(Map<String,VisibleContent> foundContent, String currentViewName, byte[] encodedContent, String visibility) {
         final byte[] decodedContent = ContentKeyValueFactory.decodeAndDecompressContent(encodedContent);
         final String decodedString = new String(decodedContent, StandardCharsets.UTF_8);
         final String input = decodedString.substring(0, Math.min(decodedString.length(), maxContentLength));
-        foundContent.put(currentViewName, input);
+        foundContent.put(currentViewName, new VisibleContent(visibility, input));
     }
 
     /**
@@ -286,14 +288,25 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     /**
      * Get the view name from the end of the column qualifier of the d key
      *
-     * @param dKey
+     * @param key
      *            the d key
      * @return the view name
      */
-    private static String getViewName(Key dKey) {
-        String cq = dKey.getColumnQualifier().toString();
+    protected String getViewName(Key key) {
+        String cq = key.getColumnQualifier().toString();
         int index = cq.lastIndexOf(Constants.NULL);
         return cq.substring(index + 1);
+    }
+
+    /**
+     * Get the visibility string from the key.
+     *
+     * @param key
+     *            the d key
+     * @return the view name
+     */
+    protected String getVisibility(Key key) {
+        return key.getColumnVisibility().toString();
     }
 
     /**
