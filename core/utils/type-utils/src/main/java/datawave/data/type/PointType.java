@@ -53,4 +53,9 @@ public class PointType extends AbstractGeometryType<Point> {
         this.delegate = normalizer.denormalize(delegateString);
         this.normalizedValue = normalizedValue;
     }
+
+    @Override
+    public long sizeInBytes() {
+        return super.sizeInBytes() + toString().length() + getDelegateAsString().length();
+    }
 }

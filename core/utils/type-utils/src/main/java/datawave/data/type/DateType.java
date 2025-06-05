@@ -44,7 +44,7 @@ public class DateType extends BaseType<Date> {
      */
     @Override
     public long sizeInBytes() {
-        return STATIC_SIZE + (2L * normalizedValue.length());
+        return STATIC_SIZE + (2L * normalizedValue.length()) + getDelegateAsString().length();
     }
 
     @Override
