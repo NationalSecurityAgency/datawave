@@ -1306,9 +1306,7 @@ public class MetadataHelper {
 
             // If a datatype was specified, add a regex filter to only include entries with the datatype.
             if (datatype != null) {
-                IteratorSetting colqRegex = new IteratorSetting(50, RegExFilter.class);
-                RegExFilter.setRegexs(colqRegex, null, null, datatype + "\u0000.*", null, false);
-                bs.addScanIterator(colqRegex);
+                bs.addScanIterator(getCQRegexFilter(datatype + "\u0000.*"));
             }
 
             for (Entry<Key,Value> entry : bs) {
@@ -1547,10 +1545,8 @@ public class MetadataHelper {
 
             // It's possible to find rows with column qualifiers in the format <datatype>\0AGGREGATED (aggregated entries) and/or <datatype>\0<date>
             // (non-aggregated entries). Filter out any non-aggregated entries that do not have the date in the column qualifier.
-            IteratorSetting cqRegex = new IteratorSetting(50, RegExFilter.class);
             // Allow any entries that contain the aggregated marker, or contain the null byte with the target date directly afterwards.
-            RegExFilter.setRegexs(cqRegex, null, null, "^(.*\u0000" + FrequencyMetadataAggregator.AGGREGATED + ")$|^(.*\u0000" + date + ")$", null, false);
-            scanner.addScanIterator(cqRegex);
+            scanner.addScanIterator(getCQRegexFilter("^(.*\u0000" + FrequencyMetadataAggregator.AGGREGATED + ")$|^(.*\u0000" + date + ")$"));
 
             final Text holder = new Text();
             for (Entry<Key,Value> entry : scanner) {
@@ -1804,9 +1800,8 @@ public class MetadataHelper {
 
             // if a type was specified, add a regex filter for it
             if (datatypeFilter != null) {
-                IteratorSetting cqRegex = new IteratorSetting(50, RegExFilter.class);
-                RegExFilter.setRegexs(cqRegex, null, null, datatypeFilter + "\u0000.*", null, false);
-                scanner.addScanIterator(cqRegex);
+
+                scanner.addScanIterator(getCQRegexFilter(datatypeFilter + "\u0000.*"));
             }
 
             final Text holder = new Text();
@@ -2153,4 +2148,12 @@ public class MetadataHelper {
     public void setTypeCacheExpirationInMinutes(int typeCacheExpirationInMinutes) {
         allFieldMetadataHelper.setTypeCacheExpirationInMinutes(typeCacheExpirationInMinutes);
     }
+
+    /** A utility to build iterator settings for a CQ regex filter **/
+    public static IteratorSetting getCQRegexFilter(String regex) {
+        IteratorSetting cqRegex = new IteratorSetting(50, RegExFilter.class);
+        RegExFilter.setRegexs(cqRegex, null, null, regex, null, false);
+        return cqRegex;
+    }
+
 }

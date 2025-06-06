@@ -78,6 +78,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         FrequencyMetadataAggregator copy = new FrequencyMetadataAggregator();
         copy.setSource(getSource().deepCopy(env));
         copy.combineVisibilities = combineVisibilities;
+        copy.columns = columns;
         return copy;
     }
 
