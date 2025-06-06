@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-
 /**
  * Interface that allows internal field names used within the edge model to be configured and injected transparently into classes that need them.<br>
  * <br>
