@@ -12,7 +12,7 @@ import datawave.query.util.Tuple2;
 
 /**
  * Basic implementation of an IndexStream for a single term.
- *
+ * <p>
  * Note that certain delayed terms may create a ScannerStream without an underlying RangeStreamScanner.
  */
 public class ScannerStream extends BaseIndexStream {
@@ -31,14 +31,6 @@ public class ScannerStream extends BaseIndexStream {
 
     private ScannerStream(Iterator<Tuple2<String,IndexInfo>> itr, StreamContext ctx, JexlNode currNode) {
         this(itr, ctx, currNode, null);
-    }
-
-    public static ScannerStream unindexed(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNINDEXED, currNode);
-    }
-
-    public static ScannerStream unindexed(JexlNode currNode, IndexStream debugDelegate) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNINDEXED, currNode, debugDelegate);
     }
 
     public static ScannerStream noData(JexlNode currNode) {
@@ -65,35 +57,8 @@ public class ScannerStream extends BaseIndexStream {
         return new ScannerStream(itr, StreamContext.VARIABLE, currNode);
     }
 
-    // exceeded value threshold, so we can evaluate with data but may need special handling
-    public static ScannerStream exceededValueThreshold(Iterator<Tuple2<String,IndexInfo>> itr, JexlNode currNode) {
-        JexlNode resultNode = currNode;
-        return new ScannerStream(itr, StreamContext.EXCEEDED_VALUE_THRESHOLD, resultNode);
-    }
-
-    public static ScannerStream delayedExpression(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.DELAYED_FIELD, currNode);
-    }
-
-    public static ScannerStream unknownField(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNKNOWN_FIELD, currNode);
-    }
-
-    public static ScannerStream unknownField(JexlNode currNode, IndexStream debugDelegate) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNKNOWN_FIELD, currNode, debugDelegate);
-    }
-
-    public static ScannerStream ignored(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.IGNORED, currNode);
-    }
-
-    public static ScannerStream ignored(JexlNode currNode, IndexStream debugDelegate) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.IGNORED, currNode, debugDelegate);
-    }
-
-    // exceeded term threshold, so we cannot evaluate
-    public static ScannerStream exceededTermThreshold(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.EXCEEDED_TERM_THRESHOLD, currNode);
+    public static ScannerStream delayed(JexlNode currNode) {
+        return new ScannerStream(Collections.emptyIterator(), StreamContext.DELAYED, currNode);
     }
 
     /**

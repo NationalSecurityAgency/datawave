@@ -41,7 +41,6 @@ import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.primitives.Longs;
 
-import datawave.ingest.time.Now;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;

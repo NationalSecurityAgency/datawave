@@ -59,7 +59,6 @@ import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonManager;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
-import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -116,6 +115,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final String RACKSTRATEGY = PREFIX + ".rack.strategy.class";
     protected static final String RANGESPLITSTRATEGY = PREFIX + ".split.strategy.class";
     protected static final String MOCK = ".useInMemoryInstance";
+
+    protected static final String UTF8 = "UTF-8";
 
     protected static final String RANGES = PREFIX + ".ranges";
     protected static final String AUTO_ADJUST_RANGES = PREFIX + ".ranges.autoAdjust";
@@ -572,7 +573,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static Set<Pair<Text,Text>> getFetchedColumns(Configuration conf) {
         Set<Pair<Text,Text>> columns = new HashSet<>();
         for (String col : conf.getStringCollection(COLUMNS)) {
-            int idx = col.indexOf(":");
+            int idx = col.indexOf(':');
             Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
             Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
             columns.add(new Pair<>(cf, cq));
@@ -1039,8 +1040,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         try {
             Class<? extends LocationStrategy> clazz = Class.forName(conf.get(RACKSTRATEGY, DefaultLocationStrategy.class.getCanonicalName()))
                             .asSubclass(LocationStrategy.class);
-            return clazz.newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e.getClass().getName(), e);
         }
         return new DefaultLocationStrategy();
@@ -1266,8 +1267,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             StringTokenizer tokenizer = new StringTokenizer(iteratorOption, FIELD_SEP);
             this.iteratorName = tokenizer.nextToken();
             try {
-                this.key = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
-                this.value = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
+                this.key = URLDecoder.decode(tokenizer.nextToken(), UTF8);
+                this.value = URLDecoder.decode(tokenizer.nextToken(), UTF8);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
@@ -1288,7 +1289,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         @Override
         public String toString() {
             try {
-                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF-8") + FIELD_SEP + URLEncoder.encode(value, "UTF-8");
+                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF8") + FIELD_SEP + URLEncoder.encode(value, "UTF8");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }

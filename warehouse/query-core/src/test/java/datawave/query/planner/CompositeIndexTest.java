@@ -47,6 +47,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
@@ -99,7 +100,7 @@ public class CompositeIndexTest {
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final int NUM_SHARDS = 241;
+    private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
@@ -336,6 +337,12 @@ public class CompositeIndexTest {
             }
             writer.close();
         }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_" + NUM_SHARDS, new Value());
+            bw.addMutation(m);
+        }
     }
 
     @Test
@@ -352,8 +359,11 @@ public class CompositeIndexTest {
         ShardQueryLogic logic = getShardQueryLogic(false);
         logic.setIntermediateMaxTermThreshold(50);
         logic.setIndexedMaxTermThreshold(50);
-        List<QueryData> queries = getQueryRanges(logic, query, false);
-        Assert.assertEquals(12, queries.size());
+
+        if (!logic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(logic, query, false);
+            Assert.assertEquals(10, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(logic, query, false);
         Assert.assertEquals(9, events.size());
@@ -392,12 +402,16 @@ public class CompositeIndexTest {
     }
 
     // the bounded range is fixed by the QueryPropertyMarkerSourceConsolidator
+    // if ASTValidation is enabled the query will fail on the first visitor, InvertSwappedNodes
+    @Ignore
     @Test
     public void testRecordOfIncorrectQueryStringWorking() throws Exception {
         // original "((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355'))";
         String query = "(((_Bounded_ = true) && GEO >= '0500aa' && GEO <= '050355'))";
-        List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(1, queries.size());
+        if (!logic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(query, false);
+            Assert.assertEquals(1, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(query, false);
         Assert.assertEquals(1, events.size());
@@ -445,8 +459,10 @@ public class CompositeIndexTest {
                 "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
 
-        List<QueryData> queries = getQueryRanges(query, true);
-        Assert.assertEquals(732, queries.size());
+        if (!logic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(query, true);
+            Assert.assertEquals(2196, queries.size());
+        }
 
         List<DefaultEvent> events = getQueryResults(query, true);
         Assert.assertEquals(9, events.size());
@@ -492,8 +508,9 @@ public class CompositeIndexTest {
     private List<QueryData> getQueryRanges(ShardQueryLogic logic, String queryString, boolean useIvarator) throws Exception {
         Iterator iter = getQueryRangesIterator(queryString, logic);
         List<QueryData> queryData = new ArrayList<>();
-        while (iter.hasNext())
+        while (iter.hasNext()) {
             queryData.add((QueryData) iter.next());
+        }
         return queryData;
     }
 

@@ -48,6 +48,8 @@ public abstract class ModificationServiceConfiguration {
     /**
      * Handle to query service in case the modification service needs to run queries.
      *
+     * @param userDetails
+     *            proxied user details
      * @return ModificationQueryService
      */
     public ModificationQueryService getQueryService(ProxiedUserDetails userDetails) {

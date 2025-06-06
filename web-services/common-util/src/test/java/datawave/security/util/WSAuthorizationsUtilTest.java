@@ -229,7 +229,7 @@ public class WSAuthorizationsUtilTest {
     @Test
     public void testBuildUserAuthorizationsString() throws Exception {
         String expected = new Authorizations("A", "C", "D").toString();
-        assertEquals(expected, WSAuthorizationsUtil.buildUserAuthorizationString((DatawavePrincipal) proxiedUserPrincipal));
+        assertEquals(expected, WSAuthorizationsUtil.buildUserAuthorizationString(proxiedUserPrincipal));
     }
 
     @Test
@@ -263,19 +263,18 @@ public class WSAuthorizationsUtilTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCannotMergeUser() {
-        WSAuthorizationsUtil.mergeUsers(((DatawavePrincipal) proxiedServerPrincipal1).getPrimaryUser(),
-                        ((DatawavePrincipal) proxiedServerPrincipal2).getPrimaryUser());
+        WSAuthorizationsUtil.mergeUsers(proxiedServerPrincipal1.getPrimaryUser(), proxiedServerPrincipal2.getPrimaryUser());
     }
 
     @Test
     public void testMergePrincipals() {
-        DatawavePrincipal merged = WSAuthorizationsUtil.mergePrincipals((DatawavePrincipal) proxiedUserPrincipal, (DatawavePrincipal) remoteUserPrincipal);
-        assertPrincipalEquals((DatawavePrincipal) overallUserPrincipal, merged);
+        DatawavePrincipal merged = WSAuthorizationsUtil.mergePrincipals(proxiedUserPrincipal, remoteUserPrincipal);
+        assertPrincipalEquals(overallUserPrincipal, merged);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCannotMergePrincipal() {
-        WSAuthorizationsUtil.mergePrincipals((DatawavePrincipal) proxiedServerPrincipal1, (DatawavePrincipal) proxiedServerPrincipal2);
+        WSAuthorizationsUtil.mergePrincipals(proxiedServerPrincipal1, proxiedServerPrincipal2);
     }
 
     private void assertUserEquals(DatawaveUser user1, DatawaveUser user2) {

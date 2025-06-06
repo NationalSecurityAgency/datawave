@@ -9,13 +9,14 @@
 # to read from input files use --inputFiles parameter instead to read the glob paths
 #
 
-if [[ `uname` == "Darwin" ]]; then
-        THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-        THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 #
 # Get the classpath
@@ -43,9 +44,9 @@ done
 #
 # Transform the classpath into a comma-separated list also
 #
-LIBJARS=`echo $CLASSPATH | sed 's/:/,/g'`
+LIBJARS=$(echo $CLASSPATH | sed 's/:/,/g')
 
-DATE=`date "+%Y%m%d%H%M%S"`
+DATE=$(date "+%Y%m%d%H%M%S")
 REDUCERS=$1
 WORKDIR=$2
 WORKDIR=${WORKDIR}/${DATE}-$$/

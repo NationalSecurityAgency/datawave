@@ -53,7 +53,7 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
 
     private Range prevRange = new Range();
     @SuppressWarnings("unchecked")
-    private Collection<ByteSequence> columnFamilies = (Set<ByteSequence>) Collections.EMPTY_SET;
+    private Collection<ByteSequence> columnFamilies = Collections.emptySet();
     private boolean colfInclusive = false;
 
     private final Text prevRow = new Text();

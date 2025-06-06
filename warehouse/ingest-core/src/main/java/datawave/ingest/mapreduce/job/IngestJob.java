@@ -418,6 +418,7 @@ public class IngestJob implements Tool {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     // do nothing
                 }
             }
@@ -749,10 +750,10 @@ public class IngestJob implements Tool {
                     for (String jobObserverClass : classes) {
                         log.info("Adding job observer: {}", jobObserverClass);
                         Class clazz = Class.forName(jobObserverClass);
-                        Observer o = (Observer) clazz.newInstance();
+                        Observer o = (Observer) clazz.getDeclaredConstructor().newInstance();
                         jobObservers.add(o);
                     }
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     log.error("cannot instantiate job observer class '{}'", jobObserverClasses, e);
                     System.exit(-2);
                 } catch (ClassCastException e) {

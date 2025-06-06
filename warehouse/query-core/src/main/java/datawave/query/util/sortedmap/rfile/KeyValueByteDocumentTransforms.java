@@ -7,11 +7,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 
-import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
-import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.function.serializer.DocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 
 public class KeyValueByteDocumentTransforms {

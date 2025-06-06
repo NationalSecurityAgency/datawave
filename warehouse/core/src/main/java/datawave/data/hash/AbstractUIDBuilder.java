@@ -124,7 +124,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
             } else if (template.getClass() == SnowflakeUID.class) {
                 validatedTemplate = template;
             } else {
-                validatedTemplate = template.parse(template.toString());
+                validatedTemplate = UID.parse(template.toString());
             }
         } else {
             validatedTemplate = null;

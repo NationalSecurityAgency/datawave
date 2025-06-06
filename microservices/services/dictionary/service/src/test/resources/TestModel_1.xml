@@ -1,0 +1,7 @@
+<Model xmlns="http://webservice.datawave.nsa/v1" name="Model1">
+	<Mappings>
+		<Mapping datatype="d1" fieldName="EVENT_DATE" modelFieldName="start-time" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="UUID" modelFieldName="randomized-ID" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="TYPE" modelFieldName="custom_data_type" direction="FORWARD" columnVisibility="PRIVATE"/>
+	</Mappings>
+</Model>

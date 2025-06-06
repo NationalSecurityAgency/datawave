@@ -17,9 +17,9 @@ import datawave.ingest.util.cache.watch.Reloadable;
  * Description: Keys consist of objects that are Reloadable, which identify if their underlying value has changed and enable it to reload the value
  *
  * Justification: Based upon Loader, which is further based upon CacheLoader. This enables us to have customized techniques for loading GUAVA caches, and
- * reloading this elements when necessary
+ * reloading these elements when necessary
  */
-public class ReloadableCacheBuilder<K extends Reloadable,V> extends Loader<K,V> {
+public class ReloadableCacheBuilder<K extends Reloadable<?>,V> extends Loader<K,V> {
 
     private static final Logger log = LoggerFactory.getLogger(ReloadableCacheBuilder.class);
 
@@ -63,26 +63,29 @@ public class ReloadableCacheBuilder<K extends Reloadable,V> extends Loader<K,V> 
      * @see datawave.ingest.util.cache.Loader#build(java.lang.Object)
      */
     @Override
+    @SuppressWarnings("unchecked")
     protected void build(K key) throws Exception {
 
         if (null == key) {
             log.trace("Rebuild all");
             Collection<K> watchers = entryCache.keySet();
             for (K keyWatcher : watchers) {
-                Reloadable watcher = Reloadable.class.cast(keyWatcher);
+                Reloadable<V> watcher = (Reloadable<V>) keyWatcher;
 
                 if (log.isTraceEnabled()) {
                     log.trace("rebuild {} ? {}", watcher, watcher.hasChanged());
                 }
                 if (watcher.hasChanged()) {
                     synchronized (entryCache) {
-                        log.trace("rebuild {} ? {} {} ", watcher, watcher.hasChanged(), watcher.reload());
-                        entryCache.put(keyWatcher, (V) watcher.reload());
+                        if (log.isTraceEnabled())
+                            log.trace("rebuild {} ? {} {} ", watcher, watcher.hasChanged(), watcher.reload());
+
+                        entryCache.put(keyWatcher, watcher.reload());
                     }
                 }
             }
         } else {
-            Reloadable watcher = Reloadable.class.cast(key);
+            Reloadable<K> watcher = (Reloadable<K>) key;
             synchronized (entryCache) {
                 entryCache.put(key, (V) watcher.reload());
             }

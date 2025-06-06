@@ -4,6 +4,7 @@ import static datawave.query.jexl.functions.QueryFunctions.GROUPBY_FUNCTION;
 import static datawave.query.jexl.functions.QueryFunctions.UNIQUE_FUNCTION;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +31,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -58,15 +61,19 @@ import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.next.SimpleQueryVisitor;
+import datawave.next.scanner.DocumentScannerConfig;
+import datawave.next.scanner.DocumentScheduler;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
-import datawave.query.config.IndexHole;
+import datawave.query.config.IndexValueHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
@@ -78,33 +85,50 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuilder;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
+import datawave.query.language.parser.lucene.LuceneSyntaxQueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
+import datawave.query.planner.QueryOptionsSwitch;
 import datawave.query.planner.QueryPlanner;
+import datawave.query.rules.QueryRule;
+import datawave.query.rules.QueryValidationResult;
+import datawave.query.rules.ShardQueryValidationConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
+import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
+import datawave.query.transformer.QueryValidationResultTransformer;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
+import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.QueryValidationResponse;
 
 /**
  * <h1>Overview</h1> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
@@ -193,14 +217,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
     protected Profile selectedProfile = null;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    protected Transformer<Object,QueryValidationResponse> validationResponseTransformer = null;
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-
     private CardinalityConfiguration cardinalityConfiguration = null;
+    private List<QueryRule> validationRules = null;
 
     /**
      * Basic constructor
@@ -323,11 +348,74 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         String originalQuery = settings.getQuery();
 
         originalQuery = this.expandQueryMacros(originalQuery);
+        if (originalQuery == null) {
+            throw new IllegalArgumentException("Query cannot be null");
+        }
 
-        // Determine query syntax (i.e. JEXL, LUCENE, etc.)
+        // Determine the valid query syntax to use (i.e. JEXL, LUCENE, etc.)
+        String querySyntax = getValidQuerySyntax(settings);
+
+        if (querySyntax.equals(Constants.JEXL)) {
+            return originalQuery;
+        } else {
+            QueryParser queryParser = getQueryParser(querySyntax);
+            QueryNode node = queryParser.parse(originalQuery);
+            String jexlQuery = node.getOriginalQuery();
+            if (log.isTraceEnabled()) {
+                log.trace("luceneQueryString: " + originalQuery + " --> jexlQueryString: " + jexlQuery);
+            }
+            return jexlQuery;
+        }
+    }
+
+    /**
+     * Returns the {@link QueryParser} that should be used to parse a query of the given syntax to JEXL.
+     *
+     * @param syntax
+     *            the syntax
+     * @return the query parser
+     */
+    private QueryParser getQueryParser(String syntax) {
+        if (this.querySyntaxParsers == null) {
+            throw new IllegalStateException("Query syntax parsers not configured");
+        }
+        QueryParser queryParser = this.querySyntaxParsers.get(syntax);
+        if (queryParser == null) {
+            queryParser = getParser();
+            if (queryParser == null) {
+                throw new IllegalArgumentException("QueryParser not configured for syntax: " + syntax);
+            }
+        }
+        return queryParser;
+    }
+
+    /**
+     * Returns the query syntax that should be used when parsing the query for the given settings. If any mandatory query syntaxes are specified, the syntax
+     * will be checked to verify if it is one of the allowed mandatory query syntaxes. After this check, if the query syntax is blank and no default parser has
+     * been configured, the syntax {@value Constants#JEXL} will be returned, otherwise the original query syntax extracted from the query settings will be
+     * returned.
+     *
+     * @param settings
+     *            the query settings
+     * @return the query syntax
+     * @throws IllegalStateException
+     *             if mandatory query syntaxes were configured and the query syntax does not match any of them
+     */
+    private String getValidQuerySyntax(Query settings) {
         String querySyntax = settings.findParameter(QueryParameters.QUERY_SYNTAX).getParameterValue();
+        checkMandatoryQuerySyntaxes(querySyntax);
+        return (StringUtils.isBlank(querySyntax) && getParser() == null) ? Constants.JEXL : querySyntax;
+    }
 
-        // enforce mandatoryQuerySyntax if set
+    /**
+     * Checks if the given query syntax is one of the allowed mandatory query syntaxes, if any mandatory query syntaxes were specified.
+     *
+     * @param querySyntax
+     * @throws IllegalStateException
+     *             if {@link ShardQueryLogic#mandatoryQuerySyntax} is not null and the given query syntax is either empty or not present within the set of
+     *             mandatory query syntaxes
+     */
+    private void checkMandatoryQuerySyntaxes(String querySyntax) {
         if (null != this.mandatoryQuerySyntax) {
             if (StringUtils.isEmpty(querySyntax)) {
                 throw new IllegalStateException("Must specify one of the following syntax options: " + this.mandatoryQuerySyntax);
@@ -338,47 +426,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 }
             }
         }
+    }
 
-        QueryParser querySyntaxParser = getParser();
-
-        if (StringUtils.isBlank(querySyntax)) {
-            // Default to the class's query parser when one is not provided
-            // Falling back to Jexl when one is not set on this class
-            if (null == querySyntaxParser) {
-                querySyntax = "JEXL";
-            }
-        } else if (!"JEXL".equals(querySyntax)) {
-            if (null == querySyntaxParsers) {
-                throw new IllegalStateException("Query syntax parsers not configured");
-            }
-
-            querySyntaxParser = querySyntaxParsers.get(querySyntax);
-
-            if (null == querySyntaxParser) {
-                // No parser was specified, try to default to the parser on the
-                // class
-                querySyntaxParser = getParser();
-
-                if (null == querySyntaxParser) {
-                    throw new IllegalArgumentException("QueryParser not configured for syntax: " + querySyntax);
-                }
-            }
-        }
-
-        if (null == originalQuery) {
-            throw new IllegalArgumentException("Query cannot be null");
-        } else {
-            if ("JEXL".equals(querySyntax)) {
-                queryString = originalQuery;
-            } else {
-                QueryNode node = querySyntaxParser.parse(originalQuery);
-                queryString = node.getOriginalQuery();
-                if (log.isTraceEnabled()) {
-                    log.trace("luceneQueryString: " + originalQuery + " --> jexlQueryString: " + queryString);
-                }
-            }
-        }
-        return queryString;
+    private String getQuerySyntaxOrDefault(String querySyntax) {
+        return StringUtils.isBlank(querySyntax) && getParser() == null ? Constants.JEXL : querySyntax;
     }
 
     public void initialize(ShardQueryConfiguration config, AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
@@ -421,30 +472,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
-
-        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
-        QueryPlanner queryPlanner = getQueryPlanner();
-        DefaultQueryPlanner defaultQueryPlanner = null;
-        if (queryPlanner instanceof DefaultQueryPlanner) {
-            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-        } else if (queryPlanner instanceof FederatedQueryPlanner) {
-            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        if (dateIndexHelper != null) {
+            dateIndexHelper.setUseIterator(isDateIndexIterator());
         }
 
-        if (defaultQueryPlanner != null) {
-            defaultQueryPlanner.setMetadataHelper(metadataHelper);
-            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
-
-            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
-            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
-            }
-
-            if (null != queryModelProvider.getQueryModel()) {
-                queryModel = queryModelProvider.getQueryModel();
-            }
-        }
+        initializeQueryModel(config, metadataHelper, dateIndexHelper);
 
         if (this.queryModel == null) {
             loadQueryModel(metadataHelper, config);
@@ -490,6 +522,40 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         stopwatch.stop();
     }
 
+    private QueryModel initializeQueryModel(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper)
+                    throws TableNotFoundException, ExecutionException, InstantiationException, IllegalAccessException {
+
+        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
+        QueryPlanner queryPlanner = getQueryPlanner();
+        DefaultQueryPlanner defaultQueryPlanner = null;
+        if (queryPlanner instanceof DefaultQueryPlanner) {
+            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+        } else if (queryPlanner instanceof DatePartitionedQueryPlanner) {
+            defaultQueryPlanner = ((DatePartitionedQueryPlanner) queryPlanner).getQueryPlanner();
+        }
+
+        if (defaultQueryPlanner != null) {
+            defaultQueryPlanner.setMetadataHelper(metadataHelper);
+            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
+
+            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
+            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
+            }
+
+            if (null != queryModelProvider.getQueryModel()) {
+                queryModel = queryModelProvider.getQueryModel();
+            }
+        }
+
+        if (this.queryModel == null) {
+            loadQueryModel(metadataHelper, config);
+        }
+
+        return this.queryModel;
+    }
+
     private void setupQueryPlanner(ShardQueryConfiguration config)
                     throws TableNotFoundException, ExecutionException, InstantiationException, IllegalAccessException {
         MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(), config.isRawTypes());
@@ -497,6 +563,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         DateIndexHelper dateIndexHelper = prepareDateIndexHelper(config.getClient(), this.getDateIndexTableName(), config.getAuthorizations());
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
+        }
+        if (dateIndexHelper != null) {
+            dateIndexHelper.setUseIterator(isDateIndexIterator());
         }
 
         QueryPlanner queryPlanner = getQueryPlanner();
@@ -718,7 +787,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                                 .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
                                 .withModel(getQueryModel())
                                 .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                                .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                                .withIvaratorCacheDirConfigs(getLocalIvaratorCacheDirConfigs())
                                 .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
                                 .withSubDirectory(getConfig().getQuery().getId().toString())
                                 .withMaxOpenFiles(getIvaratorMaxOpenFiles())
@@ -1021,6 +1090,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
+        // Get the SUMMARY parameter if given
+        String summaryParam = settings.findParameter(QueryParameters.SUMMARY_OPTIONS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(summaryParam)) {
+            SummaryOptions summaryOptions = SummaryOptions.from(summaryParam);
+            this.setSummaryOptions(summaryOptions);
+            config.setSummaryOptions(summaryOptions);
+        }
+
         // Get the HIT_LIST parameter if given
         String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
         if (StringUtils.isNotBlank(hitListString)) {
@@ -1284,7 +1361,34 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
+        // ony optimize if unique fields are not requested. The suspicion is that the unique transform on the query iterator
+        // is reducing the amount of network traffic between scanners and webservice, and we don't want to overwhelm
+        // the unique transform in the webservice.
+        if (isUseDocumentScheduler() && config.getDocumentScannerConfig() != null && !isCheckpointable() && !isFullTableScanEnabled()) {
+
+            QueryPlanner queryPlanner = getQueryPlanner();
+            if (planner instanceof DefaultQueryPlanner) {
+                DefaultQueryPlanner dqp = (DefaultQueryPlanner) queryPlanner;
+                boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
+                if (simple) {
+                    DocumentScheduler documentScheduler = new DocumentScheduler(config);
+                    documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
+                    return documentScheduler;
+                } else {
+                    log.warn("Query was not simple: " + simple + " or scheduler config was null:" + (config.getDocumentScannerConfig() == null));
+                }
+            }
+        }
+
         return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+    }
+
+    protected VisitorFunction getVisitorFunction(MetadataHelper metadataHelper) {
+        try {
+            return new VisitorFunction(getConfig(), metadataHelper);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
@@ -1373,7 +1477,220 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 log.error("Caught exception trying to close Scheduler", e);
             }
         }
+    }
 
+    @Override
+    public Object validateQuery(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
+        if (log.isTraceEnabled()) {
+            log.trace("Validating query for settings: ");
+            Map<String,List<String>> map = settings.toMap();
+            for (Entry<String,List<String>> entry : map.entrySet()) {
+                log.trace(entry.getKey() + ": " + entry.getValue());
+            }
+            log.trace("");
+        }
+
+        this.config = ShardQueryConfiguration.create(this, settings);
+        if (log.isTraceEnabled()) {
+            log.trace("Initializing ShardQueryLogic for query validation: " + System.identityHashCode(this) + '('
+                            + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
+        }
+
+        // Delegate to the super class if no validation rules were configured.
+        if (validationRules == null || validationRules.isEmpty()) {
+            log.trace("No validation rules configured");
+            return super.validateQuery(client, settings, auths);
+        }
+
+        // Set the connector and authorizations for the config object.
+        config.setClient(client);
+        config.setAuthorizations(auths);
+        config.setMaxScannerBatchSize(getMaxScannerBatchSize());
+        config.setMaxIndexBatchSize(getMaxIndexBatchSize());
+
+        // Load the query parameters.
+        loadQueryParameters(config, settings);
+
+        // Initialize the metadata helper and query model.
+        MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(), config.isRawTypes());
+        initializeQueryModel(config, metadataHelper, null);
+        config.setQueryModel(this.queryModel);
+
+        // Set up the initial validation configuration.
+        ShardQueryValidationConfiguration validationConfig = new ShardQueryValidationConfiguration();
+        validationConfig.setQuerySettings(settings);
+        validationConfig.setQueryConfiguration(config);
+        validationConfig.setMetadataHelper(metadataHelper);
+        validationConfig.setTypeMetadata(metadataHelper.getTypeMetadata());
+
+        // Fetch the query syntax considered to be correct for the query.
+        String querySyntax = getValidQuerySyntax(settings);
+
+        // Create a copy of the rules. Rules will be removed from this list as they are executed so that we do not execute the same rule twice.
+        List<QueryRule> unexecutedRules = new ArrayList<>(getValidationRules());
+        QueryValidationResult result = new QueryValidationResult();
+
+        // If the query syntax is not JEXL, i.e. LUCENE or otherwise, fetch the query parser and see if it supplies a lucene syntax parser. If so, the query
+        // needs to be validated against all LUCENE-specific rules that support the given syntax.
+        if (!querySyntax.equals(Constants.JEXL)) {
+            // Fetch the query parser for the query syntax.
+            QueryParser queryParser = getQueryParser(querySyntax);
+            // If the query parser is one that parses LUCENE, parse the query to LUCENE.
+            if (queryParser instanceof LuceneSyntaxQueryParser) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Using LUCENE parser " + queryParser.getClass() + " for syntax " + querySyntax);
+                }
+                org.apache.lucene.queryparser.flexible.core.nodes.QueryNode luceneQuery;
+                try {
+                    luceneQuery = ((LuceneSyntaxQueryParser) queryParser).parseToLuceneQueryNode(settings.getQuery());
+                } catch (Exception e) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Failed to parse query " + settings.getQuery() + " to LUCENE for syntax " + querySyntax + ": " + System.identityHashCode(this)
+                                        + '(' + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')', e);
+                    }
+                    QueryException exception = new QueryException("Failed to parse query as " + querySyntax, e,
+                                    DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR.getErrorCode());
+                    result.setException(exception);
+                    return result;
+                }
+
+                if (log.isTraceEnabled()) {
+                    log.trace("LUCENE Query after parsing:");
+                    List<String> lines = datawave.query.lucene.visitors.PrintingVisitor.printToList(luceneQuery);
+                    for (String line : lines) {
+                        log.trace(line);
+                    }
+                    log.trace("");
+                }
+
+                // Update the validation configuration with the parsed lucene
+                validationConfig.setParsedQuery(luceneQuery);
+                validationConfig.setQueryString(settings.getQuery());
+
+                // Validate the lucene query against all rules that support the syntax.
+                Iterator<QueryRule> ruleIter = unexecutedRules.iterator();
+                while (ruleIter.hasNext()) {
+                    QueryRule rule = ruleIter.next();
+                    try {
+                        // Check if the rule supports validating a query of the query's syntax.
+                        if (rule.canValidate(validationConfig)) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Rule '" + rule.getName() + "' supports validating the query " + validationConfig.getQueryString());
+                            }
+
+                            // Validate the query against the rule's criteria.
+                            result.addRuleResult(rule.validate(validationConfig));
+                            // Remove the rule from the underlying list so that it is not executed again later.
+                            ruleIter.remove();
+                        } else {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Rule '" + rule.getName() + "' does not support validating the query " + validationConfig.getQueryString());
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("Error occurred when validating against rule " + rule.getName(), e);
+                        QueryException exception = new QueryException("Error occurred when validating against rule " + rule.getName(), e);
+                        result.setException(exception);
+                        return result;
+                    }
+                }
+            }
+        }
+
+        // Some rules expect to validate a JEXL query. Even if the query was originally provided in a syntax other than JEXL, e.g. LUCENE, we should validate
+        // the JEXL version of the query against the remaining rules.
+
+        // Parse the query to JEXL.
+        String jexlQuery;
+        try {
+            jexlQuery = getJexlQueryString(settings);
+            config.setQueryTree(JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery));
+        } catch (Exception e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Failed to parse query to JEXL: " + System.identityHashCode(this) + '('
+                                + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')', e);
+            }
+            QueryException exception = new QueryException("Failed to parse query as JEXL", e, DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR.getErrorCode());
+            result.setException(exception);
+            return result;
+        }
+
+        logQuery(config.getQueryTree(), "Query after parsing to JEXL");
+
+        // Normalize the JEXL query on a very basic level, and apply the query model to the query.
+        // Extract any query options and add them to the configuration.
+        Map<String,String> optionsMap = new HashMap<>();
+        if (jexlQuery.contains(QueryFunctions.QUERY_FUNCTION_NAMESPACE + ':')) {
+            // only do the extra tree visit if the function is present
+            config.setQueryTree(QueryOptionsFromQueryVisitor.collect(config.getQueryTree(), optionsMap));
+            if (!optionsMap.isEmpty()) {
+                QueryOptionsSwitch.apply(optionsMap, config);
+            }
+        }
+
+        logQuery(config.getQueryTree(), "Query after applying options");
+
+        // Ensure any nodes with the literal on the left and the identifier on the right are re-ordered.
+        config.setQueryTree(InvertNodeVisitor.invertSwappedNodes(config.getQueryTree()));
+
+        logQuery(config.getQueryTree(), "Query after inverting swapped nodes");
+
+        // Uppercase all identifiers.
+        config.setQueryTree(ShardQueryUtils.upperCaseIdentifiers(metadataHelper, config, config.getQueryTree()));
+
+        logQuery(config.getQueryTree(), "Query after capitalizing identifiers");
+
+        // Flatten the tree.
+        config.setQueryTree(TreeFlatteningRebuilder.flatten(config.getQueryTree()));
+
+        logQuery(config.getQueryTree(), "Query after flattening");
+
+        // Apply the query model.
+        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
+                        this.queryModel));
+
+        logQuery(config.getQueryTree(), "Query after applying query model");
+
+        // Update the configurations with the target syntax JEXL and the jexl query string. Execute any remaining rules that expect to run against a JEXL query.
+        validationConfig.setParsedQuery(config.getQueryTree());
+        validationConfig.setQueryString(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
+
+        // Validate the JEXL query against the remaining rules that support JEXL.
+        for (QueryRule rule : unexecutedRules) {
+            try {
+                // Check if the rule supports validating a JEXL query.
+                if (rule.canValidate(validationConfig)) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Rule '" + rule.getName() + "' supports validating the query " + validationConfig.getQueryString());
+                    }
+
+                    // Validate the query against the rule's criteria.
+                    result.addRuleResult(rule.validate(validationConfig));
+                } else {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Rule '" + rule.getName() + "' does not support validating the query " + validationConfig.getQueryString());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error occurred when validating against rule " + rule.getName(), e);
+                QueryException exception = new QueryException("Error occurred when validating against rule " + rule.getName(), e);
+                result.setException(exception);
+                return result;
+            }
+        }
+
+        return result;
+    }
+
+    private static void logQuery(final ASTJexlScript queryTree, String message) {
+        if (log.isTraceEnabled()) {
+            List<String> lines = PrintingVisitor.formattedQueryStringList(queryTree, -1, -1);
+            log.trace(message);
+            for (String line : lines) {
+                log.trace(line);
+            }
+            log.trace("");
+        }
     }
 
     @Override
@@ -1514,6 +1831,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return getConfig().getGroupFieldsBatchSize();
     }
 
+    public boolean isDisableIteratorUniqueFields() {
+        return getConfig().isDisableIteratorUniqueFields();
+    }
+
+    public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
+        getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
     public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
@@ -1564,6 +1889,34 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         } catch (Exception e) {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
         }
+    }
+
+    public SummaryOptions getSummaryOptions() {
+        return getConfig().getSummaryOptions();
+    }
+
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        getConfig().setSummaryOptions(summaryOptions);
+    }
+
+    public String getSummaryIterator() {
+        return getConfig().getSummaryIterator().getName();
+    }
+
+    public void setSummaryIterator(String iteratorClass) {
+        try {
+            getConfig().setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
+        } catch (Exception e) {
+            throw new DatawaveFatalQueryException("Illegal content summary iterator class", e);
+        }
+    }
+
+    public String getSummaryFieldName() {
+        return getConfig().getSummaryFieldName();
+    }
+
+    public void setSummaryFieldName(String summaryFieldname) {
+        getConfig().setSummaryFieldName(summaryFieldname);
     }
 
     public int getFiFieldSeek() {
@@ -1995,6 +2348,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setFullTableScanEnabled(fullTableScanEnabled);
     }
 
+    public void setLocalIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs) {
+        getConfig().setLocalIvaratorCacheDirConfigs(localIvaratorCacheDirConfigs);
+    }
+
+    public List<IvaratorCacheDirConfig> getLocalIvaratorCacheDirConfigs() {
+        return getConfig().getLocalIvaratorCacheDirConfigs();
+    }
+
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
         return getConfig().getIvaratorCacheDirConfigs();
     }
@@ -2193,7 +2554,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new FederatedQueryPlanner();
+            planner = new DatePartitionedQueryPlanner();
         }
         return planner;
     }
@@ -2524,6 +2885,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setSpeculativeScanning(speculativeScanning);
     }
 
+    public boolean getSerializeQueryIterator() {
+        return getConfig().getSerializeQueryIterator();
+    }
+
+    public void setSerializeQueryIterator(boolean serializeQueryIterator) {
+        getConfig().setSerializeQueryIterator(serializeQueryIterator);
+    }
+
     public boolean getAllowShortcutEvaluation() {
         return getConfig().getAllowShortcutEvaluation();
     }
@@ -2620,12 +2989,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setCacheModel(cacheModel);
     }
 
-    public List<IndexHole> getIndexHoles() {
-        return getConfig().getIndexHoles();
+    public List<IndexValueHole> getIndexValueHoles() {
+        return getConfig().getIndexValueHoles();
     }
 
-    public void setIndexHoles(List<IndexHole> indexHoles) {
-        getConfig().setIndexHoles(indexHoles);
+    public void setIndexValueHoles(List<IndexValueHole> indexValueHoles) {
+        getConfig().setIndexValueHoles(indexValueHoles);
+    }
+
+    @Deprecated
+    public void setIndexHoles(List<IndexValueHole> indexHoles) {
+        setIndexValueHoles(indexHoles);
     }
 
     public CardinalityConfiguration getCardinalityConfiguration() {
@@ -2821,6 +3195,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
+     *            The query checkpoint
+     * @throws Exception
+     *             when unable to set up query
      */
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
@@ -3033,12 +3410,44 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
     }
 
-    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
-        getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
+    public void setIndexFieldHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        getConfig().setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
     }
 
-    public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
-        return getConfig().getFieldIndexHoleMinThreshold();
+    public double getIndexFieldHoleMinThreshold() {
+        return getConfig().getIndexFieldHoleMinThreshold();
+    }
+
+    public List<QueryRule> getValidationRules() {
+        return validationRules;
+    }
+
+    public void setValidationRules(List<QueryRule> validationRules) {
+        if (validationRules == null) {
+            this.validationRules = List.of();
+        } else {
+            this.validationRules = new ArrayList<>();
+            for (QueryRule rule : validationRules) {
+                QueryRule copy = rule.copy();
+                // If a rule name was not specified, use the name of the class for easier identification later.
+                if (StringUtils.isBlank(copy.getName())) {
+                    copy.setName(copy.getClass().getSimpleName());
+                }
+                this.validationRules.add(copy);
+            }
+        }
+    }
+
+    @Override
+    public Transformer<Object,QueryValidationResponse> getQueryValidationResponseTransformer() {
+        if (this.validationResponseTransformer == null) {
+            this.validationResponseTransformer = new QueryValidationResultTransformer();
+        }
+        return validationResponseTransformer;
+    }
+
+    public void setValidationResponseTransformer(Transformer<Object,QueryValidationResponse> queryValidationResponseTransformer) {
+        this.validationResponseTransformer = queryValidationResponseTransformer;
     }
 
     public Set<String> getNoExpansionIfCurrentDateTypes() {
@@ -3047,5 +3456,29 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         getConfig().setNoExpansionIfCurrentDateTypes(noExpansionIfCurrentDateTypes);
+    }
+
+    public boolean isUseDocumentScheduler() {
+        return getConfig().isUseDocumentScheduler();
+    }
+
+    public void setUseDocumentScheduler(boolean useDocumentScheduler) {
+        getConfig().setUseDocumentScheduler(useDocumentScheduler);
+    }
+
+    public void setDocumentScannerConfig(DocumentScannerConfig documentScannerConfig) {
+        this.getConfig().setDocumentScannerConfig(documentScannerConfig);
+    }
+
+    public DocumentScannerConfig getDocumentScannerConfig() {
+        return getConfig().getDocumentScannerConfig();
+    }
+
+    public boolean isDateIndexIterator() {
+        return getConfig().isDateIndexIterator();
+    }
+
+    public void setDateIndexIterator(boolean dateIndexIterator) {
+        getConfig().setDateIndexIterator(dateIndexIterator);
     }
 }
