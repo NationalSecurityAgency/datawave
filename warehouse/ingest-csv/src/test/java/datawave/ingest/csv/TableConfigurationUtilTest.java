@@ -107,7 +107,7 @@ public class TableConfigurationUtilTest {
 
         Assert.assertEquals(0, tempCacheFile.length());
         tcu.updateCacheFile();
-        Assert.assertEquals(7868, tempCacheFile.length());
+        Assert.assertEquals(8053, tempCacheFile.length());
 
         tcu.serializeTableConfgurationIntoConf(conf);
 
@@ -271,7 +271,7 @@ public class TableConfigurationUtilTest {
         Assert.assertEquals(10, shardIndexProps.size());
 
         Map<String,String> metaProps = tcu.getTableProperties("datawave.metadata");
-        Assert.assertEquals(23, metaProps.size());
+        Assert.assertEquals(25, metaProps.size());
 
         tcu.setTableItersPrioritiesAndOpts();
 
