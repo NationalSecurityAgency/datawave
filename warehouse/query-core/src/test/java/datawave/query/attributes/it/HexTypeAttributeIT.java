@@ -3,8 +3,6 @@ package datawave.query.attributes.it;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.HexStringNormalizer;
 import datawave.data.type.HexStringType;
@@ -17,11 +15,14 @@ import datawave.query.attributes.TypeAttributeIT;
  */
 public class HexTypeAttributeIT extends TypeAttributeIT {
 
-    private static final Logger log = LoggerFactory.getLogger(HexTypeAttributeIT.class);
-
     @Override
     protected Type<?> getType() {
         return new HexStringType();
+    }
+
+    @Override
+    protected String getTypeShortName() {
+        return "HEX";
     }
 
     @Override
@@ -47,38 +48,30 @@ public class HexTypeAttributeIT extends TypeAttributeIT {
     }
 
     @Test
-    public void testKryoSerialization() {
-        writeKryo(NORMALIZED, createNormalizedAttribute(), log);
-        writeKryo(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
-    public void testKryoDeserialization() {
-        readKryo(NORMALIZED, createNormalizedAttribute(), log);
-        readKryo(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        testKryoReadWriteTimes(NORMALIZED, createNormalizedAttribute());
+        testKryoReadWriteTimes(NON_NORMALIZED, createNonNormalizedAttribute());
     }
 
     @Test
-    public void testDataSerialization() {
-        writeDataOutput(NORMALIZED, createNormalizedAttribute(), log);
-        writeDataOutput(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
-    public void testDataDeserialization() {
-        readDataInput(NORMALIZED, createNormalizedAttribute(), log);
-        readDataInput(NON_NORMALIZED, createNonNormalizedAttribute(), log);
+    public void testKryoValuePreservation() {
+        // serializing full type name: 49
+        // serializing type name index: 18
+        verifyKryoPreservesValue(createNormalizedAttribute(), 18);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 18);
     }
 
     @Test
     public void testDataReadWrite() {
-        readWriteData(createNormalizedAttribute());
-        readWriteData(createNonNormalizedAttribute());
+        testDataReadWriteTimes(NORMALIZED, createNormalizedAttribute());
+        testDataReadWriteTimes(NON_NORMALIZED, createNonNormalizedAttribute());
+    }
+
+    @Test
+    public void testDataValuePreservation() {
+        // serializing full type name: 57
+        // serializing type name index: 22
+        verifyDataPreservesValue(createNormalizedAttribute(), 22);
+        verifyDataPreservesValue(createNonNormalizedAttribute(), 22);
     }
 }

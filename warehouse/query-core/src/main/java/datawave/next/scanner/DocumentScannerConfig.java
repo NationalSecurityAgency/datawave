@@ -74,6 +74,17 @@ public class DocumentScannerConfig implements Serializable {
     private transient VisitorFunction visitorFunction;
     private String queryId;
 
+    // accumulo execution hints control which executor pool handles our scans
+    private String searchScanHintTable;
+    private String searchScanHintPool;
+
+    private String retrievalScanHintTable;
+    private String retrievalScanHintPool;
+
+    // IMMEDIATE or EVENTUAL
+    private String searchConsistencyLevel;
+    private String retrievalConsistencyLevel;
+
     private final DocumentSchedulerStats stats = new DocumentSchedulerStats();
 
     public DocumentScannerConfig() {
@@ -226,6 +237,12 @@ public class DocumentScannerConfig implements Serializable {
                     .append(maxRetrievalTasks, other.maxRetrievalTasks)
                     .append(sortedCandidateQueue, other.sortedCandidateQueue)
                     .append(candidateBatchSize, other.candidateBatchSize)
+                    .append(searchScanHintTable, other.searchScanHintTable)
+                    .append(searchScanHintPool, other.searchScanHintPool)
+                    .append(retrievalScanHintTable, other.retrievalScanHintTable)
+                    .append(retrievalScanHintPool, other.retrievalScanHintPool)
+                    .append(searchConsistencyLevel, other.searchConsistencyLevel)
+                    .append(retrievalConsistencyLevel, other.retrievalConsistencyLevel)
                     .isEquals();
             //  @formatter:on
         }
@@ -244,6 +261,12 @@ public class DocumentScannerConfig implements Serializable {
                 .append(maxRetrievalTasks)
                 .append(sortedCandidateQueue)
                 .append(candidateBatchSize)
+                .append(searchScanHintTable)
+                .append(searchScanHintPool)
+                .append(retrievalScanHintTable)
+                .append(retrievalScanHintPool)
+                .append(searchConsistencyLevel)
+                .append(retrievalConsistencyLevel)
                 .hashCode();
         //  @formatter:on
     }
@@ -334,5 +357,53 @@ public class DocumentScannerConfig implements Serializable {
 
     public void setUseQueryIterator(boolean useQueryIterator) {
         this.useQueryIterator = useQueryIterator;
+    }
+
+    public String getSearchScanHintTable() {
+        return searchScanHintTable;
+    }
+
+    public void setSearchScanHintTable(String searchScanHintTable) {
+        this.searchScanHintTable = searchScanHintTable;
+    }
+
+    public String getSearchScanHintPool() {
+        return searchScanHintPool;
+    }
+
+    public void setSearchScanHintPool(String searchScanHintPool) {
+        this.searchScanHintPool = searchScanHintPool;
+    }
+
+    public String getRetrievalScanHintTable() {
+        return retrievalScanHintTable;
+    }
+
+    public void setRetrievalScanHintTable(String retrievalScanHintTable) {
+        this.retrievalScanHintTable = retrievalScanHintTable;
+    }
+
+    public String getRetrievalScanHintPool() {
+        return retrievalScanHintPool;
+    }
+
+    public void setRetrievalScanHintPool(String retrievalScanHintPool) {
+        this.retrievalScanHintPool = retrievalScanHintPool;
+    }
+
+    public String getSearchConsistencyLevel() {
+        return searchConsistencyLevel;
+    }
+
+    public void setSearchConsistencyLevel(String searchConsistencyLevel) {
+        this.searchConsistencyLevel = searchConsistencyLevel;
+    }
+
+    public String getRetrievalConsistencyLevel() {
+        return retrievalConsistencyLevel;
+    }
+
+    public void setRetrievalConsistencyLevel(String retrievalConsistencyLevel) {
+        this.retrievalConsistencyLevel = retrievalConsistencyLevel;
     }
 }

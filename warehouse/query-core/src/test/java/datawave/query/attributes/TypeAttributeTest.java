@@ -34,6 +34,7 @@ public class TypeAttributeTest extends AttributeTest {
         Output output = new Output(baos);
 
         // note: if further changes are made to serialization this test will need to be updated
+        output.writeInt(0, true);
         output.writeString("MrMcDoesn'tExist");
         output.writeBoolean(false); // write metadata when not set
         output.writeString("delegate value as string");

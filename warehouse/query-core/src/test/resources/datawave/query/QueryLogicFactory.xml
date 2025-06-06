@@ -527,6 +527,13 @@
         <property name="resultQueuePollTimeMillis" value="5"/>
         <property name="scanTimeoutMillis" value="10000"/>
         <property name="useQueryIterator" value="true" />
+        <!-- execution hints and consistency levels -->
+        <property name="searchScanHintTable" value="shard"/>
+        <property name="searchScanHintPool" value="shardTablePool"/>
+        <property name="retrievalScanHintTable" value="shard"/>
+        <property name="retrievalScanHintPool" value="shardTablePool"/>
+        <property name="searchConsistencyLevel" value="IMMEDIATE"/>
+        <property name="retrievalConsistencyLevel" value="IMMEDIATE"/>
     </bean>
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">

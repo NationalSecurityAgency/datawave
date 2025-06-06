@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -107,6 +108,14 @@ public class DocumentIdProducer implements RunnableWithContext {
         Scanner scanner = config.getClient().createScanner(context.getTableName(), config.getAuthorizations());
         scanner.setRange(range);
         scanner.addScanIterator(createIteratorSetting());
+
+        if (config.getSearchScanHintTable() != null && config.getSearchScanHintPool() != null) {
+            scanner.setExecutionHints(Map.of(config.getSearchScanHintTable(), config.getSearchScanHintPool()));
+        }
+
+        if (config.getSearchConsistencyLevel() != null) {
+            scanner.setConsistencyLevel(ConsistencyLevel.valueOf(config.getSearchConsistencyLevel()));
+        }
         return scanner;
     }
 

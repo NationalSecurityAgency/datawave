@@ -32,7 +32,7 @@ public class DocumentTest {
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
     private final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
-    private static final int max_iterations = 1;
+    private static final int max_iterations = 100;
 
     private AttributeFactory attributeFactory;
 
@@ -52,49 +52,49 @@ public class DocumentTest {
 
     @Test
     public void testEmptyDocument() {
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 16);
     }
 
     @Test
     public void testDocumentWithLcType() {
         Attribute<?> attr = createAttribute("LC", "value");
         d.put("LC", attr);
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 66);
     }
 
     @Test
     public void testDocumentWithLcNoDiacriticsType() {
         Attribute<?> attr = createAttribute("LC_NO_DIACRITICS", "value");
         d.put("LC_NO_DIACRITICS", attr);
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 80);
     }
 
     @Test
     public void testDocumentWithHexType() {
         Attribute<?> attr = createAttribute("HEX", "a1b2c3");
         d.put("HEX", attr);
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 68);
     }
 
     @Test
     public void testDocumentWithNumberType() {
         Attribute<?> attr = createAttribute("NUMBER", "12");
         d.put("NUMBER", attr);
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 67);
     }
 
     @Test
     public void testDocumentWithNumberTypeNormalizedValue() {
         Attribute<?> attr = createAttribute("NUMBER", "+bE1.2");
         d.put("NUMBER", attr);
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 67);
     }
 
     @Test
     public void testDocumentWithNumberTypeLargeValue() {
         Attribute<?> attr = createAttribute("NUMBER", "12456789.987654321");
         d.put("NUMBER", attr);
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 83);
     }
 
     @Test
@@ -107,7 +107,7 @@ public class DocumentTest {
         d.put("LC_NO_DIACRITICS", attr2);
         d.put("NUMBER", attr3);
         d.put("HEX", attr4);
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 234);
     }
 
     @Test
@@ -117,12 +117,13 @@ public class DocumentTest {
             Attribute<?> attr = createAttribute("LC", "value-" + i);
             d.put("LC", attr);
         }
-        roundTrip(max_iterations);
+        roundTrip(max_iterations, 5288956);
     }
 
-    protected void roundTrip(int max) {
+    protected void roundTrip(int max, int serializedLength) {
         Entry<Key,Value> entry = serialize(d);
         log.trace("size: {}", entry.getValue().getSize());
+        assertEquals(serializedLength, entry.getValue().getSize());
         for (int i = 0; i < max; i++) {
             Entry<Key,Document> result = deserialize(entry);
             Document d2 = result.getValue();
