@@ -60,6 +60,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.Type;
+import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -741,8 +742,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
                 Key key = entry.getKey();
                 Value value = entry.getValue();
                 String cq = key.getColumnQualifier().toString();
-                if (cq.endsWith("AGGREGATED")) {
-                    cq = cq.substring(0, cq.length() - 10);
+                if (cq.endsWith(FrequencyMetadataAggregator.AGGREGATED)) {
+                    cq = cq.substring(0, cq.length() - FrequencyMetadataAggregator.AGGREGATED.length());
                     DateFrequencyMap entryMap = new DateFrequencyMap(value.get());
                     for (Map.Entry<String,Frequency> dateEntry : entryMap.entrySet()) {
                         Key newKey = new Key(key.getRow().toString(), key.getColumnFamily().toString(), cq + dateEntry.getKey(),

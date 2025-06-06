@@ -42,7 +42,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
 
     public static final String COMBINE_VISIBILITIES_OPTION = "COMBINE_VISIBILITIES";
     public static final String COLUMNS_OPTION = "columns";
-    public static final String AGGREGATED = "AGGREGATED";
+    public static final String AGGREGATED = "-AGGREGATED-";
 
     private static final Logger log = Logger.getLogger(FrequencyMetadataAggregator.class);
     private static final String NULL_BYTE = "\0";
