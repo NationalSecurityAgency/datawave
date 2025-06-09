@@ -42,7 +42,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
 
     public static final String COMBINE_VISIBILITIES_OPTION = "COMBINE_VISIBILITIES";
     public static final String COLUMNS_OPTION = "columns";
-    public static final String AGGREGATED = "-AGGREGATED-";
+    public static final String AGGREGATED = "AGGREGATE";
 
     private static final Logger log = Logger.getLogger(FrequencyMetadataAggregator.class);
     private static final String NULL_BYTE = "\0";
@@ -66,6 +66,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
     private ColumnVisibility currentVisibility;
     private long currentTimestamp;
     private boolean isCurrentAggregated;
+    private boolean isMarker;
 
     public FrequencyMetadataAggregator() {
         cache = new TreeMap<>();
@@ -132,12 +133,43 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         }
     }
 
+    /**
+     * Given a range, return a start key that will allow us to return the next appropriate key
+     *
+     * @param range
+     *            The seek range
+     * @return modified range
+     */
+    private Range minimizeStartKey(Range range) {
+        if (range.getStartKey() != null) {
+            String columnQualifier = range.getStartKey().getColumnQualifier().toString();
+            int separatorPos = columnQualifier.indexOf(NULL_BYTE);
+            if (separatorPos == -1) {
+                range = IteratorUtil.maximizeStartKeyTimeStamp(range);
+            } else {
+                Key startKey = range.getStartKey();
+                startKey = new Key(startKey.getRow(), startKey.getColumnFamily(), new Text(columnQualifier.substring(0, separatorPos)));
+                range = new Range(startKey, range.isStartKeyInclusive(), range.getEndKey(), range.isEndKeyInclusive());
+            }
+        }
+        return range;
+    }
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        // Do not seek to the middle of a value that should be combined.
-        Range seekRange = IteratorUtil.maximizeStartKeyTimeStamp(range);
+        log.info("seek(" + range + ", " + columnFamilies + ", " + inclusive);
+
+        // we want to seek to the beginning of the row,cf,datatype to ensure we get complete keys
+        Range seekRange = minimizeStartKey(range);
+        if (log.isTraceEnabled()) {
+            log.trace("modified seek range: " + range);
+        }
 
         super.seek(seekRange, columnFamilies, inclusive);
+        if (log.isTraceEnabled()) {
+            log.trace("super.seek() -> " + (super.hasTop() ? super.getTopKey() : "null"));
+        }
+
         findTop();
 
         if (range.getStartKey() != null) {
@@ -150,6 +182,10 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
 
         while (hasTop() && range.beforeStartKey(getTopKey())) {
             next();
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("seek -> " + (hasTop() ? getTopKey() : "null"));
         }
     }
 
@@ -180,9 +216,15 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             // If topKey is null, the last call to next() did not pop an entry from the cache. Advance to the next from the source. We will determine if
             // aggregation is needed in findTop().
             super.next();
+            if (log.isTraceEnabled()) {
+                log.trace("super.next () -> " + (super.hasTop() ? super.getTopKey() : "null"));
+            }
         }
 
         findTop();
+        if (log.isTraceEnabled()) {
+            log.trace("next -> " + (hasTop() ? getTopKey() : "null"));
+        }
     }
 
     private void findTop() throws IOException {
@@ -190,10 +232,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         // Attempt to pop an entry from the cache. If no entries remain, evaluate the next key for potential aggregation.
         if (!popCache()) {
             if (super.hasTop()) {
-                workKey.set(super.getTopKey());
                 // Check if the current key contains a column marked for aggregation, and is not deleted. If so, rebuild the cache with the relevant aggregated
                 // entries.
-                if (columns.contains(workKey) && !workKey.isDeleted()) {
+                if (columns.contains(super.getTopKey()) && !super.getTopKey().isDeleted()) {
                     updateCache();
                     popCache();
                 }
@@ -210,6 +251,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             Map.Entry<Key,Value> entry = cache.pollFirstEntry();
             topKey = entry.getKey();
             topValue = entry.getValue();
+            if (log.isTraceEnabled()) {
+                log.trace("Popping from cache: " + topKey);
+            }
             return true;
         }
         return false;
@@ -226,6 +270,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         currentVisibility = null;
         currentTimestamp = 0L;
         isCurrentAggregated = false;
+        isMarker = false;
         visibilityToDateFrequencies.clear();
         visibilityToMaxTimestamp.clear();
     }
@@ -259,17 +304,26 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             }
 
             // Aggregate the current entry only if it is not deleted.
-            if (!workKey.isDeleted()) {
-                // Aggregate the current entry.
-                aggregateCurrent();
+            if (columns.contains(workKey) && !workKey.isDeleted()) {
+                // add markers directly the cache
+                if (isMarker) {
+                    // need to create copy as byte arrays are reused
+                    cache.put(new Key(workKey), new Value(super.getTopValue()));
+                } else {
+                    // Aggregate everything else
+                    aggregateCurrent();
+                }
             } else {
-                // TODO: Instead aggregate by deleting from the value (ala the shardIndex) ?
-                // Add the deleted entry to the cache so that it is available for scanning, but do not include it as part of the aggregation.
-                cache.put(super.getTopKey(), super.getTopValue());
+                // Add the deleted or others entry to the cache so that it is available for scanning, but do not include it as part of the aggregation.
+                // need to create copy as byte arrays are reused
+                cache.put(new Key(workKey), new Value(super.getTopValue()));
             }
 
             // Advance to the next entry from the source.
             super.next();
+            if (log.isTraceEnabled()) {
+                log.trace("super.next () -> " + (super.hasTop() ? super.getTopKey() : "null"));
+            }
         }
     }
 
@@ -277,6 +331,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
      * Return true if the current entry has the same row, column family, and datatype from the previous entry, or false otherwise.
      */
     private boolean partOfCurrentAggregation(Key key) {
+        isCurrentAggregated = false;
+        isMarker = false;
+
         // Update the current row if null.
         if (currentRow.getLength() == 0) {
             currentRow.set(key.getRow());
@@ -308,16 +365,31 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         String columnQualifier = key.getColumnQualifier().toString();
         int separatorPos = columnQualifier.indexOf(NULL_BYTE);
 
-        // If a null byte is not present, this is an entry with a legacy format and should not be aggregated.
-        if (separatorPos == -1) {
+        String datatype = (separatorPos == -1 ? columnQualifier : columnQualifier.substring(0, separatorPos));
+        String remainder = (separatorPos == -1 ? "" : columnQualifier.substring((separatorPos + 1)));
+
+        // Update the current datatype if null.
+        if (currentDatatype == null) {
+            currentDatatype = datatype;
             if (log.isTraceEnabled()) {
-                log.trace("Found column qualifier that does not contain null byte: " + columnQualifier);
+                log.trace("Set current datatype to " + currentDatatype);
+            }
+            // Check if we're on a new datatype.
+        } else if (!currentDatatype.equals(datatype)) {
+            if (log.isTraceEnabled()) {
+                log.trace("Next datatype " + datatype + " differs from prev " + currentDatatype);
             }
             return false;
         }
 
-        String datatype = columnQualifier.substring(0, separatorPos);
-        String remainder = columnQualifier.substring((separatorPos + 1));
+        // If a null byte is not present, this is an entry with a legacy format and should not be aggregated but still in the same section
+        if (separatorPos == -1) {
+            if (log.isTraceEnabled()) {
+                log.trace("Found column qualifier that does not contain null byte: " + columnQualifier);
+            }
+            isMarker = true;
+            return true;
+        }
 
         // If a second null byte is present, this is an entry with an index boundary marker in the format <datatype>\0<date>\0<true|false> and should not be
         // aggregated.
@@ -325,7 +397,8 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             if (log.isTraceEnabled()) {
                 log.trace("Found index boundary marker: " + columnQualifier);
             }
-            return false;
+            isMarker = true;
+            return true;
         }
 
         // This is an aggregated entry.
@@ -340,26 +413,13 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
                 if (log.isTraceEnabled()) {
                     log.trace("Found unparseable date: " + columnQualifier);
                 }
-                return false;
+                isMarker = true;
+                return true;
             }
             currentDate = columnQualifier.substring((separatorPos + 1));
             if (log.isTraceEnabled()) {
                 log.trace("Set current date to " + currentDate);
             }
-        }
-
-        // Update the current datatype if null.
-        if (currentDatatype == null) {
-            currentDatatype = datatype;
-            if (log.isTraceEnabled()) {
-                log.trace("Set current datatype to " + currentDatatype);
-            }
-            // Check if we're on a new datatype.
-        } else if (!currentDatatype.equals(datatype)) {
-            if (log.isTraceEnabled()) {
-                log.trace("Next datatype " + datatype + " differs from prev " + currentDatatype);
-            }
-            return false;
         }
 
         // Update the current visibility and timestamp.

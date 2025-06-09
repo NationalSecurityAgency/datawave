@@ -18,6 +18,10 @@ import org.apache.hadoop.io.WritableUtils;
 
 public class DateFrequencyMap implements Map<String,Frequency>, Writable {
 
+    public enum VERSION {
+        UNKNOWN, BASIC;
+    }
+
     private final TreeMap<String,Frequency> dateToFrequencies;
 
     public DateFrequencyMap() {
@@ -191,6 +195,9 @@ public class DateFrequencyMap implements Map<String,Frequency>, Writable {
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
+        // Write the format version
+        WritableUtils.writeEnum(dataOutput, VERSION.BASIC);
+
         // Write the map's size.
         WritableUtils.writeVInt(dataOutput, dateToFrequencies.size());
 
@@ -206,6 +213,18 @@ public class DateFrequencyMap implements Map<String,Frequency>, Writable {
         // Clear the map.
         this.dateToFrequencies.clear();
 
+        VERSION ver = WritableUtils.readEnum(dataInput, VERSION.class);
+
+        switch (ver) {
+            case BASIC:
+                readBasicMap(dataInput);
+                break;
+            default:
+                throw new IOException("Unexpected DateFrequencyMap format: " + ver);
+        }
+    }
+
+    private void readBasicMap(DataInput dataInput) throws IOException {
         // Read how many entries to expect.
         int entries = WritableUtils.readVInt(dataInput);
 
