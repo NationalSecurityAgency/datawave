@@ -1,16 +1,47 @@
-/* eslint-disable no-var */
 import { Ref, WritableComputedRef, computed, defineComponent, ref } from 'vue';
 
-// Parses a Value to remove uncessessary 'undefined' or empty values.
-export function parseVal(colName: any, colValue: any): string {
-  if (colName === 'Types' || colName === 'Descriptions') {
+interface Entry {
+  key: string;
+  value: string;
+}
+
+interface Markings {
+  entry: Entry[];
+}
+
+interface Record {
+  decription: string;
+  markings: Markings;
+}
+
+// Parses a Value to remove uncessessary 'undefined' or empty values and filters Description.
+// Ensure that the undefined/null values are loosely compared (i.e '==' not '===')
+export function parseVal(colName: string, colValue: any) : string {
+  if (colName === 'Types') {
     if (colValue == undefined) {
       return '';
     } else {
       return colValue.toString();
     }
+  } else if (colName === 'Descriptions') {
+    if (colValue == undefined || colValue.length === 0) {
+      return '';
+    }
+
+    const firstEntry = colValue[0] as Record;
+    if (!firstEntry.markings || !firstEntry.markings.entry) {
+      return '';
+    }
+
+    const markingsEntry = firstEntry.markings.entry;
+
+    const marking = markingsEntry.length > 0 ? markingsEntry[0].value : '';
+    const markingAccess = markingsEntry.length > 1 ? markingsEntry[1].value : '';
+    const description = firstEntry.decription || '';
+
+    return `${marking} ${markingAccess} ${description}`;
   } else {
-    return colValue;
+    return colValue.toString();
   }
 }
 
