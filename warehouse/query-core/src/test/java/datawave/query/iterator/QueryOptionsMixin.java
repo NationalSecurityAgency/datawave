@@ -24,6 +24,13 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.util.sortedset.FileSortedSet;
 
+/**
+ * QueryOptionsMixin adds the @JsonIgnore decorator to fields in
+ * the main class for testing. This is specifically useful for checking if
+ * default options are present for any new query options, keeping
+ * the original QueryOptions class nice and clean!
+ */
+
 public abstract class QueryOptionsMixin {
 
     @JsonIgnore
