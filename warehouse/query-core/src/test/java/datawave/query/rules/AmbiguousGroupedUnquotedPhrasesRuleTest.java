@@ -58,11 +58,11 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
      */
     @Test
     void testMultipleFieldsWithVariousGroupedAmbiguousPhrases() throws Exception {
-        givenQuery("FOO:(abc def ghi) OR BAR:(aaa bbb ccc) AND 333 HAT:\"111\" 222 AND HEN:car VEE:elephant zebra VEE:deer");
+        givenQuery("FOO:(abc def ghi) OR BAR:(aaa bbb ccc) AND 333 HAT:\"111\" 222 AND HEN:car VEE:(elephant zebra) VEE:deer");
 
         expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: FOO:( abc AND def AND ghi ). Recommended: FOO:\"abc def ghi\"");
         expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: BAR:( aaa AND bbb AND ccc ). Recommended: BAR:\"aaa bbb ccc\"");
-        expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: VEE:elephant AND zebra. Recommended: VEE:\"elephant zebra\"");
+        expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: VEE:( elephant AND zebra ). Recommended: VEE:\"elephant zebra\"");
 
         assertResult();
     }

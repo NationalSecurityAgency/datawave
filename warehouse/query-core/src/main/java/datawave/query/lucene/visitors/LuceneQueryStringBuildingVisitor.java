@@ -56,11 +56,25 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
     private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
     private boolean newParenthesis;
     private QueryNodeType type;
+    private QueryNode copy;
 
     public static String build(QueryNode node) {
         LuceneQueryStringBuildingVisitor visitor = new LuceneQueryStringBuildingVisitor();
         return ((StringBuilder) visitor.visit(node, new StringBuilder())).toString();
     }
+
+//    public static QueryNode createCopy(QueryNode node) {
+//        // this.copy = node;
+//
+//        // List<QueryNode> children = node.getChildren();
+//        // for (QueryNode child : children) {
+//        //
+//        // }
+//
+//
+//
+//        return copy;
+//    }
 
     @Override
     public Object visit(AndQueryNode node, Object data) {
@@ -455,10 +469,9 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
                             // if it does, we know the group is something like ( FOO: abc def ghi )
                             newParenthesis = false;
                         } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
-                            // this means there is (an) unfielded term(s)
-                            newParenthesis = true;
                             // if it does, we know the group is something like: FOO:( abc def ghi )
                             ((FieldQueryNode) child).setField("");
+                            newParenthesis = true;
                         } else {
                             prevField = ((FieldQueryNode) child).getFieldAsString();
                             newParenthesis = false;
