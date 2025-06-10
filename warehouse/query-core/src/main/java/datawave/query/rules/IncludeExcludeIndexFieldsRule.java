@@ -58,7 +58,7 @@ public class IncludeExcludeIndexFieldsRule extends ShardQueryRule {
                     Set<String> intersection = Sets.intersection(indexedFields, functionFields.getFields());
                     // If the function contains any index fields, add a message to the result.
                     if (!intersection.isEmpty()) {
-                        result.addMessage("Indexed fields found within the function " + functionFields.getNamespace() + ":" + functionFields.getFunction()
+                        result.addMessage("Index Only fields found within the function " + functionFields.getNamespace() + ":" + functionFields.getFunction()
                                         + ": " + String.join(", ", intersection));
                     }
                 }
