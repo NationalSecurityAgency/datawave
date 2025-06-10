@@ -46,7 +46,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.util.keyword.KeywordResults;
+import datawave.util.keyword.KeywordResults;
 import datawave.webservice.query.exception.QueryException;
 
 @SuppressWarnings("rawtypes")
@@ -189,7 +189,7 @@ public class KeywordQueryLogicTest {
         baseResults.put("kind", 0.2546);
         baseResults.put("kind word", 0.2052);
 
-        KeywordResults results = new KeywordResults("someSource", "someView", "someLanguage", baseResults);
+        KeywordResults results = new KeywordResults("someSource", "someView", "someLanguage", "someVisibility", baseResults);
 
         Key dataKey = new Key("20241218_0", "d", "sampleCsv" + '\u0000' + "1.2.3" + '\u0000' + "someView", "A");
         Value viewValue = new Value(KeywordResults.serialize(results));
@@ -204,7 +204,7 @@ public class KeywordQueryLogicTest {
         QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> transformer = logic.getTransformer(settings);
         KeywordResults base = transformer.transform(entry);
         String json = base.toJson();
-        assertEquals("{\"source\":\"someSource\",\"view\":\"someView\",\"language\":\"someLanguage\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052}}",
+        assertEquals("{\"source\":\"someSource\",\"view\":\"someView\",\"language\":\"someLanguage\",\"visibility\":\"someVisibility\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052}}",
                         json);
         verifyAll();
     }

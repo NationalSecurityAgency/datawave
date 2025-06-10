@@ -14,7 +14,7 @@ import org.junit.Test;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 
-public class KeywordQueryTransformerTest {
+public class TagCloudTransformerTest {
 
     //@formatter:off
     String[] input = {

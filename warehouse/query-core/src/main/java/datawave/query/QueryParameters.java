@@ -231,10 +231,4 @@ public class QueryParameters {
      * Used to specify model or DB fields that must be treated as strict (cannot be skipped if normalization fails)
      */
     public static final String STRICT_FIELDS = "strict.fields";
-
-    /**
-     * Used to specify that a tag cloud should consist of merged results for all documents or for individual results for individual documents.
-     */
-    public static final String TAG_CLOUD_CREATE = "tag.cloud.create";
-
 }

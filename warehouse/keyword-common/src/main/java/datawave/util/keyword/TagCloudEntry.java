@@ -1,4 +1,4 @@
-package datawave.query.util.keyword;
+package datawave.util.keyword;
 
 import static java.util.Comparator.nullsLast;
 
@@ -6,16 +6,18 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
 import com.google.common.base.Objects;
+import com.google.gson.Gson;
 
 /**
  * A tag cloud entry, a single keyword with an accompanying score, frequency and list of sources where the keyword was found.
  */
 public class TagCloudEntry implements Comparable<TagCloudEntry> {
+
+    static final Gson gson = new Gson();
 
     /** the keyword that represents the tag */
     final String keyword;
@@ -66,25 +68,44 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
 
     @Override
     public int compareTo(@Nonnull TagCloudEntry other) {
-        return naturalOrder.compare(this, other);
+        return ORDER_BY_SCORE.compare(this, other);
     }
 
     //@formatter:off
-    public static final Comparator<TagCloudEntry> naturalOrder = nullsLast(Comparator
+    public static final Comparator<TagCloudEntry> ORDER_BY_SCORE = nullsLast(Comparator
             .comparingDouble(TagCloudEntry::getScore)
             .thenComparing(TagCloudEntry::getFrequency)
             .thenComparing(TagCloudEntry::getKeyword));
+
+    public static final Comparator<TagCloudEntry> ORDER_BY_FREQUENCY = nullsLast(Comparator
+            .comparingDouble(TagCloudEntry::getFrequency).reversed()
+            .thenComparing(TagCloudEntry::getScore)
+            .thenComparing(TagCloudEntry::getKeyword));
     //@formatter:on
+
+    public String toString() {
+        return gson.toJson(this);
+    }
+
+    public static TagCloudEntry fromJson(String json) {
+        return gson.fromJson(json, TagCloudEntry.class);
+    }
 
     /**
      * A builder for a tag cloud entry. Allows scores and sources for this keyword to be accumulated and the resulting entry produced with the build() call.
      */
     public static class Builder {
-        String keyword;
+        final String keyword;
         final SortedSet<ScoreTuple> sourceScores = new TreeSet<>();
+        TagCloudUtils utils = new DefaultTagCloudUtils();
 
         public Builder(String keyword) {
             this.keyword = keyword;
+        }
+
+        public Builder withUtilities(TagCloudUtils utils) {
+            this.utils = utils;
+            return this;
         }
 
         public void addSourceScore(String source, double score, String language) {
@@ -92,18 +113,10 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
         }
 
         public TagCloudEntry build() {
-            // todo: make this modular/pluggable?
-            //@formatter:off
-            final double score = sourceScores.stream()
-                    .map(ScoreTuple::getScore)
-                    .min(Double::compareTo)
-                    .orElse(1.0);
-
-            final Set<String> sources = sourceScores.stream()
-                    .map(ScoreTuple::getSource)
-                    .collect(Collectors.toSet());
-            //@formatter:on
-            return new TagCloudEntry(keyword, score, sourceScores.size(), sources);
+            final double score = utils.calculateScore(sourceScores);
+            final Set<String> sources = utils.calculateSources(sourceScores);
+            final int frequency = utils.calculateFrequency(sourceScores);
+            return new TagCloudEntry(keyword, score, frequency, sources);
         }
     }
 
@@ -155,5 +168,14 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
                 .thenComparing(ScoreTuple::getSource)
                 .thenComparing(ScoreTuple::getLanguage));
         //@formatter:on
+
+        public String toString() {
+            return gson.toJson(this);
+        }
+
+        public static ScoreTuple fromJson(String json) {
+            return gson.fromJson(json, ScoreTuple.class);
+        }
+
     }
 }
