@@ -149,7 +149,7 @@ public class ScanResult {
      * @return true if the candidate should be removed
      */
     private boolean nominate(Key candidate, Key min, Key max, Set<Key> otherResults) {
-        return candidate.compareTo(min) < 0 || candidate.compareTo(max) <= 0 && !otherResults.contains(candidate);
+        return candidate.compareTo(min) < 0 || (candidate.compareTo(max) <= 0 && !otherResults.contains(candidate));
     }
 
     private boolean isIntersectionPossible(ScanResult other) {
