@@ -157,7 +157,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        log.info("seek(" + range + ", " + columnFamilies + ", " + inclusive);
+        if (log.isDebugEnabled()) {
+            log.debug("seek(" + range + ", " + columnFamilies + ", " + inclusive);
+        }
 
         // we want to seek to the beginning of the row,cf,datatype to ensure we get complete keys
         Range seekRange = minimizeStartKey(range);
@@ -206,7 +208,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
 
     @Override
     public void next() throws IOException {
-        log.trace("Fetching next");
+        log.debug("Fetching next");
         // If topKey is not null, the last call to next() popped an entry from the cache. Reset to null. If any more entries remain in the cache, they will be
         // popped in findTop().
         if (topKey != null) {
