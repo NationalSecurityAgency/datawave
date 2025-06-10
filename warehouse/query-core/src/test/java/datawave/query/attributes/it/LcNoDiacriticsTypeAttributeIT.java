@@ -1,8 +1,6 @@
 package datawave.query.attributes.it;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.data.type.LcNoDiacriticsType;
@@ -15,11 +13,14 @@ import datawave.query.attributes.TypeAttributeIT;
  */
 public class LcNoDiacriticsTypeAttributeIT extends TypeAttributeIT {
 
-    private static final Logger log = LoggerFactory.getLogger(LcNoDiacriticsTypeAttributeIT.class);
-
     @Override
     protected Type<?> getType() {
         return new LcNoDiacriticsType();
+    }
+
+    @Override
+    protected String getTypeShortName() {
+        return "LC_ND";
     }
 
     @Override
@@ -33,38 +34,29 @@ public class LcNoDiacriticsTypeAttributeIT extends TypeAttributeIT {
     }
 
     @Test
-    public void testKryoSerialization() {
-        writeKryo(NORMALIZED, createNormalizedAttribute(), log);
-        writeKryo(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
-    public void testKryoDeserialization() {
-        readKryo(NORMALIZED, createNormalizedAttribute(), log);
-        readKryo(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
     public void testKryoReadWrite() {
-        readWriteKryo(createNormalizedAttribute());
-        readWriteKryo(createNonNormalizedAttribute());
+        testKryoReadWriteTimes(NORMALIZED, createNormalizedAttribute());
+        testKryoReadWriteTimes(NON_NORMALIZED, createNonNormalizedAttribute());
     }
 
     @Test
-    public void testDataSerialization() {
-        writeDataOutput(NORMALIZED, createNormalizedAttribute(), log);
-        writeDataOutput(NON_NORMALIZED, createNonNormalizedAttribute(), log);
-    }
-
-    @Test
-    public void testDataDeserialization() {
-        readDataInput(NORMALIZED, createNormalizedAttribute(), log);
-        readDataInput(NON_NORMALIZED, createNonNormalizedAttribute(), log);
+    public void testKryoValuePreservation() {
+        // serializing full type name: 52, 54
+        // serializing type name index: 16, 18
+        verifyKryoPreservesValue(createNormalizedAttribute(), 16);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 18);
     }
 
     @Test
     public void testDataReadWrite() {
-        writeDataOutput(NORMALIZED, createNormalizedAttribute(), log);
-        writeDataOutput(NON_NORMALIZED, createNonNormalizedAttribute(), log);
+        testDataReadWriteTimes(NORMALIZED, createNormalizedAttribute());
+        testDataReadWriteTimes(NON_NORMALIZED, createNonNormalizedAttribute());
+    }
+
+    @Test
+    public void testDataValuePreservation() {
+        // 20, 21
+        verifyDataPreservesValue(createNormalizedAttribute(), 20);
+        verifyDataPreservesValue(createNonNormalizedAttribute(), 21);
     }
 }

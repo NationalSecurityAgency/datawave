@@ -42,6 +42,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
@@ -544,6 +545,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
 
+    private boolean useDocumentScheduler = false;
+    private DocumentScannerConfig documentScannerConfig;
+
     /**
      * Default constructor
      */
@@ -794,6 +798,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setUseDocumentScheduler(other.isUseDocumentScheduler());
+        this.setDocumentScannerConfig(other.getDocumentScannerConfig());
     }
 
     /**
@@ -3362,5 +3368,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
+    }
+
+    public DocumentScannerConfig getDocumentScannerConfig() {
+        return documentScannerConfig;
+    }
+
+    public void setDocumentScannerConfig(DocumentScannerConfig documentScannerConfig) {
+        this.documentScannerConfig = documentScannerConfig;
+    }
+
+    public boolean isUseDocumentScheduler() {
+        return useDocumentScheduler;
+    }
+
+    public void setUseDocumentScheduler(boolean useDocumentScheduler) {
+        this.useDocumentScheduler = useDocumentScheduler;
     }
 }
