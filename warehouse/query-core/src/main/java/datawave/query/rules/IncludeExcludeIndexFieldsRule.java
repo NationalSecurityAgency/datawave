@@ -56,9 +56,9 @@ public class IncludeExcludeIndexFieldsRule extends ShardQueryRule {
                 // Each FunctionField object represents the collection of all fields seen for either filter:includeRegex or filter:excludeRegex.
                 for (FetchFunctionFieldsVisitor.FunctionFields functionFields : functions) {
                     Set<String> intersection = Sets.intersection(indexedFields, functionFields.getFields());
-                    // If the function contains any index only fields, add a message to the result.
+                    // If the function contains any index fields, add a message to the result.
                     if (!intersection.isEmpty()) {
-                        result.addMessage("Index Only fields found within the filter function " + functionFields.getNamespace() + ":" + functionFields.getFunction()
+                        result.addMessage("Indexed fields found within the function " + functionFields.getNamespace() + ":" + functionFields.getFunction()
                                         + ": " + String.join(", ", intersection));
                     }
                 }
