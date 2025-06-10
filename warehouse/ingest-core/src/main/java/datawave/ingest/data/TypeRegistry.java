@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.DataTypeOverrideHelper;
 import datawave.ingest.data.config.filter.KeyValueFilter;
