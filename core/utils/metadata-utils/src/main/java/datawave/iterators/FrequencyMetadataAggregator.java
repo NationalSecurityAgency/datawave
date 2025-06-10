@@ -149,7 +149,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             } else {
                 Key startKey = range.getStartKey();
                 startKey = new Key(startKey.getRow(), startKey.getColumnFamily(), new Text(columnQualifier.substring(0, separatorPos)));
-                range = new Range(startKey, range.isStartKeyInclusive(), range.getEndKey(), range.isEndKeyInclusive());
+                range = new Range(startKey, true, range.getEndKey(), range.isEndKeyInclusive());
             }
         }
         return range;
@@ -173,14 +173,6 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         }
 
         findTop();
-
-        if (range.getStartKey() != null) {
-            while (hasTop() && getTopKey().equals(range.getStartKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)
-                            && getTopKey().getTimestamp() > range.getStartKey().getTimestamp()) {
-                // Value has a more recent timestamp, pass it up.
-                next();
-            }
-        }
 
         while (hasTop() && range.beforeStartKey(getTopKey())) {
             next();
