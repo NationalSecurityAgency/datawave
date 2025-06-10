@@ -28,9 +28,19 @@ import datawave.query.testframework.RawData;
 public class SSDeepDataManager extends AbstractDataManager {
 
     private static final Logger log = Logger.getLogger(SSDeepDataManager.class);
+    private static SSDeepDataManager INSTANCE = new SSDeepDataManager();
 
-    public SSDeepDataManager() {
+    private SSDeepDataManager() {
         super(SSDeepField.EVENT_ID.name(), SSDeepField.PROCESSING_DATE.name(), SSDeepField.getFieldsMetadata());
+    }
+
+    public static SSDeepDataManager getInstance() {
+        return INSTANCE;
+    }
+
+    public static synchronized SSDeepDataManager newInstance() {
+        INSTANCE = new SSDeepDataManager();
+        return INSTANCE;
     }
 
     @Override
