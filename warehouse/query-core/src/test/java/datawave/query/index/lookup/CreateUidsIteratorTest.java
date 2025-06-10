@@ -143,7 +143,7 @@ public class CreateUidsIteratorTest {
         // Setup iterator
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
         assertEquals(new Key("row", "cf", "date_1"), iterator.getTopKey());
 
@@ -183,7 +183,7 @@ public class CreateUidsIteratorTest {
         // Setup iterator
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
         assertEquals(new Key("row", "cf", "date_1"), iterator.getTopKey());
 
@@ -236,7 +236,7 @@ public class CreateUidsIteratorTest {
         Map<String,String> iteratorOptions = new HashMap<>();
         iteratorOptions.put(CreateUidsIterator.COLLAPSE_UIDS, "true");
         iterator.init(new SortedMapIterator(data), iteratorOptions, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
         assertEquals(new Key("row", "cf", "date_1"), iterator.getTopKey());
 
@@ -272,7 +272,7 @@ public class CreateUidsIteratorTest {
         Map<String,String> iteratorOptions = new HashMap<>();
         iteratorOptions.put(CreateUidsIterator.PARSE_TLD_UIDS, "false");
         iterator.init(new SortedMapIterator(data), iteratorOptions, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("bar", "FOO"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
         assertEquals(new Key("bar", "FOO", "20190314_1"), iterator.getTopKey());
 
@@ -295,7 +295,7 @@ public class CreateUidsIteratorTest {
         iteratorOptions = new HashMap<>();
         iteratorOptions.put(CreateUidsIterator.PARSE_TLD_UIDS, "true");
         iterator.init(new SortedMapIterator(data), iteratorOptions, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("bar", "FOO"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
         assertEquals(new Key("bar", "FOO", "20190314_1"), iterator.getTopKey());
 
