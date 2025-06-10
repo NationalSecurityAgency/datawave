@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static datawave.query.jexl.visitors.IngestTypeVisitor.IGNORED_TYPE;
 import static org.junit.Assert.assertEquals;
@@ -9,6 +10,7 @@ import static org.junit.Assert.fail;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -17,16 +19,26 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
+import datawave.data.type.util.NumericalEncoder;
+import datawave.ingest.protobuf.Uid;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -882,41 +894,57 @@ public class IngestTypePruningVisitorTest {
     @Test
     public void testAfterRangeStream() throws Exception {
 
+        /**
+         *
+         The query tree pre-RangeStream has invalid node parentage
+         The query tree post-RangeStream has invalid node parentage
+         The IngestTypePruningVisitor breaks node parentage during it's operation
+         Some unhandled edge case in the IngestTypePruningVisitor
+
+         */
+
         // Set up range stream
 
-        final String SHARD_INDEX = "shardIndex";
-
-        AccumuloClient client = new InMemoryAccumuloClient("", new InMemoryInstance());
-        client.tableOperations().create(SHARD_INDEX);
-
-        String originalQuery = "FOO == 'bag'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-
+        AccumuloClient client = setupAccumulo();
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setClient(client);
+
+        String originalQuery = "(FOO == 'oreo') && ((filter:include(FOO, 'tardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) || (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) )";
+
+        //String originalQuery = "(FOO == 'oreo')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
         config.setBeginDate(new Date(0));
         config.setEndDate(new Date(System.currentTimeMillis()));
 
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
         dataTypes.putAll("NUM", Sets.newHashSet(new NumberType()));
-
-        MockMetadataHelper helper = new MockMetadataHelper();
-        helper.setIndexedFields(dataTypes.keySet());
 
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
 
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        RangeStream rangeStream = new RangeStream(config, scannerFactory, helper);
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
 
-        Set<Range> expectedRanges = Sets.newHashSet(makeTestRange("20190314", "datatype1\u0000234"), makeTestRange("20190314", "datatype1\u0000345"));
-        for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
+        Set<Range> expectedRanges = Sets.newHashSet(makeShardedRange("20190314_1"));
+
+        for (QueryPlan queryPlan : getRangeStream(helper, config).streamPlans(script)) {
+            // verify the query plan dropped no terms
+            JexlNode queryTree = JexlASTHelper.parseJexlQuery(queryPlan.getQueryString());
+            PrintingVisitor.printQuery(queryTree);
+            JexlNode expectedTree = JexlASTHelper.parseJexlQuery(
+                    "(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
+            JexlNodeAssert.assertThat(queryTree).isEqualTo(expectedTree);
+
+            // verify the range
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range from expected ranges: " + range.toString(), expectedRanges.remove(range));
+               assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
             }
         }
+
+       assertTrue(expectedRanges.size() + " expected ranges not found in query plan: " + expectedRanges, expectedRanges.isEmpty());
+
 
         //Now that the range stream is set up, we need to get the Query in jexl format and send that into the test() method.
         // this is also a good spot to se what exactly is being produced from the range stream, because that can help us single out if the problem is there in here in ingesttyupepruiningcidistlsesasdf
@@ -924,8 +952,367 @@ public class IngestTypePruningVisitorTest {
 //        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
 
         // doesn't matter how complex the nesting is, C term should drive pruning
-        String jexlQueryAfterRangeStream = "( && (A == '1'))";
-        test(jexlQueryAfterRangeStream, null);
+//        String jexlQueryAfterRangeStream = "( && (A == '1'))";
+//        test(jexlQueryAfterRangeStream, null);
+    }
+
+        private RangeStream getRangeStream(MetadataHelper helper, ShardQueryConfiguration config) {
+            ScannerFactory scannerFactory = new ScannerFactory(config);
+            return new RangeStream(config, scannerFactory, helper);
+        }
+
+    public static AccumuloClient setupAccumulo() throws Exception {
+
+        final String SHARD_INDEX = "shardIndex";
+
+        AccumuloClient client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client.tableOperations().create(SHARD_INDEX);
+
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX,
+                new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1));
+
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.addUID("123");
+        builder.setIGNORE(false);
+        builder.setCOUNT(1);
+        Uid.List list = builder.build();
+
+        Mutation m = new Mutation("ba");
+        m.put(new Text("FOO"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("234");
+        builder.addUID("345");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("bag");
+        m.put(new Text("FOO"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("234");
+        builder.addUID("345");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("candy corn");
+        m.put(new Text("CANDY_TYPE"), new Text("20190315\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("345");
+        builder.setIGNORE(false);
+        builder.setCOUNT(1);
+        list = builder.build();
+
+        m = new Mutation("bar");
+        m.put(new Text("FOO"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("345");
+        builder.addUID("456");
+        builder.addUID("567");
+        builder.setIGNORE(false);
+        builder.setCOUNT(3);
+        list = builder.build();
+
+        m = new Mutation("bard");
+        m.put(new Text("FOO"), new Text("20190314_0\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_1\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_10\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_100\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_9\0" + "datatype2"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        m = new Mutation("bardy");
+        m.put(new Text("FOO"), new Text("20190314_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_10\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_100\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_9\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("345");
+        builder.addUID("456");
+        builder.addUID("567");
+        builder.addUID("1345");
+        builder.addUID("2456");
+        builder.addUID("3567");
+        builder.setIGNORE(false);
+        builder.setCOUNT(6);
+        list = builder.build();
+
+        m = new Mutation("boohoo");
+        m.put(new Text("FOO"), new Text("20190314_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_10\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_100\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_9\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        // Too many laughs
+        builder = Uid.List.newBuilder();
+        builder.setIGNORE(true);
+        builder.setCOUNT(30);
+        list = builder.build();
+
+        m = new Mutation("bahahaha");
+        m.put(new Text("LAUGH"), new Text("20190314_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("LAUGH"), new Text("20190314_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("LAUGH"), new Text("20190314_100\0" + "datatype2"), new Value(list.toByteArray()));
+        m.put(new Text("LAUGH"), new Text("20190314_9\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("567");
+        builder.setIGNORE(false);
+        builder.setCOUNT(1);
+        list = builder.build();
+
+        m = new Mutation("barz");
+        m.put(new Text("FOO"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("678");
+        builder.setIGNORE(false);
+        builder.setCOUNT(1);
+        list = builder.build();
+
+        m = new Mutation("bat");
+        m.put(new Text("FOO"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("efg");
+        builder.addUID("fgh");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("+aE1");
+        m.put(new Text("NUM"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("def");
+        builder.addUID("egh");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("+aE2");
+        m.put(new Text("NUM"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("cde");
+        builder.addUID("def");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("+aE3");
+        m.put(new Text("NUM"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("bcd");
+        builder.addUID("cde");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("+aE4");
+        m.put(new Text("NUM"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("abc");
+        builder.addUID("bcd");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("+aE5");
+        m.put(new Text("NUM"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("negnum1");
+        builder.addUID("negnum2");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation(NumericalEncoder.encode("-1"));
+        m.put(new Text("KELVIN"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("123");
+        builder.addUID("345");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("barter");
+        m.put(new Text("FOO"), new Text("20190314_1\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("123");
+        builder.addUID("345");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("baggy");
+        m.put(new Text("FOO"), new Text("20190414_1\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        m = new Mutation("oreo");
+        m.put(new Text("FOO"), new Text("20190314_1\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        // Terms for high-low cardinality test with query (FOO == 'low_card' && FOO == 'high_card')
+        // Four terms {'highest_card', 'high_card', 'low_card', 'lowest_card'}
+        // Ranges fall across 8 days, each day has up to 50 shards.
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("lowest_card");
+        m.put(new Text("FOO"), new Text("20190310_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_22\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_49\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        m = new Mutation("low_card");
+        m.put(new Text("FOO"), new Text("20190310_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190312_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_22\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_33\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190317_1\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.addUID("d.e.f");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+
+        m = new Mutation("high_card");
+        for (int day = 0; day < 8; day += 2) {
+            for (int ii = 1; ii < 50; ii++) {
+                m.put(new Text("FOO"), new Text("2019031" + day + "_" + ii + "\0" + "datatype1"), new Value(list.toByteArray()));
+            }
+        }
+        bw.addMutation(m);
+
+        m = new Mutation("highest_card");
+        for (int day = 0; day < 8; day++) {
+            for (int ii = 1; ii < 50; ii++) {
+                m.put(new Text("FOO"), new Text("2019031" + day + "_" + ii + "\0" + "datatype1"), new Value(list.toByteArray()));
+            }
+        }
+        bw.addMutation(m);
+
+        // ---------------
+
+        // Keep it simple, just have one hit.
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.setIGNORE(true);
+        builder.setCOUNT(5000);
+        list = builder.build();
+
+        // With shards per day set to zero, these will roll up
+        m = new Mutation("day_ranges");
+        m.put(new Text("FOO"), new Text("20190310_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_2\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_3\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_4\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_5\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_6\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_7\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_8\0" + "datatype1"), new Value(list.toByteArray()));
+
+        m.put(new Text("FOO"), new Text("20190311_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190312_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190313_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_0\0" + "datatype1"), new Value(list.toByteArray()));
+
+        m.put(new Text("FOO"), new Text("20190315_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_2\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_3\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_4\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_5\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_6\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_7\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_8\0" + "datatype1"), new Value(list.toByteArray()));
+
+        m.put(new Text("FOO"), new Text("20190316_0\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.setIGNORE(false);
+        builder.setCOUNT(1);
+        list = builder.build();
+
+        m = new Mutation("shard_range");
+        m.put(new Text("FOO"), new Text("20190310_21\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_51\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+
+        // ---------------
+
+        bw.flush();
+        bw.close();
+
+        return client;
     }
 
     private void test(String query, String expected) {
