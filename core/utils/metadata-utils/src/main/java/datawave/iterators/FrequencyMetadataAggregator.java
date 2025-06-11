@@ -4,15 +4,18 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import datawave.iterator.ReducingIterator;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.LongCombiner;
@@ -36,19 +39,26 @@ import datawave.util.StringUtils;
  * same row, column family, datatype, and column family will be aggregated into a single entry where the column qualifier consists of the datatype and the value
  * consists of an encoded {@link DateFrequencyMap} with the dates and counts seen. Additionally, this aggregator will handle the case where we have a previously
  * aggregated entry and freshly ingested rows that need to be aggregated together.
+ *
+ * NOTE: Note that given the nature of what this aggregator combines, it cannot simply extend the Combiner class.  For ingest purposes we need to implement
+ * the reduce() method as well which will reduce the values for a given key.  For the AGGREGATED keys, this will produce a combined aggregate key, and otherwise
+ * will do the same as the SummingCombiner.
  */
-public class FrequencyMetadataAggregator extends WrappingIterator implements OptionDescriber {
+public class FrequencyMetadataAggregator extends WrappingIterator implements OptionDescriber, ReducingIterator {
 
     public static final String COMBINE_VISIBILITIES_OPTION = "COMBINE_VISIBILITIES";
+    // this needs to be the same value as for the Combiner class
     public static final String COLUMNS_OPTION = "columns";
-    public static final String AGGREGATED = "AGGREGATE";
+    public static final String AGGREGATED = "AGG";
 
     private static final Logger log = Logger.getLogger(FrequencyMetadataAggregator.class);
     private static final String NULL_BYTE = "\0";
     private static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     private boolean combineVisibilities;
+    private String columnsOption;
     private ColumnSet columns;
+    private IteratorEnvironment iterEnv;
 
     private Key topKey;
     private Value topValue;
@@ -78,7 +88,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         FrequencyMetadataAggregator copy = new FrequencyMetadataAggregator();
         copy.setSource(getSource().deepCopy(env));
         copy.combineVisibilities = combineVisibilities;
+        copy.columnsOption = columnsOption;
         copy.columns = columns;
+        copy.iterEnv = env;
         return copy;
     }
 
@@ -124,7 +136,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         super.init(source, options, env);
 
         combineVisibilities = options.containsKey(COMBINE_VISIBILITIES_OPTION) && Boolean.parseBoolean(options.get(COMBINE_VISIBILITIES_OPTION));
-        columns = new ColumnSet(List.of(StringUtils.split(options.get(COLUMNS_OPTION), ",")));
+        columnsOption = options.get(COLUMNS_OPTION);
+        columns = new ColumnSet(List.of(StringUtils.split(columnsOption, ",")));
+        iterEnv = env;
 
         if (log.isTraceEnabled()) {
             log.trace("Option " + COMBINE_VISIBILITIES_OPTION + ": " + combineVisibilities);
@@ -180,6 +194,62 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         if (log.isTraceEnabled()) {
             log.trace("seek -> " + (hasTop() ? getTopKey() : "null"));
         }
+    }
+
+    /**
+     * This method is required by the ingest framework to be able to reduce keys as if this
+     * were a Combiner.  Unfortunately this does more than a mere Combiner and hence we cannot
+     * extend that class.  @see ReducingIterator
+     * @param key
+     * @param iter
+     * @return The reduced value
+     */
+    public Value reduce(Key key, Iterator<Value> iter) {
+        Value value = null;
+        if (iter.hasNext()) {
+            resetCurrent();
+            // process the key
+            partOfCurrentAggregation(key);
+            if (isMarker) {
+                // if a marker, then the value should already be empty so just return the first one
+                value = iter.next();
+            } else if (isCurrentAggregated) {
+                while (iter.hasNext()) {
+                    aggregateCurrent(iter.next());
+                }
+                wrapUpCurrent();
+                value = cache.pollFirstEntry().getValue();
+            } else {
+                long total = 0;
+                while (iter.hasNext()) {
+                    total += LongCombiner.VAR_LEN_ENCODER.decode(iter.next().get());
+                }
+                value = new Value(LongCombiner.VAR_LEN_ENCODER.encode(total));
+            }
+        } else {
+            value = new Value();
+        }
+        return value;
+    }
+
+    public static class FrequencyMetadataCombiner extends Combiner {
+        private final FrequencyMetadataAggregator agg = new FrequencyMetadataAggregator();
+
+        @Override
+        public void init(SortedKeyValueIterator<Key, Value> source, Map<String, String> options, IteratorEnvironment env) throws IOException {
+            super.init(source, options, env);
+            agg.init(source, options, env);
+        }
+
+        @Override
+        public Value reduce(Key key, Iterator<Value> iter) {
+            return agg.reduce(key, iter);
+        }
+    };
+
+    @Override
+    public Class<? extends Combiner> getReducerClass() {
+        return FrequencyMetadataCombiner.class;
     }
 
     @Override
@@ -304,7 +374,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
                     cache.put(new Key(workKey), new Value(super.getTopValue()));
                 } else {
                     // Aggregate everything else
-                    aggregateCurrent();
+                    aggregateCurrent(super.getTopValue());
                 }
             } else {
                 // Add the deleted or others entry to the cache so that it is available for scanning, but do not include it as part of the aggregation.
@@ -424,8 +494,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
     /**
      * Aggregate the current entry.
      */
-    private void aggregateCurrent() {
-        Value value = super.getTopValue();
+    private void aggregateCurrent(Value value) {
         // Fetch the date-frequency map for the current column visibility, creating one if not present.
         DateFrequencyMap dateFrequencies = visibilityToDateFrequencies.computeIfAbsent(currentVisibility, (k) -> new DateFrequencyMap());
 

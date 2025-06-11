@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import datawave.iterator.ReducingIterator;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -621,7 +622,22 @@ public class TableConfigurationUtil {
                                 log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
 
                         }
-                        if (Combiner.class.isAssignableFrom(klass)) {
+                        else if (ReducingIterator.class.isAssignableFrom(klass)) {
+                            Map<String,String> options = allOptions.get(iter.getName());
+                            if (null != options) {
+                                try {
+                                    ReducingIterator iterInstance = (ReducingIterator) (klass.getDeclaredConstructor().newInstance());
+                                    options.put(ITERATOR_CLASS_MARKER, iterInstance.getReducerClass().getName());
+                                    combinerMap.put(iter.getPriority(), options);
+                                } catch (NoSuchMethodException | InstantiationException |
+                                         IllegalAccessException | InvocationTargetException e) {
+                                    log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have an accessible null constructor", e);
+                                }
+                            } else {
+                                log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                            }
+                        }
+                        else if (Combiner.class.isAssignableFrom(klass)) {
                             Map<String,String> options = allOptions.get(iter.getName());
                             if (null != options) {
                                 options.put(ITERATOR_CLASS_MARKER, iter.getIteratorClass());

@@ -6,7 +6,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
-import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -27,7 +26,6 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                 setFrequencyCombiner(tops, scope.name());
                 setIndexCombiner(tops, scope.name());
                 setReverseIndexCombiner(tops, scope.name());
-                setFrequencyAggregator(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
             }
@@ -56,37 +54,24 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     // Add the SummingCombiner to the frequency column.
     private String setFrequencyCombiner(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyCombiner");
-        setPropertyIfNecessary(tableName, stem, "10," + SummingCombiner.class.getName(), tops, log);
+        setPropertyIfNecessary(tableName, stem, "10," + FrequencyMetadataAggregator.class.getName(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
         return stem;
     }
 
     // Add the SummingCombiner to the indexed column.
     private String setIndexCombiner(TableOperations tops, String scopeName) throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "IndexCombiner");
-        setPropertyIfNecessary(tableName, stem, "11," + SummingCombiner.class.getName(), tops, log);
+        setPropertyIfNecessary(tableName, stem, "11," + FrequencyMetadataAggregator.class.getName(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_I.toString(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.lossy", "true", tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
         return stem;
     }
 
     // Add the SummingCombiner to the reverse indexed column.
     private String setReverseIndexCombiner(TableOperations tops, String scopeName) throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "ReverseIndexCombiner");
-        setPropertyIfNecessary(tableName, stem, "12," + SummingCombiner.class.getName(), tops, log);
+        setPropertyIfNecessary(tableName, stem, "12," + FrequencyMetadataAggregator.class.getName(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_RI.toString(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.lossy", "true", tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
-        return stem;
-    }
-
-    private String setFrequencyAggregator(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyAggregator");
-        setPropertyIfNecessary(tableName, stem, "13," + FrequencyMetadataAggregator.class.getName(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns",
-                        ColumnFamilyConstants.COLF_F.toString() + ',' + ColumnFamilyConstants.COLF_I + ',' + ColumnFamilyConstants.COLF_RI, tops, log);
         return stem;
     }
 

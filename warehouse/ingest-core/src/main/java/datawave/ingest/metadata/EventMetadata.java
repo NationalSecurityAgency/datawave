@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import datawave.iterators.FrequencyMetadataAggregator;
+import datawave.query.model.DateFrequencyMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -438,9 +440,10 @@ public class EventMetadata implements RawRecordMetadata {
         if (!frequencies.getColumnFamily().equals(ColumnFamilyConstants.COLF_F) || writeFrequencyCounts) {
             for (MetadataCounterGroup.Components entry : frequencies.getEntries()) {
                 Long count = entry.getCount();
-                Key key = new Key(new Text(entry.getRowId()), frequencies.getColumnFamily(), new Text(entry.getDataType() + DELIMITER + entry.getDate()),
+                String date = entry.getDate();
+                Key key = new Key(new Text(entry.getRowId()), frequencies.getColumnFamily(), new Text(entry.getDataType() + DELIMITER + FrequencyMetadataAggregator.AGGREGATED),
                                 DateHelper.parse(entry.getDate()).getTime());
-                addToResults(results, count, key, this.metadataTableName);
+                addToResults(results, date, count, key, this.metadataTableName);
             }
         }
     }
@@ -448,6 +451,13 @@ public class EventMetadata implements RawRecordMetadata {
     protected void addToResults(Multimap<BulkIngestKey,Value> results, Long value, Key key, Text tableName) {
         BulkIngestKey bk = new BulkIngestKey(tableName, key);
         results.put(bk, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(value)));
+    }
+
+    protected void addToResults(Multimap<BulkIngestKey,Value> results, String date, Long value, Key key, Text tableName) {
+        BulkIngestKey bk = new BulkIngestKey(tableName, key);
+        DateFrequencyMap map = new DateFrequencyMap();
+        map.put(date, value);
+        results.put(bk, new Value(map.toBytes()));
     }
 
     protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithMostRecentDate mostRecentDates) {
