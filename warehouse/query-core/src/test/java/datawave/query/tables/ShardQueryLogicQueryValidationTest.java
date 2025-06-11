@@ -43,7 +43,6 @@ import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.rules.AmbiguousGroupedUnquotedPhrasesRule;
 import datawave.query.rules.AmbiguousNotRule;
 import datawave.query.rules.AmbiguousOrPhrasesRule;
 import datawave.query.rules.AmbiguousUnquotedPhrasesRule;
@@ -167,7 +166,6 @@ public class ShardQueryLogicQueryValidationTest {
         expectedRules.add(new AmbiguousNotRule("Check for Ambiguous Usage of NOT"));
         expectedRules.add(new AmbiguousOrPhrasesRule("Check for Unfielded Terms That Could Be Wrapped"));
         expectedRules.add(new AmbiguousUnquotedPhrasesRule("Check for Unfielded Terms That Could Be Quoted"));
-        expectedRules.add(new AmbiguousGroupedUnquotedPhrasesRule("Check for Grouped Unfielded Terms That Could Be Quoted"));
         expectedRules.add(new MinimumSlopProximityRule("Validate Slop Proximity"));
         expectedRules.add(new IncludeExcludeArgsRule("Validate Args of #INCLUDE and #EXCLUDE"));
         expectedRules.add(new FieldExistenceRule("Check Field Existence", Set.of("I_DO_NOT_EXIST", "_NOFIELD_", "_ANYFIELD_")));

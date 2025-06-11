@@ -56,11 +56,25 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
     private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
     private boolean newParenthesis;
     private QueryNodeType type;
+    private QueryNode copy;
 
     public static String build(QueryNode node) {
         LuceneQueryStringBuildingVisitor visitor = new LuceneQueryStringBuildingVisitor();
-        return ((StringBuilder) visitor.visit(copy(node), new StringBuilder())).toString();
+        return ((StringBuilder) visitor.visit(node, new StringBuilder())).toString();
     }
+
+//    public static QueryNode createCopy(QueryNode node) {
+//        // this.copy = node;
+//
+//        // List<QueryNode> children = node.getChildren();
+//        // for (QueryNode child : children) {
+//        //
+//        // }
+//
+//
+//
+//        return copy;
+//    }
 
     @Override
     public Object visit(AndQueryNode node, Object data) {
@@ -442,7 +456,6 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         List<QueryNode> children = node.getChildren();
         String prevField = "";
 
-        // if the field is changed, it is changing a copy of the original node
         if (children != null && !children.isEmpty()) {
             boolean requiresGrouping = !isRootOrHasParentGroup(node);
             if (type == QueryNodeType.GROUP) {
