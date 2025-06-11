@@ -1,6 +1,8 @@
 name: Tests
 
 on:
+  pull_request:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
   push:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
     branches:
@@ -8,10 +10,6 @@ on:
     - 'release/version*'
   merge_group:
   workflow_dispatch:
-  workflow_run:
-    workflows: [Code Formatting]
-    types:
-      - completed
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
