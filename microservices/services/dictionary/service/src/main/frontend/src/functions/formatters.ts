@@ -14,8 +14,13 @@ interface Record {
   markings: Markings;
 }
 
-// Parses a Value to remove uncessessary 'undefined' or empty values and filters Description.
-// Ensure that the undefined/null values are loosely compared (i.e '==' not '===')
+/*
+*  Parses a Value to remove uncessessary 'undefined' or empty values and filters Description, here is how it works:
+*  In this function, colValue can either be a populated array, an array that is null, or a string.
+*  In the Descriptions and Types column, the value here will always be an array. Every other column is a string (hence 'any' type)
+*  Specifically, for the descriptions block, it checks to see if the value is undefined/null (doesn't have a description).
+*  Or if the description value has a length of 0 (if something was pulled incorrectly in the JSON).
+*/
 export function parseVal(colName: string, colValue: any) : string {
   if (colName === 'Types') {
     if (colValue == undefined) {
