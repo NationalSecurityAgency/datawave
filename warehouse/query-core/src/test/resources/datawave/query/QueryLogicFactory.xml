@@ -184,6 +184,10 @@
         <property name="name" value="Check for Unfielded Terms That Could Be Quoted"/>
     </bean>
 
+    <bean id="AmbiguousGroupedUnquotedPhrasesRule" scope="prototype" class="datawave.query.rules.AmbiguousUnquotedPhrasesRule">
+        <property name="name" value="Check for Grouped Unfielded Terms That Could Be Quoted"/>
+    </bean>
+
     <bean id="IncludeExcludeArgsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeArgsRule">
         <property name="name" value="Validate Args of #INCLUDE and #EXCLUDE"/>
     </bean>
@@ -399,6 +403,7 @@
                 <ref bean="AmbiguousNotRule"/>
                 <ref bean="AmbiguousOrPhrasesRule"/>
                 <ref bean="AmbiguousUnquotedPhrasesRule"/>
+                <ref bean="AmbiguousGroupedUnquotedPhrasesRule"/>
                 <ref bean="MinimumSlopProximityRule"/>
                 <ref bean="IncludeExcludeArgsRule"/>
                 <ref bean="FieldExistenceRule"/>
