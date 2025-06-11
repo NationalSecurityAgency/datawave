@@ -51,6 +51,8 @@ public class CountQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private Key tk;
     private Value tv = new Value();
 
+    private final Kryo kryo = new Kryo();
+
     public CountQueryIterator() {}
 
     public CountQueryIterator(CountQueryIterator other, IteratorEnvironment env) {
@@ -145,7 +147,6 @@ public class CountQueryIterator implements SortedKeyValueIterator<Key,Value> {
     }
 
     private Value serializeCount(long count, ColumnVisibility cv) {
-        Kryo kryo = new Kryo();
         ResultCountingIterator.ResultCountTuple result = new ResultCountingIterator.ResultCountTuple(count, cv);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Output kryoOutput = new Output(baos);

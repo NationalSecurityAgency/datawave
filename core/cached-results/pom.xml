@@ -27,6 +27,10 @@
                     <groupId>jakarta.validation</groupId>
                     <artifactId>jakarta.validation-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.microservice</groupId>
+                    <artifactId>type-utils</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>

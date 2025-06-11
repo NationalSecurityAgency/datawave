@@ -674,7 +674,10 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         ResultsPage resultList;
         int pagesize = (rowEnd - rowBegin) + 1;
 
-        try (PreparedStatement ps = connection.prepareStatement(query.toString()); CachedRowSet crs = RowSetProvider.newFactory().createCachedRowSet()) {
+        // We must specify ResultSet.TYPE_SCROLL_INSENSITIVE so we can call certain methods on the ResultSet
+        // returned from executeQuery. ResultSet.CONCUR_READ_ONLY is the default resultSetConcurrency value
+        try (PreparedStatement ps = connection.prepareStatement(query.toString(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                        CachedRowSet crs = RowSetProvider.newFactory().createCachedRowSet()) {
             log.debug("Get Rows query: " + query);
 
             ps.setFetchSize(pagesize);
@@ -1127,12 +1130,14 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
         String sql = "SELECT * FROM cachedResultsQuery WHERE alias=? OR queryId=? OR view=?";
 
-        try (Connection localConnection = datasource.getConnection(); PreparedStatement statement = localConnection.prepareStatement(sql)) {
+        // We must specify ResultSet.TYPE_SCROLL_INSENSITIVE so we can call certain methods on the ResultSet
+        // returned from executeQuery. ResultSet.CONCUR_READ_ONLY is the default resultSetConcurrency value
+        try (Connection localConnection = datasource.getConnection();
+                        PreparedStatement statement = localConnection.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
 
             statement.setString(1, id);
             statement.setString(2, id);
             statement.setString(3, id);
-            // String sql = "SELECT * FROM cachedResultsQuery WHERE alias='" + id + "' OR queryId='" + id + "' OR view='" + id + "'";
 
             try (ResultSet resultSet = statement.executeQuery()) {
 

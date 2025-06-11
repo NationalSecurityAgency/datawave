@@ -1,9 +1,12 @@
 package datawave.query.attributes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.AbstractMap;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -12,10 +15,18 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.data.type.DateType;
+import datawave.data.type.GeoLatType;
+import datawave.data.type.GeoLonType;
+import datawave.data.type.GeoType;
+import datawave.data.type.GeometryType;
 import datawave.data.type.HexStringType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.LcType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberListType;
 import datawave.data.type.NumberType;
+import datawave.data.type.PointType;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.util.TypeMetadata;
@@ -32,92 +43,155 @@ public class DocumentTest {
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
     private final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
-    private static final int max_iterations = 100;
+    private final long startTimeMillis = System.currentTimeMillis();
+    private final Random rand = new Random();
 
-    private AttributeFactory attributeFactory;
+    private static final int MAX_ITERATIONS = 250;
+    private static final int DOCUMENT_SIZE = 250;
 
     private Document d;
+    private AttributeFactory attributeFactory;
 
     @BeforeEach
     public void setup() {
         TypeMetadata typeMetadata = new TypeMetadata();
-        typeMetadata.put("LC", datatype, LcType.class.getTypeName());
-        typeMetadata.put("LC_NO_DIACRITICS", datatype, LcNoDiacriticsType.class.getTypeName());
-        typeMetadata.put("NUMBER", datatype, NumberType.class.getTypeName());
+        typeMetadata.put("DATE", datatype, DateType.class.getTypeName());
+        typeMetadata.put("GEO_LAT", datatype, GeoLatType.class.getTypeName());
+        typeMetadata.put("GEO_LON", datatype, GeoLonType.class.getTypeName());
+        typeMetadata.put("GEOMETRY", datatype, GeometryType.class.getTypeName());
+        typeMetadata.put("GEO", datatype, GeoType.class.getTypeName());
         typeMetadata.put("HEX", datatype, HexStringType.class.getTypeName());
+        typeMetadata.put("LC", datatype, LcType.class.getTypeName());
+        typeMetadata.put("LC_ND", datatype, LcNoDiacriticsType.class.getTypeName());
+        typeMetadata.put("NO_OP", datatype, NoOpType.class.getTypeName());
+        typeMetadata.put("NUM", datatype, NumberType.class.getTypeName());
+        typeMetadata.put("NUM_LIST", datatype, NumberListType.class.getTypeName());
+        typeMetadata.put("POINT", datatype, PointType.class.getTypeName());
 
-        attributeFactory = new AttributeFactory(typeMetadata);
         d = new Document(documentKey, true);
+        attributeFactory = new AttributeFactory(typeMetadata);
     }
 
     @Test
     public void testEmptyDocument() {
-        roundTrip(max_iterations, 16);
+        roundTrip(MAX_ITERATIONS, 16);
     }
 
     @Test
     public void testDocumentWithLcType() {
         Attribute<?> attr = createAttribute("LC", "value");
         d.put("LC", attr);
-        roundTrip(max_iterations, 66);
+        roundTrip(MAX_ITERATIONS, 66);
     }
 
     @Test
     public void testDocumentWithLcNoDiacriticsType() {
-        Attribute<?> attr = createAttribute("LC_NO_DIACRITICS", "value");
-        d.put("LC_NO_DIACRITICS", attr);
-        roundTrip(max_iterations, 80);
+        Attribute<?> attr = createAttribute("LC_ND", "value");
+        d.put("LC_ND", attr);
+        roundTrip(MAX_ITERATIONS, 69);
     }
 
     @Test
     public void testDocumentWithHexType() {
         Attribute<?> attr = createAttribute("HEX", "a1b2c3");
         d.put("HEX", attr);
-        roundTrip(max_iterations, 68);
+        roundTrip(MAX_ITERATIONS, 74);
     }
 
     @Test
     public void testDocumentWithNumberType() {
-        Attribute<?> attr = createAttribute("NUMBER", "12");
-        d.put("NUMBER", attr);
-        roundTrip(max_iterations, 67);
+        Attribute<?> attr = createAttribute("NUM", "12");
+        d.put("NUM", attr);
+        roundTrip(MAX_ITERATIONS, 70);
     }
 
     @Test
     public void testDocumentWithNumberTypeNormalizedValue() {
-        Attribute<?> attr = createAttribute("NUMBER", "+bE1.2");
-        d.put("NUMBER", attr);
-        roundTrip(max_iterations, 67);
+        Attribute<?> attr = createAttribute("NUM", "+bE1.2");
+        d.put("NUM", attr);
+        roundTrip(MAX_ITERATIONS, 70);
     }
 
     @Test
     public void testDocumentWithNumberTypeLargeValue() {
-        Attribute<?> attr = createAttribute("NUMBER", "12456789.987654321");
-        d.put("NUMBER", attr);
-        roundTrip(max_iterations, 83);
+        Attribute<?> attr = createAttribute("NUM", "12456789.987654321");
+        d.put("NUM", attr);
+        roundTrip(MAX_ITERATIONS, 101);
     }
 
     @Test
     public void testOneOfEverything() {
-        Attribute<?> attr1 = createAttribute("LC", "value-1");
-        Attribute<?> attr2 = createAttribute("LC_NO_DIACRITICS", "value-2");
-        Attribute<?> attr3 = createAttribute("NUMBER", "25");
-        Attribute<?> attr4 = createAttribute("HEX", "a1b2c3");
-        d.put("LC", attr1);
-        d.put("LC_NO_DIACRITICS", attr2);
-        d.put("NUMBER", attr3);
-        d.put("HEX", attr4);
-        roundTrip(max_iterations, 234);
+        d.put("DATE", createAttribute("DATE", String.valueOf(System.currentTimeMillis())));
+        d.put("GEO_LAT", createAttribute("GEO_LAT", "-90"));
+        d.put("GEO_LON", createAttribute("GEO_LON", "-180"));
+        d.put("HEX", createAttribute("HEX", "a1b2c3"));
+        d.put("IP", createAttribute("IP", "192.168.1.1"));
+        d.put("IPV4", createAttribute("IPV4", "192.168.1.1"));
+        d.put("LC", createAttribute("LC", "value-1"));
+        d.put("NC_ND", createAttribute("NC_ND", "value-2"));
+        d.put("NC_ND_LIST", createAttribute("NC_ND", "value-2"));
+        d.put("NUM", createAttribute("NUM", "25"));
+        d.put("NUM_LIST", createAttribute("NUM_LIST", "22,23,24"));
+        d.put("POINT", createAttribute("POINT", "POINT(10 10)"));
+        roundTrip(MAX_ITERATIONS, 750);
     }
 
     @Test
     public void testLargeDocument() {
-        int size = 100_000;
+        int size = 10_000;
         for (int i = 0; i < size; i++) {
             Attribute<?> attr = createAttribute("LC", "value-" + i);
             d.put("LC", attr);
         }
-        roundTrip(max_iterations, 5288956);
+        roundTrip(MAX_ITERATIONS, 518952);
+    }
+
+    @Test
+    public void testSingleFieldedRoundTrips() {
+        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 18314);
+        roundTrip("GEO_LAT", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
+        roundTrip("GEO_LON", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
+        roundTrip("HEX", DOCUMENT_SIZE, MAX_ITERATIONS, 11563);
+        roundTrip("LC", DOCUMENT_SIZE, MAX_ITERATIONS, 12702);
+        roundTrip("LC_ND", DOCUMENT_SIZE, MAX_ITERATIONS, 12705);
+        roundTrip("NUM", DOCUMENT_SIZE, MAX_ITERATIONS, 12806);
+        roundTrip("POINT", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
+    }
+
+    @Test
+    public void testHexRoundTrip() {
+        // original size: 11063
+        // post hex serialization changes: 11563
+        // read times cut by about 35%
+        roundTrip("HEX", DOCUMENT_SIZE, MAX_ITERATIONS, 11563);
+    }
+
+    @Test
+    public void testNumberRoundTrip() {
+        // original size: 11213
+        // post number serialization: 12806
+        // attribute write times remained the same, attribute read times were cut by about 50%
+        roundTrip("NUM", DOCUMENT_SIZE, MAX_ITERATIONS, 12806);
+    }
+
+    @Test
+    public void testNumberListRoundTrip() {
+        // original size: 12994
+        // kryo optimization: 18030
+        roundTrip("NUM_LIST", DOCUMENT_SIZE, MAX_ITERATIONS, 18030);
+    }
+
+    @Test
+    public void testDateRoundTrip() {
+        // original size: 16564
+        // kryo optimization: 22564
+        // using default DateSerializer dropped the read time by 50%
+        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 18314);
+    }
+
+    @Test
+    public void testPointRoundTrip() {
+        roundTrip("POINT", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
     }
 
     protected void roundTrip(int max, int serializedLength) {
@@ -131,10 +205,100 @@ public class DocumentTest {
         }
     }
 
+    /**
+     * Test both read and writes for a single fielded document. Should provide a rough comparison of Type serialization performance
+     *
+     * @param field
+     *            the field, corresponds to a Type
+     * @param documentSize
+     *            the size of the document to create
+     * @param maxIterations
+     *            the number of iterations
+     * @param serializedLength
+     *            the expected length of the serialized document
+     */
+    protected void roundTrip(String field, int documentSize, int maxIterations, int serializedLength) {
+        long readTime = 0;
+        long writeTime = 0;
+        Document d = createDocumentForField(field, documentSize);
+
+        Entry<Key,Value> entry = null;
+        writeTime = System.nanoTime();
+        for (int i = 0; i < maxIterations; i++) {
+            entry = serialize(d);
+        }
+        writeTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - writeTime);
+        assertNotNull(entry);
+
+        if (serializedLength > 0) {
+            // some tests rely on random inputs, do not assert the serialized length in those cases
+            assertEquals(serializedLength, entry.getValue().getSize());
+        }
+
+        for (int i = 0; i < maxIterations; i++) {
+            long start = System.nanoTime();
+            Entry<Key,Document> result = deserialize(entry);
+            readTime += System.nanoTime() - start;
+            Document d2 = result.getValue();
+            assertEquals(d, d2);
+        }
+        readTime = TimeUnit.NANOSECONDS.toMillis(readTime);
+
+        log.info("{} read: {} write: {}", field, readTime, writeTime);
+    }
+
+    protected Document createDocumentForField(String field, int size) {
+        d = new Document(documentKey, true);
+        for (int i = 0; i < size; i++) {
+            Attribute<?> attr = createAttribute(field, i);
+            d.put(field, attr);
+        }
+        return d;
+    }
+
+    protected Attribute<?> createAttribute(String field, int index) {
+        String value = createValueForFieldAndIndex(field, index);
+        return createAttribute(field, value);
+    }
+
     protected Attribute<?> createAttribute(String field, String value) {
         Attribute<?> attr = attributeFactory.create(field, value, documentKey, datatype, true);
         attr.clearMetadata();
         return attr;
+    }
+
+    protected String createValueForFieldAndIndex(String field, int index) {
+        switch (field) {
+            case "DATE":
+                return Long.toString(startTimeMillis + index);
+            case "GEO_LAT":
+                return String.valueOf(-90 + rand.nextInt(180));
+            case "GEO_LON":
+                return String.valueOf(-180 + rand.nextInt(360));
+            case "GEOMETRY":
+            case "GEO":
+            case "HEX":
+                return Integer.toHexString(index);
+            case "HIT_TERM":
+            case "IP":
+            case "IPV4":
+                return "192.168.1.1";
+            case "LC_ND_LIST":
+            case "LC_ND":
+            case "LC":
+                return "value-" + index;
+            case "NO_OP":
+            case "NUM_LIST":
+                return index + "," + (index + 1) + "," + (index + 2);
+            case "NUM":
+                return Integer.toString(index);
+            case "POINT":
+                int x = -10 + rand.nextInt(20);
+                int y = -10 + rand.nextInt(20);
+                return "POINT(" + x + " " + y + ")";
+            default:
+                throw new IllegalArgumentException("Unknown field: " + field);
+        }
     }
 
     protected Entry<Key,Value> serialize(Document d) {
