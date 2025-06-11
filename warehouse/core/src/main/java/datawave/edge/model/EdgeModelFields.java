@@ -40,8 +40,8 @@ public class EdgeModelFields implements Serializable {
         return baseFieldMap;
     }
 
-    public void setBaseFieldMap(Map<String,String> baseFieldMap){
-        this.baseFieldMap = baseFieldMap; 
+    public void setBaseFieldMap(Map<String,String> baseFieldMap) {
+        this.baseFieldMap = baseFieldMap;
         updateReverseMap(baseFieldMap);
     }
 
