@@ -3,6 +3,7 @@ package datawave.next.retrieval;
 import static datawave.query.iterator.QueryOptions.COMPOSITE_METADATA;
 import static datawave.query.iterator.QueryOptions.DISALLOWLISTED_FIELDS;
 import static datawave.query.iterator.QueryOptions.END_TIME;
+import static datawave.query.iterator.QueryOptions.INCLUDE_GROUPING_CONTEXT;
 import static datawave.query.iterator.QueryOptions.INDEX_ONLY_FIELDS;
 import static datawave.query.iterator.QueryOptions.PROJECTION_FIELDS;
 import static datawave.query.iterator.QueryOptions.QUERY;
@@ -40,13 +41,20 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.marking.MarkingFunctionsFactory;
 import datawave.next.LongRange;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.data.parsers.EventKey;
+import datawave.query.data.parsers.FieldIndexKey;
+import datawave.query.data.parsers.TermFrequencyKey;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -80,6 +88,17 @@ public class DocumentIteratorOptions implements OptionDescriber {
     protected Multimap<String,String> indexOnlyFieldValues;
     protected Multimap<String,String> termFrequencyFieldValues;
 
+    // composite aggregation
+    protected ValueToAttributes valueToAttributes;
+    protected AttributeFactory attributeFactory;
+
+    protected boolean includeGroupingContext = false;
+
+    protected final EventKey eventKeyParser = new EventKey();
+    protected final FieldIndexKey fiParser = new FieldIndexKey();
+    protected final TermFrequencyKey tfParser = new TermFrequencyKey();
+    protected final TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+
     // evaluation stuff
     protected final DatawaveJexlContext context = new DatawaveJexlContext();
     protected JexlEvaluation evaluation;
@@ -97,7 +116,8 @@ public class DocumentIteratorOptions implements OptionDescriber {
             DISALLOWLISTED_FIELDS,
             CANDIDATES,
             INDEX_ONLY_FIELDS,
-            TERM_FREQUENCY_FIELDS);
+            TERM_FREQUENCY_FIELDS,
+            INCLUDE_GROUPING_CONTEXT);
     //  @formatter:on
 
     public void deepCopy(DocumentIteratorOptions other) {
@@ -137,6 +157,7 @@ public class DocumentIteratorOptions implements OptionDescriber {
         options.put(DISALLOWLISTED_FIELDS, "the set of fields to exclude");
         options.put(INDEX_ONLY_FIELDS, "the set of index only fields to fetch from the field index");
         options.put(TERM_FREQUENCY_FIELDS, "the set of tokenized fields to fetch from the term frequency column");
+        options.put(INCLUDE_GROUPING_CONTEXT, "flag that determines if a field's grouping context is retained");
         options.put(CANDIDATES, "the set of candidate record ids to fetch");
         return new IteratorOptions(getClass().getSimpleName(), "Retrieves documents", options, null);
     }
@@ -176,6 +197,10 @@ public class DocumentIteratorOptions implements OptionDescriber {
             }
         } else {
             throw new RuntimeException("Cannot execute query without TypeMetadata");
+        }
+
+        if (typeMetadata != null) {
+            attributeFactory = new AttributeFactory(typeMetadata);
         }
 
         if (options.containsKey(COMPOSITE_METADATA)) {
@@ -231,6 +256,17 @@ public class DocumentIteratorOptions implements OptionDescriber {
             queryTree.jjtAccept(visitor, null);
             indexOnlyFieldValues = visitor.getIndexOnlyFieldValues();
             termFrequencyFieldValues = visitor.getTokenizedFieldValues();
+        }
+
+        if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
+            includeGroupingContext = Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT));
+        }
+
+        if (attributeFactory != null) {
+            // composite metadata is allowed to be null
+            valueToAttributes = new ValueToAttributes(attributeFactory, compositeMetadata, null, MarkingFunctionsFactory.createMarkingFunctions(), false);
+        } else {
+            throw new IllegalArgumentException("DocumentIterator requires TypeMetadata or CompositeMetadata");
         }
 
         return true;
