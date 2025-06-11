@@ -80,7 +80,7 @@ public class ScanResult {
 
         if (other.isTimeout()) {
 
-            if (allowPartialIntersections) {
+            if (!allowPartialIntersections) {
                 return;
             }
 
@@ -227,6 +227,10 @@ public class ScanResult {
 
     public void setTimeout(boolean timeout) {
         this.timeout = timeout;
+    }
+
+    public void setAllowPartialIntersections(boolean allowPartialIntersections) {
+        this.allowPartialIntersections = allowPartialIntersections;
     }
 
     public boolean isTimeout() {

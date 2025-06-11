@@ -239,13 +239,13 @@ public class ScanResultTest {
     }
 
     private void testPartialIntersection(ScanResult left, ScanResult right, int expected) {
-        setPartial(right);
+        setPartial(left, right);
         left.intersect(right);
         assertEquals(expected, left.getResults().size());
     }
 
     private void testPartialIntersection(ScanResult left, ScanResult right, Set<Integer> expected) {
-        setPartial(right);
+        setPartial(left, right);
         left.intersect(right);
         assertResults(expected, left.getResults());
     }
@@ -253,12 +253,16 @@ public class ScanResultTest {
     /**
      * Utility method that configures the ScanResult so it can be considered for a partial intersection
      *
-     * @param scanResult
-     *            the ScanResult
+     * @param left
+     *            the left ScanResult
+     * @param right
+     *            the right ScanResult
      */
-    private void setPartial(ScanResult scanResult) {
-        scanResult.setSource(SOURCE.EQ);
-        scanResult.setTimeout(true);
+    private void setPartial(ScanResult left, ScanResult right) {
+        left.setAllowPartialIntersections(true);
+        right.setAllowPartialIntersections(true);
+        right.setSource(SOURCE.EQ);
+        right.setTimeout(true);
     }
 
     /**
