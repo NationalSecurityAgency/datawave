@@ -53,7 +53,7 @@ public class FrequencyMetadataAggregatorTest {
 
     private AccumuloClient accumuloClient;
     private Boolean combineColumnVisibilities;
-    private final List<Map.Entry<Key, Value>> expected = new ArrayList<>();
+    private final List<Map.Entry<Key,Value>> expected = new ArrayList<>();
     private final List<Mutation> mutations = new ArrayList<>();
 
     @BeforeAll
@@ -129,12 +129,9 @@ public class FrequencyMetadataAggregatorTest {
         givenNonAggregatedRow("NAME", COLF_RI, "csv", "FOO", 1500000003L, "20200103", 3L);
         givenNonAggregatedRow("NAME", COLF_RI, "csv", "FOO", 1500000004L, "20200103", 3L);
 
-        expect("NAME", COLF_F, "csv", "FOO", 1500000004L,
-                createDateFrequencyMap("20200101", 4L, "20200102", 10L, "20200103", 12L));
-        expect("NAME", COLF_I, "csv", "FOO", 1500000004L,
-                createDateFrequencyMap("20200101", 3L, "20200102", 8L, "20200103", 9L));
-        expect("NAME", COLF_RI, "csv", "FOO", 1500000005L,
-                createDateFrequencyMap("20200101", 5L, "20200102", 12L, "20200103", 15L));
+        expect("NAME", COLF_F, "csv", "FOO", 1500000004L, createDateFrequencyMap("20200101", 4L, "20200102", 10L, "20200103", 12L));
+        expect("NAME", COLF_I, "csv", "FOO", 1500000004L, createDateFrequencyMap("20200101", 3L, "20200102", 8L, "20200103", 9L));
+        expect("NAME", COLF_RI, "csv", "FOO", 1500000005L, createDateFrequencyMap("20200101", 5L, "20200102", 12L, "20200103", 15L));
 
         assertResults();
     }
@@ -187,12 +184,9 @@ public class FrequencyMetadataAggregatorTest {
         givenNonAggregatedRow("NAME", COLF_F, "text", "FOO", 1500000002L, "20200104", 4L);
         givenNonAggregatedRow("NAME", COLF_F, "text", "FOO", 1500000003L, "20200104", 4L);
 
-        expect("NAME", COLF_F, "csv", "FOO", 1500000004L,
-                createDateFrequencyMap("20200101", 4L, "20200102", 10L, "20200103", 12L));
-        expect("NAME", COLF_F, "text", "FOO", 1500000015L,
-                createDateFrequencyMap("20200102", 12L, "20200103", 4L, "20200104", 16L));
-        expect("NAME", COLF_F, "wiki", "FOO", 1500000003L,
-                createDateFrequencyMap("20200101", 12L, "20200102", 4L, "20200103", 8L));
+        expect("NAME", COLF_F, "csv", "FOO", 1500000004L, createDateFrequencyMap("20200101", 4L, "20200102", 10L, "20200103", 12L));
+        expect("NAME", COLF_F, "text", "FOO", 1500000015L, createDateFrequencyMap("20200102", 12L, "20200103", 4L, "20200104", 16L));
+        expect("NAME", COLF_F, "wiki", "FOO", 1500000003L, createDateFrequencyMap("20200101", 12L, "20200102", 4L, "20200103", 8L));
 
         assertResults();
     }
@@ -246,12 +240,9 @@ public class FrequencyMetadataAggregatorTest {
         givenNonAggregatedRow("NAME", COLF_F, "csv", "COB", 1500000002L, "20200104", 4L);
         givenNonAggregatedRow("NAME", COLF_F, "csv", "COB", 1500000003L, "20200104", 4L);
 
-        expect("NAME", COLF_F, "csv", "BAR", 1500000003L,
-                createDateFrequencyMap("20200101", 12L, "20200102", 4L, "20200103", 8L));
-        expect("NAME", COLF_F, "csv", "COB", 1500000015L,
-                createDateFrequencyMap("20200102", 12L, "20200103", 4L, "20200104", 16L));
-        expect("NAME", COLF_F, "csv", "FOO", 1500000004L,
-                createDateFrequencyMap("20200101", 4L, "20200102", 10L, "20200103", 12L));
+        expect("NAME", COLF_F, "csv", "BAR", 1500000003L, createDateFrequencyMap("20200101", 12L, "20200102", 4L, "20200103", 8L));
+        expect("NAME", COLF_F, "csv", "COB", 1500000015L, createDateFrequencyMap("20200102", 12L, "20200103", 4L, "20200104", 16L));
+        expect("NAME", COLF_F, "csv", "FOO", 1500000004L, createDateFrequencyMap("20200101", 4L, "20200102", 10L, "20200103", 12L));
 
         assertResults();
     }
@@ -308,8 +299,7 @@ public class FrequencyMetadataAggregatorTest {
         // Enable to option to combine visibilities.
         givenCombineColumnVisibilitiesIsTrue();
 
-        expect("NAME", COLF_F, "csv", "BAR&COB&FOO", 1500000015L,
-                createDateFrequencyMap("20200101", 16L, "20200102", 26L, "20200103", 24L, "20200104", 16L));
+        expect("NAME", COLF_F, "csv", "BAR&COB&FOO", 1500000015L, createDateFrequencyMap("20200101", 16L, "20200102", 26L, "20200103", 24L, "20200104", 16L));
 
         assertResults();
     }
@@ -337,8 +327,7 @@ public class FrequencyMetadataAggregatorTest {
         givenNonAggregatedRow("NAME", COLF_F, "csv", "FOO", 1500000002L, "20200103", 3L);
         givenNonAggregatedRow("NAME", COLF_F, "csv", "FOO", 1500000003L, "20200103", 3L);
 
-        expect("NAME", COLF_F, "csv", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 40L, "20200101", 19L, "20200102", 30L, "20200103", 12L));
+        expect("NAME", COLF_F, "csv", "FOO", 1500000004L, createDateFrequencyMap("20191225", 40L, "20200101", 19L, "20200102", 30L, "20200103", 12L));
 
         assertResults();
     }
@@ -364,36 +353,21 @@ public class FrequencyMetadataAggregatorTest {
         givenAggregatedRow("GENDER", COLF_I, "attr", "FOO", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
         givenAggregatedRow("GENDER", COLF_RI, "attr", "FOO", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
 
-        expect("GENDER", COLF_F, "attr", "BAR", 1499999995L,
-                createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
-        expect("GENDER", COLF_F, "attr", "FOO", 1499999995L,
-                createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
-        expect("GENDER", COLF_I, "attr", "BAR", 1499999995L,
-                createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
-        expect("GENDER", COLF_I, "attr", "FOO", 1499999995L,
-                createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
-        expect("GENDER", COLF_RI, "attr", "BAR", 1499999995L,
-                createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
-        expect("GENDER", COLF_RI, "attr", "FOO", 1499999995L,
-                createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
-        expect("NAME", COLF_F, "csv", "FOO", 1499999995L,
-                createDateFrequencyMap("20191225", 40L, "20200101", 15L, "20200102", 20L));
-        expect("NAME", COLF_F, "text", "FOO", 1499999995L,
-                createDateFrequencyMap("20200101", 20L, "20200102", 10L));
-        expect("NAME", COLF_F, "wiki", "FOO", 1499999995L,
-                createDateFrequencyMap("20191225", 20L, "20200101", 10L));
-        expect("NAME", COLF_I, "csv", "FOO", 1499999995L,
-                createDateFrequencyMap("20191225", 40L, "20200101", 15L, "20200102", 20L));
-        expect("NAME", COLF_I, "text", "FOO", 1499999995L,
-                createDateFrequencyMap("20200101", 20L, "20200102", 10L));
-        expect("NAME", COLF_I, "wiki", "FOO", 1499999995L,
-                createDateFrequencyMap("20191225", 20L, "20200101", 10L));
-        expect("NAME", COLF_RI, "csv", "FOO", 1499999995L,
-                createDateFrequencyMap("20191225", 40L, "20200101", 15L, "20200102", 20L));
-        expect("NAME", COLF_RI, "text", "FOO", 1499999995L,
-                createDateFrequencyMap("20200101", 20L, "20200102", 10L));
-        expect("NAME", COLF_RI, "wiki", "FOO", 1499999995L,
-                createDateFrequencyMap("20191225", 20L, "20200101", 10L));
+        expect("GENDER", COLF_F, "attr", "BAR", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
+        expect("GENDER", COLF_F, "attr", "FOO", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
+        expect("GENDER", COLF_I, "attr", "BAR", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
+        expect("GENDER", COLF_I, "attr", "FOO", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
+        expect("GENDER", COLF_RI, "attr", "BAR", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
+        expect("GENDER", COLF_RI, "attr", "FOO", 1499999995L, createDateFrequencyMap("20191220", 20L, "20191225", 10L, "20191230", 11L));
+        expect("NAME", COLF_F, "csv", "FOO", 1499999995L, createDateFrequencyMap("20191225", 40L, "20200101", 15L, "20200102", 20L));
+        expect("NAME", COLF_F, "text", "FOO", 1499999995L, createDateFrequencyMap("20200101", 20L, "20200102", 10L));
+        expect("NAME", COLF_F, "wiki", "FOO", 1499999995L, createDateFrequencyMap("20191225", 20L, "20200101", 10L));
+        expect("NAME", COLF_I, "csv", "FOO", 1499999995L, createDateFrequencyMap("20191225", 40L, "20200101", 15L, "20200102", 20L));
+        expect("NAME", COLF_I, "text", "FOO", 1499999995L, createDateFrequencyMap("20200101", 20L, "20200102", 10L));
+        expect("NAME", COLF_I, "wiki", "FOO", 1499999995L, createDateFrequencyMap("20191225", 20L, "20200101", 10L));
+        expect("NAME", COLF_RI, "csv", "FOO", 1499999995L, createDateFrequencyMap("20191225", 40L, "20200101", 15L, "20200102", 20L));
+        expect("NAME", COLF_RI, "text", "FOO", 1499999995L, createDateFrequencyMap("20200101", 20L, "20200102", 10L));
+        expect("NAME", COLF_RI, "wiki", "FOO", 1499999995L, createDateFrequencyMap("20191225", 20L, "20200101", 10L));
 
         assertResults();
     }
@@ -422,24 +396,17 @@ public class FrequencyMetadataAggregatorTest {
         givenNonAggregatedRow("JOB", COLF_F, "attr", "FOO", 1500000004L, "20200101", 1L); // Should result in new aggregated entry because new row.
         givenNonAggregatedRow("JOB", COLF_I, "attr", "FOO", 1500000004L, "20200101", 1L); // Should result in new aggregated entry because new row.
 
-        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("AGE", COLF_F, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("AGE", COLF_F, "var", "BAR", 1500000004L, createDateFrequencyMap("20200101", 1L));
-        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("AGE", COLF_I, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("GENDER", COLF_F, "text", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_I, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("GENDER", COLF_F, "text", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
         expect("GENDER", COLF_F, "text", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", COLF_F, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 3L));
         expect("JOB", COLF_I, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
-        expect("NAME", COLF_F, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
-        expect("NAME", COLF_I, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_F, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_I, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
 
         assertResults();
     }
@@ -473,27 +440,20 @@ public class FrequencyMetadataAggregatorTest {
         givenMutation("JOB", COLF_RI, "attr" + NULL_BYTE + "20190530" + NULL_BYTE + "false", "FOO", 1500000004L, new Value());
         givenMutation("NAME", COLF_I, "attr" + NULL_BYTE + "20171201" + NULL_BYTE + "true", "BAR", 1500000004L, new Value());
 
-        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("AGE", COLF_F, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("AGE", COLF_F, "var", "BAR", 1500000004L, createDateFrequencyMap("20200101", 1L));
-        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("AGE", COLF_I, "num" + NULL_BYTE + "20191230" + NULL_BYTE + "true", "BAR", 1400000005L, new Value());
-        expect("AGE", COLF_I, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("GENDER", COLF_F, "text", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("AGE", COLF_I, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("GENDER", COLF_F, "text", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
         expect("GENDER", COLF_F, "text", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", COLF_F, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 3L));
         expect("JOB", COLF_I, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", COLF_RI, "attr" + NULL_BYTE + "20190530" + NULL_BYTE + "false", "FOO", 1500000004L, new Value());
-        expect("NAME", COLF_F, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_F, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
         expect("NAME", COLF_I, "attr" + NULL_BYTE + "20171201" + NULL_BYTE + "true", "BAR", 1500000004L, new Value());
-        expect("NAME", COLF_I, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_I, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
 
         assertResults();
     }
@@ -526,26 +486,19 @@ public class FrequencyMetadataAggregatorTest {
         givenMutation("AGE", COLF_I, "num", "BAR", 1400000005L, new Value());
         givenMutation("JOB", COLF_RI, "attr" + NULL_BYTE + "FakeTypeClassName", "FOO", 1500000004L, new Value());
 
-        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("AGE", COLF_F, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("AGE", COLF_F, "var", "BAR", 1500000004L, createDateFrequencyMap("20200101", 1L));
-        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("AGE", COLF_I, "num", "BAR", 1400000005L, new Value());
-        expect("AGE", COLF_I, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("GENDER", COLF_F, "text", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("AGE", COLF_I, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("GENDER", COLF_F, "text", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
         expect("GENDER", COLF_F, "text", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", COLF_F, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 3L));
         expect("JOB", COLF_I, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", COLF_RI, "attr" + NULL_BYTE + "FakeTypeClassName", "FOO", 1500000004L, new Value());
-        expect("NAME", COLF_F, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
-        expect("NAME", COLF_I, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_F, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_I, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
 
         assertResults();
     }
@@ -590,28 +543,21 @@ public class FrequencyMetadataAggregatorTest {
         expect("AGE", COLF_DESC, "var", "BAR", 1400000005L, new Value("age_var description"));
         expect("AGE", COLF_E, "lifetime", "BAR", 1400000005L, new Value());
         expect("AGE", COLF_E, "num", "BAR", 1400000005L, new Value());
-        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("AGE", COLF_F, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_F, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("AGE", COLF_F, "var", "BAR", 1500000004L, createDateFrequencyMap("20200101", 1L));
-        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
-        expect("AGE", COLF_I, "num", "FOO", 1500000004L,
-                createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_I, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("GENDER", COLF_DESC, "text", "BAR", 1400000005L, new Value("gender_text description"));
-        expect("GENDER", COLF_F, "text", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("GENDER", COLF_F, "text", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
         expect("GENDER", COLF_F, "text", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", COLF_DESC, "attr", "BAR", 1400000005L, new Value("job_attr description"));
         expect("JOB", COLF_E, "attr", "BAR", 1400000005L, new Value());
         expect("JOB", COLF_F, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 3L));
         expect("JOB", COLF_I, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", new Text("m"), "attr", "BAR", 1400000005L, new Value());
-        expect("NAME", COLF_F, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
-        expect("NAME", COLF_I, "attr", "BAR", 1499999999L,
-                createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_F, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
+        expect("NAME", COLF_I, "attr", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
 
         assertResults();
     }
@@ -701,12 +647,12 @@ public class FrequencyMetadataAggregatorTest {
     private void assertResults() throws TableNotFoundException {
         TestUtils.writeMutations(accumuloClient, TABLE_METADATA, mutations);
         Scanner scanner = createScanner();
-        List<Map.Entry<Key, Value>> actual = new ArrayList<>();
-        for (Map.Entry<Key, Value> entry : scanner) {
+        List<Map.Entry<Key,Value>> actual = new ArrayList<>();
+        for (Map.Entry<Key,Value> entry : scanner) {
             actual.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
         }
 
-        List<Map.Entry<Key, Value>> expectedSorted = new ArrayList(expected);
+        List<Map.Entry<Key,Value>> expectedSorted = new ArrayList(expected);
         expectedSorted.sort(Map.Entry.comparingByKey());
 
         Assertions.assertEquals(expectedSorted, actual, getDiffs(expectedSorted, actual));
@@ -743,25 +689,25 @@ public class FrequencyMetadataAggregatorTest {
     private void assertCombinerResults() throws TableNotFoundException {
         TestUtils.writeMutations(accumuloClient, TABLE_METADATA, mutations);
         Scanner scanner = createCombinerScanner();
-        List<Map.Entry<Key, Value>> actual = new ArrayList<>();
-        for (Map.Entry<Key, Value> entry : scanner) {
+        List<Map.Entry<Key,Value>> actual = new ArrayList<>();
+        for (Map.Entry<Key,Value> entry : scanner) {
             actual.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
         }
 
-        List<Map.Entry<Key, Value>> expectedSorted = new ArrayList(expected);
+        List<Map.Entry<Key,Value>> expectedSorted = new ArrayList(expected);
         expectedSorted.sort(Map.Entry.comparingByKey());
 
         Assertions.assertEquals(expectedSorted, actual, getDiffs(expectedSorted, actual));
     }
 
-    private String getDiffs(List<Map.Entry<Key, Value>> expected, List<Map.Entry<Key, Value>> actual) {
+    private String getDiffs(List<Map.Entry<Key,Value>> expected, List<Map.Entry<Key,Value>> actual) {
         StringBuilder diffs = new StringBuilder();
-        Iterator<Map.Entry<Key, Value>> expectedIter = expected.iterator();
-        Iterator<Map.Entry<Key, Value>> actualIter = actual.iterator();
+        Iterator<Map.Entry<Key,Value>> expectedIter = expected.iterator();
+        Iterator<Map.Entry<Key,Value>> actualIter = actual.iterator();
         int index = 0;
         while (expectedIter.hasNext() && actualIter.hasNext()) {
-            Map.Entry<Key, Value> expectedEntry = expectedIter.next();
-            Map.Entry<Key, Value> actualEntry = actualIter.next();
+            Map.Entry<Key,Value> expectedEntry = expectedIter.next();
+            Map.Entry<Key,Value> actualEntry = actualIter.next();
             if (!Objects.equals(expectedEntry, actualEntry)) {
                 if (diffs.length() > 0) {
                     diffs.append('\n');
@@ -771,7 +717,7 @@ public class FrequencyMetadataAggregatorTest {
             index++;
         }
         while (expectedIter.hasNext()) {
-            Map.Entry<Key, Value> expectedEntry = expectedIter.next();
+            Map.Entry<Key,Value> expectedEntry = expectedIter.next();
             if (diffs.length() > 0) {
                 diffs.append('\n');
             }
@@ -779,7 +725,7 @@ public class FrequencyMetadataAggregatorTest {
             index++;
         }
         while (actualIter.hasNext()) {
-            Map.Entry<Key, Value> actualEntry = actualIter.next();
+            Map.Entry<Key,Value> actualEntry = actualIter.next();
             if (diffs.length() > 0) {
                 diffs.append('\n');
             }
@@ -792,7 +738,7 @@ public class FrequencyMetadataAggregatorTest {
         return diffs.toString();
     }
 
-    private String print(Map.Entry<Key, Value> entry) {
+    private String print(Map.Entry<Key,Value> entry) {
         StringBuilder str = new StringBuilder();
         str.append(entry.getKey()).append('=');
         byte[] data = entry.getValue().get();
@@ -854,6 +800,7 @@ public class FrequencyMetadataAggregatorTest {
     private void expect(String row, Text colf, String datatype, String colv, long timestamp, String date, long count) {
         expect(row, colf, datatype + NULL_BYTE + date, colv, timestamp, new Value(LongCombiner.VAR_LEN_ENCODER.encode(count)));
     }
+
     private void expect(String row, Text colf, String colq, String colv, long timestamp, Value value) {
         expected.add(new AbstractMap.SimpleEntry<>(new Key(new Text(row), colf, new Text(colq), new ColumnVisibility(colv), timestamp), value));
     }

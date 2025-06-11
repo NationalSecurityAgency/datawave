@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import datawave.iterators.FrequencyMetadataAggregator;
-import datawave.query.model.DateFrequencyMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -29,6 +27,8 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.iterators.FrequencyMetadataAggregator;
+import datawave.query.model.DateFrequencyMap;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 
@@ -441,7 +441,8 @@ public class EventMetadata implements RawRecordMetadata {
             for (MetadataCounterGroup.Components entry : frequencies.getEntries()) {
                 Long count = entry.getCount();
                 String date = entry.getDate();
-                Key key = new Key(new Text(entry.getRowId()), frequencies.getColumnFamily(), new Text(entry.getDataType() + DELIMITER + FrequencyMetadataAggregator.AGGREGATED),
+                Key key = new Key(new Text(entry.getRowId()), frequencies.getColumnFamily(),
+                                new Text(entry.getDataType() + DELIMITER + FrequencyMetadataAggregator.AGGREGATED),
                                 DateHelper.parse(entry.getDate()).getTime());
                 addToResults(results, date, count, key, this.metadataTableName);
             }

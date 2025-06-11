@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import datawave.iterator.ReducingIterator;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -29,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Splitter;
 
+import datawave.iterator.ReducingIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.DateFrequencyMap;
 import datawave.util.StringUtils;
@@ -40,9 +40,9 @@ import datawave.util.StringUtils;
  * consists of an encoded {@link DateFrequencyMap} with the dates and counts seen. Additionally, this aggregator will handle the case where we have a previously
  * aggregated entry and freshly ingested rows that need to be aggregated together.
  *
- * NOTE: Note that given the nature of what this aggregator combines, it cannot simply extend the Combiner class.  For ingest purposes we need to implement
- * the reduce() method as well which will reduce the values for a given key.  For the AGGREGATED keys, this will produce a combined aggregate key, and otherwise
- * will do the same as the SummingCombiner.
+ * NOTE: Note that given the nature of what this aggregator combines, it cannot simply extend the Combiner class. For ingest purposes we need to implement the
+ * reduce() method as well which will reduce the values for a given key. For the AGGREGATED keys, this will produce a combined aggregate key, and otherwise will
+ * do the same as the SummingCombiner.
  */
 public class FrequencyMetadataAggregator extends WrappingIterator implements OptionDescriber, ReducingIterator {
 
@@ -197,9 +197,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
     }
 
     /**
-     * This method is required by the ingest framework to be able to reduce keys as if this
-     * were a Combiner.  Unfortunately this does more than a mere Combiner and hence we cannot
-     * extend that class.  @see ReducingIterator
+     * This method is required by the ingest framework to be able to reduce keys as if this were a Combiner. Unfortunately this does more than a mere Combiner
+     * and hence we cannot extend that class. @see ReducingIterator
+     *
      * @param key
      * @param iter
      * @return The reduced value
@@ -236,7 +236,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         private final FrequencyMetadataAggregator agg = new FrequencyMetadataAggregator();
 
         @Override
-        public void init(SortedKeyValueIterator<Key, Value> source, Map<String, String> options, IteratorEnvironment env) throws IOException {
+        public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
             super.init(source, options, env);
             agg.init(source, options, env);
         }
