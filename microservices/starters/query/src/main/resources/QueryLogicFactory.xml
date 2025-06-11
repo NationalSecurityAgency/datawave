@@ -54,8 +54,6 @@
         <property name="reverseIndexTableName" value="${datawave.query.logic.logics.BaseEventQuery.reverseIndexTableName}" />
         <property name="maxResults" value="${datawave.query.logic.logics.BaseEventQuery.maxResults}" />
         <property name="queryThreads" value="${datawave.query.logic.logics.BaseEventQuery.queryThreads}" />
-        <property name="yieldThresholdMs" value="${datawave.query.logic.logics.BaseEventQuery.yieldThresholdMs}" />
-        <property name="collectTimingDetails" value="${datawave.query.logic.logics.BaseEventQuery.collectTimingDetails}" />
         <property name="indexLookupThreads" value="${datawave.query.logic.logics.BaseEventQuery.indexLookupThreads}" />
         <property name="dateIndexThreads" value="${datawave.query.logic.logics.BaseEventQuery.dateIndexThreads}" />
         <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled}" />
@@ -128,11 +126,6 @@
         <property name="hdfsSiteConfigURLs" value="${datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}" />
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${datawave.query.logic.logics.BaseEventQuery.zookeeperConfig}" />
-
-        <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
-        <!-- the list of directories in which the query service puts its caches (selection always made on query service side) -->
-        <!-- TODO: Uncomment this once we have a version of datawave that has this setter -->
-        <!-- property name="localIvaratorCacheDirConfigs" ref="baseEventQueryLocalIvaratorCacheDirConfigs" /-->
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->

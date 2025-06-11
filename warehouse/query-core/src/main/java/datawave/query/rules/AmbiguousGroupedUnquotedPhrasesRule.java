@@ -56,9 +56,6 @@ public class AmbiguousGroupedUnquotedPhrasesRule extends ShardQueryRule {
     // Return a message about the given nodes.
     private String formatMessage(QueryNode node) {
         // @formatter:off
-                    // issue is not the GROUP -> AND . it is the GROUP -> FIELD AND -> FIELD AND ...
-                    // check for same field names conjoined with AND and combine?
-                    // maybe a loop : however many fields and combine them with their operator and grouped
         return new StringBuilder()
                         .append("Ambiguous grouped unfielded terms AND'd with fielded term detected: ")
                         .append(LuceneQueryStringBuildingVisitor.build(node))
@@ -69,6 +66,7 @@ public class AmbiguousGroupedUnquotedPhrasesRule extends ShardQueryRule {
     }
 
     private static class CorrectFormatVisitor extends BaseVisitor {
+        private String prevField = "";
 
         private static String format(QueryNode node) {
             CorrectFormatVisitor visitor = new CorrectFormatVisitor();
@@ -78,9 +76,10 @@ public class AmbiguousGroupedUnquotedPhrasesRule extends ShardQueryRule {
         @Override
         public Object visit(FieldQueryNode node, Object data) {
             String field = node.getFieldAsString();
-            if (field.isEmpty()) {
+            if (field.isEmpty() || field.equals(prevField)) {
                 ((StringBuilder) data).append(" ").append(node.getTextAsString());
             } else {
+                prevField = field;
                 ((StringBuilder) data).append(field).append(":\"").append(node.getTextAsString());
             }
             return data;
