@@ -94,7 +94,7 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        if [[ "${{ github.event_name }}" == "push" && contains("${{ github.triggering_actor }}", 'github-merge-queue') ]]; then
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.triggering_actor }}" == "github-merge-queue" ]]; then
           echo "Skipping... already ran job in merge queue."
         else
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipITs -DskipFormat
@@ -104,7 +104,7 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        if [[ "${{ github.event_name }}" == "push" && contains("${{ github.triggering_actor }}", 'github-merge-queue') ]]; then
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.triggering_actor }}" == "github-merge-queue" ]]; then
           echo "Skipping... already ran job in merge queue."
         else
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples -Dmaven.build.cache.enabled=false -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
@@ -143,7 +143,7 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        if [[ "${{ github.event_name }}" == "push" && contains("${{ github.triggering_actor }}", 'github-merge-queue') ]]; then
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.triggering_actor }}" == "github-merge-queue" ]]; then
           echo "Skipping... already ran job in merge queue."
         else
           TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
@@ -177,7 +177,7 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" && contains("${{ github.triggering_actor }}", 'github-merge-queue') ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.triggering_actor }}" == "github-merge-queue" ]]; then
             echo "Skipping... already ran job in merge queue."
           else
             if [[ ${{ steps.extract_branch.outputs.branch }} =~ ^release/version* ]] then
@@ -255,7 +255,7 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" && contains("${{ github.triggering_actor }}", 'github-merge-queue') ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.triggering_actor }}" == "github-merge-queue" ]]; then
             echo "Skipping... already ran job in merge queue."
           else
             # set some bogus URLs to trigger dependency download via maven
