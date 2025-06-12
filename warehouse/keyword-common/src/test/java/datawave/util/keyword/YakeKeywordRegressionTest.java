@@ -52,6 +52,7 @@ public class YakeKeywordRegressionTest {
                 .withMaxNGrams(3)
                 .withKeywordCount(10)
                 .withMaxContentLength(32768)
+                .withMaxSimilarityThreshold(0.9)
                 .withLanguage(language)
                 .build();
         //@formatter:on

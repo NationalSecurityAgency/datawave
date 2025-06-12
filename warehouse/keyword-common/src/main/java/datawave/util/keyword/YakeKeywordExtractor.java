@@ -54,6 +54,7 @@ public class YakeKeywordExtractor {
     public static final int DEFAULT_KEYWORD_COUNT = 10;
     public static final float DEFAULT_MAX_SCORE_THRESHOLD = 0.6f;
     public static final int DEFAULT_MAX_CONTENT_LENGTH = 32768;
+    public static final double DEFAULT_MAX_SIMILARITY_THRESHOLD = 0.9;
 
     private static final Logger log = LoggerFactory.getLogger(YakeKeywordExtractor.class);
 
@@ -78,6 +79,11 @@ public class YakeKeywordExtractor {
     /** the maximum number of characters to process as input for keyword extraction */
     private final int maxContentLength;
 
+    /**
+     * the similarity threshold for new candidate keywords. If the candidate similarity is higher than this, it won't be added to the final list
+     */
+    private final double maxSimilarityThreshold;
+
     /** a set of words to ignore, language dependent */
     private final Set<String> stopwords;
 
@@ -85,12 +91,14 @@ public class YakeKeywordExtractor {
     private final BreakIterator sentenceBreakIterator;
 
     // use the builder to construct.
-    private YakeKeywordExtractor(int minNGrams, int maxNGrams, int keywordCount, float maxScoreThreshold, int maxContentLength, YakeLanguage language) {
+    private YakeKeywordExtractor(int minNGrams, int maxNGrams, int keywordCount, float maxScoreThreshold, int maxContentLength, double similarityThreshold,
+                    YakeLanguage language) {
         this.minNGrams = minNGrams;
         this.maxNGrams = maxNGrams;
         this.keywordCount = keywordCount;
         this.maxScoreThreshold = maxScoreThreshold;
         this.maxContentLength = maxContentLength;
+        this.maxSimilarityThreshold = similarityThreshold;
         this.stopwords = language.getStopwords();
         this.sentenceBreakIterator = language.getSentenceBreakIterator();
     }
@@ -121,6 +129,10 @@ public class YakeKeywordExtractor {
 
     public Set<String> getStopwords() {
         return stopwords;
+    }
+
+    public double getMaxSimilarityThreshold() {
+        return maxSimilarityThreshold;
     }
 
     /**
@@ -676,13 +688,61 @@ public class YakeKeywordExtractor {
 
         final Stream<TokenScore> sortedByScoreAscending = filteredStream.sorted(Comparator.comparing(TokenScore::getScore));
 
-        // todo: implement similarity-based deduplication here
+        final Stream<TokenScore> deduplicated = deduplicateCandidateTokens(sortedByScoreAscending, maxSimilarityThreshold);
 
         // limit the number of keywords if a limit is set.
-        final Stream<TokenScore> limitedStream = this.getKeywordCount() > 0 ? sortedByScoreAscending.limit(this.getKeywordCount()) : sortedByScoreAscending;
+        final Stream<TokenScore> limitedStream = this.getKeywordCount() > 0 ? deduplicated.limit(this.getKeywordCount()) : deduplicated;
 
         return limitedStream.sorted(Comparator.comparing(TokenScore::getToken)) // by keyword ascending
                         .collect(Collectors.toMap(TokenScore::getToken, TokenScore::getScore, Double::sum, LinkedHashMap::new));
+    }
+
+    /**
+     * Given a stream of scored keywords, identify similar keywords and filter them.
+     *
+     * @param kwStream
+     *            a stream of candidate keywords ordered by score ascending.
+     * @param similarityThreshold
+     *            items that have a larger similarity than this to an existing item in the collection will be dropped
+     * @return a filtered stream of keywords.
+     */
+    protected static Stream<TokenScore> deduplicateCandidateTokens(Stream<TokenScore> kwStream, double similarityThreshold) {
+        if (similarityThreshold <= 0.0) {
+            return kwStream;
+        }
+
+        final List<TokenScore> kwList = kwStream.collect(Collectors.toList());
+        if (kwList.size() <= 1) {
+            return kwList.stream();
+        }
+
+        final SequenceMatcher sequenceMatcher = new SequenceMatcher();
+        final List<TokenScore> keywords = new ArrayList<>();
+        keywords.add(kwList.get(0));
+
+        boolean skip;
+        TokenScore candidate;
+        double ratio;
+        for (int i = 1; i < kwList.size(); i++) {
+            skip = false;
+            candidate = kwList.get(i);
+            sequenceMatcher.setSequenceA(candidate.getToken());
+
+            for (TokenScore keyword : keywords) {
+                sequenceMatcher.setSequenceB(keyword.getToken());
+                ratio = sequenceMatcher.ratio();
+                if (ratio >= similarityThreshold) {
+                    skip = true;
+                    break;
+                }
+            }
+
+            if (!skip) {
+                keywords.add(candidate);
+            }
+        }
+
+        return keywords.stream();
     }
 
     /**
@@ -763,6 +823,11 @@ public class YakeKeywordExtractor {
         /** the maximum number of characters to process as input for keyword extraction */
         private int maxContentLength = DEFAULT_MAX_CONTENT_LENGTH;
 
+        /**
+         * the similarity threshold for new candidate keywords. If the candidate similarity is higher than this, it won't be added to the final list
+         */
+        private double maxSimilarityThreshold = DEFAULT_MAX_SIMILARITY_THRESHOLD;
+
         private YakeLanguage language = BaseYakeLanguage.ENGLISH;
 
         public Builder() {}
@@ -792,13 +857,18 @@ public class YakeKeywordExtractor {
             return this;
         }
 
+        public Builder withMaxSimilarityThreshold(double similarityThreshold) {
+            this.maxSimilarityThreshold = similarityThreshold;
+            return this;
+        }
+
         public Builder withLanguage(YakeLanguage language) {
             this.language = language;
             return this;
         }
 
         public YakeKeywordExtractor build() {
-            return new YakeKeywordExtractor(minNGrams, maxNGrams, keywordCount, maxScoreThreshold, maxContentLength, language);
+            return new YakeKeywordExtractor(minNGrams, maxNGrams, keywordCount, maxScoreThreshold, maxContentLength, maxSimilarityThreshold, language);
         }
     }
 }

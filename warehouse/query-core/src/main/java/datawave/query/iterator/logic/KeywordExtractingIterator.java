@@ -60,6 +60,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         defaultMapOptions.put(KeywordExtractor.MAX_KEYWORDS, "maximum number of keywords to extract");
         defaultMapOptions.put(KeywordExtractor.MAX_SCORE, "max keyword score allowed (smaller scores are better)");
         defaultMapOptions.put(KeywordExtractor.MAX_CONTENT_CHARS, "max number of input characters to process");
+        defaultMapOptions.put(KeywordExtractor.MAX_SIMILARITY_THRESHOLD, "max similarity threshold");
         defaultMapOptions.put(VIEW_NAMES, "a comma separated list of views to extract keywords from, in priority order");
     }
 
@@ -390,6 +391,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
                 validateIntOption(KeywordExtractor.MAX_KEYWORDS, options);
                 validateFloatOption(KeywordExtractor.MAX_SCORE, options);
                 validateIntOption(KeywordExtractor.MAX_CONTENT_CHARS, options);
+                validateDoubleOption(KeywordExtractor.MAX_SIMILARITY_THRESHOLD, options);
                 valid = true;
             } catch (Exception e) {
                 if (log.isDebugEnabled()) {
@@ -401,7 +403,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     }
 
     public static void setOptions(IteratorSetting si, int minNgrams, int maxNgrams, int maxKeywords, float maxScore, int maxContentChars,
-                    List<String> viewNames, Map<String,String> documentLanguageMap) {
+                    double maxSimilarityThreshold, List<String> viewNames, Map<String,String> documentLanguageMap) {
 
         if (minNgrams > 0) {
             si.addOption(KeywordExtractor.MIN_NGRAMS, String.valueOf(minNgrams));
@@ -421,6 +423,10 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
 
         if (maxContentChars > 0) {
             si.addOption(KeywordExtractor.MAX_CONTENT_CHARS, String.valueOf(maxContentChars));
+        }
+
+        if (maxSimilarityThreshold > -1) {
+            si.addOption(KeywordExtractor.MAX_SIMILARITY_THRESHOLD, String.valueOf(maxSimilarityThreshold));
         }
 
         si.addOption(VIEW_NAMES, String.join(",", viewNames));
@@ -449,6 +455,13 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     private static void validateFloatOption(String name, Map<String,String> options) {
         if (options.containsKey(name)) {
             float f = Float.parseFloat(options.get(name));
+        }
+    }
+
+    @SuppressWarnings({"unused", "SameParameterValue"})
+    private static void validateDoubleOption(String name, Map<String,String> options) {
+        if (options.containsKey(name)) {
+            double d = Double.parseDouble(options.get(name));
         }
     }
 
