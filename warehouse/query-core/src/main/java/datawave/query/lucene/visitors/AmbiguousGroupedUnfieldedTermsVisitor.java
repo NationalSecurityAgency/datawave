@@ -14,7 +14,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 /**
  * A {@link BaseVisitor} implementation that will search a query for any sub-phrases that represent a fielded term that is directly followed by unfielded terms
- * conjoined by the specified junction type. For example, this visitor would identify cases like {@code FOO:("abc" "def")} and {@code FOO:"abc" AND "def"} if
+ * conjoined by the specified junction type. For example, this visitor would identify cases like {@code FOO:(abc def)} and {@code (FOO:abc AND def)} if
  * the junction type {@link JUNCTION#AND} is specified.
  */
 public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
@@ -45,7 +45,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
      * @param node
      *            the node
      * @param junction
-     *            the junction type AND/OR
+     *            the junction type AND
      * @return the list of ambiguous nodes
      */
     public static List<QueryNode> check(QueryNode node, JUNCTION junction) {
@@ -122,7 +122,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                     } else {
                         // We are already tracking a fielded term.
                         if (fieldedTerm != null) {
-                            // The current child is a new fielded term. If we found ambiguous phrases in the preceding terms, add a new OR node with the phrases
+                            // The current child is a new fielded term. If we found ambiguous phrases in the preceding terms, add a new AND node with the phrases
                             // to the data and reset the list.
                             if (ambiguousPhrases != null) {
                                 ((List<QueryNode>) data).add(junction.getNewInstance(ambiguousPhrases));
@@ -198,7 +198,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
      *            the group node
      * @param fieldedTermFound
      *            whether a fielded term has already been found
-     * @return true if the group node consists of ambiguously ORed phrases, or false otherwise
+     * @return true if the group node consists of ambiguously ANDed phrases, or false otherwise
      */
     private boolean groupConsistsOfUnfieldedTerms(GroupQueryNode node, boolean fieldedTermFound) {
         // A GROUP node will have just one child.
