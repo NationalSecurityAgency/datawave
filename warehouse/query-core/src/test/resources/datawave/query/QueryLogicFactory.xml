@@ -184,7 +184,7 @@
         <property name="name" value="Check for Unfielded Terms That Could Be Quoted"/>
     </bean>
 
-    <bean id="AmbiguousGroupedUnquotedPhrasesRule" scope="prototype" class="datawave.query.rules.AmbiguousUnquotedPhrasesRule">
+    <bean id="AmbiguousGroupedUnquotedPhrasesRule" scope="prototype" class="datawave.query.rules.AmbiguousGroupedUnquotedPhrasesRule">
         <property name="name" value="Check for Grouped Unfielded Terms That Could Be Quoted"/>
     </bean>
 
