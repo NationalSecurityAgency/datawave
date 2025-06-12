@@ -14,8 +14,8 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 /**
  * A {@link BaseVisitor} implementation that will search a query for any sub-phrases that represent a fielded term that is directly followed by unfielded terms
- * conjoined by the specified junction type. For example, this visitor would identify cases like {@code FOO:(abc def)} and {@code (FOO:abc AND def)} if
- * the junction type {@link JUNCTION#AND} is specified.
+ * conjoined by the specified junction type. For example, this visitor would identify cases like {@code FOO:(abc def)} and {@code (FOO:abc AND def)} if the
+ * junction type {@link JUNCTION#AND} is specified.
  */
 public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
 
@@ -122,7 +122,8 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                     } else {
                         // We are already tracking a fielded term.
                         if (fieldedTerm != null) {
-                            // The current child is a new fielded term. If we found ambiguous phrases in the preceding terms, add a new AND node with the phrases
+                            // The current child is a new fielded term. If we found ambiguous phrases in the preceding terms, add a new AND node with the
+                            // phrases
                             // to the data and reset the list.
                             if (ambiguousPhrases != null) {
                                 ((List<QueryNode>) data).add(junction.getNewInstance(ambiguousPhrases));
