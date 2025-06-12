@@ -31,6 +31,14 @@ public class YakeKeywordExtractorTest {
                     + "given that Google is hosting its Cloud Next conference in San Francisco this week the official "
                     + "announcement could come as early as tomorrow.";
 
+    static final LinkedHashMap<String,Double> EXPECTED_DEDUPED_NEWS_OUTPUT = new LinkedHashMap<>();
+    static {
+        LinkedHashMap<String,Double> m = EXPECTED_DEDUPED_NEWS_OUTPUT;
+        m.put("acquiring kaggle", 0.4602);
+        m.put("cloud next", 0.3884);
+        m.put("san francisco", 0.3884);
+    }
+
     static final LinkedHashMap<String,Double> EXPECTED_NEWS_OUTPUT = new LinkedHashMap<>();
     static {
         LinkedHashMap<String,Double> m = EXPECTED_NEWS_OUTPUT;
@@ -106,6 +114,7 @@ public class YakeKeywordExtractorTest {
                 .withMinNGrams(2)
                 .withMaxNGrams(3)
                 .withKeywordCount(10)
+                .withMaxSimilarityThreshold(0.9)
                 .withLanguage(BaseYakeLanguage.ENGLISH)
                 .build();
         //@formatter:on
@@ -114,6 +123,25 @@ public class YakeKeywordExtractorTest {
         keywords.entrySet().forEach(i -> log.info(i.toString()));
         assertEquals(4, keywords.size());
         assertEquals(EXPECTED_NEWS_OUTPUT, keywords);
+    }
+
+    @Test
+    public void testInputWithStrictDeduplication() {
+        //@formatter:off
+        YakeKeywordExtractor keywordExtractor = new YakeKeywordExtractor.Builder()
+                .withMaxScoreThreshold(0.6f)
+                .withMinNGrams(2)
+                .withMaxNGrams(3)
+                .withKeywordCount(10)
+                .withMaxSimilarityThreshold(0.6)
+                .withLanguage(BaseYakeLanguage.ENGLISH)
+                .build();
+        //@formatter:on
+
+        Map<String,Double> keywords = keywordExtractor.extractKeywords(TEST_NEWS_INPUT_INPUT);
+        keywords.entrySet().forEach(i -> log.info(i.toString()));
+        assertEquals(3, keywords.size());
+        assertEquals(EXPECTED_DEDUPED_NEWS_OUTPUT, keywords);
     }
 
     @Test

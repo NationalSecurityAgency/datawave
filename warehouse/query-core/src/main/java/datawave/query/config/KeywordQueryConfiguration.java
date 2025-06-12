@@ -28,6 +28,7 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
     private int maxKeywords = YakeKeywordExtractor.DEFAULT_KEYWORD_COUNT;
     private float maxScore = YakeKeywordExtractor.DEFAULT_MAX_SCORE_THRESHOLD;
     private int maxContentChars = YakeKeywordExtractor.DEFAULT_MAX_CONTENT_LENGTH;
+    private double maxSimilarityThreshold = YakeKeywordExtractor.DEFAULT_MAX_SIMILARITY_THRESHOLD;
     private int maxCloudTags = 0; // no limit by default
 
     private TagCloudUtils tagCloudUtils = new DefaultTagCloudUtils();
@@ -57,6 +58,7 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
         this.setMaxKeywords(other.maxKeywords);
         this.setMaxScore(other.maxScore);
         this.setMaxContentChars(other.maxContentChars);
+        this.setMaxSimilarityThreshold(other.maxSimilarityThreshold);
         this.setState(other.getState());
         this.setTagCloudUtils(other.getTagCloudUtils());
         this.setPreferredViews(other.getPreferredViews());
@@ -135,6 +137,14 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
         this.maxCloudTags = maxCloudTags;
     }
 
+    public double getMaxSimilarityThreshold() {
+        return maxSimilarityThreshold;
+    }
+
+    public void setMaxSimilarityThreshold(double maxSimilarityThreshold) {
+        this.maxSimilarityThreshold = maxSimilarityThreshold;
+    }
+
     /**
      * Factory method that instantiates a fresh KeywordQueryConfiguration
      *
@@ -152,12 +162,12 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
             return false;
         KeywordQueryConfiguration that = (KeywordQueryConfiguration) o;
         return minNgrams == that.minNgrams && maxNgrams == that.maxNgrams && maxKeywords == that.maxKeywords && Float.compare(maxScore, that.maxScore) == 0
-                        && maxContentChars == that.maxContentChars && Objects.equal(state, that.state);
+                        && maxContentChars == that.maxContentChars && maxSimilarityThreshold == that.maxSimilarityThreshold && Objects.equal(state, that.state);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(super.hashCode(), minNgrams, maxNgrams, maxKeywords, maxScore, maxContentChars, state);
+        return Objects.hashCode(super.hashCode(), minNgrams, maxNgrams, maxKeywords, maxScore, maxContentChars, maxSimilarityThreshold, state);
     }
 
     // todo: implement serialization methods?

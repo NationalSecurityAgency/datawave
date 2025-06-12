@@ -98,7 +98,12 @@ public class TagCloud {
 
         TagCloudUtils utils = new DefaultTagCloudUtils();
 
-        /** Add a set of keyword extraction results to the tag cloud to be built */
+        /**
+         * Add a set of keyword extraction results to the tag cloud to be built
+         *
+         * @param results
+         *            a results instance to add to the cloud.
+         */
         public void addResults(KeywordResults results) {
             final String source = results.getSource();
             final String language = results.getLanguage();
@@ -158,6 +163,10 @@ public class TagCloud {
 
         /**
          * Indicate that we should use a specific utilities instance.
+         *
+         * @param utils
+         *            the tag cloud utils implementation to sue for this builder.
+         * @return the builder.
          */
         public Builder withTagCloudUtilities(TagCloudUtils utils) {
             this.utils = utils;
