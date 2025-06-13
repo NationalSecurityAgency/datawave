@@ -173,13 +173,14 @@ public abstract class TypeAttributeIT {
 
             // validate delegate and normalized
             String deserializedDelegate = deserialized.getType().getDelegateAsString();
-            String deserializedNormalized = deserialized.getType().getNormalizedValue();
             assertEquals(delegateValue, deserializedDelegate);
-            assertEquals(normalizedValue, deserializedNormalized);
 
             if (deserialized.getType() instanceof ListType) {
                 assertNotNull(normalizedValues, "delegate Type produced normalized values, but none were expected");
                 assertEquals(normalizedValues, ((ListType) deserialized.getType()).getNormalizedValues());
+            } else {
+                String deserializedNormalized = deserialized.getType().getNormalizedValue();
+                assertEquals(normalizedValue, deserializedNormalized);
             }
         }
     }

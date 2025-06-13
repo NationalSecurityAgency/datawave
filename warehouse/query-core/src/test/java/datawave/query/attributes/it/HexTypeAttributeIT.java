@@ -49,6 +49,7 @@ public class HexTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testKryoReadWrite() {
+        // individual serialization times remained the same after optimizing kryo serialization to avoid normalizers
         testKryoReadWriteTimes(NORMALIZED, createNormalizedAttribute());
         testKryoReadWriteTimes(NON_NORMALIZED, createNonNormalizedAttribute());
     }
@@ -57,8 +58,9 @@ public class HexTypeAttributeIT extends TypeAttributeIT {
     public void testKryoValuePreservation() {
         // serializing full type name: 49
         // serializing type name index: 18
-        verifyKryoPreservesValue(createNormalizedAttribute(), 18);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 18);
+        // post kryo optimization: 24
+        verifyKryoPreservesValue(createNormalizedAttribute(), 24);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 24);
     }
 
     @Test

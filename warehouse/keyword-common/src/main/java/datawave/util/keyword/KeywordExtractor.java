@@ -27,7 +27,7 @@ public class KeywordExtractor {
     public static final String MAX_SCORE = "max.score";
 
     private final List<String> preferredViews;
-    private final Map<String,String> foundContent;
+    private final Map<String,VisibleContent> foundContent;
 
     public static final KeywordResults EMPTY_RESULTS = new KeywordResults();
 
@@ -54,7 +54,7 @@ public class KeywordExtractor {
 
     YakeKeywordExtractor yakeKeywordExtractor;
 
-    public KeywordExtractor(String source, List<String> preferredViews, Map<String,String> foundContent, String language, Map<String,String> options) {
+    public KeywordExtractor(String source, List<String> preferredViews, Map<String,VisibleContent> foundContent, String language, Map<String,String> options) {
         this.source = source;
         this.preferredViews = preferredViews;
         this.foundContent = foundContent;
@@ -101,14 +101,15 @@ public class KeywordExtractor {
     public KeywordResults extractKeywords() {
         KeywordResults results = EMPTY_RESULTS;
         for (String viewName : preferredViews) {
-            for (Map.Entry<String,String> foundEntry : foundContent.entrySet()) {
+            for (Map.Entry<String,VisibleContent> foundEntry : foundContent.entrySet()) {
                 if (viewName.equals(foundEntry.getKey())) {
-                    final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(foundEntry.getValue());
+                    VisibleContent content = foundEntry.getValue();
+                    final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(content.getContent());
                     if (logger.isDebugEnabled()) {
                         logger.debug("Extracted {} keywords from {} view.", keywords.size(), viewName);
                     }
                     if (!keywords.isEmpty()) {
-                        results = new KeywordResults(source, viewName, language, keywords);
+                        results = new KeywordResults(source, viewName, language, content.getVisibility(), keywords);
                         break;
                     }
                 }

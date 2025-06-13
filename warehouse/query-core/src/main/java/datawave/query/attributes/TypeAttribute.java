@@ -154,7 +154,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
             output.writeString(datawaveType.getClass().getName());
         }
         super.writeMetadata(kryo, output);
-        output.writeString(this.datawaveType.getDelegateAsString());
+        this.datawaveType.write(kryo, output);
         output.writeBoolean(this.toKeep);
     }
 
@@ -172,21 +172,13 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
             }
             setDatawaveType(clazzName);
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
-            log.warn("could not read datawateType from input: " + e);
+            log.warn("could not read DatawaveType from input: " + e);
         }
         super.readMetadata(kryo, input);
-        if (datawaveType == null)
+        if (datawaveType == null) {
             datawaveType = (Type) new NoOpType();
-        String delegateString = input.readString();
-        try {
-            datawaveType.setDelegateFromString(delegateString);
-        } catch (Exception ex) {
-            // there was some problem with setting the delegate as the declared type.
-            // Instead of letting this exception fail the query, make this a NoOpType containing the string value from the input
-            log.warn("Was unable to make a " + datawaveType + " to contain a delegate created from input:" + delegateString + "  Making a NoOpType instead.");
-            datawaveType = (Type) new NoOpType();
-            datawaveType.setDelegateFromString(delegateString);
         }
+        this.datawaveType.read(kryo, input);
         this.toKeep = input.readBoolean();
     }
 
