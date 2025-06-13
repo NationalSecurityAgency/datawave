@@ -131,6 +131,7 @@ public class DocumentIdProducer implements RunnableWithContext {
             next.addOption(QueryOptions.DATATYPE_FILTER, settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
         }
         next.addOption(DocIdQueryIterator.BATCH_SIZE, String.valueOf(config.getCandidateBatchSize()));
+        next.addOption(DocIdQueryIterator.PARTIAL_INTERSECTIONS, String.valueOf(config.isAllowPartialIntersections()));
         return next;
     }
 
