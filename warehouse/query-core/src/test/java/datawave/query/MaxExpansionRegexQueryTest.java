@@ -27,6 +27,7 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -49,6 +50,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig max = new MaxExpandCityFields();
 
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);

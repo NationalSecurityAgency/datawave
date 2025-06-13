@@ -18,6 +18,8 @@ import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedExcepti
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
+
 import datawave.core.query.configuration.QueryData;
 import datawave.next.DocIdQueryIterator;
 import datawave.next.async.RunnableWithContext;
@@ -110,7 +112,8 @@ public class DocumentIdProducer implements RunnableWithContext {
         scanner.addScanIterator(createIteratorSetting());
 
         if (config.getSearchScanHintTable() != null && config.getSearchScanHintPool() != null) {
-            scanner.setExecutionHints(Map.of(config.getSearchScanHintTable(), config.getSearchScanHintPool()));
+            Preconditions.checkArgument(context.getTableName().equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
+            scanner.setExecutionHints(Map.of("scan_type", config.getSearchScanHintPool()));
         }
 
         if (config.getSearchConsistencyLevel() != null) {
@@ -131,6 +134,7 @@ public class DocumentIdProducer implements RunnableWithContext {
             next.addOption(QueryOptions.DATATYPE_FILTER, settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
         }
         next.addOption(DocIdQueryIterator.BATCH_SIZE, String.valueOf(config.getCandidateBatchSize()));
+        next.addOption(DocIdQueryIterator.PARTIAL_INTERSECTIONS, String.valueOf(config.isAllowPartialIntersections()));
         return next;
     }
 

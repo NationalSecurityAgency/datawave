@@ -134,7 +134,7 @@
               :key="col.name"
               :props="props"
               style="font-size: 13px;"
-              @click="Feature.copyLabel(col.value)"
+              @click="Feature.copyLabel(col.name, col.value)"
             >
               <label style="cursor: pointer;">
                 {{
