@@ -26,7 +26,7 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class MapReduceInfoResponseList extends BaseResponse implements Serializable, Message<MapReduceInfoResponseList> {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2392149072563803408L;
 
     @XmlElementWrapper(name = "MapReduceInfoResponseList")
     @XmlElement(name = "MapReduceInfoResponse")

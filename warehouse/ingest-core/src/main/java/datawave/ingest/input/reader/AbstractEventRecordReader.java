@@ -36,7 +36,6 @@ import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.policy.Policy;
-import datawave.util.CompositeTimestamp;
 
 public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWritable,K> implements EventRecordReader {
 
@@ -55,6 +54,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
     /**
      * @deprecated to support the use of multiple formatters to parse a plurality of simple date formats
      */
+    @Deprecated
     protected SimpleDateFormat formatter;
     protected List<SimpleDateFormat> formatters;
 
@@ -177,6 +177,9 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
 
         try {
             event.setRawRecordNumber(getCurrentKey().get());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Unable to get current key", e);
         } catch (Exception e) {
             throw new RuntimeException("Unable to get current key", e);
         }

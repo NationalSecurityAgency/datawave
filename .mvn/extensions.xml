@@ -1,14 +1,23 @@
-<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.1.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
     <extension>
         <groupId>io.takari.maven</groupId>
         <artifactId>takari-smart-builder</artifactId>
-        <version>0.6.1</version>
+        <version>1.0.2</version>
     </extension>
-
+    <extension>
+        <groupId>io.takari.aether</groupId>
+        <artifactId>takari-local-repository</artifactId>
+        <version>0.11.3</version>
+    </extension>
+    <extension>
+        <groupId>co.leantechniques</groupId>
+        <artifactId>maven-buildtime-extension</artifactId>
+        <version>3.0.0</version>
+    </extension>
     <extension>
         <groupId>org.apache.maven.extensions</groupId>
         <artifactId>maven-build-cache-extension</artifactId>
-        <version>1.0.1</version>
+        <version>1.2.0</version>
     </extension>
 </extensions>

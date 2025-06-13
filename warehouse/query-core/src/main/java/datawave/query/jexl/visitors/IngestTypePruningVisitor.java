@@ -108,6 +108,11 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         if (visitor.getTermsPruned() > 0) {
             log.info("pruned " + visitor.getTermsPruned() + " terms and " + visitor.getNodesPruned() + " nodes");
         }
+
+        // clean up adjacent junctions and reference expressions
+        RemoveExtraReferenceExpressionsVisitor.remove(node);
+        MergeAdjacentJunctionsVisitor.merge(node);
+
         return node;
     }
 
@@ -182,24 +187,21 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTReference node, Object data) {
-        JexlNode child = node.jjtGetChild(0);
-        Object o = child.jjtAccept(this, data);
-
-        if (child.jjtGetNumChildren() == 0) {
-            pruneNodeFromParent(child);
-        }
-
-        if (node.jjtGetNumChildren() == 0) {
-            pruneNodeFromParent(node);
-        }
-        return o;
-    }
-
-    @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         JexlNode child = node.jjtGetChild(0);
         Object o = child.jjtAccept(this, data);
+
+        // quick check for double reference expressions
+        if (node.jjtGetParent() != null && node.jjtGetParent() instanceof ASTReferenceExpression) {
+            if (node.jjtGetNumChildren() == 0) {
+                // case 0: child was pruned
+                pruneNodeFromParent(node);
+            } else {
+                // case 1: child exists, double ref
+                JexlNodes.swap(node.jjtGetParent(), node, node.jjtGetChild(0));
+            }
+            return o;
+        }
 
         if (child.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(child);
@@ -253,6 +255,8 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         // all children could self-prune, for example (A && B) || (C && D) when no term maps to the same datatype
         if (node.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(node);
+        } else if (node.jjtGetNumChildren() == 1) {
+            JexlNodes.swap(node.jjtGetParent(), node, node.jjtGetChild(0));
         }
 
         return types;
@@ -326,6 +330,8 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
         if (node.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(node);
+        } else if (node.jjtGetNumChildren() == 1) {
+            JexlNodes.swap(node.jjtGetParent(), node, node.jjtGetChild(0));
         }
 
         return ingestTypes;

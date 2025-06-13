@@ -15,11 +15,11 @@ public class LimitedKeyPartitionerTest {
     private static final int NUM_REDUCERS = 1000;
 
     @Test
-    public void testLimitedRangeSetViaGenericConfig() throws IllegalAccessException, InstantiationException {
+    public void testLimitedRangeSetViaGenericConfig() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         Configuration conf = new Configuration();
         conf.setInt(PartitionLimiter.MAX_PARTITIONS_PROPERTY, 8);
 
-        LimitedKeyPartitioner partitioner = LimitedKeyPartitioner.class.newInstance();
+        LimitedKeyPartitioner partitioner = LimitedKeyPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
 
         assertPartitionsUnderMax(partitioner, 8);
@@ -47,11 +47,11 @@ public class LimitedKeyPartitionerTest {
     }
 
     @Test
-    public void testHigherMaxThanReducers() throws IllegalAccessException, InstantiationException {
+    public void testHigherMaxThanReducers() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         Configuration conf = new Configuration();
         conf.setInt(PartitionLimiter.MAX_PARTITIONS_PROPERTY, NUM_REDUCERS + 1);
 
-        LimitedKeyPartitioner partitioner = LimitedKeyPartitioner.class.newInstance();
+        LimitedKeyPartitioner partitioner = LimitedKeyPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         assertPartitionsUnderMax(partitioner, NUM_REDUCERS);
     }

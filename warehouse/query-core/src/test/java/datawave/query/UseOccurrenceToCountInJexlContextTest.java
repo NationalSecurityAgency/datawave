@@ -21,7 +21,6 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
@@ -64,7 +63,7 @@ import datawave.util.TableName;
  * This test confirms that hit terms are found in the correct documents, and only in the correct documents. The test data has fields that will hit in different
  * grouping context levels, and assures that the hits contain the fields with the correct grouping context. It also confirms that an 'or' query that hits
  * different fields in the returned documents will have the correct hit terms.
- *
+ * <p>
  * The same tests are made against document ranges and shard ranges
  *
  */
@@ -88,6 +87,12 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
         }
 
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
                         Multimap<String,String> expectedHitTerms) throws Exception {
@@ -109,6 +114,12 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override

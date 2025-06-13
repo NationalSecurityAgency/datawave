@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -315,7 +314,9 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         // create the key
         Key key = new Key(row, type, colq, biased, date.getTime());
 
-        log.trace("Date index key: {} for shardId {}", key, shardId);
+        if (log.isTraceEnabled()) {
+            log.trace("Date index key: {} for shardId {}", key, shardId);
+        }
 
         return new KeyValue(key, shardList);
     }

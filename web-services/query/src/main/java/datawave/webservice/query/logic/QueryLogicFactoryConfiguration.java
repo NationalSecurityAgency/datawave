@@ -2,8 +2,6 @@ package datawave.webservice.query.logic;
 
 import java.util.Map;
 
-import datawave.core.query.logic.QueryLogic;
-
 public class QueryLogicFactoryConfiguration {
     // The logicMap is the list of logics that can be loaded.
     // This is a map of logic name to bean name.

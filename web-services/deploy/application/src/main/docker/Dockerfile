@@ -1,3 +1,4 @@
+FROM jboss/wildfly:17.0.1.Final AS wildfly
 FROM rockylinux/rockylinux:8
 
 RUN dnf -y install dnf-plugins-core epel-release java-11-openjdk-devel && \
@@ -22,7 +23,7 @@ ENV WILDFLY_VERSION 17.0.1.Final \
     JBOSS_HOME /opt/jboss/wildfly \
     LAUNCH_JOBS_IN_BACKGROUND true
 
-COPY --from=jboss/wildfly:17.0.1.Final /opt/jboss/wildfly /opt/jboss/wildfly
+COPY --from=wildfly /opt/jboss/wildfly /opt/jboss/wildfly
 EXPOSE 8080
 
 CMD ["/opt/jboss/wildfly/bin/standalone.sh","-b","0.0.0.0"]

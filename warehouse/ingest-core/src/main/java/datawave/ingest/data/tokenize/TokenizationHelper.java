@@ -1,5 +1,7 @@
 package datawave.ingest.data.tokenize;
 
+import static org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -26,6 +28,7 @@ public class TokenizationHelper {
 
         public static final long INTERVAL = 500; // half second resolution
         public static volatile int counter = 0;
+
         public static long lastRun;
 
         static {
@@ -42,6 +45,7 @@ public class TokenizationHelper {
                 try {
                     Thread.sleep(INTERVAL);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
 
@@ -374,7 +378,7 @@ public class TokenizationHelper {
             }
         } else {
             log.warn("Utilizing default stopword set. Tokenization and indexing may generate unwanted data");
-            stopWords = org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+            stopWords = ENGLISH_STOP_WORDS_SET;
         }
         return stopWords;
     }

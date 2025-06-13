@@ -20,7 +20,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class Content extends Attribute<Content> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -642410227862723970L;
 
     private static final Type<?> normalizer = new LcNoDiacriticsType();
 
