@@ -188,7 +188,7 @@
         <property name="name" value="Validate Args of #INCLUDE and #EXCLUDE"/>
     </bean>
 
-    <bean id="IncludeExcludeIndexFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexFieldsRule">
+    <bean id="IncludeExcludeIndexOnlyFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexOnlyFieldsRule">
         <property name="name" value="Check #INCLUDE and #EXCLUDE for Indexed Fields"/>
     </bean>
 
@@ -404,7 +404,7 @@
                 <ref bean="FieldExistenceRule"/>
                 <ref bean="UnescapedSpecialCharsRule"/>
                 <ref bean="FieldPatternPresenceRule"/>
-                <ref bean="IncludeExcludeIndexFieldsRule"/>
+                <ref bean="IncludeExcludeIndexOnlyFieldsRule"/>
                 <ref bean="NumericValueRule"/>
                 <ref bean="TimeFunctionRule"/>
             </list>
