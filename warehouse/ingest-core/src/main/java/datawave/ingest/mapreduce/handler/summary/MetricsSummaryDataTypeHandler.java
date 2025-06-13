@@ -24,7 +24,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;

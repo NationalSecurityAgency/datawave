@@ -28,7 +28,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawRecordContainer;

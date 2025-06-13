@@ -138,7 +138,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_FAILED_NORMALIZATION_POLICY = ".data.field.normalization.failure.policy";
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
-  
+
     private static final String PROPERTY_MALFORMED = " property malformed: ";
     private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;

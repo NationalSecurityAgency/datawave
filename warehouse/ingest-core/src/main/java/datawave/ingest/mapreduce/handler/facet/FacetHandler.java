@@ -22,7 +22,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.geotools.feature.type.DateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
