@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
