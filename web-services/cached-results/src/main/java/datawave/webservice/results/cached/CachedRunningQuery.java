@@ -58,7 +58,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     private static DataSource datasource = null;
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 9093679062966451008L;
 
     private static ResponseObjectFactory responseObjectFactory;
     private transient Connection connection = null;
@@ -67,7 +67,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     private transient CacheableLogic cacheableLogic = null;
     private transient QueryLogic<?> queryLogic = null;
-    private transient QueryLogicTransformer transformer = null;
+    private transient QueryLogicTransformer<?,?> transformer = null;
 
     // gets set in previous and next
     private transient int lastPageNumber = 0;
@@ -674,7 +674,10 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         ResultsPage resultList;
         int pagesize = (rowEnd - rowBegin) + 1;
 
-        try (PreparedStatement ps = connection.prepareStatement(query.toString()); CachedRowSet crs = RowSetProvider.newFactory().createCachedRowSet()) {
+        // We must specify ResultSet.TYPE_SCROLL_INSENSITIVE so we can call certain methods on the ResultSet
+        // returned from executeQuery. ResultSet.CONCUR_READ_ONLY is the default resultSetConcurrency value
+        try (PreparedStatement ps = connection.prepareStatement(query.toString(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                        CachedRowSet crs = RowSetProvider.newFactory().createCachedRowSet()) {
             log.debug("Get Rows query: " + query);
 
             ps.setFetchSize(pagesize);
@@ -922,7 +925,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         return totalRows;
     }
 
-    public QueryLogicTransformer getTransformer() {
+    public QueryLogicTransformer<?,?> getTransformer() {
         return transformer;
     }
 
@@ -1118,6 +1121,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static CachedRunningQuery retrieveFromDatabase(String id, Principal principal, QueryMetricFactory metricFactory) {
 
         verifyCrqTableExists();
@@ -1126,12 +1130,14 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
         String sql = "SELECT * FROM cachedResultsQuery WHERE alias=? OR queryId=? OR view=?";
 
-        try (Connection localConnection = datasource.getConnection(); PreparedStatement statement = localConnection.prepareStatement(sql)) {
+        // We must specify ResultSet.TYPE_SCROLL_INSENSITIVE so we can call certain methods on the ResultSet
+        // returned from executeQuery. ResultSet.CONCUR_READ_ONLY is the default resultSetConcurrency value
+        try (Connection localConnection = datasource.getConnection();
+                        PreparedStatement statement = localConnection.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
 
             statement.setString(1, id);
             statement.setString(2, id);
             statement.setString(3, id);
-            // String sql = "SELECT * FROM cachedResultsQuery WHERE alias='" + id + "' OR queryId='" + id + "' OR view='" + id + "'";
 
             try (ResultSet resultSet = statement.executeQuery()) {
 
@@ -1170,7 +1176,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                         crq.variableFields.addAll(Arrays.asList(varFields.split(" ")));
                     }
 
-                    Query query = crq.responseObjectFactory.getQueryImpl();
+                    Query query = CachedRunningQuery.responseObjectFactory.getQueryImpl();
 
                     query.setQuery(resultSet.getString(x++));
                     Timestamp bDate = resultSet.getTimestamp(x++);

@@ -101,11 +101,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     protected List<Function<ScannerChunk,ScannerChunk>> visitorFunctions = Lists.newArrayList();
 
-    /**
-     * Tablet locator reference.
-     */
-    protected TabletLocator tl;
-
     protected long scanLimitTimeout = -1;
 
     private static final Logger log = Logger.getLogger(BatchScannerSession.class);
@@ -718,6 +713,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                     log.error("Executor did not fully shutdown");
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // we were interrupted while waiting
             }
         }
@@ -739,9 +735,9 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     }
 
+    @Deprecated(forRemoval = true)
     public void setTabletLocator(TabletLocator tl) {
-        this.tl = tl;
-
+        // no-op
     }
 
     public void setBackoffEnabled(boolean backoffEnabled) {

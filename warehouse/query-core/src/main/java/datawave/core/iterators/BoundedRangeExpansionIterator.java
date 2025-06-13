@@ -80,7 +80,9 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
 
     @Override
     public FilterResult filter(Key k, Value v) {
-        log.trace("filter key: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("filter key: {}", k.toStringNoTime());
+        }
 
         // shard + null + datatype
         String cq = k.getColumnQualifier().toString();
@@ -124,7 +126,9 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
      */
     @Override
     public Key getNextKeyHint(Key k, Value v) {
-        log.trace("get next key hint: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("get next key hint: {}", k.toStringNoTime());
+        }
 
         // shard + null + datatype
         String cq = k.getColumnQualifier().toString();

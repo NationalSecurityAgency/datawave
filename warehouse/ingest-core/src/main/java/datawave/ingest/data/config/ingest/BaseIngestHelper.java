@@ -26,7 +26,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -139,7 +138,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_FAILED_NORMALIZATION_POLICY = ".data.field.normalization.failure.policy";
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
-
+  
+    private static final String PROPERTY_MALFORMED = " property malformed: ";
     private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
@@ -526,8 +526,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // if this type already has a '.', then we have a malformed property
         // name
         if (dataType.typeName().indexOf('.') >= 0) {
-            log.error("{} property malformed: {}", propertyPattern, property);
-            throw new IllegalArgumentException(propertyPattern + " property malformed: " + property);
+            log.error(propertyPattern + PROPERTY_MALFORMED + property);
+            throw new IllegalArgumentException(propertyPattern + PROPERTY_MALFORMED + property);
         }
 
         String fieldName = property.substring(dataType.typeName().length() + 1, property.length() - propertyPattern.length());
@@ -549,8 +549,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // if this type already has a '.', then we have a malformed property
         // name
         if (dataType.typeName().indexOf('.') >= 0) {
-            log.error("{} property malformed: {}", propertyPattern, property);
-            throw new IllegalArgumentException(propertyPattern + " property malformed: " + property);
+            log.error(propertyPattern + PROPERTY_MALFORMED + property);
+            throw new IllegalArgumentException(propertyPattern + PROPERTY_MALFORMED + property);
         }
 
         String fieldName = property.substring(dataType.typeName().length() + 1, property.length() - propertyPattern.length());
@@ -751,7 +751,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 value.setEventFieldValue(null);
             }
             values.add(value);
-            log.debug("added normalized field {} to values set.", value);
+            logNormalizedField(normalizedContent, values);
         }
         return values;
     }
@@ -792,7 +792,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 } else {
                     values.add(normalize(normalizedContent, dataType));
                 }
-                log.debug("added normalized field {} to values {}", normalizedContent, values);
+                logNormalizedField(normalizedContent, values);
             }
             return values;
         }
@@ -804,7 +804,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
                 values.add(normalizeFieldValue(normalizedContent, dataType));
-                log.debug("added normalized field {} to values {}", normalizedContent, values);
+                logNormalizedField(normalizedContent, values);
             }
             return values;
         } else {
@@ -814,9 +814,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
                 values.add(normalize(normalizedContent, dataType));
-                log.debug("added normalized field {} to values {}", normalizedContent, values);
+                logNormalizedField(normalizedContent, values);
             }
             return values;
+        }
+    }
+
+    private void logNormalizedField(NormalizedContentInterface normalizedContent, HashSet<NormalizedContentInterface> values) {
+        if (log.isDebugEnabled()) {
+            log.debug("added normalized field " + normalizedContent + " to values " + values);
         }
     }
 

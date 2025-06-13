@@ -4,57 +4,16 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-core-parent</artifactId>
-        <version>7.15.0-SNAPSHOT</version>
+        <version>7.24.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.core</groupId>
     <artifactId>datawave-utils-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <modules />
-    <profiles>
-        <profile>
-            <id>submodule-accumulo-utils</id>
-            <activation>
-                <file>
-                    <exists>accumulo-utils/pom.xml</exists>
-                </file>
-            </activation>
-            <modules>
-                <module>accumulo-utils</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>submodule-common-utils</id>
-            <activation>
-                <file>
-                    <exists>common-utils/pom.xml</exists>
-                </file>
-            </activation>
-            <modules>
-                <module>common-utils</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>submodule-metadata-utils</id>
-            <activation>
-                <file>
-                    <exists>metadata-utils/pom.xml</exists>
-                </file>
-            </activation>
-            <modules>
-                <module>metadata-utils</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>submodule-type-utils</id>
-            <activation>
-                <file>
-                    <exists>type-utils/pom.xml</exists>
-                </file>
-            </activation>
-            <modules>
-                <module>type-utils</module>
-            </modules>
-        </profile>
-    </profiles>
+    <modules>
+        <module>accumulo-utils</module>
+        <module>common-utils</module>
+        <module>metadata-utils</module>
+        <module>type-utils</module>
+    </modules>
 </project>

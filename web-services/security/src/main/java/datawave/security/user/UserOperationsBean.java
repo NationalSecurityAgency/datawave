@@ -1,8 +1,11 @@
 package datawave.security.user;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -130,15 +133,39 @@ public class UserOperationsBean implements UserOperations {
 
             // if we have any remote services configured, merge those authorizations in here
             if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteUserOperationsList)) {
+                Set<String> localDNs = new HashSet<>(Arrays.asList(datawavePrincipal.getDNs()));
+                log.debug("Verifying remote principals cover {}", localDNs);
+                List<DatawaveUser> reducedRemoteProxiedUsers = new ArrayList<>();
+
                 for (UserOperations remote : remoteUserOperationsList) {
                     try {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
-                        datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, remotePrincipal);
+
+                        Set<String> remoteDNs = new HashSet<>(Arrays.asList(remotePrincipal.getDNs()));
+                        log.debug("Checking remote principal list {}", remoteDNs);
+                        if (!remoteDNs.containsAll(localDNs)) {
+                            log.warn("Skipping remote user: " + localDNs + " was not contained by " + remoteDNs);
+                            continue;
+                        }
+
+                        for (DatawaveUser user : remotePrincipal.getProxiedUsers()) {
+                            if (localDNs.contains(user.getDn().subjectDN())) {
+                                reducedRemoteProxiedUsers.add(user);
+                            } else {
+                                log.debug("{} was a remote only user and has been removed", user.getDn().subjectDN());
+                                log.trace("Remote only user DN and Authorizations: {} : {}", user.getDn().subjectDN(), user.getAuths());
+                            }
+                        }
+
                     } catch (Exception e) {
                         log.error("Failed to lookup users from remote user service", e);
-                        list.addMessage("Failed to lookup user from remote service: " + e.getMessage());
+                        list.addMessage("Failed to include user from remote service: " + e.getMessage());
                     }
                 }
+
+                reducedRemoteProxiedUsers.add(datawavePrincipal.getPrimaryUser());
+                DatawavePrincipal reducedRemotePrincipal = new DatawavePrincipal(reducedRemoteProxiedUsers);
+                datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, reducedRemotePrincipal);
             }
 
             // Add the user DN's auths into the authorization list

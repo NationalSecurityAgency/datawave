@@ -48,7 +48,8 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 public class IngestFieldFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(IngestFieldFilter.class);
-
+    private static final long serialVersionUID = 8288835090777714924L;
+  
     @Deprecated
     public static final String FILTER_FIELD_SUFFIX = ".data.field.filter";
 
@@ -308,6 +309,7 @@ public class IngestFieldFilter {
      * A parsed field configuration
      ***************************************************************************/
     class FieldConfiguration extends ArrayList<FieldFilter> implements List<FieldFilter> {
+        private static final long serialVersionUID = -6593828377509888969L;
 
         public FieldConfiguration() {
 

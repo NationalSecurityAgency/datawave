@@ -243,7 +243,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
         if (lastFilter != null) {
             try {
-                KeyValueFilter<K2,V2> filter = lastFilter.newInstance();
+                KeyValueFilter<K2,V2> filter = lastFilter.getDeclaredConstructor().newInstance();
                 filter.configureChainedContextWriter(filterConf, contextWriterClass);
             } catch (Exception e) {
                 throw new IOException("Unable to configure " + contextWriterClass + " on " + lastFilter, e);
@@ -253,6 +253,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         try {
             contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
             contextWriter.setup(filterConf, filterConf.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         }
@@ -321,12 +324,12 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                     for (String validatorClass : validatorClasses) {
                         try {
                             Class<? extends FieldValidator> clazz = Class.forName(validatorClass).asSubclass(FieldValidator.class);
-                            FieldValidator validator = clazz.newInstance();
+                            FieldValidator validator = clazz.getDeclaredConstructor().newInstance();
                             validator.init(t, context.getConfiguration());
                             validators.put(typeStr, validator);
                         } catch (ClassNotFoundException e) {
                             log.error("Error finding validator " + validatorClass, e);
-                        } catch (InstantiationException | IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                             log.error("Error creating validator " + validatorClass, e);
                         }
                     }
@@ -393,7 +396,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 }
             }).collect(Collectors.toSet());
         } else {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
     }
 
@@ -480,7 +483,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                     NDC.push(origFiles.iterator().next());
                     reprocessedNDCPush = true;
                 }
-
+            } catch (InterruptedException e) {
+                contextWriter.rollback();
+                Thread.currentThread().interrupt();
+                log.error("Failed to clean event from error table.  Terminating map", e);
+                throw new IOException("Failed to clean event from error table, Terminating map", e);
             } catch (Exception e) {
                 contextWriter.rollback();
                 log.error("Failed to clean event from error table.  Terminating map", e);
@@ -776,7 +783,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     }
 
     private static class FieldNormalizationError extends Exception {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 6106161010855162008L;
 
         public FieldNormalizationError(String message, Throwable cause) {
             super(message, cause);
