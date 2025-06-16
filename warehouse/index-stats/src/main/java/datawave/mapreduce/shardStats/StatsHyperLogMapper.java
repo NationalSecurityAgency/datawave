@@ -1,6 +1,5 @@
 package datawave.mapreduce.shardStats;
 
-import static datawave.mapreduce.shardStats.StatsJob.DEFAULT_LOG_LEVEL;
 import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
 import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_OPTION;
 import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
@@ -20,8 +19,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -34,7 +33,7 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.util.StringUtils;
 
 class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
-    private static final Logger log = Logger.getLogger(StatsHyperLogMapper.class);
+    private static final Logger log = LoggerFactory.getLogger(StatsHyperLogMapper.class);
 
     // mapper parameter keys
     static final String STATS_MAPPER_INPUT_INTERVAL = "stats.mapper.input.interval";
@@ -78,36 +77,28 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
-        if (log.isTraceEnabled()) {
-            log.trace("setup(" + context + ")");
-        }
+        log.trace("setup( {} )", context);
         super.setup(context);
         Configuration conf = context.getConfiguration();
 
         MultiTableRangePartitioner.setContext(context);
 
-        // set log level if configured
-        String logLevel = conf.get(STATS_MAPPER_LOG_LEVEL);
-        Level level = Level.toLevel(logLevel, DEFAULT_LOG_LEVEL);
-        log.setLevel(level);
-        log.info("log level set to " + level.toString());
-
         // set stats configuration data
         this.outputTable = new Text(conf.get(OUTPUT_TABLE_NAME));
-        log.info("output table(" + this.outputTable.toString() + ")");
+        log.info("output table( {} )", this.outputTable);
 
         this.logOutputInterval = conf.getInt(STATS_MAPPER_OUTPUT_INTERVAL, DEFAULT_OUTPUT_INTERVAL);
-        log.info("output log interval(" + this.logOutputInterval + ")");
+        log.info("output log interval( {} )", this.logOutputInterval);
         this.logInputInterval = conf.getInt(STATS_MAPPER_INPUT_INTERVAL, DEFAULT_INPUT_INTERVAL);
-        log.info("input log interval(" + this.logInputInterval + ")");
+        log.info("input log interval( {} )", this.logInputInterval);
         this.sumUniqueCounts = conf.getBoolean(STATS_MAPPER_UNIQUE_COUNT, false);
-        log.info("unique counts(" + this.sumUniqueCounts + ")");
+        log.info("unique counts( {} )", this.sumUniqueCounts);
 
         // hyperlog precision
         this.normalPrecision = conf.getInt(HYPERLOG_NORMAL_OPTION, HYPERLOG_NORMAL_DEFAULT_VALUE);
-        log.info("normal precision(" + this.normalPrecision + ")");
+        log.info("normal precision( {} )", this.normalPrecision);
         this.sparsePrecision = conf.getInt(HYPERLOG_SPARSE_OPTION, HYPERLOG_SPARSE_DEFAULT_VALUE);
-        log.info("sparse precision(" + this.sparsePrecision + ")");
+        log.info("sparse precision( {} )", this.sparsePrecision);
 
         this.visibility = new ColumnVisibility(conf.get(StatsJob.STATS_VISIBILITY));
 
@@ -115,40 +106,34 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         TypeRegistry.getInstance(conf);
 
         InputSplit split = context.getInputSplit();
-        log.info("Got a split of type " + split.getClass());
+        log.info("Got a split of type {}", split.getClass());
         if (log.isInfoEnabled()) {
             if (split instanceof TabletSplitSplit) {
                 TabletSplitSplit tabletSplit = (TabletSplitSplit) split;
-                log.info("Has " + tabletSplit.getLength() + " file range splits");
+                log.info("Has {} file range splits", tabletSplit.getLength());
                 for (int i = 0; i < tabletSplit.getLength(); i++) {
                     FileRangeSplit subSplit = (FileRangeSplit) tabletSplit.get(i);
-                    log.info("Got a file range spit of " + subSplit + " with a range of " + subSplit.getRange());
+                    log.info("Got a file range spit of {} with a range of {}", subSplit, subSplit.getRange());
                 }
             }
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Completed setup(" + context + ")");
-        }
+        log.trace("Completed setup( {} )", context);
     }
 
     @Override
     protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
-        if (log.isTraceEnabled()) {
-            log.trace("map(" + key + ", " + value + ")");
-        }
+        log.trace("map( {}, {} )", key, value);
 
         // range should find all field index rows
         String[] colf = StringUtils.split(key.getColumnFamily().toString(), NULL_CHAR);
         if ("fi".equals(colf[0])) {
             this.total++;
             if (0 == this.total % this.logInputInterval) {
-                log.info("input row count(" + this.total + ")");
+                log.info("input row count( {} )", this.total);
             }
             DatawaveKey dwKey = new DatawaveKey(key);
-            if (log.isTraceEnabled()) {
-                log.trace("mapper input(" + dwKey.toString() + ")");
-            }
+            log.trace("mapper input( {} )", dwKey);
 
             String fieldName = dwKey.getFieldName();
             if (null == this.currentFieldName) {
@@ -169,21 +154,17 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         context.progress();
 
-        if (log.isTraceEnabled()) {
-            log.trace("Completed map(" + key + ", " + value + ")");
-        }
+        log.trace("Completed map( {}, {} )", key, value);
     }
 
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        if (log.isTraceEnabled()) {
-            log.trace("context(" + context + ")");
-        }
+        log.trace("context( {} )", context);
 
-        // write last enrty
+        // write last entry
         flushFieldValues(context);
 
-        log.info("totals keys(" + this.outputTotal + ") +  'fi' values(" + this.total + ")");
+        log.info("totals keys( {} ) +  'fi' values( {} )", this.outputTotal, this.total);
 
         super.cleanup(context);
     }
@@ -209,15 +190,15 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 BulkIngestKey bulkKey = new BulkIngestKey(this.outputTable, key);
                 StatsHyperLogSummary sum = entry.getStatsSummary();
                 if (log.isDebugEnabled()) {
-                    log.debug("output: key(" + bulkKey.getKey() + ")");
-                    log.debug("stats(" + sum.statsString() + ")");
+                    log.debug("output: key( {} )", bulkKey.getKey());
+                    log.debug("stats( {} )", sum.statsString());
                 }
 
                 val.set(sum.toByteArray());
                 context.write(bulkKey, val);
 
                 if (0 == (this.outputTotal % this.logOutputInterval)) {
-                    log.info("totals => keys(" + this.outputTotal + ") values(" + this.total + ")");
+                    log.info("totals => keys( {} ) values( {} )", this.outputTotal, this.total);
                 }
             }
         }
