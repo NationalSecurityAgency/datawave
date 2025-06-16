@@ -1556,7 +1556,10 @@ public class IngestTypePruningVisitorTest {
         PrintingVisitor.printQuery(treeFlattenedJexl);
 
         QueryModelVisitor.applyModel(treeFlattenedJexl, model, allFields);
-        test(treeFlattenedJexl.toString(), "SUCCESS");
+        test(JexlStringBuildingVisitor.buildQuery(treeFlattenedJexl), "SUCCESS");
     }
 
 }
+
+// In case you forget again :)
+// JexlStringBuildingVisitor.buildQuery(<root-node>)
