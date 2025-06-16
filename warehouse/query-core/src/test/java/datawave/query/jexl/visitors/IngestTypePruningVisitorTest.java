@@ -1534,9 +1534,9 @@ public class IngestTypePruningVisitorTest {
         // String original = "   A == '1' || A == '2' || (B == '2')";               // Internal Prune: query produced an invalid query tree: [RefExpr]
         // String original = "   A == '1' || A == '2' || C == '3' || C == '4'";     // Works fine
         // String original = "   A == '1' || A == '2' || (C == '3') || C == '4'";   // Internal Prune: query produced an invalid query tree: [RefExpr]
-        // String original = "(A == '1' || (B == '1'))";                            // Internal Prune: query produced an invalid query tree: [RefExpr]
-        //String original = "(B == '1')";                                           // Works fine
-        //String original = "(A == '1' || !(B == '1'))";                            // Works fine
+        // String original = "  (A == '1' || (B == '1'))";                          // Internal Prune: query produced an invalid query tree: [RefExpr]
+        //String original = "   (B == '1')";                                        // Works fine
+        //String original = "   (A == '1' || !(B == '1'))";                         // Works fine
         String original = "(A == '1' && (B == '1'))";                               // Internal Prune: query produced an invalid query tree: [RefExpr]
 
         // For some reason, "parseAndFlatten" isn't removing the parentheses around the B == '1'.
