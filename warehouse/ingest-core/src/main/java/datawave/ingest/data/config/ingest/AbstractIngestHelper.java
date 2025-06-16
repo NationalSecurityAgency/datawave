@@ -65,9 +65,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
                 final Set<String> normalizedValues = normalizeFieldValue(fieldName.toUpperCase(), value);
                 return normalizedValues.iterator().next();
             } catch (final Exception ex) {
-                if (log.isWarnEnabled()) {
-                    log.warn("{}: Unable to normalize masked value of {} for {}", this.getType().typeName(), value, fieldName, ex);
-                }
+                log.warn("{}: Unable to normalize masked value of {} for {}", this.getType().typeName(), value, fieldName, ex);
                 return value;
             }
         }

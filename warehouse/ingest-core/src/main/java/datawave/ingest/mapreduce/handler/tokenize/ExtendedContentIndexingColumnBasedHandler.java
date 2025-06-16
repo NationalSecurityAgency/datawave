@@ -679,8 +679,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     throw new RuntimeException(e);
                 }
 
-                // verify that we're exeuting in a timely fashion
-                // if not warn.
+                // verify that we're executing in a timely fashion
+                // ; if not warn.
                 long currentRun = System.currentTimeMillis();
                 long delta = currentRun - lastRun;
                 if (delta > (INTERVAL * 1.5)) {

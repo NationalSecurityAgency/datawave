@@ -49,7 +49,7 @@ public class TokenizationHelper {
                     throw new RuntimeException(e);
                 }
 
-                // verify that we're exeuting in a timely fashion
+                // verify that we're executing in a timely fashion; if not then send out a warning.
                 // if not warn.
                 long currentRun = System.currentTimeMillis();
                 long delta = currentRun - lastRun;

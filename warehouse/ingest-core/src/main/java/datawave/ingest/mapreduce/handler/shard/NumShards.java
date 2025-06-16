@@ -287,7 +287,7 @@ public class NumShards {
             try {
                 tops.create(metadataTableName);
             } catch (TableExistsException tee) {
-                log.error("{} already exists someone got here first", metadataTableName);
+                log.error("{} already exists; someone got here first", metadataTableName);
             }
         }
     }

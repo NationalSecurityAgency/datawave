@@ -86,9 +86,7 @@ public class EventFieldNormalizerHelper {
                 } else {
                     typeFieldMap.put(fieldName, normalizer);
                 }
-                if (log.isDebugEnabled()) {
-                    log.debug("Registered a {} for type [{}], EVENT (not index) field[{}]", normalizerClass, this.getType().typeName(), fieldName);
-                }
+                log.debug("Registered a {} for type [{}], EVENT (not index) field[{}]", normalizerClass, this.getType().typeName(), fieldName);
             }
         }
     }
