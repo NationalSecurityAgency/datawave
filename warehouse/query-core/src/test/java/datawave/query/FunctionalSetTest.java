@@ -169,7 +169,7 @@ public abstract class FunctionalSetTest {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
-        logic.setMaxDepthThreshold(6);
+        logic.setMaxDepthThreshold(7);
 
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
@@ -302,9 +302,9 @@ public abstract class FunctionalSetTest {
         // @formatter:off
         String[] queryStrings = {
 
-                "10 <= AG && AG <= 18",
-                "AG <= 18 && AG >= 10",
-                "18 >= AG && 10 <= AG",
+                "((_Bounded_ = true) && (10 <= AG && AG <= 18))",
+                "((_Bounded_ = true) && (AG <= 18 && AG >= 10))",
+                "((_Bounded_ = true) && (18 >= AG && 10 <= AG))",
                 // "AG <= 18",
                 // "18 >= AG",
                 "AG == 18",
@@ -318,22 +318,22 @@ public abstract class FunctionalSetTest {
 
                 // the next one matches Meadow Soprano, age 18, because the 'MAGIC' value is 18 (we don't know/care what the actual value
                 // of MAGIC is, only that whatever it is, it matches AGE in the same group as the other matches)
-                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
 
                 // the next one matches Meadow Soprano, GENDER female, age 18 but not Constanza Corleone, Gender female, age 18
                 // the < part of this is what is special. Other comparison operators should work the same way
-                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
 
                 // the next 2 queries are equivalent. the reason for the functional query stuff is for when we
                 // want to query with an operator other than '=='
-                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
-                "AG > 10 && AG < 100 && grouping:matchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE', AG, 30)",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && grouping:matchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE', AG, 30)",
 
-                "AG > 10 && AG < 100 && filter:occurrence(AG, '==', filter:getAllMatches(AG, '16').size() + filter:getAllMatches(AG, '18').size())", // will
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && filter:occurrence(AG, '==', filter:getAllMatches(AG, '16').size() + filter:getAllMatches(AG, '18').size())", // will
                                                                                                                                                      // match
                                                                                                                                                      // only the
                                                                                                                                                      // sopranos
-                "AG > 10 && AG < 100 && filter:occurrence(AG, '==', filter:getAllMatches(AG, '19').size() + filter:getAllMatches(AG, '18').size())" // will
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && filter:occurrence(AG, '==', filter:getAllMatches(AG, '19').size() + filter:getAllMatches(AG, '18').size())" // will
                                                                                                                                                     // match
                                                                                                                                                     // none
         };
@@ -362,6 +362,9 @@ public abstract class FunctionalSetTest {
         for (int i = 0; i < queryStrings.length; i++) {
             // stat must be reset between each run when pruning ingest types
             logic.getConfig().setDatatypeFilter(Collections.emptySet());
+            logic.getConfig().setIntermediateMaxTermThreshold(25);
+            logic.getConfig().setIndexedMaxTermThreshold(25);
+            logic.getConfig().setFinalMaxTermThreshold(25);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

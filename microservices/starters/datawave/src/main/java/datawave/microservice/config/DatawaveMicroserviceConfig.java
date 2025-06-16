@@ -36,18 +36,18 @@ import reactor.netty.tcp.TcpClient;
 @Configuration
 public class DatawaveMicroserviceConfig {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
     public RestClientProperties restClientProperties() {
         return new RestClientProperties();
     }
-    
+
     @Bean
     public MetricsConfigurationProperties metricsConfigurationProperties() {
         return new MetricsConfigurationProperties();
     }
-    
+
     @Bean
     @Profile("nomessaging")
     public ServiceMatcher serviceMatcher() {
@@ -56,7 +56,7 @@ public class DatawaveMicroserviceConfig {
         // for internal use, so we make a dummy for that case.
         return new PathServiceMatcher(new AntPathMatcher(), "invalid");
     }
-    
+
     @Bean
     @Qualifier("serverUserDetailsSupplier")
     @ConditionalOnWebApplication
@@ -70,10 +70,10 @@ public class DatawaveMicroserviceConfig {
                 .secure(sslContextSpec -> sslContextSpec.sslContext(nettySslContext));
         WebClient webClient = webClientBuilder.clone().clientConnector(new ReactorClientHttpConnector(HttpClient.from(timeoutClient))).build();
         // @formatter:on
-        
+
         return new Supplier<>() {
             DatawaveUserDetails serverUserDetails = null;
-            
+
             @Override
             public DatawaveUserDetails get() {
                 synchronized (this) {
@@ -84,9 +84,9 @@ public class DatawaveMicroserviceConfig {
                                     .uri(authorizationUri)
                                     .retrieve();
                             // @formatter:on
-                            
+
                             String jwtString = response.bodyToMono(String.class).block(Duration.ofSeconds(30));
-                            
+
                             serverUserDetails = new DatawaveUserDetails(jwtTokenHandler.createUsersFromToken(jwtString), System.currentTimeMillis());
                         } catch (Exception e) {
                             log.warn("Unable to create server proxied user details via {}", authorizationUri);

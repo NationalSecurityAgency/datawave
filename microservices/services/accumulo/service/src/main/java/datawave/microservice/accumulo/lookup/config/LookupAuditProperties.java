@@ -14,37 +14,37 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 @Validated
 @ConfigurationProperties(prefix = "accumulo.lookup.audit")
 public class LookupAuditProperties {
-    
+
     /**
      * Default audit type to be assigned to lookup audit records
      */
     @NotNull
     private AuditType defaultAuditType = AuditType.ACTIVE;
-    
+
     /**
      * Audit configs to be applied on a per-table/row/col basis, as matched against incoming query
      */
     private List<AuditConfiguration> tableConfig = new ArrayList<>();
-    
+
     public AuditType getDefaultAuditType() {
         return defaultAuditType;
     }
-    
+
     public void setDefaultAuditType(AuditType defaultAuditType) {
         this.defaultAuditType = defaultAuditType;
     }
-    
+
     public List<AuditConfiguration> getTableConfig() {
         return tableConfig;
     }
-    
+
     public void setTableConfig(List<AuditConfiguration> auditConfig) {
         this.tableConfig = auditConfig;
     }
-    
+
     @Validated
     public static class AuditConfiguration {
-        
+
         // rowRegex, colFamRegex, colQualRegex will match everything if not configured
         @NotBlank
         private String tableRegex = null;
@@ -56,11 +56,11 @@ public class LookupAuditProperties {
         private String colQualRegex = ".*";
         @NotNull
         private AuditType auditType = null;
-        
+
         private AuditConfiguration() {}
-        
+
         public AuditConfiguration(String tableRegex, String rowRegex, String colFamRegex, String colQualRegex, AuditType auditType) {
-            
+
             this.tableRegex = tableRegex;
             if (rowRegex != null) {
                 this.rowRegex = rowRegex;
@@ -72,12 +72,12 @@ public class LookupAuditProperties {
                 this.colQualRegex = colQualRegex;
             }
             this.auditType = auditType;
-            
+
             validate();
         }
-        
+
         public void validate() throws IllegalArgumentException {
-            
+
             if (this.tableRegex == null) {
                 throw new IllegalArgumentException("tableRegex can not be null");
             }
@@ -85,51 +85,51 @@ public class LookupAuditProperties {
                 throw new IllegalArgumentException("auditType can not be null");
             }
         }
-        
+
         public String getTableRegex() {
             return tableRegex;
         }
-        
+
         public void setTableRegex(String tableRegex) {
             this.tableRegex = tableRegex;
         }
-        
+
         public String getRowRegex() {
             return rowRegex;
         }
-        
+
         public void setRowRegex(String rowRegex) {
             this.rowRegex = rowRegex;
         }
-        
+
         public String getColFamRegex() {
             return colFamRegex;
         }
-        
+
         public void setColFamRegex(String colFamRegex) {
             this.colFamRegex = colFamRegex;
         }
-        
+
         public String getColQualRegex() {
             return colQualRegex;
         }
-        
+
         public void setColQualRegex(String colQualRegex) {
             this.colQualRegex = colQualRegex;
         }
-        
+
         public AuditType getAuditType() {
             return auditType;
         }
-        
+
         public void setAuditType(AuditType auditType) {
             this.auditType = auditType;
         }
-        
+
         public boolean isMatch(String table, String row, String colFam, String colQual) {
-            
+
             boolean isMatch = false;
-            
+
             // table == null should never happen, but this protects against a NPE
             if (table == null) {
                 table = "";
@@ -146,7 +146,7 @@ public class LookupAuditProperties {
             if (colQual == null) {
                 colQual = "";
             }
-            
+
             if (this.tableRegex != null && this.rowRegex != null && this.colFamRegex != null && this.colQualRegex != null) {
                 if (table.matches(this.tableRegex) && row.matches(this.rowRegex) && colFam.matches(this.colFamRegex) && colQual.matches(this.colQualRegex)) {
                     isMatch = true;

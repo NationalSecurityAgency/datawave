@@ -32,13 +32,13 @@ public class DefaultQueryPlannerConfiguration {
     public DefaultQueryPlannerProperties defaultQueryPlannerProperties() {
         return new DefaultQueryPlannerProperties();
     }
-    
+
     @Bean
     @ConfigurationProperties(prefix = "datawave.query.planner.transform-rules.regex-pushdown-transform-rule")
     public TransformRuleProperties regexPushdownTransformRuleProperties() {
         return new TransformRuleProperties();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     @ConditionalOnRequestedTransformRule("RegexPushdownTransformRule")
@@ -47,21 +47,21 @@ public class DefaultQueryPlannerConfiguration {
         rule.setRegexPatterns(regexPushdownTransformRuleProperties().getRegexPatterns());
         return rule;
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     @ConditionalOnRequestedTransformRule("RegexDotallTransformRule")
     public RegexDotallTransformRule RegexDotallTransformRule() {
         return new RegexDotallTransformRule();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     @ConditionalOnRequestedTransformRule("RegexSimplifierTransformRule")
     public RegexSimplifierTransformRule RegexSimplifierTransformRule() {
         return new RegexSimplifierTransformRule();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<NodeTransformRule> defaultQueryPlannerNodeTransformRules(Map<String,NodeTransformRule> nodeTransformRuleBeans) {
@@ -73,14 +73,14 @@ public class DefaultQueryPlannerConfiguration {
         }
         return requestedNodeTransformRules;
     }
-    
+
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     @Conditional(NodeTransformRuleCondition.class)
     public @interface ConditionalOnRequestedTransformRule {
         String value();
     }
-    
+
     public static class NodeTransformRuleCondition implements Condition {
         @Override
         public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {

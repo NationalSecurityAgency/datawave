@@ -30,36 +30,36 @@ import datawave.data.ColumnFamilyConstants;
  * iterating across useless keys.
  */
 public class MetadataFColumnSeekingFilter extends SeekingFilter implements OptionDescriber {
-    
+
     private static final Logger log = LoggerFactory.getLogger(MetadataFColumnSeekingFilter.class);
-    
+
     public static final String DATATYPES_OPT = "datatypes";
     public static final String START_DATE = "start.date";
     public static final String END_DATE = "end.date";
-    
+
     private TreeSet<String> datatypes;
     private String startDate;
     private String endDate;
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (!validateOptions(options)) {
             throw new IllegalArgumentException("Iterator not configured with correct options");
         }
-        
+
         String opt = options.get(DATATYPES_OPT);
         if (StringUtils.isBlank(opt)) {
             datatypes = new TreeSet<>();
         } else {
             datatypes = new TreeSet<>(Splitter.on(',').splitToList(opt));
         }
-        
+
         startDate = options.get(START_DATE);
         endDate = options.get(END_DATE);
-        
+
         super.init(source, options, env);
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions opts = new IteratorOptions(getClass().getName(), "Filter keys by datatype and date range", null, null);
@@ -68,12 +68,12 @@ public class MetadataFColumnSeekingFilter extends SeekingFilter implements Optio
         opts.addNamedOption(END_DATE, "The end date, used for seeking");
         return null;
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         return options.containsKey(DATATYPES_OPT) && options.containsKey(START_DATE) && options.containsKey(END_DATE);
     }
-    
+
     /**
      * A key is filtered if one of the following three conditions is met. Otherwise, the source will call next.
      * <ol>
@@ -81,7 +81,7 @@ public class MetadataFColumnSeekingFilter extends SeekingFilter implements Optio
      * <li>key date is before the start date</li>
      * <li>key date is after the end date</li>
      * </ol>
-     * 
+     *
      * @param k
      *            a key
      * @param v
@@ -99,30 +99,30 @@ public class MetadataFColumnSeekingFilter extends SeekingFilter implements Optio
         if (!datatypes.isEmpty() && !datatypes.contains(datatype)) {
             return new FilterResult(false, AdvanceResult.USE_HINT);
         }
-        
+
         String date = cq.substring(index + 1);
         if (date.compareTo(startDate) < 0) {
             return new FilterResult(false, AdvanceResult.USE_HINT);
         }
-        
+
         if (date.compareTo(endDate) > 0) {
             return new FilterResult(false, AdvanceResult.USE_HINT);
         }
-        
+
         return new FilterResult(true, AdvanceResult.NEXT);
     }
-    
+
     @Override
     public Key getNextKeyHint(Key k, Value v) {
         if (log.isTraceEnabled()) {
             log.trace("get next hint for key: {}", k.toStringNoTime());
         }
-        
+
         Key hint;
         String cq = k.getColumnQualifier().toString();
         int index = cq.indexOf('\u0000');
         String datatype = cq.substring(0, index);
-        
+
         if (!datatypes.isEmpty() && !datatypes.contains(datatype)) {
             hint = getSeekToNextDatatypeKey(k, datatype);
         } else {
@@ -135,17 +135,17 @@ public class MetadataFColumnSeekingFilter extends SeekingFilter implements Optio
                 hint = k.followingKey(PartialKey.ROW_COLFAM_COLQUAL);
             }
         }
-        
+
         log.trace("hint: {}", hint);
         return hint;
     }
-    
+
     private Key getSeekToNextDatatypeKey(Key key, String datatype) {
         if (datatypes.isEmpty()) {
             // no datatypes provided, so we must instead produce a 'rollover' start key
             return getDatatypeRolloverKey(key, datatype);
         }
-        
+
         // otherwise datatypes were provided
         String nextDatatype = datatypes.higher(datatype);
         if (nextDatatype != null) {
@@ -158,13 +158,13 @@ public class MetadataFColumnSeekingFilter extends SeekingFilter implements Optio
             return key.followingKey(PartialKey.ROW_COLFAM);
         }
     }
-    
+
     private Key getDatatypeRolloverKey(Key key, String datatype) {
         log.trace("seek to rollover datatype");
         Text cq = new Text(datatype + '\u0000' + '\uffff');
         return new Key(key.getRow(), key.getColumnFamily(), cq);
     }
-    
+
     private Key getSeekToStartDateKey(Key k, String datatype) {
         log.trace("seek to start date");
         Text cq = new Text(datatype + '\u0000' + startDate);

@@ -45,9 +45,9 @@ import datawave.microservice.querymetric.QueryMetricType;
 import datawave.webservice.query.exception.QueryException;
 
 public abstract class ExecutorTask implements Runnable {
-    
+
     private static final Logger log = Logger.getLogger(ExecutorTask.class);
-    
+
     protected final QueryExecutor source;
     protected final AccumuloConnectionRequestMap connectionMap;
     protected final AccumuloConnectionFactory connectionFactory;
@@ -67,13 +67,13 @@ public abstract class ExecutorTask implements Runnable {
     protected boolean running = false;
     boolean taskComplete = false;
     boolean taskFailed = false;
-    
+
     public ExecutorTask(QueryExecutor source, QueryTask task) {
         this(source, source.getExecutorProperties(), source.getQueryProperties(), source.getBusProperties(), source.getConnectionRequestMap(),
                         source.getConnectionFactory(), source.getCache(), source.getQueues(), source.getQueryLogicFactory(), source.getPublisher(),
                         source.getMetricFactory(), source.getMetricClient(), task);
     }
-    
+
     public ExecutorTask(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
                     AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache,
                     QueryResultsManager resultsManager, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
@@ -94,44 +94,44 @@ public abstract class ExecutorTask implements Runnable {
         this.task = task;
         this.queryTaskUpdater = new QueryTaskUpdater();
     }
-    
+
     public TaskKey getTaskKey() {
         return task.getTaskKey();
     }
-    
+
     /**
      * Execute the task
-     * 
+     *
      * @return True if the task was completed, false otherwise.
      * @throws Exception
      *             is the task failed
      */
     public abstract boolean executeTask(QueryStatus queryStatus) throws Exception;
-    
+
     /**
      * Interrupt this execution
      */
     public void interrupt() {
         interrupted = true;
     }
-    
+
     /**
      * It is presumed that a lock for this task has already been obtained by the QueryExecutor
      */
     @Override
     public void run() {
         running = true;
-        
+
         queryTaskUpdater.start();
-        
+
         AccumuloClient client = null;
         TaskKey taskKey = task.getTaskKey();
-        
+
         try {
             log.debug("Running " + taskKey);
-            
+
             QueryStatus queryStatus = cache.getQueryStatus(taskKey.getQueryId());
-            
+
             log.debug("Executing task for " + taskKey);
             taskComplete = executeTask(queryStatus);
         } catch (Exception e) {
@@ -140,16 +140,16 @@ public abstract class ExecutorTask implements Runnable {
             cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
         } finally {
             queryTaskUpdater.close();
-            
+
             completeTask(taskComplete, taskFailed);
-            
+
             running = false;
         }
     }
-    
+
     /**
      * Complete the task by updating its state appropriately
-     * 
+     *
      * @param taskComplete
      * @param taskFailed
      */
@@ -185,7 +185,7 @@ public abstract class ExecutorTask implements Runnable {
             }
         }
     }
-    
+
     /**
      * Checkpoint a query logic
      *
@@ -203,10 +203,10 @@ public abstract class ExecutorTask implements Runnable {
             publishExecutorEvent(QueryRequest.next(queryKey.getQueryId()), queryKey.getQueryPool());
         }
     }
-    
+
     protected AccumuloClient borrowClient(QueryStatus queryStatus, String poolName, AccumuloConnectionFactory.Priority priority) throws Exception {
         log.debug("Getting connector for " + getTaskKey());
-        
+
         Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
         Query q = queryStatus.getQuery();
         if (q.getOwner() != null) {
@@ -225,7 +225,7 @@ public abstract class ExecutorTask implements Runnable {
             connectionMap.requestEnd(q.getId().toString());
         }
     }
-    
+
     protected void returnClient(AccumuloClient client) {
         if (client != null) {
             try {
@@ -235,23 +235,23 @@ public abstract class ExecutorTask implements Runnable {
             }
         }
     }
-    
+
     protected QueryLogic<?> getQueryLogic(Query query, DatawaveUserDetails currentUser) throws QueryException, CloneNotSupportedException {
         log.debug("Getting query logic for " + query.getQueryLogicName());
         return queryLogicFactory.getQueryLogic(query.getQueryLogicName(), currentUser);
     }
-    
+
     public enum RESULTS_ACTION {
         PAUSE, GENERATE, COMPLETE;
     }
-    
+
     protected RESULTS_ACTION shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults) {
         QueryStatus queryStatus = cache.getQueryStatus(taskKey.getQueryId());
         QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
         int concurrentNextCalls = queryStatus.getActiveNextCalls();
         float bufferMultiplier = executorProperties.getAvailableResultsPageMultiplier();
         long numResultsGenerated = queryStatus.getNumResultsGenerated();
-        
+
         // if the state is closed AND we don't have any ongoing next calls, then stop
         if (state == QueryStatus.QUERY_STATE.CLOSE) {
             if (concurrentNextCalls == 0) {
@@ -262,35 +262,35 @@ public abstract class ExecutorTask implements Runnable {
                 bufferMultiplier = 1.0f;
             }
         }
-        
+
         // if the state is canceled or failed, then stop
         if (state == QueryStatus.QUERY_STATE.CANCEL || state == QueryStatus.QUERY_STATE.FAIL) {
             log.debug("Not getting results for canceled or failed query " + taskKey);
             return RESULTS_ACTION.COMPLETE;
         }
-        
+
         // if we have reached the max results for this query, then stop
         if (maxResults > 0 && queryStatus.getNumResultsGenerated() >= maxResults) {
             log.debug("max resuilts reached for " + taskKey);
             return RESULTS_ACTION.COMPLETE;
         }
-        
+
         // if we are to exhaust the iterator, then continue generating results
         if (exhaust) {
             return RESULTS_ACTION.GENERATE;
         }
-        
+
         // get the queue size
         long queueSize = resultsManager.getNumResultsRemaining(taskKey.getQueryId());
-        
+
         // calculate a result buffer size (pagesize * multiplier) adjusting for concurrent next calls
         long bufferSize = (long) (maxPageSize * Math.max(1, concurrentNextCalls) * bufferMultiplier);
-        
+
         // cap the buffer size by max results
         if (maxResults > 0) {
             bufferSize = Math.min(bufferSize, maxResults - numResultsGenerated);
         }
-        
+
         // we should return results if we have less than what we want to have buffered
         log.debug("Getting results if " + queueSize + " < " + bufferSize);
         if (queueSize < bufferSize) {
@@ -299,12 +299,12 @@ public abstract class ExecutorTask implements Runnable {
             return RESULTS_ACTION.PAUSE;
         }
     }
-    
+
     protected boolean pullResults(QueryLogic queryLogic, Query query, boolean exhaustIterator) throws Exception {
         if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
             queryTaskUpdater.setQueryLogic((CheckpointableQueryLogic) queryLogic);
         }
-        
+
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
         TransformIterator iter = queryLogic.getTransformIterator(query);
@@ -317,7 +317,7 @@ public abstract class ExecutorTask implements Runnable {
             maxResults = Math.max(maxResults, query.getMaxResultsOverride());
         }
         int pageSize = query.getPagesize();
-        
+
         QueryResultsPublisher publisher = resultsManager.createPublisher(queryId);
         RESULTS_ACTION running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults);
         int count = 0;
@@ -344,19 +344,19 @@ public abstract class ExecutorTask implements Runnable {
             running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults);
         }
         log.debug("Generated " + count + " results for " + taskKey);
-        
+
         // a final metrics update
         if (updateMetrics(queryId, query, metrics, iter)) {
             updateQueryStatusMetrics(metrics);
         }
-        
+
         // if the query is complete or we have no more results to generate, then the task is complete
         return (running == RESULTS_ACTION.COMPLETE || !iter.hasNext());
     }
-    
+
     protected void updateQueryStatusMetrics(QueryStatusMetrics metrics) throws QueryException, InterruptedException {
         String queryId = getTaskKey().getQueryId();
-        
+
         // update the query status
         QueryStatus queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, (newQueryStatus) -> {
             // sum up the counts
@@ -364,16 +364,16 @@ public abstract class ExecutorTask implements Runnable {
             newQueryStatus.incrementSeekCount(metrics.seekCount);
             newQueryStatus.incrementNumResultsGenerated(metrics.numResultsGenerated);
         });
-        
+
         log.debug("Updating summed results (" + queryStatus.getNumResultsReturned() + ") for " + queryId);
-        
+
         // clear the counts in the local instance
         metrics.clear();
     }
-    
+
     /**
      * Update the metrics in the query status. This method will NOT update the storage cache.
-     * 
+     *
      * @param queryId
      * @param metrics
      * @param iter
@@ -418,7 +418,7 @@ public abstract class ExecutorTask implements Runnable {
         }
         return false;
     }
-    
+
     protected void publishExecutorEvent(QueryRequest queryRequest, String queryPool) {
         // @formatter:off
         publisher.publishEvent(
@@ -429,11 +429,11 @@ public abstract class ExecutorTask implements Runnable {
                         queryRequest));
         // @formatter:on
     }
-    
+
     protected String getPooledExecutorName(String poolName) {
         return String.join("-", Arrays.asList(queryProperties.getExecutorServiceName(), poolName));
     }
-    
+
     /**
      * The default query task updater that will update the QueryTask in the cache periodically based on the number of results returned or the time that has
      * passed.
@@ -442,25 +442,25 @@ public abstract class ExecutorTask implements Runnable {
         protected volatile int resultsCount = 0;
         protected volatile int resultsThreshold;
         protected volatile long lastRefresh;
-        
+
         protected volatile boolean closed = false;
         // the refresh object is used to notify that a checkpoint update may be required or we just closed
         protected final Object refresh = new Object();
         protected Thread workThread;
         protected CheckpointableQueryLogic queryLogic;
-        
+
         public QueryTaskUpdater() {
             resultsThreshold = executorProperties.getCheckpointFlushResults();
             lastRefresh = System.currentTimeMillis();
         }
-        
+
         public void start() {
             refreshTask();
             workThread = new Thread(this, "Checkpoint Updater for " + task.getTaskKey().toString());
             workThread.setDaemon(true);
             workThread.start();
         }
-        
+
         @Override
         public void run() {
             synchronized (refresh) {
@@ -477,7 +477,7 @@ public abstract class ExecutorTask implements Runnable {
                 }
             }
         }
-        
+
         public void close() {
             closed = true;
             while (workThread.isAlive()) {
@@ -486,15 +486,15 @@ public abstract class ExecutorTask implements Runnable {
                 }
             }
         }
-        
+
         public void setQueryLogic(CheckpointableQueryLogic queryLogic) {
             this.queryLogic = queryLogic;
         }
-        
+
         protected boolean isRefreshTime() {
             return (resultsCount >= resultsThreshold || lastRefresh + executorProperties.getCheckpointFlushMs() < System.currentTimeMillis());
         }
-        
+
         protected void refreshTask() {
             try {
                 if (queryLogic != null) {
@@ -509,14 +509,14 @@ public abstract class ExecutorTask implements Runnable {
                 log.warn("Attempted to refresh task " + task.getTaskKey() + " but it no longer exists.  Query was probably deleted");
             }
         }
-        
+
         protected void updateCounters() {
             lastRefresh = System.currentTimeMillis();
             if (resultsCount >= resultsThreshold) {
                 resultsThreshold = resultsCount + executorProperties.getCheckpointFlushResults();
             }
         }
-        
+
         public void resultPublished() {
             resultsCount++;
             if (resultsCount >= resultsThreshold) {
@@ -526,65 +526,65 @@ public abstract class ExecutorTask implements Runnable {
             }
         }
     }
-    
+
     private static class QueryStatusMetrics {
         private int numResultsGenerated = 0;
         private long seekCount = 0;
         private long nextCount = 0;
-        
+
         public int getNumResultsGenerated() {
             return numResultsGenerated;
         }
-        
+
         public void incrementNumResultsGenerated() {
             numResultsGenerated++;
         }
-        
+
         public long getSeekCount() {
             return seekCount;
         }
-        
+
         public void incrementSeekCount(long count) {
             seekCount += count;
         }
-        
+
         public long getNextCount() {
             return nextCount;
         }
-        
+
         public void incrementNextCount(long count) {
             nextCount += count;
         }
-        
+
         public void clear() {
             numResultsGenerated = 0;
             seekCount = nextCount = 0;
         }
     }
-    
+
     public boolean isInterrupted() {
         return interrupted;
     }
-    
+
     public boolean isRunning() {
         return running;
     }
-    
+
     public boolean isTaskComplete() {
         return taskComplete;
     }
-    
+
     public boolean isTaskFailed() {
         return taskFailed;
     }
-    
+
     public QueryTask getTask() {
         return task;
     }
-    
+
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("taskKey", task.getTaskKey()).build();
     }
-    
+
 }

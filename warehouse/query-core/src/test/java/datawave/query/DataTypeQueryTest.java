@@ -26,6 +26,7 @@ import datawave.query.testframework.BaseRawData;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -52,6 +53,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             generic.addReverseIndexField(idx);
         }
 
+        CityDataManager.newInstance();
         for (CityEntry entry : TEST_DATATYPES) {
             dataTypes.add(new CitiesDataType(entry, generic));
         }
@@ -158,7 +160,9 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
 
         for (String num : TEST_NUMS) {
-            String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
+            int lower = Integer.parseInt(num);
+            int upper = lower + 1;
+            String query = CityField.NUM.name() + GTE_OP + lower + AND_OP + CityField.NUM.name() + LTE_OP + upper;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
             query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);
@@ -175,7 +179,9 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
 
         for (String num : TEST_NUMS) {
-            String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
+            int lower = Integer.parseInt(num);
+            int upper = lower + 1;
+            String query = CityField.NUM.name() + GTE_OP + lower + AND_OP + CityField.NUM.name() + LTE_OP + upper;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
             query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);

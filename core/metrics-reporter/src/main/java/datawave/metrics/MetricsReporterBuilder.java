@@ -15,7 +15,7 @@ public abstract class MetricsReporterBuilder {
     protected TimeUnit rateUnit;
     protected TimeUnit durationUnit;
     protected MetricFilter filter;
-    
+
     protected MetricsReporterBuilder(MetricRegistry registry) {
         this.registry = registry;
         prefix = null;
@@ -23,26 +23,26 @@ public abstract class MetricsReporterBuilder {
         durationUnit = TimeUnit.MILLISECONDS;
         filter = MetricFilter.ALL;
     }
-    
+
     public MetricsReporterBuilder prefixedWith(String prefix) {
         this.prefix = prefix;
         return this;
     }
-    
+
     public MetricsReporterBuilder convertRatesTo(TimeUnit rateUnit) {
         this.rateUnit = rateUnit;
         return this;
     }
-    
+
     public MetricsReporterBuilder convertDurationsTo(TimeUnit durationUnit) {
         this.durationUnit = durationUnit;
         return this;
     }
-    
+
     public MetricsReporterBuilder filter(MetricFilter filter) {
         this.filter = filter;
         return this;
     }
-    
+
     public abstract ScheduledReporter build(String host, int port);
 }

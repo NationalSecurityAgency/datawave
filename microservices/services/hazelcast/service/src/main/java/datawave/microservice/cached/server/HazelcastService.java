@@ -17,16 +17,16 @@ import org.springframework.cloud.commons.util.InetUtilsProperties;
 @SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {SecurityAutoConfiguration.class, ManagementWebSecurityAutoConfiguration.class})
 public class HazelcastService {
     private static final int MAX_PORT = 100;
-    
+
     static {
         System.setProperty("hazelcast.cluster.host", findHostInfo().getIpAddress());
         System.setProperty("hazelcast.cluster.port", String.valueOf(getNextPort(5701)));
     }
-    
+
     public static void main(String[] args) {
         SpringApplication.run(HazelcastService.class, args);
     }
-    
+
     private static int getNextPort(int start) {
         for (int port = start; port < start + MAX_PORT; ++port) {
             try {
@@ -38,10 +38,10 @@ public class HazelcastService {
         }
         return -1;
     }
-    
+
     private static InetUtils.HostInfo findHostInfo() {
         InetUtils inetUtils = new InetUtils(new InetUtilsProperties());
         return inetUtils.findFirstNonLoopbackHostInfo();
     }
-    
+
 }

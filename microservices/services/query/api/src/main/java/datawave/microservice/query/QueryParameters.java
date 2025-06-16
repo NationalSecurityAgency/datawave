@@ -13,7 +13,7 @@ import datawave.validation.ParameterValidator;
  *
  */
 public interface QueryParameters extends ParameterValidator {
-    
+
     String QUERY_STRING = "query";
     String QUERY_NAME = "queryName";
     String QUERY_PERSISTENCE = "persistence";
@@ -33,89 +33,89 @@ public interface QueryParameters extends ParameterValidator {
     String QUERY_PLAN_EXPAND_FIELDS = "expand.fields";
     String QUERY_PLAN_EXPAND_VALUES = "expand.values";
     String QUERY_SYSTEM_FROM = "systemFrom";
-    
+
     String getQuery();
-    
+
     void setQuery(String query);
-    
+
     String getQueryName();
-    
+
     void setQueryName(String queryName);
-    
+
     QueryPersistence getPersistenceMode();
-    
+
     void setPersistenceMode(QueryPersistence persistenceMode);
-    
+
     int getPagesize();
-    
+
     void setPagesize(int pagesize);
-    
+
     int getPageTimeout();
-    
+
     void setPageTimeout(int pageTimeout);
-    
+
     long getMaxResultsOverride();
-    
+
     void setMaxResultsOverride(long maxResults);
-    
+
     boolean isMaxResultsOverridden();
-    
+
     String getAuths();
-    
+
     void setAuths(String auths);
-    
+
     Date getExpirationDate();
-    
+
     void setExpirationDate(Date expirationDate);
-    
+
     boolean isTrace();
-    
+
     void setTrace(boolean trace);
-    
+
     Date getBeginDate();
-    
+
     Date getEndDate();
-    
+
     void setBeginDate(Date beginDate);
-    
+
     void setEndDate(Date endDate);
-    
+
     String getVisibility();
-    
+
     void setVisibility(String visibility);
-    
+
     String getLogicName();
-    
+
     void setLogicName(String logicName);
-    
+
     String getSystemFrom();
-    
+
     void setSystemFrom(String systemFrom);
-    
+
     String getPool();
-    
+
     void setPool(String pool);
-    
+
     int getMaxConcurrentTasks();
-    
+
     void setMaxConcurrentTasks(int maxConcurrentTasks);
-    
+
     boolean isMaxConcurrentTasksOverridden();
-    
+
     void setExpandFields(boolean expandFields);
-    
+
     boolean isExpandFields();
-    
+
     void setExpandValues(boolean expandVues);
-    
+
     boolean isExpandValues();
-    
+
     Map<String,List<String>> getRequestHeaders();
-    
+
     void setRequestHeaders(Map<String,List<String>> requestHeaders);
-    
+
     MultiValueMap<String,String> getUnknownParameters(Map<String,List<String>> allQueryParameters);
-    
+
     void clear();
-    
+
 }

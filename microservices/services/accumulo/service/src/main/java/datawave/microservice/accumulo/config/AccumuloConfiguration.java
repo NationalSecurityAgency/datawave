@@ -18,7 +18,7 @@ import datawave.microservice.config.cluster.ClusterProperties;
 @Configuration
 @EnableConfigurationProperties({WarehouseClusterProperties.class, MetricsClusterProperties.class})
 public class AccumuloConfiguration {
-    
+
     @Bean
     @Lazy
     @Qualifier("warehouse")
@@ -26,7 +26,7 @@ public class AccumuloConfiguration {
     public AccumuloProperties warehouseAccumuloProperies(WarehouseClusterProperties warehouseProperties) {
         return warehouseProperties.getAccumulo();
     }
-    
+
     @Bean
     @Lazy
     @Qualifier("metrics")
@@ -34,26 +34,26 @@ public class AccumuloConfiguration {
     public AccumuloProperties metricsAccumuloProperies(MetricsClusterProperties metricsProperties) {
         return metricsProperties.getAccumulo();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public MarkingFunctions markingFunctions() {
         return new MarkingFunctions.Default();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public UserAuthFunctions userAuthFunctions() {
         return UserAuthFunctions.getInstance();
     }
-    
+
     @ConfigurationProperties(prefix = "metrics-cluster")
     public static class MetricsClusterProperties extends ClusterProperties {
-        
+
     }
-    
+
     @ConfigurationProperties(prefix = "warehouse-cluster")
     public static class WarehouseClusterProperties extends ClusterProperties {
-        
+
     }
 }

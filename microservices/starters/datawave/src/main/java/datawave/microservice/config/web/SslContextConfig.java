@@ -56,7 +56,7 @@ import io.netty.util.concurrent.FastThreadLocal;
 @ConditionalOnWebApplication
 @ConditionalOnProperty(name = "server.outbound-ssl.enabled", matchIfMissing = true)
 public class SslContextConfig {
-    
+
     @Bean
     @Qualifier("outboundJDKSslContext")
     public SSLContext sslContext(DatawaveServerProperties serverProperties) throws NoSuchAlgorithmException, KeyManagementException {
@@ -65,7 +65,7 @@ public class SslContextConfig {
         sslContext.init(getKeyManagers(ssl), getTrustManagers(ssl), null);
         return sslContext;
     }
-    
+
     @Bean
     @Qualifier("outboundNettySslContext")
     public SslContext nettySslContext(DatawaveServerProperties serverProperties) throws SSLException {
@@ -82,15 +82,15 @@ public class SslContextConfig {
             builder.protocols(ssl.getEnabledProtocols());
         return builder.build();
     }
-    
+
     private KeyManager[] getKeyManagers(OutboundSsl ssl) {
         return getKeyManagerFactory(ssl).getKeyManagers();
     }
-    
+
     private KeyManagerFactory getKeyManagerFactory(OutboundSsl ssl) {
         try {
             KeyStore keyStore = getKeyStore(ssl);
-            
+
             // Get key manager to provide client credentials.
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             char[] keyPassword = ssl.getKeyPassword() != null ? ssl.getKeyPassword().toCharArray() : ssl.getKeyStorePassword().toCharArray();
@@ -103,7 +103,7 @@ public class SslContextConfig {
             throw new IllegalStateException(e);
         }
     }
-    
+
     private KeyStore getKeyStore(OutboundSsl ssl) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
         String keyStoreType = ssl.getKeyStoreType();
         if (keyStoreType == null) {
@@ -114,19 +114,19 @@ public class SslContextConfig {
         keyStore.load(url.openStream(), ssl.getKeyStorePassword().toCharArray());
         return keyStore;
     }
-    
+
     private TrustManager[] getTrustManagers(OutboundSsl ssl) {
         TrustManagerFactory tmf = getTrustManagerFactory(ssl);
         return tmf == null ? null : tmf.getTrustManagers();
     }
-    
+
     private TrustManagerFactory getTrustManagerFactory(OutboundSsl ssl) {
         try {
             KeyStore trustStore = getTrustStore(ssl);
             KeyStore keyStore = getKeyStore(ssl);
-            
+
             X509Certificate trustedCertificate = getTrustedCertificate(ssl.getKeyAlias(), keyStore);
-            
+
             TrustManagerFactory trustManagerFactory = new DatawaveTrustMangerFactory(TrustManagerFactory.getDefaultAlgorithm(), trustedCertificate);
             trustManagerFactory.init(trustStore);
             return trustManagerFactory;
@@ -134,7 +134,7 @@ public class SslContextConfig {
             throw new IllegalStateException(e);
         }
     }
-    
+
     private KeyStore getTrustStore(OutboundSsl ssl) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
         String trustStoreType = ssl.getTrustStoreType();
         if (trustStoreType == null) {
@@ -149,7 +149,7 @@ public class SslContextConfig {
         trustStore.load(url.openStream(), ssl.getTrustStorePassword().toCharArray());
         return trustStore;
     }
-    
+
     private X509Certificate getTrustedCertificate(String alias, KeyStore keyStore) throws KeyStoreException {
         Certificate trustCandidate = null;
         X509Certificate trustedCertificate = null;
@@ -166,7 +166,7 @@ public class SslContextConfig {
         }
         return trustedCertificate;
     }
-    
+
     /**
      * A custom {@link TrustManagerFactory} that wraps any returned {@link TrustManager}s in order to apply custom behavior for trusting a remote server.
      */
@@ -180,16 +180,16 @@ public class SslContextConfig {
                 return new DatawaveTrustManagerSpi();
             }
         };
-        
+
         public DatawaveTrustMangerFactory(String algorithm, X509Certificate trustedCertificate) throws NoSuchAlgorithmException {
             super(CURRENT_SPI.get(), PROVIDER, algorithm);
             CURRENT_SPI.get().init(TrustManagerFactory.getInstance(algorithm), trustedCertificate);
             CURRENT_SPI.remove();
-            
+
             Preconditions.checkNotNull(algorithm);
         }
     }
-    
+
     /**
      * The {@link TrustManagerFactorySpi} that is used by {@link DatawaveTrustMangerFactory} in order to wrap any returned {@link TrustManager}s with a
      * {@link DatawaveTrustManager}.
@@ -198,22 +198,22 @@ public class SslContextConfig {
         private TrustManagerFactory delegate;
         private X509Certificate trustedCertificate;
         private volatile TrustManager[] trustManagers;
-        
+
         public void init(TrustManagerFactory delegate, X509Certificate trustedCertificate) {
             this.delegate = delegate;
             this.trustedCertificate = trustedCertificate;
         }
-        
+
         @Override
         protected void engineInit(KeyStore keyStore) throws KeyStoreException {
             delegate.init(keyStore);
         }
-        
+
         @Override
         protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws InvalidAlgorithmParameterException {
             delegate.init(managerFactoryParameters);
         }
-        
+
         @Override
         protected TrustManager[] engineGetTrustManagers() {
             TrustManager[] trustManagers = this.trustManagers;
@@ -232,7 +232,7 @@ public class SslContextConfig {
             return trustManagers.clone();
         }
     }
-    
+
     /**
      * An extension of {@link X509ExtendedTrustManager} that applies custom trust behavior for use with microservices. It is expected that these services will
      * run on a cluster where DNS might be used for service discovery. However, the server certificate used by the microservices will not have the DNS names as
@@ -243,7 +243,7 @@ public class SslContextConfig {
         private X509Certificate trustedCertificate;
         private X509TrustManager delegate;
         private X509ExtendedTrustManager extendedDelegate;
-        
+
         public DatawaveTrustManager(X509TrustManager delegate, X509Certificate trustedCertificate) {
             this.trustedCertificate = trustedCertificate;
             this.delegate = delegate;
@@ -251,22 +251,22 @@ public class SslContextConfig {
                 extendedDelegate = (X509ExtendedTrustManager) delegate;
             }
         }
-        
+
         @Override
         public X509Certificate[] getAcceptedIssuers() {
             return delegate.getAcceptedIssuers();
         }
-        
+
         @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
             delegate.checkClientTrusted(x509Certificates, s);
         }
-        
+
         @Override
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
             delegate.checkServerTrusted(x509Certificates, s);
         }
-        
+
         @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
             Preconditions.checkNotNull(extendedDelegate, "Not wrapping an X509ExtendedTrustManager");
@@ -280,7 +280,7 @@ public class SslContextConfig {
                     SSLParameters overrideParameters = sslSocket.getSSLParameters();
                     overrideParameters.setEndpointIdentificationAlgorithm("");
                     sslSocket.setSSLParameters(overrideParameters);
-                    
+
                     extendedDelegate.checkClientTrusted(x509Certificates, s, socket);
                 } finally {
                     origParameters.setEndpointIdentificationAlgorithm(curIdentityAlgorithm);
@@ -290,7 +290,7 @@ public class SslContextConfig {
                 extendedDelegate.checkClientTrusted(x509Certificates, s, socket);
             }
         }
-        
+
         @Override
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
             Preconditions.checkNotNull(extendedDelegate, "Not wrapping an X509ExtendedTrustManager");
@@ -313,7 +313,7 @@ public class SslContextConfig {
                 extendedDelegate.checkServerTrusted(x509Certificates, s, socket);
             }
         }
-        
+
         @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
             Preconditions.checkNotNull(extendedDelegate, "Not wrapping an X509ExtendedTrustManager");
@@ -327,14 +327,14 @@ public class SslContextConfig {
                     overrideParameters.setEndpointIdentificationAlgorithm("");
                     sslEngine.setSSLParameters(overrideParameters);
                 }
-                
+
                 extendedDelegate.checkClientTrusted(x509Certificates, s, sslEngine);
             } finally {
                 origParameters.setEndpointIdentificationAlgorithm(curIdentityAlgorithm);
                 sslEngine.setSSLParameters(origParameters);
             }
         }
-        
+
         @Override
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
             Preconditions.checkNotNull(extendedDelegate, "Not wrapping an X509ExtendedTrustManager");
@@ -354,7 +354,7 @@ public class SslContextConfig {
                 sslEngine.setSSLParameters(origParameters);
             }
         }
-        
+
         private boolean certChainTrusted(X509Certificate[] x509Certificates) {
             // If there was no peer certificate available or none matched the trusted certificate, then return
             // immediately so that we use the default trust verification instead of our custom verification.
@@ -370,7 +370,7 @@ public class SslContextConfig {
             return peerCertIsTrusted;
         }
     }
-    
+
     private static class KeyAliasKeyManagerFactory extends KeyManagerFactory {
         private static final Provider PROVIDER = new Provider("", 0.0, "") {
             private static final long serialVersionUID = -2680540247105807895L;
@@ -381,35 +381,35 @@ public class SslContextConfig {
                 return new KeyAliasKeyManagerSpi();
             }
         };
-        
+
         public KeyAliasKeyManagerFactory(KeyManagerFactory delegate, String alias) {
-            
+
             super(CURRENT_SPI.get(), PROVIDER, delegate.getAlgorithm());
             CURRENT_SPI.get().init(delegate, alias);
             CURRENT_SPI.remove();
         }
     }
-    
+
     private static class KeyAliasKeyManagerSpi extends KeyManagerFactorySpi {
         private KeyManagerFactory delegate;
         private String alias;
         private volatile KeyManager[] keyManagers;
-        
+
         public void init(KeyManagerFactory delegate, String alias) {
             this.delegate = delegate;
             this.alias = alias;
         }
-        
+
         @Override
         protected void engineInit(KeyStore keyStore, char[] chars) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
             delegate.init(keyStore, chars);
         }
-        
+
         @Override
         protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws InvalidAlgorithmParameterException {
             delegate.init(managerFactoryParameters);
         }
-        
+
         @Override
         protected KeyManager[] engineGetKeyManagers() {
             KeyManager[] keyManagers = this.keyManagers;
@@ -428,51 +428,51 @@ public class SslContextConfig {
             return keyManagers.clone();
         }
     }
-    
+
     private static class KeyAliasKeyManager extends X509ExtendedKeyManager {
         private final X509ExtendedKeyManager delegate;
         private final String alias;
-        
+
         public KeyAliasKeyManager(X509ExtendedKeyManager delegate, String alias) {
             this.delegate = delegate;
             this.alias = alias;
         }
-        
+
         @Override
         public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
             return delegate.chooseEngineClientAlias(strings, principals, sslEngine);
         }
-        
+
         @Override
         public String chooseEngineServerAlias(String s, Principal[] principals, SSLEngine sslEngine) {
             return (alias != null) ? alias : delegate.chooseEngineServerAlias(s, principals, sslEngine);
         }
-        
+
         @Override
         public String[] getClientAliases(String s, Principal[] principals) {
             return delegate.getClientAliases(s, principals);
         }
-        
+
         @Override
         public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
             return delegate.chooseClientAlias(strings, principals, socket);
         }
-        
+
         @Override
         public String[] getServerAliases(String s, Principal[] principals) {
             return delegate.getServerAliases(s, principals);
         }
-        
+
         @Override
         public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
             return delegate.chooseServerAlias(s, principals, socket);
         }
-        
+
         @Override
         public X509Certificate[] getCertificateChain(String s) {
             return delegate.getCertificateChain(s);
         }
-        
+
         @Override
         public PrivateKey getPrivateKey(String s) {
             return delegate.getPrivateKey(s);

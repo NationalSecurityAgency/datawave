@@ -45,34 +45,34 @@ import datawave.microservice.authorization.user.DatawaveUserDetails;
 @ContextConfiguration(classes = ReplayClientTest.TestConfiguration.class)
 @ActiveProfiles({"ReplayClientTest", "audit-enabled"})
 public class ReplayClientTest {
-    
+
     private static final String EXPECTED_REPLAY_URI = "http://localhost:11111/audit/v1/replay";
-    
+
     @Autowired
     private ReplayClient replayClient;
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     private MockRestServiceServer mockServer;
     private DatawaveUserDetails defaultUserDetails;
-    
+
     @BeforeEach
     public void setup() throws Exception {
         defaultUserDetails = TestUtils.userDetails(Collections.singleton("AuthorizedUser"), Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
         setupMockAuditServer();
     }
-    
+
     @Test
     public void verifyAutoConfig() {
         assertEquals(1, context.getBeanNamesForType(ReplayClient.class).length, "One ReplayClient bean should have been found");
         assertEquals(1, context.getBeanNamesForType(AuditServiceConfiguration.class).length, "One AuditServiceConfiguration bean should have been found");
         assertEquals(1, context.getBeanNamesForType(AuditServiceProvider.class).length, "One AuditServiceProvider bean should have been found");
     }
-    
+
     @Test
     public void testCreateURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -89,10 +89,10 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testCreateMissingParam() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -110,7 +110,7 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testCreateURIServerError() {
         //@formatter:off
@@ -130,10 +130,10 @@ public class ReplayClientTest {
 
         //@formatter:on
     }
-    
+
     @Test
     public void testCreateAndStartURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -150,10 +150,10 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testCreateAndStartMissingParam() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -171,11 +171,11 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testStartURISuccess() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -189,11 +189,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testStartMissingParam() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -208,10 +208,10 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testStartAllURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -224,11 +224,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testStatusURISuccess() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -242,11 +242,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testStatusMissingParam() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -261,10 +261,10 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testStatusAllURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -277,11 +277,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testUpdateURISuccess() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -297,11 +297,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testUpdateMissingParam1() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -317,11 +317,11 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testUpdateMissingParam2() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -339,10 +339,10 @@ public class ReplayClientTest {
 
         //@formatter:on
     }
-    
+
     @Test
     public void testUpdateAllURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -357,10 +357,10 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testUpdateAllMissingParam() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -376,11 +376,11 @@ public class ReplayClientTest {
         });
             //@formatter:on
     }
-    
+
     @Test
     public void testStopURISuccess() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -394,11 +394,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testStopMissingParam() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -413,10 +413,10 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testStopAllURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -429,11 +429,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testResumeURISuccess() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -447,11 +447,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testResumeMissingParam() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -466,10 +466,10 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testResumeAllURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -482,11 +482,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testDeleteURISuccess() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -500,11 +500,11 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     @Test
     public void testDeleteMissingParam() {
         String id = "some-id";
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -519,10 +519,10 @@ public class ReplayClientTest {
         });
         //@formatter:on
     }
-    
+
     @Test
     public void testDeleteAllURISuccess() {
-        
+
         //@formatter:off
         final ReplayClient.Request replayRequest = new ReplayClient.Request.Builder()
                 .withDatawaveUserDetails(defaultUserDetails)
@@ -535,7 +535,7 @@ public class ReplayClientTest {
         mockServer.verify();
         //@formatter:on
     }
-    
+
     /**
      * Mocks the ReplayClient jwtRestTemplate field within the internal ReplayClient
      */
@@ -543,12 +543,12 @@ public class ReplayClientTest {
         RestTemplate replayRestTemplate = (RestTemplate) new DirectFieldAccessor(replayClient).getPropertyValue("jwtRestTemplate");
         mockServer = MockRestServiceServer.createServer(replayRestTemplate);
     }
-    
+
     @Configuration
     @Profile("ReplayClientTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class TestConfiguration {}
-    
+
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestApplication {
         public static void main(String[] args) {

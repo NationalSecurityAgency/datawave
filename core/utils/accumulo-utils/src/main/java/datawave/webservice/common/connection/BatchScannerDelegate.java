@@ -12,7 +12,7 @@ public class BatchScannerDelegate extends ScannerBaseDelegate implements BatchSc
     public BatchScannerDelegate(BatchScanner delegate) {
         super(delegate);
     }
-    
+
     @Override
     public final void setRanges(Collection<Range> ranges) {
         ((BatchScanner) delegate).setRanges(ranges);

@@ -11,11 +11,11 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 /**
- * 
+ *
  */
 public class IpV6AddressTypeTest {
     private static Logger log = Logger.getLogger(IpV6AddressTypeTest.class);
-    
+
     private final String[] in = { //
             "2001:0db8:0000:0000:0000:ff00:0042:8329", //
             "2003:DEAD:BEEF:4DAD:23:46:bb:101", //
@@ -35,16 +35,16 @@ public class IpV6AddressTypeTest {
             "::1", //
             "::", //
             "1::"
-    
+
     };
-    
+
     /**
      * Take a valid IpV6Address string, parse it to an IpV6Address instance, take the toString value from the IpV6Address and parse that into another
      * IpV6Address instance. Make sure that the toString for the original and reparsed addresses match.
      */
     @Test
     public void testIpNormalizer01() {
-        
+
         for (String address : in) {
             IpV6Address addr = IpV6Address.parse(address);
             log.debug(address + " parsed to: " + addr);
