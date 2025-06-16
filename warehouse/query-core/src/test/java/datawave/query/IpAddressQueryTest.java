@@ -19,6 +19,7 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.IpAddrFields;
+import datawave.query.testframework.IpAddressDataManager;
 import datawave.query.testframework.IpAddressDataType;
 import datawave.query.testframework.IpAddressDataType.IpAddrEntry;
 import datawave.query.testframework.IpAddressDataType.IpAddrField;
@@ -33,6 +34,7 @@ public class IpAddressQueryTest extends AbstractFunctionalQuery {
     @BeforeClass
     public static void filterSetup() throws Exception {
         FieldConfig fieldInfo = new IpAddrFields();
+        IpAddressDataManager.newInstance();
         DataTypeHadoopConfig dataType = new IpAddressDataType(IpAddrEntry.ipbase, fieldInfo);
         accumuloSetup.setData(FileType.CSV, dataType);
         client = accumuloSetup.loadTables(log);

@@ -10,7 +10,8 @@ import java.util.Map;
 
 import org.apache.commons.cli.Option;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of the UIDBuilder
@@ -20,7 +21,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBuilder<UID_TYPE> {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractUIDBuilder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractUIDBuilder.class);
 
     @Override
     public void configure(final Configuration config, final Option... options) {
@@ -82,21 +83,18 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
         String uidType = (null != option) ? option.getValue() : null;
         if (null == uidType) {
             uidType = HashUID.class.getSimpleName();
-            if (LOGGER.isDebugEnabled()) {
-                final String message = "Defaulting configuration to UID type " + HashUID.class.getSimpleName() + " due to unspecified value";
-                LOGGER.info(message);
-            }
+            LOGGER.info("Defaulting configuration to UID type {} due to unspecified value", HashUID.class.getSimpleName());
         } else if (SnowflakeUID.class.getSimpleName().equals(uidType)) {
             if (options.size() < 4) {
                 uidType = HashUID.class.getSimpleName();
-                final String message = "Unable to configure UID type " + SnowflakeUID.class.getSimpleName();
-                LOGGER.warn(message, new IllegalArgumentException("Insufficient number of 'Snowflake' options: " + options));
+                LOGGER.warn("Unable to configure UID type {}", SnowflakeUID.class.getSimpleName(),
+                                new IllegalArgumentException("Insufficient number of 'Snowflake' options: " + options));
             }
         } else if (!HashUID.class.getSimpleName().equals(uidType)) {
             final String invalidType = uidType;
             uidType = HashUID.class.getSimpleName();
-            final String message = "Defaulting configuration to UID type " + HashUID.class.getSimpleName() + " due to unspecified value";
-            LOGGER.warn(message, new IllegalArgumentException("Unrecognized UID type: " + invalidType));
+            LOGGER.warn("Defaulting configuration to UID type {} due to unspecified value", HashUID.class.getSimpleName(),
+                            new IllegalArgumentException("Unrecognized UID type: " + invalidType));
         }
         config.set(CONFIG_UID_TYPE_KEY, uidType, this.getClass().getName());
 
@@ -104,16 +102,12 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
         if (SnowflakeUID.class.getSimpleName().equals(uidType)) {
             int machineId = SnowflakeUIDBuilder.newMachineId(options);
             if (machineId >= 0) {
-                if (LOGGER.isDebugEnabled()) {
-                    final String message = "Setting configuration " + config.hashCode() + " to use " + SnowflakeUIDBuilder.class.getSimpleName()
-                                    + " based on UID type " + uidType + " and machine ID " + machineId;
-                    LOGGER.debug(message);
-                }
+                LOGGER.debug("Setting configuration {} to use {} based on UID type {} and machine ID {}", config.hashCode(),
+                                SnowflakeUIDBuilder.class.getSimpleName(), uidType, machineId);
                 config.setInt(CONFIG_MACHINE_ID_KEY, machineId);
             } else if (LOGGER.isDebugEnabled()) {
-                final String message = "Unable to set configuration to use " + SnowflakeUIDBuilder.class.getSimpleName() + " based on UID type " + uidType
-                                + " with machine ID " + machineId;
-                LOGGER.warn(message);
+                LOGGER.warn("Unable to set configuration to use {} based on UID type {} with machine ID {}", SnowflakeUIDBuilder.class.getSimpleName(), uidType,
+                                machineId);
                 config.set(CONFIG_UID_TYPE_KEY, HashUID.class.getSimpleName(), this.getClass().getName());
             }
         }

@@ -160,7 +160,7 @@ public class PushdownScheduler extends Scheduler {
             tableId = ctx.getTableId(tableName);
         }
 
-        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(config, settings, tableId));
+        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), getPushdownFunction());
 
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery()).setConfig(config);
@@ -189,6 +189,10 @@ public class PushdownScheduler extends Scheduler {
         session.updateIdentifier(config.getQuery().getId().toString());
 
         return session;
+    }
+
+    protected PushdownFunction getPushdownFunction() {
+        return new PushdownFunction(config, settings, tableId);
     }
 
     protected Iterator<QueryData> getQueryDataIterator() {

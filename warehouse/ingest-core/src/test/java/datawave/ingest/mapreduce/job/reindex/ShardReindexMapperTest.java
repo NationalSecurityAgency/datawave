@@ -72,10 +72,10 @@ import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexMapperTest extends EasyMockSupport {
     private Configuration conf;

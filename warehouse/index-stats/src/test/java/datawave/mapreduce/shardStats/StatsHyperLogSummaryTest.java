@@ -9,15 +9,15 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 public class StatsHyperLogSummaryTest {
-    private static final Logger log = Logger.getLogger(StatsHyperLogSummaryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(StatsHyperLogSummaryTest.class);
 
     private static final int MAX_UNIQUE_VALUES = 60;
     private static final int MIN_UNIQUE_VALUES = 20;
@@ -25,11 +25,6 @@ public class StatsHyperLogSummaryTest {
     private static final int MIN_DUP_VALUES = 15;
 
     private static final Random rVal = new Random(System.currentTimeMillis());
-
-    static {
-        Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsHyperLogSummaryTest.class).setLevel(Level.DEBUG);
-    }
 
     private int uniqueCount;
 
@@ -42,8 +37,8 @@ public class StatsHyperLogSummaryTest {
             Value value = new Value(bytes);
             final StatsHyperLogSummary after = new StatsHyperLogSummary(value);
 
-            log.debug("before(" + before + ")");
-            log.debug("after(" + after + ")");
+            log.debug("before( {} )", before);
+            log.debug("after( {} )", after);
 
             Assert.assertEquals(before, after);
             Assert.assertEquals(0, before.compareTo(after));
@@ -76,7 +71,7 @@ public class StatsHyperLogSummaryTest {
             }
         }
 
-        log.debug("unique strings added to hyper log(" + this.uniqueCount + ")");
+        log.debug("unique strings added to hyper log( {} )", this.uniqueCount);
 
         // add duplicates
         List<String> values = new ArrayList<>(unique);
