@@ -216,6 +216,7 @@
         <property name="resultQueueOfferTimeMillis" value="25"/>
         <property name="resultQueuePollTimeMillis" value="5"/>
         <property name="scanTimeoutMillis" value="10000"/>
+        <property name="allowPartialIntersections" value="true" />
         <property name="useQueryIterator" value="true" />
         <!-- execution hints and consistency levels -->
         <property name="searchScanHintTable" value="shard"/>
