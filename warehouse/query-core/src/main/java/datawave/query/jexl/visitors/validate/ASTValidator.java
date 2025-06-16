@@ -99,6 +99,7 @@ public class ASTValidator {
         isValid = true;
         reasons.clear();
 
+        // REMEMBER !!! ~SETH
         validateLineage(root);
         validateFlatten(root);
         validateJunctions(root);

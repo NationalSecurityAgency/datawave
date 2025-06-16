@@ -64,6 +64,7 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -156,6 +157,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected NumShardFinder numShardFinder;
 
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
+        log.setLevel(Level.ALL);
         this.config = config;
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;

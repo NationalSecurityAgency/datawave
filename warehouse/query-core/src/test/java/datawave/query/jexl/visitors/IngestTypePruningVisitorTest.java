@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -22,7 +23,9 @@ import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.index.lookup.RangeStream;
+import datawave.query.model.QueryModel;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -891,76 +894,124 @@ public class IngestTypePruningVisitorTest {
         test(query, expected, metadata);
     }
 
-    @Test
-    public void testAfterRangeStream() throws Exception {
-
-        /**
-         *
-         The query tree pre-RangeStream has invalid node parentage
-         The query tree post-RangeStream has invalid node parentage
-         The IngestTypePruningVisitor breaks node parentage during it's operation
-         Some unhandled edge case in the IngestTypePruningVisitor
-
-         */
-
-        // Set up range stream
-
-        AccumuloClient client = setupAccumulo();
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setClient(client);
-
-        String originalQuery = "(FOO == 'oreo') && ((filter:include(FOO, 'tardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) || (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) )";
-
-        //String originalQuery = "(FOO == 'oreo')";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-
-        config.setBeginDate(new Date(0));
-        config.setEndDate(new Date(System.currentTimeMillis()));
-
-        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
-        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
-        dataTypes.putAll("NUM", Sets.newHashSet(new NumberType()));
-
-        config.setQueryFieldsDatatypes(dataTypes);
-        config.setIndexedFields(dataTypes);
-
-        MockMetadataHelper helper = new MockMetadataHelper();
-        helper.setIndexedFields(dataTypes.keySet());
-
-        Set<Range> expectedRanges = Sets.newHashSet(makeShardedRange("20190314_1"));
-
-        for (QueryPlan queryPlan : getRangeStream(helper, config).streamPlans(script)) {
-            // verify the query plan dropped no terms
-            JexlNode queryTree = JexlASTHelper.parseJexlQuery(queryPlan.getQueryString());
-            PrintingVisitor.printQuery(queryTree);
-            JexlNode expectedTree = JexlASTHelper.parseJexlQuery(
-                    "(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
-            JexlNodeAssert.assertThat(queryTree).isEqualTo(expectedTree);
-
-            // verify the range
-            for (Range range : queryPlan.getRanges()) {
-               assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
-            }
-        }
-
-       assertTrue(expectedRanges.size() + " expected ranges not found in query plan: " + expectedRanges, expectedRanges.isEmpty());
-
-
-        //Now that the range stream is set up, we need to get the Query in jexl format and send that into the test() method.
-        // this is also a good spot to se what exactly is being produced from the range stream, because that can help us single out if the problem is there in here in ingesttyupepruiningcidistlsesasdf
-
-//        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
-
-        // doesn't matter how complex the nesting is, C term should drive pruning
-//        String jexlQueryAfterRangeStream = "( && (A == '1'))";
-//        test(jexlQueryAfterRangeStream, null);
+    private void test(String query, String expected) {
+        test(query, expected, typeMetadata);
     }
 
-        private RangeStream getRangeStream(MetadataHelper helper, ShardQueryConfiguration config) {
-            ScannerFactory scannerFactory = new ScannerFactory(config);
-            return new RangeStream(config, scannerFactory, helper);
-        }
+    private void test(String query, String expected, TypeMetadata metadata) {
+        ASTJexlScript internal = testInternalPrune(query, expected, metadata);
+        ASTJexlScript external = testExternalPrune(query, expected, metadata);
 
+        // validate and compare internal vs. external pruning
+        verifyEquality(internal, external);
+    }
+
+    private void testInternalPrune(String query, String expected) {
+        testInternalPrune(query, expected, typeMetadata);
+    }
+
+    private ASTJexlScript testInternalPrune(String query, String expected, TypeMetadata metadata) {
+        try {
+            ASTJexlScript script = parseQuery(query);
+            validator.isValid(script, "Internal Prune: query");
+            ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata);
+
+            log.info("input   : " + query);
+            log.info("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));
+            log.info("expected: " + expected);
+
+            // all pruned scripts must be valid
+            assertTrue(validator.isValid(pruned, "Internal Prune: result"));
+
+            // we might be expecting nothing as a result
+            if (expected == null) {
+                log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
+                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
+                return null;
+            }
+
+            ASTJexlScript expectedScript = parseQuery(expected);
+            assertTrue(validator.isValid(expectedScript, "Internal Prune: expected"));
+            verifyEquality(pruned, expectedScript);
+            return pruned;
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("test failed: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private void testExternalPrune(String query, String expected) {
+        testExternalPrune(query, expected, typeMetadata);
+    }
+
+    private void testExternalPrune(String query, String expected, Set<String> ingestTypes) {
+        testExternalPrune(query, expected, typeMetadata, ingestTypes);
+    }
+
+    private ASTJexlScript testExternalPrune(String query, String expected, TypeMetadata metadata) {
+        ASTJexlScript script = parseQuery(query);
+        Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(script, metadata);
+        return testExternalPrune(query, expected, metadata, ingestTypes);
+    }
+
+    private ASTJexlScript testExternalPrune(String query, String expected, TypeMetadata metadata, Set<String> ingestTypes) {
+        try {
+            ASTJexlScript script = parseQuery(query);
+            assertTrue(validator.isValid(script, "External Prune: query"));
+
+            if (ingestTypes == null) {
+                ingestTypes = IngestTypeVisitor.getIngestTypes(script, metadata);
+            }
+
+            if (ingestTypes.contains(IGNORED_TYPE)) {
+                return parseQuery(expected);
+            }
+
+            ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata, ingestTypes);
+
+            log.info("input   : " + query);
+            log.info("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));
+            log.info("expected: " + expected);
+
+            // all pruned scripts must be valid
+            assertTrue(validator.isValid(pruned, "External Prune: result"));
+
+            // we might be expecting nothing as a result
+            if (expected == null) {
+                log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
+                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
+                return null;
+            }
+
+            ASTJexlScript expectedScript = parseQuery(expected);
+            assertTrue(validator.isValid(expectedScript, "External Prune: expected"));
+            verifyEquality(pruned, expectedScript);
+            return pruned;
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("test failed: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private ASTJexlScript parseQuery(String query) {
+        try {
+            return JexlASTHelper.parseAndFlattenJexlQuery(query);
+        } catch (ParseException e) {
+            fail("Failed to parse query: " + query);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void verifyEquality(ASTJexlScript script, ASTJexlScript expected) {
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expected, script);
+        assertTrue("Jexl tree comparison failed with reason: " + comparison.getReason(), comparison.isEqual());
+    }
+
+    // --- THE SETH ZONE ---
+
+    // Helper Methods
     public static AccumuloClient setupAccumulo() throws Exception {
 
         final String SHARD_INDEX = "shardIndex";
@@ -1314,120 +1365,198 @@ public class IngestTypePruningVisitorTest {
 
         return client;
     }
-
-    private void test(String query, String expected) {
-        test(query, expected, typeMetadata);
+    private RangeStream getRangeStream(MetadataHelper helper, ShardQueryConfiguration config) {
+        ScannerFactory scannerFactory = new ScannerFactory(config);
+        return new RangeStream(config, scannerFactory, helper);
     }
 
-    private void test(String query, String expected, TypeMetadata metadata) {
-        ASTJexlScript internal = testInternalPrune(query, expected, metadata);
-        ASTJexlScript external = testExternalPrune(query, expected, metadata);
+    // Seth's first try
+    @Test
+    public void testAfterRangeStream() throws Exception {
 
-        // validate and compare internal vs. external pruning
-        verifyEquality(internal, external);
-    }
+        /**
+         *
+         The query tree pre-RangeStream has invalid node parentage
+         The query tree post-RangeStream has invalid node parentage
+         The IngestTypePruningVisitor breaks node parentage during it's operation
+         Some unhandled edge case in the IngestTypePruningVisitor
 
-    private void testInternalPrune(String query, String expected) {
-        testInternalPrune(query, expected, typeMetadata);
-    }
+         */
+        //( (NAME:value) OR (NAME:value) OR (AGE:value AND AGE:value) OR (HEIGHT:regex or HEIGHT:regex) ) AND (#INTERSECTS() OR #INTERSECTS())
+        // Set up range stream
 
-    private ASTJexlScript testInternalPrune(String query, String expected, TypeMetadata metadata) {
-        try {
-            ASTJexlScript script = parseQuery(query);
-            validator.isValid(script, "Internal Prune: query");
-            ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata);
+        AccumuloClient client = setupAccumulo();
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setClient(client);
 
-            log.info("input   : " + query);
-            log.info("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));
-            log.info("expected: " + expected);
+        String originalQuery = "(FOO == 'oreo') && ((filter:include(FOO, 'tardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) || (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) )";
 
-            // all pruned scripts must be valid
-            assertTrue(validator.isValid(pruned, "Internal Prune: result"));
+        //String originalQuery = "(FOO == 'oreo')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-            // we might be expecting nothing as a result
-            if (expected == null) {
-                log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
-                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
-                return null;
+        config.setBeginDate(new Date(0));
+        config.setEndDate(new Date(System.currentTimeMillis()));
+
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("NUM", Sets.newHashSet(new NumberType()));
+
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+
+        Set<Range> expectedRanges = Sets.newHashSet(makeShardedRange("20190314_1"));
+
+        for (QueryPlan queryPlan : getRangeStream(helper, config).streamPlans(script)) {
+            // verify the query plan dropped no terms
+            JexlNode queryTree = JexlASTHelper.parseJexlQuery(queryPlan.getQueryString());
+            PrintingVisitor.printQuery(queryTree);
+            JexlNode expectedTree = JexlASTHelper.parseJexlQuery(
+                    "(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
+            JexlNodeAssert.assertThat(queryTree).isEqualTo(expectedTree);
+
+            // verify the range
+            for (Range range : queryPlan.getRanges()) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
             }
-
-            ASTJexlScript expectedScript = parseQuery(expected);
-            assertTrue(validator.isValid(expectedScript, "Internal Prune: expected"));
-            verifyEquality(pruned, expectedScript);
-            return pruned;
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("test failed: " + e.getMessage());
         }
-        return null;
+
+        assertTrue(expectedRanges.size() + " expected ranges not found inquery plan: " + expectedRanges, expectedRanges.isEmpty());
+
+
+        //Now that the range stream is set up, we need to get the Query in jexl format and send that into the test() method.
+        // this is also a good spot to se what exactly is being produced from the range stream, because that can help us single out if the problem is there in here in ingesttyupepruiningcidistlsesasdf
+
+        String jexlQueryAfterRangeStream = JexlStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(getRangeStream(helper, config).streamPlans(script).iterator().next().getQueryString()));
+        System.out.println("Post Range Stream Query: " + jexlQueryAfterRangeStream);
+        //assertEquals(jexlQueryAfterRangeStream, originalQuery);
+
+        boolean validLineage = JexlASTHelper.validateLineage(JexlASTHelper.parseJexlQuery(getRangeStream(helper, config).streamPlans(script).iterator().next().getQueryString()), false);
+        System.out.println("IS valid lineage? " + validLineage);
     }
 
-    private void testExternalPrune(String query, String expected) {
-        testExternalPrune(query, expected, typeMetadata);
+    // Laura's test
+    @Test
+    public void testPruneFirstTermOfJunction() {
+        // prune C term
+        String query = "A == '1' && (B == '2' || C == '3')";
+        String expected = "A == '1' && B == '2'";
+        test(query, expected);
+
+        // prune C term
+        query = "((B == '2' || C == '3') && A == '1')";
+        expected = "B == '2' && A == '1'";
+        test(query, expected);
+
+        test("( !(C =='3') && A == '1')", "A == '1'");
+        test("!(C =='3') && A == '1'", "A == '1'");
+
     }
 
-    private void testExternalPrune(String query, String expected, Set<String> ingestTypes) {
-        testExternalPrune(query, expected, typeMetadata, ingestTypes);
+    // Post-talk tests
+    @Test
+    public void testForQueryModelExpansionFailure() throws ParseException, InvalidQueryTreeException {
+
+        // Create a query model that has exactly the mappings we need to test edge cases.
+        QueryModel model = new QueryModel();
+
+        // Forward Mappings
+        model.addTermToModel("A", "");
+        model.addTermToModel("B", "B");
+        model.addTermToModel("C", "C1");
+        model.addTermToModel("C", "C2");
+
+        // Reverse Mappings (Mirror of Forward Mappings)
+        model.addTermToReverseModel("", "A");
+        model.addTermToReverseModel("B", "B");
+        model.addTermToReverseModel("C1", "C");
+        model.addTermToReverseModel("C2", "C");
+
+        // TODO: Figure out what ModelFieldAttributes means. "AG" was used as a term in the model.
+        // model.setModelFieldAttribute("AG", QueryModel.LENIENT);
+
+        HashSet<String> allFields = new HashSet<>();
+        allFields.add("A");
+        allFields.add("B");
+        allFields.add("C");
+
+        String original = "((A == 'Ants' || A == 'Apes' || (B == 'Bees' && B('Birds')) || (C == 'Cats' || C == 'Camel')) && (INTERSECTS() || INTERSECTS()))";
+
+        ASTJexlScript parsedAndFlattenedJexl = JexlASTHelper.parseAndFlattenJexlQuery(original);
+
+        System.out.println(" --- Original Jexl Query --- ");
+        PrintingVisitor.printQuery(original);
+
+        System.out.println(" --- Parsed and Flattened Jexl Query --- ");
+        PrintingVisitor.printQuery(parsedAndFlattenedJexl);
+
+        validator.isValid(parsedAndFlattenedJexl);
+
     }
 
-    private ASTJexlScript testExternalPrune(String query, String expected, TypeMetadata metadata) {
-        ASTJexlScript script = parseQuery(query);
-        Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(script, metadata);
-        return testExternalPrune(query, expected, metadata, ingestTypes);
-    }
+    @Test
+    public void testExpansionPruning() throws ParseException, InvalidQueryTreeException {
 
-    private ASTJexlScript testExternalPrune(String query, String expected, TypeMetadata metadata, Set<String> ingestTypes) {
-        try {
-            ASTJexlScript script = parseQuery(query);
-            assertTrue(validator.isValid(script, "External Prune: query"));
+        // Create a query model that has exactly the mappings we need to test edge cases.
+        QueryModel model = new QueryModel();
 
-            if (ingestTypes == null) {
-                ingestTypes = IngestTypeVisitor.getIngestTypes(script, metadata);
-            }
+        // Forward Mappings
+        model.addTermToModel("A", "");
+        model.addTermToModel("B", "B");
+        model.addTermToModel("C", "C1");
+        model.addTermToModel("C", "C2");
 
-            if (ingestTypes.contains(IGNORED_TYPE)) {
-                return parseQuery(expected);
-            }
+        // Reverse Mappings (Mirror of Forward Mappings)
+        model.addTermToReverseModel("", "A");
+        model.addTermToReverseModel("B", "B");
+        model.addTermToReverseModel("C1", "C");
+        model.addTermToReverseModel("C2", "C");
 
-            ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata, ingestTypes);
+        // TODO: Figure out what ModelFieldAttributes means. "AG" was used as a term in the model.
+        // model.setModelFieldAttribute("AG", QueryModel.LENIENT);
 
-            log.info("input   : " + query);
-            log.info("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));
-            log.info("expected: " + expected);
+        HashSet<String> allFields = new HashSet<>();
+        allFields.add("A");
+        allFields.add("B");
+        allFields.add("C");
 
-            // all pruned scripts must be valid
-            assertTrue(validator.isValid(pruned, "External Prune: result"));
+        // String original = "A == 'Ants' || A == 'Apes' || (B == 'Bees' && B('Birds')) || (C == 'Cats' || C == 'Camel')";
+        // String original = "A == '1' || A == '2' || (B == '2' && B('3')) || (C == '3' || C == '4')";
 
-            // we might be expecting nothing as a result
-            if (expected == null) {
-                log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
-                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
-                return null;
-            }
 
-            ASTJexlScript expectedScript = parseQuery(expected);
-            assertTrue(validator.isValid(expectedScript, "External Prune: expected"));
-            verifyEquality(pruned, expectedScript);
-            return pruned;
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("test failed: " + e.getMessage());
-        }
-        return null;
-    }
+        // These failures are (I believe) from not using TreeFlatteningRebuildingVisitor
+        // String original = "   A == '1'";                                         // Works fine
+        // String original = "  (A == '1')";                                        // Works fine
+        // String original = "   A == '1' || A == '2' || B == '2'";                 // Works fine
+        // String original = "  (A == '1' || B == '1')";                            // Works fine
+        // String original = "   A == '1' || A == '2' || (B == '2')";               // Internal Prune: query produced an invalid query tree: [RefExpr]
+        // String original = "   A == '1' || A == '2' || C == '3' || C == '4'";     // Works fine
+        // String original = "   A == '1' || A == '2' || (C == '3') || C == '4'";   // Internal Prune: query produced an invalid query tree: [RefExpr]
+        // String original = "(A == '1' || (B == '1'))";                            // Internal Prune: query produced an invalid query tree: [RefExpr]
+        //String original = "(B == '1')";                                           // Works fine
+        //String original = "(A == '1' || !(B == '1'))";                            // Works fine
+        String original = "(A == '1' && (B == '1'))";                               // Internal Prune: query produced an invalid query tree: [RefExpr]
 
-    private ASTJexlScript parseQuery(String query) {
-        try {
-            return JexlASTHelper.parseAndFlattenJexlQuery(query);
-        } catch (ParseException e) {
-            fail("Failed to parse query: " + query);
-            throw new RuntimeException(e);
-        }
-    }
+        // For some reason, "parseAndFlatten" isn't removing the parentheses around the B == '1'.
+        // Maybe I'm missing something, but for now it seems like the flattening isn't working.
+        // FIX: see TreeFlatteningRebuildingVisitor. pAFJQ doesn't rebuild.
+        ASTJexlScript parsedAndFlattenedJexl = JexlASTHelper.parseAndFlattenJexlQuery(original);
 
-    private void verifyEquality(ASTJexlScript script, ASTJexlScript expected) {
-        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expected, script);
-        assertTrue("Jexl tree comparison failed with reason: " + comparison.getReason(), comparison.isEqual());
+        ASTJexlScript treeFlattenedJexl = TreeFlatteningRebuildingVisitor.flattenAll(parsedAndFlattenedJexl);
+
+        System.out.println(" --- Original Jexl Query --- ");
+        PrintingVisitor.printQuery(original);
+
+        System.out.println(" --- Parsed and Flattened Jexl Query --- ");
+        PrintingVisitor.printQuery(parsedAndFlattenedJexl);
+
+        System.out.println(" --- Tree-Flattened Jexl Query --- ");
+        PrintingVisitor.printQuery(treeFlattenedJexl);
+
+        QueryModelVisitor.applyModel(treeFlattenedJexl, model, allFields);
+        test(treeFlattenedJexl.toString(), "SUCCESS");
     }
 
 }

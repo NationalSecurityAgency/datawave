@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import datawave.query.jexl.visitors.PrintingVisitor;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -539,8 +540,8 @@ public class RangeStreamTest {
 
     @Test
     public void testShardAndDaysHints6() throws Exception {
-        String originalQuery = "(FOO == 'oreo') && ((filter:include(FOO, 'tardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) || (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) )";
-
+        //String originalQuery = "(FOO == 'oreo') && ((filter:include(FOO, 'tardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) || (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) )";
+        String originalQuery = "(FOO == 'oreo')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
         config.setBeginDate(new Date(0));
@@ -561,6 +562,7 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : getRangeStream(helper).streamPlans(script)) {
             // verify the query plan dropped no terms
             JexlNode queryTree = JexlASTHelper.parseJexlQuery(queryPlan.getQueryString());
+            PrintingVisitor.printQuery(queryTree);
             JexlNode expectedTree = JexlASTHelper.parseJexlQuery(
                             "(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
             JexlNodeAssert.assertThat(queryTree).isEqualTo(expectedTree);

@@ -697,6 +697,8 @@ public abstract class GroupingTest {
         assertGroups();
     }
 
+    // END TO END TEST !!! ~SETH
+
     /**
      * Verify that specifying a single field via the lucene function works correctly.
      */

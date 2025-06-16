@@ -21,6 +21,8 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
 
+// !!! ~SETH for large testing with ARchilion
+
 /**
  * write data in accumulo for testing of the limit.fields function
  */
