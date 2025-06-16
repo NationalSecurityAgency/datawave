@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class SplitBasedHashPartitionerTest {
@@ -27,8 +28,8 @@ public class SplitBasedHashPartitionerTest {
         final String testFilePath = SplitBasedHashPartitionerTest.class.getClassLoader().getResource(TEST_FILE_LOCATION).getPath();
 
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
-        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, testFilePath.substring(0, testFilePath.lastIndexOf('/')));
-        conf.set(TableSplitsCache.SPLITS_CACHE_FILE, "full_splits.txt");
+        conf.set(SplitsConstants.SPLITS_CACHE_DIR, testFilePath.substring(0, testFilePath.lastIndexOf('/')));
+        conf.set(SplitsConstants.SPLITS_CACHE_FILE, "full_splits.txt");
 
         TableSplitsCache.getCurrentCache(conf).clear();
 

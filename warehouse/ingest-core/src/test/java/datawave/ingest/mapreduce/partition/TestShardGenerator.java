@@ -17,6 +17,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.util.time.DateHelper;
 
@@ -43,7 +44,7 @@ public class TestShardGenerator {
         registerSomeTServers();
         Map<Text,String> locations = simulateTabletAssignments(tableNames);
         // adding sorting here since it now happens when we generate the splits file
-        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
+        conf.set(SplitsConstants.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
         TableSplitsCache.getCurrentCache(conf).clear();
         Map<Text,String> sortedLocations = TableSplitsCache.getCurrentCache(conf).reverseSortByShardIds(locations);
         String tmpDirectory = tmpDir + "/";
@@ -69,7 +70,7 @@ public class TestShardGenerator {
         // constructor that takes a created list of locations
         String tmpDirectory = tmpDir + "/";
         Path splitsPath = new Path(tmpDir.getAbsolutePath() + "/all-splits.txt");
-        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
+        conf.set(SplitsConstants.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
         Map<Text,String> sortedLocations = TableSplitsCache.getCurrentCache(conf).reverseSortByShardIds(locations);
 
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
@@ -80,7 +81,7 @@ public class TestShardGenerator {
                 }
             }
         }
-        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
+        conf.set(SplitsConstants.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
     }
 
     // create splits for all the shards from today back NUM_DAYS,

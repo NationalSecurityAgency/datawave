@@ -374,14 +374,6 @@ public class MultiRFileOutputFormatterTest {
             }
 
             @Override
-            protected Map<Text,String> getShardLocations(String tableName) throws IOException {
-                Map<Text,String> locations = new HashMap<>();
-                locations.put(new Text("20100101_1"), "server1");
-                locations.put(new Text("20100101_2"), "server2");
-                return locations;
-            }
-
-            @Override
             protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) {
                 filenames.add(filename);
                 return new SizeTrackingWriter(new FileSKVWriter() {

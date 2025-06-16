@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.util.TableName;
@@ -41,8 +42,8 @@ public class MultiTableRangePartitionerTest {
         String filename = "trimmed_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         Assert.assertEquals(5, getPartition());
     }
 
@@ -51,8 +52,8 @@ public class MultiTableRangePartitionerTest {
         String filename = "trimmed_empty_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         getPartition();
     }
 

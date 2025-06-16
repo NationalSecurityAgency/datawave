@@ -96,6 +96,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected Configuration conf;
     protected Map<String,ConfigurationCopy> tableConfigs;
     protected Set<String> tableIds = null;
+    protected SplitsCache splitsCache;
     protected long maxRFileSize = 0;
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
@@ -435,10 +436,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     private SafeFileOutputCommitter _committer = null;
 
     @Override
-    public synchronized OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException {
-        if (_committer == null) {
-            Path output = getOutputPath(context);
-            _committer = new SafeFileOutputCommitter(output, context);
+    public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException {
+        synchronized (this) {
+            if (_committer == null) {
+                Path output = getOutputPath(context);
+                _committer = new SafeFileOutputCommitter(output, context);
+            }
         }
         return _committer;
     }
@@ -451,6 +454,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         FileOutputCommitter committer = (FileOutputCommitter) getOutputCommitter(context);
         workDir = committer.getWorkPath();
         conf = context.getConfiguration();
+        splitsCache = SplitsCache.getInstance(conf);
 
         setTableIdsAndConfigs();
 
@@ -621,12 +625,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     if (generateMapFilePerShardLocation) {
                         // Look up the shard location (tablet server serving shard ID rowKey)
                         // If we don't have a location, then just use the rowKey itself.
-                        Map<Text,String> shardLocs = getShardLocations(tableName);
-                        shardLocation = shardLocs.containsKey(rowKey) ? shardLocs.get(rowKey) : null;
-                        if (shardLocation == null) {
-                            // in this case we have a shard id that has no split. Lets put this in one "extra" file
-                            shardLocation = "extra";
-                        }
+                        // in the case we have a shard id that has no split. Lets put this in one "extra" file
+                        shardLocation = splitsCache.getExactLocation(tableName, rowKey, () -> "extra");
                     }
                     // Combine table name with shard location so that we end up
                     // with all of the shard map files under directories that can be
@@ -651,28 +651,5 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 return writer;
             }
         };
-    }
-
-    /**
-     * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
-     * which that shard is assigned.
-     *
-     * @param tableName
-     *            the table name
-     * @return a mapping of the shard ids and tablet server
-     * @throws IOException
-     *             if there is an issue with read or write
-     */
-    protected Map<Text,String> getShardLocations(String tableName) throws IOException {
-        // Create the Map of sharded table name to [shardId -> server]
-        if (this.tableShardLocations == null) {
-            this.tableShardLocations = new HashMap<>();
-        }
-
-        if (null == this.tableShardLocations.get(tableName)) {
-            this.tableShardLocations.put(tableName, SplitsFile.getSplitsAndLocations(conf, tableName));
-        }
-
-        return tableShardLocations.get(tableName);
     }
 }

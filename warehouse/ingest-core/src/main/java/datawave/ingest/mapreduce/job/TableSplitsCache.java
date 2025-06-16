@@ -1,5 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.SplitsConstants.SPLITS_CACHE_DIR;
+import static datawave.ingest.mapreduce.job.SplitsConstants.SPLITS_CACHE_FILE;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -51,14 +54,12 @@ import datawave.util.StringUtils;
 public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     public static final String REFRESH_SPLITS = "datawave.ingest.refresh.splits";
-    public static final String SPLITS_CACHE_DIR = "datawave.ingest.splits.cache.dir";
-    public static final String SPLITS_CACHE_FILE = "datawave.ingest.splits.cache.fileName";
+    public static final String DEFAULT_SPLITS_CACHE_FILE = "all-splits.txt";
 
-    public static final String MAX_SPLIT_DECREASE = "datawave.ingest.splits.max.decrease.number";
-    public static final String MAX_SPLIT_PERCENTAGE_DECREASE = "datawave.ingest.splits.max.decrease.percentage";
+    private static final String MAX_SPLIT_DECREASE = "datawave.ingest.splits.max.decrease.number";
+    private static final String MAX_SPLIT_PERCENTAGE_DECREASE = "datawave.ingest.splits.max.decrease.percentage";
     private static final Logger log = Logger.getLogger(TableSplitsCache.class);
     private static final String DEFAULT_SPLITS_CACHE_DIR = "/data/splitsCache";
-    public static final String DEFAULT_SPLITS_CACHE_FILE = "all-splits.txt";
     private static final short DEFAULT_MAX_SPLIT_DECREASE = 42;
     private static final double DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE = .5;
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
@@ -407,7 +408,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
-    public List<Text> getSplits(String table) throws IOException {
+    List<Text> getSplits(String table) throws IOException {
         if (this.splits.isEmpty()) {
             read();
         }
@@ -425,7 +426,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
-    public List<Text> getSplits(String table, int maxSplits) throws IOException {
+    List<Text> getSplits(String table, int maxSplits) throws IOException {
         return trimSplits(getSplits(table), maxSplits);
     }
 
@@ -434,7 +435,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
-    public Map<String,List<Text>> getSplits() throws IOException {
+    Map<String,List<Text>> getSplits() throws IOException {
         if (this.splits.isEmpty())
             read();
         return Collections.unmodifiableMap(splits);
@@ -445,7 +446,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @return map of splits to tablet locations for the table
      * @throws IOException
      */
-    public Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException {
+    Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException {
         if (this.splitLocations.isEmpty())
             read();
         if (this.splitLocations.containsKey(table)) {
