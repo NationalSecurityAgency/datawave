@@ -189,7 +189,7 @@
     </bean>
 
     <bean id="IncludeExcludeIndexOnlyFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexOnlyFieldsRule">
-        <property name="name" value="Check #INCLUDE and #EXCLUDE for Indexed Fields"/>
+        <property name="name" value="Check #INCLUDE and #EXCLUDE for Index Only Fields"/>
     </bean>
 
     <bean id="InvalidQuoteRule" scope="prototype" class="datawave.query.rules.InvalidQuoteRule">
