@@ -2,7 +2,10 @@ package datawave.edge.model;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -20,7 +23,8 @@ public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
     /** required bean name */
     static final String TRANSFORM_MODEL_BEAN = "transformFieldMap";
 
-    private static Logger log = Logger.getLogger(DefaultEdgeModelFieldsFactory.class);
+    private static Marker fatal = MarkerFactory.getMarker("FATAL");
+    private static Logger log = LoggerFactory.getLogger(DefaultEdgeModelFieldsFactory.class);
 
     @Override
     public EdgeModelFields createFields() {
@@ -44,9 +48,9 @@ public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
             fields.setKeyUtilFieldMap((Map<String,String>) context.getBean(KEYUTIL_MODEL_BEAN));
             fields.setTransformFieldMap((Map<String,String>) context.getBean(TRANSFORM_MODEL_BEAN));
         } catch (Throwable t) {
-            log.fatal("Edge model configuration not loaded!! Edge queries will fail until this issue is corrected.");
-            log.fatal(String.format("Ensure that the Spring config file '%s' is on the classpath and contains bean names '%s', '%s', and '%s'",
-                            EDGE_MODEL_CONTEXT, BASE_MODEL_BEAN, KEYUTIL_MODEL_BEAN, TRANSFORM_MODEL_BEAN), t);
+            log.error(fatal, "Edge model configuration not loaded!! Edge queries will fail until this issue is corrected.");
+            log.error(fatal, "Ensure that the Spring config file {} is on the classpath and contains bean names {}, {}, and {}", EDGE_MODEL_CONTEXT,
+                            BASE_MODEL_BEAN, KEYUTIL_MODEL_BEAN, TRANSFORM_MODEL_BEAN, t);
         } finally {
             if (context != null) {
                 context.close();

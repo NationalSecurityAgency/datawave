@@ -3,7 +3,8 @@ package datawave.ingest.util.cache;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -20,7 +21,7 @@ import datawave.ingest.util.cache.watch.Reloadable;
  */
 public class ReloadableCacheBuilder<K extends Reloadable<?>,V> extends Loader<K,V> {
 
-    private static final Logger log = Logger.getLogger(ReloadableCacheBuilder.class);
+    private static final Logger log = LoggerFactory.getLogger(ReloadableCacheBuilder.class);
 
     public ReloadableCacheBuilder() {
 
@@ -48,7 +49,7 @@ public class ReloadableCacheBuilder<K extends Reloadable<?>,V> extends Loader<K,
             try {
                 build(key);
             } catch (Exception e) {
-                log.error(e);
+                log.error("", e);
             }
         }
 
@@ -66,21 +67,20 @@ public class ReloadableCacheBuilder<K extends Reloadable<?>,V> extends Loader<K,
     protected void build(K key) throws Exception {
 
         if (null == key) {
-            if (log.isTraceEnabled())
-                log.trace("Rebuild all");
+            log.trace("Rebuild all");
             Collection<K> watchers = entryCache.keySet();
             for (K keyWatcher : watchers) {
                 Reloadable<V> watcher = (Reloadable<V>) keyWatcher;
 
-                if (log.isTraceEnabled())
-                    log.trace("rebuild " + watcher + " ? " + watcher.hasChanged());
+                if (log.isTraceEnabled()) {
+                    log.trace("rebuild {} ? {}", watcher, watcher.hasChanged());
+                }
                 if (watcher.hasChanged()) {
                     synchronized (entryCache) {
                         if (log.isTraceEnabled())
-                            log.trace("rebuild " + watcher + " ? " + watcher.hasChanged() + " " + watcher.reload());
+                            log.trace("rebuild {} ? {} {} ", watcher, watcher.hasChanged(), watcher.reload());
 
                         entryCache.put(keyWatcher, watcher.reload());
-
                     }
                 }
             }
