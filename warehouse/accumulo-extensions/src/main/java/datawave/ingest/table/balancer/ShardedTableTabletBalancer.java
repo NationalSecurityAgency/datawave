@@ -15,7 +15,8 @@ import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A custom tablet balancer designed to work with a date-partitioned (sharded) table. This balancer is based on the {@link GroupBalancer}, which spreads tablets
@@ -33,7 +34,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
     public static final int MAX_MIGRATIONS_DEFAULT = 10000;
 
-    private static final Logger log = Logger.getLogger(ShardedTableTabletBalancer.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardedTableTabletBalancer.class);
     private Map<TabletId,TabletServerId> tabletLocationCache;
     private Function<TabletId,String> partitioner;
     private TableId tableId;
@@ -88,12 +89,11 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
                 try {
                     maxMigrations = Integer.parseInt(maxMigrationsProp);
                 } catch (Exception e) {
-                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to "
-                                    + maxMigrations);
+                    log.error("Unable to parse {} value ( {} ) as an integer. Defaulting to {}", SHARDED_MAX_MIGRATIONS, maxMigrationsProp, maxMigrations);
                 }
             }
         } catch (Exception e) {
-            log.warn("Failed to get " + SHARDED_MAX_MIGRATIONS + ".  Defaulting to " + maxMigrations, e);
+            log.warn("Failed to get {}. Defaulting to {}", SHARDED_MAX_MIGRATIONS, maxMigrations, e);
         }
         return maxMigrations;
     }
@@ -204,13 +204,13 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
             if (endRow == null)
                 endRow = extent.getPrevEndRow();
             if (endRow == null) {
-                log.warn("Attempting to retrieve date from empty extent " + extent + ". Is your sharded table pre-split?");
+                log.warn("Attempting to retrieve date from empty extent {}. Is your sharded table pre-split?", extent);
                 return "null".getBytes();
             } else {
                 int idx = endRow.find("_");
                 if (idx <= 0) {
                     idx = endRow.getLength();
-                    log.warn("Extent " + extent + " does not conform to sharded date scheme yyyyMMdd_num");
+                    log.warn("Extent {} does not conform to sharded date scheme yyyyMMdd_num", extent);
                 }
                 return Arrays.copyOf(endRow.getBytes(), idx);
             }
@@ -221,7 +221,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
             if (endRow == null)
                 endRow = extent.getPrevEndRow();
             if (endRow == null) {
-                log.warn("Attempting to compare date from empty extent " + extent + ". Is your sharded table pre-split?");
+                log.warn("Attempting to compare date from empty extent {}. Is your sharded table pre-split?", extent);
                 return date == null || date.length == 0;
             } else {
                 return WritableComparator.compareBytes(endRow.getBytes(), 0, date.length, date, 0, date.length) == 0;

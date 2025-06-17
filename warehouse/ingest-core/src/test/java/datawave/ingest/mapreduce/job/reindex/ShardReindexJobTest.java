@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.util.AccumuloUtil;
-import datawave.ingest.mapreduce.job.util.RFileUtil;
+import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexJobTest extends EasyMockSupport {
 

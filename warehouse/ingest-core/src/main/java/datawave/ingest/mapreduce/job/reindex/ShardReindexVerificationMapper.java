@@ -20,8 +20,8 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.protobuf.TermWeight;
+import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Value> {
     private static final Logger log = Logger.getLogger(ShardReindexVerificationMapper.class);
