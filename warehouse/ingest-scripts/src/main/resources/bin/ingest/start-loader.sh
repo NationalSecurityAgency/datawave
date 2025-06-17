@@ -104,8 +104,8 @@ if [[ ${TOTAL} -gt 0 ]]; then
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
           portUsed=$(ps -eaf | grep "[b]ulkIngestMap" | grep $SHUTDOWN_PORT)
       done
-      echo starting map file loader with log file map-file-loader.$LOADER$x.log
-      $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >> $LOG_DIR/map-file-loader.$LOADER$x.log 2>&1 &
+      echo starting map file loader with log file map-file-loader.$(date +%H%M%S)-$LOADER-$x.log
+      $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >> $LOG_DIR/map-file-loader.$(date +%H%M%S)-$LOADER$x.log 2>&1 &
       SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
       portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
       portUsed=$(ps -eaf | grep "[b]ulkIngestMap" | grep $SHUTDOWN_PORT)
