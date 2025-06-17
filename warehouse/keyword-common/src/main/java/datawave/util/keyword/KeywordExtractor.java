@@ -2,7 +2,6 @@ package datawave.util.keyword;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -61,8 +60,10 @@ public class KeywordExtractor {
 
         parseOptions(options);
 
+        this.language = language;
         YakeLanguage yakeLanguage = YakeLanguage.Registry.find(language);
-        this.language = yakeLanguage.getLanguageName().toUpperCase(Locale.ROOT);
+
+        logger.debug("Input language was {}, resolved language for YAKE extraction is {}", this.language, yakeLanguage.getLanguageName());
 
         //@formatter:off
         yakeKeywordExtractor = new YakeKeywordExtractor.Builder()
