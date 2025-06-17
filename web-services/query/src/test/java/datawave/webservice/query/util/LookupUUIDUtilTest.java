@@ -49,6 +49,7 @@ public class LookupUUIDUtilTest {
         expect(configuration.getUuidTypes()).andReturn(Collections.singletonList(new UUIDType("ID", "LuceneUUIDEventQuery", 28)));
         expect(configuration.getBeginDate()).andReturn("20230101");
         expect(configuration.getBatchLookupUpperLimit()).andReturn(10);
+        expect(configuration.getTagCloudLookupUpperLimit()).andReturn(50);
         MultivaluedMap<String,String> defaultParams = new MultivaluedMapImpl<>();
         defaultParams.putSingle("foo", "bar");
         defaultParams.putSingle("foo2", "default");
