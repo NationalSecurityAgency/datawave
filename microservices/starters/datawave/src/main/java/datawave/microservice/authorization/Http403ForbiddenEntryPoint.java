@@ -16,7 +16,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
  */
 public class Http403ForbiddenEntryPoint implements AuthenticationEntryPoint {
     private static final Logger logger = LoggerFactory.getLogger(Http403ForbiddenEntryPoint.class);
-    
+
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         if (logger.isDebugEnabled()) {

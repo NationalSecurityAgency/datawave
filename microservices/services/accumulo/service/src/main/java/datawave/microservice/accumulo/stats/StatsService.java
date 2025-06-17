@@ -41,17 +41,17 @@ import datawave.webservice.response.StatsResponse;
 @Service
 @ConditionalOnProperty(name = "accumulo.stats.enabled", havingValue = "true", matchIfMissing = true)
 public class StatsService implements InitializingBean {
-    
+
     @Autowired
     private StatsProperties statsProperties;
-    
+
     private String monitorStatsUri = null;
-    
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final AccumuloClient warehouseClient;
     private final RestTemplate restTemplate;
     private final String namespace;
-    
+
     @Autowired
     //@formatter:off
     public StatsService(
@@ -62,7 +62,7 @@ public class StatsService implements InitializingBean {
         this.namespace = getNamespace();
         //@formatter:on
     }
-    
+
     private String getNamespace() {
         String namespace = "";
         for (Annotation a : StatsResponse.class.getPackage().getAnnotations()) {
@@ -73,7 +73,7 @@ public class StatsService implements InitializingBean {
         }
         return namespace;
     }
-    
+
     public synchronized void discoverAccumuloMonitor() {
         try {
             monitorStatsUri = String.format(statsProperties.getMonitorStatsUriTemplate(), new AccumuloMonitorLocator().getHostPort(warehouseClient));
@@ -81,31 +81,31 @@ public class StatsService implements InitializingBean {
             log.error("Failed to discover Accumulo monitor location", e);
         }
     }
-    
+
     @Override
     public void afterPropertiesSet() throws Exception {
         discoverAccumuloMonitor();
     }
-    
+
     /**
      * Retrieves statistics from the Accumulo monitor
      *
      * @return {@link StatsResponse}
      */
     public synchronized StatsResponse getStats() {
-        
+
         // Keep re-trying for the stats URL if we couldn't locate it at startup
         if (this.monitorStatsUri == null) {
             discoverAccumuloMonitor();
         }
-        
+
         StatsResponse response = new StatsResponse();
-        
+
         try {
             log.debug("Submitting Accumulo monitor request to {}", monitorStatsUri);
-            
+
             ResponseEntity<String> monitorResponse = restTemplate.exchange(monitorStatsUri, HttpMethod.GET, null, String.class);
-            
+
             if (monitorResponse.getStatusCode().value() == HttpStatus.OK.value()) {
                 NamespaceFilter nsFilter = new NamespaceFilter(this.namespace);
                 SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -113,7 +113,7 @@ public class StatsService implements InitializingBean {
                 spf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
                 spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
                 nsFilter.setParent(spf.newSAXParser().getXMLReader());
-                
+
                 JAXBContext ctx = JAXBContext.newInstance(StatsResponse.class);
                 UnmarshallerHandler umHandler = ctx.createUnmarshaller().getUnmarshallerHandler();
                 nsFilter.setContentHandler(umHandler);
@@ -124,34 +124,34 @@ public class StatsService implements InitializingBean {
                                 monitorResponse.getStatusCode().getReasonPhrase());
                 log.error(errorMessage);
                 response.addException(new RuntimeException(errorMessage));
-                
+
                 // maybe the monitor has moved, force rediscovery of its location
                 this.monitorStatsUri = null;
             }
-            
+
         } catch (Exception e) {
             log.error("Failed to retrieve stats from Accumulo", e);
             throw new RuntimeException(e);
         }
-        
+
         return response;
     }
-    
+
     /**
      * {@link XMLFilterImpl} that will inject the given namespace URI into XML retrieved from the Accumulo monitor
      */
     public static class NamespaceFilter extends XMLFilterImpl {
         private final String xmlNamespace;
-        
+
         private NamespaceFilter(String xmlNamespace) {
             this.xmlNamespace = xmlNamespace;
         }
-        
+
         @Override
         public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
             super.startElement(xmlNamespace, localName, qName, atts);
         }
-        
+
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
             super.endElement(xmlNamespace, localName, qName);

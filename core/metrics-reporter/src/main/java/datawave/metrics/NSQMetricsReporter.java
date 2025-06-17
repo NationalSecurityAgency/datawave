@@ -25,12 +25,12 @@ import com.codahale.metrics.MetricRegistry;
  */
 public class NSQMetricsReporter extends TimelyMetricsReporter {
     private static final int MAX_MESSAGE_SIZE = 7 * 1024;
-    
+
     private CloseableHttpClient client = HttpClients.createDefault();
     private URI endpoint;
     private DataOutputStream dos;
     private ByteArrayOutputStream baos;
-    
+
     protected NSQMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
                     TimeUnit durationUnit) {
         super(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit);
@@ -40,14 +40,14 @@ public class NSQMetricsReporter extends TimelyMetricsReporter {
             throw new RuntimeException("Unable to construct NSQ URI: " + e.getMessage(), e);
         }
     }
-    
+
     @Override
     protected synchronized boolean connect() {
         baos = new ByteArrayOutputStream();
         dos = new DataOutputStream(baos);
         return true;
     }
-    
+
     @Override
     protected synchronized void reportMetric(String timelyMetric) {
         // Flush the message if adding the new metric will take us over the maximum message size.
@@ -55,14 +55,14 @@ public class NSQMetricsReporter extends TimelyMetricsReporter {
             flush();
             connect();
         }
-        
+
         try {
             dos.writeBytes(timelyMetric);
         } catch (IOException e) {
             logger.error("Error sending metrics to NSQ: {}", e.getMessage(), e);
         }
     }
-    
+
     @Override
     protected synchronized void flush() {
         try {
@@ -81,7 +81,7 @@ public class NSQMetricsReporter extends TimelyMetricsReporter {
             logger.error("Error sending metrics to NSQ: {}", e.getMessage(), e);
         }
     }
-    
+
     @Override
     public void stop() {
         try {

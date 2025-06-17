@@ -365,6 +365,7 @@ public abstract class ShapesTest {
             Document d = deserializer.apply(entry).getValue();
             results.add(d);
         }
+        logic.close();
         return this;
     }
 

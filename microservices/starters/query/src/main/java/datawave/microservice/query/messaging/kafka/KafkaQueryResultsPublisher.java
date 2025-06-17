@@ -19,21 +19,21 @@ import datawave.microservice.query.messaging.Result;
 
 class KafkaQueryResultsPublisher implements QueryResultsPublisher {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final KafkaTemplate<String,String> kafkaTemplate;
-    
+
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     public KafkaQueryResultsPublisher(KafkaTemplate<String,String> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
-    
+
     @Override
     public boolean publish(Result result, long interval, TimeUnit timeUnit) {
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + kafkaTemplate.getDefaultTopic());
         }
-        
+
         boolean success = false;
         try {
             // @formatter:off
@@ -56,7 +56,7 @@ class KafkaQueryResultsPublisher implements QueryResultsPublisher {
         }
         return success;
     }
-    
+
     @Override
     public void close() throws IOException {
         kafkaTemplate.flush();

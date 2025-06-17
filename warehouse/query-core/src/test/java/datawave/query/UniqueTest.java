@@ -30,7 +30,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -265,9 +264,7 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
 
-    // Test is randomly failing so disabling for now
     @Test
-    @Ignore
     public void testUniquenessWithMissingField() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -278,11 +275,12 @@ public abstract class UniqueTest {
         String queryString = "UUID =~ '^[CS].*'";
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID));
-        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        // both capone and corleone contain NUMBER:25, only one document is expected to be returned
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID, WiseGuysIngest.corleoneUID));
+        // soprano uid -1kfeoq.-80b5fs.r0262j does NOT contain a NUMBER field
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         extraParameters.put("unique.fields", "NUMBER");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
     }
 
     @Test

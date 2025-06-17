@@ -35,19 +35,19 @@ import io.protostuff.Schema;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 public class QueryMetric extends BaseQueryMetric implements Serializable, Message<QueryMetric>, Comparable<QueryMetric>, HasMarkings {
-    
+
     @Override
     public int compareTo(QueryMetric that) {
         return this.getCreateDate().compareTo(that.getCreateDate());
     }
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     public QueryMetric() {
         this.createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
         this.host = System.getProperty("jboss.host.name");
     }
-    
+
     public QueryMetric(QueryMetric other) {
         this.queryType = other.queryType;
         this.user = other.user;
@@ -93,7 +93,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         this.numUpdates = other.numUpdates;
         this.queryName = other.queryName;
         this.parameters = other.parameters;
-        
+
         this.sourceCount = other.sourceCount;
         this.nextCount = other.nextCount;
         this.seekCount = other.seekCount;
@@ -104,7 +104,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         this.fiRanges = other.fiRanges;
         this.plan = other.plan;
         this.loginTime = other.loginTime;
-        
+
         if (other.predictions != null) {
             this.predictions = new HashSet<>();
             for (Prediction p : other.predictions) {
@@ -112,7 +112,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             }
         }
     }
-    
+
     @Override
     public void populate(Query query) {
         setQueryType(query.getClass());
@@ -128,11 +128,11 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         setParameters(query.getParameters());
         setColumnVisibility(query.getColumnVisibility());
     }
-    
+
     public BaseQueryMetric duplicate() {
         return new QueryMetric(this);
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(this.getCreateDate()).append(this.getQueryId()).append(this.getQueryType())
@@ -145,7 +145,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                         .append(this.getLoginTime()).append(this.getPredictions()).append(this.getMarkings()).append(this.getNumUpdates())
                         .append(this.getVersionMap()).toHashCode();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (null == o) {
@@ -177,7 +177,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             return false;
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
@@ -221,57 +221,57 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         buf.append("\n");
         return buf.toString();
     }
-    
+
     public static Schema<QueryMetric> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<QueryMetric> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<QueryMetric> SCHEMA = new Schema<QueryMetric>() {
         public QueryMetric newMessage() {
             return new QueryMetric();
         }
-        
+
         public Class<QueryMetric> typeClass() {
             return QueryMetric.class;
         }
-        
+
         public String messageName() {
             return QueryMetric.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return QueryMetric.class.getName();
         }
-        
+
         public boolean isInitialized(QueryMetric message) {
             return true;
         }
-        
+
         public void writeTo(Output output, QueryMetric message) throws IOException {
             if (message.queryType != null) {
                 output.writeString(1, message.queryType, false);
             }
-            
+
             if (message.user != null) {
                 output.writeString(2, message.user, false);
             }
-            
+
             if (message.createDate != null) {
                 output.writeInt64(3, message.createDate.getTime(), false);
             }
-            
+
             if (message.queryId != null) {
                 output.writeString(4, message.queryId, false);
             }
-            
+
             output.writeUInt64(5, message.setupTime, false);
-            
+
             if (message.pageTimes != null) {
                 for (PageMetric pageTimes : message.pageTimes) {
                     if (pageTimes != null) {
@@ -279,15 +279,15 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
+
             if (message.query != null) {
                 output.writeString(7, message.query, false);
             }
-            
+
             if (message.host != null) {
                 output.writeString(8, message.host, false);
             }
-            
+
             if (message.proxyServers != null) {
                 for (String h : message.proxyServers) {
                     if (h != null) {
@@ -295,31 +295,31 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
+
             if (message.lifecycle != null) {
                 output.writeString(10, message.lifecycle.toString(), false);
             }
-            
+
             if (message.errorMessage != null) {
                 output.writeString(11, message.errorMessage, false);
             }
-            
+
             if (message.queryAuthorizations != null) {
                 output.writeString(12, message.queryAuthorizations, false);
             }
-            
+
             if (message.beginDate != null) {
                 output.writeInt64(13, message.beginDate.getTime(), false);
             }
-            
+
             if (message.endDate != null) {
                 output.writeInt64(14, message.endDate.getTime(), false);
             }
-            
+
             if (message.createCallTime != -1) {
                 output.writeInt64(15, message.createCallTime, false);
             }
-            
+
             if (message.positiveSelectors != null) {
                 for (String s : message.positiveSelectors) {
                     if (s != null) {
@@ -327,7 +327,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
+
             if (message.negativeSelectors != null) {
                 for (String s : message.negativeSelectors) {
                     if (s != null) {
@@ -335,31 +335,31 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
+
             if (message.lastUpdated != null) {
                 output.writeInt64(18, message.lastUpdated.getTime(), false);
             }
-            
+
             if (message.columnVisibility != null) {
                 output.writeString(19, message.columnVisibility, false);
             }
-            
+
             if (message.queryLogic != null) {
                 output.writeString(20, message.queryLogic, false);
             }
-            
+
             if (message.queryLogic != null) {
                 output.writeInt64(21, message.numUpdates, false);
             }
-            
+
             if (message.userDN != null) {
                 output.writeString(22, message.userDN, false);
             }
-            
+
             if (message.userDN != null) {
                 output.writeInt64(23, message.numResults, false);
             }
-            
+
             if (message.userDN != null) {
                 output.writeInt64(24, message.numPages, false);
             }
@@ -369,7 +369,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             if (message.queryName != null) {
                 output.writeString(26, message.queryName, false);
             }
-            
+
             if (message.parameters != null) {
                 for (Parameter p : message.parameters) {
                     if (p != null) {
@@ -377,22 +377,22 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
+
             output.writeInt64(28, message.sourceCount, false);
             output.writeInt64(29, message.nextCount, false);
             output.writeInt64(30, message.seekCount, false);
             output.writeInt64(31, message.yieldCount, false);
             output.writeInt64(32, message.docRanges, false);
             output.writeInt64(33, message.fiRanges, false);
-            
+
             if (message.plan != null) {
                 output.writeString(34, message.plan, false);
             }
-            
+
             if (message.loginTime != -1) {
                 output.writeUInt64(35, message.loginTime, false);
             }
-            
+
             if (message.predictions != null) {
                 for (Prediction prediction : message.predictions) {
                     if (prediction != null) {
@@ -400,16 +400,16 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
+
             if (message.versionMap != null) {
                 for (Map.Entry<String,String> entry : message.versionMap.entrySet()) {
                     output.writeString(38, StringUtils.join(Arrays.asList(entry.getKey(), entry.getValue()), "\0"), true);
                 }
             }
-            
+
             output.writeInt64(39, message.docSize, false);
         }
-        
+
         public void mergeFrom(Input input, QueryMetric message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -566,7 +566,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             }
             message.numPages = message.pageTimes.size();
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -651,14 +651,14 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final HashMap<String,Integer> fieldMap = new HashMap<>();
-        
+
         {
             fieldMap.put("queryType", 1);
             fieldMap.put("user", 2);
@@ -701,7 +701,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("docSize", 39);
         }
     };
-    
+
     @JsonIgnore
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {
         return getSchema();

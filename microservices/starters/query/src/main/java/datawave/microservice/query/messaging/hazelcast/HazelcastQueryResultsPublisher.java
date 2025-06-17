@@ -15,21 +15,21 @@ import datawave.microservice.query.messaging.Result;
 
 public class HazelcastQueryResultsPublisher implements QueryResultsPublisher {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final IQueue<String> queue;
     private final ObjectMapper objectMapper;
-    
+
     public HazelcastQueryResultsPublisher(IQueue<String> queue, ObjectMapper objectMapper) {
         this.queue = queue;
         this.objectMapper = objectMapper;
     }
-    
+
     @Override
     public boolean publish(Result result, long interval, TimeUnit timeUnit) {
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + queue.getName());
         }
-        
+
         boolean success = false;
         try {
             success = queue.offer(objectMapper.writeValueAsString(result), interval, timeUnit);
@@ -40,7 +40,7 @@ public class HazelcastQueryResultsPublisher implements QueryResultsPublisher {
         }
         return success;
     }
-    
+
     @Override
     public void close() throws IOException {
         // do nothing

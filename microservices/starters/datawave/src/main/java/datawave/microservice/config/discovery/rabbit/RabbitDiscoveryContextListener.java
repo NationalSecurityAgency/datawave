@@ -18,12 +18,12 @@ import org.springframework.stereotype.Component;
 @EnableConfigurationProperties(RabbitDiscoveryProperties.class)
 public class RabbitDiscoveryContextListener {
     private static Logger logger = LoggerFactory.getLogger(RabbitDiscoveryContextListener.class);
-    
+
     private final RabbitDiscoveryProperties rabbitProperties;
     private final RabbitDiscoveryInstanceProvider instanceProvider;
     private final CachingConnectionFactory connectionFactory;
     private final HeartbeatMonitor monitor;
-    
+
     @Autowired
     public RabbitDiscoveryContextListener(RabbitDiscoveryProperties rabbitProperties, RabbitDiscoveryInstanceProvider instanceProvider,
                     CachingConnectionFactory connectionFactory) {
@@ -32,19 +32,19 @@ public class RabbitDiscoveryContextListener {
         this.connectionFactory = connectionFactory;
         this.monitor = new HeartbeatMonitor();
     }
-    
+
     @EventListener(ContextRefreshedEvent.class)
     public void startup() {
         refresh();
     }
-    
+
     @EventListener(HeartbeatEvent.class)
     public void heartbeat(HeartbeatEvent event) {
         if (monitor.update(event.getValue())) {
             refresh();
         }
     }
-    
+
     private void refresh() {
         try {
             String serviceId = rabbitProperties.getServiceId();

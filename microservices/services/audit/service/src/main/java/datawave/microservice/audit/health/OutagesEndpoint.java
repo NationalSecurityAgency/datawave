@@ -11,13 +11,13 @@ import org.springframework.stereotype.Component;
 @Component
 @Endpoint(id = "outages")
 public class OutagesEndpoint {
-    
+
     @Autowired(required = false)
     private HealthChecker healthChecker;
-    
+
     /**
      * In the event that a health checker is configured, this will return a list of outages experience by the audit service.
-     * 
+     *
      * @return Outage statistics for the audit service infrastructure
      */
     @ReadOperation

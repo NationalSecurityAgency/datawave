@@ -34,39 +34,39 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections.iterators.IteratorChain;
 
 public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchScanner, ScannerRebuilder, Cloneable {
-    
+
     List<Range> ranges = null;
-    
+
     @Override
     public InMemoryBatchScanner clone() {
         InMemoryBatchScanner clone = new InMemoryBatchScanner(table, getAuthorizations());
         clone.ranges = (ranges == null ? null : new ArrayList<>(ranges));
         ScannerOptions.setOptions(clone, this);
         clone.retryTimeout = retryTimeout;
-        
+
         return clone;
     }
-    
+
     public InMemoryBatchScanner(InMemoryTable mockTable, Authorizations authorizations) {
         super(mockTable, authorizations);
     }
-    
+
     @Override
     public void setRanges(Collection<Range> ranges) {
         if (ranges == null || ranges.size() == 0) {
             throw new IllegalArgumentException("ranges must be non null and contain at least 1 range");
         }
-        
+
         this.ranges = Range.mergeOverlapping(ranges);
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         if (ranges == null) {
             throw new IllegalStateException("ranges not set");
         }
-        
+
         IteratorChain chain = new IteratorChain();
         for (Range range : ranges) {
             SortedKeyValueIterator<Key,Value> i = new SortedMapIterator(table.table);
@@ -82,7 +82,7 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
         }
         return chain;
     }
-    
+
     @Override
     public Iterator<Entry<Key,Value>> rebuild(Key lastKey) {
         // Rebuild the set of ranges. We should drop all ranges up until the range that includes
@@ -112,11 +112,11 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
             }
             this.ranges = newRanges;
         }
-        
+
         // now return a rebuild iterator stack using the new set of ranges.
         return iterator();
     }
-    
+
     @Override
     public void close() {}
 }

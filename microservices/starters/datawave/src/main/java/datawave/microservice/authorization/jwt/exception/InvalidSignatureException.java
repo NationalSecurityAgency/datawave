@@ -10,7 +10,7 @@ public class InvalidSignatureException extends AuthenticationException {
     public InvalidSignatureException(String msg) {
         super(msg);
     }
-    
+
     public InvalidSignatureException(String msg, Throwable t) {
         super(msg, t);
     }

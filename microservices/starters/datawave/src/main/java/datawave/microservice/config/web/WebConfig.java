@@ -46,7 +46,7 @@ public class WebConfig {
      * Creates a {@link JaxbAnnotationModule} bean, which will be added automatically to any {@link ObjectMapper} created by Spring. The
      * {@link JaxbAnnotationModule} causes Jackson to honor JAX-B annotations on object when producing JSON. This default behavior can be disabled by setting
      * the property {@code spring.jackson.module.jaxb-annotation-module} to {@code false}.
-     * 
+     *
      * @return a new {@link JaxbAnnotationModule}
      */
     @Bean
@@ -54,7 +54,7 @@ public class WebConfig {
     public JaxbAnnotationModule jaxbAnnotationModule() {
         return new JaxbAnnotationModule();
     }
-    
+
     /**
      * Enables by default the Jackson object mapper feature {@link MapperFeature#USE_WRAPPER_NAME_AS_PROPERTY_NAME}. For annotated objects that use
      * {@link javax.xml.bind.annotation.XmlElementWrapper}, this will use the specified name as the JSON property name rather than the value of
@@ -69,7 +69,7 @@ public class WebConfig {
     public Jackson2ObjectMapperBuilderCustomizer datawaveJacksonCustomizer() {
         return c -> c.featuresToEnable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
     }
-    
+
     /**
      * Creates a {@link WebMvcConfigurer} that applies CORS configuration as defined in the {@link Cors} properties.
      *
@@ -94,7 +94,7 @@ public class WebConfig {
             }
         };
     }
-    
+
     /**
      * Creates a {@link WebFluxConfigurer} that applies CORS configuration as defined in the {@link Cors} properties.
      *
@@ -120,7 +120,7 @@ public class WebConfig {
             }
         };
     }
-    
+
     /**
      * Creates a {@link WebMvcConfigurer} that adds {@link HttpMessageConverter}s to handle protostuff {@link io.protostuff.Message} responses,
      * {@link HtmlProvider} responses, and {@link VoidResponse} responses.
@@ -140,7 +140,7 @@ public class WebConfig {
             }
         };
     }
-    
+
     /**
      * Creates a {@link FilterRegistrationBean} that registers our custom filter that adds headers to HTTP responses.
      *
@@ -156,7 +156,7 @@ public class WebConfig {
         registration.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.ASYNC);
         return registration;
     }
-    
+
     /**
      * Creates a {@link org.springframework.web.server.WebFilter} that adds headers to HTTP responses for reactive applications.
      *

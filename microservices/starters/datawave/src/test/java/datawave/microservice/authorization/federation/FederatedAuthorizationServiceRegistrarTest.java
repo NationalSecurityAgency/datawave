@@ -12,18 +12,18 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles({"federatedAuthorizationServiceTest"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class FederatedAuthorizationServiceRegistrarTest {
-    
+
     @Autowired
     private ApplicationContext applicationContext;
-    
+
     @Test
     public void federatedAuthorizationServiceTest() {
         FederatedAuthorizationService federatedAuthorizationService = (FederatedAuthorizationService) applicationContext
                         .getBean("FederatedAuthorizationService");
-        
+
         assertNotNull(federatedAuthorizationService);
     }
-    
+
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestConfiguration {}
 }

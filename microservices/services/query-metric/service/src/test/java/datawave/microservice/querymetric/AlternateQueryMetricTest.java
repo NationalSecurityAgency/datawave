@@ -17,20 +17,20 @@ import datawave.microservice.querymetric.config.QueryMetricTransportType;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"AlternateQueryMetricTest", "QueryMetricTest", "MessageRouting", "hazelcast-writethrough"})
 public class AlternateQueryMetricTest extends QueryMetricTestBase {
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
     }
-    
+
     @Test
     public void AlternateMetricDeserializedAndStoredCorrectly() throws Exception {
-        
+
         AlternateQueryMetric m = new AlternateQueryMetric();
         String queryId = createQueryId();
         populateMetric(m, queryId);

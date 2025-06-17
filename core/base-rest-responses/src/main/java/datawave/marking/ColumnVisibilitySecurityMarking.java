@@ -19,12 +19,12 @@ import com.google.common.base.Preconditions;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ColumnVisibilitySecurityMarking implements SecurityMarking {
-    
+
     public static final String VISIBILITY_MARKING = "columnVisibility";
-    
+
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility = null;
-    
+
     @Override
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         List<String> values = parameters.get(VISIBILITY_MARKING);
@@ -37,25 +37,25 @@ public class ColumnVisibilitySecurityMarking implements SecurityMarking {
         columnVisibility = values.get(0);
         Preconditions.checkNotNull(columnVisibility);
     }
-    
+
     public String getColumnVisibility() {
         return toString();
     }
-    
+
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
-    
+
     @Override
     public ColumnVisibility toColumnVisibility() {
         return new ColumnVisibility(columnVisibility);
     }
-    
+
     @Override
     public int hashCode() {
         return this.columnVisibility == null ? 0 : this.columnVisibility.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (null == obj) {
@@ -83,12 +83,12 @@ public class ColumnVisibilitySecurityMarking implements SecurityMarking {
         }
         return false;
     }
-    
+
     @Override
     public String toString() {
         return toColumnVisibilityString();
     }
-    
+
     @Override
     public String toColumnVisibilityString() {
         if (null == this.columnVisibility) {
@@ -96,34 +96,34 @@ public class ColumnVisibilitySecurityMarking implements SecurityMarking {
         }
         return new String(toColumnVisibility().flatten(), UTF_8);
     }
-    
+
     public void clear() {
         this.columnVisibility = null;
     }
-    
+
     @Override
     public Map<String,String> toMap() {
         return Collections.singletonMap(VISIBILITY_MARKING, this.columnVisibility);
     }
-    
+
     @Override
     public void fromMap(Map<String,String> map) {
         this.columnVisibility = map.get(VISIBILITY_MARKING);
     }
-    
+
     /**
      * Turn this set of markings into a serializable string
-     * 
+     *
      * @return String
      */
     @Override
     public String mapToString() {
         return MarkingFunctions.Encoding.toString(toMap());
     }
-    
+
     /**
      * Fill this security markings given an encoded string
-     * 
+     *
      * @param encodedMarkings
      */
     @Override
@@ -132,5 +132,5 @@ public class ColumnVisibilitySecurityMarking implements SecurityMarking {
         this.columnVisibility = markings.get(VISIBILITY_MARKING);
         Preconditions.checkNotNull(columnVisibility);
     }
-    
+
 }

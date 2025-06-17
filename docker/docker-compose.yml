@@ -142,6 +142,12 @@ services:
       - ./logs:/logs
     networks:
       - demo
+    healthcheck:
+      test: curl -f http://localhost:8888/configserver/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
     depends_on:
       rabbitmq:
         condition: service_started
@@ -171,7 +177,7 @@ services:
       retries: 3
     depends_on:
       configuration:
-        condition: service_started
+        condition: service_healthy
 
   query-cache:
     profiles:

@@ -2,78 +2,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>gov.nsa.datawave.microservice</groupId>
-        <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
-        <relativePath>../../microservices/microservice-parent/pom.xml</relativePath>
+        <groupId>gov.nsa.datawave.core</groupId>
+        <artifactId>datawave-core-parent</artifactId>
+        <version>7.25.0-SNAPSHOT</version>
     </parent>
     <artifactId>base-rest-responses</artifactId>
-    <version>4.0.2-SNAPSHOT</version>
-    <url>https://code.nsa.gov/datawave-base-rest-responses</url>
-    <licenses>
-        <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-base-rest-responses.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-base-rest-responses.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-base-rest-responses</url>
-    </scm>
+    <name>${project.artifactId}</name>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <version.commons-lang3>3.12.0</version.commons-lang3>
-        <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
-        <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
-        <version.jaxb>2.3.3</version.jaxb>
-        <version.powermock>2.0.4</version.powermock>
-        <version.protobuf>2.5.0</version.protobuf>
-        <version.protostuff>1.6.2</version.protostuff>
-        <version.slf4j>1.7.29</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${version.protobuf}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
-                <version>${version.jaxb}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave.accumulo-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>common-utils</artifactId>
-                <version>${version.datawave.common-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.protostuff</groupId>
-                <artifactId>protostuff-api</artifactId>
-                <version>${version.protostuff}</version>
+                <version>${version.jaxb-impl}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jaxb}</version>
+                <version>${version.jakarta}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.commons-lang3}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${version.slf4j}</version>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>
@@ -101,11 +55,11 @@
             <artifactId>jaxb-impl</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
@@ -130,16 +84,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-support</artifactId>
             <scope>test</scope>
@@ -150,18 +94,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <resources>
             <resource>
@@ -176,7 +108,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -190,10 +121,10 @@
                 <executions>
                     <execution>
                         <id>copy-templated-sources</id>
-                        <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <outputDirectory>${project.build.directory}/generated-sources/templated-sources</outputDirectory>
                             <resources>
@@ -209,14 +140,13 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>add-source</id>
-                        <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <sources>
                                 <source>target/generated-sources/templated-sources</source>

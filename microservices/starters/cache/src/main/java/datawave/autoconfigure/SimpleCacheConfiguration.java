@@ -16,14 +16,14 @@ import org.springframework.context.annotation.Primary;
 @Conditional(CacheCondition.class)
 public class SimpleCacheConfiguration {
     private final CacheProperties cacheProperties;
-    
+
     private final CacheManagerCustomizers customizerInvoker;
-    
+
     SimpleCacheConfiguration(CacheProperties cacheProperties, CacheManagerCustomizers customizerInvoker) {
         this.cacheProperties = cacheProperties;
         this.customizerInvoker = customizerInvoker;
     }
-    
+
     @Bean
     @Primary
     public ConcurrentMapCacheManager cacheManager() {

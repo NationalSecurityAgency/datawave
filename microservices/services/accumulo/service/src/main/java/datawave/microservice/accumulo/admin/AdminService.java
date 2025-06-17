@@ -66,20 +66,20 @@ import datawave.webservice.result.VoidResponse;
 @Service
 @ConditionalOnProperty(name = "accumulo.admin.enabled", havingValue = "true", matchIfMissing = true)
 public class AdminService {
-    
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final MarkingFunctions markingFunctions;
     private final AccumuloClient warehouseAccumuloClient;
-    
+
     @Autowired
     public AdminService(@Qualifier("warehouse") AccumuloClient warehouseAccumuloClient, MarkingFunctions markingFunctions) {
         this.warehouseAccumuloClient = warehouseAccumuloClient;
         this.markingFunctions = markingFunctions;
     }
-    
+
     /**
      * Grants the specified Accumulo permission to the specified user
-     * 
+     *
      * @param userName
      *            Accumulo user
      * @param permission
@@ -97,7 +97,7 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Revokes the specified Accumulo permission from the specified user
      *
@@ -118,7 +118,7 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Grants the specified table permission to the specified Accumulo user
      *
@@ -141,7 +141,7 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Revokes the specified table permission to the specified Accumulo user
      *
@@ -164,10 +164,10 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Creates the specified table in Accumulo
-     * 
+     *
      * @param tableName
      *            Table to be created
      * @return {@link VoidResponse}
@@ -183,10 +183,10 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Flushes the memory buffer of the specified table to disk (minor compaction)
-     * 
+     *
      * @param tableName
      *            Table to be flushed
      * @return {@link VoidResponse}
@@ -202,10 +202,10 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Sets the specified property on the specified Accumulo table
-     * 
+     *
      * @param tableName
      *            Table to be configured
      * @param propertyName
@@ -225,10 +225,10 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Removes the specified property from the specified Accumulo table
-     * 
+     *
      * @param tableName
      *            Table to be configured
      * @param propertyName
@@ -246,10 +246,10 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Returns the list of Accumulo table names
-     * 
+     *
      * @return {@link ListTablesResponse}
      */
     public ListTablesResponse listTables() {
@@ -266,10 +266,10 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Returns the current authorizations assigned to the specified Accumulo user
-     * 
+     *
      * @param userName
      *            Accumulo user name
      * @return {@link ListUserAuthorizationsResponse}
@@ -290,10 +290,10 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Returns the current permissions granted to the specified Accumulo user
-     * 
+     *
      * @param userName
      *            Accumulo user name
      * @return {@link ListUserPermissionsResponse}
@@ -302,7 +302,7 @@ public class AdminService {
         ListUserPermissionsResponse response = new ListUserPermissionsResponse();
         try {
             SecurityOperations ops = warehouseAccumuloClient.securityOperations();
-            
+
             List<datawave.webservice.response.objects.SystemPermission> systemPermissions = new ArrayList<>();
             SystemPermission[] allSystemPerms = SystemPermission.values();
             for (SystemPermission next : allSystemPerms) {
@@ -310,7 +310,7 @@ public class AdminService {
                     systemPermissions.add(new datawave.webservice.response.objects.SystemPermission(next.name()));
                 }
             }
-            
+
             List<datawave.webservice.response.objects.TablePermission> tablePermissions = new ArrayList<>();
             TableOperations tops = warehouseAccumuloClient.tableOperations();
             SortedSet<String> tables = tops.list();
@@ -322,7 +322,7 @@ public class AdminService {
                     }
                 }
             }
-            
+
             List<datawave.webservice.response.objects.NamespacePermission> namespacePermissions = new ArrayList<>();
             NamespaceOperations nops = warehouseAccumuloClient.namespaceOperations();
             SortedSet<String> namespaces = nops.list();
@@ -334,23 +334,23 @@ public class AdminService {
                     }
                 }
             }
-            
+
             UserPermissions userPermissions = new UserPermissions();
             userPermissions.setSystemPermissions(systemPermissions);
             userPermissions.setTablePermissions(tablePermissions);
             userPermissions.setNamespacePermissions(namespacePermissions);
             response.setUserPermissions(userPermissions);
-            
+
         } catch (Exception e) {
             log.error("Failed to retrieve permissions for user: " + userName, e);
             throw new RuntimeException(e);
         }
         return response;
     }
-    
+
     /**
      * Returns list of local Accumulo users
-     * 
+     *
      * @return {@link ListUsersResponse}
      */
     public ListUsersResponse listUsers() {
@@ -367,16 +367,16 @@ public class AdminService {
         }
         return response;
     }
-    
+
     /**
      * Performs the specified mutations requested by the {@link UpdateRequest} object
-     * 
+     *
      * @param request
      *            {@link UpdateRequest} containing mutations to write to Accumulo
      * @return {@link UpdateResponse} instance
      */
     public UpdateResponse updateAccumulo(UpdateRequest request) {
-        
+
         UpdateResponse response = new UpdateResponse();
         try {
             List<TableUpdate> tableUpdateList = request.getTableUpdates();
@@ -388,20 +388,20 @@ public class AdminService {
             }
             String[] tableNameArray = new String[tableNameSet.size()];
             tableNameSet.toArray(tableNameArray);
-            
+
             log.trace("Processing Update Request - Authorization Passed!");
-            
+
             int mutationsAccepted = 0;
             int mutationsDenied = 0;
-            
+
             ArrayList<String> tablesNotFound = new ArrayList<>();
             HashMap<String,byte[]> globalDataRefs = new HashMap<>();
-            
+
             MultiTableBatchWriter writer = warehouseAccumuloClient
                             .createMultiTableBatchWriter(new BatchWriterConfig().setMaxLatency(3, TimeUnit.SECONDS).setMaxMemory(50000).setMaxWriteThreads(5));
-            
+
             log.trace("Processing Update Request - Connector and MultiTableBatchWriter created!");
-            
+
             List<ReferencedValue> refValues = request.getReferencedValues();
             if (refValues != null) {
                 for (ReferencedValue currRef : refValues) {
@@ -411,37 +411,37 @@ public class AdminService {
                     log.trace("Processing Update Request - Retrieved ReferencedValue '{}' from the message", name);
                 }
             }
-            
+
             if (tableUpdateList != null) {
-                
+
                 for (TableUpdate next : tableUpdateList) {
                     String tableName = next.getTable();
                     List<datawave.webservice.request.objects.Mutation> mutations = next.getMutations();
-                    
+
                     log.trace("Processing Update Request - Processing mutations for '{}'", tableName);
-                    
+
                     try {
                         BatchWriter bw = writer.getBatchWriter(tableName);
-                        
+
                         for (datawave.webservice.request.objects.Mutation nextMutation : mutations) {
                             String rowId = nextMutation.getRow().getValue();
-                            
+
                             Mutation m = new Mutation(new Text(rowId));
-                            
+
                             List<MutationEntry> mutationEntries = nextMutation.getMutationEntries();
                             if (mutationEntries != null) {
-                                
+
                                 for (MutationEntry currEntry : mutationEntries) {
                                     String colFamily = currEntry.getColFam().getValue();
                                     String colQualifier = currEntry.getColQual().getValue();
                                     String visibilityString = currEntry.getVisibility();
-                                    
+
                                     log.trace("Mutation visibility string '{}'", visibilityString);
-                                    
+
                                     ColumnVisibility visibility = new ColumnVisibility(visibilityString);
-                                    
+
                                     log.trace("Processing Update Request - Processing mutation: {}:{}:{}:{}", rowId, colFamily, colQualifier, visibility);
-                                    
+
                                     Object valueInfo = currEntry.getValue();
                                     if (valueInfo instanceof ValueReference) {
                                         ValueReference ref = (ValueReference) valueInfo;
@@ -462,18 +462,18 @@ public class AdminService {
                                             // even though this is required in the schema,
                                             // it may not actually be there.
                                             mutationsDenied++;
-                                            
+
                                             log.trace("Processing Update Request - Mutation Denied (SetValueRef)");
                                         }
                                     } else if (valueInfo instanceof OptionallyEncodedString) {
                                         OptionallyEncodedString value = (OptionallyEncodedString) valueInfo;
-                                        
+
                                         m.put(new Text(colFamily), new Text(colQualifier), visibility, new Value(value.getValueAsBytes()));
                                         mutationsAccepted++;
                                         log.trace("Processing Update Request - Mutation Accepted (SetValue)");
                                     } else if (valueInfo instanceof Boolean) {
                                         Boolean remove = (Boolean) valueInfo;
-                                        
+
                                         if (remove.equals(Boolean.TRUE)) {
                                             m.putDelete(new Text(colFamily), new Text(colQualifier), visibility);
                                             mutationsAccepted++;
@@ -486,7 +486,7 @@ public class AdminService {
                                     }
                                 }
                             }
-                            
+
                             bw.addMutation(m);
                         }
                     } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
@@ -495,25 +495,25 @@ public class AdminService {
                     }
                 }
             }
-            
+
             Map<TabletId,Set<SecurityErrorCode>> authFailures = null;
             List<ConstraintViolationSummary> cvs = null;
-            
+
             try {
                 writer.close();
             } catch (MutationsRejectedException e) {
                 authFailures = e.getSecurityErrorCodes();
                 cvs = e.getConstraintViolationSummaries();
             }
-            
+
             response.setMutationsAccepted(mutationsAccepted);
             response.setMutationsDenied(mutationsDenied);
-            
+
             if (authFailures != null) {
                 List<AuthorizationFailure> authorizationFailures = new ArrayList<>();
                 for (Map.Entry<TabletId,Set<SecurityErrorCode>> next : authFailures.entrySet()) {
                     AuthorizationFailure failure = new AuthorizationFailure();
-                    
+
                     Optional<Map.Entry<String,String>> tableNameToId = warehouseAccumuloClient.tableOperations().tableIdMap().entrySet().stream()
                                     .filter(entry -> entry.getValue().equals(next.getKey().getTable().canonical())).findAny();
                     String mappedTableName = (tableNameToId.isPresent() ? tableNameToId.get().getKey() : "unknown");
@@ -537,7 +537,7 @@ public class AdminService {
                 }
                 response.setConstraintViolations(constraintViolations);
             }
-            
+
             if (!tablesNotFound.isEmpty()) {
                 response.setTableNotFoundList(tablesNotFound);
             }
@@ -547,22 +547,22 @@ public class AdminService {
             throw new RuntimeException(e);
         }
     }
-    
+
     /**
      * Validates that the accumulo user can see this visibility and return the printable strings that correspond with this visibility
-     * 
+     *
      * @param visibilityArray
      *            Array of visibility strings to check
      * @return {@link ValidateVisibilityResponse}
      */
     public ValidateVisibilityResponse validateVisibilities(String[] visibilityArray) {
-        
+
         ValidateVisibilityResponse response = new ValidateVisibilityResponse();
         try {
             SecurityOperations securityOps = warehouseAccumuloClient.securityOperations();
             Authorizations authorizations = securityOps.getUserAuthorizations(warehouseAccumuloClient.whoami());
             List<Visibility> visibilityList = new ArrayList<>();
-            
+
             for (String v : visibilityArray) {
                 try {
                     Visibility vis = new Visibility();

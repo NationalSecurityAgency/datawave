@@ -8,11 +8,11 @@ import datawave.microservice.audit.AuditServiceProvider;
 import datawave.microservice.audit.config.AuditServiceProperties;
 
 public class RetryableServiceProvider extends AuditServiceProvider {
-    
+
     public RetryableServiceProvider(AuditServiceProperties properties, DiscoveryClient client) {
         super(properties, client);
     }
-    
+
     @Override
     @Retryable(interceptor = "auditDiscoveryRetryInterceptor")
     public ServiceInstance getServiceInstance() {

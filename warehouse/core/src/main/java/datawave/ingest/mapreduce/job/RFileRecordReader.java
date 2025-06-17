@@ -19,7 +19,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 public class RFileRecordReader extends RecordReader<Key,Value> {
-    private FileSKVIterator fileIterator;
+    protected FileSKVIterator fileIterator;
     private boolean readFirstKeyValue = false;
     private long start, end, pos;
 

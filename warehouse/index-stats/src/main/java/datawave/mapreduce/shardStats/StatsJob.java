@@ -16,7 +16,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Level;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
@@ -71,9 +70,6 @@ import datawave.util.StringUtils;
  * </p>
  */
 public class StatsJob extends IngestJob {
-
-    // default log level for all classes
-    static final Level DEFAULT_LOG_LEVEL = Level.INFO;
 
     // default values used by both mapper and reducer
     // constants for hyperloglogplus
@@ -161,12 +157,6 @@ public class StatsJob extends IngestJob {
             JobArg arg = JobArg.getOption(args[0]);
             if (null != arg) {
                 switch (arg) {
-                    // job args
-                    case JOB_LOG_LEVEL:
-                        Level level = Level.toLevel(args[1], DEFAULT_LOG_LEVEL);
-                        log.setLevel(level);
-                        log.info("log level set to " + level.toString());
-                        break;
                     default:
                         conf.set(arg.key, args[1]);
                         break;
@@ -179,19 +169,19 @@ public class StatsJob extends IngestJob {
         if (null == vis) {
             throw new IllegalStateException("column visibility property (" + STATS_VISIBILITY + ") is not set");
         }
-        log.info("column visibility (" + vis + ")");
+        log.info("column visibility ( {} )", vis);
 
         this.inputTableName = conf.get(INPUT_TABLE_NAME);
         if (null == this.inputTableName) {
             throw new IllegalStateException("input table property (" + INPUT_TABLE_NAME + ") is not set");
         }
-        log.info("input table(" + this.inputTableName + ")");
+        log.info("input table( {} )", this.inputTableName);
 
         this.outputTableName = conf.get(OUTPUT_TABLE_NAME);
         if (null == this.outputTableName) {
             throw new IllegalStateException("output table property (" + OUTPUT_TABLE_NAME + ") is not set");
         }
-        log.info("output table(" + this.outputTableName + ")");
+        log.info("output table( {} )", this.outputTableName);
     }
 
     private Set<Range> calculateRanges(Configuration conf) {
@@ -241,20 +231,17 @@ public class StatsJob extends IngestJob {
         INPUT_TABLE(INPUT_TABLE_NAME, ""),
         OUTPUT_TABLE(OUTPUT_TABLE_NAME, ""),
         COLUMN_VISIBILITY(STATS_VISIBILITY, ""),
-        JOB_LOG_LEVEL(STATS_JOB_LOG_LEVEL, DEFAULT_LOG_LEVEL),
         HYPERLOG_NORMAL_PRECISION(HYPERLOG_NORMAL_OPTION, HYPERLOG_NORMAL_DEFAULT_VALUE),
         HYPERLOG_SPARSE_PRECISION(HYPERLOG_SPARSE_OPTION, HYPERLOG_SPARSE_DEFAULT_VALUE),
 
         // mapper specific options
         MAPPER_INPUT_INTERVAL(StatsHyperLogMapper.STATS_MAPPER_INPUT_INTERVAL, StatsHyperLogMapper.DEFAULT_INPUT_INTERVAL),
         MAPPER_OUTPUT_INTERVAL(StatsHyperLogMapper.STATS_MAPPER_OUTPUT_INTERVAL, StatsHyperLogMapper.DEFAULT_OUTPUT_INTERVAL),
-        MAPPER_LOG_LEVEL(StatsHyperLogMapper.STATS_MAPPER_LOG_LEVEL, DEFAULT_LOG_LEVEL),
 
         // reducer specific options
         MIN_COUNT(StatsHyperLogReducer.STATS_MIN_COUNT, StatsHyperLogReducer.DEFAULT_MIN_COUNT),
         REDUCER_COUNTS(StatsHyperLogReducer.STATS_REDUCER_COUNTS, false),
-        REDUCER_VALUE_INTERVAL(StatsHyperLogReducer.STATS_REDUCER_VALUE_INTERVAL, StatsHyperLogReducer.DEFAULT_VALUE_INTERVAL),
-        REDUCER_LOG_LEVEL(StatsHyperLogReducer.STATS_REDUCER_LOG_LEVEL, DEFAULT_LOG_LEVEL),;
+        REDUCER_VALUE_INTERVAL(StatsHyperLogReducer.STATS_REDUCER_VALUE_INTERVAL, StatsHyperLogReducer.DEFAULT_VALUE_INTERVAL);
 
         static JobArg getOption(String option) {
             while (option.startsWith("-")) {

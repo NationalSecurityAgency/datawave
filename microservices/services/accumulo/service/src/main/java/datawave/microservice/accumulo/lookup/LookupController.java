@@ -43,14 +43,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Secured({"InternalUser", "Administrator"})
 @RequestMapping(path = "/v1", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
 public class LookupController {
-    
+
     private final LookupService lookupService;
-    
+
     @Autowired
     public LookupController(LookupService lookupService) {
         this.lookupService = lookupService;
     }
-    
+
     //@formatter:off
     @Operation(summary = "Performs an Accumulo table scan using the given parameters")
     @Parameters({

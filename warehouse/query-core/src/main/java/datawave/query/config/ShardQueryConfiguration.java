@@ -42,6 +42,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
@@ -288,6 +289,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String limitFieldsField = null;
     private boolean hitList = false;
     private boolean dateIndexTimeTravel = false;
+    private boolean dateIndexIterator = false;
     private boolean ignoreNonExistentFields = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
@@ -545,6 +547,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
 
+    private boolean useDocumentScheduler = false;
+    private DocumentScannerConfig documentScannerConfig;
+
     /**
      * Default constructor
      */
@@ -676,6 +681,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
+        this.setDateIndexIterator(other.isDateIndexIterator());
         this.setBeginDateCap(other.getBeginDateCap());
         this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
         this.setRawTypes(other.isRawTypes());
@@ -795,6 +801,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setUseDocumentScheduler(other.isUseDocumentScheduler());
+        this.setDocumentScannerConfig(other.getDocumentScannerConfig());
     }
 
     /**
@@ -1888,6 +1896,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setDateIndexTimeTravel(boolean dateIndexTimeTravel) {
         this.dateIndexTimeTravel = dateIndexTimeTravel;
+    }
+
+    public boolean isDateIndexIterator() {
+        return dateIndexIterator;
+    }
+
+    public void setDateIndexIterator(boolean dateIndexIterator) {
+        this.dateIndexIterator = dateIndexIterator;
     }
 
     public boolean getIgnoreNonExistentFields() {
@@ -3363,5 +3379,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
+    }
+
+    public DocumentScannerConfig getDocumentScannerConfig() {
+        return documentScannerConfig;
+    }
+
+    public void setDocumentScannerConfig(DocumentScannerConfig documentScannerConfig) {
+        this.documentScannerConfig = documentScannerConfig;
+    }
+
+    public boolean isUseDocumentScheduler() {
+        return useDocumentScheduler;
+    }
+
+    public void setUseDocumentScheduler(boolean useDocumentScheduler) {
+        this.useDocumentScheduler = useDocumentScheduler;
     }
 }

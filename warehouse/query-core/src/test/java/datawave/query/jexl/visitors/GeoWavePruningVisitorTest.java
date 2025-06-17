@@ -3,12 +3,14 @@ package datawave.query.jexl.visitors;
 import static datawave.query.jexl.functions.GeoWaveFunctionsDescriptorTest.convertFunctionToIndexQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -16,7 +18,9 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 
@@ -24,11 +28,18 @@ public class GeoWavePruningVisitorTest {
 
     private static MockMetadataHelper metadataHelper;
 
+    private final ASTValidator validator = new ASTValidator();
+
     @BeforeClass
     public static void setup() {
         metadataHelper = new MockMetadataHelper();
         metadataHelper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
         metadataHelper.addField("LEGACY_GEO_FIELD", "datawave.data.type.GeoType");
+    }
+
+    @Before
+    public void beforeEach() {
+        validator.enableAll();
     }
 
     @Test
@@ -54,7 +65,7 @@ public class GeoWavePruningVisitorTest {
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
 
         // Add a wrapped term that should be pruned.
-        String query = function + " && ((GEO_FIELD == '0100') || " + indexQuery + ")";
+        String query = function + " && (GEO_FIELD == '0100' || " + indexQuery + ")";
         String expected = function + " && (false || " + indexQuery + ")";
 
         Multimap<String,String> expectedPrunedTerms = HashMultimap.create();
@@ -93,9 +104,14 @@ public class GeoWavePruningVisitorTest {
 
     private void assertResult(String original, String expected, Multimap<String,String> expectedPrunedTerms) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
+        validate(originalScript, "original");
 
         Multimap<String,String> prunedTerms = HashMultimap.create();
         ASTJexlScript actualScript = GeoWavePruningVisitor.pruneTree(originalScript, prunedTerms, metadataHelper);
+        validate(actualScript, "result");
+
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        validate(expectedScript, "expected");
 
         // Verify the result is as expected, with a valid lineage.
         JexlNodeAssert.assertThat(actualScript).isEqualTo(expected).hasValidLineage();
@@ -108,6 +124,15 @@ public class GeoWavePruningVisitorTest {
 
         // Verify the original script was not modified, and has a valid lineage.
         JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
+    }
+
+    private void validate(JexlNode node, String stage) {
+        try {
+            validator.isValid(node, stage);
+        } catch (InvalidQueryTreeException e) {
+            fail("Failed to validate query: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     private void assertNoChildlessReferences(JexlNode node) {

@@ -423,7 +423,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         // Extract the events from the response.
         for (EventBase event : response.getEvents()) {
             String row = event.getMetadata().getRow();
-            String date = row.substring(0, row.indexOf("_"));
+            String date = row.substring(0, row.indexOf('_'));
             actualEvents.add(new Event(date, event.getMetadata().getInternalId()));
         }
 

@@ -60,11 +60,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
 public class BulkResultsJob extends MapReduceJob {
-    
+
     private final Map<String,String> propertiesMap;
-    
+
     private UserOperations userOperations;
-    
+
     /**
      * Container for query settings
      */
@@ -74,7 +74,7 @@ public class BulkResultsJob extends MapReduceJob {
         private final String base64EncodedQuery;
         private final Set<Authorizations> runtimeQueryAuthorizations;
         private final Class<? extends Query> queryImplClass;
-        
+
         public QuerySettings(QueryLogic<?> logic, GenericQueryConfiguration queryConfig, String base64EncodedQuery, Class<? extends Query> queryImplClass,
                         Set<Authorizations> runtimeQueryAuthorizations) {
             super();
@@ -84,40 +84,40 @@ public class BulkResultsJob extends MapReduceJob {
             this.queryImplClass = queryImplClass;
             this.runtimeQueryAuthorizations = runtimeQueryAuthorizations;
         }
-        
+
         public QueryLogic<?> getLogic() {
             return logic;
         }
-        
+
         public GenericQueryConfiguration getQueryConfig() {
             return queryConfig;
         }
-        
+
         public String getBase64EncodedQuery() {
             return base64EncodedQuery;
         }
-        
+
         public Class<? extends Query> getQueryImplClass() {
             return queryImplClass;
         }
-        
+
         public Set<Authorizations> getRuntimeQueryAuthorizations() {
             return runtimeQueryAuthorizations;
         }
     }
-    
+
     private String tableName = null;
     private Class<? extends OutputFormat> outputFormatClass = SequenceFileOutputFormat.class;
-    
+
     public BulkResultsJob(MapReduceQueryProperties mapReduceQueryProperties, Map<String,String> propertiesMap) {
         super(mapReduceQueryProperties);
         this.propertiesMap = propertiesMap;
     }
-    
+
     @Override
     public void _initializeConfiguration(QueryLogicFactory queryLogicFactory, AccumuloConnectionFactory accumuloConnectionFactory,
                     MapReduceQueryStatus mapReduceQueryStatus, Job job, Path jobDir) throws QueryException {
-        
+
         String queryId = mapReduceQueryStatus.getParameters().getFirst(QUERY_ID);
         SerializationFormat format = SerializationFormat.valueOf(mapReduceQueryStatus.getParameters().getFirst(FORMAT));
         String outputFormatParameter = mapReduceQueryStatus.getParameters().getFirst(OUTPUT_FORMAT);
@@ -127,14 +127,14 @@ public class BulkResultsJob extends MapReduceJob {
         if (mapReduceQueryStatus.getParameters().containsKey(OUTPUT_TABLE_NAME)) {
             this.tableName = mapReduceQueryStatus.getParameters().getFirst(OUTPUT_TABLE_NAME);
         }
-        
+
         // Initialize the Query
         QueryLogic<?> logic;
         GenericQueryConfiguration queryConfig;
         String base64EncodedQuery;
         Class<? extends Query> queryImplClass;
         Set<Authorizations> runtimeQueryAuthorizations;
-        
+
         try {
             QuerySettings settings = setupQuery(queryLogicFactory, accumuloConnectionFactory, mapReduceQueryStatus);
             logic = settings.getLogic();
@@ -149,11 +149,11 @@ public class BulkResultsJob extends MapReduceJob {
             log.error("Error setting up Query for id: " + queryId, e);
             throw new QueryException(e);
         }
-        
+
         // Setup and run the MapReduce job
         try {
             setupJob(job, jobDir, queryConfig, logic, base64EncodedQuery, queryImplClass, runtimeQueryAuthorizations);
-            
+
             if (null == this.tableName) {
                 // Setup job for output to HDFS
                 // set the mapper
@@ -183,14 +183,14 @@ public class BulkResultsJob extends MapReduceJob {
                 job.setOutputValueClass(Mutation.class);
                 job.setNumReduceTasks(0);
                 job.setOutputFormatClass(AccumuloOutputFormat.class);
-                
+
                 // formatter:off
                 Properties clientProps = Accumulo.newClientProperties()
                                 .to(mapReduceJobProperties.getAccumulo().getInstanceName(), mapReduceJobProperties.getAccumulo().getZookeepers())
                                 .as(mapReduceJobProperties.getAccumulo().getUsername(), mapReduceJobProperties.getAccumulo().getPassword())
                                 .batchWriterConfig(new BatchWriterConfig().setMaxLatency(30, TimeUnit.SECONDS).setMaxMemory(10485760).setMaxWriteThreads(2))
                                 .build();
-                
+
                 AccumuloOutputFormat.configure().clientProperties(clientProps).createTables(true).defaultTable(tableName).store(job);
                 // formatter:on
             }
@@ -200,9 +200,9 @@ public class BulkResultsJob extends MapReduceJob {
             log.error("Error starting job", e);
             throw new QueryException(DatawaveErrorCode.JOB_STARTING_ERROR, e);
         }
-        
+
     }
-    
+
     /**
      * Common MapReduce setup methods
      *
@@ -227,31 +227,31 @@ public class BulkResultsJob extends MapReduceJob {
      */
     private void setupJob(Job job, Path jobDir, GenericQueryConfiguration queryConfig, QueryLogic<?> logic, String base64EncodedQuery,
                     Class<? extends Query> queryImplClass, Set<Authorizations> runtimeQueryAuthorizations) throws IOException, NoResultsException {
-        
+
         job.setInputFormatClass(BulkInputFormat.class);
-        
+
         QueryData queryData = null;
         Collection<Range> ranges = new ArrayList<>();
-        
+
         if (!queryConfig.canRunQuery()) {
             throw new UnsupportedOperationException("Unable to run query");
         }
-        
+
         Iterator<QueryData> iter = queryConfig.getQueriesIter();
         while (iter.hasNext()) {
             queryData = iter.next();
             ranges.addAll(queryData.getRanges());
         }
-        
+
         if (ranges.isEmpty()) {
             throw new NoResultsException(new QueryException("No scan ranges produced for query."));
         }
-        
+
         BulkInputFormat.setWorkingDirectory(job.getConfiguration(), jobDir.toString());
-        
+
         // Copy the information from the GenericQueryConfiguration to the job.
         BulkInputFormat.setRanges(job, ranges);
-        
+
         for (IteratorSetting cfg : queryData.getSettings()) {
             // Note: We can't use the query from the first query data as it has likely pruned fields which don't exist within that range
             // Ideally, we would use the plan specific to each range, but at a minimum we can use the base query plan
@@ -260,7 +260,7 @@ public class BulkResultsJob extends MapReduceJob {
             }
             BulkInputFormat.addIterator(job.getConfiguration(), cfg);
         }
-        
+
         BulkInputFormat.setZooKeeperInstance(job.getConfiguration(), mapReduceJobProperties.getAccumulo().getInstanceName(),
                         mapReduceJobProperties.getAccumulo().getZookeepers());
         Iterator<Authorizations> authsIter = (runtimeQueryAuthorizations == null || runtimeQueryAuthorizations.isEmpty()) ? null
@@ -274,27 +274,27 @@ public class BulkResultsJob extends MapReduceJob {
             cfg.addOption(ConfigurableVisibilityFilter.AUTHORIZATIONS_OPT, authsIter.next().toString());
             BulkInputFormat.addIterator(job.getConfiguration(), cfg);
         }
-        
+
         job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_LOGIC_SETTINGS, base64EncodedQuery);
         job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_IMPL_CLASS, queryImplClass.getName());
         job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_LOGIC_NAME, logic.getLogicName());
-        
+
         if (mapReduceJobProperties.getBasePackages() != null && !mapReduceJobProperties.getBasePackages().isEmpty()) {
             job.getConfiguration().set(BulkResultsFileOutputMapper.SPRING_CONFIG_BASE_PACKAGES, String.join(",", mapReduceJobProperties.getBasePackages()));
         }
-        
+
         if (mapReduceJobProperties.getStartingClass() != null && !mapReduceJobProperties.getStartingClass().isEmpty()) {
             job.getConfiguration().set(BulkResultsFileOutputMapper.SPRING_CONFIG_STARTING_CLASS, mapReduceJobProperties.getStartingClass());
         }
-        
+
         String javaOpts = job.getConfiguration().get("mapreduce.map.java.opts");
         job.getConfiguration().set("mapreduce.map.java.opts", javaOpts);
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
-        
+
         job.setWorkingDirectory(jobDir);
     }
-    
+
     private QuerySettings setupQuery(QueryLogicFactory queryLogicFactory, AccumuloConnectionFactory accumuloConnectionFactory,
                     MapReduceQueryStatus mapReduceQueryStatus) throws Exception {
         AccumuloClient client = null;
@@ -302,14 +302,14 @@ public class BulkResultsJob extends MapReduceJob {
         try {
             String userDN = mapReduceQueryStatus.getCurrentUser().getPrimaryUser().getDn().subjectDN();
             Collection<String> proxyServers = mapReduceQueryStatus.getCurrentUser().getProxyServers();
-            
+
             // will throw IllegalArgumentException if not defined
             logic = queryLogicFactory.getQueryLogic(mapReduceQueryStatus.getQuery().getQueryLogicName(), mapReduceQueryStatus.getCurrentUser());
-            
+
             // Get an accumulo connection
             Map<String,String> trackingMap = accumuloConnectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = accumuloConnectionFactory.getClient(userDN, proxyServers, logic.getConnectionPriority(), trackingMap);
-            
+
             Query query = mapReduceQueryStatus.getQuery();
             if (query.getQueryAuthorizations() == null) {
                 logic.preInitialize(query, AuthorizationsUtil.buildAuthorizations(null));
@@ -326,19 +326,19 @@ public class BulkResultsJob extends MapReduceJob {
                             : userOperations.getRemoteUser(mapReduceQueryStatus.getCurrentUser()));
             Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(query.getQueryAuthorizations(), overallUserDetails,
                             queryUserDetails);
-            
+
             // Initialize the logic so that the configuration contains all of the iterator options
             GenericQueryConfiguration queryConfig = logic.initialize(client, query, runtimeQueryAuthorizations);
-            
+
             String base64EncodedQuery = BulkResultsFileOutputMapper.serializeQuery(query);
-            
+
             return new QuerySettings(logic, queryConfig, base64EncodedQuery, query.getClass(), runtimeQueryAuthorizations);
         } finally {
             if (null != logic && null != client)
                 accumuloConnectionFactory.returnClient(client);
         }
     }
-    
+
     @Override
     protected void exportSystemProperties(String id, Job job, FileSystem fs, Path classpath) {
         Properties systemProperties = new Properties();
@@ -346,13 +346,13 @@ public class BulkResultsJob extends MapReduceJob {
         if (mapReduceJobProperties.getJobSystemProperties() != null) {
             systemProperties.putAll(mapReduceJobProperties.getJobSystemProperties());
         }
-        
+
         // Note: The logic used to submit a mapreduce query is not needed when running in the mapper
         systemProperties.put(MapReduceQueryProperties.PREFIX + ".enabled", "false");
-        
+
         writeProperties(id, job, fs, classpath, systemProperties);
     }
-    
+
     public void setUserOperations(UserOperations userOperations) {
         this.userOperations = userOperations;
     }
