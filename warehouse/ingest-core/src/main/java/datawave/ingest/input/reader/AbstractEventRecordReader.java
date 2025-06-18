@@ -18,7 +18,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -40,7 +41,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
 
     protected static final IngestConfiguration INGEST_CONFIG = IngestConfigurationFactory.getIngestConfiguration();
 
-    private static final Logger logger = Logger.getLogger(AbstractEventRecordReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractEventRecordReader.class);
 
     protected final TreeMap<String,String> uidOverrideFields = new TreeMap<>();
 
@@ -196,7 +197,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
      * Ability to override the UID value. This is useful for datatypes where we want the UID to be based off the configured id field's value instead of the
      * entire record, so that the csv records and bud file content are merged into one event in the shard table. For the enrichment data, we want to base the
      * UID off of the MD5 hash and some other metadata, but not the dates in the record. This is because we will have to reload the enrichment data on a regular
-     * basis and we want the same hashes to merge.
+     * basis, and we want the same hashes to merge.
      *
      * @param event
      *            the event container to examine
@@ -241,12 +242,12 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
                 try {
                     event.setDate(format.parse(DateNormalizer.convertMicroseconds(fieldValue, format.toPattern())).getTime());
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Parsed date from '" + fieldName + "' using formatter " + format.toPattern());
+                        logger.debug("Parsed date from {} using formatter {}", fieldName, format.toPattern());
                     }
                     break;
                 } catch (java.text.ParseException e) {
                     if (logger.isTraceEnabled()) {
-                        logger.trace("Error parsing date from hash record using format " + format.toPattern(), e);
+                        logger.trace("Error parsing date from hash record using format {}", format.toPattern(), e);
                     }
                 }
             }
@@ -255,7 +256,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
                 for (SimpleDateFormat formatter : formatters) {
                     patterns.add(formatter.toPattern());
                 }
-                logger.error("Unable to parse date '" + fieldValue + "' from field '" + fieldName + " using formatters " + patterns);
+                logger.error("Unable to parse date {} from field {} using formatters {}", fieldValue, fieldName, patterns);
             }
         } else if (formatter != null) {
             try {
