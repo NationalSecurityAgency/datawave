@@ -433,14 +433,16 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
 
     // Creating because super class does not allow overridding
-    private SafeFileOutputCommitter _committer = null;
+    private volatile SafeFileOutputCommitter _committer = null;
 
     @Override
     public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException {
-        synchronized (this) {
-            if (_committer == null) {
-                Path output = getOutputPath(context);
-                _committer = new SafeFileOutputCommitter(output, context);
+        if (_committer == null) {
+            synchronized (this) {
+                if (_committer == null) {
+                    Path output = getOutputPath(context);
+                    _committer = new SafeFileOutputCommitter(output, context);
+                }
             }
         }
         return _committer;
