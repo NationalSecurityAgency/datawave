@@ -3,9 +3,7 @@ package datawave.query.jexl.visitors;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static datawave.query.jexl.visitors.IngestTypeVisitor.IGNORED_TYPE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.Collections;
 import java.util.Date;
@@ -54,6 +52,8 @@ import datawave.data.type.LcType;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.TypeMetadata;
+
+import javax.validation.constraints.AssertFalse;
 
 public class IngestTypePruningVisitorTest {
 
@@ -1496,8 +1496,11 @@ public class IngestTypePruningVisitorTest {
 
     }
 
+    // Queries that throw an error here are good ones to use in other tests since they'll
+    // make some noise at the place you're looking for.
+    // There doesn't seem to be much of a difference in this specific error if I include the QueryModelVisitor or not.
     @Test
-    public void testExpansionPruning() throws ParseException, InvalidQueryTreeException {
+    public void testQueriesWithoutTreeFlattening() throws ParseException, InvalidQueryTreeException {
 
         // Create a query model that has exactly the mappings we need to test edge cases.
         QueryModel model = new QueryModel();
@@ -1544,6 +1547,63 @@ public class IngestTypePruningVisitorTest {
         // FIX: see TreeFlatteningRebuildingVisitor. pAFJQ doesn't rebuild.
         ASTJexlScript parsedAndFlattenedJexl = JexlASTHelper.parseAndFlattenJexlQuery(original);
 
+        System.out.println(" --- Original Jexl Query --- ");
+        PrintingVisitor.printQuery(original);
+
+        System.out.println(" --- Parsed and Flattened Jexl Query --- ");
+        PrintingVisitor.printQuery(parsedAndFlattenedJexl);
+
+        test(JexlStringBuildingVisitor.buildQuery(parsedAndFlattenedJexl), "SUCCESS");
+    }
+
+
+    @Test
+    public void testExpansionPruning() throws ParseException, InvalidQueryTreeException {
+
+        // Create a query model that has exactly the mappings we need to test edge cases.
+        QueryModel model = new QueryModel();
+
+        // Forward Mappings
+        model.addTermToModel("A", "");
+        model.addTermToModel("B", "B");
+        model.addTermToModel("C", "C1");
+        model.addTermToModel("C", "C2");
+
+        // Reverse Mappings (Mirror of Forward Mappings)
+        model.addTermToReverseModel("", "A");
+        model.addTermToReverseModel("B", "B");
+        model.addTermToReverseModel("C1", "C");
+        model.addTermToReverseModel("C2", "C");
+
+        // TODO: Figure out what ModelFieldAttributes means. "AG" was used as a term in the model.
+        // model.setModelFieldAttribute("AG", QueryModel.LENIENT);
+
+        HashSet<String> allFields = new HashSet<>();
+        allFields.add("A");
+        allFields.add("B");
+        allFields.add("C");
+
+        // String original = "A == 'Ants' || A == 'Apes' || (B == 'Bees' && B('Birds')) || (C == 'Cats' || C == 'Camel')";
+        // String original = "A == '1' || A == '2' || (B == '2' && B('3')) || (C == '3' || C == '4')";
+
+
+        // These failures are (I believe) from not using TreeFlatteningRebuildingVisitor
+        //String original = "   A == '1'";                                         // Works fine
+        //String original = "  (A == '1')";                                        // Works fine
+        //String original = "   A == '1' || A == '2' || B == '2'";                 // Works fine
+        //String original = "  (A == '1' || B == '1')";                            // Works fine
+        //String original = "   A == '1' || A == '2' || (B == '2')";               // Works find
+        //String original = "   A == '1' || A == '2' || C == '3' || C == '4'";     // Works fine
+        //String original = "   A == '1' || A == '2' || (C == '3') || C == '4'";   //Works fine
+        //String original = "  (A == '1' || (B == '1'))";                          // Works fine
+        //String original = "  (B == '1')";                                        // Works fine
+        //String original = "  (A == '1' || !(B == '1'))";                         // Works fine
+        String original = "  (A == '1' && (B == '1'))";                          // Works fine
+
+        // For some reason, "parseAndFlatten" isn't removing the parentheses around the B == '1'.
+        // Maybe I'm missing something, but for now it seems like the flattening isn't working.
+        // FIX: see TreeFlatteningRebuildingVisitor. pAFJQ doesn't rebuild.
+        ASTJexlScript parsedAndFlattenedJexl = JexlASTHelper.parseAndFlattenJexlQuery(original);
         ASTJexlScript treeFlattenedJexl = TreeFlatteningRebuildingVisitor.flattenAll(parsedAndFlattenedJexl);
 
         System.out.println(" --- Original Jexl Query --- ");
@@ -1555,8 +1615,105 @@ public class IngestTypePruningVisitorTest {
         System.out.println(" --- Tree-Flattened Jexl Query --- ");
         PrintingVisitor.printQuery(treeFlattenedJexl);
 
-        QueryModelVisitor.applyModel(treeFlattenedJexl, model, allFields);
-        test(JexlStringBuildingVisitor.buildQuery(treeFlattenedJexl), "SUCCESS");
+        ASTJexlScript queryModelAppliedJexl = QueryModelVisitor.applyModel(treeFlattenedJexl, model, allFields);
+        System.out.println(" --- QueryModel-Applied Query --- ");
+        PrintingVisitor.printQuery(queryModelAppliedJexl);
+
+        test(JexlStringBuildingVisitor.buildQuery(queryModelAppliedJexl), "SUCCESS");
+    }
+
+    @Test
+    public void findQueryThatMakesQueryModelVisitorProduceAnUnflattenedTree() throws InvalidQueryTreeException, ParseException {
+        // Create a query model that has exactly the mappings we need to test edge cases.
+        QueryModel model = new QueryModel();
+
+        // Forward Mappings
+        model.addTermToModel("A", "");
+        model.addTermToModel("B", "B");
+        model.addTermToModel("C", "C1");
+        model.addTermToModel("C", "C2");
+
+        // Reverse Mappings (Mirror of Forward Mappings)
+        model.addTermToReverseModel("", "A");
+        model.addTermToReverseModel("B", "B");
+        model.addTermToReverseModel("C1", "C");
+        model.addTermToReverseModel("C2", "C");
+
+        // TODO: Figure out what ModelFieldAttributes means. "AG" was used as a term in the model.
+        // model.setModelFieldAttribute("AG", QueryModel.LENIENT);
+
+        HashSet<String> allFields = new HashSet<>();
+        allFields.add("A");
+        allFields.add("B");
+        allFields.add("C");
+
+        // String original = "A == 'Ants' || A == 'Apes' || (B == 'Bees' && B('Birds')) || (C == 'Cats' || C == 'Camel')";
+        String original = "A == '1' || A == '2' || (B == '2' && B('3')) || (C == '3' || C == '4')";
+
+
+        // These failures are (I believe) from not using TreeFlatteningRebuildingVisitor
+        //String original = "   A == '1'";                                         // Works fine
+        //String original = "  (A == '1')";                                        // Works fine
+        //String original = "   A == '1' || A == '2' || B == '2'";                 // Works fine
+        //String original = "  (A == '1' || B == '1')";                            // Works fine
+        //String original = "   A == '1' || A == '2' || (B == '2')";               // Works find
+        //String original = "   A == '1' || A == '2' || C == '3' || C == '4'";     // Works fine
+        //String original = "   A == '1' || A == '2' || (C == '3') || C == '4'";   //Works fine
+        //String original = "  (A == '1' || (B == '1'))";                          // Works fine
+        //String original = "  (B == '1')";                                        // Works fine
+        //String original = "  (A == '1' || !(B == '1'))";                         // Works fine
+        //String original = "  (A == '1' && (B == '1'))";                          // Works fine
+
+        // For some reason, "parseAndFlatten" isn't removing the parentheses around the B == '1'.
+        // Maybe I'm missing something, but for now it seems like the flattening isn't working.
+        // FIX: see TreeFlatteningRebuildingVisitor. pAFJQ doesn't rebuild.
+        ASTJexlScript parsedAndFlattenedJexl = JexlASTHelper.parseAndFlattenJexlQuery(original);
+        //ASTJexlScript treeFlattenedJexl = TreeFlatteningRebuildingVisitor.flattenAll(parsedAndFlattenedJexl);
+
+//        System.out.println(" --- Original Jexl Query --- ");
+//        PrintingVisitor.printQuery(original);
+//
+        System.out.println(" --- Parsed and Flattened Jexl Query --- ");
+        PrintingVisitor.printQuery(parsedAndFlattenedJexl);
+
+//        assertFalse("Nope, works fine.", validator.isValid(parsedAndFlattenedJexl));
+
+        ASTJexlScript queryModelAppliedJexl = QueryModelVisitor.applyModel(parsedAndFlattenedJexl, model, allFields);
+        System.out.println(" --- QueryModel-Applied Query --- ");
+        PrintingVisitor.printQuery(queryModelAppliedJexl);
+
+        // check if the QMV messes up the validity of the query.
+        validator.setValidateFlatten(true);
+        validator.setValidateJunctions(false);
+        validator.setValidateLineage(false);
+        validator.setValidateReferenceExpressions(false);
+        validator.setValidateQueryPropertyMarkers(false);
+        assertFalse("Nope, works fine.", validator.isValid(queryModelAppliedJexl));
+    }
+
+    @Test
+    public void abcdefg() throws ParseException {
+
+        TypeMetadata tm = new TypeMetadata();
+        tm.put("A", "ingestType1", LcType.class.getTypeName());
+        tm.put("A", "ingestType2", LcType.class.getTypeName());
+        tm.put("A", "ingestType3", LcType.class.getTypeName());
+        tm.put("B", "ingestType1", LcType.class.getTypeName());
+        tm.put("B", "ingestType2", LcType.class.getTypeName());
+        tm.put("C", "ingestType5", LcType.class.getTypeName());
+        tm.put("123", "ingestType1", LcType.class.getTypeName());
+
+//        test("( !(C =='3') && A == '1')", "A == '1'", tm);
+
+        // Found something!! Looks like the B('3') part is causing the null error. I need to check what the syntax should be for this.
+        // ... uh... why was that there to begin with :/ ???
+        String original = "A == '1' || A == '2' || (B == '2' && B == '3') || INTERSECTS(FIELD, 'POINT(10 20)')";// || (C == '3' || C == '4')"; // as-is causes test to null-pointer
+        //String original = "(A == '1') || A == '2'"; // this is a different error caused by not tree-ifying visitoring
+        String flat = JexlStringBuildingVisitor.buildQueryWithoutParse(JexlASTHelper.parseAndFlattenJexlQuery(original)); // same null here
+        String treed = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseAndFlattenJexlQuery(original))); // same null here
+
+        PrintingVisitor.printQuery(treed);
+        test(treed, "A == '1'", tm);
     }
 
 }
