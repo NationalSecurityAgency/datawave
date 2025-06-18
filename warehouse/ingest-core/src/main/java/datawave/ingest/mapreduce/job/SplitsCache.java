@@ -12,6 +12,8 @@ public interface SplitsCache extends AutoCloseable {
         return SplitsCacheFactory.getSplitsCache(conf);
     }
 
+    void init(Configuration conf);
+
     void setupJob(final Job job) throws IOException;
 
     boolean hasSplits();

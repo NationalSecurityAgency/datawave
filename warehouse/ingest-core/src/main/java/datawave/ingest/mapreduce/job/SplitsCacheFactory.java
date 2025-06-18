@@ -19,6 +19,7 @@ public class SplitsCacheFactory {
                         // noinspection unchecked
                         final Class<? extends SplitsCache> clazz = (Class<? extends SplitsCache>) Class.forName(splitsCacheImpl);
                         INSTANCE = clazz.getDeclaredConstructor().newInstance();
+                        INSTANCE.init(conf);
                     } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
                         throw new RuntimeException(ex);
                     }

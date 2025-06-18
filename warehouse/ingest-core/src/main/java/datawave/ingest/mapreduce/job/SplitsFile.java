@@ -41,17 +41,20 @@ public class SplitsFile implements SplitsCache {
     public static final String DIST_CACHE_LABEL = "splitsFile";
 
     private static final int NUMBER_MILLIS_BACK = 0;
+    private static final String TODAY = DateHelper.format(NUMBER_MILLIS_BACK);
 
-    private final TableSplitsCache instance;
-    private final Configuration conf;
     private final ConcurrentHashMap<String,Map<Text,Integer>> shardPartitionsByTable;
-    private final String today;
+    private TableSplitsCache instance;
+    private Configuration conf;
 
-    public SplitsFile(Configuration conf) throws IOException {
-        this.conf = conf;
+    public SplitsFile() {
         this.shardPartitionsByTable = new ConcurrentHashMap<>();
-        this.today = DateHelper.format(NUMBER_MILLIS_BACK);
-        instance = TableSplitsCache.getCurrentCache(conf);
+    }
+
+    @Override
+    public void init(Configuration conf) {
+        this.conf = conf;
+        this.instance = TableSplitsCache.getCurrentCache(conf);
     }
 
     @Override
@@ -309,7 +312,7 @@ public class SplitsFile implements SplitsCache {
         if (shardIdStr.length() < 8) {
             return true;
         }
-        return shardIdStr.substring(0, 8).compareTo(today) > 0;
+        return shardIdStr.substring(0, 8).compareTo(TODAY) > 0;
     }
 
     private HashMap<Text,Integer> getShardIdAssignments(Map<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
