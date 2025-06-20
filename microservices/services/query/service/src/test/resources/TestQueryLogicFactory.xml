@@ -5,9 +5,13 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         https://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <!-- Pull in the default BaseQueryLogicFactory.xml from the datawave query starter -->
+    <!-- Pull in QueryLogicFactory files from the datawave query starter -->
     <import resource="classpath:QueryLogicFactory.xml" />
-
+    <import resource="classpath:EdgeQueryLogicFactory.xml" />
+    <import resource="classpath:FederatedQueryLogicFactory.xml" />
+    <import resource="classpath:KeywordExtractionQueryLogicFactory.xml" />
+    <import resource="classpath:SSDeepQueryLogicFactory.xml" />
+    
     <!-- Additional beans required for testing purposes -->
     <bean id="AltEventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Query the sharded event/document schema, leveraging the global index tables as needed" />

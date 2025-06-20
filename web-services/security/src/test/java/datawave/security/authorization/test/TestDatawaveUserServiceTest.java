@@ -105,6 +105,7 @@ public class TestDatawaveUserServiceTest {
 
         @Deployment
         public static JavaArchive createDeployment() throws Exception {
+            System.setProperty("datawave.configuration.spring.useBootstrapContext", "false");
             System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
             System.setProperty("dw.security.use.testuserservice", "true");
             return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")

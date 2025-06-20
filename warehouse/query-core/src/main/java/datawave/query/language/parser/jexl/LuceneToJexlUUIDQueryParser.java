@@ -1,7 +1,8 @@
 package datawave.query.language.parser.jexl;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import datawave.query.Constants;
 import datawave.query.data.UUIDType;
@@ -14,7 +15,7 @@ import datawave.query.search.RangeFieldedTerm;
 import datawave.query.search.WildcardFieldedTerm;
 
 public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
-    private List<UUIDType> uuidTypes = new ArrayList<>();
+    private Map<String,UUIDType> uuidTypes = new HashMap<>();
     private LuceneQueryParser luceneParser = new LuceneQueryParser();
 
     @Override
@@ -31,11 +32,11 @@ public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
         return super.parse(query);
     }
 
-    public List<UUIDType> getUuidTypes() {
+    public Map<String,UUIDType> getUuidTypes() {
         return uuidTypes;
     }
 
-    public void setUuidTypes(List<UUIDType> uuidTypes) {
+    public void setUuidTypes(Map<String,UUIDType> uuidTypes) {
         this.uuidTypes = uuidTypes;
     }
 
@@ -44,13 +45,7 @@ public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
         FieldedTerm fieldedTerm = (FieldedTerm) selectorNode.getQuery();
         String field = fieldedTerm.getField();
 
-        UUIDType uuidType = null;
-        for (UUIDType u : uuidTypes) {
-            if (u.getFieldName().equals(field)) {
-                uuidType = u;
-                break;
-            }
-        }
+        UUIDType uuidType = uuidTypes.get(field.toUpperCase());
 
         if (uuidType == null) {
             return false;

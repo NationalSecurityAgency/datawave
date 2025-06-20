@@ -54,6 +54,7 @@
         <version.accumulo>2.1.5</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
+        <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
         <version.byte-buddy>1.14.11</version.byte-buddy>
@@ -140,7 +141,8 @@
         <version.saxon-he>12.4</version.saxon-he>
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>5.2.2.RELEASE</version.spring>
+        <version.spring>5.3.39</version.spring>
+        <version.spring-security-core>5.7.14</version.spring-security-core>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.thrift>0.17.0</version.thrift>
@@ -1467,6 +1469,12 @@
                 <groupId>org.jboss.arquillian.container</groupId>
                 <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
                 <version>${version.arquillian-weld-ee-embedded}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-weld-embedded</artifactId>
+                <version>${version.arquillian-weld-embedded}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

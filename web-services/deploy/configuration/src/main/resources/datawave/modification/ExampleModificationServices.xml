@@ -2,22 +2,7 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:context="http://www.springframework.org/schema/context"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
-	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd">
-
-    <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" />
-
-    <!-- Database properties are retrieved from the database.properties file but can be overridden by system properties
-    <bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <property name="location">
-            <value>classpath:/datawave/query/database.properties</value>
-        </property>
-        <property name="systemPropertiesModeName">
-            <value>SYSTEM_PROPERTIES_MODE_OVERRIDE</value>
-        </property>
-    </bean>
-    -->
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
 
 	<bean id="ModificationConfiguration" class="datawave.modification.configuration.ModificationConfiguration">
 		<property name="tableName" value="${metadata.table.name}" />
@@ -28,11 +13,7 @@
 				<entry key="ExampleService">
 					<bean class="">
 						<property name="description" value="Modification service that submits annotations" />
-						<property name="authorizedRoles">
-							<list value-type="java.lang.String">
-								<value>AuthorizedUser</value>
-							</list>
-						</property>
+                        <property name="authorizedRoles" ref="authorizedRoles" />
 						<property name="requiredRuntimeParameters">
 							<map key-type="java.lang.String" value-type="java.lang.Class">
 								<entry key="queryId" value="java.lang.String" />
@@ -50,5 +31,4 @@
 			</map>
 		</property>			
 	</bean>
-
 </beans>

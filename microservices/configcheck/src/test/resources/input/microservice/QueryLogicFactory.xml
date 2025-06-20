@@ -15,12 +15,91 @@
         <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
-    <!-- This has traditionally been included via MetadataHelperContext.xml -->
+    <!-- NOTE: This has traditionally been included via MetadataHelperContext.xml -->
     <bean id="dateIndexHelperFactory" class="datawave.query.util.DateIndexHelperFactory" >
         <lookup-method name="createDateIndexHelper" bean="dateIndexHelper" />
     </bean>
 
     <bean id="dateIndexHelper" scope="prototype" class="datawave.query.util.DateIndexHelper" />
+
+    <bean id="AmbiguousNotRule" scope="prototype" class="datawave.query.rules.AmbiguousNotRule">
+        <property name="name" value="Check for Ambiguous Usage of NOT"/>
+    </bean>
+
+    <bean id="AmbiguousOrPhrasesRule" scope="prototype" class="datawave.query.rules.AmbiguousOrPhrasesRule">
+        <property name="name" value="Check for Unfielded Terms That Could Be Wrapped"/>
+    </bean>
+
+    <bean id="AmbiguousUnquotedPhrasesRule" scope="prototype" class="datawave.query.rules.AmbiguousUnquotedPhrasesRule">
+        <property name="name" value="Check for Unfielded Terms That Could Be Quoted"/>
+    </bean>
+
+    <bean id="GroupedInterpretationRule" scope="prototype" class="datawave.query.rules.GroupedInterpretationRule">
+        <property name="name" value="Interpret Grouped Phrases"/>
+    </bean>
+
+    <bean id="IncludeExcludeArgsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeArgsRule">
+        <property name="name" value="Validate Args of #INCLUDE and #EXCLUDE"/>
+    </bean>
+
+    <bean id="IncludeExcludeIndexOnlyFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexOnlyFieldsRule">
+        <property name="name" value="Check #INCLUDE and #EXCLUDE for Index Only Fields"/>
+    </bean>
+
+    <bean id="InvalidQuoteRule" scope="prototype" class="datawave.query.rules.InvalidQuoteRule">
+        <property name="name" value="Check for Invalid Quote"/>
+    </bean>
+
+    <bean id="MinimumSlopProximityRule" scope="prototype" class="datawave.query.rules.MinimumSlopProximityRule">
+        <property name="name" value="Validate Slop Proximity"/>
+    </bean>
+
+    <bean id="NumericValueRule" scope="prototype" class="datawave.query.rules.NumericValueRule">
+        <property name="name" value="Validate Numeric Values Only Given for Numeric Fields"/>
+    </bean>
+
+    <bean id="TimeFunctionRule" scope="prototype" class="datawave.query.rules.TimeFunctionRule">
+        <property name="name" value="Validate #TIME_FUNCTION has Date Fields"/>
+    </bean>
+
+    <bean id="UnescapedWildcardsInPhrasesRule" scope="prototype" class="datawave.query.rules.UnescapedWildcardsInPhrasesRule">
+        <property name="name" value="Check Quoted Phrases for Unescaped Wildcard"/>
+    </bean>
+
+    <bean id="UnfieldedTermsRule" scope="prototype" class="datawave.query.rules.UnfieldedTermsRule">
+        <property name="name" value="Check for Unfielded Terms"/>
+    </bean>
+
+
+    <bean id="FieldExistenceRule" scope="prototype" class="datawave.query.rules.FieldExistenceRule">
+        <property name="name" value="Check Field Existence"/>
+        <property name="specialFields">
+            <list value-type="java.lang.String">
+                <value>_ANYFIELD_</value>
+                <value>_NOFIELD_</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="FieldPatternPresenceRule" scope="prototype" class="datawave.query.rules.FieldPatternPresenceRule">
+        <property name="name" value="Check Presence of Field or Pattern"/>
+        <property name="fieldMessages">
+            <map key-type="java.lang.String" value-type="java.lang.String">
+                <entry key="_ANYFIELD_" value="Detected presence of _ANYFIELD_"/>
+            </map>
+        </property>
+        <property name="patternMessages">
+            <map key-type="java.lang.String" value-type="java.lang.String">
+                <entry key=".*" value="Detected pattern '.*' that will match everything"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="UnescapedSpecialCharsRule" scope="prototype" class="datawave.query.rules.UnescapedSpecialCharsRule">
+        <property name="name" value="Check for Unescaped Special Characters"/>
+        <property name="escapedWhitespaceRequiredForLiterals" value="false"/>
+        <property name="escapedWhitespaceRequiredForPatterns" value="false"/>
+    </bean>
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="checkpointable" value="${datawave.query.logic.logics.BaseEventQuery.checkpointable}" />
@@ -41,6 +120,9 @@
         <property name="reverseIndexTableName" value="${datawave.query.logic.logics.BaseEventQuery.reverseIndexTableName}" />
         <property name="maxResults" value="${datawave.query.logic.logics.BaseEventQuery.maxResults}" />
         <property name="queryThreads" value="${datawave.query.logic.logics.BaseEventQuery.queryThreads}" />
+        <property name="yieldThresholdMs" value="${datawave.query.logic.logics.BaseEventQuery.yieldThresholdMs}" />
+        <property name="maxYields" value="${datawave.query.logic.logics.BaseEventQuery.maxYields}" />
+        <property name="collectTimingDetails" value="${datawave.query.logic.logics.BaseEventQuery.collectTimingDetails}" />
         <property name="indexLookupThreads" value="${datawave.query.logic.logics.BaseEventQuery.indexLookupThreads}" />
         <property name="dateIndexThreads" value="${datawave.query.logic.logics.BaseEventQuery.dateIndexThreads}" />
         <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled}" />
@@ -99,6 +181,8 @@
         <property name="maxFieldIndexRangeSplit" value="${datawave.query.logic.logics.BaseEventQuery.maxFieldIndexRangeSplit}" />
         <!-- The max number of sources that can be created across ivarators for one scan -->
         <property name="maxIvaratorSources" value="${datawave.query.logic.logics.BaseEventQuery.maxIvaratorSources}" />
+        <!-- The max wait time in ms for an ivarator source (default 30 minutes) -->
+        <property name="maxIvaratorSourceWait" value="${datawave.query.logic.logics.BaseEventQuery.maxIvaratorSourceWait}" />
         <!-- The max number of evaluation pipelines.  They are run in a pool of threads controlled by the tserver.datawave.evaluation.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
         <property name="maxEvaluationPipelines" value="${datawave.query.logic.logics.BaseEventQuery.maxEvaluationPipelines}" />
         <!-- The max number of non-null evaluated results to cache on each tserver beyond the evaluation pipelines in queue -->
@@ -149,6 +233,29 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
 
         <property name="evaluationOnlyFields" value="${datawave.query.logic.logics.BaseEventQuery.evaluationOnlyFields}" />
+        <!--    control when to log warnings for long aggregations    -->
+        <property name="docAggregationThresholdMs" value="-1" />
+        <property name="tfAggregationThresholdMs" value="-1" />
+        <property name="summaryFieldName" value="SUMMARY" />
+        <property name="validationRules">
+            <list value-type="datawave.query.rules.QueryRule">
+                <ref bean="InvalidQuoteRule"/>
+                <ref bean="UnfieldedTermsRule"/>
+                <ref bean="UnescapedWildcardsInPhrasesRule"/>
+                <ref bean="AmbiguousNotRule"/>
+                <ref bean="AmbiguousOrPhrasesRule"/>
+                <ref bean="AmbiguousUnquotedPhrasesRule"/>
+                <ref bean="GroupedInterpretationRule"/>
+                <ref bean="MinimumSlopProximityRule"/>
+                <ref bean="IncludeExcludeArgsRule"/>
+                <ref bean="FieldExistenceRule"/>
+                <ref bean="UnescapedSpecialCharsRule"/>
+                <ref bean="FieldPatternPresenceRule"/>
+                <ref bean="IncludeExcludeIndexOnlyFieldsRule"/>
+                <ref bean="NumericValueRule"/>
+                <ref bean="TimeFunctionRule"/>
+            </list>
+        </property>
         <property name="maxConcurrentTasks" value="${datawave.query.logic.logics.BaseEventQuery.maxConcurrentTasks}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
@@ -190,6 +297,7 @@
                 <property name="selectorExtractor"><null/></property>
             </bean>
         </constructor-arg>
+        <property name="auditType" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.auditType}" />
         <property name="checkpointable" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.checkpointable}" />
     </bean>
 
@@ -230,8 +338,18 @@
         <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
+        <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
+        <bean class="datawave.query.language.functions.jexl.Rename"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMillisecond"/>
+        <bean class="datawave.query.language.functions.jexl.GroupBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByHour"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByDay"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByYear"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
@@ -248,6 +366,8 @@
         <bean class="datawave.query.language.functions.jexl.MostRecentUniqueBySecond"/>
         <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByTenthOfHour"/>
         <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByYear"/>
+        <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
+        <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
@@ -258,6 +378,13 @@
         <bean class="datawave.query.language.functions.jexl.EvaluationOnly">
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
+        <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.Matches"/>
+        <bean class="datawave.query.language.functions.jexl.Sum"/>
+        <bean class="datawave.query.language.functions.jexl.Min"/>
+        <bean class="datawave.query.language.functions.jexl.Max"/>
+        <bean class="datawave.query.language.functions.jexl.Average"/>
+        <bean class="datawave.query.language.functions.jexl.Count"/>
     </util:list>
 
     <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
@@ -305,14 +432,14 @@
     <!-- Query Logic that implements a discovery type query over the index -->
     <bean id="DiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.discovery.DiscoveryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.DiscoveryQuery.checkpointable}" />
-        <property name="tableName" value="${datawave.query.logic.logics.DiscoveryQuery.tableName}" />
+        <property name="tableName" value="${datawave.query.logic.logics.DiscoveryQuery.indexTableName}" />
         <property name="indexTableName" value="${datawave.query.logic.logics.DiscoveryQuery.indexTableName}" />
         <property name="reverseIndexTableName" value="${datawave.query.logic.logics.DiscoveryQuery.reverseIndexTableName}" />
         <property name="maxResults" value="${datawave.query.logic.logics.DiscoveryQuery.maxResults}" />
         <property name="maxWork" value="${datawave.query.logic.logics.DiscoveryQuery.maxWork}" />
-        <property name="metadataTableName" value="${datawave.query.logic.logics.DiscoveryQuery.metadataTableName}" />
         <property name="modelTableName" value="${datawave.query.logic.logics.DiscoveryQuery.modelTableName}" />
         <property name="modelName" value="${datawave.query.logic.logics.DiscoveryQuery.modelName}" />
+        <property name="metadataTableName" value="${datawave.query.logic.logics.DiscoveryQuery.metadataTableName}" />
         <!-- This is injected via MetadataHelperConfiguration.java -->
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.DiscoveryQuery.fullTableScanEnabled}" />
@@ -326,14 +453,14 @@
     <!-- Query Logic that implements a discovery type query over the index -->
     <bean id="ErrorDiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.discovery.DiscoveryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.checkpointable}" />
-        <property name="tableName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.tableName}" />
+        <property name="tableName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.indexTableName}" />
         <property name="indexTableName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.indexTableName}" />
         <property name="reverseIndexTableName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.reverseIndexTableName}" />
         <property name="maxResults" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.maxResults}" />
         <property name="maxWork" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.maxWork}" />
-        <property name="metadataTableName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.metadataTableName}" />
         <property name="modelTableName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.modelTableName}" />
         <property name="modelName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.modelName}" />
+        <property name="metadataTableName" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.metadataTableName}" />
         <!-- This is injected via MetadataHelperConfiguration.java -->
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.fullTableScanEnabled}" />
@@ -367,7 +494,7 @@
         <property name="tableName" value="${datawave.query.logic.logics.ErrorCountQuery.tableName}" />
         <property name="metadataTableName" value="${datawave.query.logic.logics.ErrorCountQuery.metadataTableName}" />
         <property name="indexTableName" value="${datawave.query.logic.logics.ErrorCountQuery.indexTableName}" />
-        <property name="reverseIndexTableName" value="${datawave.query.logic.logics.ErrorCountQuery.indexTableName}" />
+        <property name="reverseIndexTableName" value="${datawave.query.logic.logics.ErrorCountQuery.reverseIndexTableName}" />
     </bean>
 
     <!-- Query Logic which performs a count on fieldIndex keys -->
@@ -382,6 +509,7 @@
         <property name="maxResults" value="${datawave.query.logic.logics.FieldIndexCountQuery.maxResults}" />
         <property name="maxWork" value="${datawave.query.logic.logics.FieldIndexCountQuery.maxWork}" />
         <property name="queryThreads" value="${datawave.query.logic.logics.FieldIndexCountQuery.queryThreads}" />
+        <property name="maxConcurrentTasks" value="${datawave.query.logic.logics.FieldIndexCountQuery.maxConcurrentTasks}" />
         <property name="modelTableName" value="${datawave.query.logic.logics.FieldIndexCountQuery.modelTableName}" />
         <property name="modelName" value="${datawave.query.logic.logics.FieldIndexCountQuery.modelName}" />
         <property name="maxUniqueValues" value="${datawave.query.logic.logics.FieldIndexCountQuery.maxUniqueValues}" />
@@ -403,6 +531,7 @@
         <property name="maxResults" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxResults}" />
         <property name="maxWork" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxWork}" />
         <property name="queryThreads" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.queryThreads}" />
+        <property name="maxConcurrentTasks" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxConcurrentTasks}" />
         <property name="modelTableName" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.modelTableName}" />
         <property name="modelName" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.modelName}" />
         <property name="maxUniqueValues" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxUniqueValues}" />
@@ -483,6 +612,7 @@
         <property name="indexTableName" value="${datawave.query.logic.logics.HitHighlights.indexTableName}" />
         <property name="reverseIndexTableName" value="${datawave.query.logic.logics.HitHighlights.reverseIndexTableName}" />
         <property name="queryThreads" value="${datawave.query.logic.logics.HitHighlights.queryThreads}" />
+        <property name="maxConcurrentTasks" value="${datawave.query.logic.logics.HitHighlights.maxConcurrentTasks}" />
         <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.HitHighlights.fullTableScanEnabled}" />
         <property name="minimumSelectivity" value="${datawave.query.logic.logics.HitHighlights.minimumSelectivity}" />
         <property name="includeDataTypeAsField" value="${datawave.query.logic.logics.HitHighlights.includeDataTypeAsField}" />
@@ -558,5 +688,15 @@
 
         <!-- This is injected via EdgeQueryLogicFactoryConfiguration.java and configured via configuration properties -->
         <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />
+    </bean>
+
+    <!-- The Top Level Document query (queries document tree as if it were one document, and then returns the top level document as the representative) -->
+    <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
+        <property name="collapseUids" value="false"/>
+        <property name="indexFilteringClassNames">
+            <list value-type="java.lang.String">
+                <value>datawave.query.function.NormalizedVersionPredicate</value>
+            </list>
+        </property>
     </bean>
 </beans>

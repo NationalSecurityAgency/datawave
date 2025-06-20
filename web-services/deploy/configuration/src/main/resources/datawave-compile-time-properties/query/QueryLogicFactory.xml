@@ -16,7 +16,7 @@
 
     <!-- Database properties are retrieved from the database.properties file
         but can be overridden by system properties -->
-    <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
+    <context:property-placeholder location="classpath:/datawave-compile-time-properties/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
 
     <!-- A list of lucene to jexl query functions -->
     <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
@@ -101,7 +101,7 @@
     </bean>
 
     <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
-        <property name="uuidTypes" ref="UUIDTypeList" />
+        <property name="uuidTypes" ref="UUIDTypes" />
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
 
@@ -340,6 +340,7 @@
         <property name="filterOptions" ref="BaseEventQueryFilterOptions" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
+
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
@@ -467,25 +468,25 @@
         <entry key="default" value="LuceneUUIDEventQuery"/>
     </util:map>
 
-    <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
+    <util:map id="UUIDTypes" key-type="java.lang.String" value-type="datawave.query.data.UUIDType">
         ${lookup.uuid.uuidTypes}
-    </util:list>
+    </util:map>
 
-    <bean id="LookupUUIDConfiguration" class="datawave.webservice.query.configuration.LookupUUIDConfiguration">
-        <property name="uuidTypes" ref="UUIDTypeList" />
+    <bean id="LookupProperties" class="datawave.microservice.query.lookup.LookupProperties">
+        <property name="uuidTypes" ref="UUIDTypes" />
         <property name="contentLookupTypes" ref="contentLookupTypes" />
         <property name="columnVisibility" value="" />
         <property name="beginDate" value="${lookup.uuid.beginDate}" />
     </bean>
 
-    <bean id="IdTranslatorConfiguration" class="datawave.webservice.query.configuration.IdTranslatorConfiguration">
-        <property name="uuidTypes" ref="UUIDTypeList" />
+    <bean id="TranslateIdProperties" class="datawave.microservice.query.translateid.TranslateIdProperties">
+        <property name="uuidTypes" ref="UUIDTypes" />
         <property name="columnVisibility" value="" />
         <property name="beginDate" value="${lookup.uuid.beginDate}" />
     </bean>
 
-    <bean id="QueryLogicFactoryConfiguration"
-          class="datawave.webservice.query.logic.QueryLogicFactoryConfiguration">
+    <bean id="QueryLogicFactoryProperties"
+          class="datawave.microservice.query.logic.config.QueryLogicFactoryProperties">
 
         <!-- The max number of records (max pagesize value) -->
         <property name="maxPageSize" value="${query.max.page.size}" />
@@ -576,7 +577,7 @@
     </bean>
 
     <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.core.query.logic.composite.CompositeQueryLogic">
-      <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
+      <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypes in QueryLogicFactory.xml" />
       <property name="auditType" value="NONE" />
       <property name="queryLogics">
         <map key-type="java.lang.String" value-type="datawave.core.query.logic.BaseQueryLogic">
@@ -788,7 +789,7 @@
     </bean>
 
     <bean id="queryLogicFactory" scope="prototype" class="datawave.webservice.query.logic.QueryLogicFactoryImpl" >
-        <property name="queryLogicFactoryConfiguration" ref="QueryLogicFactoryConfiguration" />
+        <property name="queryLogicFactoryProperties" ref="QueryLogicFactoryProperties" />
     </bean>
 
     <!--

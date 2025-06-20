@@ -6,20 +6,21 @@ import static datawave.microservice.configcheck.util.ArgumentUtils.getFileList;
 import static datawave.microservice.configcheck.util.ArgumentUtils.getFiles;
 import static datawave.microservice.configcheck.util.ArgumentUtils.getOutputPath;
 import static datawave.microservice.configcheck.util.FileUtils.getFilePath;
+import static datawave.microservice.configcheck.util.XmlRenderUtils.getYamlPropertySources;
 import static datawave.microservice.configcheck.util.XmlRenderUtils.loadContent;
-import static datawave.microservice.configcheck.util.XmlRenderUtils.loadProperties;
-import static datawave.microservice.configcheck.util.XmlRenderUtils.loadYamlAsProperties;
+import static datawave.microservice.configcheck.util.XmlRenderUtils.loadPropertySources;
 import static datawave.microservice.configcheck.util.XmlRenderUtils.renderContent;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.core.env.PropertySources;
+import org.springframework.core.env.PropertySourcesPropertyResolver;
 
 /**
  * CommandRunner is used to parse the application arguments and figure out which command needs to be run.
@@ -154,13 +155,13 @@ public class CommandRunner {
         }
 
         // load the properties (properties, or yaml)
-        Properties properties = getProperties(args);
-        if (properties == null) {
+        PropertySources propertySources = getPropertySources(args);
+        if (propertySources == null) {
             output.setErrorMessage("No properties/yaml loaded");
             return;
         }
 
-        output.setMessage(handleOutput(renderContent(content, properties)));
+        output.setMessage(handleOutput(renderContent(content, propertySources)));
     }
 
     private void runAnalyzeCommand(ApplicationArguments args, Output output) {
@@ -178,13 +179,14 @@ public class CommandRunner {
         }
 
         // load the properties (properties, or yaml)
-        Properties properties = getProperties(args);
-        if (properties == null) {
+        PropertySources propertySources = getPropertySources(args);
+        if (propertySources == null) {
             output.setErrorMessage("No properties/yaml loaded");
             return;
         }
 
-        XmlPropertyAnalyzer analyzer = new XmlPropertyAnalyzer(xmlContent, properties);
+        PropertySourcesPropertyResolver propertyResolver = new PropertySourcesPropertyResolver(propertySources);
+        XmlPropertyAnalyzer analyzer = new XmlPropertyAnalyzer(xmlContent, propertyResolver);
         String report;
         if (args.containsOption(FULL_REPORT)) {
             report = analyzer.getFullReport();
@@ -231,20 +233,23 @@ public class CommandRunner {
         return configdir;
     }
 
-    private Properties getProperties(ApplicationArguments args) {
+    private PropertySources getPropertySources(ApplicationArguments args) {
         String configdir = getConfigdir(args);
 
         // load the properties (or yaml)
-        Properties mergedProperties = null;
-        if (args.getOptionNames().contains(PROPERTIES)) {
-            mergedProperties = loadProperties(configdir, getFileList(args, PROPERTIES));
-        } else if (args.getOptionNames().contains(YAML)) {
-            mergedProperties = loadYamlAsProperties(configdir, getFileList(args, YAML));
-        } else {
-            log.info("No properties or yaml to render");
+        PropertySources propertySources = null;
+        try {
+            if (args.getOptionNames().contains(PROPERTIES)) {
+                propertySources = loadPropertySources(configdir, getFileList(args, PROPERTIES));
+            } else if (args.getOptionNames().contains(YAML)) {
+                propertySources = getYamlPropertySources(configdir, getFileList(args, YAML));
+            } else {
+                log.info("No properties or yaml to render");
+            }
+        } catch (Exception e) {
+            log.error("Error loading properties file", e);
         }
-
-        return mergedProperties;
+        return propertySources;
     }
 
     private String handleOutput(String output) {

@@ -163,12 +163,12 @@
     </bean>
     
     <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
-        <property name="uuidTypes" ref="UUIDTypeList" />
+        <property name="uuidTypes" ref="UUIDTypes" />
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
-    <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
+    <util:map id="UUIDTypes" key-type="java.lang.String" value-type="datawave.query.data.UUIDType">
 
-    </util:list>
+    </util:map>>
 
     <!--<bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">-->
         <!--<property name="tokenizeUnfieldedQueries" value="true" />-->

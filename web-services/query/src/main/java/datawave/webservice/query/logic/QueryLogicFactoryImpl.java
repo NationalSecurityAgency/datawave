@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationContext;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
+import datawave.microservice.query.logic.config.QueryLogicFactoryProperties;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.system.ServerPrincipal;
@@ -28,7 +29,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
      */
     @Inject
     @SpringBean(refreshable = true)
-    private QueryLogicFactoryConfiguration queryLogicFactoryConfiguration;
+    private QueryLogicFactoryProperties queryLogicFactoryProperties;
 
     @Inject
     private ApplicationContext applicationContext;
@@ -50,8 +51,8 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
     public QueryLogic<?> getQueryLogic(String queryLogic, ProxiedUserDetails currentUser, boolean checkRoles)
                     throws IllegalArgumentException, CloneNotSupportedException {
         String beanName = queryLogic;
-        if (queryLogicFactoryConfiguration.hasLogicMap()) {
-            beanName = queryLogicFactoryConfiguration.getLogicMap().get(queryLogic);
+        if (!queryLogicFactoryProperties.getQueryLogicsByName().isEmpty()) {
+            beanName = queryLogicFactoryProperties.getQueryLogicsByName().get(queryLogic);
         }
         if (beanName == null) {
             throw new IllegalArgumentException("Logic name '" + queryLogic + "' is not configured for this system");
@@ -75,10 +76,10 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
 
         logic.setLogicName(queryLogic);
         if (logic.getMaxPageSize() == 0) {
-            logic.setMaxPageSize(queryLogicFactoryConfiguration.getMaxPageSize());
+            logic.setMaxPageSize(queryLogicFactoryProperties.getMaxPageSize());
         }
         if (logic.getPageByteTrigger() == 0) {
-            logic.setPageByteTrigger(queryLogicFactoryConfiguration.getPageByteTrigger());
+            logic.setPageByteTrigger(queryLogicFactoryProperties.getPageByteTrigger());
         }
 
         logic.setCurrentUser(currentUser);
@@ -90,9 +91,9 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
     @Override
     public List<QueryLogic<?>> getQueryLogicList() {
         Map<String,QueryLogic> logicMap = applicationContext.getBeansOfType(QueryLogic.class);
-        if (queryLogicFactoryConfiguration.hasLogicMap()) {
+        if (!queryLogicFactoryProperties.getQueryLogicsByName().isEmpty()) {
             Map<String,QueryLogic> renamedLogicMap = new HashMap<>();
-            for (Map.Entry<String,String> entry : queryLogicFactoryConfiguration.getLogicMap().entrySet()) {
+            for (Map.Entry<String,String> entry : queryLogicFactoryProperties.getQueryLogicsByName().entrySet()) {
                 if (logicMap.containsKey(entry.getValue())) {
                     renamedLogicMap.put(entry.getKey(), logicMap.get(entry.getValue()));
                 }

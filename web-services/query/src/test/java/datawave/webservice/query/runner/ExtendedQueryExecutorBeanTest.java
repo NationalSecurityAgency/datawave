@@ -85,6 +85,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.lookup.LookupProperties;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.data.UUIDType;
@@ -105,7 +106,6 @@ import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
-import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -155,7 +155,7 @@ public class ExtendedQueryExecutorBeanTest {
     GenericQueryConfiguration genericConfiguration;
 
     @Mock
-    LookupUUIDConfiguration lookupUUIDConfiguration;
+    LookupProperties lookupProperties;
 
     @Mock
     LookupUUIDUtil lookupUUIDUtil;
@@ -3020,21 +3020,21 @@ public class ExtendedQueryExecutorBeanTest {
     public void testInit() throws Exception {
         // Set expectations
         when(this.traceCache.putIfAbsent(isA(String.class), (Multimap) notNull())).thenReturn(null);
-        when(this.lookupUUIDConfiguration.getUuidTypes()).thenReturn(null);
-        when(this.lookupUUIDConfiguration.getBeginDate()).thenReturn("not a date");
-        when(this.lookupUUIDConfiguration.getBatchLookupUpperLimit()).thenReturn(0);
-        when(this.lookupUUIDConfiguration.getTagCloudLookupUpperLimit()).thenReturn(0);
-        when(this.lookupUUIDConfiguration.getContentLookupTypes()).thenReturn(Collections.emptyMap());
+        when(this.lookupProperties.getUuidTypes()).thenReturn(null);
+        when(this.lookupProperties.getBeginDate()).thenReturn("not a date");
+        when(this.lookupProperties.getBatchLookupUpperLimit()).thenReturn(0);
+        when(this.lookupProperties.getTagCloudLookupUpperLimit()).thenReturn(0);
+        when(this.lookupProperties.getContentLookupTypes()).thenReturn(Collections.emptyMap());
         when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-        LookupUUIDConfiguration tmpCfg = new LookupUUIDConfiguration();
+        LookupProperties tmpCfg = new LookupProperties();
         tmpCfg.setColumnVisibility("PUBLIC");
-        when(this.lookupUUIDConfiguration.optionalParamsToMap()).thenAnswer(inv -> tmpCfg.optionalParamsToMap());
+        when(this.lookupProperties.optionalParamsToMap()).thenAnswer(inv -> tmpCfg.optionalParamsToMap());
 
         // Run the test
         QueryExecutorBean subject = new QueryExecutorBean();
         ReflectionTestUtils.setField(subject, "ctx", context);
         ReflectionTestUtils.setField(subject, "queryTraceCache", traceCache);
-        ReflectionTestUtils.setField(subject, "lookupUUIDConfiguration", lookupUUIDConfiguration);
+        ReflectionTestUtils.setField(subject, "lookupProperties", lookupProperties);
         ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
         ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
         ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());

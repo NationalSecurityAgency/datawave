@@ -2,39 +2,26 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:util="http://www.springframework.org/schema/util"
-       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
-    http://www.springframework.org/schema/context
-    http://www.springframework.org/schema/context/spring-context-4.0.xsd
-    http://www.springframework.org/schema/util
-    http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
     <!--  part of what enforces any Required properties to be set on loading of the context -->
     <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
 
-    <!-- Database properties are retrieved from the database.properties file
-        but can be overridden by system properties -->
-    <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
-
     <bean id="AnnotationManagerConfig" scope="prototype" class="datawave.webservice.annotation.AnnotationManagerConfig">
-        <property name="annotationTableName" value="${annotation.table.name}"/>
-        <property name="annotationSourceTableName" value="${annotation.source.table.name}"/>
-        <property name="truthmarkTableName" value="${truthmark.table.name}"/>
-        <property name="truthmarkSourceTableName" value="${truthmark.source.table.name}"/>
-        <property name="connPoolName" value="WAREHOUSE" />
+        <property name="annotationTableName" value="${warehouse.tables.annotation.name}"/>
+        <property name="annotationSourceTableName" value="${warehouse.tables.annotationSource.name}"/>
+        <property name="truthmarkTableName" value="${warehouse.tables.truthmark.name}"/>
+        <property name="truthmarkSourceTableName" value="${warehouse.tables.truthmarkSource.name}"/>
+        <property name="connPoolName" value="datawave.connection.factory.defaultPool" />
         <property name="enableInternalIdLookup" value="true" />
         <property name="lookupUUIDQueryLogic">
             <bean scope="prototype" parent="BaseEventQuery">
-                <property name="auditType" value="NONE" />
-                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
-                <property name="mandatoryQuerySyntax">
-                    <util:set>
-                        <value>LUCENE-UUID</value>
-                    </util:set>
-                </property>
-                <property name="connPoolName" value="UUID" />
+                <property name="auditType" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.auditType}" />
+                <property name="logicDescription" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.logicDescription}" />
+                <!-- This is injected via LuceneUUIDEventQueryConfiguration.java and configured via configuration properties -->
+                <property name="mandatoryQuerySyntax" ref="luceneUUIDEventQueryEventQueryMandatoryQuerySyntax" />
+                <property name="connPoolName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.connPoolName}" />
             </bean>
         </property>
         <property name="lookupUUIDServiceConfig">

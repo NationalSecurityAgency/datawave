@@ -24,6 +24,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
+import org.springframework.core.metrics.ApplicationStartup;
 
 /**
  * A delegating wrapper around {@link ConfigurableApplicationContext}. This implements all methods of {@link ConfigurableApplicationContext}, delegating each
@@ -77,6 +78,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public void setApplicationStartup(ApplicationStartup applicationStartup) {
+        lockAndWrite(() -> configurableApplicationContext.setApplicationStartup(applicationStartup));
+    }
+
+    @Override
+    public ApplicationStartup getApplicationStartup() {
+        return lockAndRead(configurableApplicationContext::getApplicationStartup);
+    }
+
+    @Override
     public void setEnvironment(ConfigurableEnvironment environment) {
         lockAndWrite(() -> configurableApplicationContext.setEnvironment(environment));
     }
@@ -114,6 +125,11 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public void addApplicationListener(ApplicationListener<?> listener) {
         lockAndWrite(() -> configurableApplicationContext.addApplicationListener(listener));
+    }
+
+    @Override
+    public void setClassLoader(ClassLoader classLoader) {
+
     }
 
     @Override
@@ -174,6 +190,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType) {
         return lockAndRead(() -> configurableApplicationContext.getBeanProvider(resolvableType));
+    }
+
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass, boolean b) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(aClass, b));
+    }
+
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType, boolean b) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(resolvableType, b));
     }
 
     @Override
@@ -274,6 +300,11 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
         return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(beanName, annotationType));
+    }
+
+    @Override
+    public <A extends Annotation> A findAnnotationOnBean(String s, Class<A> aClass, boolean b) throws NoSuchBeanDefinitionException {
+        return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(s, aClass, b));
     }
 
     @Override

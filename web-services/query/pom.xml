@@ -63,6 +63,16 @@
             <artifactId>query-metric-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-query-common</artifactId>
+            <version>${version.datawave.starter-query-common}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-webservice</artifactId>
+            <version>${version.datawave.starter-webservice}</version>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
             <version>${project.version}</version>

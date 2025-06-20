@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "datawave.query.logic.factory")
 public class QueryLogicFactoryProperties {
-    private String xmlBeansPath = "classpath:QueryLogicFactory.xml,EdgeQueryLogicFactory.xml";
+    private String xmlBeansPath = "";// ""classpath:QueryLogicFactory.xml,EdgeQueryLogicFactory.xml";
     private Map<String,String> queryLogicsByName = new LinkedHashMap<>();
     private int maxPageSize = 10000;
     private long pageByteTrigger = 0;

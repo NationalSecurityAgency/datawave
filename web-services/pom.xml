@@ -42,12 +42,17 @@
         <version.commons-dbutils>1.7</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-net>3.9.0</version.commons-net>
+        <version.datawave.starter-query>1.0.15-SNAPSHOT</version.datawave.starter-query>
+        <version.datawave.starter-query-common>1.0.0-SNAPSHOT</version.datawave.starter-query-common>
+        <version.datawave.starter-webservice>1.0.0-SNAPSHOT</version.datawave.starter-webservice>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>1.1</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
         <version.protobuf>3.16.3</version.protobuf>
+        <version.spring-boot>2.7.1</version.spring-boot>
+        <version.spring-cloud-config-client>3.1.3</version.spring-cloud-config-client>
     </properties>
     <dependencyManagement>
         <dependencies>

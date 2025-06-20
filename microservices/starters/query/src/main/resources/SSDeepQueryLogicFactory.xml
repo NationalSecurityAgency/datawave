@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <!-- Query Logic that returns document content -->
+    <bean id="SSDeepSimilarityQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.ssdeep.SSDeepSimilarityQueryLogic">
+        <property name="tableName" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.tableName}" />
+        <property name="maxResults" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.maxResults}" />
+        <property name="maxWork" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.maxWork}" />
+        <property name="auditType" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.auditType}" />
+        <property name="indexBuckets" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.indexBuckets}" />
+        <property name="queryThreads" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.queryThreads}" />
+        <property name="maxRepeatedCharacters" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.maxRepeatedCharacters}" />
+        <property name="bucketEncodingBase" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.bucketEncodingBase}" />
+        <property name="bucketEncodingLength" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.bucketEncodingLength}" />
+        <property name="logicDescription" value="${datawave.query.logic.logics.SSDeepSimilarityQuery.logicDescription}" />
+    </bean>
+
+    <bean id="SSDeepDiscoveryQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ssdeep.SSDeepDiscoveryQueryLogic">
+        <property name="tableName" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.tableName}" />
+        <property name="indexTableName" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.indexTableName}" />
+        <property name="reverseIndexTableName" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.reverseIndexTableName}" />
+        <property name="maxResults" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.maxResults}" />
+        <property name="maxWork" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.maxWork}" />
+        <property name="modelTableName" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.modelTableName}" />
+        <property name="modelName" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.modelName}" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
+        <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.fullTableScanEnabled}" />
+        <property name="allowLeadingWildcard" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.allowLeadingWildcard}" />
+        <property name="auditType" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.auditType}" />
+        <property name="logicDescription" value="${datawave.query.logic.logics.SSDeepDiscoveryQuery.logicDescription}" />
+    </bean>
+
+    <bean id="SSDeepSimilarityDiscoveryQuery" parent="baseQueryLogic" class="datawave.query.tables.ssdeep.SSDeepChainedDiscoveryQueryLogic">
+        <property name="tableName" value="${datawave.query.logic.logics.SSDeepSimilarityDiscoveryQuery.tableName}" />
+        <property name="logic1" ref="SSDeepSimilarityQuery"/>
+        <property name="logic2" ref="SSDeepDiscoveryQuery"/>
+        <property name="auditType" value="${datawave.query.logic.logics.SSDeepSimilarityDiscoveryQuery.auditType}"/>
+        <property name="chainStrategy">
+            <bean class="datawave.query.tables.ssdeep.FullSSDeepDiscoveryChainStrategy"/>
+        </property>
+        <property name="logicDescription" value="${datawave.query.logic.logics.SSDeepSimilarityDiscoveryQuery.logicDescription}" />
+    </bean>
+</beans>

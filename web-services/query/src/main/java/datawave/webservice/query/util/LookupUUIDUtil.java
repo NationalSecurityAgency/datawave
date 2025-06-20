@@ -23,6 +23,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.MultiValueMap;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
@@ -32,6 +33,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
+import datawave.microservice.query.lookup.LookupProperties;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
@@ -40,7 +42,6 @@ import datawave.security.util.WSAuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
@@ -115,12 +116,12 @@ public class LookupUUIDUtil {
     private final Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     private Map<String,String> contentLookupTypes = Collections.synchronizedMap(new HashMap<>());
 
-    MultivaluedMap<String,String> defaultOptionalParams;
+    MultiValueMap<String,String> defaultOptionalParams;
 
     /**
      * Constructor
      *
-     * @param lookupUUIDConfiguration
+     * @param lookupProperties
      *            Configuration bean for lookupUUID web service endpoints
      * @param queryExecutor
      *            Service that executes queries
@@ -133,10 +134,10 @@ public class LookupUUIDUtil {
      * @param userOperations
      *            the user operations
      */
-    public LookupUUIDUtil(final LookupUUIDConfiguration lookupUUIDConfiguration, final QueryExecutor queryExecutor, final EJBContext context,
+    public LookupUUIDUtil(final LookupProperties lookupProperties, final QueryExecutor queryExecutor, final EJBContext context,
                     final ResponseObjectFactory responseObjectFactory, final QueryLogicFactory queryLogicFactory, final UserOperations userOperations) {
         // Validate and assign the lookup UUID configuration
-        if (null == lookupUUIDConfiguration) {
+        if (null == lookupProperties) {
             throw new IllegalArgumentException("Non-null configuration required to lookup UUIDs");
         }
 
@@ -158,28 +159,26 @@ public class LookupUUIDUtil {
         this.queryLogicFactory = queryLogicFactory;
 
         // load uuidTypes from the flat list
-        final List<UUIDType> types = lookupUUIDConfiguration.getUuidTypes();
-
-        if (null != types) {
-            for (final UUIDType type : types) {
+        if (lookupProperties.getUuidTypes() != null) {
+            for (final UUIDType type : lookupProperties.getUuidTypes().values()) {
                 addUUIDType(type.getFieldName(), type);
             }
         }
 
         // Populate the content lookup types map
         this.contentLookupTypes.clear();
-        this.contentLookupTypes = lookupUUIDConfiguration.getContentLookupTypes();
+        this.contentLookupTypes = lookupProperties.getContentLookupTypes();
 
         // Assign the begin date
         try {
-            this.beginAsDate = DateHelper.parse(lookupUUIDConfiguration.getBeginDate());
+            this.beginAsDate = DateHelper.parse(lookupProperties.getBeginDate());
         } catch (DateTimeParseException e) {
             log.error(e.getMessage(), e);
         }
 
         // Assign the maximum number of UUIDs allowed for batch lookup. A zero or negative
         // value is interpreted as unlimited, which is automatically adjusted to -1.
-        this.maxAllowedBatchLookupUUIDs = lookupUUIDConfiguration.getBatchLookupUpperLimit();
+        this.maxAllowedBatchLookupUUIDs = lookupProperties.getBatchLookupUpperLimit();
         if (this.maxAllowedBatchLookupUUIDs <= 0) {
             this.maxAllowedBatchLookupUUIDs = -1;
         }
@@ -187,12 +186,12 @@ public class LookupUUIDUtil {
         // Assign the maximum number of UUIDs allowed for tag cloud batch lookup which may be different
         // from the default limit because tag clouds summarize results. A zero or negative
         // value is interpreted as unlimited, which is automatically adjusted to -1.
-        this.maxAllowedTagCloudLookupUUIDs = lookupUUIDConfiguration.getTagCloudLookupUpperLimit();
+        this.maxAllowedTagCloudLookupUUIDs = lookupProperties.getTagCloudLookupUpperLimit();
         if (this.maxAllowedTagCloudLookupUUIDs <= 0) {
             this.maxAllowedTagCloudLookupUUIDs = -1;
         }
 
-        this.defaultOptionalParams = lookupUUIDConfiguration.optionalParamsToMap();
+        this.defaultOptionalParams = lookupProperties.optionalParamsToMap();
     }
 
     /*

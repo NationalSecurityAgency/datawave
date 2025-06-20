@@ -1,7 +1,13 @@
 package datawave.springframework.integration;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
@@ -22,7 +28,9 @@ import org.springframework.context.ApplicationContext;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.microservice.metadata.config.MetadataHelperConfiguration;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.logic.config.BaseEventQueryConfiguration;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.metrics.QueryMetricQueryLogic;
 import datawave.query.planner.BooleanChunkingQueryPlanner;
@@ -65,22 +73,27 @@ public class WiredQueryExecutorBeanTest {
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         System.setProperty("cdi.bean.context", "springFrameworkBeanRefContext.xml");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         // Set system properties that are normally set by the Wildfly container, and needed for test deployment
         try (InputStream is = WiredQueryExecutorBeanTest.class.getResourceAsStream("/test-system-properties.properties")) {
             Properties systemProperties = System.getProperties();
             systemProperties.load(is);
             System.setProperties(systemProperties);
         }
+        String tempDirPrefix = WiredQueryExecutorBeanTest.class.getSimpleName();
+        System.setProperty("spring.context.debug.dir", createTempDirectory(tempDirPrefix));
+        System.setProperty("datawave.configuration.spring.configure-from-properties", "false");
 
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
-                                        "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
+                                        "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration",
+                                        "datawave.microservice.query.logic.config", "datawave.webservice.spring.configuration")
                         .addClasses(DefaultResponseObjectFactory.class, QueryExpirationProperties.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
                                         DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, CachedResultsConfiguration.class, DateIndexHelperFactory.class,
-                                        DefaultMapperDecorator.class)
+                                        DefaultMapperDecorator.class, BaseEventQueryConfiguration.class, MetadataHelperConfiguration.class)
                         .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
@@ -127,5 +140,11 @@ public class WiredQueryExecutorBeanTest {
         public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
             return mockRemoteEdgeDictionary;
         }
+    }
+
+    private static String createTempDirectory(String prefix) throws IOException {
+        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr-xr-x");
+        FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
+        return String.valueOf(Files.createTempDirectory(prefix + "_", attr));
     }
 }

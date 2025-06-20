@@ -9,6 +9,9 @@
     <artifactId>datawave-query-core</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <version.spring-cloud-starter-bootstrap>3.1.9</version.spring-cloud-starter-bootstrap>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.clearspring.analytics</groupId>
@@ -129,6 +132,11 @@
             <artifactId>datawave-ws-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
             <exclusions>
@@ -156,6 +164,10 @@
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -282,12 +294,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-cached-results</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -299,6 +305,12 @@
             <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.microservice</groupId>
+                    <artifactId>spring-boot-starter-datawave-query</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>javax.validation</groupId>
@@ -421,6 +433,22 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+            <version>${version.spring-cloud-starter-bootstrap}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <!-- Runtime dependency needed for MiniAccumuloCluster, discovered
             after hunting down the MAC logs out in /tmp territory, which can
             only be found and recovered by using a well-placed breakpoint in the
@@ -437,6 +465,12 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
+        <testResources>
+            <testResource>
+                <filtering>true</filtering>
+                <directory>src/test/resources</directory>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

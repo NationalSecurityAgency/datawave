@@ -11,12 +11,36 @@
     <build>
         <finalName>${project.artifactId}</finalName>
         <resources>
+            <!-- xml files under datawave that use config server properties do not get filtered -->
+            <resource>
+                <filtering>false</filtering>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>datawave/**/*</include>
+                </includes>
+            </resource>
+            <!-- this xml file under datawave should get filtered -->
             <resource>
                 <filtering>true</filtering>
                 <directory>src/main/resources</directory>
+                <includes>
+                    <include>datawave/query/QueryMetrics.xml</include>
+                    <include>datawave/security/TestDatawaveUserServiceConfiguration.xml</include>
+                </includes>
+            </resource>
+            <!-- xml files that use config server properties do not get filtered -->
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>datawave/**/*</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

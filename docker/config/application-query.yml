@@ -10,6 +10,14 @@ warehouse:
     host: localhost
     port: 8125
   tables:
+    annotation:
+      name: 'datawave.annotation'
+    annotationSource:
+      name: 'datawave.annotationSource'
+    truthmark:
+      name: 'datawave.truthmark'
+    truthmarkSource:
+      name: 'datawave.truthmarkSource'
     shard:
       name: 'datawave.shard'
     index:
@@ -24,6 +32,8 @@ warehouse:
       name: 'datawave.metadata'
     edge:
       name: 'datawave.edge'
+    ssdeepIndex:
+      name: 'ssdeepIndex'
   errorTables:
     shard:
       name: "datawave.error_s"
@@ -36,7 +46,7 @@ warehouse:
     metadata:
       name: "datawave.error_m"
     model:
-      name: "datawave.error_m"
+      name: "datawave.metadata"
   metricTables:
     shard:
       name: "datawave.queryMetrics_s"
@@ -45,7 +55,7 @@ warehouse:
     reverseIndex:
       name: "datawave.queryMetrics_r"
     dateIndex:
-      name: ""
+      name: "datawave.queryMetrics_di"
     metadata:
       name: "datawave.queryMetrics_m"
     model:
@@ -70,6 +80,7 @@ warehouse:
     maxOrExpansionFstThreshold: 750
     maxFieldIndexRangeSplit: 16
     maxIvaratorSources: 20
+    maxIvaratorSourceWait: 1800000
     maxEvaluationPipelines: 16
     maxPipelineCachedResults: 16
     hdfsSiteConfigURLs: 'file://${HADOOP_CONF_DIR:/etc/hadoop/conf}/core-site.xml,file://${HADOOP_CONF_DIR:/etc/hadoop/conf}/hdfs-site.xml'
@@ -79,6 +90,7 @@ warehouse:
     ivaratorCacheScanPersistThreshold: 100000
     ivaratorCacheScanTimeoutMinutes: 60
     yieldThresholdMs: 188400
+    maxYields: 20
     modelName: 'DATAWAVE'
     edgeModelName: 'DATAWAVE_EDGE'
 
@@ -160,8 +172,8 @@ datawave:
           disableIndexOnlyDocuments: false
           indexOnlyFilterFunctionsEnabled: false
           includeHierarchyFields: false
-          hierarchyFieldOptions:
-            "FOO": "BAR"
+          #hierarchyFieldOptions:
+          #  "FOO": "BAR"
           baseIteratorPriority: ${warehouse.defaults.baseIteratorPriority}
           maxIndexScanTimeMillis: ${warehouse.defaults.maxIndexScanTimeMillis}
           collapseUids: false
@@ -175,10 +187,10 @@ datawave:
           enricherClassNames:
             - 'datawave.query.enrich.DatawaveTermFrequencyEnricher'
           useFilters: false
-          filterClassNames:
-            - 'foo.bar'
-          filterOptions:
-            'bar': "foo"
+          #filterClassNames:
+          #  - 'foo.bar'
+          #filterOptions:
+          #  'bar': "foo"
           auditType: "ACTIVE"
           logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
           initialMaxTermThreshold: ${warehouse.defaults.initialMaxTermThreshold}
@@ -191,18 +203,22 @@ datawave:
           maxOrExpansionFstThreshold: ${warehouse.defaults.maxOrExpansionFstThreshold}
           maxFieldIndexRangeSplit: ${warehouse.defaults.maxFieldIndexRangeSplit}
           maxIvaratorSources: ${warehouse.defaults.maxIvaratorSources}
+          maxIvaratorSourceWait: ${warehouse.defaults.maxIvaratorSourceWait}
           maxEvaluationPipelines: ${warehouse.defaults.maxEvaluationPipelines}
           maxPipelineCachedResults: ${warehouse.defaults.maxPipelineCachedResults}
           hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
           zookeeperConfig: ${warehouse.accumulo.zookeepers}
           ivaratorCacheDirConfigs:
             - basePathURI: "hdfs://${HADOOP_HOST:localhost}:9000/IvaratorCache"
+          localIvaratorCacheDirConfigs:
+            - basePathURI: "file:///tmp/IvaratorCache"
           ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
           ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
           ivaratorCacheScanPersistThreshold: ${warehouse.defaults.ivaratorCacheScanPersistThreshold}
           ivaratorCacheScanTimeoutMinutes: ${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}
           yieldThresholdMs: ${warehouse.defaults.yieldThresholdMs}
+          maxYields: ${warehouse.defaults.maxYields}
           eventQueryDataDecoratorTransformer:
             requestedDecorators:
               - "CSV"
@@ -225,7 +241,7 @@ datawave:
           sendTimingToStatsd: false
           collectQueryMetrics: true
           collectTimingDetails: true
-          logTimingDetails: true
+          logTimingDetails: false
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
@@ -464,6 +480,52 @@ datawave:
           edgeModelName: "DATAWAVE_EDGE"
           modelTableName: ${warehouse.tables.model.name}
 
+        SSDeepSimilarityQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
+          tableName: ${warehouse.tables.ssdeepIndex.name}
+          maxResults: -1
+          maxWork: -1
+          auditType: "NONE"
+          indexBuckets: 32
+          queryThreads: 100
+          maxRepeatedCharacters: 3
+          bucketEncodingBase: 32
+          bucketEncodingLength: 2
+          logicDescription: "Query that will retrieve similar ssdeep hashes"
+
+        SSDeepDiscoveryQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
+          tableName: ${warehouse.tables.index.name}
+          indexTableName: ${warehouse.tables.index.name}
+          reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+          maxResults: -1
+          maxWork: -1
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: ${warehouse.defaults.modelName}
+          fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
+          allowLeadingWildcard: true
+          auditType: "NONE"
+          logicDescription: "Discovery query that returns information from the index about the supplied term(s)"
+
+        SSDeepSimilarityDiscoveryQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
+          tableName: ${warehouse.tables.ssdeepIndex.name}
+          auditType: "NONE"
+          logicDescription: "Query that will retrieve similar ssdeep hashes and then automatically perform a follow-on Discovery query that returns information from the index about the similar hashes"
+
+        KeywordQuery:
+          tableName: ${warehouse.tables.shard.name}
+          maxResults: -1
+          maxWork: -1
+          auditType: "NONE"
+          logicDescription: "Query that returns keywords from content"
+          queryThreads: 100
+          maxContentChars: 32768
+          maxKeywords: 10
+          maxNgrams: 3
+          minNgrams: 1
+          maxScore: "0.6f"
+
     uuidTypes: &defaultUuidTypes
       'EVENT_ID':
         fieldName: 'EVENT_ID'
@@ -490,12 +552,12 @@ datawave:
     lookup:
       columnVisibility: ""
       beginDate: "20100101 000000.000"
-      types: *defaultUuidTypes
+      uuidTypes: *defaultUuidTypes
 
     translateid:
       columnVisibility: ""
       beginDate: "20100101 000000.000"
-      types: *defaultUuidTypes
+      uuidTypes: *defaultUuidTypes
 
     edge:
       # Uncomment the following line to override the edge beans to load

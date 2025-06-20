@@ -73,8 +73,8 @@ public class QueryLogicFactoryConfiguration {
     @Scope(SCOPE_PROTOTYPE)
     public List<UUIDType> uuidTypes(LookupProperties lookupProperties) {
         List<UUIDType> uuidTypes = new ArrayList<>();
-        if (lookupProperties.getTypes() != null) {
-            uuidTypes.addAll(lookupProperties.getTypes().values());
+        if (lookupProperties.getUuidTypes() != null) {
+            uuidTypes.addAll(lookupProperties.getUuidTypes().values());
         }
         return uuidTypes;
     }
