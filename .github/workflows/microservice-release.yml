@@ -1,0 +1,113 @@
+name: Release Microservices
+
+on:
+  workflow_dispatch:
+    inputs:
+      projectToRelease:
+        required: true
+        type: choice
+        options:
+          - microservices/
+          - microservices/starters
+          - microservices/starters/audit
+          - microservices/starters/cache
+          - microservices/starters/cached-results
+          - microservices/starters/datawave
+          - microservices/starters/metadata
+          - microservices/starters/query
+          - microservices/starters/query-metric
+          - microservices/configcheck
+          - microservices/microservice-parent
+          - microservices/microservice-service-parent
+          - microservices/services/accumulo/api
+          - microservices/services/accumulo/service
+          - microservices/services/audit/api
+          - microservices/services/audit/service
+          - microservices/services/authorization/api
+          - microservices/services/authorization/service
+          - microservices/services/config/
+          - microservices/services/dictionary/api
+          - microservices/services/dictionary/service
+          - microservices/services/file-provider/api
+          - microservices/services/file-provider/service
+          - microservices/services/hazelcast/client
+          - microservices/services/hazelcast/common
+          - microservices/services/hazelcast/service
+          - microservices/services/mapreduce-query/api
+          - microservices/services/mapreduce-query/jobs
+          - microservices/services/mapreduce-query/layout-factory
+          - microservices/services/mapreduce-query/service
+          - microservices/services/modification/api
+          - microservices/services/modification/service
+          - microservices/services/query/api
+          - microservices/services/query/service
+          - microservices/services/query-executor/api
+          - microservices/services/query-executor/service
+          - microservices/services/query-metric/api
+          - microservices/services/query-metric/service
+      finalRelease:
+        required: true
+        default: false
+        type: boolean
+        description: "Whether or not this is the final release of this package. True will ignore modifier value and perform final release steps."
+      modifier:
+        required: true
+        default: "RC1"
+        description: "Modifier to add to version (e. g. 1.0.0-RC1)."
+env:
+  JAVA_VERSION: '11'
+  JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
+  REGISTRY: ghcr.io
+  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+
+
+jobs:
+  release-microservice:
+    runs-on: ubuntu-latest
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout DataWave
+      uses: actions/checkout@v4
+    - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        cache: 'maven'
+    - name: Determine release version
+      id: version
+      run: |
+        cd "${{ github.event.inputs.projectToRelease }}"
+        RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
+
+        if [ "${{ github.event.inputs.finalRelease }}" = "true" ]; then
+          FINAL_VERSION="$BASE_VERSION"
+          # Bump patch for new dev version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+          NEXT_DEV_VERSION="$MAJOR.$MINOR.$((PATCH+1))-SNAPSHOT"
+        else
+          FINAL_VERSION="${BASE_VERSION}-${{ github.event.inputs.modifier }}"
+          # Leave dev version as-is
+          NEXT_DEV_VERSION="$RAW_VERSION"
+        fi
+
+        echo "FINAL_VERSION=$FINAL_VERSION" >> $GITHUB_OUTPUT
+        echo "NEXT_DEV_VERSION=$NEXT_DEV_VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION_TAG=${{ github.event.inputs.projectToRelease }}-$FINAL_VERSION" >> $GITHUB_OUTPUT
+    - name: Release with Maven
+      run: |
+        cd "${{ github.event.inputs.projectToRelease }}"
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --batch-mode release:prepare release:perform \
+          -DreleaseVersion="${{ steps.version.outputs.FINAL_VERSION }}" \
+          -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
+          -Dtag="${{ steps.version.outputs.VERSION_TAG }}" \
+          -DpushChanges=true \
+          -DlocalCheckout=true
+
+
