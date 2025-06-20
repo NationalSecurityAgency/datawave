@@ -111,6 +111,8 @@ jobs:
           -DlocalCheckout=true
     - name: Build and Push packages and images 
       run: |
+        git checkout ${{ steps.version.outputs.VERSION_TAG }}
+          cd "${{ github.event.inputs.projectToRelease }}"
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml 
           --show-version 
           --batch-mode
