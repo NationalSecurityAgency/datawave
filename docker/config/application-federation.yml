@@ -2,15 +2,44 @@
 
 datawave:
   authorization:
-    federation:
-      # Each entry in the following map will be registered as a FederatedAuthorizationService bean, named after the key
+    remote:
+      defaults: &authorizationServiceDefaults
+        # these properties are for the RemoteHttpServiceProperties, used only in WSRemoteUserOperations
+        connectionPoolTimeout: 60000
+        connectTimeout: 60000
+        # these properties are for RemoteUserOperationsProperties, used in both MSRemoteUserOperations and WSRemoteUserOperations
+        listEffectiveAuthorizationsRetry:
+          timeout: 30000
+          retryDelay: 2000
+          retries: 5
+        flushCachedCredentialsRetry:
+          timeout: 30000
+          retryDelay: 2000
+          retries: 5
+      # Each entry in the following map will be registered as a RemoteUserOperations bean, named after the key
       services:
-        FederatedAuthorizationService:
-          federatedAuthorizationUri: "https://authorization:8443/authorization/v2"
+        RemoteUserOperations:
+          <<: *authorizationServiceDefaults
+          authorizationServiceUri: "https://authorization:8443/authorization/v2"
   query:
-    federation:
-      # Each entry in the following map will be registered as a FederatedQueryService (RemoteQueryService) bean, named after the key
+    remote:
+      defaults: &queryServiceDefaults
+        serviceClass: datawave.microservice.query.remote.MSRemoteQueryService
+        # these properties are for the RemoteHttpServiceProperties, used only in RemoteQueryServiceImpl
+        retryCount: 4
+        unavailableRetryDelay: 1000
+        unavailableRetryCount: 10
+        connectionPoolTimeout: 60000
+        connectTimeout: 60000
+        # these properties are for RemoteQueryServiceProperties, used in both RemoteQueryServiceImpl and MicroserviceRemoteQueryService
+        createTimeout: 180000
+        nextTimeout: 360000
+        closeTimeout: 360000
+        planTimeout: 1200000
+
+      # Each entry in the following map will be registered as a RemoteQueryService bean, named after the key
       services:
-        FederatedQueryService:
+        RemoteQueryService:
+          <<: *queryServiceDefaults
           queryServiceUri: 'https://query:8443/query/v1'
           queryMetricServiceUri: 'https://querymetric:8443/querymetric/v1/id'

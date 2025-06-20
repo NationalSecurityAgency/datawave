@@ -21,6 +21,7 @@ import com.google.common.collect.Sets;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.remote.RemoteQueryServiceProperties;
 import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -121,11 +122,6 @@ public class RemoteEventQueryLogicTest {
         }
 
         @Override
-        public void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass) {
-            // noop
-        }
-
-        @Override
         public BaseQueryResponse next(String id, ProxiedUserDetails callerObject) {
             return nextResponses.poll();
         }
@@ -152,6 +148,11 @@ public class RemoteEventQueryLogicTest {
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public RemoteQueryServiceProperties getRemoteQueryServiceProperties() {
+            return null;
         }
     }
 }

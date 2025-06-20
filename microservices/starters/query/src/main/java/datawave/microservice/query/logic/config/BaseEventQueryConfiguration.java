@@ -2,7 +2,6 @@ package datawave.microservice.query.logic.config;
 
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,6 +22,7 @@ import datawave.query.language.parser.QueryParser;
 import datawave.query.tables.QueryMacroFunction;
 import datawave.query.transformer.EventQueryDataDecorator;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
@@ -87,17 +87,10 @@ public class BaseEventQueryConfiguration {
 
     @Bean
     @Scope(SCOPE_PROTOTYPE)
-    public EventQueryDataDecoratorTransformer baseEventQueryEventQueryDataDecoratorTransformer() {
+    public EventQueryDataDecoratorTransformer baseEventQueryEventQueryDataDecoratorTransformer(ResponseObjectFactory responseObjectFactory) {
         EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer();
         if (baseEventQueryProperties().getDataDecoratorTransformerConfig() != null) {
             ShardQueryLogicProperties.DataDecoratorTransformerConfig config = baseEventQueryProperties().getDataDecoratorTransformerConfig();
-
-            List<String> requestedDecorators = new ArrayList<>();
-            if (config.getRequestedDecorators() != null) {
-                requestedDecorators.addAll(config.getRequestedDecorators());
-            }
-            eventQueryDataDecoratorTransformer.setRequestedDecorators(requestedDecorators);
-
             Map<String,EventQueryDataDecorator> dataDecorators = new LinkedHashMap<>();
             if (config.getDataDecorators() != null) {
                 config.getDataDecorators().forEach((key, value) -> {
@@ -105,6 +98,7 @@ public class BaseEventQueryConfiguration {
                         EventQueryDataDecorator eventQueryDataDecorator = new EventQueryDataDecorator();
                         eventQueryDataDecorator.setFieldName(key);
                         eventQueryDataDecorator.setPatternMap(new LinkedHashMap<>(value));
+                        eventQueryDataDecorator.setResponseObjectFactory(responseObjectFactory);
                         dataDecorators.put(key, eventQueryDataDecorator);
                     }
                 });

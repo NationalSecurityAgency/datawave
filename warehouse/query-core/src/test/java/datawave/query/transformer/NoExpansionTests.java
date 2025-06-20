@@ -28,7 +28,7 @@ import datawave.query.util.VisibilityWiseGuysIngestWithModel;
  * Tests for usage of #NO_EXPANSION in queries.
  */
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

@@ -24,8 +24,8 @@ import datawave.common.test.integration.IntegrationTest;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
-import datawave.webservice.query.remote.RemoteQueryServiceImpl;
+import datawave.webservice.common.remote.RemoteHttpServiceProperties;
+import datawave.webservice.query.remote.WSRemoteQueryService;
 
 @Category(IntegrationTest.class)
 public class RemoteEventQueryLogicIT {
@@ -43,7 +43,7 @@ public class RemoteEventQueryLogicIT {
         testUtil.initialize();
 
         // create a remote event query logic that has our own server behind it
-        RemoteQueryServiceImpl remote = (RemoteQueryServiceImpl) testUtil.getRemoteService();
+        WSRemoteQueryService remote = (WSRemoteQueryService) testUtil.getRemoteService();
 
         logic.setRemoteQueryService(remote);
         logic.setRemoteQueryLogic(DEFAULT_REMOTE_LOGIC);
@@ -63,8 +63,12 @@ public class RemoteEventQueryLogicIT {
 
     @Test
     public void testDefaultConnectTimeoutHangForever() {
+        WSRemoteQueryService remoteQueryService = (WSRemoteQueryService) logic.getRemoteQueryService();
+        RemoteHttpServiceProperties remoteConfig = remoteQueryService.getConfig();
         // override the endpoint to a non-routable ip, so it will block forever
-        ((RemoteHttpService) logic.getRemoteQueryService()).setQueryServiceHost(NON_ROUTABLE_HOST);
+        String uri = remoteQueryService.getRemoteQueryServiceProperties().getQueryServiceUri();
+        uri = uri.replace("localhost", NON_ROUTABLE_HOST);
+        remoteQueryService.getRemoteQueryServiceProperties().setQueryServiceUri(uri);
 
         RemoteQueryServiceTestUtil.QueryRunnable r = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
         Thread t = new Thread(r);
@@ -90,14 +94,16 @@ public class RemoteEventQueryLogicIT {
 
     @Test
     public void testConnectTimeoutQuery() throws Exception {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        WSRemoteQueryService remoteQueryService = (WSRemoteQueryService) logic.getRemoteQueryService();
+        RemoteHttpServiceProperties remoteConfig = remoteQueryService.getConfig();
 
         // set a super fast connect timeout
         remoteConfig.setConnectTimeout(1);
 
         // override the endpoint to a non-routable ip
-        ((RemoteHttpService) logic.getRemoteQueryService()).setQueryServiceHost(NON_ROUTABLE_HOST);
+        String uri = remoteQueryService.getRemoteQueryServiceProperties().getQueryServiceUri();
+        uri = uri.replace("localhost", NON_ROUTABLE_HOST);
+        remoteQueryService.getRemoteQueryServiceProperties().setQueryServiceUri(uri);
 
         RemoteQueryServiceTestUtil.QueryRunnable runnable = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
         runnable.run();
@@ -140,11 +146,10 @@ public class RemoteEventQueryLogicIT {
 
     @Test
     public void testSocketTimeout() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        WSRemoteQueryService remoteQueryService = (WSRemoteQueryService) logic.getRemoteQueryService();
 
         // set a super fast socket timeout
-        remoteConfig.setSocketTimeout(1);
+        remoteQueryService.getRemoteQueryServiceProperties().setCreateTimeout(1);
 
         HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
 
@@ -164,10 +169,12 @@ public class RemoteEventQueryLogicIT {
     @Test(timeout = 30000)
     public void testDefaultConnectionPoolTimeout() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // only allow a single max connection
         remoteConfig.setMaxConnections(1);
+        // disable use of the retry handler
+        remoteConfig.setRetryCount(0);
 
         // patch in the forever handler which will block until its unlocked
         HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
@@ -211,13 +218,16 @@ public class RemoteEventQueryLogicIT {
 
     @Test
     public void testConnectionPoolTimeout() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        WSRemoteQueryService remoteQueryService = (WSRemoteQueryService) logic.getRemoteQueryService();
+        remoteQueryService.getRemoteQueryServiceProperties().setCreateTimeout(-1);
 
+        RemoteHttpServiceProperties remoteConfig = remoteQueryService.getConfig();
         // only allow a single max connection
         remoteConfig.setMaxConnections(1);
         // only wait 1ms for a thread
         remoteConfig.setConnectionPoolTimeout(1);
+        // disable use of the retry handler
+        remoteConfig.setRetryCount(0);
 
         // patch in the forever handler which will block until its unlocked
         // use an arrival latch to ensure the first request occupies the connection before the second thread starts
@@ -267,11 +277,10 @@ public class RemoteEventQueryLogicIT {
 
     @Test
     public void testIteratorTimeout() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        WSRemoteQueryService remoteQueryService = (WSRemoteQueryService) logic.getRemoteQueryService();
 
         // only wait 100ms for the read
-        remoteConfig.setSocketTimeout(100);
+        remoteQueryService.getRemoteQueryServiceProperties().setNextTimeout(100);
 
         // patch in the forever handler which will block until its unlocked
         HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);

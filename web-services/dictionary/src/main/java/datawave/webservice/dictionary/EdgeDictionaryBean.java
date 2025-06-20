@@ -15,6 +15,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.http.client.utils.URIBuilder;
 import org.xbill.DNS.TextParseException;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
@@ -28,6 +29,7 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 public class EdgeDictionaryBean {
 
     @Inject
+    @SpringBean
     private RemoteEdgeDictionary remoteEdgeDictionary;
 
     /**

@@ -4,21 +4,19 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>8.2.0-SNAPSHOT</version>
+        <version>8.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>spring-framework-integration</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-
+    <properties>
+        <spring.yaml.git.path>docker/config</spring.yaml.git.path>
+        <spring.yaml.git.ref>integration</spring.yaml.git.ref>
+        <spring.yaml.git.url>https://github.com/NationalSecurityAgency/datawave.git</spring.yaml.git.url>
+        <version.datawave.starter-datawave>4.0.14-SNAPSHOT</version.datawave.starter-datawave>
+        <version.spring-cloud-starter-bootstrap>3.1.9</version.spring-cloud-starter-bootstrap>
+    </properties>
     <dependencies>
-        <dependency>
-            <groupId>gov.nsa.datawave.commons</groupId>
-            <artifactId>datawave-commons-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-jaxb-annotations</artifactId>
@@ -57,11 +55,50 @@
                     <groupId>jakarta.validation</groupId>
                     <artifactId>jakarta.validation-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-modification</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave</artifactId>
+            <version>${version.datawave.starter-datawave}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-query</artifactId>
+            <version>${version.datawave.starter-query}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-accumulo</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-annotations</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
@@ -97,6 +134,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.astefanutti.metrics.cdi</groupId>
+            <artifactId>metrics-cdi</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>test</scope>
@@ -107,13 +149,25 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-weld-embedded</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.arquillian.junit</groupId>
-            <artifactId>arquillian-junit-container</artifactId>
+            <groupId>org.jboss.arquillian.junit5</groupId>
+            <artifactId>arquillian-junit5-container</artifactId>
+            <version>1.10.2.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.junit5</groupId>
+            <artifactId>arquillian-junit5-core</artifactId>
+            <version>1.10.2.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -169,6 +223,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-spi</artifactId>
+            <version>3.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld.module</groupId>
+            <artifactId>weld-web</artifactId>
+            <version>3.1.9.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.weld.se</groupId>
             <artifactId>weld-se-core</artifactId>
             <scope>test</scope>
@@ -178,10 +244,36 @@
             <artifactId>slf4j-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>${version.spring-boot}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+            <version>${version.spring-cloud-starter-bootstrap}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
+            <plugin>
+                <!-- Disable the read-properties execution inherited from the parent pom so this module's
+                     project properties aren't populated from the default/build.env properties files;
+                     the copy-filtered-configuration-resources execution below supplies its own scoped
+                     <filters> instead. -->
+                <groupId>gov.nsa.datawave.plugins</groupId>
+                <artifactId>read-properties</artifactId>
+                <executions>
+                    <execution>
+                        <id>read-properties</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -192,6 +284,19 @@
                             <goal>testCompile</goal>
                         </goals>
                         <phase>test-compile</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- Disable the enforce-properties execution inherited from the parent pom because this module
+                     loads the context files and use the property placeholder configurer to ensure that property
+                      placeholders are resolved -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-properties</id>
+                        <phase>none</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -224,6 +329,63 @@
                         </goals>
                         <phase>process-test-resources</phase>
                     </execution>
+                    <!-- Copy and filter the datawave-ws-deploy-configuration module's main resources
+                         directly from source (using the properties already loaded by the read-properties
+                         plugin) into target/conf for the test classpath, instead of depending on an
+                         already-built/packaged configuration jar. The filtering split below mirrors the
+                         configuration module's own pom: most datawave-new/**/* xml files carry runtime Spring
+                         ${...} placeholders and must NOT be Maven-filtered, while one named file and
+                         everything under datawave/**/* are filtered. -->
+                    <execution>
+                        <id>copy-unfiltered-configuration-resources-dev</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/springxmlfiles/profiles/dev</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.parent.basedir}/configuration/src/main/resources</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>datawave-new/**/*</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>datawave-new/query/QueryMetrics.xml</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-filtered-configuration-resources-dev</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/springxmlfiles/profiles/dev</outputDirectory>
+                            <!-- Restrict filter tokens to only these two files from the base properties
+                                 directory, ignoring any other build-level <filters> declarations. -->
+                            <useBuildFilters>false</useBuildFilters>
+                            <filters>
+                                <filter>${maven.multiModuleProjectDirectory}/properties/default.properties</filter>
+                                <filter>${maven.multiModuleProjectDirectory}/properties/dev.properties</filter>
+                                <filter>${project.basedir}/src/test/resources/certificate.properties</filter>
+                            </filters>
+                            <resources>
+                                <resource>
+                                    <directory>${project.parent.basedir}/configuration/src/main/resources</directory>
+                                    <filtering>true</filtering>
+                                    <includes>
+                                        <include>datawave-new/query/QueryMetrics.xml</include>
+                                        <include>datawave/**/*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -231,18 +393,18 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skipTests>${skipUTs}</skipTests>
-                    <argLine>@{argLine}</argLine>
+                    <argLine>--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens=java.base/java.lang.module=ALL-UNNAMED @{argLine}</argLine>
                     <reuseForks>${surefire.reuseForks}</reuseForks>
-                    <additionalClasspathElements>
-                        <additionalClasspathElement>${project.build.directory}/conf</additionalClasspathElement>
-                        <additionalClasspathElement>${project.parent.basedir}/web-service/properties</additionalClasspathElement>
-                    </additionalClasspathElements>
+                    <!--                    <additionalClasspathElements>-->
+                    <!--                        <additionalClasspathElement>${project.build.directory}/springxmlfiles</additionalClasspathElement>-->
+                    <!--                    </additionalClasspathElements>-->
                     <systemPropertyVariables>
                         <log4j1.compatibility>true</log4j1.compatibility>
                         <log4j.configuration>file:${project.build.testOutputDirectory}/log4j.properties</log4j.configuration>
                         <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         <jboss.home.dir>/tmp</jboss.home.dir>
                     </systemPropertyVariables>
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -256,4 +418,108 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <!-- This profile will copy the yaml files from the docker/config directory to ensure that the
+         Spring context loads and to compare property values -->
+        <profile>
+            <id>yaml-from-docker</id>
+            <activation>
+                <property>
+                    <name>!yamlFromGit</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <configuration>
+                            <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
+                        </configuration>
+                        <executions>
+                            <!-- Copy yaml files from the docker/config directory -->
+                            <execution>
+                                <id>copy-docker-yaml</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/springymlfiles</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${maven.multiModuleProjectDirectory}/docker/config</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>yaml-from-git</id>
+            <activation>
+                <property>
+                    <name>yamlFromGit</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <configuration>
+                            <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
+                        </configuration>
+                        <executions>
+                            <!-- Copy yaml files from the docker/config directory -->
+                            <execution>
+                                <id>copy-yaml-from-git</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/springymlfiles</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/springymlfiles-clone/${spring.yaml.git.path}</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>clone-yaml-from-git</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>if [ -d "$1" ]; then exit 0; fi; git clone --branch "$2" --depth 1 "$3" "$1"</argument>
+                                        <argument>clone-yaml-from-git</argument>
+                                        <argument>${project.build.directory}/springymlfiles-clone</argument>
+                                        <argument>${spring.yaml.git.ref}</argument>
+                                        <argument>${spring.yaml.git.url}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/util
+       http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <bean id="datawaveUserServiceFactory" class="datawave.security.authorization.DatawaveUserServiceFactory">
+        <property name="activeService" value="${security.activeService}"/>
+        <property name="services">
+            <util:map>
+                <entry key="TEST" value-ref="testDatawaveUserService"/>
+                <entry key="REMOTE" value-ref="remoteDatawaveUserService"/>
+            </util:map>
+        </property>
+    </bean>
+
+    <bean id="testDatawaveUserService" class="datawave.security.authorization.test.TestDatawaveUserService">
+        <property name="encodedTestUsers" ref="testAuthDatawaveUsers"/>
+        <property name="activeDelegateService" value="${security.testauthservice.activeDelegateService}"/>
+        <property name="delegateServices">
+            <util:map>
+                <entry key="REMOTE" value-ref="remoteDatawaveUserService"/>
+            </util:map>
+        </property>
+    </bean>
+
+    <bean id="remoteDatawaveUserService" class="datawave.security.authorization.remote.RemoteDatawaveUserService">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${security.remoteuserservice.scheme}"/>
+                <property name="serviceHost" value="${security.remoteuserservice.host}"/>
+                <property name="servicePort" value="${security.remoteuserservice.port}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="remoteQueryMetricService" class="datawave.webservice.query.remote.RemoteQueryMetricService">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${querymetric.remoteservice.scheme}"/>
+                <property name="serviceHost" value="${querymetric.remoteservice.host}"/>
+                <property name="servicePort" value="${querymetric.remoteservice.port}"/>
+            </bean>
+        </property>
+        <property name="useConfiguredURIForRedirect" value="${querymetric.remoteservice.useConfiguredURIForRedirect}"/>
+    </bean>
+
+    <bean id="remoteEdgeDictionary" class="datawave.webservice.edgedictionary.RemoteEdgeDictionary">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${querymetric.remoteservice.scheme}"/>
+                <property name="serviceHost" value="${querymetric.remoteservice.host}"/>
+                <property name="servicePort" value="${querymetric.remoteservice.port}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.EdgeDictionaryProviderImpl">
+        <property name="remoteEdgeDictionary" ref="remoteEdgeDictionary"/>
+    </bean>
+
+    <bean id="remoteDataDictionary" class="datawave.webservice.datadictionary.RemoteDataDictionary">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${dictionary.remoteservice.scheme}"/>
+                <property name="serviceHost" value="${dictionary.remoteservice.host}"/>
+                <property name="servicePort" value="${dictionary.remoteservice.port}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="auditServiceFactory" class="datawave.webservice.common.audit.AuditServiceFactory">
+        <property name="activeService" value="${auditing.activeService}"/>
+        <property name="services">
+            <util:map>
+                <entry key="NOOP" value-ref="noOpAuditor"/>
+                <entry key="REMOTE" value-ref="remoteAuditor"/>
+            </util:map>
+        </property>
+    </bean>
+
+    <bean id="auditService" factory-bean="auditServiceFactory" factory-method="createService"/>
+
+    <bean id="noOpAuditor" class="datawave.webservice.common.audit.NoOpAuditor"/>
+
+    <bean id="remoteAuditor" class="datawave.webservice.common.audit.remote.RemoteAuditor">
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${auditing.remoteauditservice.scheme}"/>
+                <property name="serviceHost" value="${auditing.remoteauditservice.host}"/>
+                <property name="servicePort" value="${auditing.remoteauditservice.port}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="remoteStatsService" class="datawave.webservice.operations.remote.RemoteStatsService">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${accumulo.remoteservice.scheme}"/>
+                <property name="serviceHost" value="${accumulo.remoteservice.host}"/>
+                <property name="servicePort" value="${accumulo.remoteservice.port}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="remoteAdminService" class="datawave.webservice.operations.remote.RemoteAdminService">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${accumulo.remoteservice.scheme}"/>
+                <property name="serviceHost" value="${accumulo.remoteservice.host}"/>
+                <property name="servicePort" value="${accumulo.remoteservice.port}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="remoteLookupService" class="datawave.webservice.operations.remote.RemoteLookupService">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="config">
+            <bean class="datawave.webservice.common.remote.RemoteHttpServiceProperties">
+                <property name="serviceScheme" value="${accumulo.remoteservice.scheme}"/>
+                <property name="serviceHost" value="${accumulo.remoteservice.host}"/>
+                <property name="servicePort" value="${accumulo.remoteservice.port}"/>
+            </bean>
+        </property>
+    </bean>
+</beans>

@@ -44,7 +44,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
+import datawave.webservice.common.remote.RemoteHttpServiceProperties;
 import datawave.webservice.result.GenericResponse;
 
 @Category(IntegrationTest.class)
@@ -92,7 +92,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void unsuppressedConnectTimeoutTest() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
         remoteHttpService.setQueryServiceHost(NON_ROUTABLE_HOST);
 
         // set a super fast connect timeout
@@ -111,7 +111,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void suppressedConnectTimeoutTest() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
         remoteHttpService.setQueryServiceHost(NON_ROUTABLE_HOST);
 
         // set a super fast connect timeout
@@ -130,7 +130,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void unsuppressedSocketTimeoutTest() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // set a super fast connect timeout
         remoteConfig.setSocketTimeout(100);
@@ -148,7 +148,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void suppressedSocketTimeoutTest() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // set a super fast connect timeout
         remoteConfig.setSocketTimeout(100);
@@ -166,7 +166,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void unsuppressedIteratorTimeoutTest() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // set a super fast connect timeout
         remoteConfig.setSocketTimeout(100);
@@ -184,7 +184,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void suppressedIteratorTimeoutTest() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // set a super fast connect timeout
         remoteConfig.setSocketTimeout(100);
@@ -202,7 +202,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void testCompositeRemoteWithTimeoutOnInitialize() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(10);
@@ -237,7 +237,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         logic.setSuppressTimeout(true);
 
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
@@ -271,7 +271,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void testCompositeRemoteWithTimeoutOnResults() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
@@ -306,7 +306,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         logic.setSuppressTimeout(true);
 
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
@@ -337,7 +337,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     @Test
     public void testCompositeGetPlanTimeout() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
@@ -372,7 +372,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         logic.setSuppressTimeout(true);
 
         RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteHttpServiceProperties remoteConfig = remoteHttpService.getConfig();
 
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);

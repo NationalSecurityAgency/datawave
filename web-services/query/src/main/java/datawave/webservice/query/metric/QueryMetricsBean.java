@@ -77,6 +77,7 @@ public class QueryMetricsBean {
     @Resource
     private EJBContext ctx;
     @Inject
+    @SpringBean
     private RemoteQueryMetricService remoteQueryMetricService;
     @Inject
     private QueryMetricHandler<? extends BaseQueryMetric> queryHandler;

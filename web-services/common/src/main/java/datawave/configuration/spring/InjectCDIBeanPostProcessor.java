@@ -7,13 +7,16 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 /**
  * A Spring bean post-processor to ensure that CDI injection is performed on beans created by Spring. That is, if a bean created by Spring uses @Inject, then we
  * want to be sure and satisfy the injection using CDI.
  */
-public class InjectCDIBeanPostProcessor implements BeanPostProcessor {
+public class InjectCDIBeanPostProcessor implements BeanPostProcessor, ApplicationContextAware {
     private Logger log = LoggerFactory.getLogger(getClass());
+    private String applicationContextId;
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -23,7 +26,7 @@ public class InjectCDIBeanPostProcessor implements BeanPostProcessor {
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         Object beanToInject = bean;
-        if (BeanProvider.isActive()) {
+        if (BeanProvider.isActive(applicationContextId)) {
             // Spring may wrap objects in a proxy, for example if a bean is marked as cached. In this case, the proxy
             // will not have the fields we want to (potentially) inject. Note that we are injecting by directly modifying
             // fields, not calling setter methods that the proxy object could wrap. Instead, attempt to find the source
@@ -46,10 +49,15 @@ public class InjectCDIBeanPostProcessor implements BeanPostProcessor {
                     log.warn("Unable to retrieve target from proxy bean {}. Injection will not be performed for bean {}.", bean, beanName);
                 }
             }
-            BeanProvider.injectFields(beanToInject);
+            BeanProvider.injectFields(applicationContextId, beanToInject);
         } else {
             log.warn("BeanProvider not initialized yet. Non-prototype beans will not have dependency injection performed on them.");
         }
         return bean;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContextId = applicationContext.getId();
     }
 }

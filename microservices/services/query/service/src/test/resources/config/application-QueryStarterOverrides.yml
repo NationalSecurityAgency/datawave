@@ -11,6 +11,7 @@ datawave:
       statusUpdateInterval: 0
     logic:
       factory:
+        importResources: false
         # Uncomment the following line to override the query logic beans to load
         xmlBeansPath: "classpath:TestQueryLogicFactory.xml"
         queryLogicsByName:

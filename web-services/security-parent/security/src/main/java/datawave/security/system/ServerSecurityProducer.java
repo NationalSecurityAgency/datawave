@@ -10,6 +10,7 @@ import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
@@ -26,6 +27,7 @@ public class ServerSecurityProducer {
     private SSLStores sslStores;
 
     @Inject
+    @SpringBean
     private DatawaveUserService datawaveUserService;
 
     @Inject

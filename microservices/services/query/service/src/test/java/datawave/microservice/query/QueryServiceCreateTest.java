@@ -363,7 +363,7 @@ public class QueryServiceCreateTest extends AbstractQueryServiceTest {
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
-                "Invalid max concurrent tasks override value. Max = 10.",
+                "Invalid max concurrent tasks override value. Max = 100.",
                 "Exception with no cause caught",
                 "400-44",
                 queryException);

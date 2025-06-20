@@ -13,6 +13,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.webservice.operations.remote.RemoteAdminService;
 import datawave.webservice.response.ListUsersResponse;
 
@@ -26,6 +27,7 @@ import datawave.webservice.response.ListUsersResponse;
 public class ListUsersBean {
 
     @Inject
+    @SpringBean
     private RemoteAdminService remoteAdminService;
 
     @Path("/ListUsers")

@@ -4,17 +4,12 @@ import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
@@ -27,7 +22,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectReader;
 
-import datawave.configuration.RefreshableScope;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
 import datawave.microservice.querymetric.QueryGeometryResponse;
@@ -40,10 +34,6 @@ import datawave.webservice.result.VoidResponse;
 /**
  * Sends query metric updates to a remote microservice.
  */
-@RefreshableScope
-@Alternative
-// Make this alternative active for the entire application per the CDI 1.2 specification
-@Priority(Interceptor.Priority.APPLICATION)
 public class RemoteQueryMetricService extends RemoteHttpService {
 
     public static final String UPDATE_METRIC_SUFFIX = "updateMetric";
@@ -57,53 +47,8 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     private ObjectReader queryGeometryResponseReader;
     private ObjectReader queryMetricsSummaryResponseReader;
 
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.useSrvDnsLookup", defaultValue = "false")
-    private boolean useSrvDNS;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.srvDnsServers", defaultValue = "127.0.0.1")
-    private List<String> srvDnsServers;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.srvDnsPort", defaultValue = "8600")
-    private int srvDnsPort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.scheme", defaultValue = "https")
-    private String serviceScheme;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.host", defaultValue = "localhost")
-    private String serviceHost;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.port", defaultValue = "8443")
-    private int servicePort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.useConfiguredURIForRedirect", defaultValue = "false")
-    private boolean useConfiguredURIForRedirect;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.uri", defaultValue = "/querymetric/v1/")
-    private String serviceURI;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.maxConnections", defaultValue = "100")
-    private int maxConnections;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.retryCount", defaultValue = "5")
-    private int retryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.unavailableRetryCount", defaultValue = "15")
-    private int unavailableRetryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteQueryMetricService.unavailableRetryDelayMS", defaultValue = "2000")
-    private int unavailableRetryDelay;
+    private boolean useConfiguredURIForRedirect = false;
+    private String serviceURI = "/querymetric/v1/";
 
     @Inject
     @Metric(name = "dw.remoteQueryMetricService.retries", absolute = true)
@@ -240,58 +185,12 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     }
 
     @Override
-    protected String serviceHost() {
-        return serviceHost;
-    }
-
-    @Override
-    protected int servicePort() {
-        return servicePort;
-    }
-
-    @Override
     protected String serviceURI() {
         return serviceURI;
     }
 
-    @Override
-    protected boolean useSrvDns() {
-        return useSrvDNS;
-    }
-
-    @Override
-    protected List<String> srvDnsServers() {
-        return srvDnsServers;
-    }
-
-    @Override
-    protected int srvDnsPort() {
-        return srvDnsPort;
-    }
-
-    @Override
-    protected String serviceScheme() {
-        return serviceScheme;
-    }
-
-    @Override
-    protected int maxConnections() {
-        return maxConnections;
-    }
-
-    @Override
-    protected int retryCount() {
-        return retryCount;
-    }
-
-    @Override
-    protected int unavailableRetryCount() {
-        return unavailableRetryCount;
-    }
-
-    @Override
-    protected int unavailableRetryDelay() {
-        return unavailableRetryDelay;
+    public void setUseConfiguredURIForRedirect(boolean useConfiguredURIForRedirect) {
+        this.useConfiguredURIForRedirect = useConfiguredURIForRedirect;
     }
 
     @Override

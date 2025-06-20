@@ -206,7 +206,7 @@ public class TranslateIdService {
 
     private String buildQuery(List<String> ids) {
         List<String> uuidTypes = new ArrayList<>();
-        translateIdProperties.getTypes().keySet().forEach(uuidType -> uuidTypes.add(uuidType.toUpperCase()));
+        translateIdProperties.getUuidTypes().keySet().forEach(uuidType -> uuidTypes.add(uuidType.toUpperCase()));
 
         // @formatter:off
         return ids.stream()

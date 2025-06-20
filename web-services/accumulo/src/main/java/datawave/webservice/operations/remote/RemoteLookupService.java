@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.enterprise.inject.Alternative;
-import javax.interceptor.Interceptor;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -18,12 +15,8 @@ import org.apache.http.message.BasicNameValuePair;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectReader;
 
-import datawave.configuration.RefreshableScope;
 import datawave.webservice.response.LookupResponse;
 
-@RefreshableScope
-@Alternative
-@Priority(Interceptor.Priority.APPLICATION)
 public class RemoteLookupService extends RemoteAccumuloService {
 
     private static final String LOOKUP_SUFFIX = "lookup/%s/%s";

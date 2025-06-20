@@ -10,14 +10,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 import javax.net.ssl.SSLException;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
@@ -27,71 +22,22 @@ import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectReader;
 
-import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 
 /**
  * A {@link CachedDatawaveUserService} that delegates all methods to a remote authorization microservice.
  */
-@RefreshableScope
-@Alternative
-// Make this alternative active for the entire application per the CDI 1.2 specification
-@Priority(Interceptor.Priority.APPLICATION)
-@Exclude(onExpression = "dw.security.use.remoteuserservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class RemoteDatawaveUserService extends RemoteHttpService implements CachedDatawaveUserService {
     private ObjectReader datawaveUserReader;
     private ObjectReader datawaveUserListReader;
     private ObjectReader datawaveUserInfoListReader;
 
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.useSrvDnsLookup", defaultValue = "false")
-    private boolean useSrvDNS;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.srvDnsServers", defaultValue = "127.0.0.1")
-    private List<String> srvDnsServers;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.srvDnsPort", defaultValue = "8600")
-    private int srvDnsPort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.scheme", defaultValue = "https")
-    private String authServiceScheme;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.host", defaultValue = "localhost")
-    private String authServiceHost;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.port", defaultValue = "8643")
-    private int authServicePort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.uri", defaultValue = "/authorization/v1/")
-    private String authServiceURI;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.maxConnections", defaultValue = "100")
-    private int maxConnections;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.retryCount", defaultValue = "5")
-    private int retryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.unavailableRetryCount", defaultValue = "15")
-    private int unavailableRetryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.unavailableRetryDelayMS", defaultValue = "2000")
-    private int unavailableRetryDelay;
+    private String authServiceURI = "/authorization/v1/";
 
     @Inject
     @Metric(name = "dw.remoteDatawaveUserService.retries", absolute = true)
@@ -229,58 +175,8 @@ public class RemoteDatawaveUserService extends RemoteHttpService implements Cach
     }
 
     @Override
-    protected String serviceHost() {
-        return authServiceHost;
-    }
-
-    @Override
-    protected int servicePort() {
-        return authServicePort;
-    }
-
-    @Override
     protected String serviceURI() {
         return authServiceURI;
-    }
-
-    @Override
-    protected boolean useSrvDns() {
-        return useSrvDNS;
-    }
-
-    @Override
-    protected List<String> srvDnsServers() {
-        return srvDnsServers;
-    }
-
-    @Override
-    protected int srvDnsPort() {
-        return srvDnsPort;
-    }
-
-    @Override
-    protected String serviceScheme() {
-        return authServiceScheme;
-    }
-
-    @Override
-    protected int maxConnections() {
-        return maxConnections;
-    }
-
-    @Override
-    protected int retryCount() {
-        return retryCount;
-    }
-
-    @Override
-    protected int unavailableRetryCount() {
-        return unavailableRetryCount;
-    }
-
-    @Override
-    protected int unavailableRetryDelay() {
-        return unavailableRetryDelay;
     }
 
     @Override

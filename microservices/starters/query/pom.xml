@@ -26,7 +26,8 @@
         <datawave.webservice.namespace>http://webservice.datawave/v1</datawave.webservice.namespace>
         <version.accumulo>2.1.5</version.accumulo>
         <version.commons-lang3>3.20.0</version.commons-lang3>
-        <version.datawave>8.0.0</version.datawave>
+        <version.datawave>8.4.0-SNAPSHOT</version.datawave>
+        <version.datawave-commons-security>8.4.0-SNAPSHOT</version.datawave-commons-security>
         <version.datawave.audit-api>4.0.5</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
         <version.datawave.dictionary-api>4.0.11</version.datawave.dictionary-api>
@@ -35,7 +36,7 @@
         <version.datawave.mapreduce-query-api>1.0.4</version.datawave.mapreduce-query-api>
         <version.datawave.query-api>1.0.4</version.datawave.query-api>
         <version.datawave.query-metric-api>4.1.8</version.datawave.query-metric-api>
-        <version.datawave.starter>4.0.12</version.datawave.starter>
+        <version.datawave.starter>4.0.14-SNAPSHOT</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.7</version.datawave.starter-metadata>
         <version.datawave.starter-query-metric>3.0.8</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
@@ -65,6 +66,10 @@
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>gov.nsa.datawave.webservices</groupId>
+                        <artifactId>datawave-ws-cached-results</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -73,8 +78,12 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.slf4j</groupId>
-                        <artifactId>*</artifactId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.jboss.resteasy</groupId>
@@ -213,6 +222,16 @@
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-common</artifactId>
+                <version>8.4.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-common</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${version.jakarta}</version>
@@ -258,6 +277,11 @@
                 <artifactId>jts-core</artifactId>
                 <version>${version.jts}</version>
             </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${version.slf4j}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -297,10 +321,12 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
         </dependency>
+        <!--
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
-        </dependency>
+		</dependency>
+	-->
         <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
@@ -388,6 +414,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>

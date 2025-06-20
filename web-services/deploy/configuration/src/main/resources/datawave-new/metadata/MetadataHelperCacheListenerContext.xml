@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+     http://www.springframework.org/schema/beans 
+     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+         
+     <!-- 
+     This is a separate context file intended to be loaded for dev and operational deployments that
+     include a running zookeeper. 
+     Unit tests will not load this file, so they will not have a zookeeper watcher listener
+      -->
+    <!-- a singleton -->
+    <bean id="metadataHelperCacheManagementListener" class="datawave.query.util.MetadataHelperCacheManagementListener" destroy-method="shutdown" >
+        <constructor-arg name="zookeepers" value="${accumulo.zookeepers}" />
+        <constructor-arg name="metadataCacheManager" ref="metadataCacheManager" />
+		<!-- bean created in WebserviceConfiguration -->
+        <constructor-arg name="metadataTableNames" ref="cachedMetadataTableNames" />
+    </bean>
+
+	<bean id="metadataHelperUpdateHdfsListener" class="datawave.query.util.MetadataHelperUpdateHdfsListener" >
+		<constructor-arg name="zookeepers" value="${accumulo.zookeepers}" />
+		<constructor-arg name="typeMetadataHelperFactory" ref="typeMetadataHelperFactory" />
+		<constructor-arg name="instance" value="${accumulo.instanceName}" />
+		<constructor-arg name="password" value="${accumulo.password}" />
+		<constructor-arg name="username" value="${accumulo.username}" />
+		<constructor-arg name="allMetadataAuths" ref="allMetadataAuths" />
+		<constructor-arg name="lockWaitTime" value="1000" />
+		<!-- bean created in WebserviceConfiguration -->
+		<constructor-arg name="metadataTableNames" ref="cachedMetadataTableNames" />
+	</bean>
+
+</beans>

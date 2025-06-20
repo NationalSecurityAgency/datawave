@@ -22,6 +22,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 
 import datawave.annotation.Required;
+import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.webservice.operations.remote.RemoteLookupService;
@@ -39,6 +40,7 @@ import datawave.webservice.response.LookupResponse;
 public class LookupBean {
 
     @Inject
+    @SpringBean
     private RemoteLookupService remoteLookupService;
 
     @Path("/Lookup/{table}/{row}")

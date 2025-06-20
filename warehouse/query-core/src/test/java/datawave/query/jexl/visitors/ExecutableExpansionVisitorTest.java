@@ -65,7 +65,7 @@ import datawave.query.util.WiseGuysIngest;
 import datawave.table.constants.TableName;
 
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

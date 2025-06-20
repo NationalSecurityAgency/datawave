@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,25 +12,17 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Priority;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.Alternative;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.google.common.collect.HashMultimap;
 
-import datawave.configuration.RefreshableScope;
-import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
@@ -39,7 +30,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 
 /**
  * A {@link CachedDatawaveUserService} for testing purposes. This version will only be active if the system property {@code dw.security.use.testuserservice} is
@@ -47,56 +37,69 @@ import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
  * it will delegate to the highest priority other {@link CachedDatawaveUserService} or {@link DatawaveUserService} that can be found. If no other instance is
  * found, then construction of this bean will fail.
  */
-@RefreshableScope
-@Alternative
-// Make this alternative active for the entire application per the CDI 1.2 specification
-@Priority(Interceptor.Priority.PLATFORM_AFTER)
-// Exclude this bean if the system property dw.security.use.testuserservice isn't defined to be true
-@Exclude(onExpression = "dw.security.use.testuserservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class TestDatawaveUserService implements CachedDatawaveUserService {
-    private Map<SubjectIssuerDNPair,DatawaveUser> cannedUsers = new HashMap<>();
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    private Map<SubjectIssuerDNPair,DatawaveUser> testUsers = new HashMap<>();
     private DatawaveUserService delegateService;
-    private CachedDatawaveUserService delegateCachedService;
-    private CreationalContext<?> delegateContext;
-
-    @Inject
-    @SpringBean(name = "testAuthDatawaveUsers", required = false)
+    private Map<String,DatawaveUserService> delegateServices;
+    private String activeDelegateService;
     private Set<String> encodedTestUsers;
-
-    @Inject
-    private BeanManager beanManager;
 
     @Inject
     private AccumuloConnectionFactory accumuloConnectionFactory;
 
     @Override
     public DatawaveUser list(String name) {
-        return delegateCachedService == null ? null : delegateCachedService.list(name);
+        if (delegateService instanceof CachedDatawaveUserService) {
+            CachedDatawaveUserService delegateCachedService = (CachedDatawaveUserService) delegateService;
+            return delegateCachedService.list(name);
+        }
+        return null;
     }
 
     @Override
     public Collection<? extends DatawaveUserInfo> listAll() {
-        return delegateCachedService == null ? Collections.emptyList() : delegateCachedService.listAll();
+        if (delegateService instanceof CachedDatawaveUserService) {
+            CachedDatawaveUserService delegateCachedService = (CachedDatawaveUserService) delegateService;
+            return delegateCachedService.listAll();
+        }
+        return Collections.emptyList();
     }
 
     @Override
     public Collection<? extends DatawaveUserInfo> listMatching(String substring) {
-        return delegateCachedService == null ? Collections.emptyList() : delegateCachedService.listMatching(substring);
+        if (delegateService instanceof CachedDatawaveUserService) {
+            CachedDatawaveUserService delegateCachedService = (CachedDatawaveUserService) delegateService;
+            return delegateCachedService.listMatching(substring);
+        }
+        return Collections.emptyList();
     }
 
     @Override
     public String evict(String name) {
-        return delegateCachedService == null ? "No cache available." : delegateCachedService.evict(name);
+        if (delegateService instanceof CachedDatawaveUserService) {
+            CachedDatawaveUserService delegateCachedService = (CachedDatawaveUserService) delegateService;
+            return delegateCachedService.evict(name);
+        }
+        return "No cache available.";
     }
 
     @Override
     public String evictMatching(String substring) {
-        return delegateCachedService == null ? "No cache available." : delegateCachedService.evictMatching(substring);
+        if (delegateService instanceof CachedDatawaveUserService) {
+            CachedDatawaveUserService delegateCachedService = (CachedDatawaveUserService) delegateService;
+            return delegateCachedService.evictMatching(substring);
+        }
+        return "No cache available.";
     }
 
     @Override
     public String evictAll() {
-        return delegateCachedService == null ? "No cache available." : delegateCachedService.evictAll();
+        if (delegateService instanceof CachedDatawaveUserService) {
+            CachedDatawaveUserService delegateCachedService = (CachedDatawaveUserService) delegateService;
+            return delegateCachedService.evictAll();
+        }
+        return "No cache available.";
     }
 
     @Override
@@ -105,14 +108,15 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
         ArrayList<SubjectIssuerDNPair> missing = new ArrayList<>();
         Map<SubjectIssuerDNPair, DatawaveUser> results = new LinkedHashMap<>();
         dns.forEach(dn -> {
-            if (cannedUsers.containsKey(dn))
-                results.put(dn, cannedUsers.get(dn));
+            if (testUsers.containsKey(dn))
+                results.put(dn, testUsers.get(dn));
             else
                 missing.add(dn);
         });
         // @formatter:on
         if (!missing.isEmpty()) {
-            if (delegateCachedService != null) {
+            if (delegateService instanceof CachedDatawaveUserService) {
+                CachedDatawaveUserService delegateCachedService = (CachedDatawaveUserService) delegateService;
                 delegateCachedService.reload(missing).forEach(u -> results.put(u.getDn(), u));
             } else {
                 // If the delegate service is not a cached one, then simply call lookup for each DN
@@ -129,8 +133,8 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
         ArrayList<SubjectIssuerDNPair> missing = new ArrayList<>();
         Map<SubjectIssuerDNPair, DatawaveUser> results = new LinkedHashMap<>();
         dns.forEach(dn -> {
-            if (cannedUsers.containsKey(dn))
-                results.put(dn, cannedUsers.get(dn));
+            if (testUsers.containsKey(dn))
+                results.put(dn, testUsers.get(dn));
             else
                 missing.add(dn);
         });
@@ -143,38 +147,54 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
 
     @PostConstruct
     protected void init() {
-        // @formatter:off
-        Comparator<Bean<?>> beanComparator = Comparator.comparing(
-            b -> b.getBeanClass().isAnnotationPresent(Priority.class)
-               ? b.getBeanClass().getAnnotation(Priority.class).value()
-               : Integer.MIN_VALUE);
-
-        Bean<?> alternate = beanManager.getBeans(CachedDatawaveUserService.class).stream()
-                .filter(b -> b.getBeanClass() != getClass())
-                .sorted(beanComparator.reversed())
-                .findFirst().orElse(null);
-
-        Bean<?> basicAlternate = beanManager.getBeans(DatawaveUserService.class).stream()
-                .filter(b -> b.getBeanClass() != getClass())
-                .sorted(beanComparator.reversed())
-                .findFirst().orElse(null);
-        // @formatter:on
-
-        if (alternate == null && basicAlternate == null) {
-            throw new IllegalStateException("No delegate " + CachedDatawaveUserService.class + " or " + DatawaveUser.class + " was found.");
-        } else if (alternate != null) {
-            delegateContext = beanManager.createCreationalContext(alternate);
-            delegateCachedService = (CachedDatawaveUserService) beanManager.getReference(alternate, alternate.getBeanClass(), delegateContext);
-            delegateService = delegateCachedService;
-        } else {
-            delegateContext = beanManager.createCreationalContext(basicAlternate);
-            delegateService = (DatawaveUserService) beanManager.getReference(basicAlternate, basicAlternate.getBeanClass(), delegateContext);
+        this.delegateService = this.delegateServices.get(this.activeDelegateService);
+        if (this.delegateService == null) {
+            throw new IllegalStateException("No delegate DatawaveUserService found for name: " + this.activeDelegateService);
         }
-
-        readTestUsers();
+        readEncodedTestUsers();
+        try {
+            this.testUsers = limitAuthsOfTestUsers();
+        } catch (Exception e) {
+            log.debug(String.format("Error limiting authorizations of test users: %s", e.getMessage()));
+        }
     }
 
-    protected void readTestUsers() {
+    public void setDelegateServices(Map<String,DatawaveUserService> delegateServices) {
+        this.delegateServices = delegateServices;
+    }
+
+    public void setActiveDelegateService(String activeDelegateService) {
+        this.activeDelegateService = activeDelegateService;
+    }
+
+    public void setEncodedTestUsers(Set<String> encodedTestUsers) {
+        this.encodedTestUsers = encodedTestUsers;
+    }
+
+    public void setTestUsers(Map<SubjectIssuerDNPair,DatawaveUser> testUsers) {
+        this.testUsers = testUsers;
+    }
+
+    private Map<SubjectIssuerDNPair,DatawaveUser> limitAuthsOfTestUsers() {
+        // Strip off any authorizations not held by the designated Accumulo user.
+        Map<SubjectIssuerDNPair,DatawaveUser> users = new HashMap<>();
+        // Read in the Accumulo authorizations so we can trim what was supplied in configuration.
+        List<String> accumuloAuthorizations = readAccumuloAuthorizations();
+        this.testUsers.forEach((dn, user) -> {
+            // Strip off any authorizations not held by the designated Accumulo user.
+            ArrayList<String> auths = new ArrayList<>(user.getAuths());
+            HashMultimap<String,String> authMapping = HashMultimap.create(user.getRoleToAuthMapping());
+            auths.removeIf(a -> !accumuloAuthorizations.contains(a));
+            authMapping.entries().removeIf(e -> !accumuloAuthorizations.contains(e.getValue()));
+
+            DatawaveUser updatedUser = new DatawaveUser(user.getDn(), user.getUserType(), user.getEmail(), auths, user.getRoles(), authMapping,
+                            user.getCreationTime(), user.getExpirationTime());
+            users.put(dn, updatedUser);
+        });
+        return users;
+    }
+
+    protected void readEncodedTestUsers() {
         if (encodedTestUsers == null || encodedTestUsers.isEmpty())
             return;
 
@@ -187,17 +207,7 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
         encodedTestUsers.forEach(u -> {
             try {
                 DatawaveUser user = objectMapper.readValue(u, DatawaveUser.class);
-
-                // Strip off any authorizations not held by the designated Accumulo user.
-                ArrayList<String> auths = new ArrayList<>(user.getAuths());
-                HashMultimap<String,String> authMapping = HashMultimap.create(user.getRoleToAuthMapping());
-                auths.removeIf(a -> !accumuloAuthorizations.contains(a));
-                authMapping.entries().removeIf(e -> !accumuloAuthorizations.contains(e.getValue()));
-
-                user = new DatawaveUser(user.getDn(), user.getUserType(), user.getEmail(), auths, user.getRoles(), authMapping, user.getCreationTime(),
-                                user.getExpirationTime());
-
-                cannedUsers.put(user.getDn(), user);
+                testUsers.put(user.getDn(), user);
             } catch (IOException e) {
                 throw new RuntimeException("Invalid test user configuration: " + e.getMessage(), e);
             }
@@ -211,13 +221,6 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
             return Arrays.asList(auths.toString().split("\\s*,\\s*"));
         } catch (Exception e) {
             throw new RuntimeException("Unable to acquire accumulo connector: " + e.getMessage(), e);
-        }
-    }
-
-    @PreDestroy
-    protected void shutdown() {
-        if (delegateContext != null) {
-            delegateContext.release();
         }
     }
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <bean id="sslStoresProducer" class="datawave.security.system.SSLStoresProducer">
+        <property name="keyStoreType" value="${server.ssl.key-store-type}"/>
+        <property name="keyStoreUrl" value="${server.ssl.key-store}"/>
+        <property name="keyStorePassword" value="${server.ssl.key-store-password}"/>
+        <property name="trustStoreType" value="${server.ssl.trust-store-type}"/>
+        <property name="trustStoreUrl" value="${server.ssl.trust-store}"/>
+        <property name="trustStorePassword" value="${server.ssl.trust-store-password}"/>
+    </bean>
+
+    <bean id="sslStores" factory-bean="sslStoresProducer" factory-method="produceSSlStores"/>
+</beans>

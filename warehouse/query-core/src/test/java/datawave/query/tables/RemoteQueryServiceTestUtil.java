@@ -53,6 +53,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.remote.RemoteQueryServiceProperties;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
@@ -63,10 +64,11 @@ import datawave.security.util.DnProperties;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.RemoteServiceUtil;
 import datawave.webservice.common.remote.TestSSLStores;
-import datawave.webservice.query.remote.RemoteQueryServiceImpl;
+import datawave.webservice.query.remote.WSRemoteQueryService;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -191,14 +193,15 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             throw new IllegalStateException("must call initialize() first");
         }
 
-        RemoteQueryServiceImpl remote = new RemoteQueryServiceImpl();
-        remote.setQueryServiceURI("/DataWave/Query/");
-        remote.setQueryServiceScheme("http");
-        remote.setQueryServiceHost("localhost");
-        remote.setQueryServicePort(getPort());
+        ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = new RemoteQueryServiceProperties();
+        remoteQueryServiceProperties.setQueryServiceUri("http://localhost:" + getPort() + "/DataWave/Query/");
+        remoteQueryServiceProperties.setNextQueryResponseClass(responseObjectFactory.getEdgeQueryResponse().getClass().getCanonicalName());
+        WSRemoteQueryService remote = new WSRemoteQueryService();
+        remote.setRemoteQueryServiceProperties(remoteQueryServiceProperties);
+        remote.setResponseObjectFactory(responseObjectFactory);
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
-        remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
         remote.setSslStores(new TestSSLStores(alias, privateKey, keyPass, chain));
 
         return remote;

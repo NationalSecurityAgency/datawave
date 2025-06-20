@@ -14,6 +14,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.webservice.operations.remote.RemoteStatsService;
 import datawave.webservice.response.StatsResponse;
 
@@ -27,6 +28,7 @@ import datawave.webservice.response.StatsResponse;
 public class StatsBean {
 
     @Inject
+    @SpringBean
     private RemoteStatsService remoteStatsService;
 
     @PermitAll

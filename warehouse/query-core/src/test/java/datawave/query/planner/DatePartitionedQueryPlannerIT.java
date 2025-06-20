@@ -63,7 +63,7 @@ import datawave.util.time.DateHelper;
  * {@code logic.getConfig().getQueryString()}. {@link #assertPartition(RangeExpectation...)} separately asserts sub-range boundaries and unindexed-field sets.
  */
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",
@@ -287,7 +287,7 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     }
 
     @ExtendWith(SpringExtension.class)
-    @ComponentScan(basePackages = "datawave.query")
+    @ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
     // @formatter:off
     @ContextConfiguration(locations = {
             "classpath:datawave/query/QueryLogicFactory.xml",
@@ -428,7 +428,7 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     }
 
     @ExtendWith(SpringExtension.class)
-    @ComponentScan(basePackages = "datawave.query")
+    @ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
     // @formatter:off
     @ContextConfiguration(locations = {
             "classpath:datawave/query/QueryLogicFactory.xml",
@@ -664,8 +664,8 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     }
 
     @ExtendWith(SpringExtension.class)
-    @ComponentScan(basePackages = "datawave.query")
-    // @formatter:off
+    @ComponentScan(basePackages = {"datawave.configuration.spring",
+            "datawave.query"}) // @formatter:off
     @ContextConfiguration(locations = {
             "classpath:datawave/query/QueryLogicFactory.xml",
             "classpath:beanRefContext.xml",

@@ -1,0 +1,36 @@
+datawave:
+  modification:
+    enabled: false
+dw:
+  security:
+    activeService: "USER_SERVICE1"
+  testDatawaveUserService:
+    testUsers:
+      - subjectDn: "cn=user1, ou=my department, o=my company, st=some-state, c=us"
+        issuerDn: "cn=my company ca, o=my company, st=some-state, c=us"
+        userType: USER
+        roles:
+          - "PRIVATE"
+          - "PUBLIC"
+          - "Administrator"
+          - "AuthorizedUser"
+        auths:
+          - "PVT"
+          - "PUB"
+        roleToAuthMapping:
+          "PRIVATE": "PVT"
+          "PUBLIC": "PUB"
+
+      - subjectDn: "cn=server1, ou=my department, o=my company, st=some-state, c=us"
+        issuerDn: "cn=my company ca, o=my company, st=some-state, c=us"
+        userType: SERVER
+        roles:
+          - "PRIVATE"
+          - "PUBLIC"
+          - "AuthorizedServer"
+        auths:
+          - "PVT"
+          - "PUB"
+        roleToAuthMapping:
+          "PRIVATE": "PVT"
+          "PUBLIC": "PUB"

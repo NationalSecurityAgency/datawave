@@ -28,7 +28,7 @@ import datawave.query.util.SizesIngest;
  * This suite of tests exercises many random events over a small number of shards
  */
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

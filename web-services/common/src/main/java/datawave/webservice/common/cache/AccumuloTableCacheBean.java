@@ -30,6 +30,7 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.springframework.context.ApplicationContext;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.annotation.Required;
@@ -73,7 +74,7 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
 
     @Inject
     @ConfigProperty(name = "dw.warehouse.zookeepers")
-    private String zookeepers = null;
+    private String zookeepers;
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @Inject
     @ConfigProperty(name = "dw.cache.tableNames", defaultValue = "DatawaveMetadata,QueryMetrics_m,errorMetadata")
@@ -94,19 +95,28 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     @ConfigProperty(name = "dw.cacheCoordinator.maxRetries", defaultValue = "10")
     private int maxRetries;
 
+    @Inject
+    private ApplicationContext applicationContext;
+
+    private AccumuloTableCacheProperties tableCacheProperties;
+
     private AccumuloTableCacheImpl tableCache;
 
     public AccumuloTableCacheBean() {}
 
     @PostConstruct
     private void setup() {
-        AccumuloTableCacheProperties config = new AccumuloTableCacheProperties().withTableNames(tableNames).withPoolName(poolName).withNumLocks(numLocks)
-                        .withZookeepers(zookeepers).withMaxRetries(maxRetries).withReloadInterval(reloadInterval)
-                        .withEvictionReaperIntervalInSeconds(evictionReaperIntervalInSeconds);
+        // code to maintain backward compatibility when tableCacheProperties is not in the context
+        if (applicationContext.containsBean("tableCacheProperties")) {
+            tableCacheProperties = applicationContext.getBean("tableCacheProperties", AccumuloTableCacheProperties.class);
+        } else {
+            tableCacheProperties = new AccumuloTableCacheProperties().withTableNames(tableNames).withPoolName(poolName).withNumLocks(numLocks)
+                            .withZookeepers(zookeepers).withMaxRetries(maxRetries).withReloadInterval(reloadInterval)
+                            .withEvictionReaperIntervalInSeconds(evictionReaperIntervalInSeconds);
+        }
+        log.debug("Called AccumuloTableCacheBean and accumuloTableCacheConfiguration = " + tableCacheProperties);
 
-        log.debug("Called AccumuloTableCacheBean and accumuloTableCacheConfiguration = " + config);
-
-        tableCache = new AccumuloTableCacheImpl(executorService, config);
+        tableCache = new AccumuloTableCacheImpl(executorService, tableCacheProperties);
     }
 
     @Override
