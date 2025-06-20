@@ -43,8 +43,9 @@ public class LcTypeAttributeIT extends TypeAttributeIT {
     public void testKryoValuePreservation() {
         // serializing full type name: 41
         // serializing type name index: 17
-        verifyKryoPreservesValue(createNormalizedAttribute(), 17);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 17);
+        // serialize hash code: 22
+        verifyKryoPreservesValue(createNormalizedAttribute(), 22);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 22);
     }
 
     @Test

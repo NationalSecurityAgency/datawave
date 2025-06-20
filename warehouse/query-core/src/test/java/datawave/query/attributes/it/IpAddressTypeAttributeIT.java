@@ -54,8 +54,9 @@ public class IpAddressTypeAttributeIT extends TypeAttributeIT {
     public void testKryoValuePreservation() {
         // serializing full type name: 54
         // serializing type name index: 23
-        verifyKryoPreservesValue(createNormalizedAttribute(), 23);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 23);
+        // serialize hash code: 28
+        verifyKryoPreservesValue(createNormalizedAttribute(), 28);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 28);
     }
 
     @Test
