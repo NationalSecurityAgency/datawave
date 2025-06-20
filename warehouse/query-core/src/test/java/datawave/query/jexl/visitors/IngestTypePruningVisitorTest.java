@@ -1692,7 +1692,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void abcdefg() throws ParseException {
+    public void testWhoopsUsedLuceneForTheFunction() throws ParseException {
 
         TypeMetadata tm = new TypeMetadata();
         tm.put("A", "ingestType1", LcType.class.getTypeName());
@@ -1707,6 +1707,8 @@ public class IngestTypePruningVisitorTest {
 
         // Found something!! Looks like the B('3') part is causing the null error. I need to check what the syntax should be for this.
         // ... uh... why was that there to begin with :/ ???
+        // Oh it was a function. swapped with INTERSECTS
+        // #doesnt work
         String original = "A == '1' || A == '2' || (B == '2' && B == '3') || INTERSECTS(FIELD, 'POINT(10 20)')";// || (C == '3' || C == '4')"; // as-is causes test to null-pointer
         //String original = "(A == '1') || A == '2'"; // this is a different error caused by not tree-ifying visitoring
         String flat = JexlStringBuildingVisitor.buildQueryWithoutParse(JexlASTHelper.parseAndFlattenJexlQuery(original)); // same null here
@@ -1714,6 +1716,78 @@ public class IngestTypePruningVisitorTest {
 
         PrintingVisitor.printQuery(treed);
         test(treed, "A == '1'", tm);
+    }
+
+    @Test
+    public void testNowUsingActualJexlAndDoTheQMStuff() throws ParseException, InvalidQueryTreeException {
+
+
+        // --- VALIDATION ---
+
+        validator.setValidateFlatten(true);
+        validator.setValidateJunctions(false);
+        validator.setValidateLineage(false);
+        validator.setValidateReferenceExpressions(false);
+        validator.setValidateQueryPropertyMarkers(false);
+
+        // --- TYPE METADATA (removing stuff) ---
+
+        TypeMetadata tm = new TypeMetadata();
+        tm.put("A", "ingestType1", LcType.class.getTypeName());
+        tm.put("A", "ingestType2", LcType.class.getTypeName());
+        tm.put("A", "ingestType3", LcType.class.getTypeName());
+        tm.put("B", "ingestType1", LcType.class.getTypeName());
+        tm.put("B", "ingestType2", LcType.class.getTypeName());
+        tm.put("C", "ingestType5", LcType.class.getTypeName());
+        tm.put("123", "ingestType1", LcType.class.getTypeName());
+        tm.put("", "ingestType1", LcType.class.getTypeName());
+        tm.put("", "ingestType2", LcType.class.getTypeName());
+        tm.put("", "ingestType3", LcType.class.getTypeName());
+        tm.put("B", "ingestType1", LcType.class.getTypeName());
+        tm.put("B", "ingestType2", LcType.class.getTypeName());
+        tm.put("C1", "ingestType5", LcType.class.getTypeName());
+        tm.put("C2", "ingestType5", LcType.class.getTypeName());
+        tm.put("123", "ingestType1", LcType.class.getTypeName());
+
+        // --- Remapping / changing stuff ---
+
+        // Create a query model that has exactly the mappings we need to test edge cases.
+        QueryModel model = new QueryModel();
+
+        // Forward Mappings
+        model.addTermToModel("A", "");
+        model.addTermToModel("B", "B");
+        model.addTermToModel("C", "C1");
+        model.addTermToModel("C", "C2");
+
+        // Reverse Mappings (Mirror of Forward Mappings)
+        model.addTermToReverseModel("", "A");
+        model.addTermToReverseModel("B", "B");
+        model.addTermToReverseModel("C1", "C");
+        model.addTermToReverseModel("C2", "C");
+
+        HashSet<String> allFields = new HashSet<>();
+        allFields.add("A");
+        allFields.add("B");
+        allFields.add("C");
+        // whoops, i need to add the mappings here too
+        allFields.add("C1");
+        allFields.add("C2");
+
+        String original = "A == '1' || A == '2' || (B == '2' && geowave:intersects(FIELD, 'POINT(10 20)')) || (C == '3' && C == '4')";
+        test(original, "SUCCESS", tm);
+
+        // replace..?
+        // ok ill groom it sheesh
+        // hmmm i dont think i need the grooming. the allFields thing fixed the issue.
+        ASTJexlScript queryModelAppliedJexl = QueryModelVisitor.applyModel(JexlASTHelper.parseJexlQuery(original), model, allFields);
+
+        System.out.println(" --- QueryModel-Applied Query --- ");
+        System.out.println("Is queryModelAppliedJexl valid? | " + validator.isValid(queryModelAppliedJexl));
+        PrintingVisitor.printQuery(queryModelAppliedJexl);
+
+        test(JexlStringBuildingVisitor.buildQuery(queryModelAppliedJexl), "SUCCESS", tm);
+
     }
 
 }
