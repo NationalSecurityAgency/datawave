@@ -109,5 +109,29 @@ jobs:
           -Dtag="${{ steps.version.outputs.VERSION_TAG }}" \
           -DpushChanges=true \
           -DlocalCheckout=true
+    - name: Build and Push packages and images 
+      run: |
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml 
+          --show-version 
+          --batch-mode
+          --errors 
+          --no-transfer-progress 
+          --fail-at-end 
+          clean deploy 
+          -Pkubernetes 
+          -Dmaven.build.cache.enabled=false 
+          -Dtar 
+          -Ddeploy 
+          -Ddist 
+          -Ddocker-release 
+          -Dutils 
+          -Dservices 
+          -Dstarters 
+          -DskipTests 
+          -DskipFormat 
+          -DskipSpotbugs 
+          -Denforcer.skip=true 
+          -Dcheckstyle.skip=true  
+          -Dmicroservice-docker
 
 
