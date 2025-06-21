@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,8 +57,8 @@ public class WaitWindowQueryIterator extends QueryIterator {
 
         // this only gets called if we have not exceeded maxYields
         @Override
-        public void start(String queryId, Range seekRange, long yieldThresholdMs) {
-            super.start(queryId, seekRange, Long.MAX_VALUE);
+        public void start(String queryId, long yieldThresholdMs) {
+            super.start(queryId, Long.MAX_VALUE);
             reset();
         }
 

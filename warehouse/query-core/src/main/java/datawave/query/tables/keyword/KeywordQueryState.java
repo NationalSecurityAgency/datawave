@@ -9,6 +9,8 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Range;
 
+import datawave.util.keyword.TagCloudUtils;
+
 /** Captures the internal state of a single keyword query */
 public class KeywordQueryState {
 
@@ -17,6 +19,16 @@ public class KeywordQueryState {
      * document.
      */
     private boolean generateCloud = false;
+
+    /**
+     * if true, group tags by language - if not, combine keywords from all languages into a single cloud.
+     */
+    private boolean languagePartitioned = true;
+
+    /**
+     * the maximum number of tags we will generate in the final cloud
+     */
+    private int maxCloudTags = 0;
 
     /** a list of view names we will attempt to use for content */
     private final List<String> viewNames = new ArrayList<>();
@@ -28,10 +40,15 @@ public class KeywordQueryState {
     private final Map<String,String> languageMap = new HashMap<>();
 
     /**
-     * a map between document uids (shard/datatype/uid) and the identifer used to find that uid (e.g., PAGE_ID:1234) used for display in the sources field of
+     * a map between document uids (shard/datatype/uid) and the identifier used to find that uid (e.g., PAGE_ID:1234) used for display in the sources field of
      * the generated tag clouds
      */
     private final Map<String,String> identifierMap = new HashMap<>();
+
+    /**
+     * The utilities class that will be used to partition tag clouds, scores keywords, merge visibilities, etc.
+     */
+    private TagCloudUtils utils;
 
     /** the ranges to scan based on the query terms */
     private final Collection<Range> ranges = new TreeSet<>();
@@ -42,6 +59,22 @@ public class KeywordQueryState {
 
     public void setGenerateCloud(boolean generateCloud) {
         this.generateCloud = generateCloud;
+    }
+
+    public boolean isLanguagePartitioned() {
+        return languagePartitioned;
+    }
+
+    public void setLanguagePartitioned(boolean languagePartitioned) {
+        this.languagePartitioned = languagePartitioned;
+    }
+
+    public int getMaxCloudTags() {
+        return maxCloudTags;
+    }
+
+    public void setMaxCloudTags(int maxCloudTags) {
+        this.maxCloudTags = maxCloudTags;
     }
 
     public Map<String,String> getLanguageMap() {
@@ -67,5 +100,13 @@ public class KeywordQueryState {
         if (null != ranges) {
             this.ranges.addAll(ranges);
         }
+    }
+
+    public void setTagCloudUtils(TagCloudUtils utils) {
+        this.utils = utils;
+    }
+
+    public TagCloudUtils getTagCloudUtils() {
+        return utils;
     }
 }

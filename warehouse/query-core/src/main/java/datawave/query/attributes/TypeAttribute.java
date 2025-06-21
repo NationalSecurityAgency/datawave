@@ -18,6 +18,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.data.type.DatawaveTypeIndex;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
@@ -62,8 +63,17 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(DataOutput out) throws IOException {
-        WritableUtils.writeString(out, datawaveType.getClass().toString());
-        writeMetadata(out);
+        int index = DatawaveTypeIndex.getIndexForTypeName(datawaveType.getClass().getTypeName());
+        if (index == 0) {
+            // Type name not found in index, must write full name
+            WritableUtils.writeVInt(out, index);
+            WritableUtils.writeString(out, datawaveType.getClass().getName());
+        } else {
+            // Type name is present in index, do not write the full name
+            WritableUtils.writeVInt(out, index);
+        }
+
+        super.writeMetadata(out);
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -71,7 +81,14 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     @Override
     public void readFields(DataInput in) throws IOException {
         try {
-            setDatawaveType(WritableUtils.readString(in));
+            int index = WritableUtils.readVInt(in);
+            String clazzName;
+            if (index == 0) {
+                clazzName = WritableUtils.readString(in);
+            } else {
+                clazzName = DatawaveTypeIndex.getTypeNameForIndex(index);
+            }
+            setDatawaveType(clazzName);
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException ex) {
             log.error("Could not create the datawaveType " + ex);
         }
@@ -130,32 +147,38 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(Kryo kryo, Output output) {
-        output.writeString(datawaveType.getClass().getName());
+        int typeIndex = DatawaveTypeIndex.getIndexForTypeName(datawaveType.getClass().getTypeName());
+        output.writeInt(typeIndex, true);
+        if (typeIndex == 0) {
+            // Type was not found in the TypeIndex, write the class name
+            output.writeString(datawaveType.getClass().getName());
+        }
         super.writeMetadata(kryo, output);
-        output.writeString(this.datawaveType.getDelegateAsString());
+        this.datawaveType.write(kryo, output);
         output.writeBoolean(this.toKeep);
     }
 
     @Override
     public void read(Kryo kryo, Input input) {
         try {
-            setDatawaveType(input.readString());
+            int typeIndex = input.readInt(true);
+            String clazzName;
+            if (typeIndex == 0) {
+                // Type was not in the TypeIndex, must read the class name
+                clazzName = input.readString();
+            } else {
+                // Type was in the TypeIndex, grab the name from the utility
+                clazzName = DatawaveTypeIndex.getTypeNameForIndex(typeIndex);
+            }
+            setDatawaveType(clazzName);
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
-            log.warn("could not read datawateType from input: " + e);
+            log.warn("could not read DatawaveType from input: " + e);
         }
         super.readMetadata(kryo, input);
-        if (datawaveType == null)
+        if (datawaveType == null) {
             datawaveType = (Type) new NoOpType();
-        String delegateString = input.readString();
-        try {
-            datawaveType.setDelegateFromString(delegateString);
-        } catch (Exception ex) {
-            // there was some problem with setting the delegate as the declared type.
-            // Instead of letting this exception fail the query, make this a NoOpType containing the string value from the input
-            log.warn("Was unable to make a " + datawaveType + " to contain a delegate created from input:" + delegateString + "  Making a NoOpType instead.");
-            datawaveType = (Type) new NoOpType();
-            datawaveType.setDelegateFromString(delegateString);
         }
+        this.datawaveType.read(kryo, input);
         this.toKeep = input.readBoolean();
     }
 
