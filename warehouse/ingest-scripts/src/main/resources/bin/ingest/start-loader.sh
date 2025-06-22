@@ -135,8 +135,8 @@ if [[ ${TOTAL} -gt 0 ]]; then
         portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
         portUsed=$(ps -eaf | grep "[b]ulkIngestMap" | grep $SHUTDOWN_PORT)
     done
-    echo starting extra map file loader with log file $LOG_DIR/map-file-loader.$LOADER$COUNT.log
-    $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader.$LOADER$COUNT.log 2>&1 &
+    echo starting extra map file loader with log file $LOG_DIR/map-file-loader.$(date +%H%M%S)-$LOADER$COUNT.log
+    $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader.$(date +%H%M%S)-$LOADER$COUNT.log 2>&1 &
   fi
 
   if [[ ! -z $MAP_LOADER_CUSTOM ]]; then
