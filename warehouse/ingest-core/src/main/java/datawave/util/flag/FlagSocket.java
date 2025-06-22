@@ -32,7 +32,9 @@ public class FlagSocket extends Observable implements Runnable, Observer {
     public void run() {
         // register ourselves to observe...
         addObserver(this);
-        log.info("Listening for shutdown commands on port {}", serverSocket.getLocalPort());
+        if (log.isInfoEnabled()) {
+            log.info("Listening for shutdown commands on port {}", serverSocket.getLocalPort());
+        }
         while (running) {
             try {
                 Socket s = serverSocket.accept();
