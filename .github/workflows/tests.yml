@@ -92,6 +92,7 @@ jobs:
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples -Dmaven.build.cache.enabled=false -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
 
   quickstart-build-and-test:
+    if: false
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code

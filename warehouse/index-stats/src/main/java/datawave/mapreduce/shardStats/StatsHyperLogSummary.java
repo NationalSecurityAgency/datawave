@@ -16,8 +16,7 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -31,7 +30,7 @@ import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
  */
 class StatsHyperLogSummary implements WritableComparable<StatsHyperLogSummary> {
 
-    private static final Logger log = LoggerFactory.getLogger(StatsHyperLogSummary.class);
+    private static final Logger log = Logger.getLogger(StatsHyperLogSummary.class);
 
     /**
      * Total count of all entries for field name/datatype pair.

@@ -14,8 +14,7 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -40,7 +39,7 @@ enum StatsTestData {
     FThree_VDos("20010911", "fn-three", "t-3", "v-dos"),
     FThree_VTres("20010911", "fn-three", "t-3", "v-tres");
 
-    private static final Logger log = LoggerFactory.getLogger(StatsTestData.class);
+    private static final Logger log = Logger.getLogger(StatsTestData.class);
 
     /**
      * Generates a list of keys for input into the mapper.
@@ -91,7 +90,7 @@ enum StatsTestData {
             Set<String> unique = new TreeSet<>(entry.getValue());
             HyperLogLogPlus logPlus = logPlusEntries.get(entry.getKey());
             StatsHyperLogSummary stats = new StatsHyperLogSummary(values.size(), logPlus, unique.size());
-            log.debug("key( {} ) value( {} )", entry.getKey().getKey(), stats);
+            log.debug("key(" + entry.getKey().getKey() + ") value(" + stats + ")");
             Value serialized = new Value(stats.toByteArray());
             output.put(entry.getKey(), serialized);
         }

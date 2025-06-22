@@ -9,7 +9,8 @@ import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 
@@ -23,7 +24,7 @@ public abstract class BaseHdfsFileCacheUtil {
     private static final int MAX_RETRIES = 3;
     protected short cacheReplicas = 3;
 
-    private static final Logger log = Logger.getLogger(BaseHdfsFileCacheUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseHdfsFileCacheUtil.class);
 
     public BaseHdfsFileCacheUtil(Configuration conf) {
         Validate.notNull(conf, "Configuration object passed in null");
@@ -48,7 +49,7 @@ public abstract class BaseHdfsFileCacheUtil {
         while (retry && attempts <= MAX_RETRIES) {
             attempts++;
 
-            log.info("Reading cache at " + this.cacheFilePath);
+            log.info("Reading cache at {}", this.cacheFilePath);
             try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
                 readCache(in);
                 retry = false;
@@ -80,7 +81,7 @@ public abstract class BaseHdfsFileCacheUtil {
                 cleanup(fs, tempFile);
             }
 
-            log.error("Unable to update cache file " + cacheFilePath + ". " + e.getMessage(), e);
+            log.error("Unable to update cache file {}. {}", cacheFilePath, e.getMessage(), e);
         }
 
     }
@@ -99,10 +100,10 @@ public abstract class BaseHdfsFileCacheUtil {
                 throw new IOException("Failed to rename temporary cache file");
             }
         } catch (Exception e) {
-            log.warn("Unable to rename " + tmpCacheFile + " to " + this.cacheFilePath + "probably because somebody else replaced it ", e);
+            log.warn("Unable to rename {} to {} probably because somebody else replaced it", tmpCacheFile, this.cacheFilePath, e);
             cleanup(fs, tmpCacheFile);
         }
-        log.info("Updated " + cacheFilePath);
+        log.info("Updated {}", cacheFilePath);
 
     }
 
@@ -110,7 +111,7 @@ public abstract class BaseHdfsFileCacheUtil {
         try {
             fs.delete(tmpCacheFile, false);
         } catch (Exception e) {
-            log.error("Unable to clean up " + tmpCacheFile, e);
+            log.error("Unable to clean up {}", tmpCacheFile, e);
         }
     }
 
@@ -132,7 +133,7 @@ public abstract class BaseHdfsFileCacheUtil {
             do {
                 Path parentDirectory = this.cacheFilePath.getParent();
                 String fileName = this.cacheFilePath.getName() + "." + count;
-                log.info("Attempting to create " + fileName + "under " + parentDirectory);
+                log.info("Attempting to create {} under {}", fileName, parentDirectory);
                 tmpCacheFile = new Path(parentDirectory, fileName);
                 count++;
             } while (!fs.createNewFile(tmpCacheFile));
