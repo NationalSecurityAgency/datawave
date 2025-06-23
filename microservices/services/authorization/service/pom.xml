@@ -11,7 +11,12 @@
     <version>4.0.5-SNAPSHOT</version>
     <description>DATAWAVE Authorization Microservice</description>
     <url>https://code.nsa.gov/datawave-authorization-service</url>
-
+    <scm>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <properties>
         <start-class>datawave.microservice.authorization.AuthorizationService</start-class>
         <version.datawave.authorization-api>4.0.1</version.datawave.authorization-api>

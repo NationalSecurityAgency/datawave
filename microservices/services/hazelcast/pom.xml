@@ -15,7 +15,12 @@
         <module>common</module>
         <module>client</module>
     </modules>
-
+    <scm>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <repositories>
         <repository>
             <releases>

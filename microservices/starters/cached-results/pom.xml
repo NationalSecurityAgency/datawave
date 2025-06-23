@@ -16,7 +16,12 @@
             <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
-
+    <scm>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <properties>
         <version.datawave>7.3.0</version.datawave>
         <version.datawave.hazelcast-client>4.0.2</version.datawave.hazelcast-client>
