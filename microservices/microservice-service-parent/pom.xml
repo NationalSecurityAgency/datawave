@@ -50,7 +50,7 @@
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
                     <exclusion>
-                2        <groupId>org.springframework.boot</groupId>
+                        <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-starter-logging</artifactId>
                     </exclusion>
                 </exclusions>
