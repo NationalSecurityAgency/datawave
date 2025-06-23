@@ -36,6 +36,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -43,7 +44,6 @@ import com.google.common.collect.Sets;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
-import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.Constants;
@@ -156,10 +156,11 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         /*
-         * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
+         * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types If we
+         * have an evaluation only term predicate, then no need to apply normalizations If we have already expanded this node, then nothing to do
          */
         QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
-        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM) || this.expandedNodes.contains(node)) {
+        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM, EVALUATION_ONLY) || this.expandedNodes.contains(node)) {
             return node;
         }
 
@@ -334,44 +335,58 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
-                            if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
-                                if (regexNode) {
-                                    throw new IllegalArgumentException(
-                                                    "OneToManyNormalizers to not handle regex normalization: " + fieldName + " -> " + normalizer.getClass());
-                                }
-                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
-                                if (normTerms.size() == 1) {
-                                    String normTerm = normTerms.iterator().next();
-                                    normalizedTerms.add(normTerm);
-                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
-                                } else {
-                                    List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
-                                    Iterator<String> iter = normTerms.iterator();
-                                    while (iter.hasNext()) {
-                                        normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
-                                    }
-
-                                    JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
-                                    normalizedNodes.add(oneToManyNode);
-                                }
-
-                            } else {
-                                String normTerm = (regexNode ? normalizer.normalizeRegex(term) : normalizer.normalize(term));
+                            if (regexNode) {
+                                String normTerm = normalizer.normalizeRegex(term);
                                 if (!normalizedTerms.contains(normTerm)) {
                                     if (log.isDebugEnabled()) {
                                         log.debug("normalizedTerm = " + normTerm);
                                     }
                                     normalizedTerms.add(normTerm);
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
-                                    if (regexNode && normalizer.normalizedRegexIsLossy(term)) {
+                                    if (normalizer.normalizedRegexIsLossy(term)) {
+                                        normalizer.normalizedRegexIsLossy(term);
                                         JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
                                                         EVALUATION_ONLY);
+                                        // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)
+                                        if (!(evalOnly instanceof ASTReferenceExpression)) {
+                                            evalOnly = JexlNodes.wrap(evalOnly);
+                                        }
                                         // now we need to combine these two nodes so that both are required
-                                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {normalizedNode, evalOnly}));
+                                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {evalOnly, normalizedNode}));
                                         normalizedNodes.add(combined);
                                     } else {
                                         normalizedNodes.add(normalizedNode);
                                     }
+                                }
+                            } else if ((normalizer instanceof OneToManyNormalizerType) && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
+                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+                                String normTerm = Joiner.on(", ").join(normTerms);
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
+                                    }
+                                    normalizedTerms.add(normTerm);
+                                    if (normTerms.size() == 1) {
+                                        normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                    } else {
+                                        List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
+                                        Iterator<String> iter = normTerms.iterator();
+                                        while (iter.hasNext()) {
+                                            normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
+                                        }
+
+                                        JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
+                                        normalizedNodes.add(oneToManyNode);
+                                    }
+                                }
+                            } else {
+                                String normTerm = normalizer.normalize(term);
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
+                                    }
+                                    normalizedTerms.add(normTerm);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
                                 }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {

@@ -392,7 +392,7 @@ public abstract class NumericListQueryTest {
         extraParameters.put("return.fields", "SIZE,CANINE");
 
         String queryString = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
-        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == '+bE9')) && CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
 
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.WILD.1:90,26.5", "CANINE.WILD.1:coyote");
 
@@ -408,7 +408,7 @@ public abstract class NumericListQueryTest {
 
         // this only works because the entire string '90,26.5' is included in the jexl context and we match against that
         String queryString = "SIZE =~'.*0.*' AND CANINE == 'coyote'";
-        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '.*0.*')) && CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Delayed_ = true) && (SIZE =~ '\\+[a-zA-Z]E.*0?\\.?.*|\\+AE0|![A-Za-z]E(.+|.*9\\.?.+)')) && ((_Eval_ = true) && (SIZE =~ '.*0.*')) && CANINE == 'coyote'";
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.WILD.1:tiger", "SIZE.CANINE.3:20,12.5",
                         "CANINE.WILD.1:coyote", "FISH.WILD.1:tuna", "BIRD.WILD.1:hawk");
