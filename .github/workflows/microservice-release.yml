@@ -73,6 +73,8 @@ jobs:
     steps:
     - name: Checkout DataWave
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
       uses: actions/setup-java@v4
       with:
@@ -103,8 +105,9 @@ jobs:
     - name: Release with Maven
       run: |
         cd "${{ github.event.inputs.projectToRelease }}"
-        git config user.email "datawave@github.org"
-        git config user.name "Automated CI Release"
+        #Github actions bot user id - user.login. See https://api.github.com/users/github-actions%5Bbot%5D
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config user.name "github-actions[bot]"
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --batch-mode release:prepare release:perform \
           -DreleaseVersion="${{ steps.version.outputs.FINAL_VERSION }}" \
           -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
