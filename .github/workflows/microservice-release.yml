@@ -116,11 +116,10 @@ jobs:
           -DlocalCheckout=true \
           -DskipTests \
           -DskipFormat \
-          -DskipSpotbugs \ 
+          -DskipSpotbugs \
           -Denforcer.skip=true \
           -Dcheckstyle.skip=true \
-          -DconnectionUrl=${{ github.server_url }}/${{ github.repository }} \
-          -DdeveloperConnectionUrl=${{ github.server_url }}/${{ github.repository }} 
+          -DconnectionType=connection
     - name: Build and Push packages and images 
       run: |
         git checkout ${{ steps.version.outputs.VERSION_TAG }}
