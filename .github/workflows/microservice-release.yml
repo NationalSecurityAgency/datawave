@@ -118,7 +118,8 @@ jobs:
           -DskipFormat \
           -DskipSpotbugs \ 
           -Denforcer.skip=true \
-          -Dcheckstyle.skip=true 
+          -Dcheckstyle.skip=true \
+          -DconnectionUrl=${{ github.server_url }}/${{ github.repository }} 
     - name: Build and Push packages and images 
       run: |
         git checkout ${{ steps.version.outputs.VERSION_TAG }}
