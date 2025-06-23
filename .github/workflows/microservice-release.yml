@@ -103,6 +103,8 @@ jobs:
     - name: Release with Maven
       run: |
         cd "${{ github.event.inputs.projectToRelease }}"
+        git config user.email "datawave@github.org"
+        git config user.name "Automated CI Release"
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --batch-mode release:prepare release:perform \
           -DreleaseVersion="${{ steps.version.outputs.FINAL_VERSION }}" \
           -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
