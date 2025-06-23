@@ -2,7 +2,6 @@ package datawave.query.testframework;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,22 +64,6 @@ public class FlattenDataType extends AbstractDataTypeConfig {
         }
     }
 
-    // ==================================
-    // data manager for flatten is based upon the flatten mode - metadata may be different for each mode
-    private static volatile Map<FlattenMode,RawDataManager> manager = new EnumMap<>(FlattenMode.class);
-
-    public static RawDataManager getManager(final FlattenData data) {
-        FlattenMode mode = data.getMode();
-        if (!manager.containsKey(mode)) {
-            synchronized (manager) {
-                if (!manager.containsKey(mode)) {
-                    manager.put(mode, new FlattenDataManager(data));
-                }
-            }
-        }
-        return manager.get(mode);
-    }
-
     private static final Map<String,FlattenDataType> flattenTypes = new HashMap<>();
 
     static FlattenDataType getFlattenDataType(final String dataType) {
@@ -128,7 +111,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
      */
     public FlattenDataType(final String datatype, final String ingestFile, final FieldConfig fieldConfig, final FlattenData flattenData)
                     throws IOException, URISyntaxException {
-        super(datatype, ingestFile, FileType.JSON, fieldConfig, manager.get(flattenData.getMode()));
+        super(datatype, ingestFile, FileType.JSON, fieldConfig, FlattenDataManager.getInstance());
 
         this.flatData = flattenData;
 
@@ -153,8 +136,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
         // load raw test data into the data manager
         Set<String> anyFieldIndexes = new HashSet<>(fieldConfig.getIndexFields());
         anyFieldIndexes.addAll(fieldConfig.getReverseIndexFields());
-        RawDataManager curMgr = manager.get(flattenData.getMode());
-        curMgr.addTestData(this.ingestPath, this.dataType, anyFieldIndexes);
+        FlattenDataManager.getInstance().addTestData(this.ingestPath, this.dataType, anyFieldIndexes);
 
         log.debug(this.toString());
     }

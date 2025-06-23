@@ -1,5 +1,7 @@
 package datawave.query.planner;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.microservice.query.QueryParameters.QUERY_END;
@@ -249,7 +251,7 @@ public class CompositeIndexTest {
                 record.setRawFileName("geodata_" + recNum + ".dat");
                 record.setRawRecordNumber(recNum++);
                 record.setDate(formatter.parse(beginDate).getTime() + dates[i]);
-                record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : "")).getBytes("UTF8"));
+                record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : "")).getBytes(UTF_8));
                 record.generateId(null);
                 record.setVisibility(new ColumnVisibility(AUTHS));
 

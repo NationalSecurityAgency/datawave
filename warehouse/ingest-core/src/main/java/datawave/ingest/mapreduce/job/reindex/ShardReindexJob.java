@@ -65,7 +65,6 @@ import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
 import datawave.ingest.mapreduce.job.util.AccumuloUtil;
-import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
@@ -73,6 +72,7 @@ import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
 import datawave.ingest.mapreduce.job.writer.SpillingSortedContextWriter;
 import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
 import datawave.util.StringUtils;
+import datawave.util.accumulo.RFileUtil;
 
 /**
  * Job will read from the sharded data [accumulo online/offline][rfiles] and apply configured ingest rules. Each Key/Value pair will be reprocessed by ingest
