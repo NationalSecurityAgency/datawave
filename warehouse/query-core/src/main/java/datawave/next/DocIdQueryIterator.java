@@ -40,6 +40,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
     public static final String BATCH_SIZE = "batch.size";
     public static final String SCAN_TIMEOUT = "scan.timeout";
+    public static final String PARTIAL_INTERSECTIONS = "partial.intersections";
 
     private Range range;
     private ASTJexlScript script;
@@ -53,6 +54,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private IteratorEnvironment env;
     private int batchSize = 1;
     private long scanTimeout = -1;
+    private boolean allowPartialIntersections = true;
 
     private Key tk;
     private Value tv = new Value();
@@ -127,6 +129,10 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
         if (options.containsKey(SCAN_TIMEOUT)) {
             scanTimeout = Long.parseLong(options.get(SCAN_TIMEOUT));
+        }
+
+        if (options.containsKey(PARTIAL_INTERSECTIONS)) {
+            allowPartialIntersections = Boolean.parseBoolean(options.get(PARTIAL_INTERSECTIONS));
         }
     }
 
@@ -226,6 +232,9 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
             DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypeFilter, timeFilter, indexedFields);
             if (scanTimeout > 0) {
                 visitor.setMaxScanTimeMillis(scanTimeout);
+            }
+            if (allowPartialIntersections) {
+                visitor.setAllowPartialIntersections(allowPartialIntersections);
             }
 
             Set<Key> docIds = visitor.getDocIds(script);

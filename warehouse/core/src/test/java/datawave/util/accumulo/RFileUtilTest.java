@@ -1,4 +1,4 @@
-package datawave.ingest.mapreduce.job.util;
+package datawave.util.accumulo;
 
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 import static org.junit.Assert.assertFalse;

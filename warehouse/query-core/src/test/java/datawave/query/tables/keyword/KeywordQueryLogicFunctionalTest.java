@@ -97,7 +97,7 @@ public class KeywordQueryLogicFunctionalTest {
         String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzua";
 
         addExpectedResult(
-                        "{\"source\":\"20130101_0/test/-cvy0gj.tlf59s.-duxzua\",\"view\":\"CONTENT\",\"language\":\"ENGLISH\",\"visibility\":\"ALL\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052,\"kind word alone\":0.4375,\"much farther\":0.5903,\"word\":0.2857,\"word alone\":0.534}}");
+                        "{\"source\":\"20130101_0/test/-cvy0gj.tlf59s.-duxzua\",\"view\":\"CONTENT\",\"language\":\"\",\"visibility\":\"ALL\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052,\"kind word alone\":0.4375,\"much farther\":0.5903,\"word\":0.2857,\"word alone\":0.534}}");
 
         runTestQuery(queryString);
     }

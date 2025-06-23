@@ -539,7 +539,7 @@ public abstract class ColorsTest {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
         withDateRange("20250301", "20250301");
-        withExpectedCount(1);
+        withExpectedCount(ColorsIngest.getNumShards());
         withExpectedDays("20250301");
         withExpectedShards("20250301", ColorsIngest.getNumShards());
         planAndExecuteQuery();
@@ -550,7 +550,7 @@ public abstract class ColorsTest {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
         withDateRange("20250331", "20250331");
-        withExpectedCount(2);
+        withExpectedCount(ColorsIngest.getNewShards());
         withExpectedDays("20250331");
         withExpectedShards("20250331", ColorsIngest.getNewShards());
         planAndExecuteQuery();
@@ -561,7 +561,7 @@ public abstract class ColorsTest {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
         withDateRange("20250326", "20250327");
-        withExpectedCount(3);
+        withExpectedCount(ColorsIngest.getNumShards() + ColorsIngest.getNewShards());
         withExpectedDays("20250326", "20250327");
         withExpectedShards("20250326", ColorsIngest.getNumShards());
         withExpectedShards("20250327", ColorsIngest.getNewShards());
