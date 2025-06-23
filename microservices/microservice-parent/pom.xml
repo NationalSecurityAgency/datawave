@@ -41,7 +41,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.version>${project.version}</project.version>
         <maven.release.arguments>-Ddist</maven.release.arguments>
-        <maven.release.profiles>-dist</maven.release.profiles>
+        <maven.release.profiles>dist</maven.release.profiles>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
