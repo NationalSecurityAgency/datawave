@@ -17,12 +17,12 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 public class ResponseHeaderWebFilter implements WebFilter, Ordered {
-    
+
     private final String origin;
-    
+
     // Make this filter near the highest priority so that we're sure to capture the response time appropriately.
     private int order = Ordered.HIGHEST_PRECEDENCE + 1;
-    
+
     public ResponseHeaderWebFilter(String systemName) {
         String origin;
         try {
@@ -32,7 +32,7 @@ public class ResponseHeaderWebFilter implements WebFilter, Ordered {
         }
         this.origin = origin;
     }
-    
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         if (exchange.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE) == null) {
@@ -51,12 +51,12 @@ public class ResponseHeaderWebFilter implements WebFilter, Ordered {
         });
         return chain.filter(exchange);
     }
-    
+
     @Override
     public int getOrder() {
         return order;
     }
-    
+
     public void setOrder(int order) {
         this.order = order;
     }

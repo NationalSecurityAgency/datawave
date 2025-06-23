@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.0</version>
+        <version>5.0.1</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>hazelcast-service</artifactId>
@@ -12,10 +12,10 @@
     <description>DATAWAVE Hazelcast Server</description>
     <url>https://code.nsa.gov/datawave-hazelcast-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-hazelcast-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-hazelcast-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-hazelcast-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <start-class>datawave.microservice.cached.server.HazelcastService</start-class>
@@ -41,12 +41,12 @@
                 <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>slf4j-log4j12</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -81,12 +81,12 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -101,8 +101,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>

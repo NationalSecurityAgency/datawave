@@ -15,7 +15,7 @@ import datawave.query.attributes.Document;
  */
 public class WritableDocumentDeserializer extends DocumentDeserializer implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1058220297462817713L;
 
     @Override
     public Document deserialize(InputStream data) {

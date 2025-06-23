@@ -38,7 +38,6 @@ import datawave.security.authorization.UserOperations;
 import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
@@ -54,18 +53,22 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
+import datawave.webservice.result.keyword.TagCloudResponseBase;
 
 /**
  * Utility for performing optimized queries based on UUIDs
  */
 public class LookupUUIDUtil {
 
+    private static final Logger log = Logger.getLogger(LookupUUIDUtil.class);
+
     protected static final String EMPTY_STRING = "";
 
     private static final String CONTENT_QUERY = "ContentQuery";
+    private static final String KEYWORD_QUERY = "KeywordUUIDQuery";
+
     private static final String DASH = "-";
     private static final String DOCUMENT_FIELD_NAME = "DOCUMENT:";
-    private static final List<FieldBase> EMPTY_FIELDS = new ArrayList<>(0);
     private static final String EVENT_TYPE_NAME = "event";
     private static final String FORWARD_SLASH = "/";
 
@@ -80,7 +83,7 @@ public class LookupUUIDUtil {
     private static final String PARAM_LUCENE_QUERY_SYNTAX = ";query.syntax:LUCENE-UUID";
     protected static final String QUOTE = "\"";
     private static final String REGEX_GROUPING_CHARS = "[()]";
-    private static final String REGEX_NONWORD_CHARS = "[\\W&&[^:_\\.\\s-]]";
+    private static final String REGEX_NONWORD_CHARS = "[\\W&&[^:_.\\s-]]";
     private static final String REGEX_OR_OPERATOR = "[\\s][oO][rR][\\s]";
     private static final String REGEX_WHITESPACE_CHARS = "\\s";
     private static final String SPACE = " ";
@@ -95,24 +98,21 @@ public class LookupUUIDUtil {
     public static final String DEFAULT_CONTENT_LOOKUP_TYPE = "default";
     private Date beginAsDate = null;
 
-    private EJBContext ctx;
+    private final EJBContext ctx;
 
-    private ResponseObjectFactory responseObjectFactory;
+    private final ResponseObjectFactory responseObjectFactory;
 
-    private QueryLogicFactory queryLogicFactory;
-
-    private AuditParameters auditParameters;
-
-    private LookupUUIDConfiguration lookupUUIDConfiguration;
-    private Logger log = Logger.getLogger(this.getClass());
+    private final QueryLogicFactory queryLogicFactory;
 
     private int maxAllowedBatchLookupUUIDs = LookupUUIDConstants.DEFAULT_BATCH_LOOKUP_UPPER_LIMIT;
+
+    private int maxAllowedTagCloudLookupUUIDs = LookupUUIDConstants.DEFAULT_TAG_CLOUD_LOOKUP_UPPER_LIMIT;
 
     private final QueryExecutor queryExecutor;
 
     private final UserOperations userOperations;
 
-    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     private Map<String,String> contentLookupTypes = Collections.synchronizedMap(new HashMap<>());
 
     MultivaluedMap<String,String> defaultOptionalParams;
@@ -120,10 +120,10 @@ public class LookupUUIDUtil {
     /**
      * Constructor
      *
-     * @param configuration
+     * @param lookupUUIDConfiguration
      *            Configuration bean for lookupUUID web service endpoints
      * @param queryExecutor
-     *            Service that executes queriesoptionalParamsToMap
+     *            Service that executes queries
      * @param context
      *            The EJB's content
      * @param queryLogicFactory
@@ -133,13 +133,12 @@ public class LookupUUIDUtil {
      * @param userOperations
      *            the user operations
      */
-    public LookupUUIDUtil(final LookupUUIDConfiguration configuration, final QueryExecutor queryExecutor, final EJBContext context,
+    public LookupUUIDUtil(final LookupUUIDConfiguration lookupUUIDConfiguration, final QueryExecutor queryExecutor, final EJBContext context,
                     final ResponseObjectFactory responseObjectFactory, final QueryLogicFactory queryLogicFactory, final UserOperations userOperations) {
         // Validate and assign the lookup UUID configuration
-        if (null == configuration) {
+        if (null == lookupUUIDConfiguration) {
             throw new IllegalArgumentException("Non-null configuration required to lookup UUIDs");
         }
-        this.lookupUUIDConfiguration = configuration;
 
         // Validate and assign the query executor
         if (null == queryExecutor) {
@@ -158,10 +157,8 @@ public class LookupUUIDUtil {
         // set the query logic factory
         this.queryLogicFactory = queryLogicFactory;
 
-        this.uuidTypes.clear();
-
         // load uuidTypes from the flat list
-        final List<UUIDType> types = this.lookupUUIDConfiguration.getUuidTypes();
+        final List<UUIDType> types = lookupUUIDConfiguration.getUuidTypes();
 
         if (null != types) {
             for (final UUIDType type : types) {
@@ -171,23 +168,31 @@ public class LookupUUIDUtil {
 
         // Populate the content lookup types map
         this.contentLookupTypes.clear();
-        this.contentLookupTypes = this.lookupUUIDConfiguration.getContentLookupTypes();
+        this.contentLookupTypes = lookupUUIDConfiguration.getContentLookupTypes();
 
         // Assign the begin date
         try {
-            this.beginAsDate = DateHelper.parseWithGMT(this.lookupUUIDConfiguration.getBeginDate());
+            this.beginAsDate = DateHelper.parse(lookupUUIDConfiguration.getBeginDate());
         } catch (DateTimeParseException e) {
-            this.log.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
 
         // Assign the maximum number of UUIDs allowed for batch lookup. A zero or negative
         // value is interpreted as unlimited, which is automatically adjusted to -1.
-        this.maxAllowedBatchLookupUUIDs = this.lookupUUIDConfiguration.getBatchLookupUpperLimit();
+        this.maxAllowedBatchLookupUUIDs = lookupUUIDConfiguration.getBatchLookupUpperLimit();
         if (this.maxAllowedBatchLookupUUIDs <= 0) {
             this.maxAllowedBatchLookupUUIDs = -1;
         }
 
-        this.defaultOptionalParams = this.lookupUUIDConfiguration.optionalParamsToMap();
+        // Assign the maximum number of UUIDs allowed for tag cloud batch lookup which may be different
+        // from the default limit because tag clouds summarize results. A zero or negative
+        // value is interpreted as unlimited, which is automatically adjusted to -1.
+        this.maxAllowedTagCloudLookupUUIDs = lookupUUIDConfiguration.getTagCloudLookupUpperLimit();
+        if (this.maxAllowedTagCloudLookupUUIDs <= 0) {
+            this.maxAllowedTagCloudLookupUUIDs = -1;
+        }
+
+        this.defaultOptionalParams = lookupUUIDConfiguration.optionalParamsToMap();
     }
 
     /*
@@ -350,7 +355,7 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
 
         // Validate the lookup criteria and get its HTTP headers, which may be null
-        final AbstractUUIDLookupCriteria validatedCriteria = this.validateLookupCriteria(unvalidatedCriteria, true);
+        final AbstractUUIDLookupCriteria validatedCriteria = this.validateLookupCriteria(unvalidatedCriteria, true, this.maxAllowedBatchLookupUUIDs);
         final HttpHeaders headers = validatedCriteria.getStreamingOutputHeaders();
 
         // If the criteria is intended for content lookup and contains only UIDQuery "event" types, allow
@@ -506,7 +511,7 @@ public class LookupUUIDUtil {
     }
 
     /**
-     * Add the specified uuid type to the internal uuidtypes map if the type is not null.
+     * Add the specified uuid type to the internal uuidTypes map if the type is not null.
      *
      * @param uuidType
      *            the uuid type name / field
@@ -521,14 +526,14 @@ public class LookupUUIDUtil {
     }
 
     /**
-     * Build the string key used to store uuid types in the internal uuidtype map. There can be multiple lists of uuid types, referred to as contexts - this
+     * Build the string key used to store uuid types in the internal uuidType map. There can be multiple lists of uuid types, referred to as contexts - this
      * allows multiple logicNames to be associated with the same field.
      *
      * @param uuidType
      *            the name/field of the specified UUIDType.
      * @return the key used to store/retrieve the UUID type from the uuidType map.
      */
-    private String buildUUIDTypeKey(String uuidType) {
+    private static String buildUUIDTypeKey(String uuidType) {
         if (uuidType == null)
             return null;
         return uuidType.toUpperCase();
@@ -550,7 +555,8 @@ public class LookupUUIDUtil {
      * check if the query logic name is one of the configured content lookup type logics.
      *
      * @param queryLogicName
-     * @return
+     *            the query logic name
+     * @return true if it is configured as content lookup, false if not
      */
     public boolean isContentLookup(String queryLogicName) {
         if (queryLogicName == null)
@@ -704,36 +710,24 @@ public class LookupUUIDUtil {
         // Validate for the expected response implementation
         final EventQueryResponseBase eventResponse = this.validatePagedResponse(uuidQueryResponse);
 
-        // Find out who/what called this method
-        final Principal principal = this.ctx.getCallerPrincipal();
-        String sid = principal.getName();
-
-        // Initialize the reusable query input
-        final String queryName = sid + '-' + UUID.randomUUID();
-        final Date endDate = new Date();
-        final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
-
         // Create manageable batches of contentQuery strings based on the configured upper limit of UUIDS, if any
         final List<StringBuilder> batchedContentQueryStrings = this.createContentQueryStrings(eventResponse);
 
         // Perform criteria validation if paging through next results
         final AbstractUUIDLookupCriteria validatedCriteria;
         if (criteria instanceof NextContentCriteria) {
-            validatedCriteria = this.validateLookupCriteria(criteria, false);
+            validatedCriteria = this.validateLookupCriteria(criteria, false, this.maxAllowedBatchLookupUUIDs);
         } else {
             validatedCriteria = criteria;
         }
-        final String userAuths = getAuths(CONTENT_QUERY, validatedCriteria.getQueryParameters(), null, principal);
 
         // Perform the lookup
         boolean allEventMockResponse = (uuidQueryResponse instanceof AllEventMockResponse);
         try {
             if (null != validatedCriteria.getStreamingOutputHeaders()) {
-                contentResponse = (T) this.lookupStreamedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                                allEventMockResponse);
+                contentResponse = (T) this.lookupStreamedContent(validatedCriteria, batchedContentQueryStrings);
             } else {
-                contentResponse = (T) this.lookupPagedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                                allEventMockResponse);
+                contentResponse = (T) this.lookupPagedContent(validatedCriteria, batchedContentQueryStrings, allEventMockResponse);
             }
         } catch (NoResultsException e) {
             // close the original lookupId query and re-throw
@@ -744,8 +738,147 @@ public class LookupUUIDUtil {
         return contentResponse;
     }
 
-    private EventQueryResponseBase lookupPagedContent(final String queryName, final AbstractUUIDLookupCriteria validatedCriteria,
-                    final List<StringBuilder> batchedContentQueryStrings, final Date endDate, final Date expireDate, final String userAuths,
+    /*
+     * Generate tag clouds for the identifiers included in the query.
+     *
+     * @param unvalidatedCriteria unvalidated lookup criteria
+     *
+     * @param merged whether the cloud should be merged for all documents or to generate a cloud per document.
+     *
+     * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value, or StreamingOutput if a valid, non-null HttpHeaders value is provided
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T generateTagCloud(final AbstractUUIDLookupCriteria unvalidatedCriteria) {
+
+        final AbstractUUIDLookupCriteria validatedCriteria = validateLookupCriteria(unvalidatedCriteria, true, this.maxAllowedTagCloudLookupUUIDs);
+        final String queryString = validatedCriteria.getRawQueryString();
+
+        // Initialize the return values
+        TagCloudResponseBase mergedResponse = null;
+        DatawaveWebApplicationException noResultsException = null;
+
+        // Set up the parameters.
+        final MultivaluedMap<String,String> queryParameters = getContentParameters(validatedCriteria, queryString);
+
+        // if no page size is set explicitly for tag clouds, we want to set it to something larger than the default of
+        // 10. This effectively controls the maximum number of documents per tag cloud, ensuring that this is larger
+        // than the number of lookup uuid's we can do at once has the effect of always generating a single tag cloud.
+        if (!queryParameters.containsKey("pagesize")) {
+            queryParameters.putSingle("pagesize", "10000");
+        }
+
+        // Prepare to handle the query and responses.
+        final GenericResponse<String> createResponse = this.queryExecutor.createQuery(KEYWORD_QUERY, queryParameters);
+        final String keywordQueryId = createResponse.getResult();
+
+        BaseQueryResponse lastResponse = null;
+
+        do {
+            try {
+                // Get the first/next results
+                BaseQueryResponse response = this.queryExecutor.next(keywordQueryId);
+                lastResponse = response;
+
+                if (TagCloudResponseBase.class.isAssignableFrom(response.getClass())) {
+                    // merge tag cloud responses
+                    final TagCloudResponseBase tagCloudResponse = (TagCloudResponseBase) response;
+                    if (mergedResponse == null) {
+                        mergedResponse = tagCloudResponse;
+                    } else {
+                        final String queryId = mergedResponse.getQueryId();
+                        mergedResponse.merge(tagCloudResponse);
+                        mergedResponse.setQueryId(queryId);
+                    }
+                } else {
+                    final EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
+                    er.addMessage("Unhandled response type " + response + " from KeywordQuery");
+                    throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS,
+                                    "Expected " + TagCloudResponseBase.class + " but got " + response.getClass()), er);
+                }
+            } catch (final NoResultsException e) {
+                lastResponse = null;
+                noResultsException = e;
+            } catch (final EJBException e) {
+                // This used to be the case. Don't know when the executor started
+                // directly throwing a NoResultsException, but this is kept just
+                // in case.
+                final Throwable cause = e.getCause();
+                if (cause instanceof DatawaveWebApplicationException) {
+                    DatawaveWebApplicationException nwae = (DatawaveWebApplicationException) cause;
+                    if (nwae instanceof NoResultsException) {
+                        lastResponse = null;
+                        noResultsException = nwae;
+                    } else {
+                        throw nwae;
+                    }
+                }
+            }
+        }
+        // Loop if more results are available
+        while (lastResponse != null);
+
+        // Conditionally throw a NoResultsException
+        if (mergedResponse == null && noResultsException != null) {
+            throw noResultsException;
+        }
+
+        return (T) mergedResponse;
+    }
+
+    /**
+     * Get the query parameters used for content lookup
+     *
+     * @param validatedCriteria
+     *            the query criteria
+     * @param queryString
+     *            the string for this query (possibly a portion of the original query)
+     * @return a map of query parameters for a content query.
+     */
+    public MultivaluedMap<String,String> getContentParameters(AbstractUUIDLookupCriteria validatedCriteria, String queryString) {
+        // Find out who/what called this method
+        final Principal principal = this.ctx.getCallerPrincipal();
+        String sid = principal.getName();
+        final String queryName = sid + '-' + UUID.randomUUID();
+
+        final String userAuths = getAuths(CONTENT_QUERY, validatedCriteria.getQueryParameters(), null, principal);
+
+        // Initialize the reusable query input
+        final Date endDate = new Date();
+        final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
+
+        final MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putAll(this.defaultOptionalParams);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, queryString);
+        try {
+            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
+        } catch (ParseException e) {
+            throw new RuntimeException("Unable to format new query begin date: " + this.beginAsDate);
+        }
+        try {
+            queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        } catch (ParseException e) {
+            throw new RuntimeException("Unable to format new query end date: " + endDate);
+        }
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
+        try {
+            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
+        } catch (ParseException e1) {
+            throw new RuntimeException("Error formatting expr date: " + expireDate);
+        }
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, QueryPersistence.TRANSIENT.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, "false");
+
+        for (String key : validatedCriteria.getQueryParameters().keySet()) {
+            if (!queryParameters.containsKey(key)) {
+                queryParameters.put(key, validatedCriteria.getQueryParameters().get(key));
+            }
+        }
+
+        return queryParameters;
+    }
+
+    private EventQueryResponseBase lookupPagedContent(final AbstractUUIDLookupCriteria validatedCriteria, final List<StringBuilder> batchedContentQueryStrings,
                     boolean allEventMockResponse) {
         // Initialize the return value
         EventQueryResponseBase mergedContentQueryResponse = null;
@@ -757,34 +890,7 @@ public class LookupUUIDUtil {
             //
             // DOCUMENT:shardId/datatype/uid [DOCUMENT:shardId/datatype/uid]*
             //
-            MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-            queryParameters.putAll(this.defaultOptionalParams);
-            queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-            queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
-            try {
-                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
-            } catch (ParseException e1) {
-                throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
-            }
-            try {
-                queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-            } catch (ParseException e1) {
-                throw new RuntimeException("Error formatting end date: " + endDate);
-            }
-            queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
-            try {
-                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
-            } catch (ParseException e1) {
-                throw new RuntimeException("Error formatting expr date: " + expireDate);
-            }
-            queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, QueryPersistence.TRANSIENT.name());
-            queryParameters.putSingle(QueryParameters.QUERY_TRACE, "false");
-
-            for (String key : validatedCriteria.getQueryParameters().keySet()) {
-                if (!queryParameters.containsKey(key)) {
-                    queryParameters.put(key, validatedCriteria.getQueryParameters().get(key));
-                }
-            }
+            MultivaluedMap<String,String> queryParameters = getContentParameters(validatedCriteria, contentQuery.toString());
 
             final String contentLookupType = getLookupType(validatedCriteria.getUUIDTypeContext());
             final GenericResponse<String> createResponse = this.queryExecutor.createQuery(contentLookupType, queryParameters);
@@ -817,7 +923,7 @@ public class LookupUUIDUtil {
                             mergedContentQueryResponse = (EventQueryResponseBase) contentQueryResponse;
                         }
                         // If the merged content has already been assigned, merge into it, but keep the original
-                        // query Id
+                        // query id
                         else {
                             final String queryId = mergedContentQueryResponse.getQueryId();
                             mergedContentQueryResponse.merge((EventQueryResponseBase) contentQueryResponse);
@@ -860,9 +966,7 @@ public class LookupUUIDUtil {
         return mergedContentQueryResponse;
     }
 
-    private StreamingOutput lookupStreamedContent(final String queryName, final AbstractUUIDLookupCriteria validatedCriteria,
-                    final List<StringBuilder> batchedContentQueryStrings, final Date endDate, final Date expireDate, final String userAuths,
-                    boolean allEventMockResponse) {
+    private StreamingOutput lookupStreamedContent(final AbstractUUIDLookupCriteria validatedCriteria, final List<StringBuilder> batchedContentQueryStrings) {
 
         // Merge the content query strings
         final StringBuilder contentQuery = new StringBuilder();
@@ -872,34 +976,7 @@ public class LookupUUIDUtil {
             }
             contentQuery.append(contentQueryString);
         }
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putAll(this.defaultOptionalParams);
-        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
-        try {
-            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
-        } catch (ParseException e1) {
-            throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
-        }
-        try {
-            queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        } catch (ParseException e1) {
-            throw new RuntimeException("Error formatting end date: " + endDate);
-        }
-        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
-        try {
-            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
-        } catch (ParseException e1) {
-            throw new RuntimeException("Error formatting expr date: " + expireDate);
-        }
-        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, QueryPersistence.TRANSIENT.name());
-        queryParameters.putSingle(QueryParameters.QUERY_TRACE, "false");
-
-        for (String key : validatedCriteria.getQueryParameters().keySet()) {
-            if (!queryParameters.containsKey(key)) {
-                queryParameters.put(key, validatedCriteria.getQueryParameters().get(key));
-            }
-        }
+        MultivaluedMap<String,String> queryParameters = getContentParameters(validatedCriteria, contentQuery.toString());
 
         // Call the ContentQuery for one or more events
         final HttpHeaders headers = validatedCriteria.getStreamingOutputHeaders();
@@ -961,7 +1038,8 @@ public class LookupUUIDUtil {
         return guttedEvents;
     }
 
-    private AbstractUUIDLookupCriteria validateLookupCriteria(final AbstractUUIDLookupCriteria criteria, boolean validateUUIDTerms) {
+    private AbstractUUIDLookupCriteria validateLookupCriteria(final AbstractUUIDLookupCriteria criteria, boolean validateUUIDTerms,
+                    int maxAllowedBatchLookupUUIDs) {
         // Initialize the validated logic name, which is only necessary for UUID lookup and
         // OK to be a null value when paging through content results.
         String logicName = null;
@@ -992,7 +1070,7 @@ public class LookupUUIDUtil {
                 // Validate the "potential" UUID term. It's potential because it could be an OR operator
                 // or some other query syntax that would be validated with more scrutiny once the query
                 // executor is invoked.
-                final UUIDType uuidType = this.validateUUIDTerm(criteria.getUUIDTypeContext(), potentialUUIDTerm.trim(), logicName);
+                final UUIDType uuidType = validateUUIDTerm(criteria.getUUIDTypeContext(), potentialUUIDTerm.trim(), logicName);
                 if (null != uuidType) {
                     // Assign the query logic name if undefined
                     if (null == logicName) {
@@ -1012,18 +1090,18 @@ public class LookupUUIDUtil {
             // Validate at least one UUID was specified in the query string
             if (null == logicName) {
                 final String message = "Undefined UUID types not supported with the LuceneToJexlUUIDQueryParser";
-                final GenericResponse<String> errorReponse = new GenericResponse<>();
-                errorReponse.addMessage(message);
-                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
+                final GenericResponse<String> errorResponse = new GenericResponse<>();
+                errorResponse.addMessage(message);
+                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorResponse);
             }
 
             // Validate the number of specified UUIDs did not exceed the upper limit, if any
-            if ((this.maxAllowedBatchLookupUUIDs > 0) && (uuidPairCount > this.maxAllowedBatchLookupUUIDs)) {
-                final String message = "The " + uuidPairCount + " specified UUIDs exceed the maximum number of " + this.maxAllowedBatchLookupUUIDs
+            if ((maxAllowedBatchLookupUUIDs > 0) && (uuidPairCount > maxAllowedBatchLookupUUIDs)) {
+                final String message = "The " + uuidPairCount + " specified UUIDs exceed the maximum number of " + maxAllowedBatchLookupUUIDs
                                 + " allowed for a given lookup request";
-                final GenericResponse<String> errorReponse = new GenericResponse<>();
-                errorReponse.addMessage(message);
-                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
+                final GenericResponse<String> errorResponse = new GenericResponse<>();
+                errorResponse.addMessage(message);
+                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorResponse);
             }
 
             // Set the flag if we know we're dealing with an all-event UID lookup that has not exceeded the max page size
@@ -1104,29 +1182,29 @@ public class LookupUUIDUtil {
             }
 
             // Get the matching UUID type
-            matchingUuidType = this.uuidTypes.get(uuidType.toUpperCase());
+            matchingUuidType = uuidTypes.get(uuidType.toUpperCase());
 
             // Validate UUID type
             if (null == matchingUuidType) {
                 final String message = "Invalid type '" + uuidType + "' for UUID " + uuid + " not supported with the LuceneToJexlUUIDQueryParser";
-                final GenericResponse<String> errorReponse = new GenericResponse<>();
-                errorReponse.addMessage(message);
-                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
+                final GenericResponse<String> errorResponse = new GenericResponse<>();
+                errorResponse.addMessage(message);
+                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorResponse);
             }
             // Validate the UUID value
             else if ((null == uuid) || uuid.isEmpty()) {
                 final String message = "Undefined UUID using type '" + uuidType + "' not supported with the LuceneToJexlUUIDQueryParser";
-                final GenericResponse<String> errorReponse = new GenericResponse<>();
-                errorReponse.addMessage(message);
-                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
+                final GenericResponse<String> errorResponse = new GenericResponse<>();
+                errorResponse.addMessage(message);
+                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorResponse);
             }
             // Reject conflicting logic name
             else if ((null != logicName) && !logicName.equals(matchingUuidType.getQueryLogic(lookupContext))) {
                 final String message = "Multiple UUID types '" + logicName + "' and '" + matchingUuidType.getQueryLogic(lookupContext) + "' not "
                                 + " supported within the same lookup request";
-                final GenericResponse<String> errorReponse = new GenericResponse<>();
-                errorReponse.addMessage(message);
-                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
+                final GenericResponse<String> errorResponse = new GenericResponse<>();
+                errorResponse.addMessage(message);
+                throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorResponse);
             }
         } else {
             matchingUuidType = null;
@@ -1135,7 +1213,7 @@ public class LookupUUIDUtil {
         return matchingUuidType;
     }
 
-    private class AllEventMockResponse extends DefaultEventQueryResponse {
+    private static class AllEventMockResponse extends DefaultEventQueryResponse {
         private static final long serialVersionUID = -4399127351489684829L;
         private final AbstractUUIDLookupCriteria criteria;
 

@@ -33,21 +33,21 @@ import datawave.webservice.result.GenericResponse;
 
 @ControllerAdvice
 public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter implements ResponseBodyAdvice<Object> {
-    
+
     private final Logger log = Logger.getLogger(this.getClass());
-    
+
     private final QueryLogicFactory queryLogicFactory;
-    
+
     private final QueryStorageCache queryStorageCache;
-    
+
     private final QueryMetricClient queryMetricClient;
-    
+
     // Note: BaseQueryMetric needs to be request scoped
     private final BaseQueryMetric baseQueryMetric;
-    
+
     // Note: QueryMetricsEnrichmentContext needs to be request scoped
     private final QueryMetricsEnrichmentContext queryMetricsEnrichmentContext;
-    
+
     public QueryMetricsEnrichmentFilterAdvice(QueryLogicFactory queryLogicFactory, QueryStorageCache queryStorageCache, QueryMetricClient queryMetricClient,
                     BaseQueryMetric baseQueryMetric, QueryMetricsEnrichmentContext queryMetricsEnrichmentContext) {
         this.queryLogicFactory = queryLogicFactory;
@@ -56,7 +56,7 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
         this.baseQueryMetric = baseQueryMetric;
         this.queryMetricsEnrichmentContext = queryMetricsEnrichmentContext;
     }
-    
+
     @Override
     public boolean supports(MethodParameter returnType, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
         boolean supports = false;
@@ -79,10 +79,10 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
                 // do nothing
             }
         }
-        
+
         return supports;
     }
-    
+
     @Override
     public Object beforeBodyWrite(Object body, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
                     @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType, @NonNull ServerHttpRequest request,
@@ -95,15 +95,15 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
             BaseQueryResponse baseResponse = (BaseQueryResponse) body;
             queryMetricsEnrichmentContext.setQueryId(baseResponse.getQueryId());
         }
-        
+
         return body;
     }
-    
+
     @Override
     public void postProcess(ResponseMethodStats responseStats) {
         String queryId = queryMetricsEnrichmentContext.getQueryId();
         EnrichQueryMetrics.MethodType methodType = queryMetricsEnrichmentContext.getMethodType();
-        
+
         if (queryId != null && methodType != null) {
             // determine which query logic is being used
             String queryLogic = null;
@@ -115,7 +115,7 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
                     queryLogic = queryStatus.getQuery().getQueryLogicName();
                 }
             }
-            
+
             // retrieve the server user and determine whether metrics are enabled
             boolean isMetricsEnabled = false;
             DatawaveUserDetails serverUser = null;
@@ -126,7 +126,7 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
             } catch (Exception e) {
                 log.warn("Unable to retrieve the server user and determine if query logic '" + queryLogic + "' supports metrics");
             }
-            
+
             if (isMetricsEnabled) {
                 try {
                     switch (queryMetricsEnrichmentContext.getMethodType()) {
@@ -157,7 +157,7 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
                             }
                             break;
                     }
-                    
+
                     baseQueryMetric.setLastUpdated(new Date());
                     // @formatter:off
                     queryMetricClient.submit(
@@ -174,28 +174,28 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
             }
         }
     }
-    
+
     public static class QueryMetricsEnrichmentContext {
         private String queryId;
         private EnrichQueryMetrics.MethodType methodType;
-        
+
         public String getQueryId() {
             return queryId;
         }
-        
+
         public void setQueryId(String queryId) {
             this.queryId = queryId;
         }
-        
+
         public EnrichQueryMetrics.MethodType getMethodType() {
             return methodType;
         }
-        
+
         public void setMethodType(EnrichQueryMetrics.MethodType methodType) {
             this.methodType = methodType;
         }
     }
-    
+
     @Configuration
     public static class QueryMetricsEnrichmentFilterAdviceConfig {
         @Bean

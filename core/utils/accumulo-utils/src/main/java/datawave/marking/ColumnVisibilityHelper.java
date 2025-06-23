@@ -17,15 +17,15 @@ import org.apache.log4j.Logger;
 import datawave.marking.MarkingFunctions.Exception;
 
 public class ColumnVisibilityHelper {
-    
+
     protected static final Charset charset = Charset.forName("UTF-8");
     private static Logger log = Logger.getLogger(ColumnVisibilityHelper.class);
-    
+
     public static ColumnVisibility simplifyColumnVisibilityForAuthorizations(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)
                     throws MarkingFunctions.Exception {
-        
+
         ColumnVisibility simplifiedCV = columnVisibility;
-        
+
         Node node = columnVisibility.getParseTree();
         if (node.getType() == NodeType.OR) {
             if (log.isTraceEnabled()) {
@@ -38,7 +38,7 @@ public class ColumnVisibilityHelper {
                     ve.add(new VisibilityEvaluator(a));
                 removeUnsatisfiedTopLevelOrNodes(ve, expression, node);
             }
-            
+
             simplifiedCV = ColumnVisibilityHelper.flatten(node, expression);
             if (log.isTraceEnabled()) {
                 log.trace("removed unsatisfied branches, visibility now: " + simplifiedCV);
@@ -46,7 +46,7 @@ public class ColumnVisibilityHelper {
         }
         return simplifiedCV;
     }
-    
+
     public static ColumnVisibility removeUndisplayedVisibilities(ColumnVisibility columnVisibility, Set<String> undisplayedVisibilities)
                     throws MarkingFunctions.Exception {
         ColumnVisibility newColumnVisibility = columnVisibility;
@@ -58,7 +58,7 @@ public class ColumnVisibilityHelper {
         }
         return newColumnVisibility;
     }
-    
+
     private static void removeUnsatisfiedTopLevelOrNodes(Set<VisibilityEvaluator> ve, byte[] expression, Node node) throws Exception {
         if (node.getType() == NodeType.OR) {
             List<Node> children = node.getChildren();
@@ -72,7 +72,7 @@ public class ColumnVisibilityHelper {
             }
         }
     }
-    
+
     private static boolean isUnsatisfied(int position, Set<VisibilityEvaluator> ve, Node currNode, byte[] expression) throws Exception {
         boolean unsatisfied = false;
         try {
@@ -86,11 +86,11 @@ public class ColumnVisibilityHelper {
         }
         return unsatisfied;
     }
-    
+
     private static String termNodeToString(Node termNode, byte[] expression) throws Exception {
         int start = termNode.getTermStart();
         int end = termNode.getTermEnd();
-        
+
         String str = "[ERROR]";
         try {
             str = new String(expression, start, end - start, charset);
@@ -100,15 +100,15 @@ public class ColumnVisibilityHelper {
         }
         return str;
     }
-    
+
     private static ColumnVisibility flatten(Node node, byte[] expression) {
-        
+
         Node newNode = ColumnVisibility.normalize(node, expression);
         StringBuilder sb = new StringBuilder();
         ColumnVisibility.stringify(newNode, expression, sb);
         return new ColumnVisibility(sb.toString());
     }
-    
+
     private static void removeUndisplayedVisibilities(Node node, byte[] expression, Set<String> undisplayedVisibilities) throws MarkingFunctions.Exception {
         List<Node> children = node.getChildren();
         // walk backwards so we don't change the index that we need to remove

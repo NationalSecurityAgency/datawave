@@ -18,10 +18,10 @@ import datawave.microservice.querymetric.persistence.MetricCacheListener;
 @Configuration
 @EnableConfigurationProperties({QueryMetricCacheProperties.class})
 public class QueryMetricCacheConfiguration {
-    
+
     private Logger log = LoggerFactory.getLogger(QueryMetricCacheConfiguration.class);
     public static final String LAST_WRITTEN_METRICS = "lastWrittenQueryMetrics";
-    
+
     @Bean
     @Qualifier("lastWrittenQueryMetrics")
     public Cache lastWrittenQueryMetrics(QueryMetricCacheProperties cacheProperties) {

@@ -57,11 +57,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @ConditionalOnProperty(name = MapReduceQueryProperties.PREFIX + ".enabled", havingValue = "true", matchIfMissing = true)
 public class MapReduceQueryController {
     private final MapReduceQueryManagementService mapReduceQueryManagementService;
-    
+
     public MapReduceQueryController(MapReduceQueryManagementService mapReduceQueryManagementService) {
         this.mapReduceQueryManagementService = mapReduceQueryManagementService;
     }
-    
+
     // @see MapReduceQueryManagementService#listConfigurations(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -84,7 +84,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return mapReduceQueryManagementService.listConfigurations(jobType, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#oozieSubmit(MultiValueMap, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -139,7 +139,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.oozieSubmit(parameters, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#submit(MultiValueMap, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -226,7 +226,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.submit(parameters, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#cancel(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -263,7 +263,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.cancel(id, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#adminCancel(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -297,7 +297,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.adminCancel(id, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#restart(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -338,7 +338,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.restart(id, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#list(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -360,7 +360,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.list(id, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#getFile(String,String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -381,7 +381,7 @@ public class MapReduceQueryController {
                     @Parameter(description = "The file name") @PathVariable String fileName, @AuthenticationPrincipal DatawaveUserDetails currentUser)
                     throws QueryException {
         final Map.Entry<FileStatus,FSDataInputStream> resultFile = mapReduceQueryManagementService.getFile(id, fileName, currentUser);
-        
+
         // @formatter:off
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -392,7 +392,7 @@ public class MapReduceQueryController {
                 });
         // @formatter:on
     }
-    
+
     // @see MapReduceQueryManagementService#getAllFiles(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -412,7 +412,7 @@ public class MapReduceQueryController {
     public ResponseEntity<StreamingResponseBody> getAllFiles(@Parameter(description = "The map reduce query id") @PathVariable String id,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         final Map<FileStatus,FSDataInputStream> resultFiles = mapReduceQueryManagementService.getAllFiles(id, currentUser);
-        
+
         // @formatter:off
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -444,7 +444,7 @@ public class MapReduceQueryController {
                 });
         // @formatter:on
     }
-    
+
     // @see MapReduceQueryManagementService#list(DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -465,7 +465,7 @@ public class MapReduceQueryController {
     public MapReduceInfoResponseList list(@AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.list(currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#remove(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -496,7 +496,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.remove(id, currentUser);
     }
-    
+
     // @see MapReduceQueryManagementService#adminRemove(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -528,7 +528,7 @@ public class MapReduceQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return mapReduceQueryManagementService.adminRemove(id, currentUser);
     }
-    
+
     // @formatter:off
     @Operation(
             summary = "Updates the state of the map reduce job.",

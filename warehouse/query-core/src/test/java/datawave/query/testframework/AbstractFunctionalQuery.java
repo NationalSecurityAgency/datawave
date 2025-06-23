@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +71,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
@@ -358,6 +358,21 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         return getExpectedKeyResponse(query, startEndDate[0], startEndDate[1]);
     }
 
+    protected List<Map<String,String>> getExpectedEvents(final String query, final Collection<String> fields) {
+        List<Map<String,String>> events = new ArrayList<>();
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        QueryJexl jexl = new QueryJexl(query, this.dataManager, startEndDate[0], startEndDate[1]);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        for (Map<String,String> data : allData) {
+            Map<String,String> requestedData = new LinkedHashMap<>();
+            for (String field : fields) {
+                requestedData.put(field, data.get(field.toLowerCase()));
+            }
+            events.add(requestedData);
+        }
+        return events;
+    }
+
     /**
      * Helper method for determining the expected results for a query.
      *
@@ -548,7 +563,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
 
         RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal,
                         new QueryMetricFactoryImpl());
-        TransformIterator it = runner.getTransformIterator();
+        TransformIterator<?,?> it = runner.getTransformIterator();
         ShardQueryCountTableTransformer ctt = (ShardQueryCountTableTransformer) it.getTransformer();
         EventQueryResponseBase resp = (EventQueryResponseBase) ctt.createResponse(runner.next());
 
@@ -559,7 +574,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         EventBase<?,?> event = events.get(0);
         List<?> fields = event.getFields();
         Assert.assertEquals(1, fields.size());
-        FieldBase<?> count = (FieldBase) fields.get(0);
+        FieldBase<?> count = (FieldBase<?>) fields.get(0);
         String val = count.getValueString();
         if (log.isDebugEnabled()) {
             log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");
@@ -700,10 +715,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return;
         }
 
-        ASTJexlScript expectedTree = JexlASTHelper.parseJexlQuery(expected);
-        expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
-        queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
+        ASTJexlScript expectedTree = JexlASTHelper.parseAndFlattenJexlQuery(expected);
+        ASTJexlScript queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
         if (!comparison.isEqual()) {
             throw new ComparisonFailure(comparison.getReason(), expected, query);

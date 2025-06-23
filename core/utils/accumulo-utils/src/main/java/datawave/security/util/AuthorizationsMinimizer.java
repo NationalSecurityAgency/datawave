@@ -13,7 +13,7 @@ import org.apache.accumulo.core.security.Authorizations;
  * @see AuthorizationsMinimizer#minimize(Collection)
  */
 public class AuthorizationsMinimizer {
-    
+
     /**
      * Given a collection of Accumulo {@link Authorizations} objects, this method attempts to compute a "minimum" set that can be used for a multi-entity scan
      * of data from Accumulo. The idea is that there is a call chain with multiple entities (e.g., a middleware broker acting on behalf of a GUI that is in turn
@@ -50,14 +50,14 @@ public class AuthorizationsMinimizer {
             final LinkedHashSet<Set<String>> allAuths = authorizations.stream()
                             .map(a -> a.getAuthorizations().stream().map(String::new).collect(Collectors.toCollection(HashSet::new)))
                             .collect(Collectors.toCollection(LinkedHashSet::new));
-            
+
             // Go through the authorizations sets and remove any that are supersets of any other.
             for (Iterator<Set<String>> it = allAuths.iterator(); it.hasNext(); /* empty */) {
                 Set<String> currentSet = it.next();
                 if (allAuths.stream().filter(a -> a != currentSet && a.size() <= currentSet.size()).anyMatch(currentSet::containsAll))
                     it.remove();
             }
-            
+
             // If we removed any sets of authorizations, then we need to convert the reduced set from
             // TreeSet<String> objects back into Authorizations objects.
             if (allAuths.size() < authorizations.size()) {

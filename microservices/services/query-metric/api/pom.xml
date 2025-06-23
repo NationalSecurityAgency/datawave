@@ -4,37 +4,44 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.1</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-api</artifactId>
-    <version>4.0.13-SNAPSHOT</version>
+    <version>4.1.1-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-query-metric-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-query-metric-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-query-metric-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-query-metric-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-text>1.9</version.commons-text>
-        <version.datawave>7.14.1</version.datawave>
+        <version.datawave>7.18.3</version.datawave>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.glassfish>2.3.6</version.glassfish>
         <version.guava>31.1-jre</version.guava>
         <version.jackson>2.12.5</version.jackson>
         <version.jaxb-api>2.3.1</version.jaxb-api>
-        <version.protobuf-java>3.7.1</version.protobuf-java>
+        <version.protobuf-java>3.16.3</version.protobuf-java>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.36</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -46,24 +53,24 @@
                 <version>${version.protobuf-java}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.datawave.accumulo-utils}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -73,8 +80,8 @@
                 <version>${version.datawave.query-api}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -84,8 +91,8 @@
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -118,13 +125,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${version.slf4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${version.jackson}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
@@ -162,11 +162,11 @@
             <artifactId>protobuf-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
@@ -210,11 +210,6 @@
             <artifactId>spring-webmvc</artifactId>
             <version>5.3.21</version>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <repositories>
         <repository>
@@ -242,45 +237,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>enforce-banned-dependencies</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <!-- spring boot microservices do not use the following slf4j binders -->
-                                        <exclude>ch.qos.reload4j:reload4j</exclude>
-                                        <exclude>org.slf4j:slf4j-reload4j</exclude>
-                                        <!-- spring boot microservices do not use 1.x versions of log4j -->
-                                        <exclude>log4j:log4j</exclude>
-                                        <!-- spring boot microservices do not use 1.x versions of junit -->
-                                        <exclude>junit:junit</exclude>
-                                    </excludes>
-                                    <includes>
-                                        <!-- some spring boot microservices include test dependencies which use 1.x versions of junit -->
-                                        <include>junit:junit:*:*:test</include>
-                                    </includes>
-                                </bannedDependencies>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>copy-templated-sources</id>
-                        <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <outputDirectory>${project.build.directory}/generated-sources/templated-sources</outputDirectory>
                             <resources>
@@ -296,14 +262,13 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>add-source</id>
-                        <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <sources>
                                 <source>target/generated-sources/templated-sources</source>

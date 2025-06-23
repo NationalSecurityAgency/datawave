@@ -26,7 +26,7 @@ import datawave.microservice.query.storage.TaskStatesCache;
 @ConditionalOnProperty(name = "datawave.query.storage.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class QueryStorageConfiguration {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     @Bean
     public QueryStatusCache queryStatusCache(@Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
                     CacheManager cacheManager) {
@@ -39,7 +39,7 @@ public class QueryStorageConfiguration {
         }
         return new QueryStatusCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public TaskStatesCache taskStatesCache(@Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
                     CacheManager cacheManager) {
@@ -52,7 +52,7 @@ public class QueryStorageConfiguration {
         }
         return new TaskStatesCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public TaskCache taskCache(@Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory, CacheManager cacheManager) {
         log.debug("Using " + cacheManager.getClass() + " for caching");

@@ -193,13 +193,15 @@ public class HitTermAssertions {
         if (expectNoHitTerms) {
             if (!hits.isEmpty()) {
                 validated = false;
-                log.warn("Expected hit terms to be empty, but found {}", hits);
+                log.trace("Expected hit terms to be empty, but found {}", hits);
             }
             return validated;
         }
 
         if (anyHitTermSet && hits.isEmpty()) {
-            log.warn("Expected hit terms but document contained no hit terms");
+            if (log.isWarnEnabled()) {
+                log.trace("Expected hit terms but document contained no hit terms");
+            }
             return false;
         }
 
@@ -229,8 +231,8 @@ public class HitTermAssertions {
      */
     private Set<String> extractHitTermsFromDocument(Document document) {
         if (!document.containsKey(HIT_TERM_FIELD)) {
-            if (!expectNoHitTerms) {
-                log.warn("Document did not contain any hit terms");
+            if (!expectNoHitTerms && log.isTraceEnabled()) {
+                log.trace("Document did not contain any hit terms");
             }
             return Collections.emptySet();
         }

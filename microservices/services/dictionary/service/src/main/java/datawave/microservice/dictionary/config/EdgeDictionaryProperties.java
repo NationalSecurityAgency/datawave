@@ -14,7 +14,7 @@ import lombok.Setter;
 @ConfigurationProperties(prefix = "datawave.dictionary.edge")
 @Validated
 public class EdgeDictionaryProperties {
-    
+
     @NotBlank
     private String metadataTableName;
     @Positive

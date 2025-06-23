@@ -6,17 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 public class NoResultsQueryExceptionTest {
-    
+
     private NoResultsQueryException nrqe;
-    
+
     private final String message = "Bad query exception";
     private final Throwable throwable = new Throwable("throws");
     private final String strErrCode = "404-1";
     private final DatawaveErrorCode code = DatawaveErrorCode.QUERY_NAME_REQUIRED;
-    
+
     private final String assertMsg = "Param queryName is required. Bad query exception";
     private final String assertMsg2 = "Param queryName is required.";
-    
+
     @Test
     public void testEmptyConstructor() {
         nrqe = new NoResultsQueryException();
@@ -25,7 +25,7 @@ public class NoResultsQueryExceptionTest {
         assertNull(nrqe.getMessage());
         assertNull(nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageConstructor() {
         nrqe = new NoResultsQueryException(message);
@@ -34,7 +34,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(message, nrqe.getMessage());
         assertEquals(message, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableConstructor() {
         nrqe = new NoResultsQueryException(message, throwable);
@@ -43,7 +43,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(message, nrqe.getMessage());
         assertEquals(message, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowableErrorCodeConstructor() {
         nrqe = new NoResultsQueryException(throwable, strErrCode);
@@ -52,7 +52,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(throwable.toString(), nrqe.getMessage());
         assertEquals(throwable.toString(), nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableConstructor() {
         nrqe = new NoResultsQueryException(code, throwable);
@@ -61,7 +61,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(assertMsg2, nrqe.getMessage());
         assertEquals(assertMsg2, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeDebugMsgConstructor() {
         nrqe = new NoResultsQueryException(code, message);
@@ -70,7 +70,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(assertMsg, nrqe.getMessage());
         assertEquals(assertMsg, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableDebugMsgConstructor() {
         nrqe = new NoResultsQueryException(code, throwable, message);
@@ -79,7 +79,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(assertMsg, nrqe.getMessage());
         assertEquals(assertMsg, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeConstructor() {
         nrqe = new NoResultsQueryException(code);
@@ -88,7 +88,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(assertMsg2, nrqe.getMessage());
         assertEquals(assertMsg2, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageResponseStatus() {
         nrqe = new NoResultsQueryException(message, 400);
@@ -97,7 +97,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(message, nrqe.getMessage());
         assertEquals(message, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableErrorCode() {
         nrqe = new NoResultsQueryException(message, throwable, strErrCode);
@@ -106,7 +106,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(message, nrqe.getMessage());
         assertEquals(message, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageErrorCode() {
         nrqe = new NoResultsQueryException(message, strErrCode);
@@ -115,7 +115,7 @@ public class NoResultsQueryExceptionTest {
         assertEquals(message, nrqe.getMessage());
         assertEquals(message, nrqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowable() {
         nrqe = new NoResultsQueryException(throwable);

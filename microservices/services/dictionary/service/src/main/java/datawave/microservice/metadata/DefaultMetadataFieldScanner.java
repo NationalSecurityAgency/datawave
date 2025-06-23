@@ -41,16 +41,16 @@ import datawave.webservice.dictionary.data.DefaultFields;
 import datawave.webservice.metadata.DefaultMetadataField;
 
 public class DefaultMetadataFieldScanner {
-    
+
     private static final Logger log = LoggerFactory.getLogger(DefaultMetadataFieldScanner.class);
     private static final String TIMESTAMP_FORMAT = "yyyyMMddHHmmss";
-    
+
     private final MarkingFunctions markingFunctions;
     private final ResponseObjectFactory<DefaultDescription,?,DefaultMetadataField,?,?> responseObjectFactory;
     private final Map<String,String> normalizationMap;
     private final Connection connectionConfig;
     private final int numThreads;
-    
+
     public DefaultMetadataFieldScanner(MarkingFunctions markingFunctions,
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     Map<String,String> normalizationMap, Connection connectionConfig, int numThreads) {
@@ -60,7 +60,7 @@ public class DefaultMetadataFieldScanner {
         this.connectionConfig = connectionConfig;
         this.numThreads = numThreads;
     }
-    
+
     public Collection<DefaultMetadataField> getFields(Map<String,String> aliases, Collection<String> datatypeFilters) throws TableNotFoundException {
         BatchScanner scanner = createScanner();
         Transformer transformer = new Transformer(scanner.iterator(), aliases, datatypeFilters);
@@ -68,10 +68,10 @@ public class DefaultMetadataFieldScanner {
         scanner.close();
         return fields;
     }
-    
+
     /**
      * Create and return a scanner that will aggregate metadata entries by their row.
-     * 
+     *
      * @return the scanner
      * @throws TableNotFoundException
      *             if the metadata table is not found
@@ -92,23 +92,23 @@ public class DefaultMetadataFieldScanner {
         scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_TF);
         return scanner;
     }
-    
+
     private class Transformer {
-        
+
         private final Iterator<Map.Entry<Key,Value>> iterator;
         private final Map<String,String> aliases;
         private final Collection<String> dataTypeFilters;
         private final boolean acceptAllDataTypes;
-        
+
         private final Map<String,Map<String,DefaultMetadataField>> fields; // Map of field names to data types to transformed fields.
         private final Text currRow = new Text(); // Used to copy the current row into.
         private final Text currColumnFamily = new Text(); // Used to copy the current column family into.
-        
+
         private Key currKey;
         private Value currValue;
         private String currColumnQualifier;
         private DefaultMetadataField currField;
-        
+
         private Transformer(Iterator<Map.Entry<Key,Value>> iterator, Map<String,String> aliases, Collection<String> dataTypeFilters) {
             this.iterator = iterator;
             this.aliases = aliases;
@@ -116,10 +116,10 @@ public class DefaultMetadataFieldScanner {
             this.acceptAllDataTypes = dataTypeFilters.isEmpty();
             fields = new HashMap<>();
         }
-        
+
         /**
          * Transform the iterator entries into {@link DefaultMetadataField} and return them.
-         * 
+         *
          * @return the transformed fields
          */
         private Collection<DefaultMetadataField> transform() {
@@ -145,13 +145,13 @@ public class DefaultMetadataFieldScanner {
             return fields.values().stream().map(Map::values).flatMap(Collection::stream).collect(Collectors.toCollection(LinkedList::new));
             // @formatter::on
         }
-        
+
         private void transformEntry(Map.Entry<Key,Value> currEntry) throws IOException, MarkingFunctions.Exception {
             SortedMap<Key,Value> rowEntries = WholeRowIterator.decodeRow(currEntry.getKey(), currEntry.getValue());
-            
+
             for (Map.Entry<Key,Value> entry : rowEntries.entrySet()) {
                 setCurrentVars(entry);
-                
+
                 // If this row is a hidden event, do not continue transforming it and ensure any
                 // previously transformed entries for this row are not in the final results.
                 if (isColumnFamly(ColumnFamilyConstants.COLF_H)) {
@@ -159,14 +159,14 @@ public class DefaultMetadataFieldScanner {
                     fields.remove(currRow.toString());
                     break;
                 }
-                
+
                 // Verify that the row should not be filtered out due to its datatype.
                 String dataType = getDataType();
                 if (hasAllowedDataType(dataType)) {
-                    
+
                     // Set the current transformed field that will be modified from here on.
                     setCurrentField(dataType);
-                    
+
                     // If this an event field, then this is not an indexed field. Use the field name and timestamp of this entry.
                     if (isColumnFamly(ColumnFamilyConstants.COLF_E)) {
                         currField.setIndexOnly(false);
@@ -190,7 +190,7 @@ public class DefaultMetadataFieldScanner {
                     } else {
                         log.warn("Unknown entry with key={}, value={}", currKey, currValue);
                     }
-                    
+
                     // If the field name is null, this is potentially an index-only field which has no event ("e") entry.
                     // Use the field name of this entry. These values will be replaced if an event entry is encountered later on.
                     if (currField.getFieldName() == null) {
@@ -203,7 +203,7 @@ public class DefaultMetadataFieldScanner {
                 }
             }
         }
-        
+
         // Set the current variables from the specified entry.
         private void setCurrentVars(Map.Entry<Key,Value> entry) {
             currKey = entry.getKey();
@@ -212,29 +212,29 @@ public class DefaultMetadataFieldScanner {
             currKey.getColumnFamily(currColumnFamily);
             currColumnQualifier = currKey.getColumnQualifier().toString();
         }
-        
+
         // Return true if the current column family is equal to the specified text, or false otherwise.
         private boolean isColumnFamly(Text columnFamily) {
             return columnFamily.equals(currColumnFamily);
         }
-        
+
         // Return true if all data types are allowed or if the given data type is in the set of data type filters, or false otherwise.
         private boolean hasAllowedDataType(String dataType) {
             return acceptAllDataTypes || dataTypeFilters.contains(dataType);
         }
-        
+
         // Return the data type from the current column qualifier.
         private String getDataType() {
             int nullPos = currColumnQualifier.indexOf('\0');
             return (nullPos < 0) ? currColumnQualifier : currColumnQualifier.substring(0, nullPos);
         }
-        
+
         // Set the current {@link DefaultMetadataField}. If a field already exists for the given field name and data type combination, it will be reused,
         // otherwise a new {@link DefaultMetadataField} will be created.
         private void setCurrentField(final String dataType) {
             Map<String,DefaultMetadataField> dataTypes = fields.computeIfAbsent(currRow.toString(), k -> Maps.newHashMap());
             currField = dataTypes.get(dataType);
-            
+
             // If a field does not yet exist for the field name and data type, create a new one that
             // defaults to index-only, which shall be cleared if we see an event entry.
             if (currField == null) {
@@ -244,7 +244,7 @@ public class DefaultMetadataFieldScanner {
                 dataTypes.put(dataType, currField);
             }
         }
-        
+
         // Set the field name for the current {@link DefaultMetadataField}. If an alias exists for the field name, the alias will be used as the primary field
         // name while the original field name is relegated to the internal field name.
         private void setFieldNameAndAlias() {
@@ -256,7 +256,7 @@ public class DefaultMetadataFieldScanner {
                 currField.setFieldName(fieldName);
             }
         }
-        
+
         // Extract the description from the current value and add it to the current {@link DefaultMetadataField}.
         private void setDescriptions() throws MarkingFunctions.Exception {
             DefaultDescription description = responseObjectFactory.getDescription();
@@ -264,7 +264,7 @@ public class DefaultMetadataFieldScanner {
             description.setMarkings(markingFunctions.translateFromColumnVisibility(currKey.getColumnVisibilityParsed()));
             currField.getDescriptions().add(description);
         }
-        
+
         // Set the normalized type for the current {@link DefaultMetadataField}. If no normalized version can be found for the type, the type will default to
         // "Unknown".
         private void setType() {
@@ -273,7 +273,7 @@ public class DefaultMetadataFieldScanner {
             String normalizedType = normalizationMap.get(type);
             currField.addType(normalizedType != null ? normalizedType : "Unknown");
         }
-        
+
         // Set the last updated date for the current {@link DefaultMetadataField} based on the timestamp of the current entry.
         private void setLastUpdated() {
             String formattedCurrentKeyTimeStamp = Instant.ofEpochMilli(currKey.getTimestamp()).atZone(ZoneId.systemDefault()).toLocalDateTime()

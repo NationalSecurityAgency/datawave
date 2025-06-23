@@ -52,7 +52,7 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 @Service
 public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandler {
     private static final Logger log = Logger.getLogger(QueryExecutor.class);
-    
+
     protected final BlockingQueue<Runnable> workQueue;
     protected final Set<Runnable> working;
     protected final Multimap<String,ExecutorTask> queryToTask;
@@ -70,7 +70,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     protected final AccumuloConnectionRequestMap connectionRequestMap = new AccumuloConnectionRequestMap();
     protected final QueryMetricFactory metricFactory;
     protected final QueryMetricClient metricClient;
-    
+
     public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, ApplicationContext appCtx,
                     AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryResultsManager queues, QueryLogicFactory queryLogicFactory,
                     QueryPredictor predictor, ApplicationEventPublisher publisher, QueryMetricFactory metricFactory, QueryMetricClient metricClient) {
@@ -95,9 +95,9 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
             protected void beforeExecute(Thread t, Runnable r) {
                 log.debug("Before execute " + ((ExecutorTask) r).getTaskKey());
                 working.add(r);
-                
+
             }
-            
+
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
                 log.debug("After execute " + ((ExecutorTask) r).getTaskKey());
@@ -108,17 +108,17 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         log.info("Created QueryExecutor with an application name of " + appCtx.getApplicationName() + " and an id of " + appCtx.getId());
         log.info("Listening to bus id " + busProperties.getId() + " with a destination of " + busProperties.getDestination());
     }
-    
+
     /**
      * Return true if we are working on any tasking for the specified query id
-     * 
+     *
      * @param queryId
      * @return true if working on query, false otherwise
      */
     public boolean isWorkingOn(String queryId) {
         return queryToTask.containsKey(queryId);
     }
-    
+
     private void removePendingTasks(String queryId) {
         Collection<ExecutorTask> tasks;
         // synchronize explicitly to avoid mutations during the iteration
@@ -131,7 +131,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
             threadPool.remove(action);
         }
     }
-    
+
     private void stopTasks(String queryId, String userDn) {
         Collection<ExecutorTask> tasks;
         // synchronize explicitly to avoid mutations during the iteration
@@ -152,22 +152,22 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         // interrupt any pending connection requests
         connectionRequestMap.cancelConnectionRequest(queryId, userDn);
     }
-    
+
     @Override
     public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService) {
         final String queryId = queryRequest.getQueryId();
         final QueryRequest.Method requestedAction = queryRequest.getMethod();
         log.info("Received request " + queryRequest);
-        
+
         final QueryStatus queryStatus = cache.getQueryStatus(queryId);
-        
+
         // validate we actually have such a query
         if (queryStatus == null) {
             String msg = "Failed to find stored query status for " + queryId + ", nothing to execute";
             log.warn(msg);
             return;
         }
-        
+
         // validate that we got a request for the correct pool
         if (!queryStatus.getQueryKey().getQueryPool().equals(executorProperties.getPool())) {
             String msg = "Received a request for a query that belongs to a different pool: " + queryStatus.getQueryKey().getQueryPool() + " vs "
@@ -175,7 +175,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
             log.error(msg);
             return;
         }
-        
+
         // A close request waits for the current page to finish
         switch (requestedAction) {
             case CLOSE:
@@ -186,7 +186,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                 break;
             default: {
                 List<QueryTask> tasks = findTasksToExecute(queryStatus, requestedAction);
-                
+
                 // if we have tasks, then run them
                 for (QueryTask task : tasks) {
                     log.info("Executing task " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
@@ -207,13 +207,13 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                         default:
                             throw new UnsupportedOperationException(task.getTaskKey().toString());
                     }
-                    
+
                     try {
                         queryToTask.put(queryId, runnable);
                         threadPool.execute(runnable);
                     } catch (Exception e) {
                         log.error("Failed to execute task " + task.getTaskKey() + ", returning to available tasks to execute", e);
-                        
+
                         // reset the task state so that another executor can grab it
                         runnable.completeTask(false, false);
                         queryToTask.remove(queryId, runnable);
@@ -222,38 +222,38 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
             }
         }
     }
-    
+
     private List<QueryTask> findTasksToExecute(QueryStatus queryStatus, QueryRequest.Method requestedAction) {
         String queryId = queryStatus.getQueryKey().getQueryId();
-        
+
         List<QueryTask> nextTasks = new ArrayList<>();
         QueryTask nextTask = null;
-        
+
         QueryStorageLock lock = cache.getTaskStatesLock(queryId);
         lock.lock();
         try {
             // get the query states from the cache
             TaskStates taskStates = cache.getTaskStates(queryId);
-            
+
             if (taskStates != null) {
                 log.debug("Searching for tasks to run for " + queryId);
-                
+
                 // get the number of ready tasks that we can start up immediately
                 int tasksAvailableToRun = taskStates.getAvailableReadyTasksToRun();
-                
+
                 // use less if our thread pool is already full
                 tasksAvailableToRun = Math.min(tasksAvailableToRun,
                                 threadPool.getMaximumPoolSize() - threadPool.getQueue().size() - threadPool.getActiveCount());
-                
+
                 log.info("Getting up to " + tasksAvailableToRun + " tasks to run for " + queryId + " (" + taskStates.taskStatesString() + ",THREADPOOL:"
                                 + threadPool.getMaximumPoolSize() + " - " + threadPool.getQueue().size() + " - " + threadPool.getActiveCount() + ")");
-                
+
                 // if we can run any tasks, then get em
                 if (tasksAvailableToRun > 0) {
-                    
+
                     for (TaskKey taskKey : taskStates.getTasksForState(TaskStates.TASK_STATE.READY, tasksAvailableToRun)) {
                         QueryTask task = cache.getTask(taskKey);
-                        
+
                         // if we have such a task, and the task is for the action requested,
                         // then prepare it for execution otherwise, ignore this task
                         if (task != null && task.getAction() == requestedAction) {
@@ -268,7 +268,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                             log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + requestedAction + ", ignoring task");
                         }
                     }
-                    
+
                     // store the updated task states if we changed anything
                     if (!nextTasks.isEmpty()) {
                         // update the tasks last update millis to avoid the appearance of orphaned tasks
@@ -285,72 +285,72 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         } finally {
             lock.unlock();
         }
-        
+
         return nextTasks;
     }
-    
+
     public QueryStorageCache getCache() {
         return cache;
     }
-    
+
     public QueryResultsManager getQueues() {
         return queues;
     }
-    
+
     public QueryLogicFactory getQueryLogicFactory() {
         return queryLogicFactory;
     }
-    
+
     public QueryPredictor getPredictor() {
         return predictor;
     }
-    
+
     public ExecutorProperties getExecutorProperties() {
         return executorProperties;
     }
-    
+
     public QueryProperties getQueryProperties() {
         return queryProperties;
     }
-    
+
     public BusProperties getBusProperties() {
         return busProperties;
     }
-    
+
     public ApplicationContext getAppCtx() {
         return appCtx;
     }
-    
+
     public ApplicationEventPublisher getPublisher() {
         return publisher;
     }
-    
+
     public AccumuloConnectionFactory getConnectionFactory() {
         return connectionFactory;
     }
-    
+
     public AccumuloConnectionRequestMap getConnectionRequestMap() {
         return connectionRequestMap;
     }
-    
+
     public QueryMetricFactory getMetricFactory() {
         return metricFactory;
     }
-    
+
     public QueryMetricClient getMetricClient() {
         return metricClient;
     }
-    
+
     public ThreadPoolExecutor getThreadPoolExecutor() {
         return threadPool;
     }
-    
+
     public Multimap<String,ExecutorTask> getQueryToTasks() {
         synchronized (queryToTask) {
             return LinkedHashMultimap.create(queryToTask);
         }
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder builder = new ToStringBuilder(this);

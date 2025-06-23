@@ -12,22 +12,22 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 public class QueryStatusUpdateUtil {
-    
+
     private final QueryProperties queryProperties;
     private final QueryStorageCache queryStorageCache;
-    
+
     public QueryStatusUpdateUtil(QueryProperties queryProperties, QueryStorageCache queryStorageCache) {
         this.queryProperties = queryProperties;
         this.queryStorageCache = queryStorageCache;
     }
-    
+
     public void claimNextCall(QueryStatus queryStatus) throws QueryException {
         // we can only call next on a created query
         if (queryStatus.getQueryState() == CREATE) {
             // increment the concurrent next count
             if (queryStatus.getActiveNextCalls() < queryStatus.getMaxConcurrentNextCalls()) {
                 queryStatus.setActiveNextCalls(queryStatus.getActiveNextCalls() + 1);
-                
+
                 // update the last used datetime for the query
                 queryStatus.setLastUsedMillis(System.currentTimeMillis());
             } else {
@@ -38,15 +38,15 @@ public class QueryStatusUpdateUtil {
             throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache with CREATED state.");
         }
     }
-    
+
     public void releaseNextCall(QueryStatus queryStatus, QueryResultsManager queryResultsManager) throws QueryException {
         // decrement the concurrent next count
         if (queryStatus.getActiveNextCalls() > 0) {
             queryStatus.setActiveNextCalls(queryStatus.getActiveNextCalls() - 1);
-            
+
             // update the last used datetime for the query
             queryStatus.setLastUsedMillis(System.currentTimeMillis());
-            
+
             if (!queryStatus.isRunning()) {
                 queryResultsManager.deleteQuery(queryStatus.getQueryKey().getQueryId());
             }
@@ -54,7 +54,7 @@ public class QueryStatusUpdateUtil {
             throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Concurrent next count can't be decremented: " + queryStatus.getActiveNextCalls());
         }
     }
-    
+
     public QueryStatus lockedUpdate(String queryUUID, QueryStatusUpdater updater) throws QueryException, InterruptedException {
         QueryStatus queryStatus = null;
         QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);

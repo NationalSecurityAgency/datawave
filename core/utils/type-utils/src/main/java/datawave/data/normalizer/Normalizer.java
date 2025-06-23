@@ -10,7 +10,7 @@ import datawave.data.type.util.IpAddress;
 import datawave.data.type.util.Point;
 
 public interface Normalizer<T> extends Serializable {
-    
+
     Normalizer<IpAddress> IP_ADDRESS_NORMALIZER = new IpAddressNormalizer();
     Normalizer<String> MAC_ADDRESS_NORMALIZER = new MacAddressNormalizer();
     Normalizer<String> LC_NO_DIACRITICS_NORMALIZER = new LcNoDiacriticsNormalizer();
@@ -27,16 +27,16 @@ public interface Normalizer<T> extends Serializable {
     Normalizer<Point> POINT_NORMALIZER = new PointNormalizer();
     Normalizer<String> TRIM_LEADING_ZEROS_NORMALIZER = new TrimLeadingZerosNormalizer();
     Normalizer<String> NOOP_NORMALIZER = new NoOpNormalizer();
-    
+
     String normalize(String in);
-    
+
     String normalizeDelegateType(T delegateIn);
-    
+
     T denormalize(String in);
-    
+
     String normalizeRegex(String in);
-    
+
     boolean normalizedRegexIsLossy(String in);
-    
+
     Collection<String> expand(String in);
 }

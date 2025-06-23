@@ -43,23 +43,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class AccumuloConnectionService {
-    
+
     private final AccumuloClient accumuloClient;
     private final DataDictionaryProperties dataDictionaryConfiguration;
     private final UserAuthFunctions userAuthFunctions;
-    
+
     // These were already hardcodeded values in ModelBean -> ModelController therefore they weren't made configurable
     private static final long BATCH_WRITER_MAX_LATENCY = 1000L;
     private static final long BATCH_WRITER_MAX_MEMORY = 10845760;
     private static final int BATCH_WRITER_MAX_THREADS = 2;
-    
+
     public AccumuloConnectionService(DataDictionaryProperties dataDictionaryConfiguration, UserAuthFunctions userAuthFunctions,
                     @Qualifier("warehouse") AccumuloClient accumuloClient) {
         this.dataDictionaryConfiguration = dataDictionaryConfiguration;
         this.userAuthFunctions = userAuthFunctions;
         this.accumuloClient = accumuloClient;
     }
-    
+
     /**
      * Return a basic connection to accumulo (as configured by spring)
      *
@@ -70,7 +70,7 @@ public class AccumuloConnectionService {
         connection.setAccumuloClient(accumuloClient);
         return connection;
     }
-    
+
     /**
      * Returns a Connection representing the connection to accumulo configured with the specified parameters
      *
@@ -80,13 +80,13 @@ public class AccumuloConnectionService {
      *            the name of the model to use in the connection
      * @param user
      *            the user (and the authorities and other security aspects related to the user)
-     *            
+     *
      * @return a Connection representing the connection to accumulo
      */
     public Connection getConnection(String modelTable, String modelName, DatawaveUserDetails user) {
         return getConnection(dataDictionaryConfiguration.getMetadataTableName(), modelTable, modelName, user);
     }
-    
+
     /**
      * Returns a Connection representing the connection to accumulo configured with the specified parameters
      *
@@ -98,7 +98,7 @@ public class AccumuloConnectionService {
      *            the name of the model to use in the connection
      * @param user
      *            the user (and the authorities and other security aspects related to the user)
-     *            
+     *
      * @return a Connection representing the connection to accumulo
      */
     public Connection getConnection(String metadataTable, String modelTable, String modelName, DatawaveUserDetails user) {
@@ -110,17 +110,17 @@ public class AccumuloConnectionService {
         connection.setAccumuloClient(accumuloClient);
         return connection;
     }
-    
+
     private String getSupplierValueIfBlank(final String value, final Supplier<String> supplier) {
         return StringUtils.isBlank(value) ? supplier.get() : value;
     }
-    
+
     /**
      * Return the accumulo authorizations for the user
      *
      * @param currentUser
      *            the user for whom to get the authorizations
-     *            
+     *
      * @return the accumulo authorizations for the user
      */
     public Set<Authorizations> getAuths(DatawaveUserDetails currentUser) {
@@ -131,7 +131,7 @@ public class AccumuloConnectionService {
                 .collect(Collectors.toSet());
         //@formatter:on
     }
-    
+
     /**
      * Return the authorizations for the specified user downgraded to the specified level
      *
@@ -139,7 +139,7 @@ public class AccumuloConnectionService {
      *            the level of authorizations to downgrade to
      * @param currentUser
      *            the user for whom to downgrade the authorizations
-     *            
+     *
      * @return the authorizations for the specified user downgraded to the specified level
      */
     public Set<Authorizations> getDowngradedAuthorizations(String requestedAuthorizations, DatawaveUserDetails currentUser) {
@@ -147,7 +147,7 @@ public class AccumuloConnectionService {
         return userAuthFunctions.mergeAuthorizations(userAuthFunctions.getRequestedAuthorizations(requestedAuthorizations, primaryUser),
                         currentUser.getProxiedUsers(), u -> u != primaryUser);
     }
-    
+
     /**
      * Return the keys. If a regexTerm is specified, the keys will be filtered according to that term, otherwise all the keys in the specified table that the
      * user has authorizations for will be returned.
@@ -158,7 +158,7 @@ public class AccumuloConnectionService {
      *            the user requesting the keys. Used for authorizations purposes
      * @param regexTerm
      *            the regex (can be just a string) to apply to the IteratorSetting
-     *            
+     *
      * @return the keys of hte specified table that the specified user has the authorzations to access.
      * @throws TableNotFoundException
      *             Thrown if the table is not found
@@ -170,11 +170,11 @@ public class AccumuloConnectionService {
             cfg.addOption(RegExFilter.COLF_REGEX, "^" + regexTerm + "(\\x00.*)?");
             scanner.addScanIterator(cfg);
         }
-        
+
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(scanner.iterator(), Spliterator.ORDERED), false).map(entry -> entry.getKey())
                         .collect(Collectors.toList());
     }
-    
+
     /**
      * Modify (insert, delete, etc) the mappings. Throws an exception if not successful.
      *
@@ -186,17 +186,17 @@ public class AccumuloConnectionService {
      *            the model name
      * @param user
      *            the user requesting the changes
-     *            
+     *
      * @return A QueryException if anything is unsuccessful, and null if everything is successful.
      */
     public QueryException modifyMappings(List<Mutation> mutations, String modelTable, String modelName, DatawaveUserDetails user) {
         QueryException exception = null;
         Mutation mute = null;
-        
+
         try {
             @Cleanup
             BatchWriter writer = getDefaultBatchWriter(modelTable, modelName, user);
-            
+
             for (Mutation m : mutations) {
                 mute = m; // make the specific mapping available outside this scope for logging purposes.
                 writer.addMutation(m);
@@ -208,10 +208,10 @@ public class AccumuloConnectionService {
             log.error("Could not modify mapping  -- " + mute, e);
             exception = new QueryException(DatawaveErrorCode.INSERT_MAPPING_ERROR, e);
         }
-        
+
         return exception;
     }
-    
+
     private BatchWriter getDefaultBatchWriter(String modelTable, String modelName, DatawaveUserDetails user) throws TableNotFoundException {
         AccumuloClient accumuloClient = getConnection(modelTable, modelName, user).getAccumuloClient();
         // TODO Do we need a new instance of BatchWriterConfig each time, or can this be a static or bean object?

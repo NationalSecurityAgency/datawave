@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  *
- * 
+ *
  */
 public class LcNoDiacriticsTypeTest {
     @Test
@@ -14,8 +14,8 @@ public class LcNoDiacriticsTypeTest {
         LcNoDiacriticsType norm = new LcNoDiacriticsType();
         String b = null;
         String n1 = norm.normalize(b);
-        
+
         assertNull(n1);
-        
+
     }
 }

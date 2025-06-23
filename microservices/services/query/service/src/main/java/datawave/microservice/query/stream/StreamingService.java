@@ -22,18 +22,18 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 @Service
 public class StreamingService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final QueryManagementService queryManagementService;
     private final QueryMetricClient queryMetricClient;
-    
+
     private final ThreadPoolTaskExecutor streamingCallExecutor;
-    
+
     public StreamingService(QueryManagementService queryManagementService, QueryMetricClient queryMetricClient, ThreadPoolTaskExecutor streamingCallExecutor) {
         this.queryManagementService = queryManagementService;
         this.queryMetricClient = queryMetricClient;
         this.streamingCallExecutor = streamingCallExecutor;
     }
-    
+
     /**
      * Creates a query using the given query logic and parameters, and streams all pages of results to the configured listener.
      * <p>
@@ -80,12 +80,12 @@ public class StreamingService {
         } else {
             log.info("Request: {}/createAndExecute from {}", queryLogicName, user);
         }
-        
+
         String queryId = queryManagementService.create(queryLogicName, parameters, pool, currentUser).getResult();
         submitStreamingCall(queryId, currentUser, serverUser, listener);
         return queryId;
     }
-    
+
     /**
      * Gets all pages of results for the given query and streams them to the configured listener.
      * <p>
@@ -104,10 +104,10 @@ public class StreamingService {
      */
     public void execute(String queryId, DatawaveUserDetails currentUser, DatawaveUserDetails serverUser, StreamingResponseListener listener) {
         log.info("Request: {}/execute from {}", queryId, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
-        
+
         submitStreamingCall(queryId, currentUser, serverUser, listener);
     }
-    
+
     private void submitStreamingCall(String queryId, DatawaveUserDetails currentUser, DatawaveUserDetails serverUser, StreamingResponseListener listener) {
         // @formatter:off
         streamingCallExecutor.submit(

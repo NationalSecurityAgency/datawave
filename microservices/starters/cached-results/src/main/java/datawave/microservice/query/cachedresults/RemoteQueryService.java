@@ -30,16 +30,16 @@ import datawave.webservice.result.VoidResponse;
 @Service
 @ConditionalOnProperty(name = "datawave.query.cached-results.enabled", havingValue = "true", matchIfMissing = true)
 public class RemoteQueryService implements QueryService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(RemoteQueryService.class);
-    
+
     private final WebClient webClient;
     private final JWTTokenHandler jwtTokenHandler;
     private final CachedResultsQueryProperties.RemoteQuery remoteQueryProperties;
-    
+
     public RemoteQueryService(CachedResultsQueryProperties cachedResultsQueryProperties, WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler) {
         remoteQueryProperties = cachedResultsQueryProperties.getRemoteQuery();
-        
+
         // @formatter:off
         this.webClient = webClientBuilder
                 .baseUrl(cachedResultsQueryProperties.getRemoteQuery().getQueryServiceUri())
@@ -52,15 +52,15 @@ public class RemoteQueryService implements QueryService {
         // @formatter:on
         this.jwtTokenHandler = jwtTokenHandler;
     }
-    
+
     private String createBearerHeader(ProxiedUserDetails currentUser) {
         return "Bearer " + jwtTokenHandler.createTokenFromUsers(currentUser.getPrimaryUser().getName(), currentUser.getProxiedUsers());
     }
-    
+
     @Override
     public GenericResponse<String> duplicate(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("RemoteQueryService duplicate {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<BaseResponse> baseResponseEntity = webClient.post()
@@ -73,11 +73,11 @@ public class RemoteQueryService implements QueryService {
                     .toEntity(BaseResponse.class)
                     .block(Duration.ofMillis(remoteQueryProperties.getDuplicateTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (baseResponseEntity != null) {
                 BaseResponse baseResponse = baseResponseEntity.getBody();
-                
+
                 if (baseResponse instanceof GenericResponse && baseResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return (GenericResponse<String>) baseResponse;
                 } else {
@@ -98,11 +98,11 @@ public class RemoteQueryService implements QueryService {
             throw new QueryException("Timed out waiting for remote query duplicate response", e);
         }
     }
-    
+
     @Override
     public BaseQueryResponse next(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("RemoteQueryService next {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<BaseResponse> baseResponseEntity = webClient.get()
@@ -115,11 +115,11 @@ public class RemoteQueryService implements QueryService {
                     .toEntity(BaseResponse.class)
                     .block(Duration.ofMillis(remoteQueryProperties.getNextTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (baseResponseEntity != null) {
                 BaseResponse baseResponse = baseResponseEntity.getBody();
-                
+
                 // if we got what we were looking for, return it
                 if (baseResponse instanceof BaseQueryResponse) {
                     return (BaseQueryResponse) baseResponse;
@@ -143,11 +143,11 @@ public class RemoteQueryService implements QueryService {
             throw new QueryException("Timed out waiting for remote query next response", e);
         }
     }
-    
+
     @Override
     public VoidResponse close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("RemoteQueryService close {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<VoidResponse> voidResponseEntity = webClient.put()
@@ -160,11 +160,11 @@ public class RemoteQueryService implements QueryService {
                     .toEntity(VoidResponse.class)
                     .block(Duration.ofMillis(remoteQueryProperties.getCloseTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (voidResponseEntity != null) {
                 VoidResponse voidResponse = voidResponseEntity.getBody();
-                
+
                 if (voidResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return voidResponse;
                 } else {
@@ -185,11 +185,11 @@ public class RemoteQueryService implements QueryService {
             throw new QueryException("Timed out waiting for remote query close response", e);
         }
     }
-    
+
     @Override
     public VoidResponse cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("RemoteQueryService cancel {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<VoidResponse> voidResponseEntity = webClient.put()
@@ -202,11 +202,11 @@ public class RemoteQueryService implements QueryService {
                     .toEntity(VoidResponse.class)
                     .block(Duration.ofMillis(remoteQueryProperties.getCancelTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (voidResponseEntity != null) {
                 VoidResponse voidResponse = voidResponseEntity.getBody();
-                
+
                 if (voidResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return voidResponse;
                 } else {
@@ -227,11 +227,11 @@ public class RemoteQueryService implements QueryService {
             throw new QueryException("Timed out waiting for remote query cancel response", e);
         }
     }
-    
+
     @Override
     public VoidResponse remove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("RemoteQueryService remove {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<VoidResponse> voidResponseEntity = webClient.put()
@@ -244,11 +244,11 @@ public class RemoteQueryService implements QueryService {
                     .toEntity(VoidResponse.class)
                     .block(Duration.ofMillis(remoteQueryProperties.getRemoveTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (voidResponseEntity != null) {
                 VoidResponse voidResponse = voidResponseEntity.getBody();
-                
+
                 if (voidResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return voidResponse;
                 } else {

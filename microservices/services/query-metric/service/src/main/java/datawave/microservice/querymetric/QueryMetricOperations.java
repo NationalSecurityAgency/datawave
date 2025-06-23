@@ -16,10 +16,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PreDestroy;
@@ -82,7 +82,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping(path = "/v1")
 public class QueryMetricOperations {
     private Logger log = LoggerFactory.getLogger(QueryMetricOperations.class);
-    
+
     private ShardTableQueryMetricHandler handler;
     private QueryGeometryHandler geometryHandler;
     private CacheManager cacheManager;
@@ -95,10 +95,10 @@ public class QueryMetricOperations {
     private MetricUpdateEntryProcessorFactory entryProcessorFactory;
     private QueryMetricOperationsStats stats;
     private static Set<String> inProcess = Collections.synchronizedSet(new HashSet<>());
-    
+
     private final QueryMetricClient queryMetricClient;
     private final DnUtils dnUtils;
-    
+
     /**
      * The enum Default datetime.
      */
@@ -112,7 +112,7 @@ public class QueryMetricOperations {
          */
         END
     }
-    
+
     /**
      * Instantiates a new QueryMetricOperations.
      *
@@ -157,7 +157,7 @@ public class QueryMetricOperations {
         this.queryMetricClient = queryMetricClient;
         this.dnUtils = dnUtils;
     }
-    
+
     @PreDestroy
     public void shutdown() {
         if (this.correlator.isEnabled()) {
@@ -168,7 +168,7 @@ public class QueryMetricOperations {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
-                    
+
                 }
             }
             ensureUpdatesProcessed(false);
@@ -176,11 +176,11 @@ public class QueryMetricOperations {
         this.stats.queueAggregatedQueryStatsForTimely();
         this.stats.writeQueryStatsToTimely();
     }
-    
+
     public boolean isTimedCorrelationInProgress() {
         return this.timedCorrelationInProgress.get();
     }
-    
+
     @Scheduled(fixedDelay = 2000)
     public void ensureUpdatesProcessedScheduled() {
         // don't write metrics from this thread while shutting down,
@@ -194,7 +194,7 @@ public class QueryMetricOperations {
             }
         }
     }
-    
+
     public void ensureUpdatesProcessed(boolean scheduled) {
         if (this.correlator.isEnabled()) {
             List<QueryMetricUpdate> correlatedUpdates;
@@ -214,7 +214,7 @@ public class QueryMetricOperations {
             } while (!(scheduled && this.correlator.isShuttingDown()) && correlatedUpdates != null && !correlatedUpdates.isEmpty());
         }
     }
-    
+
     /**
      * Update metrics void response.
      *
@@ -254,7 +254,7 @@ public class QueryMetricOperations {
         }
         return new VoidResponse();
     }
-    
+
     /**
      * Update metric void response.
      *
@@ -294,11 +294,11 @@ public class QueryMetricOperations {
         }
         return new VoidResponse();
     }
-    
+
     private String getClusterLocalMemberUuid() {
         return ((HazelcastCacheManager) this.cacheManager).getHazelcastInstance().getCluster().getLocalMember().getUuid().toString();
     }
-    
+
     public QueryMetricUpdateHolder combineMetricUpdates(List<QueryMetricUpdate> updates, QueryMetricType metricType) throws Exception {
         BaseQueryMetric combinedMetric = null;
         Lifecycle lowestLifecycle = null;
@@ -317,7 +317,7 @@ public class QueryMetricOperations {
         metricUpdateHolder.updateLowestLifecycle(lowestLifecycle);
         return metricUpdateHolder;
     }
-    
+
     public void storeMetricUpdate(QueryMetricUpdateHolder metricUpdate) {
         Timer.Context storeTimer = this.stats.getTimer(TIMERS.STORE).time();
         String queryId = metricUpdate.getMetric().getQueryId();
@@ -349,11 +349,11 @@ public class QueryMetricOperations {
             storeTimer.stop();
         }
     }
-    
+
     public static Set<String> getInProcess() {
         return inProcess;
     }
-    
+
     /**
      * Returns metrics for the current users queries that are identified by the id
      *
@@ -370,69 +370,126 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/id/{queryId}", method = {RequestMethod.GET}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public BaseQueryMetricListResponse query(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId) {
-        
+
         BaseQueryMetricListResponse response = queryMetricResponseFactory.createListResponse();
         List<BaseQueryMetric> metricList = new ArrayList<>();
+        long startTime = System.currentTimeMillis();
+        QueryMetricOperationsStats.TIMERS timerType = null;
         try {
-            List<BaseQueryMetric> metricsFromAccumulo = this.handler.getQueryMetrics(queryId);
-            for (BaseQueryMetric metric : metricsFromAccumulo) {
-                boolean allowAllMetrics = false;
-                boolean sameUser = false;
-                if (currentUser != null) {
-                    String metricUser = metric.getUser();
-                    String requestingUser = dnUtils.getShortName(currentUser.getPrimaryUser().getName());
-                    sameUser = metricUser != null && metricUser.equals(requestingUser);
-                    allowAllMetrics = currentUser.getPrimaryUser().getRoles().contains("MetricsAdministrator");
+            List<BaseQueryMetric> candidateMetrics = new ArrayList<>();
+            QueryMetricUpdateHolder metricUpdate = incomingQueryMetricsCache.get(queryId, QueryMetricUpdateHolder.class);
+            if (metricUpdate != null) {
+                // metric (queryId) was retrieved from incomingQueryMetricsCache
+                // Determine if the cached metric is complete, and if not then fetch metric from Accumulo
+                if (isCachedMetricComplete(metricUpdate)) {
+                    candidateMetrics.add(metricUpdate.getMetric());
+                    timerType = TIMERS.QUERY_FROM_CACHE;
+                } else {
+                    candidateMetrics.add(completeCachedMetricFromAccumulo(metricUpdate));
+                    timerType = TIMERS.QUERY_FROM_CACHE_AND_ACCUMULO;
                 }
-                // since we are using the incomingQueryMetricsCache, we need to make sure that the
-                // requesting user has the necessary Authorizations to view the requested query metric
-                if (sameUser || allowAllMetrics) {
-                    ColumnVisibility columnVisibility = this.markingFunctions.translateToColumnVisibility(metric.getMarkings());
-                    boolean userCanSeeVisibility = true;
-                    for (DatawaveUser user : currentUser.getProxiedUsers()) {
-                        Authorizations authorizations = new Authorizations(user.getAuths().toArray(new String[0]));
-                        VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
-                        if (visibilityEvaluator.evaluate(columnVisibility) == false) {
-                            userCanSeeVisibility = false;
-                            break;
-                        }
-                    }
-                    if (userCanSeeVisibility) {
-                        // if returning this metric, then add any updates found in the incomingQueryMetricsCache
-                        metricList.add(completeMetric(metric));
+            } else {
+                // metric (queryId) was not retrieved from incomingQueryMetricsCache, so get it from Accumulo
+                // Implementations of ShardTableQueryMetricHandler may treat the id as something other than
+                // or in addition to queryId and may return more than one metric
+                List<BaseQueryMetric> metricsFromAccumulo = this.handler.getQueryMetrics(queryId);
+                if (metricsFromAccumulo.size() == 1) {
+                    // if queryId returned a single metric, then we will cache it to speed up subsequent requests for that queryId
+                    this.mergeLock.lock();
+                    try {
+                        IMap<String,QueryMetricUpdateHolder> incomingQueryMetricsCacheHz = ((IMap<String,QueryMetricUpdateHolder>) incomingQueryMetricsCache
+                                        .getNativeCache());
+                        // QueryMetricType.CACHE_ONLY metricType will keep the AccumuloMapStore from writing this metric to
+                        // Accumulo, since it just came from there. If an additional update comes in for this query, then
+                        // the MetricUpdateEntryProcessor will merge the update and change the metricType to the updated type
+                        metricUpdate = new QueryMetricUpdateHolder(metricsFromAccumulo.get(0), QueryMetricType.CACHE_ONLY);
+                        incomingQueryMetricsCacheHz.executeOnKey(queryId, this.entryProcessorFactory.createEntryProcessor(metricUpdate));
+                    } catch (Exception e) {
+                        log.error(e.getMessage(), e);
+                    } finally {
+                        this.mergeLock.unlock();
                     }
                 }
+                candidateMetrics.addAll(metricsFromAccumulo);
+                timerType = TIMERS.QUERY_FROM_ACCUMULO;
+            }
+
+            for (BaseQueryMetric metric : candidateMetrics) {
+                // Ensure that the requesting user has the necessary Authorizations to view the query metric
+                if ((isMetricsAdministrator(currentUser) || isSameUser(currentUser, metric)) && canViewMetric(currentUser, metric)) {
+                    metricList.add(metric);
+                }
+            }
+
+            // Set the result to have the formatted query and query plan
+            // StackOverflowErrors seen in JexlFormattedStringBuildingVisitor.formatMetrics, so protect
+            // this call for each metric with try/catch and add original metric if formatMetrics fails
+            List<BaseQueryMetric> formattedMetricList = new ArrayList<>();
+            for (BaseQueryMetric m : metricList) {
+                List<BaseQueryMetric> formatted = null;
+                try {
+                    formatted = JexlFormattedStringBuildingVisitor.formatMetrics(Collections.singletonList(m));
+                } catch (StackOverflowError | Exception e) {
+                    log.warn("{} while formatting metric {}: {}", e.getClass().getCanonicalName(), m.getQueryId(), e.getMessage());
+                }
+                if (formatted == null || formatted.isEmpty()) {
+                    formattedMetricList.add(m);
+                } else {
+                    formattedMetricList.addAll(formatted);
+                }
+            }
+            response.setResult(formattedMetricList);
+            if (formattedMetricList.isEmpty()) {
+                response.setHasResults(false);
+            } else {
+                response.setGeoQuery(formattedMetricList.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
+                response.setHasResults(true);
             }
         } catch (Exception e) {
             response.addException(new QueryException(e.getMessage(), 500));
-        }
-        // Set the result to have the formatted query and query plan
-        // StackOverflowErrors seen in JexlFormattedStringBuildingVisitor.formatMetrics, so protect
-        // this call for each metric with try/catch and add original metric if formatMetrics fails
-        List<BaseQueryMetric> fmtMetricList = new ArrayList<>();
-        for (BaseQueryMetric m : metricList) {
-            List<BaseQueryMetric> formatted = null;
-            try {
-                formatted = JexlFormattedStringBuildingVisitor.formatMetrics(Collections.singletonList(m));
-            } catch (StackOverflowError | Exception e) {
-                log.warn(String.format("%s while formatting metric %s: %s", e.getClass().getCanonicalName(), m.getQueryId(), e.getMessage()));
+        } finally {
+            long duration = System.currentTimeMillis() - startTime;
+            this.stats.getTimer(TIMERS.QUERY).update(duration, TimeUnit.MILLISECONDS);
+            if (timerType != null) {
+                log.trace("metric for queryId:{} fetched from:{} in {} ms", queryId, timerType, duration);
+                this.stats.getTimer(timerType).update(duration, TimeUnit.MILLISECONDS);
             }
-            if (formatted == null || formatted.isEmpty()) {
-                fmtMetricList.add(m);
-            } else {
-                fmtMetricList.addAll(formatted);
-            }
-        }
-        response.setResult(fmtMetricList);
-        if (fmtMetricList.isEmpty()) {
-            response.setHasResults(false);
-        } else {
-            response.setGeoQuery(fmtMetricList.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
-            response.setHasResults(true);
         }
         return response;
     }
-    
+
+    private boolean isSameUser(DatawaveUserDetails currentUser, BaseQueryMetric metric) {
+        boolean sameUser = false;
+        if (currentUser != null) {
+            String metricUser = metric.getUser();
+            String requestingUser = dnUtils.getShortName(currentUser.getPrimaryUser().getName());
+            sameUser = metricUser != null && metricUser.equals(requestingUser);
+        }
+        return sameUser;
+    }
+
+    private boolean isMetricsAdministrator(DatawaveUserDetails currentUser) {
+        boolean isMetricsAdministrator = false;
+        if (currentUser != null) {
+            isMetricsAdministrator = currentUser.getPrimaryUser().getRoles().contains("MetricsAdministrator");
+        }
+        return isMetricsAdministrator;
+    }
+
+    private boolean canViewMetric(DatawaveUserDetails currentUser, BaseQueryMetric metric) throws Exception {
+        boolean userCanViewMetric = true;
+        ColumnVisibility columnVisibility = this.markingFunctions.translateToColumnVisibility(metric.getMarkings());
+        for (DatawaveUser user : currentUser.getProxiedUsers()) {
+            Authorizations authorizations = new Authorizations(user.getAuths().toArray(new String[0]));
+            VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
+            if (visibilityEvaluator.evaluate(columnVisibility) == false) {
+                userCanViewMetric = false;
+                break;
+            }
+        }
+        return userCanViewMetric;
+    }
+
     /**
      * Returns metrics for the current users queries that are identified by the id
      *
@@ -450,14 +507,14 @@ public class QueryMetricOperations {
     public ModelAndView queryWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId,
                     @Parameter(description = "queryId to return") @RequestParam(name = "display", required = false) String display) {
-        
+
         BaseQueryMetricListResponse response = query(currentUser, queryId);
         if (StringUtils.isNotBlank(display) && display.equalsIgnoreCase("horizontal")) {
             response.setViewName("querymetric-horizontal");
         }
         return response.createModelAndView();
     }
-    
+
     /**
      * Get a map for the given query represented by the query ID, if applicable.
      *
@@ -483,44 +540,55 @@ public class QueryMetricOperations {
             return queryGeometryResponse;
         }
     }
-    
+
     /*
-     * Pages could be missing if the metric was updated since being written to Accumulo
+     * Try to determine if cached metric is complete or whether it may be missing pages because it was evicted from the incoming cache
      */
-    protected BaseQueryMetric completeMetric(BaseQueryMetric metricFromAccumulo) {
-        String queryId = metricFromAccumulo.getQueryId();
-        QueryMetricUpdateHolder metricUpdateHolderFromCache = incomingQueryMetricsCache.get(queryId, QueryMetricUpdateHolder.class);
-        BaseQueryMetric updatedMetric = metricFromAccumulo;
-        if (metricUpdateHolderFromCache != null) {
-            try {
-                BaseQueryMetric metricFromCache = metricUpdateHolderFromCache.getMetric();
-                QueryMetricType metricType = metricUpdateHolderFromCache.getMetricType();
-                if (metricType.equals(QueryMetricType.DISTRIBUTED)) {
-                    // These values are additive, so we don't want to count them twice
-                    // The QueryMetricUpdateHolder resets the values when written to Accumulo
-                    metricFromCache.setSourceCount(metricUpdateHolderFromCache.getValue("sourceCount"));
-                    metricFromCache.setNextCount(metricUpdateHolderFromCache.getValue("nextCount"));
-                    metricFromCache.setSeekCount(metricUpdateHolderFromCache.getValue("seekCount"));
-                    metricFromCache.setYieldCount(metricUpdateHolderFromCache.getValue("yieldCount"));
-                    metricFromCache.setDocSize(metricUpdateHolderFromCache.getValue("docSize"));
-                    metricFromCache.setDocRanges(metricUpdateHolderFromCache.getValue("docRanges"));
-                    metricFromCache.setFiRanges(metricUpdateHolderFromCache.getValue("fiRanges"));
-                }
-                updatedMetric = this.handler.combineMetrics(metricFromCache, metricFromAccumulo, metricUpdateHolderFromCache.getMetricType());
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
+    protected boolean isCachedMetricComplete(QueryMetricUpdateHolder metricUpdateHolderFromCache) {
+        BaseQueryMetric metricUpdate = metricUpdateHolderFromCache.getMetric();
+        if (metricUpdateHolderFromCache.getMetricType().equals(QueryMetricType.CACHE_ONLY) || metricUpdateHolderFromCache.isNewMetric()) {
+            return true;
+        } else {
+            List<PageMetric> pageMetrics = new ArrayList<>(metricUpdate.getPageTimes());
+            if (metricUpdate.getNumPages() != pageMetrics.size()) {
+                return false;
+            } else {
+                pageMetrics.sort(Comparator.comparingLong(PageMetric::getPageNumber));
+                // If the first page's pageNumber is equal to 1 then that's a good indicator that the metric hasn't been evicted
+                return (pageMetrics.isEmpty()) || (pageMetrics.get(0).getPageNumber() == 1);
             }
         }
-        return updatedMetric;
     }
-    
+
+    /*
+     * Pages could be missing if the metricUpdate was evicted from the incomingQueryMetricsCache. If so, then retrieve the full metric from Accumulo and combine
+     * metrics so that the requesting user gets the complete metric.
+     */
+    protected BaseQueryMetric completeCachedMetricFromAccumulo(QueryMetricUpdateHolder metricUpdateHolderFromCache) {
+        BaseQueryMetric metricUpdate = null;
+        if (metricUpdateHolderFromCache != null) {
+            metricUpdate = metricUpdateHolderFromCache.getMetric();
+            if (metricUpdate != null) {
+                try {
+                    BaseQueryMetric metricFromAccumulo = this.handler.getQueryMetric(metricUpdate.getQueryId());
+                    if (metricFromAccumulo != null) {
+                        metricUpdate = this.handler.combineMetrics(metricUpdate, metricFromAccumulo, metricUpdateHolderFromCache.getMetricType());
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
+        return metricUpdate;
+    }
+
     @Operation(summary = "Get a map for the given query represented by the query ID, if applicable.")
     @PermitAll
     @RequestMapping(path = "/id/{queryId}/map", method = {RequestMethod.GET, RequestMethod.POST}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView mapWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser, @PathVariable("queryId") String queryId) {
         return map(currentUser, queryId).createModelAndView();
     }
-    
+
     private static Date parseDate(String dateString, DEFAULT_DATETIME defaultDateTime) throws IllegalArgumentException {
         if (StringUtils.isBlank(dateString)) {
             return null;
@@ -542,9 +610,9 @@ public class QueryMetricOperations {
             }
         }
     }
-    
+
     private QueryMetricsSummaryResponse queryMetricsSummary(Date begin, Date end, DatawaveUserDetails currentUser, boolean onlyCurrentUser) {
-        
+
         if (null == end) {
             end = new Date();
         }
@@ -565,7 +633,7 @@ public class QueryMetricOperations {
         }
         return response;
     }
-    
+
     /**
      * Returns a summary of the query metrics
      *
@@ -584,7 +652,7 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/summary/all", method = {RequestMethod.GET}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public QueryMetricsSummaryResponse getQueryMetricsSummary(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @RequestParam(required = false) String begin, @RequestParam(required = false) String end) {
-        
+
         try {
             return queryMetricsSummary(parseDate(begin, BEGIN), parseDate(end, END), currentUser, false);
         } catch (Exception e) {
@@ -593,7 +661,7 @@ public class QueryMetricOperations {
             return response;
         }
     }
-    
+
     /**
      * Returns a summary of the query metrics
      *
@@ -612,10 +680,10 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/summary/all", method = {RequestMethod.GET}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView getQueryMetricsSummaryWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser, @RequestParam(required = false) String begin,
                     @RequestParam(required = false) String end) {
-        
+
         return getQueryMetricsSummary(currentUser, begin, end).createModelAndView();
     }
-    
+
     /**
      * Returns a summary of the requesting user's query metrics
      *
@@ -642,7 +710,7 @@ public class QueryMetricOperations {
             return response;
         }
     }
-    
+
     /**
      * Returns a summary of the requesting user's query metrics
      *
@@ -661,10 +729,10 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/summary/user", method = {RequestMethod.GET}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView getQueryMetricsUserSummaryWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @RequestParam(required = false) String begin, @RequestParam(required = false) String end) {
-        
+
         return getQueryMetricsUserSummary(currentUser, begin, end).createModelAndView();
     }
-    
+
     /**
      * Returns cache stats for the local part of the distributed Hazelcast cache
      *
@@ -684,21 +752,21 @@ public class QueryMetricOperations {
         try {
             cacheStats.setHost(InetAddress.getLocalHost().getCanonicalHostName());
         } catch (Exception e) {
-            
+
         }
         return cacheStats;
     }
-    
+
     @Scheduled(fixedRateString = "${datawave.query.metric.stats.logServiceStatsRateMs:300000}")
     public void logStats() {
         this.stats.logServiceStats();
     }
-    
+
     @Scheduled(fixedRateString = "${datawave.query.metric.stats.publishServiceStatsToTimelyRateMs:60000}")
     public void publishServiceStatsToTimely() {
         this.stats.writeServiceStatsToTimely();
     }
-    
+
     @Scheduled(fixedRateString = "${datawave.query.metric.stats.publishQueryStatsToTimelyRateMs:60000}")
     public void publishQueryStatsToTimely() {
         this.stats.queueAggregatedQueryStatsForTimely();

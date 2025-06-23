@@ -55,20 +55,22 @@ import lombok.extern.slf4j.Slf4j;
 @Secured({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
 @EnableConfigurationProperties(ModelProperties.class)
 public class ModelController {
-    
+
     private final String dataTablesUri;
     private final String jqueryUri;
+    private final String systemName;
     private final AccumuloConnectionService accumloConnectionService;
-    
+
     public static final String DEFAULT_MODEL_TABLE_NAME = "DatawaveMetadata";
     private static final HashSet<String> RESERVED_COLF_VALUES = Sets.newHashSet("e", "i", "ri", "f", "tf", "m", "desc", "edge", "t", "n", "h");
-    
+
     public ModelController(ModelProperties modelProperties, AccumuloConnectionService accumloConnectionService) {
         this.dataTablesUri = modelProperties.getDataTablesUri();
         this.jqueryUri = modelProperties.getJqueryUri();
+        this.systemName = modelProperties.getSystemName();
         this.accumloConnectionService = accumloConnectionService;
     }
-    
+
     /**
      * Get the names of the models
      *
@@ -76,15 +78,15 @@ public class ModelController {
      *            name of the table that contains the model
      * @return the ModelList
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
     @GetMapping("/list") // If we get to change to follow true REST standard, this would just be / and remain a GET
     public ModelList listModelNames(@RequestParam(defaultValue = DEFAULT_MODEL_TABLE_NAME) String modelTableName,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
-        
-        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
+
+        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName, systemName);
         HashSet<String> modelNames = new HashSet<>();
         List<Key> keys;
         try {
@@ -95,10 +97,10 @@ public class ModelController {
             response.addException(qe.getBottomQueryException());
             return response;
         }
-        
+
         Set<String> colFamilies = keys.stream().map(k -> k.getColumnFamily().toString()).filter(colFamily -> !RESERVED_COLF_VALUES.contains(colFamily))
                         .collect(Collectors.toSet());
-        
+
         for (String colf : colFamilies) {
             String[] parts = colf.split(ModelKeyParser.NULL_BYTE);
             if (parts.length == 1) {
@@ -107,11 +109,11 @@ public class ModelController {
                 modelNames.add(parts[0]);
             }
         }
-        
+
         response.setNames(modelNames);
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Delete a model with the supplied name
      *
@@ -121,7 +123,7 @@ public class ModelController {
      *            name of the table that contains the model
      * @return a VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -138,10 +140,10 @@ public class ModelController {
             Model model = getModel(name, modelTableName, currentUser);
             deleteMapping(model, modelTableName, currentUser);
         }
-        
+
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Copy a model
      *
@@ -153,26 +155,26 @@ public class ModelController {
      *            name of the table that contains the model
      * @return a VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 204 model not found
      * @HTTP 500 internal server error
      */
     @Operation(summary = "Copy a model.")
-    
+
     @PostMapping("/clone")
     @Secured({"Administrator", "JBossAdministrator"})
     public VoidResponse cloneModel(@RequestParam String name, @RequestParam String newName,
                     @RequestParam(defaultValue = DEFAULT_MODEL_TABLE_NAME) String modelTableName, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         VoidResponse response = new VoidResponse();
-        
+
         Model model = getModel(name, modelTableName, currentUser);
         // Set the new name
         model.setName(newName);
         insertMapping(model, modelTableName, currentUser);
         return response;
     }
-    
+
     /**
      * Retrieve the model and all of its mappings
      *
@@ -182,7 +184,7 @@ public class ModelController {
      *            name of the table that contains the model
      * @return the Model
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -190,7 +192,7 @@ public class ModelController {
     @GetMapping("/{name}")
     public Model getModel(@PathVariable String name, @RequestParam(defaultValue = DEFAULT_MODEL_TABLE_NAME) String modelTableName,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
-        Model response = new Model(jqueryUri, dataTablesUri);
+        Model response = new Model(jqueryUri, dataTablesUri, systemName);
         List<Key> keys;
         try {
             keys = accumloConnectionService.getKeys(modelTableName, currentUser, name);
@@ -200,13 +202,13 @@ public class ModelController {
             response.addException(qe.getBottomQueryException());
             return response;
         }
-        
+
         TreeSet<FieldMapping> fields = response.getFields();
         keys.forEach(k -> fields.add(ModelKeyParser.parseKey(k)));
         response.setName(name);
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Insert a new field mapping into an existing model
      *
@@ -216,7 +218,7 @@ public class ModelController {
      *            name of the table that contains the model
      * @return a VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -228,21 +230,21 @@ public class ModelController {
         if (log.isDebugEnabled()) {
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
-        
+
         VoidResponse response = new VoidResponse();
         List<Mutation> mutations = model.getFields().stream().map(mapping -> ModelKeyParser.createMutation(mapping, model.getName()))
                         .collect(Collectors.toList());
-        
+
         QueryException exception = accumloConnectionService.modifyMappings(mutations, modelTableName, model.getName(), currentUser);
         if (exception != null) {
             response.addException(exception.getBottomQueryException());
         }
-        
+
         // Do we already have an AccumuloTableCache bean somewhere?
         // cache.reloadTableCache(tableName);
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Delete field mappings from an existing model
      *
@@ -252,7 +254,7 @@ public class ModelController {
      *            name of the table that contains the model
      * @return a VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -265,15 +267,15 @@ public class ModelController {
             log.debug("Deleting model name: " + model.getName() + "from modelTableName " + modelTableName);
         }
         VoidResponse response = new VoidResponse();
-        
+
         List<Mutation> mutations = model.getFields().stream().map(mapping -> ModelKeyParser.createDeleteMutation(mapping, model.getName()))
                         .collect(Collectors.toList());
-        
+
         QueryException exception = accumloConnectionService.modifyMappings(mutations, modelTableName, model.getName(), currentUser);
         if (exception != null) {
             response.addException(exception.getBottomQueryException());
         }
-        
+
         return response;
     }
 }

@@ -45,56 +45,56 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"AuthorizationServiceV2Test"})
 public class AuthorizationServiceV2Test {
-    
+
     private static final SubjectIssuerDNPair ALLOWED_ADMIN_CALLER = SubjectIssuerDNPair
                     .of("cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us", "cn=testcorp ca, ou=security, o=testcorp, c=us");
     private static final SubjectIssuerDNPair ALLOWED_NONADMIN_CALLER = SubjectIssuerDNPair
                     .of("cn=test2.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us", "cn=testcorp ca, ou=security, o=testcorp, c=us");
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     private CacheManager cacheManager;
-    
+
     @Autowired
     private JWTTokenHandler jwtTokenHandler;
-    
+
     private AuthorizationTestUtils testUtils;
-    
+
     private static DatawaveUserDetails allowedAdminCaller;
     private static DatawaveUserDetails allowedNonAdminCaller;
-    
+
     @BeforeAll
     public static void classSetup() {
         Collection<String> roles = Collections.singleton("Administrator");
         DatawaveUser allowedAdminDWUser = new DatawaveUser(ALLOWED_ADMIN_CALLER, USER, null, null, roles, null, System.currentTimeMillis());
         allowedAdminCaller = new DatawaveUserDetails(Collections.singleton(allowedAdminDWUser), allowedAdminDWUser.getCreationTime());
-        
+
         DatawaveUser allowedNonAdminDWUser = new DatawaveUser(ALLOWED_NONADMIN_CALLER, USER, null, null, null, null, System.currentTimeMillis());
         allowedNonAdminCaller = new DatawaveUserDetails(Collections.singleton(allowedNonAdminDWUser), allowedNonAdminDWUser.getCreationTime());
     }
-    
+
     @BeforeEach
     public void setup() {
         cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
         RestTemplate restTemplate = restTemplateBuilder.build(RestTemplate.class);
         testUtils = new AuthorizationTestUtils(jwtTokenHandler, restTemplate, "https", webServicePort);
     }
-    
+
     @Test
     public void testAdminMethodSecurity() throws Exception {
-        
+
         // the call is being authenticated using a JWT of the provided user. The roles are encapsulated in the JWT
         testUtils.testAdminMethodFailure(allowedNonAdminCaller, "/authorization/v2/admin/evictUser", "username=ignored");
         testUtils.testAdminMethodFailure(allowedNonAdminCaller, "/authorization/v2/admin/evictUsersMatching", "substring=ignored");
         testUtils.testAdminMethodFailure(allowedNonAdminCaller, "/authorization/v2/admin/listUsers", null);
         testUtils.testAdminMethodFailure(allowedNonAdminCaller, "/authorization/v2/admin/listUser", "username=ignored");
         testUtils.testAdminMethodFailure(allowedNonAdminCaller, "/authorization/v2/admin/listUsersMatching", "substring=ignore");
-        
+
         testUtils.testAdminMethodSuccess(allowedAdminCaller, "/authorization/v2/admin/evictAll", null);
         testUtils.testAdminMethodSuccess(allowedAdminCaller, "/authorization/v2/admin/evictUser", "username=ignored");
         testUtils.testAdminMethodSuccess(allowedAdminCaller, "/authorization/v2/admin/evictUsersMatching", "substring=ignored");
@@ -102,7 +102,7 @@ public class AuthorizationServiceV2Test {
         testUtils.testAdminMethodSuccess(allowedAdminCaller, "/authorization/v2/admin/listUser", "username=ignored");
         testUtils.testAdminMethodSuccess(allowedAdminCaller, "/authorization/v2/admin/listUsersMatching", "substring=ignore");
     }
-    
+
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})
     @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
     @ComponentScan(basePackages = "datawave.microservice")
@@ -114,7 +114,7 @@ public class AuthorizationServiceV2Test {
                         @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory) {
             return new AuthorizationTestUserService(Collections.EMPTY_MAP, true);
         }
-        
+
         @Bean
         public HazelcastInstance testHazelcastInstance() {
             Config config = new Config();
@@ -122,7 +122,7 @@ public class AuthorizationServiceV2Test {
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);
         }
-        
+
         @Bean
         public BusProperties busProperties() {
             return new BusProperties();

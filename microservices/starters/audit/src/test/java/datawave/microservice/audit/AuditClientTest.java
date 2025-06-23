@@ -54,41 +54,41 @@ import datawave.webservice.common.audit.Auditor;
 @ContextConfiguration(classes = AuditClientTest.TestConfiguration.class)
 @ActiveProfiles({"AuditClientTest", "audit-enabled"})
 public class AuditClientTest {
-    
+
     private static final String EXPECTED_AUDIT_URI = "http://localhost:11111/audit/v1/audit";
-    
+
     @Autowired
     private AuditClient auditClient;
-    
+
     @Autowired
     private SecurityMarking auditTestSecurityMarking;
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     private MockRestServiceServer mockServer;
     private DatawaveUserDetails defaultUserDetails;
-    
+
     @BeforeEach
     public void setup() {
         defaultUserDetails = TestUtils.userDetails(Collections.singleton("AuthorizedUser"), Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
         setupMockAuditServer();
     }
-    
+
     @Test
     public void verifyAutoConfig() {
         assertEquals(1, context.getBeanNamesForType(AuditClient.class).length, "One AuditClient bean should have been found");
         assertEquals(1, context.getBeanNamesForType(AuditServiceConfiguration.class).length, "One AuditServiceConfiguration bean should have been found");
         assertEquals(1, context.getBeanNamesForType(AuditServiceProvider.class).length, "One AuditServiceProvider bean should have been found");
     }
-    
+
     @Test
     public void testAuditURISuccess() {
-        
+
         MultiValueMap<String,String> parameters = new LinkedMultiValueMap<>();
         parameters.add(TestAuditParameters.TEST_PARAM_1, "tp1Value");
         parameters.add(TestAuditParameters.TEST_PARAM_2, "tp2Value");
-        
+
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
                 .withParams(parameters)
@@ -108,15 +108,15 @@ public class AuditClientTest {
 
         //@formatter:on
     }
-    
+
     @Test
     public void testMissingTestParam2() {
-        
+
         MultiValueMap<String,String> parameters = new LinkedMultiValueMap<>();
         parameters.add(TestAuditParameters.TEST_PARAM_1, "tp1Value");
-        
+
         // Missing TestAuditParameters.TEST_PARAM_2 this time
-        
+
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
                 .withParams(parameters)
@@ -129,13 +129,13 @@ public class AuditClientTest {
         //@formatter:on
         assertThrows(IllegalArgumentException.class, () -> AuditClient.validate(auditRequest, new TestAuditParameters()));
     }
-    
+
     @Test
     public void testAuditURIServerError() {
         MultiValueMap<String,String> parameters = new LinkedMultiValueMap<>();
         parameters.add("paramFoo", "paramFooValue");
         parameters.add("paramBar", "paramBarValue");
-        
+
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
                 .withQueryExpression("FIELD:VALUE1 OR FIELD:VALUE2")
@@ -155,12 +155,12 @@ public class AuditClientTest {
 
         //@formatter:on
     }
-    
+
     @Test
     public void testBuildMissingAuditParams1() {
-        
+
         // No AuditType specified this time
-        
+
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
             .withQueryExpression("FIELD:VALUE1 OR FIELD:VALUE2")
@@ -171,12 +171,12 @@ public class AuditClientTest {
         //@formatter:on
         assertThrows(IllegalArgumentException.class, () -> AuditClient.validate(auditRequest, new AuditParameters()));
     }
-    
+
     @Test
     public void testBuildMissingAuditParams2() {
-        
+
         // No query specified this time
-        
+
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
             .withAuditType(Auditor.AuditType.PASSIVE)
@@ -187,7 +187,7 @@ public class AuditClientTest {
         //@formatter:on
         assertThrows(IllegalArgumentException.class, () -> AuditClient.validate(auditRequest, new AuditParameters()));
     }
-    
+
     /**
      * Mocks the AuditClient jwtRestTemplate field within the internal AuditClient
      */
@@ -196,12 +196,12 @@ public class AuditClientTest {
         assertNotNull(auditorRestTemplate);
         mockServer = MockRestServiceServer.createServer(auditorRestTemplate);
     }
-    
+
     public static class TestAuditParameters extends AuditParameters {
         public static final String TEST_PARAM_1 = "PARAM1";
         public static final String TEST_PARAM_2 = "PARAM2";
         private static final List<String> REQUIRED_TEST_PARAMS = Arrays.asList(TEST_PARAM_1, TEST_PARAM_2);
-        
+
         @Override
         public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
             super.validate(parameters);
@@ -213,21 +213,21 @@ public class AuditClientTest {
             }
         }
     }
-    
+
     @Configuration
     @Profile("AuditClientTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class TestConfiguration {
-        
+
         @Bean
         public SecurityMarking auditTestSecurityMarking() {
             ColumnVisibilitySecurityMarking auditCVSM = new ColumnVisibilitySecurityMarking();
             auditCVSM.setColumnVisibility("BAR|FOO");
             return auditCVSM;
         }
-        
+
     }
-    
+
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestApplication {
         public static void main(String[] args) {

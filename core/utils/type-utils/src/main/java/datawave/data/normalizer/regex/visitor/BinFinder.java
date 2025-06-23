@@ -13,33 +13,33 @@ import datawave.data.normalizer.regex.RegexUtils;
  * Abstract class for {@link LTOneBinFinder} and {@link GTEOneBinFinder} with common properties and functionality.
  */
 abstract class BinFinder {
-    
+
     // The original node.
     protected final Node node;
-    
+
     // An iterator for the node's children.
     protected final NodeListIterator childrenIter;
-    
+
     // The index of the decimal point in the node's children, possibly -1.
     protected final int decimalPointIndex;
-    
+
     // The smallest bin value.
     protected final int minBin;
-    
+
     // The highest bin value.
     protected final int maxBin;
-    
+
     // The initial value for the lower and upper endpoints.
     protected final int initialEndpointValue;
-    
+
     // The current lower end of the bin range.
     protected int lower;
-    
+
     // The current upper end of the bin range.
     protected int upper;
-    
+
     protected boolean lowerLocked;
-    
+
     protected BinFinder(Node node, int minBin, int maxBin, int initialEndpointValue) {
         this.node = node;
         this.decimalPointIndex = RegexUtils.getDecimalPointIndex(node);
@@ -47,19 +47,19 @@ abstract class BinFinder {
         this.maxBin = maxBin;
         this.initialEndpointValue = initialEndpointValue;
         this.childrenIter = node.getChildrenIterator();
-        
+
         // Set the initial end point values.
         this.lower = initialEndpointValue;
         this.upper = initialEndpointValue;
-        
+
         // If the first child is a hyphen, skip over it and start at the next child.
         if (RegexUtils.isChar(node.getFirstChild(), RegexConstants.HYPHEN)) {
             childrenIter.next();
         }
     }
-    
+
     protected abstract Pair<Integer,Integer> getBinRange();
-    
+
     /**
      * Increment lower by one.
      */
@@ -68,10 +68,10 @@ abstract class BinFinder {
             lower++;
         }
     }
-    
+
     /**
      * Increment lower by the given value.
-     * 
+     *
      * @param value
      *            the value
      */
@@ -80,35 +80,35 @@ abstract class BinFinder {
             lower += value;
         }
     }
-    
+
     /**
      * Lock modifications to the lower bound. Any subsequent calls to {@link #incrementLower()} or {@link #incrementLower(int)} will not modify the lower bound.
      */
     protected void lockLower() {
         this.lowerLocked = true;
     }
-    
+
     /**
      * Unlock modifications to the lower bound. Any subsequent calls to {@link #incrementLower()} or {@link #incrementLower(int)} will modify the lower bound.
      */
     protected void unlockLower() {
         this.lowerLocked = false;
     }
-    
+
     /**
      * Set lower to the initial endpoint value.
      */
     protected void setLowerToInitialEndpointValue() {
         this.lower = initialEndpointValue;
     }
-    
+
     /**
      * Increment upper by one.
      */
     protected void incrementUpper() {
         upper++;
     }
-    
+
     /**
      * Increment upper by the given value.
      *
@@ -118,14 +118,14 @@ abstract class BinFinder {
     protected void incrementUpper(int value) {
         upper += value;
     }
-    
+
     /**
      * Set upper to the max bin value.
      */
     protected void setUpperToMax() {
         upper = maxBin;
     }
-    
+
     /**
      * Normalize the endpoints to be within the min and max bin if they were updated.
      */
@@ -139,14 +139,14 @@ abstract class BinFinder {
             } else if (lower > maxBin) {
                 lower = maxBin;
             }
-            
+
             // If the upper bound is greater than the max bin, set it to the max bin.
             if (upper > maxBin) {
                 upper = maxBin;
             }
         }
     }
-    
+
     /**
      * Return a {@link Pair} with the lower and upper bin range endpoints, or null if no valid bin range was found.
      *
@@ -159,7 +159,7 @@ abstract class BinFinder {
             return null;
         }
     }
-    
+
     /**
      * Update lower and upper based on the quantities read from the next quantifier in the iterator.
      */
@@ -169,7 +169,7 @@ abstract class BinFinder {
         // If the node after the quantifier node is an question mark, skip over it.
         childrenIter.seekPastQuestionMarks();
     }
-    
+
     /**
      * Update lower and upper based off the quantities read from the next quantifier.
      */
