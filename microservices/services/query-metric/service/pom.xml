@@ -8,9 +8,15 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-service</artifactId>
-    <version>4.1.1-SNAPSHOT</version>
+    <version>4.1.1-TEST1</version>
     <description>DATAWAVE Query Metric Microservice</description>
     <url>https://code.nsa.gov/datawave-query-metric-service</url>
+    <scm>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>4.1.1-TEST1</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <properties>
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <start-class>datawave.microservice.querymetric.QueryMetricService</start-class>

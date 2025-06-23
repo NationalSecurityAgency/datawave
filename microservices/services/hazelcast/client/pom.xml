@@ -10,7 +10,12 @@
     <artifactId>hazelcast-client</artifactId>
     <version>4.0.3-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-hazelcast-service</url>
-
+    <scm>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <properties>
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
