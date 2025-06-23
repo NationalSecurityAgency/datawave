@@ -16,12 +16,7 @@
             <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave</url>
-    </scm>
+
     <properties>
         <version.datawave.audit-api>4.0.1</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.1</version.datawave.authorization-api>

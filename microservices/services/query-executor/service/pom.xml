@@ -11,12 +11,7 @@
     <version>1.0.10-SNAPSHOT</version>
     <description>DATAWAVE Query Executor Service</description>
     <url>https://github.com/NationalSecurityAgency/datawave-query-executor-service</url>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave</url>
-    </scm>
+
     <properties>
         <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
         <version.accumulo>2.1.1</version.accumulo>

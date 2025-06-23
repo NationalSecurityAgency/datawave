@@ -11,12 +11,7 @@
     <version>1.0.12-SNAPSHOT</version>
     <description>DATAWAVE Query Microservice</description>
     <url>https://github.com/NationalSecurityAgency/datawave-query-service</url>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave</url>
-    </scm>
+
     <properties>
         <start-class>datawave.microservice.query.QueryService</start-class>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>

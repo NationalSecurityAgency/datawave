@@ -11,12 +11,7 @@
     <version>4.0.7-SNAPSHOT</version>
     <description>DATAWAVE Dictionary Service</description>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave</url>
-    </scm>
+
     <properties>
         <node.downloadRoot>https://nodejs.org/dist/</node.downloadRoot>
         <node.npmRegistryUrl>https://registry.npmjs.org/</node.npmRegistryUrl>

@@ -11,12 +11,7 @@
     <version>1.0.5-SNAPSHOT</version>
     <description>DATAWAVE MapReduce Query Core Job</description>
     <url>https://github.com/NationalSecurityAgency/datawave-mapreduce-query-service</url>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave</url>
-    </scm>
+
     <properties>
         <version.datawave>7.1.3</version.datawave>
         <version.datawave.mapreduce-layout-factory>1.0.0</version.datawave.mapreduce-layout-factory>
