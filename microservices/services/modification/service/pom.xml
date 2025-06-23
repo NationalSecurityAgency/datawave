@@ -11,12 +11,7 @@
     <version>1.0.3-SNAPSHOT</version>
     <description>DATAWAVE Modification Service</description>
     <url>https://code.nsa.gov/datawave-modification-service</url>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave</url>
-    </scm>
+
     <properties>
         <start-class>datawave.microservice.modification.ModificationService</start-class>
         <version.datawave>7.1.3</version.datawave>
