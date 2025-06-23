@@ -23,12 +23,6 @@
         <version.spring.boot>2.7.1</version.spring.boot>
         <version.spring.cloud>2021.0.3</version.spring.cloud>
     </properties>
-    <scm>
-        <connection>scm:git:${project.scm.url}</connection>
-        <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave</url>
-    </scm>
     <dependencyManagement>
         <dependencies>
             <dependency>
