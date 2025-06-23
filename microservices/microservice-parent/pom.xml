@@ -17,8 +17,8 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
@@ -40,6 +40,8 @@
         <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.version>${project.version}</project.version>
+        <maven.release.arguments>-Ddist</maven.release.arguments>
+        <maven.release.profiles>-dist</maven.release.profiles>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
@@ -413,8 +415,8 @@
                     <version>3.1.1</version>
                     <configuration>
                         <tagNameFormat>@{project.version}</tagNameFormat>
-                        <releaseProfiles>dist</releaseProfiles>
-                        <arguments>-Ddist</arguments>
+                        <releaseProfiles>${maven.release.profiles}</releaseProfiles>
+                        <arguments>${maven.release.arguments}</arguments>
                     </configuration>
                 </plugin>
                 <plugin>
