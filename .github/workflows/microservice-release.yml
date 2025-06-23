@@ -85,7 +85,7 @@ jobs:
       id: version
       run: |
         cd "${{ github.event.inputs.projectToRelease }}"
-        RAW_VERSION=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -q -DforceStdout)
+        RAW_VERSION=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -q -DforceStdout) || mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -DforceStdout
         BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
 
         if [ "${{ github.event.inputs.finalRelease }}" = "true" ]; then
