@@ -85,6 +85,7 @@ jobs:
       id: version
       run: |
         cd "${{ github.event.inputs.projectToRelease }}"
+        mvn help:evaluate -Dexpression=project.version -DforceStdout
         RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
         BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
 
