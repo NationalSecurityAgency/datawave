@@ -12,8 +12,8 @@
     <packaging>pom</packaging>
     <name>DataWave Microservices Spring Boot Service Parent</name>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
