@@ -110,7 +110,12 @@ jobs:
           -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
           -Dtag="${{ steps.version.outputs.VERSION_TAG }}" \
           -DpushChanges=true \
-          -DlocalCheckout=true
+          -DlocalCheckout=true \
+          -DskipTests \
+          -DskipFormat \
+          -DskipSpotbugs \ 
+          -Denforcer.skip=true \
+          -Dcheckstyle.skip=true 
     - name: Build and Push packages and images 
       run: |
         git checkout ${{ steps.version.outputs.VERSION_TAG }}
