@@ -6,6 +6,7 @@ import static datawave.query.iterator.QueryOptions.CONTAINS_INDEX_ONLY_TERMS;
 import static datawave.query.iterator.QueryOptions.END_TIME;
 import static datawave.query.iterator.QueryOptions.HDFS_SITE_CONFIG_URLS;
 import static datawave.query.iterator.QueryOptions.HIT_LIST;
+import static datawave.query.iterator.QueryOptions.INCLUDE_GROUPING_CONTEXT;
 import static datawave.query.iterator.QueryOptions.INDEXED_FIELDS;
 import static datawave.query.iterator.QueryOptions.INDEX_ONLY_FIELDS;
 import static datawave.query.iterator.QueryOptions.IVARATOR_CACHE_DIR_CONFIG;
@@ -173,23 +174,34 @@ public class QueryIteratorIT extends EasyMockSupport {
         return addEvent(DEFAULT_ROW, DEFAULT_DATATYPE, eventTime, uid);
     }
 
+    private List<Map.Entry<Key,Value>> addIndexedField(String row, String dataType, long eventTime, String uid, String field, String value) {
+        List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
+
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, field, value, dataType, uid, eventTime), EMPTY_VALUE));
+        String cleanFieldForFi = field;
+        int baseFieldIndex = field.indexOf(".");
+        if (baseFieldIndex > -1) {
+            cleanFieldForFi = cleanFieldForFi.substring(0, baseFieldIndex);
+        }
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, cleanFieldForFi, value, dataType, uid, eventTime), EMPTY_VALUE));
+
+        return listSource;
+    }
+
     private List<Map.Entry<Key,Value>> addEvent(String row, String dataType, long eventTime, String uid) {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.addAll(addIndexedField(row, dataType, eventTime, uid, "EVENT_FIELD1", "a"));
         // unindexed
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTime), EMPTY_VALUE));
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTime), EMPTY_VALUE));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.addAll(addIndexedField(row, dataType, eventTime, uid, "EVENT_FIELD4", "d"));
         // unindexed
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTime), EMPTY_VALUE));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.addAll(addIndexedField(row, dataType, eventTime, uid, "EVENT_FIELD6", "f"));
 
         // add some indexed TF fields
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTime), EMPTY_VALUE));
@@ -1165,6 +1177,157 @@ public class QueryIteratorIT extends EasyMockSupport {
         event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
+    @Test
+    public void index_groupingNotation_rightGroupMustMatchFail_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
+
+        List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.B.B.C.1", "a2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.C.B.C.2", "b1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.D.B.C.3", "b2"));
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+
+        groupingNotation_test(seekRange, query, true, groupingData, Collections.emptyList());
+    }
+
+    @Test
+    public void index_groupingNotation_rightGroupMustMatchPass_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
+
+        List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.X.Y.Z.0", "a2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2"));
+
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
+                new HashMap<>());
+        List<String> values = new ArrayList<>();
+
+        values.add("a1");
+        expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.0", values);
+        values = new ArrayList<>();
+        values.add("a2");
+        expectedEvent.getValue().put("EVENT_FIELD1.X.Y.Z.0", values);
+        values = new ArrayList<>();
+        values.add("b1");
+        expectedEvent.getValue().put("EVENT_FIELD1.C.B.C.1", values);
+        values = new ArrayList<>();
+        values.add("b2");
+        expectedEvent.getValue().put("EVENT_FIELD1.D.B.C.1", values);
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+
+        groupingNotation_test(seekRange, query, false, groupingData, Collections.singletonList(expectedEvent));
+    }
+
+    @Test
+    public void index_matchesInGroupLeft_rightGroupMustMatchPass_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "grouping:matchesInGroupLeft(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2', 0)";
+
+        List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.X.Y.Z.0", "a2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2"));
+
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
+                new HashMap<>());
+        List<String> values = new ArrayList<>();
+
+        values.add("a1");
+        expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.0", values);
+        values = new ArrayList<>();
+        values.add("a2");
+        expectedEvent.getValue().put("EVENT_FIELD1.X.Y.Z.0", values);
+        values = new ArrayList<>();
+        values.add("b1");
+        expectedEvent.getValue().put("EVENT_FIELD1.C.B.C.1", values);
+        values = new ArrayList<>();
+        values.add("b2");
+        expectedEvent.getValue().put("EVENT_FIELD1.D.B.C.1", values);
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+
+        groupingNotation_test(seekRange, query, false, groupingData, Collections.singletonList(expectedEvent));
+    }
+
+    @Test
+    public void index_groupingNotationEnabled_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
+
+        List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.B.B.C.0", "a2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2"));
+
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
+                        new HashMap<>());
+        List<String> values = new ArrayList<>();
+//        values.add("a1");
+//        values.add("a2");
+//        expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.0", values);
+//        values = new ArrayList<>();
+//        values.add("b1");
+//        values.add("b2");
+//        expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.1", values);
+
+        values.add("a1");
+        expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.0", values);
+        values = new ArrayList<>();
+        values.add("a2");
+        expectedEvent.getValue().put("EVENT_FIELD1.B.B.C.0", values);
+        values = new ArrayList<>();
+        values.add("b1");
+        expectedEvent.getValue().put("EVENT_FIELD1.C.B.C.1", values);
+        values = new ArrayList<>();
+        values.add("b2");
+        expectedEvent.getValue().put("EVENT_FIELD1.D.B.C.1", values);
+
+        // values = new ArrayList<>();
+        // values.add(DEFAULT_ROW + "/" + DEFAULT_DATATYPE + "/" + "123.345.567");
+        // expectedEvent.getValue().put("RECORD_ID", values);
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+
+        groupingNotation_test(seekRange, query, false, groupingData, Collections.singletonList(expectedEvent));
+    }
+
+    @Test
+    public void index_groupingNotationDisabled_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 == 'b1' && grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
+
+        List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b1"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, 11, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b2"));
+
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
+                        new HashMap<>());
+        List<String> values = new ArrayList<>();
+        values.add("a1");
+        values.add("a2");
+        values.add("b1");
+        values.add("b2");
+        expectedEvent.getValue().put("EVENT_FIELD1", values);
+        // values = new ArrayList<>();
+        // values.add(DEFAULT_ROW + "/" + DEFAULT_DATATYPE + "/" + "123.345.567");
+        // expectedEvent.getValue().put("RECORD_ID", values);
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "false");
+
+        groupingNotation_test(seekRange, query, false, groupingData, Collections.singletonList(expectedEvent));
+    }
+
     protected void configureIterator() {
         // configure iterator
         iterator.setEvaluationFilter(filter);
@@ -1212,6 +1375,35 @@ public class QueryIteratorIT extends EasyMockSupport {
             }
         }
         hits.addAll(otherHits);
+        eval(hits);
+    }
+
+    protected void groupingNotation_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
+                    List<Map.Entry<Key,Map<String,List<String>>>> hitOverride) throws IOException {
+        // configure source
+        List<Map.Entry<Key,Value>> listSource = configureTestData(11);
+        listSource.addAll(otherData);
+
+        baseIterator = new SortedListKeyValueIterator(listSource);
+
+        configureIterator();
+
+        options.put(QUERY, query);
+
+        replayAll();
+
+        iterator.init(baseIterator, options, iterEnv);
+        iterator.seek(seekRange, Collections.emptyList(), true);
+
+        verifyAll();
+
+        List<Map.Entry<Key,Map<String,List<String>>>> hits = new ArrayList<>();
+        if (miss) {
+            hits.add(new AbstractMap.SimpleEntry<>(null, null));
+        } else {
+            hits.addAll(hitOverride);
+        }
+
         eval(hits);
     }
 
@@ -1397,12 +1589,16 @@ public class QueryIteratorIT extends EasyMockSupport {
         indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
+    protected Key getHitKey(String row, String dataType, String uid) {
+        return new Key(row, dataType + Constants.NULL + uid);
+    }
+
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String uid) {
         return getBaseExpectedEvent(DEFAULT_ROW, DEFAULT_DATATYPE, uid);
     }
 
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String row, String dataType, String uid) {
-        Key hitKey = new Key(row, dataType + Constants.NULL + uid);
+        Key hitKey = getHitKey(row, dataType, uid);
         Map<String,List<String>> expectedDocument = new HashMap<>();
         expectedDocument.put("EVENT_FIELD1", List.of("a"));
         expectedDocument.put("EVENT_FIELD2", List.of("b"));
@@ -1465,6 +1661,10 @@ public class QueryIteratorIT extends EasyMockSupport {
             assertEquals("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys, docKeys.keySet().size(),
                             docSize);
 
+            // assertEquals("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\ngot: " + d.getDictionary() + "\nexpected: " + docKeys,
+            // docKeys.keySet().size(),
+            // docSize);
+
             // validate the hit list
             assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null),
                             (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), isExpectHitTerm());
@@ -1475,6 +1675,7 @@ public class QueryIteratorIT extends EasyMockSupport {
                 if (expected.size() == 1) {
                     // verify the only doc
                     Attribute<?> docAttr = d.getDictionary().get(field);
+                    assertNotNull("missing expected field " + field, docAttr);
                     if (docAttr instanceof Attributes) {
                         // Special handling of Content attributes, typically when TermFrequencies are looked up.
                         // TFs append Content attributes which results in Attributes coming back instead of a single Attribute
@@ -1487,6 +1688,7 @@ public class QueryIteratorIT extends EasyMockSupport {
                         assertTrue(field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0), stringsMatch);
                     }
                 } else {
+                    assertNotNull("null expected field: " + field, d.getDictionary().get(field));
                     // the data should be a set, verify it matches expected
                     Object dictData = d.getDictionary().get(field).getData();
                     assertNotNull(dictData);
