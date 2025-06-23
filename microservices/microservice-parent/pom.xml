@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>4.0.3</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -19,7 +19,7 @@
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>microservices/microservice-parent-4.0.3</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <distributionManagement>
@@ -34,14 +34,14 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.release.arguments>-Ddist</maven.release.arguments>
+        <maven.release.profiles>-dist</maven.release.profiles>
         <project.artifactId>${project.artifactId}</project.artifactId>
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.version>${project.version}</project.version>
-        <maven.release.arguments>-Ddist</maven.release.arguments>
-        <maven.release.profiles>-dist</maven.release.profiles>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
