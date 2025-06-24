@@ -24,6 +24,7 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -49,6 +50,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         }
         generic.addIndexOnlyField(CityField.COUNTRY.name());
         generic.addIndexOnlyField(CityField.CODE.name());
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         FieldConfig paris = new GenericCityFields();
         paris.addIndexField(CityField.COUNTRY.name());

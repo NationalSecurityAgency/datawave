@@ -29,7 +29,6 @@ public abstract class ListType extends BaseType implements OneToManyNormalizerTy
 
             String str = normalizer.normalize(s);
             strings.add(Pair.of(str, Category.LIST_ELEMENT));
-
         }
 
         return strings;

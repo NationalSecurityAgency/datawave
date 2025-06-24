@@ -2,7 +2,9 @@ package datawave.data.type;
 
 import java.util.Collection;
 
-public interface Type<T extends Comparable<T>> extends Comparable<Type<T>> {
+import com.esotericsoftware.kryo.KryoSerializable;
+
+public interface Type<T extends Comparable<T>> extends Comparable<Type<T>>, KryoSerializable {
 
     String normalize();
 
@@ -27,6 +29,9 @@ public interface Type<T extends Comparable<T>> extends Comparable<Type<T>> {
      */
     String getDelegateAsString();
 
+    /**
+     * The primary way to set the delegate value
+     */
     void setDelegateFromString(String str);
 
     T getDelegate();

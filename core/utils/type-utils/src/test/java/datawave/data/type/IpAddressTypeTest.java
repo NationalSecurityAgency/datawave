@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import datawave.data.type.util.IpV4Address;
 
 public class IpAddressTypeTest {
-    private static Logger log = Logger.getLogger(IpAddressTypeTest.class);
+    private static final Logger log = Logger.getLogger(IpAddressTypeTest.class);
 
     @Test
     public void testIpNormalizer01() {

@@ -24,6 +24,7 @@ public class ListTypeTest {
         expected.add(Pair.of("a", Type.Category.LIST_ELEMENT));
         expected.add(Pair.of("b", Type.Category.LIST_ELEMENT));
         expected.add(Pair.of("c", Type.Category.LIST_ELEMENT));
+
         Assert.equals(expected, t.normalizeToMany(str));
     }
 
@@ -40,6 +41,7 @@ public class ListTypeTest {
         expected.add(Pair.of("a", Type.Category.LIST_ELEMENT));
         expected.add(Pair.of("b", Type.Category.LIST_ELEMENT));
         expected.add(Pair.of("c", Type.Category.LIST_ELEMENT));
+
         Assert.equals(expected, t.normalizeToMany(str));
     }
 
@@ -51,6 +53,7 @@ public class ListTypeTest {
         expected.add(Pair.of("+aE2", Type.Category.LIST_ELEMENT));
         expected.add(Pair.of("+aE3", Type.Category.LIST_ELEMENT));
         expected.add(Pair.of("+aE5.5", Type.Category.LIST_ELEMENT));
+
 
         NumberListType nt = new NumberListType();
         Assert.equals(4, nt.normalizeToMany(str).size());

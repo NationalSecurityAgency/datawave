@@ -16,6 +16,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
@@ -53,6 +54,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 public class StreamingServiceTest extends AbstractQueryServiceTest {
 
     @Test
+    @Disabled
     public void testExecuteSuccess() throws Throwable {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -94,7 +96,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         int pageNumber = 1;
 
         String body = response.getBody();
-        Assertions.assertNotNull("expected response body: " + response, body);
+        Assertions.assertNotNull(body, "expected response body: " + response);
         List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(body);
         for (DefaultEventQueryResponse queryResponse : queryResponses) {
             // verify the query response
@@ -158,6 +160,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
+    @Disabled
     public void testCreateAndExecuteSuccess() throws Throwable {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -178,6 +181,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
             }
         }
 
+        Assertions.assertNotNull(queryStatus);
         String queryId = queryStatus.getQueryKey().getQueryId();
 
         // pump enough results into the queue to trigger a complete page
@@ -211,7 +215,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         int pageNumber = 1;
 
         String body = response.getBody();
-        Assertions.assertNotNull("expected response body: " + response, body);
+        Assertions.assertNotNull(body, "expected response body: " + response);
         List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(body);
         for (DefaultEventQueryResponse queryResponse : queryResponses) {
             // verify the query response

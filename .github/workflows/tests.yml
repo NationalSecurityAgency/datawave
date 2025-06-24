@@ -54,21 +54,10 @@ jobs:
       run: |
         if [[ "${{ github.event_name }}" != "merge_group" ]]; then
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
-          git status
-          git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
-        else
-          echo "Nothing to do"
-        fi
-    - name: Commit Changes
-      run: |
-        if [[ "$diffs_found" = true && "${{ github.event_name }}" != "merge_group" ]]; then
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "datawave@github.com"
-          git fetch origin
-          git checkout ${{ steps.extract_branch.outputs.branch }}
-          git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase
-          git commit -am "GitHub Actions: Fix Formatting"
-          git push origin ${{ steps.extract_branch.outputs.branch }}
+          if ! git diff-index --quiet HEAD; then
+            echo "Code formatting issues detected. Please format locally.";
+            exit 1;
+          fi
         else
           echo "Nothing to do"
         fi
@@ -244,7 +233,7 @@ jobs:
                      -Durl.accumulo=https://bogus.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz \
                      -Durl.wildfly=https://bogus.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz \
                      -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
-                     -Durl.maven=https://bogus.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz"
+                     -Durl.maven=https://bogus.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.tar.gz"
           
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
           # free up some space so that we don't run out
