@@ -88,7 +88,7 @@ public class SplitsFile implements SplitsCache {
             }
 
         } catch (Exception e) {
-            log.error("Unable to use splits file because " + e.getMessage());
+            log.error("Unable to use splits file because {}", e.getMessage(), e);
             throw new IOException(e);
         }
     }
@@ -174,11 +174,9 @@ public class SplitsFile implements SplitsCache {
     public void validate(Configuration conf) throws IOException {
         TableSplitsCache cache = TableSplitsCache.getCurrentCache(conf);
         int daysToVerify = conf.getInt(SHARDS_BALANCED_DAYS_TO_VERIFY, 2) - 1;
-
         for (String table : conf.getStrings(ShardedDataTypeHandler.SHARDED_TNAMES)) {
             validateShardIdLocations(conf, table, daysToVerify, cache.getSplitsAndLocationByTable(table));
         }
-
     }
 
     public void validateShardIdLocations(Configuration conf, String tableName, int daysToVerify, Map<Text,String> shardIdToLocation) {
@@ -389,7 +387,7 @@ public class SplitsFile implements SplitsCache {
 
                 // if shard is assigned to more tservers than allowed, then the shards are not balanced
                 if (cnt.intValue() > maxShardsPerTserver) {
-                    log.warn(cnt.toInteger() + " Shards for " + datePrefix + " assigned to tablet " + value);
+                    log.warn("{} Shards for {} assigned to tablet {}", cnt.toInteger(), datePrefix, value);
                     dateIsBalanced = false;
                 }
 
