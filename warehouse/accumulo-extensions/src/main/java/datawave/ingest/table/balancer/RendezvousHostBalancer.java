@@ -216,7 +216,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
     /**
      * @param tabletGroupName
-     *            Mame of tablet group
+     *            Name of tablet group
      * @param tabletsInGroup
      *            List of tablets in the tablet group
      * @param tserversForGroup
