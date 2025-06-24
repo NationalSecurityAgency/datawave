@@ -75,8 +75,10 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     @Override
     public int getPartition(BulkIngestKey key, Value value, int numPartitions) {
         readCacheFilesIfNecessary();
+        holder.clear();
 
         String tableName = key.getTableName().toString();
+        key.getKey().getRow(holder);
 
         int index = splitsCache.getExactIndex(tableName, holder);
         if (index < 0) {
