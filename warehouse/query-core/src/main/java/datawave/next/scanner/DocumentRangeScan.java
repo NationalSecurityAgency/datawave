@@ -157,7 +157,7 @@ public class DocumentRangeScan implements RunnableWithContext {
 
         if (config.getRetrievalScanHintTable() != null && config.getRetrievalScanHintPool() != null) {
             Preconditions.checkArgument(tableName.equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
-            scanner.setExecutionHints(Map.of(config.getRetrievalScanHintTable(), config.getRetrievalScanHintPool()));
+            scanner.setExecutionHints(Map.of("scan_type", config.getRetrievalScanHintPool()));
         }
 
         if (config.getSearchConsistencyLevel() != null) {

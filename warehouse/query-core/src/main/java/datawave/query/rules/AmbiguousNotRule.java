@@ -1,10 +1,8 @@
 package datawave.query.rules;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
@@ -61,26 +59,21 @@ public class AmbiguousNotRule extends ShardQueryRule {
         StringBuilder sb = new StringBuilder();
         sb.append("Ambiguous usage of NOT detected with multiple unwrapped preceding terms: ");
 
-        String precedingTerms = getPrecedingTerms(node);
+        String lastPrecedingTerm = getLastPrecedingTerm(node);
+
         // @formatter:off
-        return sb.append("\"")
-                        .append(precedingTerms)
-                        .append(" NOT\" should be \"(")
-                        .append(precedingTerms)
-                        .append(") NOT\".")
+        return sb.append("the NOT clause will only be applied to \"")
+                        .append(lastPrecedingTerm)
+                        .append("\".")
                         .toString();
         // @formatter:on
     }
 
-    // Return the terms preceding the NOT in the given node as a nicely formatted query string.
-    private String getPrecedingTerms(NotBooleanQueryNode node) {
+    // Return the last term preceding the NOT in the given, in query format.
+    private String getLastPrecedingTerm(NotBooleanQueryNode node) {
         QueryNode junctionNode = node.getChildren().get(0);
-        String junction = junctionNode instanceof AndQueryNode ? " AND " : " OR ";
-        // @formatter:off
-        return junctionNode.getChildren().stream()
-                        .map(LuceneQueryStringBuildingVisitor::build)
-                        .collect(Collectors.joining(junction));
-        // @formatter:on
+        List<QueryNode> children = junctionNode.getChildren();
+        QueryNode lastChild = children.get(children.size() - 1);
+        return LuceneQueryStringBuildingVisitor.build(lastChild);
     }
-
 }

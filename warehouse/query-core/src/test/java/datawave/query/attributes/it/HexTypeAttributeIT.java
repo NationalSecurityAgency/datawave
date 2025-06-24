@@ -59,8 +59,9 @@ public class HexTypeAttributeIT extends TypeAttributeIT {
         // serializing full type name: 49
         // serializing type name index: 18
         // post kryo optimization: 24
-        verifyKryoPreservesValue(createNormalizedAttribute(), 24);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 24);
+        // serialize hash code: 29
+        verifyKryoPreservesValue(createNormalizedAttribute(), 29);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 29);
     }
 
     @Test
