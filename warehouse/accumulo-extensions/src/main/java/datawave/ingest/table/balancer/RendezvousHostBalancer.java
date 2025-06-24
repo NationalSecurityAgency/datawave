@@ -107,7 +107,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         Map<String,List<TabletId>> tabletsToAssign = groupTablets(lastLocations.keySet());
         Map<String,List<TabletId>> allTabletsGrouped = groupTablets(allLocations.keySet(), tabletsToAssign::containsKey);
 
-        Function<String,Map<String,List<TabletServerId>>> tabletServerParitioner = getServerPartitioner(currentTservers.keySet());
+        Function<String,Map<String,List<TabletServerId>>> tabletServerPartitioner = getServerPartitioner(currentTservers.keySet());
 
         tabletsToAssign.forEach((tabletGroup, tablets) -> {
             Map<String,List<TabletServerId>> tserversForGroup = tabletServerParitioner.apply(tabletGroup);
