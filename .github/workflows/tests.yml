@@ -229,7 +229,7 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           # set some bogus URLs to trigger dependency download via maven
-          DIST_URLS="-Durl.zookeeper=https://bogus.apache.org/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz.tar.gz \
+          DIST_URLS="-Durl.zookeeper=https://bogus.apache.org/zookeeper/zookeeper-3.8.4/apache-zookeeper-3.8.4-bin.tar.gz.tar.gz \
                      -Durl.accumulo=https://bogus.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz \
                      -Durl.wildfly=https://bogus.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz \
                      -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
