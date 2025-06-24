@@ -12,12 +12,12 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.DataTypeOverrideHelper;
 import datawave.ingest.data.config.filter.KeyValueFilter;
@@ -28,7 +28,7 @@ import datawave.util.StringUtils;
 
 public class TypeRegistry extends HashMap<String,Type> {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(TypeRegistry.class);
+    private static final Logger log = LoggerFactory.getLogger(TypeRegistry.class);
 
     public static final String ALL_PREFIX = "all";
 
@@ -73,7 +73,7 @@ public class TypeRegistry extends HashMap<String,Type> {
     }
 
     /**
-     * Helps determine whether or not the registry instance has been instantiated.
+     * Helps determine whether the registry instance has been instantiated.
      *
      * @return true if the registry exists, false otherwise
      */
@@ -189,13 +189,13 @@ public class TypeRegistry extends HashMap<String,Type> {
             try {
                 helperClassName = ConfigurationHelper.isNull(config, typeName + INGEST_HELPER, String.class);
             } catch (IllegalArgumentException e) {
-                log.debug("No helper class defined for type: " + typeName);
+                log.debug("No helper class defined for type: {}", typeName);
             }
             String readerClassName = null;
             try {
                 readerClassName = ConfigurationHelper.isNull(config, typeName + RAW_READER, String.class);
             } catch (IllegalArgumentException e) {
-                log.debug("No reader class defined for type: " + typeName);
+                log.debug("No reader class defined for type: {}", typeName);
             }
             String[] handlerClassNames = null;
             try {
@@ -207,7 +207,7 @@ public class TypeRegistry extends HashMap<String,Type> {
                                 .asList(StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config, EXCLUDED_HANDLER_CLASSES, String[].class)));
                 handlerClassNames = getClassnamesWithoutExclusions(handlerClassNames, exclusions);
             } catch (IllegalArgumentException e) {
-                log.debug("No handler classes defined for type: " + typeName);
+                log.debug("No handler classes defined for type: {}", typeName);
             }
 
             String[] filterClassNames = null;
@@ -217,7 +217,7 @@ public class TypeRegistry extends HashMap<String,Type> {
                                 StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config, typeName + FILTER_CLASSES, String[].class)));
                 filterPriority = config.getInt(typeName + FILTER_PRIORITY, Integer.MAX_VALUE);
             } catch (IllegalArgumentException e) {
-                log.debug("No filter classes defined for type: " + typeName);
+                log.debug("No filter classes defined for type: {}", typeName);
             }
 
             String outputName = config.get(typeName + OUTPUT_NAME, typeName);
@@ -236,27 +236,27 @@ public class TypeRegistry extends HashMap<String,Type> {
                     // performing `configurationKey.split(".")[0]`. Using a period inside datatype name muddies later code
                     // due to the manner than Hadoop Configurations operate.
                     if (typeName.indexOf('.') != -1) {
-                        log.error("Datatypes ('" + INGEST_DATA_TYPES + "') cannot contain a period. Offending datatype: '" + typeName + "'");
+                        log.error("Datatypes ( {} ) cannot contain a period. Offending datatype: {}", INGEST_DATA_TYPES, typeName);
                         throw new IllegalArgumentException(
                                         "Datatypes ('" + INGEST_DATA_TYPES + "') cannot contain a period. Offending datatype: '" + typeName + "'");
                     }
 
                     Type t = new Type(typeName, outputName, helperClass, readerClass, handlerClassNames, filterPriority, filterClassNames);
-                    log.debug("Registered type " + t);
+                    log.debug("Registered type {}", t);
                     this.put(typeName, t);
 
                     if (null != config.get(typeName + DataTypeOverrideHelper.Properties.DATA_TYPE_VALUES)) {
                         for (String type : config.getStrings(typeName + DataTypeOverrideHelper.Properties.DATA_TYPE_VALUES)) {
                             outputName = config.get(type + OUTPUT_NAME, outputName);
                             t = new Type(type, outputName, helperClass, readerClass, handlerClassNames, filterPriority, filterClassNames);
-                            log.debug("Registered child type:" + type);
+                            log.debug("Registered child type: {}", type);
                             this.put(type, t);
                         }
                     }
                 }
 
             } catch (ClassNotFoundException cnfe) {
-                log.error("Unable to create supporting class for type " + typeName, cnfe);
+                log.error("Unable to create supporting class for type {}", typeName, cnfe);
             }
 
         }
@@ -273,7 +273,7 @@ public class TypeRegistry extends HashMap<String,Type> {
     }
 
     private Set<String> getAllPossibleNames(Configuration config) {
-        // Loop through the all of the property names in the configuration
+        // Loop through the property names in the configuration
         // and extract parts of the property name up to the first period and second periods
         Set<String> names = new HashSet<>();
         for (Map.Entry<String,String> entry : config) {

@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -18,7 +19,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 public abstract class AbstractNormalizer implements TextNormalizer {
     private static final String FAILED_TO_NORMALIZE = "Failed to normalize ";
-    private static final Logger log = Logger.getLogger(AbstractNormalizer.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractNormalizer.class);
 
     @Override
     public void setup(Type type, String instance, Configuration config) {}
@@ -34,7 +35,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      *            configuration to use
      * @param normalizerClass
      *            the normalizerClass to set up
-     * @return An configured instance of the normalizerClass
+     * @return A configured instance of the normalizerClass
      */
     public static TextNormalizer createNormalizer(Type type, String instance, Configuration config, String normalizerClass) {
         Class<?> c;
@@ -51,7 +52,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
             throw new IllegalArgumentException("Error creating instance of class " + normalizerClass + ':' + e.getLocalizedMessage(), e);
         }
         if (o instanceof TextNormalizer) {
-            // setup the normalizer
+            // set up the normalizer
             ((TextNormalizer) o).setup(type, instance, config);
         } else {
             throw new IllegalArgumentException(normalizerClass + " is not an instance of " + TextNormalizer.class.getName());

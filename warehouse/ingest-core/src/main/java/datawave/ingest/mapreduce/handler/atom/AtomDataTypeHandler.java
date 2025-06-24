@@ -13,7 +13,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Multimap;
@@ -42,7 +43,7 @@ import datawave.util.TextUtil;
  */
 public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
 
-    private static final Logger log = Logger.getLogger(AtomDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(AtomDataTypeHandler.class);
 
     public static final String ATOM_TYPE = "atom";
     public static final String ATOM_TABLE_NAME = ATOM_TYPE + ".table.name";

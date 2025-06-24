@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -16,7 +17,7 @@ import datawave.ingest.data.config.FieldConfigHelper;
  */
 public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelper {
 
-    private static final Logger log = Logger.getLogger(ContentBaseIngestHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentBaseIngestHelper.class);
 
     private final Set<String> contentIndexAllowlist = new HashSet<>();
     private final Set<String> contentReverseIndexAllowlist = new HashSet<>();
@@ -107,8 +108,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
                             : rawDocumentViewName;
             if (log.isTraceEnabled()) {
                 log.trace("saveRawDataOption was true");
-                log.trace("getType().typeName()+RAW_DOCUMENT_VIEW_NAME: " + getType().typeName() + RAW_DOCUMENT_VIEW_NAME);
-                log.trace("config.get(getType().typeName()+RAW_DOCUMENT_VIEW_NAME): " + config.get(getType().typeName() + RAW_DOCUMENT_VIEW_NAME));
+                log.trace("getType().typeName()+RAW_DOCUMENT_VIEW_NAME: {}", getType().typeName() + RAW_DOCUMENT_VIEW_NAME);
+                log.trace("config.get(getType().typeName()+RAW_DOCUMENT_VIEW_NAME): {}", config.get(getType().typeName() + RAW_DOCUMENT_VIEW_NAME));
             }
         }
     }

@@ -2781,6 +2781,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.lookupUUIDConfiguration.getUuidTypes()).andReturn(null);
         expect(this.lookupUUIDConfiguration.getBeginDate()).andReturn("not a date");
         expect(this.lookupUUIDConfiguration.getBatchLookupUpperLimit()).andReturn(0);
+        expect(this.lookupUUIDConfiguration.getTagCloudLookupUpperLimit()).andReturn(0);
         expect(this.lookupUUIDConfiguration.getContentLookupTypes()).andReturn(Collections.emptyMap());
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         LookupUUIDConfiguration tmpCfg = new LookupUUIDConfiguration();

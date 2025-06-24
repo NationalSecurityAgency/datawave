@@ -10,7 +10,8 @@ import org.apache.commons.collections4.Unmodifiable;
 import org.apache.commons.collections4.keyvalue.AbstractMapEntry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -46,8 +47,9 @@ import datawave.ingest.data.config.NormalizedContentInterface;
  */
 public class IngestFieldFilter {
 
-    private static final Logger logger = Logger.getLogger(IngestFieldFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(IngestFieldFilter.class);
     private static final long serialVersionUID = 8288835090777714924L;
+
     @Deprecated
     public static final String FILTER_FIELD_SUFFIX = ".data.field.filter";
 
@@ -75,10 +77,10 @@ public class IngestFieldFilter {
         fieldNameFilters = new FieldConfiguration();
         fieldNameFilters.load(conf.get(dataType.typeName() + FILTER_FIELD_SUFFIX), false);
         fieldNameFilters.load(conf.get(dataType.typeName() + FILTER_FIELD_NAME_SUFFIX), false);
-        logger.info("Field Name Filters for " + dataType.typeName() + ": " + fieldNameFilters);
+        logger.info("Field Name Filters for {}: {}", dataType.typeName(), fieldNameFilters);
 
         fieldValueFilters = new FieldConfiguration(conf.get(dataType.typeName() + FILTER_FIELD_VALUE_SUFFIX), true);
-        logger.info("Field Value Filters for " + dataType.typeName() + ": " + fieldValueFilters);
+        logger.info("Field Value Filters for {}: {}", dataType.typeName(), fieldValueFilters);
     }
 
     /**
@@ -92,7 +94,7 @@ public class IngestFieldFilter {
         for (FieldFilter filter : fieldNameFilters) {
             if (fields.keySet().containsAll(filter.getKeepFields())) {
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Removing " + filter.getDropFields() + " because " + filter.getKeepFields() + " exists in event");
+                    logger.trace("Removing {} because {} exists in event", filter.getDropFields(), filter.getKeepFields());
                 }
                 fields.keySet().removeAll(filter.getDropFields());
             }
@@ -103,9 +105,7 @@ public class IngestFieldFilter {
                 for (List<FieldValue> keepValues : gatherValueLists(fields, filter.getKeepFields(), -1, null)) {
                     for (List<FieldValue> toRemoveValues : gatherValueLists(fields, filter.getDropFields(), -1, null)) {
                         if (equalValues(keepValues, toRemoveValues)) {
-                            if (logger.isTraceEnabled()) {
-                                logger.trace("Removing " + toRemoveValues + " because " + keepValues + " exists in event");
-                            }
+                            logger.trace("Removing {} because {} exists in event", toRemoveValues, keepValues);
                             for (FieldValue toRemoveValue : toRemoveValues) {
                                 fields.remove(toRemoveValue.getKey(), toRemoveValue.getValue());
                             }
@@ -266,7 +266,7 @@ public class IngestFieldFilter {
         }
 
         /**
-         * Determine if the raw value in this matches the raw value in another
+         * Determine if the raw value in this, matches the raw value in another
          *
          * @param other
          *            the field value to check
