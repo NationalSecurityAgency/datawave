@@ -117,7 +117,7 @@ jobs:
         git config user.name "github-actions[bot]"
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml \
         --batch-mode release:prepare release:perform \
-        -Dmaven.release.arguments="-Ddocker.image.prefix=ghcr.io/nationalsecurityagency/ -DpushChanges=true \
+        -Dmaven.release.arguments="-Ddocker.image.prefix=ghcr.io/nationalsecurityagency/datawave/ -DpushChanges=true \
         -DskipTests -DskipFormat -DskipSpotbugs \
         -Denforcer.skip=true -Dcheckstyle.skip=true \
         -Ddocker-release -Dmicroservice-docker" \
