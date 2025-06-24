@@ -18,6 +18,8 @@ public interface SplitsCache extends AutoCloseable {
 
     boolean hasSplits();
 
+    int getSplitsCount(String table);
+
     int getExactIndex(String table, Text key);
 
     int getExactPartition(String table, Text key);

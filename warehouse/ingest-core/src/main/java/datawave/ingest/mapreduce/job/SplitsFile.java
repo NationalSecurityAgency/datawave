@@ -108,6 +108,18 @@ public class SplitsFile implements SplitsCache {
     }
 
     @Override
+    public int getSplitsCount(String table) {
+        int count = 0;
+        try {
+            List<Text> splits = instance.getSplits(table);
+            count = splits == null ? -1 : splits.size();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return count;
+    }
+
+    @Override
     public String getExactLocation(String table, Text key, Supplier<String> defaultFn) {
         String location;
         try {

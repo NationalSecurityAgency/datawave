@@ -85,7 +85,12 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
             return (tableName.hashCode() & Integer.MAX_VALUE) % numPartitions;
         }
 
-        index = calculateIndex(index, numPartitions, tableName, 0);
+        int splitSize = splitsCache.getSplitsCount(tableName);
+
+        // Note that cut-point length may be used by derived classes
+        // even though its not used below
+        index = calculateIndex(index, numPartitions, tableName, splitSize);
+
         index = partitionLimiter.limit(numPartitions, index);
 
         TaskInputOutputContext<?,?,?,?> c = context;
