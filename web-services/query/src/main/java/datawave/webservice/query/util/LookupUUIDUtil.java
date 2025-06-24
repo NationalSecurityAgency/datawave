@@ -773,49 +773,53 @@ public class LookupUUIDUtil {
 
         BaseQueryResponse lastResponse = null;
 
-        do {
-            try {
-                // Get the first/next results
-                BaseQueryResponse response = this.queryExecutor.next(keywordQueryId);
-                lastResponse = response;
+        try {
+            do {
+                try {
+                    // Get the first/next results
+                    BaseQueryResponse response = this.queryExecutor.next(keywordQueryId);
+                    lastResponse = response;
 
-                if (TagCloudResponseBase.class.isAssignableFrom(response.getClass())) {
-                    // merge tag cloud responses
-                    final TagCloudResponseBase tagCloudResponse = (TagCloudResponseBase) response;
-                    if (mergedResponse == null) {
-                        mergedResponse = tagCloudResponse;
+                    if (TagCloudResponseBase.class.isAssignableFrom(response.getClass())) {
+                        // merge tag cloud responses
+                        final TagCloudResponseBase tagCloudResponse = (TagCloudResponseBase) response;
+                        if (mergedResponse == null) {
+                            mergedResponse = tagCloudResponse;
+                        } else {
+                            final String queryId = mergedResponse.getQueryId();
+                            mergedResponse.merge(tagCloudResponse);
+                            mergedResponse.setQueryId(queryId);
+                        }
                     } else {
-                        final String queryId = mergedResponse.getQueryId();
-                        mergedResponse.merge(tagCloudResponse);
-                        mergedResponse.setQueryId(queryId);
+                        final EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
+                        er.addMessage("Unhandled response type " + response + " from KeywordQuery");
+                        throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS,
+                                        "Expected " + TagCloudResponseBase.class + " but got " + response.getClass()), er);
                     }
-                } else {
-                    final EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
-                    er.addMessage("Unhandled response type " + response + " from KeywordQuery");
-                    throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS,
-                                    "Expected " + TagCloudResponseBase.class + " but got " + response.getClass()), er);
-                }
-            } catch (final NoResultsException e) {
-                lastResponse = null;
-                noResultsException = e;
-            } catch (final EJBException e) {
-                // This used to be the case. Don't know when the executor started
-                // directly throwing a NoResultsException, but this is kept just
-                // in case.
-                final Throwable cause = e.getCause();
-                if (cause instanceof DatawaveWebApplicationException) {
-                    DatawaveWebApplicationException nwae = (DatawaveWebApplicationException) cause;
-                    if (nwae instanceof NoResultsException) {
-                        lastResponse = null;
-                        noResultsException = nwae;
-                    } else {
-                        throw nwae;
+                } catch (final NoResultsException e) {
+                    lastResponse = null;
+                    noResultsException = e;
+                } catch (final EJBException e) {
+                    // This used to be the case. Don't know when the executor started
+                    // directly throwing a NoResultsException, but this is kept just
+                    // in case.
+                    final Throwable cause = e.getCause();
+                    if (cause instanceof DatawaveWebApplicationException) {
+                        DatawaveWebApplicationException nwae = (DatawaveWebApplicationException) cause;
+                        if (nwae instanceof NoResultsException) {
+                            lastResponse = null;
+                            noResultsException = nwae;
+                        } else {
+                            throw nwae;
+                        }
                     }
                 }
             }
+            // Loop if more results are available
+            while (lastResponse != null);
+        } finally {
+            this.queryExecutor.close(keywordQueryId);
         }
-        // Loop if more results are available
-        while (lastResponse != null);
 
         // Conditionally throw a NoResultsException
         if (mergedResponse == null && noResultsException != null) {
