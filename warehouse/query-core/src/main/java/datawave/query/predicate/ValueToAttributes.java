@@ -35,31 +35,64 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
 
 /**
- *
- * Unused. It was written to put Composite Fields into fetched documents. It is preserved in case we change the way composite fields are managed
- *
- *
+ * This class is the only way that composite fields get create.
+ * <p>
+ * It was written to put Composite Fields into fetched documents. It is preserved in case we change the way composite fields are managed
  */
 public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> {
     private static final Logger log = Logger.getLogger(ValueToAttributes.class);
 
     private final Text holder = new Text();
 
-    private AttributeFactory attrFactory;
+    private final AttributeFactory attrFactory;
 
     private Map<String,Multimap<String,String>> compositeToFieldMap;
     private Map<String,Map<String,String>> compositeFieldSeparatorsByType;
-    private MarkingFunctions markingFunctions;
-    private Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
+    private final MarkingFunctions markingFunctions;
+    private final Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
 
-    private EventDataQueryFilter attrFilter;
+    private final EventDataQueryFilter attrFilter;
 
     // Whether the value is from the index
     private final boolean fromIndex;
 
+    /**
+     * Constructor that accepts raw components
+     *
+     * @param compositeMetadata
+     *            the composite metadata
+     * @param typeMetadata
+     *            the type metadata
+     * @param attrFilter
+     *            the attribute filter
+     * @param markingFunctions
+     *            the marking functions
+     * @param fromIndex
+     *            flag denoting if this class is operating on values from the field index
+     */
     public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions,
                     boolean fromIndex) {
-        this.attrFactory = new AttributeFactory(typeMetadata);
+        // in Java 25 we can create the attribute factory first
+        this(new AttributeFactory(typeMetadata), compositeMetadata, attrFilter, markingFunctions, fromIndex);
+    }
+
+    /**
+     * Constructor that accepts a pre-built AttributeFactory. Should only be used if the attribute factory is not shared between threads
+     *
+     * @param attributeFactory
+     *            the attribute factory
+     * @param compositeMetadata
+     *            the composite metadata
+     * @param attrFilter
+     *            the attribute filter
+     * @param markingFunctions
+     *            the marking functions
+     * @param fromIndex
+     *            flag denoting if this class is operating on values from the field index
+     */
+    public ValueToAttributes(AttributeFactory attributeFactory, CompositeMetadata compositeMetadata, EventDataQueryFilter attrFilter,
+                    MarkingFunctions markingFunctions, boolean fromIndex) {
+        this.attrFactory = attributeFactory;
         this.markingFunctions = markingFunctions;
         this.attrFilter = attrFilter;
         if (compositeMetadata != null) {
@@ -67,6 +100,13 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             this.compositeFieldSeparatorsByType = compositeMetadata.getCompositeFieldSeparatorsByType();
         }
         this.fromIndex = fromIndex;
+    }
+
+    /**
+     * Allows this object to be reused
+     */
+    public void resetState() {
+        componentFieldToValues.clear();
     }
 
     @Override

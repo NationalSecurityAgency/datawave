@@ -4,15 +4,15 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.1</version>
+        <version>4.0.3</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>modification-api</artifactId>
     <version>1.0.1-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-modification-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
