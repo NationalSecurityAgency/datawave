@@ -27,7 +27,7 @@
         <version.hadoop.tar.gz>3.3.6</version.hadoop.tar.gz>
         <version.maven.tar.gz>3.9.10</version.maven.tar.gz>
         <version.wildfly.tar.gz>17.0.1</version.wildfly.tar.gz>
-        <version.zookeeper.tar.gz>3.7.2</version.zookeeper.tar.gz>
+        <version.zookeeper.tar.gz>3.8.4</version.zookeeper.tar.gz>
     </properties>
     <dependencies>
         <dependency>
