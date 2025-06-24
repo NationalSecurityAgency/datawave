@@ -1,13 +1,12 @@
 package datawave.ingest.mapreduce.job;
 
-import static datawave.ingest.mapreduce.job.SplitsConstants.DEFAULT_SPLITS_CACHE_IMPL;
-import static datawave.ingest.mapreduce.job.SplitsConstants.SPLITS_CACHE_IMPL;
-
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.hadoop.conf.Configuration;
 
 public class SplitsCacheFactory {
+    public static final String SPLITS_CACHE_IMPL = "datawave.ingest.splits.cache.impl";
+
     static volatile SplitsCache INSTANCE;
 
     public static SplitsCache getSplitsCache(final Configuration conf) {
@@ -15,9 +14,9 @@ public class SplitsCacheFactory {
             synchronized (SplitsCacheFactory.class) {
                 if (INSTANCE == null) {
                     try {
-                        final String splitsCacheImpl = conf.get(SPLITS_CACHE_IMPL, DEFAULT_SPLITS_CACHE_IMPL);
+                        String splitsCacheImpl = conf.get(SPLITS_CACHE_IMPL);
                         // noinspection unchecked
-                        final Class<? extends SplitsCache> clazz = (Class<? extends SplitsCache>) Class.forName(splitsCacheImpl);
+                        Class<? extends SplitsCache> clazz = splitsCacheImpl != null ? (Class<? extends SplitsCache>) Class.forName(splitsCacheImpl) : SplitsFile.class;
                         INSTANCE = clazz.getDeclaredConstructor().newInstance();
                         INSTANCE.init(conf);
                     } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
