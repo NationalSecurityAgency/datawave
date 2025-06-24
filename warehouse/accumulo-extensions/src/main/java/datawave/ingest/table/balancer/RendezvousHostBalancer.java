@@ -159,7 +159,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
         Map<String,List<TabletId>> tabletsPerGroup = groupTablets(allLocations.keySet());
 
-        Function<String,Map<String,List<TabletServerId>>> tabletServerParitioner = getServerPartitioner(balanceParameters.currentStatus().keySet());
+        Function<String,Map<String,List<TabletServerId>>> tabletServerPartitioner = getServerPartitioner(balanceParameters.currentStatus().keySet());
 
         // read once so a consistent max is used for the entire balance call
         final int maxMigrations = getMaxMigrations();
