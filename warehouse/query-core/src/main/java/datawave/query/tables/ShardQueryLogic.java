@@ -61,7 +61,6 @@ import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
-import datawave.next.SimpleQueryVisitor;
 import datawave.next.scanner.DocumentScannerConfig;
 import datawave.next.scanner.DocumentScheduler;
 import datawave.query.CloseableIterable;
@@ -1369,14 +1368,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             QueryPlanner queryPlanner = getQueryPlanner();
             if (planner instanceof DefaultQueryPlanner) {
                 DefaultQueryPlanner dqp = (DefaultQueryPlanner) queryPlanner;
-                boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
-                if (simple) {
-                    DocumentScheduler documentScheduler = new DocumentScheduler(config);
-                    documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
-                    return documentScheduler;
-                } else {
-                    log.warn("Query was not simple: " + simple + " or scheduler config was null:" + (config.getDocumentScannerConfig() == null));
-                }
+                DocumentScheduler documentScheduler = new DocumentScheduler(config);
+                documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
+                return documentScheduler;
             }
         }
 

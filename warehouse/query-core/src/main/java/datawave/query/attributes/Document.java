@@ -37,6 +37,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.cache.ClassCache;
 import datawave.util.time.DateHelper;
 
 public class Document extends AttributeBag<Document> implements Serializable {
@@ -45,6 +46,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private static final Logger log = Logger.getLogger(Document.class);
 
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
+
+    private static final ClassCache classCache = new ClassCache();
 
     private int _count = 0;
     long _bytes = 0;
@@ -804,7 +807,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
             // Get the Class for the name of the class of the concrete Attribute
             try {
-                clz = Class.forName(attrClassName);
+                clz = classCache.get(attrClassName);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
