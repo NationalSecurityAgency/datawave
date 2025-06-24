@@ -22,14 +22,15 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.util.TableName;
+import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MultiTableRRRangePartitionerTest {
 
@@ -45,7 +46,7 @@ public class MultiTableRRRangePartitionerTest {
     Configuration configuration;
     Job mockJob;
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         mockJob = new Job();
         configuration = mockJob.getConfiguration();
@@ -73,21 +74,21 @@ public class MultiTableRRRangePartitionerTest {
         int resultFour = instance.calculateIndex(indexFour, numPartitions, tableName, cutPointArrayLength);
         assertEquals(result, resultTwo);
         assertEquals(result, expectedResult);
-        Assert.assertEquals(4, resultThree);
-        Assert.assertEquals(0, resultFour);
+        Assertions.assertEquals(4, resultThree);
+        Assertions.assertEquals(0, resultFour);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
         String filename = "full_empty_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
         configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
         configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
-        getPartition("23432");
+        Assertions.assertThrows(RuntimeException.class, () -> getPartition("23432"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testProblemGettingLocalCacheFiles() throws IOException, URISyntaxException {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
@@ -102,7 +103,7 @@ public class MultiTableRRRangePartitionerTest {
             }
         });
 
-        getPartition("23432");
+        Assertions.assertThrows(RuntimeException.class, () -> getPartition("23432"));
     }
 
     private URL createUrl(String fileName) {
@@ -157,8 +158,8 @@ public class MultiTableRRRangePartitionerTest {
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
         for (int i = -1 * cutPointArrayLength - 1; i < cutPointArrayLength; i++) {
             int result = partitioner.calculateIndex(i, numPartitions, "someTableName", cutPointArrayLength);
-            Assert.assertTrue("i: " + i + " result: " + result, 0 <= result);
-            Assert.assertTrue("i: " + i + " result: " + result, result < numPartitions);
+            Assertions.assertTrue(0 <= result, "i: " + i + " result: " + result);
+            Assertions.assertTrue(result < numPartitions, "i: " + i + " result: " + result);
         }
     }
 
@@ -179,15 +180,15 @@ public class MultiTableRRRangePartitionerTest {
         for (int i = 0; i < numSplits; i++) {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int result = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
-            Assert.assertTrue("rowStr: " + rowStr + " partition: " + result, numPartitions - numSplits - 1 <= result);
-            Assert.assertTrue("rowStr: " + rowStr + " partition: " + result, result < numPartitions);
+            Assertions.assertTrue(numPartitions - numSplits - 1 <= result, "rowStr: " + rowStr + " partition: " + result);
+            Assertions.assertTrue(result < numPartitions, "rowStr: " + rowStr + " partition: " + result);
         }
 
         // test rows before and after each split
         for (int i = -1; i < numSplits + 1; i++) {
             int result = partitioner.getPartition(getBulkIngestKey(Character.toString((char) ("a".codePointAt(0) + i)) + "_"), new Value(), numPartitions);
-            Assert.assertTrue("i: " + i + " partition: " + result, numPartitions - numSplits - 1 <= result);
-            Assert.assertTrue("i: " + i + " partition: " + result, result < numPartitions);
+            Assertions.assertTrue(numPartitions - numSplits - 1 <= result, "i: " + i + " partition: " + result);
+            Assertions.assertTrue(result < numPartitions, "i: " + i + " partition: " + result);
         }
     }
 
@@ -200,12 +201,11 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        Assert.assertEquals(
-                        "Should have seen a total of 27 different partitions.  There is a split for each letter of the alphabet and the null split which is not in the file",
-                        27, numberTimesPartitionSeen.size());
+        Assertions.assertEquals(27, numberTimesPartitionSeen.size(),
+                        "Should have seen a total of 27 different partitions.  There is a split for each letter of the alphabet and the null split which is not in the file");
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            Assert.assertEquals("We haven't used the partition space so they should all be even, but partition " + partitionAndNumSeen.getKey().intValue()
-                            + " did not see 2.", 2, partitionAndNumSeen.getValue().intValue());
+            Assertions.assertEquals(2, partitionAndNumSeen.getValue().intValue(), "We haven't used the partition space so they should all be even, but partition " + partitionAndNumSeen.getKey().intValue()
+                + " did not see 2.");
         }
     }
 
@@ -218,15 +218,15 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        Assert.assertEquals("Should have seen a total of 10 different partitions given the small reducer space", 10, numberTimesPartitionSeen.size());
+        Assertions.assertEquals(10, numberTimesPartitionSeen.size(), "Should have seen a total of 10 different partitions given the small reducer space");
         System.out.println(numberTimesPartitionSeen);
         // we partitioned 27 splits
         // over a space of 10 partitioners
         // so each partitioners should have 2 splits or 3 splits assigned to it
         // we partitioned two rows per split, so each partition should have seen 4 or 6 rows
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            Assert.assertTrue(partitionAndNumSeen.toString(), 4 <= partitionAndNumSeen.getValue().intValue());
-            Assert.assertTrue(partitionAndNumSeen.toString(), partitionAndNumSeen.getValue().intValue() <= 6);
+            Assertions.assertTrue(4 <= partitionAndNumSeen.getValue().intValue(), partitionAndNumSeen.toString());
+            Assertions.assertTrue(partitionAndNumSeen.getValue().intValue() <= 6, partitionAndNumSeen.toString());
         }
     }
 
@@ -241,7 +241,7 @@ public class MultiTableRRRangePartitionerTest {
             String row = Character.toString((char) ("a".codePointAt(0) + i));
             partitionsFound.add(partitioner.getPartition(getBulkIngestKey(row), new Value(), numPartitions));
         }
-        Assert.assertEquals(10, partitionsFound.size());
+        Assertions.assertEquals(10, partitionsFound.size());
 
         // k - t go to different partitions
         partitionsFound.clear();
@@ -249,7 +249,7 @@ public class MultiTableRRRangePartitionerTest {
             String row = Character.toString((char) ("a".codePointAt(0) + i));
             partitionsFound.add(partitioner.getPartition(getBulkIngestKey(row), new Value(), numPartitions));
         }
-        Assert.assertEquals(10, partitionsFound.size());
+        Assertions.assertEquals(10, partitionsFound.size());
     }
 
     @Test
