@@ -27,7 +27,6 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.util.TableName;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -145,8 +144,7 @@ public class MultiTableRRRangePartitionerTest {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int resultRow = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
 
-            Assert.assertEquals("These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow, resultRow,
-                            resultForPrecedingRow);
+            Assertions.assertEquals(resultRow, resultForPrecedingRow, "These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow);
         }
     }
 
@@ -264,7 +262,7 @@ public class MultiTableRRRangePartitionerTest {
         int previousCount = 0;
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
             int currentCount = partitionAndNumSeen.getValue().intValue();
-            Assert.assertTrue(partitionAndNumSeen.toString(), previousCount <= currentCount);
+            Assertions.assertTrue(previousCount <= currentCount, partitionAndNumSeen.toString());
             previousCount = currentCount;
         }
     }
