@@ -182,6 +182,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     @Override
     public void write(Kryo kryo, Output output) {
         writeMetadata(kryo, output);
+        output.writeString(this.value.toString());
         output.writeString(this.normalizedValue);
         output.writeBoolean(this.toKeep);
     }
@@ -190,8 +191,9 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
         String stringValue = input.readString();
-        setValue(stringValue);
-        setNormalizedValue(stringValue);
+        String normalizedValue = input.readString();
+        this.value = NumberUtils.createNumber(stringValue);
+        this.normalizedValue = normalizedValue;
         this.toKeep = input.readBoolean();
         validate();
     }
