@@ -34,6 +34,8 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.release.arguments>-Ddist</maven.release.arguments>
+        <maven.release.profiles>dist</maven.release.profiles>
         <project.artifactId>${project.artifactId}</project.artifactId>
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -413,8 +415,8 @@
                     <version>3.1.1</version>
                     <configuration>
                         <tagNameFormat>@{project.version}</tagNameFormat>
-                        <releaseProfiles>dist</releaseProfiles>
-                        <arguments>-Ddist</arguments>
+                        <releaseProfiles>${maven.release.profiles}</releaseProfiles>
+                        <arguments>${maven.release.arguments}</arguments>
                     </configuration>
                 </plugin>
                 <plugin>
