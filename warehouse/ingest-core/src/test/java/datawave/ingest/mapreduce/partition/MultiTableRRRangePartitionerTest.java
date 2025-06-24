@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -52,8 +53,8 @@ public class MultiTableRRRangePartitionerTest {
         configuration.set("job.output.table.names", TableName.SHARD);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
 
-        TableSplitsCache.getCurrentCache(configuration).clear();
-
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
     }
 
     @Test

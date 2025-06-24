@@ -27,4 +27,8 @@ public class SplitsCacheFactory {
         }
         return INSTANCE;
     }
+
+    public static void clearInstance() {
+        INSTANCE = null;
+    }
 }

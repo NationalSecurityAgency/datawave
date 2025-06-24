@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Assert;
@@ -33,7 +34,8 @@ public class TabletLocationHashPartitionerTest {
         conf = new Configuration();
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
 
-        TableSplitsCache.getCurrentCache(conf).clear();
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
 
         partitioner = new TabletLocationHashPartitioner();
         partitioner.setConf(conf);

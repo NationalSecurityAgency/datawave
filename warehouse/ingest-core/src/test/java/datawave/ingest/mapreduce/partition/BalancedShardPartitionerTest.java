@@ -12,6 +12,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
@@ -56,7 +57,8 @@ public class BalancedShardPartitionerTest {
     @Before
     public void setUp() throws IOException {
         conf = new Configuration();
-        TableSplitsCache.getCurrentCache(conf).clear();
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
 
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         partitioner = new BalancedShardPartitioner();

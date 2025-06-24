@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -33,8 +34,9 @@ public class MultiTableRangePartitionerTest {
         mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
-        TableSplitsCache.getCurrentCache(configuration).clear();
         configuration.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, TableName.SHARD);
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
     }
 
     @Test
