@@ -505,40 +505,53 @@ public class YakeKeywordExtractor {
      * @return a Map of candidate keywords - the keyword is the key, the score is the value
      */
     protected Map<String,Long> calculateCandidateKeywords(List<TaggedToken> sentences) {
-        final Map<Integer,List<TaggedToken>> sentenceStream = sentences.stream().collect(Collectors.groupingBy(TaggedToken::getSentenceId)); // group by
-                                                                                                                                             // sentences
-
         final Set<String> stopwords = this.getStopwords();
 
-        return sentenceStream.values().stream().map(value -> {
-            final int valueSize = value.size();
+        // group tokens by sentences to prevent forming ngrams across sentences.
+        final Map<Integer,List<TaggedToken>> tokensBySentence = sentences.stream().collect(Collectors.groupingBy(TaggedToken::getSentenceId));
 
-            final Stream<List<Integer>> ngramPositions = IntStream.range(minNGrams, maxNGrams + 1) // for each window size
-                            .mapToObj(size -> IntStream.range(0, valueSize).mapToObj(start -> { // for each start token in entry
-                                int end = start + size;
-                                if (end > valueSize) {
-                                    return IntStream.empty();
-                                }
-                                return IntStream.range(start, end); // generate a stream of positions for that window size
-                            })).reduce(Stream.empty(), Stream::concat).map(k -> k.boxed().collect(Collectors.toList())).filter(s -> !s.isEmpty());
+        // build candidate keywords from ranges of tokens using sliding ngram windows
+        final List<String> candidateKeywords = new ArrayList<>();
+        for (List<TaggedToken> sentenceTokens : tokensBySentence.values()) {
+            final int limit = sentenceTokens.size();
+            for (int start = 0; start < limit; start++) { // for each token in sentence
+                NGRAM_SIZE: for (int length = minNGrams; length <= maxNGrams; length++) { // for each desired ngram size
+                    int end = findEnd(start, length, limit);
+                    if (end > start) {
+                        // skip candidate keywords that start with a stopword.
+                        if (stopwords.contains(sentenceTokens.get(start).getLowercaseToken())) {
+                            continue;
+                        }
 
-            // convert positions lists to actual ngrams.
-            final Stream<List<TaggedToken>> ngrams = ngramPositions.map(k -> k.stream().map(value::get).collect(Collectors.toList()));
+                        // skip candidate keywords that end with a stopword
+                        if (stopwords.contains(sentenceTokens.get(end - 1).getLowercaseToken())) {
+                            continue;
+                        }
 
-            return ngrams.filter(y -> {
-                // remove any candidates that contain a 'u' or 'd' token.
-                final List<String> tagList = y.stream().map(TaggedToken::getTag).collect(Collectors.toList());
-                return !(tagList.contains("u") || tagList.contains("d"));
-            }).filter(y -> {
-                // remove any candidates where the first or last word is a stopwords
-                final String firstWord = y.get(0).getLowercaseToken();
-                final String lastWord = y.get(y.size() - 1).getLowercaseToken();
-                return !(stopwords.contains(firstWord) || stopwords.contains(lastWord));
-            })
-                            // transform remaining candidates into a comma-delimited string
-                            .map(y -> y.stream().map(TaggedToken::getToken).map(String::toLowerCase).collect(Collectors.joining(",")));
+                        // skip candidate keywords that contain a 'u' or 'd' token
+                        for (int pos = start; pos < end; pos++) {
+                            TaggedToken t = sentenceTokens.get(pos);
+                            if (t.getTag().equals("u") || t.getTag().equals("d")) {
+                                continue NGRAM_SIZE;
+                            }
+                        }
 
-        }).reduce(Stream.empty(), Stream::concat).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+                        // build the candidate keyword string (comma-delimited tokens)
+                        final StringBuilder b = new StringBuilder();
+                        for (int pos = start; pos < end; pos++) {
+                            b.append(sentenceTokens.get(pos).getLowercaseToken()).append(",");
+                        }
+                        if (b.length() > 0) {
+                            b.setLength(b.length() - 1);
+                        }
+                        candidateKeywords.add(b.toString());
+                    }
+                }
+            }
+        }
+
+        // group candidate keywords by frequency
+        return candidateKeywords.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     }
 
     /**
