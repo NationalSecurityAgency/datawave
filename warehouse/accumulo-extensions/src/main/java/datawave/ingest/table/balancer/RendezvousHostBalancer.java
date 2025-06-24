@@ -59,6 +59,10 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
     /**
      * For a given tabletId returns a group name. This balancer places tablets in the same group on different hosts.
+     *
+     * @param tabletId
+     *            the requested tablet id
+     * @return The corresponding tablet group for the tablet id.
      */
     protected abstract String getTabletGroup(TabletId tabletId);
 
@@ -66,7 +70,11 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
     /**
      * Creates a function that determines what tservers should be used for a named group of tablets. The function should map a name returned by
-     * {@link #getTabletGroup()} to a subset of tablet servers. The returned map should be keyed on hostname.
+     * {@link #getTabletGroup(TabletId)} to a subset of tablet servers. The returned map should be keyed on hostname.
+     *
+     * @param allTservers
+     *            set of tservers to use for partitioning
+     * @return The function which will partition the group of tservers
      */
     protected abstract Function<String,Map<String,List<TabletServerId>>> getServerPartitioner(Collection<TabletServerId> allTservers);
 
@@ -124,6 +132,8 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
     /**
      * The amount of time to wait between balancing.
+     *
+     * @return the static time to wait
      */
     protected long getWaitTime() {
         return 60000;
@@ -205,9 +215,15 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
     }
 
     /**
+     * @param tabletGroupName
+     *            Mame of tablet group
+     * @param tabletsInGroup
+     *            List of tablets in the tablet group
      * @param tserversForGroup
-     *            map of tservers that tablets can be assigned to, the map is expected to be keyed on hostname
-     * @return
+     *            Map of tservers that tablets can be assigned to, the map is expected to be keyed on hostname
+     * @param currentLocations
+     *            map of current tablet locations
+     * @return Map of desired locations for a given tablet group name and list of tablets.
      */
     private Map<TabletId,TabletServerId> getDesiredLocationsForTabletGroup(String tabletGroupName, List<TabletId> tabletsInGroup,
                     Map<String,List<TabletServerId>> tserversForGroup, Map<TabletId,TabletServerId> currentLocations) {
