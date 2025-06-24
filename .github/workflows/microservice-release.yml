@@ -111,6 +111,7 @@ jobs:
     - name: Release with Maven
       run: |
         cd "${{ github.event.inputs.projectToRelease }}"
+        git checkout -b release-staging-${{ steps.version.outputs.VERSION_TAG }}
         #Github actions bot user id + user.login. See https://api.github.com/users/github-actions%5Bbot%5D
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config user.name "github-actions[bot]"
@@ -125,6 +126,7 @@ jobs:
         -DreleaseVersion="${{ steps.version.outputs.FINAL_VERSION }}" \
         -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
         -Dtag="${{ steps.version.outputs.VERSION_TAG }}"
+        git push -d origin release-staging-${{ steps.version.outputs.VERSION_TAG }}
           
     
           
