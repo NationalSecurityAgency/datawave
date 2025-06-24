@@ -168,7 +168,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         outer: for (var tpgEntry : tabletsPerGroup.entrySet()) {
             String tabletGroup = tpgEntry.getKey();
             List<TabletId> tablets = tpgEntry.getValue();
-            Map<String,List<TabletServerId>> tserversForGroup = tabletServerParitioner.apply(tabletGroup);
+            Map<String,List<TabletServerId>> tserversForGroup = tabletServerPartitioner.apply(tabletGroup);
 
             Map<TabletId,TabletServerId> desiredLocs = getDesiredLocationsForTabletGroup(tabletGroup, tablets, tserversForGroup, allLocations);
 
