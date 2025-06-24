@@ -166,7 +166,7 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
             var daysBack = getDaysBack(configuredTiers, tabletServerId);
             if (!daysBack.isEmpty()) {
                 for (var db : daysBack) {
-                    log.trace(" daysBack:{} tserver:{}", daysBack, tabletServerId);
+                    log.trace(" daysBack:{} tserver:{}", db, tabletServerId);
                     serverPartitioningMap.computeIfAbsent(db, ub -> new HashMap<>()).computeIfAbsent(tabletServerId.getHost(), h -> new ArrayList<>())
                                     .add(tabletServerId);
                 }
