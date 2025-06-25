@@ -8,7 +8,6 @@ import java.time.format.DateTimeParseException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -152,7 +151,7 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
     @Override
-    protected Function<String,Map<String,List<TabletServerId>>> getServerPartitioner(Collection<TabletServerId> allTservers) {
+    protected Function<String,List<TabletServerId>> getServerPartitioner(Collection<TabletServerId> allTservers) {
 
         final List<Map.Entry<Long,Matcher>> configuredTiers = getTiers(tableConfig);
 
@@ -160,49 +159,18 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
             throw new IllegalStateException("Tier configuration is not set");
         }
 
-        TreeMap<Long,Map<String,List<TabletServerId>>> serverPartitioningMap = new TreeMap<>();
+        TreeMap<Long,List<TabletServerId>> serverPartitioningMap = new TreeMap<>();
 
         allTservers.forEach(tabletServerId -> {
             var daysBack = getDaysBack(configuredTiers, tabletServerId);
             if (!daysBack.isEmpty()) {
                 for (var db : daysBack) {
                     log.trace(" daysBack:{} tserver:{}", db, tabletServerId);
-                    serverPartitioningMap.computeIfAbsent(db, ub -> new HashMap<>()).computeIfAbsent(tabletServerId.getHost(), h -> new ArrayList<>())
-                                    .add(tabletServerId);
+                    serverPartitioningMap.computeIfAbsent(db, ub -> new ArrayList<>()).add(tabletServerId);
                 }
             } else {
                 log.warn("Tserver {} did not match any tiers", tabletServerId);
             }
-        });
-
-        serverPartitioningMap.forEach((daysBack, servers) -> {
-            Map<Integer,Integer> perHostHistogram = new HashMap<>();
-            for (var tservers : servers.values()) {
-                perHostHistogram.merge(tservers.size(), 1, Integer::sum);
-            }
-            // This is the most common count for tservers per host
-            int maxHistogramValue = perHostHistogram.values().stream().mapToInt(i -> i).max().getAsInt();
-            int tmp = 0;
-            for (var entry : perHostHistogram.entrySet()) {
-                if (entry.getValue() == maxHistogramValue) {
-                    tmp = entry.getKey();
-                }
-            }
-            int expectedTserversPerHost = tmp;
-
-            // If a hostA has 1 tablet server and all other host have 3, then the single tserver on hostA would get 3x the tablets as tservers on other host. To
-            // avoid this problem any host that differs in the number of tablet servers is ignored.
-            servers.entrySet().removeIf(e -> {
-                String host = e.getKey();
-                List<TabletServerId> tservers = e.getValue();
-                if (tservers.size() != expectedTserversPerHost) {
-                    log.warn("Ignoring all tservers on host {} because it has {} tservers and not {}", host, tservers.size(), expectedTserversPerHost);
-                    return true;
-                }
-                return false;
-            });
-
-            log.debug(" daysBack:{} numHosts:{}", daysBack, servers.size());
         });
 
         // grab this once outside the lambda so the lambda always makes consistent decisions.
@@ -220,7 +188,7 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
                     entry = serverPartitioningMap.lastEntry();
                 }
             }
-            return entry == null ? Map.of() : entry.getValue();
+            return entry == null ? List.of() : entry.getValue();
         };
     }
 }

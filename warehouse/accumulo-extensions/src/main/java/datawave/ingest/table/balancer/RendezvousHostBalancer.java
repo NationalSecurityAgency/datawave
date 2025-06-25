@@ -70,17 +70,87 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
     /**
      * Creates a function that determines what tservers should be used for a named group of tablets. The function should map a name returned by
-     * {@link #getTabletGroup(TabletId)} to a subset of tablet servers. The returned map should be keyed on hostname.
+     * {@link #getTabletGroup(TabletId)} to a subset of tablet servers.
      *
      * @param allTservers
      *            set of tservers to use for partitioning
      * @return The function which will partition the group of tservers
      */
-    protected abstract Function<String,Map<String,List<TabletServerId>>> getServerPartitioner(Collection<TabletServerId> allTservers);
+    protected abstract Function<String,List<TabletServerId>> getServerPartitioner(Collection<TabletServerId> allTservers);
 
     @Override
     public void init(BalancerEnvironment balancerEnvironment) {
         this.env = balancerEnvironment;
+    }
+
+    private static class TServers {
+
+        Map<Integer,Map<String,List<TabletServerId>>> tservers = new HashMap<>();
+
+        TServers(List<TabletServerId> tabletServers) {
+            Map<String,List<TabletServerId>> tseversPerHost = new HashMap<>();
+            for (var tserver : tabletServers) {
+                tseversPerHost.computeIfAbsent(tserver.getHost(), h -> new ArrayList<>()).add(tserver);
+            }
+
+            tseversPerHost.forEach((host, tsList) -> {
+                tservers.computeIfAbsent(tsList.size(), s -> new HashMap<>()).put(host, tsList);
+            });
+        }
+
+        Map<String,List<TabletServerId>> getTserverWithNHost(int numHost) {
+            return tservers.get(numHost);
+        }
+
+        int getTotalNumberOfTservers() {
+            int total = 0;
+            for (var entry : tservers.entrySet()) {
+                total += entry.getKey() * entry.getValue().size();
+            }
+            return total;
+        }
+
+        /**
+         * If there are 1000 tablets and there are 40 hosts with 5 tservers and 10 hosts with 4 tservers then this function will do the following
+         *
+         * <ul>
+         * <li>compute there are a total of 40*5+10*4 = 240 tablet servers.</li>
+         * <li>For the 40 host with 5 tservers, they are 200/240=83.33% of the tservers. So give 833 of the 1000 tablets to this set of tservers.</li>
+         * <li>For the 10 host with 4 tservers, they are 40/240=16.66% of the tservers. So give 167 of the 1000 tablets to this set of tservers.</li>
+         * </ul>
+         *
+         * <p>
+         * For the example above would return Map.of(5, 833, 4, 167);
+         */
+        public Map<Integer,Integer> computeTabletAssignmentCountsByHostCount(int numTablets) {
+            if (tservers.size() == 1) {
+                return Map.of(tservers.keySet().iterator().next(), numTablets);
+            }
+
+            Map<Integer,Integer> counts = new HashMap<>();
+
+            double totalTservers = getTotalNumberOfTservers();
+
+            int tabletsLeft = numTablets;
+
+            for (var entry : tservers.entrySet()) {
+                int tserversPerHost = entry.getKey();
+                int numHost = entry.getValue().size();
+                double numTservers = tserversPerHost * numHost;
+
+                double percent = numTservers / totalTservers;
+
+                int tablets = Math.min(tabletsLeft, (int) Math.round(numTablets * percent));
+                if (tablets > 0) {
+                    counts.put(tserversPerHost, tablets);
+                    tabletsLeft -= tablets;
+                }
+            }
+
+            Preconditions.checkState(tabletsLeft == 0);
+
+            return counts;
+        }
     }
 
     @Override
@@ -107,10 +177,11 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         Map<String,List<TabletId>> tabletsToAssign = groupTablets(lastLocations.keySet());
         Map<String,List<TabletId>> allTabletsGrouped = groupTablets(allLocations.keySet(), tabletsToAssign::containsKey);
 
-        Function<String,Map<String,List<TabletServerId>>> tabletServerPartitioner = getServerPartitioner(currentTservers.keySet());
+        Function<String,List<TabletServerId>> tabletServerPartitioner = getServerPartitioner(currentTservers.keySet());
+        Map<String,TServers> computedTservers = new HashMap<>();
 
         tabletsToAssign.forEach((tabletGroup, tablets) -> {
-            Map<String,List<TabletServerId>> tserversForGroup = tabletServerPartitioner.apply(tabletGroup);
+            TServers tserversForGroup = computedTservers.computeIfAbsent(tabletGroup, g -> new TServers(tabletServerPartitioner.apply(tabletGroup)));
 
             // Must pass the set of all tablets for the group to compute the desired location, not just the subset of tablets being assigned
             var allTablets = allTabletsGrouped.get(tabletGroup);
@@ -159,7 +230,8 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
         Map<String,List<TabletId>> tabletsPerGroup = groupTablets(allLocations.keySet());
 
-        Function<String,Map<String,List<TabletServerId>>> tabletServerPartitioner = getServerPartitioner(balanceParameters.currentStatus().keySet());
+        Function<String,List<TabletServerId>> tabletServerPartitioner = getServerPartitioner(currentTservers.keySet());
+        Map<String,TServers> computedTservers = new HashMap<>();
 
         // read once so a consistent max is used for the entire balance call
         final int maxMigrations = getMaxMigrations();
@@ -168,7 +240,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         outer: for (var tpgEntry : tabletsPerGroup.entrySet()) {
             String tabletGroup = tpgEntry.getKey();
             List<TabletId> tablets = tpgEntry.getValue();
-            Map<String,List<TabletServerId>> tserversForGroup = tabletServerPartitioner.apply(tabletGroup);
+            TServers tserversForGroup = computedTservers.computeIfAbsent(tabletGroup, g -> new TServers(tabletServerPartitioner.apply(tabletGroup)));
 
             Map<TabletId,TabletServerId> desiredLocs = getDesiredLocationsForTabletGroup(tabletGroup, tablets, tserversForGroup, allLocations);
 
@@ -225,18 +297,31 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
      *            map of current tablet locations
      * @return Map of desired locations for a given tablet group name and list of tablets.
      */
-    private Map<TabletId,TabletServerId> getDesiredLocationsForTabletGroup(String tabletGroupName, List<TabletId> tabletsInGroup,
-                    Map<String,List<TabletServerId>> tserversForGroup, Map<TabletId,TabletServerId> currentLocations) {
+    private Map<TabletId,TabletServerId> getDesiredLocationsForTabletGroup(String tabletGroupName, List<TabletId> tabletsInGroup, TServers tserversForGroup,
+                    Map<TabletId,TabletServerId> currentLocations) {
 
-        // Use rendezvous hashing to first determine the goal number of tablets that each hostname should have
-        Map<String,Integer> hostGoalCounts = getGoalCounts(tabletGroupName, tabletsInGroup.size(), tserversForGroup.keySet(), h -> h);
-        // For each hostname, use rendezvous hashing to determine how many tablets each tserver on that host should have
         Map<TabletServerId,Integer> tserverGoalCounts = new LinkedHashMap<>();
-        hostGoalCounts.forEach((hostname, goalTablets) -> {
-            var goalCounts = getGoalCounts(tabletGroupName, goalTablets, tserversForGroup.get(hostname), tsi -> tsi.getHost() + ":" + tsi.getPort());
-            Preconditions.checkState(Collections.disjoint(tserverGoalCounts.keySet(), goalCounts.keySet()));
-            tserverGoalCounts.putAll(goalCounts);
-        });
+
+        // If rendevous balance was done across host w/ different numbers of tablets, then it would lead to hosts with less tablets getting more tablets per
+        // tservers. To deal with this hosts with different numbers of tablets servers are partitioned. Then rendevous balancing is done across each partition.
+        Map<Integer,Integer> tabletsCountsPerHostCount = tserversForGroup.computeTabletAssignmentCountsByHostCount(tabletsInGroup.size());
+
+        for (var entry : tabletsCountsPerHostCount.entrySet()) {
+            int tserversPerHost = entry.getKey();
+            // the number of tablets for this
+            int numTablets = entry.getValue();
+            // all of the tservers that have this number of tablets per host
+            Map<String,List<TabletServerId>> tabletServers = tserversForGroup.getTserverWithNHost(tserversPerHost);
+
+            // Use rendezvous hashing to first determine the goal number of tablets that each hostname should have
+            Map<String,Integer> hostGoalCounts = getGoalCounts(tabletGroupName, numTablets, tabletServers.keySet(), h -> h);
+            // For each hostname, use rendezvous hashing to determine how many tablets each tserver on that host should have
+            hostGoalCounts.forEach((hostname, goalTablets) -> {
+                var goalCounts = getGoalCounts(tabletGroupName, goalTablets, tabletServers.get(hostname), tsi -> tsi.getHost() + ":" + tsi.getPort());
+                Preconditions.checkState(Collections.disjoint(tserverGoalCounts.keySet(), goalCounts.keySet()));
+                tserverGoalCounts.putAll(goalCounts);
+            });
+        }
 
         Map<TabletId,TabletServerId> desiredLocations = new HashMap<>();
         // find all tablets that can remain at their current or last location

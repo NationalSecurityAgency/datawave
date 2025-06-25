@@ -320,14 +320,6 @@ public class ShardRendezvousHostBalancerTest {
         migrations.clear();
         balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
         assertTrue(migrations.isEmpty());
-
-        // add some host that have less tabletservers than the other host... should ignore these host
-        generateTabletServers(32, 1, 2).forEach(testTServers::addTServer);
-        generateTabletServers(33, 1, 1).forEach(testTServers::addTServer);
-        migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
-        assertTrue(migrations.isEmpty());
-
     }
 
     @Test
@@ -624,54 +616,69 @@ public class ShardRendezvousHostBalancerTest {
     }
 
     @Test
-    public void testHostWithUncommonTserverCount() throws Exception {
-        generateTabletServers(0, 10, 3).forEach(testTServers::addTServer);
+    public void testHostWithVaryingTserverCount() throws Exception {
+        generateTabletServers(0, 7, 3).forEach(testTServers::addTServer);
         // Create a few that differs from the norm of 3 tservers per host
-        generateTabletServers(10, 1, 1).forEach(testTServers::addTServer);
-        generateTabletServers(11, 1, 2).forEach(testTServers::addTServer);
-        generateTabletServers(12, 1, 4).forEach(testTServers::addTServer);
+        generateTabletServers(10, 2, 1).forEach(testTServers::addTServer);
+        generateTabletServers(12, 5, 2).forEach(testTServers::addTServer);
+        generateTabletServers(17, 1, 4).forEach(testTServers::addTServer);
 
-        generateTabletServers(20, 20, 4).forEach(testTServers::addTServer);
+        generateTabletServers(20, 11, 4).forEach(testTServers::addTServer);
         // For the 2nd group of tservers, create a few that differs from the norm of 4 tservers per host
-        generateTabletServers(40, 2, 2).forEach(testTServers::addTServer);
+        generateTabletServers(40, 5, 2).forEach(testTServers::addTServer);
 
-        tablets.addAll(createShards(tableId, "20010101", 30, 31));
-        today.set(parseDay("20010130"));
+        tablets.addAll(createShards(tableId, "20010101", 31, 31));
+        today.set(parseDay("20010131"));
 
         tableProps.clear();
         tableProps.put("table.custom.volume.tier.names", "t1,t2");
         tableProps.put("table.custom.volume.tiered.t1.days.back", "0");
         tableProps.put("table.custom.volume.tiered.t1.tservers", "host000[01].*");
         tableProps.put("table.custom.volume.tiered.t2.days.back", "20");
-        tableProps.put("table.custom.volume.tiered.t2.tservers", "host000[234].*");
+        tableProps.put("table.custom.volume.tiered.t2.tservers", "host000[2345].*");
 
         balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
         testTServers.applyAssignments(aout);
 
-        var shardStats = ShardStats.compute(filter("host000[01].*", testTServers.getLocationProvider()));
-        // should ignore three host that do not have the most common tserver per host count
-        shardStats.check(20, 31, 10, 3);
-        // should ignore two host that do not have the most common tserver per host count
-        shardStats = ShardStats.compute(filter("host000[234].*", testTServers.getLocationProvider()));
-        shardStats.check(10, 31, 20, 4);
+        /*
+         * There are 37 tservers in tier t1.
+         *
+         * There are 7 host with 3 tservers, these make up 7*3/37=.5676 of all tservers. For each day w/ 31 tablets they will get round(.5676*31)=18 tablets.
+         * That is why shards per day is set to 18 below. The 2 host w/ 1 tservers will get round(2/37*31)=2 of the 31 shards for each day. The 5 host w/ 2
+         * tservers will get round(5*2/37*31)=8 of the 31 shards for each day. The 1 host w/ 4 tservers will get round(4/37*31)=3 of the 31 shards for each day.
+         */
+        var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
+        shardStats.check(20, 18, 7, 3);
+        shardStats = ShardStats.compute(filter("host0001[01].*", testTServers.getLocationProvider()));
+        shardStats.check(20, 2, 2, 1);
+        shardStats = ShardStats.compute(filter("host0001[23456].*", testTServers.getLocationProvider()));
+        shardStats.check(20, 8, 5, 2);
+        shardStats = ShardStats.compute(filter("host00017.*", testTServers.getLocationProvider()));
+        shardStats.check(20, 3, 1, 4);
 
-        // double check the test assumptions, ensure the regexes match more host than tablet were assigned to
-        assertEquals(13, testTServers.tservers.stream().map(TabletServerId::getHost).filter(h -> h.matches("host000[01].*")).distinct().count());
-        assertEquals(22, testTServers.tservers.stream().map(TabletServerId::getHost).filter(h -> h.matches("host000[234].*")).distinct().count());
+        /*
+         * There are a total of 54 tservers in tier t2. The 11 host w/ 4 tservers will get round(11*4/54*31)=25 of the 31 shards per day. The 5 host w/ 2
+         * tsevers will get round(5*2/54*31)=6 of the 31 shards per day
+         */
+        shardStats = ShardStats.compute(filter("host000[23].*", testTServers.getLocationProvider()));
+        shardStats.check(11, 25, 11, 4);
+        shardStats = ShardStats.compute(filter("host0004.*", testTServers.getLocationProvider()));
+        shardStats.check(11, 6, 5, 2);
 
         balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
         assertEquals(0, migrations.size());
 
-        // add a few tablet servers to test that balancing ignore the host w/ an uncommon number of tservers
-        generateTabletServers(42, 3, 4).forEach(testTServers::addTServer);
+        // add a few tablet servers
+        generateTabletServers(50, 1, 3).forEach(testTServers::addTServer);
         balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        assertTrue(migrations.stream().map(tm -> tm.getNewTabletServer().getHost()).noneMatch(h -> h.matches("host000[01].*")));
         testTServers.applyMigrations(migrations);
-        shardStats = ShardStats.compute(filter("host000[01].*", testTServers.getLocationProvider()));
-        shardStats.check(20, 31, 10, 3);
-        shardStats = ShardStats.compute(filter("host000[234].*", testTServers.getLocationProvider()));
-        shardStats.check(10, 31, 23, 4);
-        assertEquals(25, testTServers.tservers.stream().map(TabletServerId::getHost).filter(h -> h.matches("host000[234].*")).distinct().count());
-
+        shardStats = ShardStats.compute(filter("host000[23].*", testTServers.getLocationProvider()));
+        shardStats.check(11, 24, 11, 4);
+        shardStats = ShardStats.compute(filter("host0004.*", testTServers.getLocationProvider()));
+        shardStats.check(11, 5, 5, 2);
+        shardStats = ShardStats.compute(filter("host0005.*", testTServers.getLocationProvider()));
+        shardStats.check(11, 2, 1, 3);
     }
 
     private static String getDay(TabletId tabletId) {
