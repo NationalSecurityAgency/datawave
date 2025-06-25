@@ -1,4 +1,4 @@
-name: Tests
+name: Compose and Quickstart Tests
 
 on:
   push:

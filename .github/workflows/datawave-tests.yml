@@ -1,4 +1,4 @@
-name: Tests
+name: Main Repo Tests
 
 on:
   push:
