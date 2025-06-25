@@ -31,7 +31,7 @@ jobs:
   # they are committed back to the branch
 
   # Build the code and run the unit/integration tests.
-  build-and-test-main:
+  build-and-test-microservices:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
