@@ -40,6 +40,8 @@ public class FlagMakerConfig {
 
     public static final String DEFAULT_FILE_PATTERN = "2*/*/*/*";
 
+    public static final String FOLDER_DATE_PATTERN = "(simple|date|folderdate)";
+
     // a list of file patterns.
     @XmlElement(name = "filePattern")
     private List<String> filePatterns = new ArrayList<>();
@@ -290,7 +292,7 @@ public class FlagMakerConfig {
             throw new IllegalArgumentException(prefix + "Default Max Flags must be set.");
         }
 
-        if (this.distributorType == null || !this.distributorType.matches("(simple|date|folderdate)")) {
+        if (this.distributorType == null || !this.distributorType.matches(FOLDER_DATE_PATTERN)) {
             throw new IllegalArgumentException(
                             "Invalid Distributor type provided: " + this.distributorType + ". Must be one of the following: simple|date|folderdate");
         }

@@ -46,6 +46,7 @@ public class ColumnBasedHandlerTestUtil {
     public static final Text shardReverseIndexTableName = new Text(TableName.SHARD_RINDEX);
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
+    public static final String SHARD_KEY_PATTERN = "\\d{8}_\\d+";
 
     private static Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
 
@@ -54,7 +55,7 @@ public class ColumnBasedHandlerTestUtil {
     }
 
     public static boolean isShardKey(Key k) {
-        return k.getRow().toString().matches("\\d{8}_\\d+");
+        return k.getRow().toString().matches(SHARD_KEY_PATTERN);
     }
 
     public static InputSplit getSplit(String file) throws URISyntaxException {

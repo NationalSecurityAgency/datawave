@@ -10,13 +10,23 @@ import org.junit.Test;
 
 public class JexlPatternCacheTest {
 
+    public static final String ASTERISK_WORD = ".*word.*";
+    public static final String BLA_WORD_BLA = "bla word bla";
+    public static final String BLA_PATTERN_2 = "bla\nbla word bla\n bla";
+    public static final String BLA_PATTERN_3 = "(\\s|.)*word(\\s|.)*";
+
+    public static final String FOOBAR_PATTERN = "foobar";
+    public static final String BAR_PATTERN_LOWER = "bar";
+    public static final String BAR_PATTERN_UPPER = "BAR";
+    public static final String FOOBAR_PATTERN_SPACED = "foo\nbar";
+
     @Test
     public void testDotAll() {
-        Pattern p = JexlPatternCache.getPattern(".*word.*");
-        assertTrue(p.matcher("bla word bla").matches());
-        assertTrue(p.matcher("bla\nbla word bla\n bla").matches());
-        p = JexlPatternCache.getPattern("(\\s|.)*word(\\s|.)*");
-        assertTrue(p.matcher("bla\nbla word bla\n bla").matches());
+        Pattern p = JexlPatternCache.getPattern(ASTERISK_WORD);
+        assertTrue(p.matcher(BLA_WORD_BLA).matches());
+        assertTrue(p.matcher(BLA_PATTERN_2).matches());
+        p = JexlPatternCache.getPattern(BLA_PATTERN_3);
+        assertTrue(p.matcher(BLA_PATTERN_2).matches());
     }
 
     /**
@@ -24,11 +34,11 @@ public class JexlPatternCacheTest {
      */
     @Test
     public void testRetrievingNewPattern() {
-        Pattern pattern = JexlPatternCache.getPattern("bar");
-        assertFalse(pattern.matcher("foobar").matches());
-        assertTrue(pattern.matcher("bar").matches());
-        assertTrue(pattern.matcher("BAR").matches());
-        assertTrue(pattern.matcher("foo\nbar").find());
+        Pattern pattern = JexlPatternCache.getPattern(BAR_PATTERN_LOWER);
+        assertFalse(pattern.matcher(FOOBAR_PATTERN).matches());
+        assertTrue(pattern.matcher(BAR_PATTERN_LOWER).matches());
+        assertTrue(pattern.matcher(BAR_PATTERN_UPPER).matches());
+        assertTrue(pattern.matcher(FOOBAR_PATTERN_SPACED).find());
     }
 
     /**

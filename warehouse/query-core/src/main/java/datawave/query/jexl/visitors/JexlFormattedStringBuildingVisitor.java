@@ -30,6 +30,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisitor {
     protected static final String NEWLINE = System.getProperty("line.separator");
+    public static final String AND_OR_PATTERN = "^([)]+ (&&|\\|\\|) )$";
 
     public JexlFormattedStringBuildingVisitor() {
         super(false);
@@ -103,7 +104,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * @return boolean
      */
     private static boolean closeParensFollowedByAndOr(String str) {
-        return str.matches("^([)]+ (&&|\\|\\|) )$");
+        return str.matches(AND_OR_PATTERN);
     }
 
     /**
