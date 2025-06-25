@@ -41,6 +41,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.scm.id>github-datawave</project.scm.id>
         <project.version>${project.version}</project.version>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
