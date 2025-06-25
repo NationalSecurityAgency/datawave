@@ -90,8 +90,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     }
 
     public void add(Attribute<? extends Comparable<?>> attr) {
-        if (!this.attributes.contains(attr)) {
-            this.attributes.add(attr);
+        boolean updated = this.attributes.add(attr);
+        if (updated) {
             this._count += attr.size();
             if (trackSizes) {
                 this._bytes += attr.sizeInBytes() + 24 + 24;
