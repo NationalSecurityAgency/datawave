@@ -84,6 +84,10 @@ export function toggleVisibility(row: any) {
   row.toggleVisibility();
 }
 
+export function toggleCount(row: any) {
+  row.toggleCount();
+}
+
 // Set the Visibility in DOM, sorts and filters by lastUpdated, and the respective row to render button.
 export function setVisibility(rows: readonly any[]) {
   const fieldVisibility: Map<string, Ref<boolean>> = new Map<
@@ -91,10 +95,18 @@ export function setVisibility(rows: readonly any[]) {
     Ref<boolean>
   >();
   const buttonValues: Map<string, number> = new Map<string, number>();
+  const countValues: Map<string, number> = new Map<string, number>();
 
   for (const row of rows) {
     let rowMostRecentUpdated: number = row.lastUpdated;
     const currentRowInternalFieldName: any = row.internalFieldName;
+    const currentRowDataType: any = row.dataType;
+
+    if (currentRowDataType) {
+      let currentValue = countValues.get(currentRowInternalFieldName) || 0;
+      countValues.set(currentRowInternalFieldName, ++currentValue);
+    }
+
     for (const scan of rows) {
       if (currentRowInternalFieldName === scan.internalFieldName && rowMostRecentUpdated < scan.lastUpdated) {
         rowMostRecentUpdated = scan.lastUpdated;
@@ -112,6 +124,9 @@ export function setVisibility(rows: readonly any[]) {
     ) {
       row['duplicate'] = 0;
       row['button'] = true;
+
+      row['dataTypeBAK'] = row.dataType;
+      row['dataType'] = countValues.get(row.internalFieldName) + ' types';
     }
     // Checks to Render Collapsible Row - Refreshes on Search
     else if (
@@ -138,6 +153,12 @@ export function setVisibility(rows: readonly any[]) {
       visibility!.value = !visibility?.value;
     };
     row['isVisible'] = visibility;
+
+    row['toggleCount'] = () => {
+      const temp = row['dataType'];
+      row['dataType'] = row['dataTypeBAK'];
+      row['dataTypeBAK'] = temp;
+    };
   }
 
   return rows;

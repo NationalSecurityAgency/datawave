@@ -116,6 +116,7 @@
                   {
                     props.expand = !props.expand;
                     Formatters.toggleVisibility(props.row);
+                    Formatters.toggleCount(props.row);
                   }
                 "
                 :icon="props.row.isVisible.value ? 'remove' : 'add'"
@@ -133,6 +134,7 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
+              :class="{ 'text-bold': col.name === 'dataType' && /^\d+\s+types$/.test(col.value) }"
               style="font-size: 13px;"
               @click="Feature.copyLabel(col.name, col.value)"
             >
@@ -234,6 +236,7 @@ onMounted(() => {
       }
     });
     rows = Formatters.setVisibility(rows);
+    console.log(rows);
     loading.value = false;
   })
   .catch((reason) => {
