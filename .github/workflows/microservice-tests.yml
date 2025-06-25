@@ -2,13 +2,11 @@ name: Microservice Tests
 
 on:
   push:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
     paths: ['microservices/**']
     branches:
     - 'integration'
     - 'release/version*'
   pull_request:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
     paths: ['microservices/**']
   merge_group:
   workflow_dispatch:
