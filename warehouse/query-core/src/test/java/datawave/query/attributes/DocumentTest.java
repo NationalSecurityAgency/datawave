@@ -81,42 +81,42 @@ public class DocumentTest {
     public void testDocumentWithLcType() {
         Attribute<?> attr = createAttribute("LC", "value");
         d.put("LC", attr);
-        roundTrip(MAX_ITERATIONS, 78);
+        roundTrip(MAX_ITERATIONS, 40);
     }
 
     @Test
     public void testDocumentWithLcNoDiacriticsType() {
         Attribute<?> attr = createAttribute("LC_ND", "value");
         d.put("LC_ND", attr);
-        roundTrip(MAX_ITERATIONS, 81);
+        roundTrip(MAX_ITERATIONS, 43);
     }
 
     @Test
     public void testDocumentWithHexType() {
         Attribute<?> attr = createAttribute("HEX", "a1b2c3");
         d.put("HEX", attr);
-        roundTrip(MAX_ITERATIONS, 86);
+        roundTrip(MAX_ITERATIONS, 48);
     }
 
     @Test
     public void testDocumentWithNumberType() {
         Attribute<?> attr = createAttribute("NUM", "12");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 82);
+        roundTrip(MAX_ITERATIONS, 44);
     }
 
     @Test
     public void testDocumentWithNumberTypeNormalizedValue() {
         Attribute<?> attr = createAttribute("NUM", "+bE1.2");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 82);
+        roundTrip(MAX_ITERATIONS, 44);
     }
 
     @Test
     public void testDocumentWithNumberTypeLargeValue() {
         Attribute<?> attr = createAttribute("NUM", "12456789.987654321");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 113);
+        roundTrip(MAX_ITERATIONS, 75);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class DocumentTest {
         d.put("NUM", createAttribute("NUM", "25"));
         d.put("NUM_LIST", createAttribute("NUM_LIST", "22,23,24"));
         d.put("POINT", createAttribute("POINT", "POINT(10 10)"));
-        roundTrip(MAX_ITERATIONS, 807);
+        roundTrip(MAX_ITERATIONS, 351);
     }
 
     @Test
@@ -143,18 +143,18 @@ public class DocumentTest {
             Attribute<?> attr = createAttribute("LC", "value-" + i);
             d.put("LC", attr);
         }
-        roundTrip(MAX_ITERATIONS, 568042);
+        roundTrip(MAX_ITERATIONS, 188007);
     }
 
     @Test
     public void testSingleFieldedRoundTrips() {
-        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 18313);
+        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 10028);
         roundTrip("GEO_LAT", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
         roundTrip("GEO_LON", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
-        roundTrip("HEX", DOCUMENT_SIZE, MAX_ITERATIONS, 11562);
-        roundTrip("LC", DOCUMENT_SIZE, MAX_ITERATIONS, 12701);
-        roundTrip("LC_ND", DOCUMENT_SIZE, MAX_ITERATIONS, 12704);
-        roundTrip("NUM", DOCUMENT_SIZE, MAX_ITERATIONS, 12805);
+        roundTrip("HEX", DOCUMENT_SIZE, MAX_ITERATIONS, 3277);
+        roundTrip("LC", DOCUMENT_SIZE, MAX_ITERATIONS, 4256);
+        roundTrip("LC_ND", DOCUMENT_SIZE, MAX_ITERATIONS, 4259);
+        roundTrip("NUM", DOCUMENT_SIZE, MAX_ITERATIONS, 4520);
         roundTrip("POINT", DOCUMENT_SIZE, MAX_ITERATIONS, 0);
     }
 
@@ -163,7 +163,8 @@ public class DocumentTest {
         // original size: 11063
         // post hex serialization changes: 11563
         // read times cut by about 35%
-        roundTrip("HEX", DOCUMENT_SIZE, MAX_ITERATIONS, 11562);
+        // attribute index optimization: 3277
+        roundTrip("HEX", DOCUMENT_SIZE, MAX_ITERATIONS, 3277);
     }
 
     @Test
@@ -171,14 +172,16 @@ public class DocumentTest {
         // original size: 11213
         // post number serialization: 12806
         // attribute write times remained the same, attribute read times were cut by about 50%
-        roundTrip("NUM", DOCUMENT_SIZE, MAX_ITERATIONS, 12805);
+        // attribute index optimization: 4520
+        roundTrip("NUM", DOCUMENT_SIZE, MAX_ITERATIONS, 4520);
     }
 
     @Test
     public void testNumberListRoundTrip() {
         // original size: 12994
         // kryo optimization: 18030
-        roundTrip("NUM_LIST", DOCUMENT_SIZE, MAX_ITERATIONS, 18029);
+        // attribute index optimization: 9731
+        roundTrip("NUM_LIST", DOCUMENT_SIZE, MAX_ITERATIONS, 9731);
     }
 
     @Test
@@ -186,7 +189,8 @@ public class DocumentTest {
         // original size: 16564
         // kryo optimization: 22564
         // using default DateSerializer dropped the read time by 50%
-        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 18313);
+        // attribute index optimization: 10028
+        roundTrip("DATE", DOCUMENT_SIZE, MAX_ITERATIONS, 10028);
     }
 
     @Test
