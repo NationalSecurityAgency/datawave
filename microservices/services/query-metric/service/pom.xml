@@ -21,7 +21,7 @@
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <start-class>datawave.microservice.querymetric.QueryMetricService</start-class>
         <version.cache-api>1.1.1</version.cache-api>
-        <version.datawave>7.24.0</version.datawave>
+        <version.datawave>7.25.0</version.datawave>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
