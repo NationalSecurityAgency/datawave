@@ -236,7 +236,6 @@ onMounted(() => {
       }
     });
     rows = Formatters.setVisibility(rows);
-    console.log(rows);
     loading.value = false;
   })
   .catch((reason) => {
