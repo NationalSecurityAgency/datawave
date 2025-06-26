@@ -681,6 +681,44 @@ public class ShardRendezvousHostBalancerTest {
         shardStats.check(11, 2, 1, 3);
     }
 
+    @Test
+    public void testHostWithVaryingTserverCountZero() throws Exception {
+        tablets.addAll(createShards(tableId, "20000101", 395, 31));
+        today.set(parseDay("20010130"));
+        generateTabletServers(0, 100, 5).forEach(testTServers::addTServer);
+        generateTabletServers(200, 2, 1).forEach(testTServers::addTServer);
+
+        tableProps.clear();
+        tableProps.put("table.custom.volume.tier.names", "t1");
+        tableProps.put("table.custom.volume.tiered.t1.days.back", "0");
+        tableProps.put("table.custom.volume.tiered.t1.tservers", "host.*");
+
+        // There are 502 total tserver. The two host with one tserver should have round(2/502*31)=0 tablets from the 31 shards per day assigned to them. All
+        // tablets should go to the 100 host with 5 tservers.
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        testTServers.applyAssignments(aout);
+
+        var shardStats = ShardStats.compute(filter("host000.*", testTServers.getLocationProvider()));
+        shardStats.check(395, 31, 100, 5);
+
+        String regex = "host002.*";
+        // nothing should have been assigned to the two host with a single tserver.
+        assertEquals(Map.of(), filter(regex, testTServers.getLocationProvider()));
+        // check the regex used above
+        assertEquals(2, testTServers.getCurrent().keySet().stream().filter(tabletServerId -> tabletServerId.getHost().matches(regex)).count());
+        assertEquals(502, testTServers.getCurrent().keySet().size());
+
+        // Add 98 host with 1 tserver. For the 31 shards per day the should now partition as round(500/600*31)=26 and round(100/600*31)=5.
+        generateTabletServers(202, 98, 1).forEach(testTServers::addTServer);
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        testTServers.applyMigrations(migrations);
+        shardStats = ShardStats.compute(filter("host000.*", testTServers.getLocationProvider()));
+        shardStats.check(395, 26, 100, 5);
+        shardStats = ShardStats.compute(filter("host002.*", testTServers.getLocationProvider()));
+        shardStats.check(395, 5, 100, 1);
+
+    }
+
     private static String getDay(TabletId tabletId) {
         return ShardRendezvousHostBalancer.PARTITIONER.apply(tabletId);
     }
