@@ -93,7 +93,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
                 tseversPerHost.computeIfAbsent(tserver.getHost(), h -> new ArrayList<>()).add(tserver);
             }
 
-            tseversPerHost.forEach((host, tsList) -> {
+            tserversPerHost.forEach((host, tsList) -> {
                 tservers.computeIfAbsent(tsList.size(), s -> new HashMap<>()).put(host, tsList);
             });
         }
