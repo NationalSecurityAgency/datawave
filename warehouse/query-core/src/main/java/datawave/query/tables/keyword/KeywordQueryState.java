@@ -50,6 +50,8 @@ public class KeywordQueryState {
      */
     private TagCloudUtils utils;
 
+    private double maxSimilarityThreshold;
+
     /** the ranges to scan based on the query terms */
     private final Collection<Range> ranges = new TreeSet<>();
 
@@ -108,5 +110,13 @@ public class KeywordQueryState {
 
     public TagCloudUtils getTagCloudUtils() {
         return utils;
+    }
+
+    public double getMaxSimilarityThreshold() {
+        return maxSimilarityThreshold;
+    }
+
+    public void setMaxSimilarityThreshold(double maxSimilarityThreshold) {
+        this.maxSimilarityThreshold = maxSimilarityThreshold;
     }
 }
