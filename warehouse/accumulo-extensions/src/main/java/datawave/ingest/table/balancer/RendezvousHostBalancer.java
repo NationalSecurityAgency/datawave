@@ -90,7 +90,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         TServers(List<TabletServerId> tabletServers) {
             Map<String,List<TabletServerId>> tseversPerHost = new HashMap<>();
             for (var tserver : tabletServers) {
-                tseversPerHost.computeIfAbsent(tserver.getHost(), h -> new ArrayList<>()).add(tserver);
+                tserversPerHost.computeIfAbsent(tserver.getHost(), h -> new ArrayList<>()).add(tserver);
             }
 
             tserversPerHost.forEach((host, tsList) -> {
