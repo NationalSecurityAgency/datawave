@@ -30,13 +30,14 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -60,7 +61,6 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.Type;
-import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -73,8 +73,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.model.DateFrequencyMap;
-import datawave.query.model.Frequency;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
@@ -728,57 +726,30 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     }
 
     protected Multimap<String,KeyValue> removeMetadataEntries(Set<String> fields, Text cf)
-                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException, TableExistsException {
         Multimap<String,KeyValue> metadataEntries = HashMultimap.create();
+        Map<String,String> config = client.tableOperations().getConfiguration(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().create(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", new NewTableConfiguration().setProperties(config));
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
-        BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
-        for (String field : fields) {
-            Mutation mutation = new Mutation(new Text(field));
+        try (BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME + "_new")) {
             Scanner scanner = client.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations());
-            scanner.fetchColumnFamily(cf);
-            scanner.setRange(new Range(new Text(field)));
-            boolean foundEntries = false;
+            scanner.setRange(new Range());
             for (Map.Entry<Key,Value> entry : scanner) {
                 Key key = entry.getKey();
+                String field = key.getRow().toString();
                 Value value = entry.getValue();
-                String cq = key.getColumnQualifier().toString();
-                if (cq.endsWith(FrequencyMetadataAggregator.AGGREGATED)) {
-                    cq = cq.substring(0, cq.length() - FrequencyMetadataAggregator.AGGREGATED.length());
-                    DateFrequencyMap entryMap = new DateFrequencyMap(value.get());
-                    for (Map.Entry<String,Frequency> dateEntry : entryMap.entrySet()) {
-                        Key newKey = new Key(key.getRow().toString(), key.getColumnFamily().toString(), cq + dateEntry.getKey(),
-                                        key.getColumnVisibilityParsed(), key.getTimestamp());
-                        Value newValue = new Value(LongCombiner.VAR_LEN_ENCODER.encode(dateEntry.getValue().getValue()));
-                        metadataEntries.put(field, new KeyValue(newKey, newValue));
-                        mutation.putDelete(newKey.getColumnFamily(), newKey.getColumnQualifier(), newKey.getColumnVisibilityParsed(),
-                                        newKey.getTimestamp() + 1000);
-                        foundEntries = true;
-                    }
-                } else {
+                if (fields.contains(field) && key.getColumnFamily().equals(cf)) {
                     metadataEntries.put(field, new KeyValue(key, value));
-                    mutation.putDelete(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1000);
-                    foundEntries = true;
+                } else {
+                    Mutation mutation = new Mutation(new Text(field));
+                    mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1000, value);
+                    writer.addMutation(mutation);
                 }
             }
-            scanner.close();
-            if (foundEntries) {
-                writer.addMutation(mutation);
-            }
+            writer.flush();
         }
-        writer.close();
-        client.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
-
-        // verify that they were deleted
-        for (String field : fields) {
-            try (Scanner scanner = client.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations())) {
-                scanner.fetchColumnFamily(cf);
-                scanner.setRange(new Range(new Text(field)));
-                for (Map.Entry<Key,Value> entry : scanner) {
-                    throw new IllegalStateException("Failed to delete entry " + entry.getKey());
-                }
-            }
-        }
-
+        client.tableOperations().delete(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().rename(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", QueryTestTableHelper.METADATA_TABLE_NAME);
         return metadataEntries;
     }
 

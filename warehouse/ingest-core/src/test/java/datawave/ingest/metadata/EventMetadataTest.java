@@ -41,6 +41,8 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.iterators.FrequencyMetadataAggregator;
+import datawave.query.model.DateFrequencyMap;
 
 public class EventMetadataTest {
 
@@ -85,9 +87,10 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(4);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 1L));
     }
 
     /**
@@ -116,7 +119,8 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(2);
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 1L));
     }
 
     /**
@@ -146,11 +150,14 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(7);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        DateFrequencyMap map = new DateFrequencyMap();
+        map.put("20140402", 2L);
+        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 2L));
         assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 2L));
         assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
     }
 
@@ -181,11 +188,13 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(7);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "ri", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "ri", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 2L));
         assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 2L));
         assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardReverseIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
     }
 
@@ -217,12 +226,14 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(9);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "ri", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
-        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "ri", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 2L));
+        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 2L));
         assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 2L));
         assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
         assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardReverseIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
     }
@@ -251,9 +262,10 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(4);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 2L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 2L));
     }
 
     /**
@@ -281,11 +293,15 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(6);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140319", eventDate2, encodeCount(1L));
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate2,
+                        encodeCount("20140319", 1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1,
+                        encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140319", eventDate2, encodeCount(1L));
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate2,
+                        encodeCount("20140319", 1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1,
+                        encodeCount("20140402", 1L));
     }
 
     /**
@@ -314,12 +330,14 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(8);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("FIELD_1_TOKEN", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
         assertContainsMetadataTableEntry("FIELD_1_TOKEN", "tf", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1_TOKEN", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1_TOKEN", "i", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 1L));
         assertContainsLoadDateTableEntry("FIELD_1_TOKEN", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(1L));
     }
 
@@ -349,12 +367,13 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(8);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
         assertContainsMetadataTableEntry("FIELD_1", "tf", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 1L));
         assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(1L));
     }
 
@@ -391,28 +410,34 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(24);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
-        assertContainsMetadataTableEntry("FIELD_1", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1,
+                        encodeCount("20140402", 2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "ababa" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("FIELD_1", "e", "ababa", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "ididi" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate2, encodeCount("20140403", 1L));
         assertContainsMetadataTableEntry("FIELD_1", "e", "ididi", eventDate2, NULL_VALUE);
         assertContainsMetadataTableEntry("FIELD_2", "e", "xyzabc", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_2", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
-        assertContainsMetadataTableEntry("FIELD_2", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_2", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1,
+                        encodeCount("20140402", 2L));
+        assertContainsMetadataTableEntry("FIELD_2", "f", "ababa" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("FIELD_2", "e", "ababa", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_2", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_2", "f", "ididi" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate2, encodeCount("20140403", 1L));
         assertContainsMetadataTableEntry("FIELD_2", "e", "ididi", eventDate2, NULL_VALUE);
         assertContainsMetadataTableEntry("FIELD_3", "e", "xyzabc", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_3", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
-        assertContainsMetadataTableEntry("FIELD_3", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_3", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1,
+                        encodeCount("20140402", 2L));
+        assertContainsMetadataTableEntry("FIELD_3", "f", "ababa" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("FIELD_3", "e", "ababa", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_3", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_3", "f", "ididi" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate2, encodeCount("20140403", 1L));
         assertContainsMetadataTableEntry("FIELD_3", "e", "ididi", eventDate2, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1,
+                        encodeCount("20140402", 2L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "ababa" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate1,
+                        encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "ababa", eventDate1, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "ididi" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate2,
+                        encodeCount("20140403", 1L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "ididi", eventDate2, NULL_VALUE);
     }
 
@@ -490,6 +515,12 @@ public class EventMetadataTest {
     // Return the given count as an encoded value.
     private Value encodeCount(long count) {
         return new Value(SummingCombiner.VAR_LEN_ENCODER.encode(count));
+    }
+
+    private Value encodeCount(String date, long count) {
+        DateFrequencyMap map = new DateFrequencyMap();
+        map.put(date, count);
+        return new Value(map.toBytes());
     }
 
     /**
