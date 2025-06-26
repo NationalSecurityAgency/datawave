@@ -29,7 +29,7 @@ ENV DW_BIND_HOST=0.0.0.0
 # This can be overridden at runtime to match the service name using DW_CONTAINER_HOST
 ENV DW_ACCUMULO_BIND_HOST=localhost
 
-# Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
+# Build context should be the DataWave source root, minus .git and other dirs. See .jkube-dockerignore
 
 COPY . /opt/datawave
 
@@ -57,8 +57,7 @@ WORKDIR /opt/datawave
 
 # Create new Git repo and configure environment...
 
-RUN rm -f .dockerignore .maven-dockerignore && \
-    git init && \
+RUN git init && \
     git add . && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \

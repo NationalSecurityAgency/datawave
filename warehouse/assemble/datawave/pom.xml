@@ -464,19 +464,16 @@
                         <version>1.18.1</version>
                         <configuration>
                             <verbose>true</verbose>
+                            <pushRegistry>${docker.image.prefix}</pushRegistry>
                             <images>
                                 <image>
-                                    <name>${docker.image.prefix}datawave/ingest-${build.env}</name>
+                                    <name>ingest-${build.env}:${project.version}</name>
                                     <build>
                                         <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                         <contextDir>.</contextDir>
                                         <buildOptions>
                                             <memory>8589934592</memory>
                                         </buildOptions>
-                                        <tags>
-                                            <tag>latest</tag>
-                                            <tag>${project.version}</tag>
-                                        </tags>
                                         <assembly>
                                             <name>/</name>
                                             <layers>

@@ -195,19 +195,16 @@
                         <artifactId>kubernetes-maven-plugin</artifactId>
                         <configuration>
                             <verbose>true</verbose>
+                            <pushRegistry>${docker.image.prefix}</pushRegistry>
                             <images>
                                 <image>
-                                    <name>${docker.image.prefix}datawave/quickstart-${build.env}</name>
+                                    <name>quickstart-${build.env}:${project.version}</name>
                                     <build>
                                         <contextDir>${maven.multiModuleProjectDirectory}</contextDir>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <buildOptions>
                                             <memory>8589934592</memory>
                                         </buildOptions>
-                                        <tags>
-                                            <tag>latest</tag>
-                                            <tag>${project.version}</tag>
-                                        </tags>
                                         <args>
                                             <DATAWAVE_COMMIT_ID>${git.commit.id}</DATAWAVE_COMMIT_ID>
                                             <DATAWAVE_BRANCH_NAME>${git.branch}</DATAWAVE_BRANCH_NAME>

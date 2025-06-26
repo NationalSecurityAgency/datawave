@@ -1,6 +1,6 @@
-FROM ${docker.image.prefix}datawave-stack-hadoop:3.3.6 AS hadoop
-FROM bitnami/zookeeper:3.6.3 AS zookeeper
-FROM ${docker.image.prefix}datawave-stack-accumulo:${docker.image.accumulo.tag}
+FROM ${docker.image.prefix}/datawave-stack-hadoop:${docker.image.hadoop.tag} AS hadoop
+FROM bitnami/zookeeper:${docker.image.zookeeper.tag} AS zookeeper
+FROM ${docker.image.prefix}/datawave-stack-accumulo:${docker.image.accumulo.tag}
 
 USER root
 
