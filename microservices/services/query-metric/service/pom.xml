@@ -26,7 +26,7 @@
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
-        <version.datawave.query-metric-api>4.0.14</version.datawave.query-metric-api>
+        <version.datawave.query-metric-api>4.1.1</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.5</version.datawave.starter>
         <version.datawave.starter-datawave-query-metric>3.0.3</version.datawave.starter-datawave-query-metric>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
