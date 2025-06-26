@@ -34,6 +34,7 @@
         <version.webjars.jquery>3.6.0</version.webjars.jquery>
         <version.webjars.locator>0.50</version.webjars.locator>
         <version.zookeeper>3.8.0</version.zookeeper>
+        <version.forceTest>1</version.forceTest>
     </properties>
     <dependencyManagement>
         <dependencies>
