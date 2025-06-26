@@ -302,8 +302,8 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
         Map<TabletServerId,Integer> tserverGoalCounts = new LinkedHashMap<>();
 
-        // If rendevous balance was done across host w/ different numbers of tablets, then it would lead to hosts with less tablets getting more tablets per
-        // tservers. To deal with this hosts with different numbers of tablets servers are partitioned. Then rendevous balancing is done across each partition.
+        // If rendezvous balance was done across host w/ different numbers of tablets, then it would lead to hosts with less tservers getting more tablets per
+        // tserver. To deal with this hosts with different numbers of tablets servers are partitioned. Then rendezvous balancing is done across each partition.
         Map<Integer,Integer> tabletsCountsPerHostCount = tserversForGroup.computeTabletAssignmentCountsByHostCount(tabletsInGroup.size());
 
         for (var entry : tabletsCountsPerHostCount.entrySet()) {
