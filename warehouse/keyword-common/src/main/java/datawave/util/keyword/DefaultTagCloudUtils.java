@@ -54,6 +54,7 @@ public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
 
     @Override
     public double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores) {
+        // for now, choose the best (smallest) scored version of the tag.
         return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).min(Double::compareTo).orElse(1.0);
 
     }
@@ -65,6 +66,7 @@ public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
 
     @Override
     public int calculateFrequency(Collection<TagCloudEntry.ScoreTuple> sourceScores) {
-        return sourceScores.size();
+        // if multiple 'documents' have the same source identifier, count only once.
+        return (int) sourceScores.stream().map(TagCloudEntry.ScoreTuple::getSource).distinct().count();
     }
 }
