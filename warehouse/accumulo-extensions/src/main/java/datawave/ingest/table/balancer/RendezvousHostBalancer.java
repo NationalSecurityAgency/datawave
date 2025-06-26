@@ -31,7 +31,7 @@ import com.google.common.primitives.UnsignedBytes;
  * Rendezvous hashing server partitioning balancer. This balancer has the following goals.
  *
  * <ul>
- * <li>Spread tablets in the same group across different host names. If a hostname has multiple tablet severs then avoid placing multiple tablets on that
+ * <li>Spread tablets in the same group across different host names. If a hostname has multiple tablet servers then avoid placing multiple tablets on that
  * host.</li>
  * <li>Allow assigning a group of tablets to a group of tablet servers.</li>
  * <li>Minimize the amount of rebalancing needed when the set of tablet servers changes.</li>
