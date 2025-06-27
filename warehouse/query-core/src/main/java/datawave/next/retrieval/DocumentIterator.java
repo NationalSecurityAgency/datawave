@@ -5,7 +5,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,7 +16,11 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.hadoop.io.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -28,13 +31,9 @@ import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
-import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
-import datawave.query.data.parsers.EventKey;
-import datawave.query.data.parsers.FieldIndexKey;
-import datawave.query.data.parsers.TermFrequencyKey;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
@@ -46,6 +45,8 @@ import datawave.query.util.Tuple3;
  */
 public class DocumentIterator extends DocumentIteratorOptions implements SortedKeyValueIterator<Key,Value> {
 
+    private static final Logger log = LoggerFactory.getLogger(DocumentIterator.class);
+
     private Key tk = null;
     private Value tv = null;
 
@@ -54,7 +55,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
     private boolean inclusive = false;
 
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
-    private final List<Entry<Key,Value>> results = new LinkedList<>();
 
     public DocumentIterator() {}
 
@@ -73,13 +73,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
 
     @Override
     public boolean hasTop() {
-        if (tk == null) {
-            if (!results.isEmpty()) {
-                Entry<Key,Value> entry = results.remove(0);
-                tk = entry.getKey();
-                tv = entry.getValue();
-            }
-        }
         return tk != null;
     }
 
@@ -87,6 +80,11 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
     public void next() throws IOException {
         tk = null;
         tv = null;
+        try {
+            aggregateNextCandidate();
+        } catch (Exception e) {
+            handleException(e);
+        }
     }
 
     @Override
@@ -96,70 +94,100 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         this.inclusive = inclusive;
 
         checkForScanRebuild();
+        aggregateNextCandidate();
+    }
 
+    /**
+     * Aggregates the next candidate if one exists
+     *
+     * @throws IOException
+     *             if something goes wrong
+     */
+    private void aggregateNextCandidate() throws IOException {
+        tk = null;
+        tv = null;
         // aggregate document
-        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-        EventKey parser = new EventKey();
+        if (!candidates.isEmpty()) {
+            String nextCandidate = candidates.remove(0);
+            aggregateCandidate(nextCandidate);
+        }
+    }
 
-        for (String candidate : candidates) {
-            // must clear state between candidates
-            context.clear();
+    /**
+     * Aggregate the candidate document
+     *
+     * @param candidate
+     *            the candidate
+     * @throws IOException
+     *             if something goes wrong
+     */
+    private void aggregateCandidate(String candidate) throws IOException {
+        // must clear state between candidates
+        context.clear();
+        valueToAttributes.resetState();
+        Preconditions.checkNotNull(candidate, "candidate was null");
 
-            Range candidateRange = rangeForCandidate(candidate);
-            source.seek(candidateRange, excludeCFs, false);
+        Range candidateRange = rangeForCandidate(candidate);
+        source.seek(candidateRange, excludeCFs, inclusive);
 
-            Document d = new Document();
-            Key key = null;
-            while (source.hasTop()) {
-                key = source.getTopKey();
-                source.next();
+        Key key = null;
+        final Document d = new Document();
 
-                if (timeFilter != null && !timeFilter.contains(key.getTimestamp())) {
-                    // check for time stamp just in case
-                    continue;
-                }
+        while (source.hasTop()) {
+            key = source.getTopKey();
+            source.next();
 
-                parser.parse(key);
-
-                String field = JexlASTHelper.deconstructIdentifier(parser.getField());
-                if (includeFields != null && !includeFields.contains(field)) {
-                    // field was not present in inclusive filter
-                    continue;
-                } else if (excludeFields != null && excludeFields.contains(field)) {
-                    // field matched the exclusive filter
-                    continue;
-                }
-
-                Attribute<?> attr = attributeFactory.create(field, parser.getValue(), key, parser.getDatatype(), true);
-                d.put(field, attr);
-            }
-
-            // collect index only fragments
-            collectIndexOnlyFragments(d, attributeFactory, candidate);
-
-            // collect term frequency fragments
-            collectTermFrequencyFragments(d, attributeFactory, candidate);
-
-            // populate context, only pulling in the attributes required by the query
-            d.visit(identifiers, context);
-
-            boolean matched = evaluation.apply(new Tuple3<>(tk, d, context));
-            if (!matched) {
+            if (timeFilter != null && !timeFilter.contains(key.getTimestamp())) {
+                // check for time stamp just in case
                 continue;
             }
 
-            if (d.size() > 0 && key != null) {
-                Text cf = new Text(parser.getDatatype() + "\0" + parser.getUid());
-                Key recordId = new Key(key.getRow(), cf, new Text(), key.getColumnVisibility(), key.getTimestamp());
-                Attribute<?> attr = new DocumentKey(recordId, false);
-                d.put(Document.DOCKEY_FIELD_NAME, attr);
+            eventKeyParser.parse(key);
+
+            String fieldWithoutGrouping = JexlASTHelper.deconstructIdentifier(eventKeyParser.getField());
+            if (includeFields != null && !includeFields.contains(fieldWithoutGrouping)) {
+                // field was not present in inclusive filter
+                continue;
+            } else if (excludeFields != null && excludeFields.contains(fieldWithoutGrouping)) {
+                // field matched the exclusive filter
+                continue;
             }
 
-            if (d.size() > 0) {
-                Map.Entry<Key,Document> entry = new AbstractMap.SimpleEntry<>(key, d);
-                Map.Entry<Key,Value> result = serializer.apply(entry);
-                results.add(result);
-            }
+            String field = JexlASTHelper.deconstructIdentifier(eventKeyParser.getField(), includeGroupingContext);
+            Entry<Key,String> from = new AbstractMap.SimpleEntry<>(key, field);
+            Iterable<Map.Entry<String,Attribute<?>>> elements = valueToAttributes.apply(from);
+            elements.forEach(entry -> d.put(entry.getKey(), entry.getValue()));
+        }
+
+        // collect index only fragments
+        collectIndexOnlyFragments(d, candidate);
+
+        // collect term frequency fragments
+        collectTermFrequencyFragments(d, candidate);
+
+        // populate context, only pulling in the attributes required by the query
+        d.visit(identifiers, context);
+
+        boolean matched = evaluation.apply(new Tuple3<>(tk, d, context));
+        if (!matched) {
+            return;
+        }
+
+        if (d.size() > 0 && key != null) {
+            Text cf = new Text(eventKeyParser.getDatatype() + "\0" + eventKeyParser.getUid());
+            Key recordId = new Key(key.getRow(), cf, new Text(), key.getColumnVisibility(), key.getTimestamp());
+            Attribute<?> attr = new DocumentKey(recordId, true);
+            d.put(Document.DOCKEY_FIELD_NAME, attr);
+        }
+
+        if (d.size() > 0) {
+            // reduce to keepers
+            d.reduceToKeep();
+
+            Map.Entry<Key,Document> entry = new AbstractMap.SimpleEntry<>(key, d);
+            Map.Entry<Key,Value> result = serializer.apply(entry);
+            tk = result.getKey();
+            tv = result.getValue();
         }
     }
 
@@ -185,7 +213,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         return new Range(start, true, stop, false);
     }
 
-    private void collectIndexOnlyFragments(Document d, AttributeFactory attributeFactory, String candidate) {
+    private void collectIndexOnlyFragments(Document d, String candidate) {
         if (indexOnlyFieldValues == null) {
             return;
         }
@@ -200,8 +228,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
                 ranges.add(range);
             }
         }
-
-        FieldIndexKey fiParser = new FieldIndexKey();
 
         for (Range range : ranges) {
             try {
@@ -222,7 +248,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         }
     }
 
-    private void collectTermFrequencyFragments(Document d, AttributeFactory attributeFactory, String candidate) {
+    private void collectTermFrequencyFragments(Document d, String candidate) {
         if (termFrequencyFieldValues == null) {
             return;
         }
@@ -238,7 +264,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             }
         }
 
-        TermFrequencyKey tfParser = new TermFrequencyKey();
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
 
         for (Range range : ranges) {
@@ -274,8 +299,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
     }
 
-    private final TermWeightPosition.Builder position = new TermWeightPosition.Builder();
-
     private TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> parseTermFrequencyValue(Value value, String field, String recordId) {
         TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = TreeMultimap.create();
         try {
@@ -307,5 +330,64 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         Preconditions.checkNotNull(source, "deepCopy() called with null source");
         return source.deepCopy(env);
+    }
+
+    /**
+     * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
+     * interrupted because the client is no longer listening.
+     *
+     * @param e
+     *            the exception to handle
+     * @throws IOException
+     *             for read/write issues
+     */
+    private void handleException(Exception e) throws IOException {
+        Throwable reason = e;
+
+        // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
+        // handled specially to ensure that the client will retry the scan elsewhere
+        IOException ioe = null;
+        IterationInterruptedException iie = null;
+        TabletClosedException tce = null;
+        if (reason instanceof IOException) {
+            ioe = (IOException) reason;
+        }
+        if (reason instanceof IterationInterruptedException) {
+            iie = (IterationInterruptedException) reason;
+        }
+        if (reason instanceof TabletClosedException) {
+            tce = (TabletClosedException) reason;
+        }
+
+        int depth = 1;
+        while (iie == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
+            reason = reason.getCause();
+            if (reason instanceof IOException) {
+                ioe = (IOException) reason;
+            }
+            if (reason instanceof IterationInterruptedException) {
+                iie = (IterationInterruptedException) reason;
+            }
+            if (reason instanceof TabletClosedException) {
+                tce = (TabletClosedException) reason;
+            }
+            depth++;
+        }
+
+        // NOTE: Only logging debug (for the most part) here because the Tablet/LookupTask will log the exception
+        // as a WARN if we actually have a problem here
+        if (iie != null) {
+            log.debug("Query interrupted ", e);
+            throw iie;
+        } else if (tce != null) {
+            log.debug("Query tablet closed ", e);
+            throw tce;
+        } else if (ioe != null) {
+            log.debug("Query io exception ", e);
+            throw ioe;
+        } else {
+            log.error("Failure for query ", e);
+            throw new RuntimeException("Failure for query ", e);
+        }
     }
 }
