@@ -1,6 +1,6 @@
 package datawave.query.index.lookup;
 
-import static datawave.query.util.ValueSerializerType.KRYO;
+import static datawave.query.util.ValueSerializerType.WRITABLE;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -71,7 +71,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
 
     private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
 
-    public static final ValueSerializerType DEFAULT_VALUE_ENCODING_TYPE = KRYO;
+    public static final ValueSerializerType DEFAULT_VALUE_ENCODING_TYPE = WRITABLE;
 
     public static final String COLLAPSE_UIDS = "index.lookup.collapse";
     public static final String PARSE_TLD_UIDS = "index.lookup.parse.tld.uids";
