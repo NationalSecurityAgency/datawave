@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +24,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.index.lookup.RangeStream;
+import datawave.query.jexl.util.JexlQueryGenerator;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
@@ -38,6 +40,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.RandomTreeBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -1790,7 +1793,196 @@ public class IngestTypePruningVisitorTest {
 
     }
 
+
+    @Test
+    public void testQueryModelRemapWorks() throws ParseException, InvalidQueryTreeException {
+
+        // --- VALIDATION ---
+
+        validator.setValidateFlatten(true);
+        validator.setValidateJunctions(false);
+        validator.setValidateLineage(false);
+        validator.setValidateReferenceExpressions(false);
+        validator.setValidateQueryPropertyMarkers(false);
+
+        // --- Remapping / changing stuff ---
+
+        // Create a query model that has exactly the mappings we need to test edge cases.
+        QueryModel model = new QueryModel();
+
+        // Forward Mappings
+        model.addTermToModel("A", "");
+        model.addTermToModel("B", "B");
+        model.addTermToModel("C", "C1");
+        model.addTermToModel("C", "C2");
+
+        // Reverse Mappings (Mirror of Forward Mappings)
+        model.addTermToReverseModel("", "A");
+        model.addTermToReverseModel("B", "B");
+        model.addTermToReverseModel("C1", "C");
+        model.addTermToReverseModel("C2", "C");
+
+        HashSet<String> allFields = new HashSet<>();
+        allFields.add("A");
+        allFields.add("B");
+        allFields.add("C");
+        // whoops, i need to add the mappings here too
+        allFields.add("C1");
+        allFields.add("C2");
+
+        String original = "A == '1' || A == '2' || (B == '2' && geowave:intersects(FIELD, 'POINT(10 20)')) || (C == '3' && C == '4')";
+
+        // MUST use invert to groom it. Don't forget!
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
+        ASTJexlScript queryModelAppliedJexl = QueryModelVisitor.applyModel(groomed, model, allFields);
+
+        System.out.println(" --- QueryModel-Applied Query --- ");
+        System.out.println("Is queryModelAppliedJexl valid? | " + validator.isValid(queryModelAppliedJexl));
+        PrintingVisitor.printQuery(queryModelAppliedJexl);
+
+    }
+
+    @Test
+    public void testMyUnderstanding() throws ParseException, InvalidQueryTreeException {
+
+
+        // --- VALIDATION ---
+
+        validator.setValidateFlatten(true);
+        validator.setValidateJunctions(false);
+        validator.setValidateLineage(false);
+        validator.setValidateReferenceExpressions(false);
+        validator.setValidateQueryPropertyMarkers(false);
+
+        // --- TYPE METADATA (removing stuff) ---
+
+        TypeMetadata tm = new TypeMetadata();
+        tm.put("A", "ingestType1", LcType.class.getTypeName());
+        tm.put("B", "ingestType3", LcType.class.getTypeName());
+        tm.put("C", "ingestType2", LcType.class.getTypeName());
+
+
+        // --- Remapping / changing stuff ---
+        // exclusive negated term evaluates to true, drop the whole union
+
+        // These have different behaviour :O
+//        "A == '1' && (B == '2' || !(C == '3'))";  ->  A == '1'
+//        "A == '1' && (B == '2' || C != '3')";     ->  A == '1' && B == '2'
+
+
+        String query = "C == 'PICKLE' || (B == 'PICKLE' && A == 'PICKLE')";
+        String expected = "A == '1'";
+        test(query, expected, tm);
+
+//        String original = "A == '1' && (A == '2' || A != '5')";
+//        test(original, "SUCCESS", tm);
+        //        String original = "(A == 'PICKLE!') OR (B == 'PICKLE!') OR (C == 'PICKLE!' AND C == 'PICKLE!') OR (D == '([A-Za-z0-9]+( [A-Za-z0-9]+)+)!' OR D == '([0-9]+( [0-9]+)+)!)' ) AND (geowave:intersects(FIELD, 'POINT(10 20)') OR geowave:intersects(MEADOW, 'POINT(1000 20)'))";
+
+
+    }
+
+    @Test
+    public void testTM() throws ParseException, InvalidQueryTreeException {
+
+        // --- VALIDATION ---
+
+        validator.setValidateFlatten(true);
+        validator.setValidateJunctions(false);
+        validator.setValidateLineage(false);
+        validator.setValidateReferenceExpressions(false);
+        validator.setValidateQueryPropertyMarkers(false);
+
+
+
+        // --- GENERATOR ---
+
+        Set<String> valueSet = new HashSet<>();
+        valueSet.add("pickle");
+        valueSet.add("banana");
+        valueSet.add("carrot");
+
+        HashSet<String> fieldSet = new HashSet<>();
+        fieldSet.add("A");
+        fieldSet.add("B");
+        fieldSet.add("C");
+        fieldSet.add("D");
+
+        // !!!
+        JexlQueryGenerator generator = new JexlQueryGenerator(fieldSet, valueSet);
+        generator.enableAllOptions();
+        String original = generator.getQuery(100);
+
+
+
+        // --- REMAPPING (QM) ---
+
+        // Create a query model that has exactly the mappings we need to test edge cases.
+        QueryModel model = new QueryModel();
+
+        // Forward Mappings
+        model.addTermToModel("A", "");
+        model.addTermToModel("B", "B");
+        model.addTermToModel("C", "C1");
+        model.addTermToModel("C", "C2");
+        model.addTermToModel("C", "C3");
+        model.addTermToModel("D", "Dork");
+        model.addTermToModel("C2", "Dork");
+
+        // Reverse Mappings (Mirror of Forward Mappings)
+        model.addTermToReverseModel("", "A");
+        model.addTermToReverseModel("B", "B");
+        model.addTermToReverseModel("C1", "C");
+        model.addTermToReverseModel("C2", "C");
+        model.addTermToReverseModel("C3", "C");
+        model.addTermToReverseModel("Dork", "D");
+        model.addTermToReverseModel("C2", "Dork");
+
+        HashSet<String> allFields = new HashSet<>();
+        allFields.add("A");
+        allFields.add("B");
+        allFields.add("C");
+        allFields.add("C1");
+        allFields.add("C2");
+        allFields.add("C3");
+        allFields.add("D");
+        allFields.add("Dork");
+
+        // !!!
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
+        ASTJexlScript queryModelAppliedJexl = QueryModelVisitor.applyModel(groomed, model, allFields);
+
+        System.out.println(" --- Giga Query --- ");
+        System.out.println("Is Giga Query valid? | " + validator.isValid(queryModelAppliedJexl));
+        PrintingVisitor.printQuery(queryModelAppliedJexl);
+
+
+
+        // --- Removing Stuff (TM) ---
+
+        TypeMetadata tm = new TypeMetadata();
+        tm.put("A",     "ingestType1", LcType.class.getTypeName());
+        tm.put("B",     "ingestType1", LcType.class.getTypeName());
+        tm.put("C",     "ingestType1", LcType.class.getTypeName());
+        tm.put("D",     "ingestType1", LcType.class.getTypeName());
+        tm.put("C1",    "ingestType1", LcType.class.getTypeName());
+        tm.put("C2",    "ingestType1", LcType.class.getTypeName());
+        tm.put("C3",    "ingestType1", LcType.class.getTypeName());
+        tm.put("Dork",  "ingestType1", LcType.class.getTypeName());
+
+        // !!!
+        test(JexlStringBuildingVisitor.buildQuery(queryModelAppliedJexl), "", tm);
+
+    }
 }
 
 // In case you forget again :)
 // JexlStringBuildingVisitor.buildQuery(<root-node>)
+// QUERYMODEL RE-MAPS (C -> C1 C2)
+
+// QueryModel applied first, then its output is piped to the TM removal process
+// Replace -> Trim
+// QM Replace -> Unflattened -> TM Trim -> Error!
+
+// 1. QMV.ApplyModel()
+// 2. ApplyModel flattens the script
+// 3. THEN it does jjtAccept!!!
