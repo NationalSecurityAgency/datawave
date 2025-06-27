@@ -1,49 +1,51 @@
 package datawave.data.type.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.datasketches.common.SuppressFBWarnings;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 
 /**
  * The IpV6 address
- * 
+ *
  */
 public class IpV6Address extends IpAddress {
     private static final long serialVersionUID = -1528748156190096213L;
-    private short[] ipaddress = new short[8];
-    
+    private final short[] ipaddress = new short[8];
+
     public IpV6Address(short[] address) {
         if (address.length != 8) {
             throw new IllegalArgumentException("An IpV6 address must be 8 shorts in length");
         }
         System.arraycopy(address, 0, this.ipaddress, 0, address.length);
     }
-    
+
     /**
      * Return the underlying short values
-     * 
+     *
      * @return the IpV6 address short values
      */
     public short[] toShorts() {
         return new short[] {this.ipaddress[0], this.ipaddress[1], this.ipaddress[2], this.ipaddress[3], this.ipaddress[4], this.ipaddress[5], this.ipaddress[6],
                 this.ipaddress[7]};
     }
-    
+
     /**
      * Return the underlying short values in reverse order
-     * 
+     *
      * @return the IpV6 address short values in reverse order
      */
     public short[] toReverseShorts() {
         return new short[] {this.ipaddress[7], this.ipaddress[6], this.ipaddress[5], this.ipaddress[4], this.ipaddress[3], this.ipaddress[2], this.ipaddress[1],
                 this.ipaddress[0]};
     }
-    
+
     /**
      * Parse an address assume the specified base
-     * 
+     *
      * @param address
+     *            the address
      * @return the IpV6 address
      * @throws IllegalArgumentException
      *             if the base is not 10, 8, 16, or the address cannot be parsed using the specified base or dotted/not
@@ -65,7 +67,7 @@ public class IpV6Address extends IpAddress {
                 throw new IllegalArgumentException("Wrong number of sections in " + address);
             }
         }
-        
+
         short[] ipaddress = new short[8];
         int index = 0;
         for (int i = 0; i < 8; i++) {
@@ -90,11 +92,11 @@ public class IpV6Address extends IpAddress {
                 ipaddress[i] = (short) value;
             }
             index++;
-            
+
         }
         return new IpV6Address(ipaddress);
     }
-    
+
     public static String toString(short[] address, boolean zeroPadded, boolean skipZeros) {
         StringBuilder builder = new StringBuilder(39);
         int startSkip = -1;
@@ -139,30 +141,30 @@ public class IpV6Address extends IpAddress {
         }
         return builder.toString();
     }
-    
+
     @Override
     public String toString() {
         return toString(ipaddress, false, true);
     }
-    
+
     @Override
     public String toZeroPaddedString() {
         return toString(ipaddress, true, false);
     }
-    
+
     @Override
     public String toReverseString() {
         return toString(toReverseShorts(), false, true);
     }
-    
+
     @Override
     public String toReverseZeroPaddedString() {
         return toString(toReverseShorts(), true, false);
     }
-    
+
     /**
      * Return the IpV4Address representation if only the last 2 shorts are set
-     * 
+     *
      * @return the IpV4Address representation, null if not compatible with IpV4
      */
     public IpV4Address toIpV4Address() {
@@ -172,7 +174,7 @@ public class IpV6Address extends IpAddress {
             return new IpV4Address(((0x00FFFFl & ipaddress[6]) << 16) | (0x00FFFFl & ipaddress[7]));
         }
     }
-    
+
     @Override
     public IpAddress getStartIp(int validBits) {
         short[] ipaddress = new short[8];
@@ -189,7 +191,7 @@ public class IpV6Address extends IpAddress {
         }
         return new IpV6Address(ipaddress);
     }
-    
+
     @Override
     public IpAddress getEndIp(int validBits) {
         short[] ipaddress = new short[8];
@@ -205,7 +207,7 @@ public class IpV6Address extends IpAddress {
         }
         return new IpV6Address(ipaddress);
     }
-    
+
     @Override
     public int compareTo(IpAddress o) {
         if (o instanceof IpV6Address) {
@@ -220,7 +222,7 @@ public class IpV6Address extends IpAddress {
             }
         }
     }
-    
+
     private int compareToIpV6Address(IpV6Address other) {
         for (int i = 0; i < 8; i++) {
             int comparison = compareSegments(ipaddress[i], other.ipaddress[i]);
@@ -230,12 +232,13 @@ public class IpV6Address extends IpAddress {
         }
         return 0;
     }
-    
+
     private int compareSegments(short x, short y) {
         return (0x00FFFF & x) - (0x00FFFF & y);
     }
-    
+
     @Override
+    @SuppressFBWarnings(value = "EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS", justification = "this has been well tested")
     public boolean equals(Object o) {
         if (o instanceof IpV6Address) {
             return 0 == compareToIpV6Address(((IpV6Address) o));
@@ -249,7 +252,7 @@ public class IpV6Address extends IpAddress {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         int hashCode = 0;
@@ -258,5 +261,5 @@ public class IpV6Address extends IpAddress {
         }
         return hashCode;
     }
-    
+
 }

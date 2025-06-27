@@ -185,7 +185,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -221,7 +221,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -245,7 +245,7 @@ public class PropogatingIteratorTest {
 
         iter.init(createSourceWithTestData(), null, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
     }
 
     private SortedMultiMapIterator createSourceWithTestData() {
@@ -271,7 +271,7 @@ public class PropogatingIteratorTest {
 
         iter.init(createSourceWithTestData(), options, null);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
     }
 
     @Test
@@ -294,7 +294,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -321,7 +321,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -351,7 +351,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -377,7 +377,7 @@ public class PropogatingIteratorTest {
 
         iter.init(createSourceWithTestData(), options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -419,7 +419,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -456,7 +456,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -505,7 +505,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -533,7 +533,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -562,7 +562,7 @@ public class PropogatingIteratorTest {
         iter.init(createSourceWithTestData(), options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -588,7 +588,7 @@ public class PropogatingIteratorTest {
         iter.init(createSourceWithTestData(), options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -623,7 +623,7 @@ public class PropogatingIteratorTest {
                 Random rand = new Random();
                 LockSupport.parkNanos(rand.nextInt(10));
 
-                myitr.seek(new Range(), Collections.emptyList(), false);
+                myitr.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
                 List<Entry<Key,Value>> resultList = Lists.newArrayList();
 

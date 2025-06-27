@@ -6,17 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 public class NotFoundQueryExceptionTest {
-    
+
     private NotFoundQueryException nfqe;
-    
+
     private final String message = "Bad query exception";
     private final Throwable throwable = new Throwable("throws");
     private final String strErrCode = "204-5";
     private final DatawaveErrorCode code = DatawaveErrorCode.QUERY_OR_VIEW_NOT_FOUND;
-    
+
     private final String assertMsg = "Query/view not found. Bad query exception";
     private final String assertMsg2 = "Query/view not found.";
-    
+
     @Test
     public void testEmptyConstructor() {
         nfqe = new NotFoundQueryException();
@@ -25,7 +25,7 @@ public class NotFoundQueryExceptionTest {
         assertNull(nfqe.getMessage());
         assertNull(nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageConstructor() {
         nfqe = new NotFoundQueryException(message);
@@ -34,7 +34,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(message, nfqe.getMessage());
         assertEquals(message, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableConstructor() {
         nfqe = new NotFoundQueryException(message, throwable);
@@ -43,7 +43,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(message, nfqe.getMessage());
         assertEquals(message, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowableErrorCodeConstructor() {
         nfqe = new NotFoundQueryException(throwable, strErrCode);
@@ -52,7 +52,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(throwable.toString(), nfqe.getMessage());
         assertEquals(throwable.toString(), nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableConstructor() {
         nfqe = new NotFoundQueryException(code, throwable);
@@ -61,7 +61,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(assertMsg2, nfqe.getMessage());
         assertEquals(assertMsg2, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeDebugMsgConstructor() {
         nfqe = new NotFoundQueryException(code, message);
@@ -70,7 +70,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(assertMsg, nfqe.getMessage());
         assertEquals(assertMsg, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableDebugMsgConstructor() {
         nfqe = new NotFoundQueryException(code, throwable, message);
@@ -79,7 +79,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(assertMsg, nfqe.getMessage());
         assertEquals(assertMsg, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeConstructor() {
         nfqe = new NotFoundQueryException(code);
@@ -88,7 +88,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(assertMsg2, nfqe.getMessage());
         assertEquals(assertMsg2, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageResponseStatus() {
         nfqe = new NotFoundQueryException(message, 404);
@@ -97,7 +97,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(message, nfqe.getMessage());
         assertEquals(message, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableErrorCode() {
         nfqe = new NotFoundQueryException(message, throwable, strErrCode);
@@ -106,7 +106,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(message, nfqe.getMessage());
         assertEquals(message, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageErrorCode() {
         nfqe = new NotFoundQueryException(message, strErrCode);
@@ -115,7 +115,7 @@ public class NotFoundQueryExceptionTest {
         assertEquals(message, nfqe.getMessage());
         assertEquals(message, nfqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowable() {
         nfqe = new NotFoundQueryException(throwable);

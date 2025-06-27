@@ -175,6 +175,7 @@ import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.YamlIOUtil;
 
+@SuppressWarnings("JavadocDeclaration")
 @Path("/Query")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
@@ -185,6 +186,8 @@ import io.protostuff.YamlIOUtil;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryExecutorBean implements QueryExecutor {
 
+    private static final Logger log = Logger.getLogger(QueryExecutorBean.class);
+
     private static final String PRIVILEGED_USER = "PrivilegedUser";
     private static final String UNLIMITED_QUERY_RESULTS_USER = "UnlimitedQueryResultsUser";
 
@@ -194,8 +197,6 @@ public class QueryExecutorBean implements QueryExecutor {
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
     public static final String CONTEXT_PARAMETER = "context";
-
-    private final Logger log = Logger.getLogger(QueryExecutorBean.class);
 
     @Inject
     private QueryCache queryCache;
@@ -264,10 +265,10 @@ public class QueryExecutorBean implements QueryExecutor {
     @Inject
     private ClosedQueryCache closedQueryCache;
 
-    private final int PAGE_TIMEOUT_MIN = 1;
-    private final int PAGE_TIMEOUT_MAX = 60;
-    private final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
-    private final String INVALID_PAGESIZE = "page.size";
+    private static final int PAGE_TIMEOUT_MIN = 1;
+    private static final int PAGE_TIMEOUT_MAX = 60;
+    private static final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
+    private static final String INVALID_PAGESIZE = "page.size";
 
     @Inject
     private QueryParameters qp;
@@ -353,8 +354,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 Set<String> requiredRoles = l.getRequiredRoles();
                 if (requiredRoles != null) {
-                    List<String> requiredRolesList = new ArrayList<>();
-                    requiredRolesList.addAll(l.getRequiredRoles());
+                    List<String> requiredRolesList = new ArrayList<>(l.getRequiredRoles());
                     d.setRequiredRoles(requiredRolesList);
                 }
 
@@ -388,7 +388,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 log.error("Error setting query logic description", e);
             }
         }
-        Collections.sort(logicConfigurationList, Comparator.comparing(QueryLogicDescription::getName));
+        logicConfigurationList.sort(Comparator.comparing(QueryLogicDescription::getName));
         response.setQueryLogicList(logicConfigurationList);
 
         return response;
@@ -869,10 +869,10 @@ public class QueryExecutorBean implements QueryExecutor {
             boolean expandFields = true;
             boolean expandValues = false;
             if (queryParameters.containsKey(EXPAND_FIELDS)) {
-                expandFields = Boolean.valueOf(queryParameters.getFirst(EXPAND_FIELDS));
+                expandFields = Boolean.parseBoolean(queryParameters.getFirst(EXPAND_FIELDS));
             }
             if (queryParameters.containsKey(EXPAND_VALUES)) {
-                expandValues = Boolean.valueOf(queryParameters.getFirst(EXPAND_VALUES));
+                expandValues = Boolean.parseBoolean(queryParameters.getFirst(EXPAND_VALUES));
             }
 
             AuditType auditType = qd.logic.getAuditType(null);
@@ -1413,11 +1413,7 @@ public class QueryExecutorBean implements QueryExecutor {
         long pageNum = query.getLastPageNumber();
 
         BaseQueryResponse response = query.getLogic().getEnrichedTransformer(query.getSettings()).createResponse(resultsPage);
-        if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
-            response.setHasResults(true);
-        } else {
-            response.setHasResults(false);
-        }
+        response.setHasResults(resultsPage.getStatus() != ResultsPage.Status.NONE);
         response.setPageNumber(pageNum);
         response.setLogicName(query.getLogic().getLogicName());
         response.setQueryId(queryId);
@@ -1477,7 +1473,7 @@ public class QueryExecutorBean implements QueryExecutor {
     }
 
     private <T> T lookupContentByUUID(String uuidType, String uuid, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
-        T response = null;
+        T response;
         String queryId = null;
         try {
             String streaming = queryParameters.getFirst("streaming");
@@ -1551,7 +1547,7 @@ public class QueryExecutorBean implements QueryExecutor {
         if (!queryParameters.containsKey("uuidPairs")) {
             throw new BadRequestException(new IllegalArgumentException("uuidPairs missing from query parameters"), new VoidResponse());
         }
-        T response = null;
+        T response;
         String queryId = null;
         try {
             String uuidPairs = queryParameters.getFirst("uuidPairs");
@@ -1563,6 +1559,11 @@ public class QueryExecutorBean implements QueryExecutor {
             // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
             // required for the content lookup
             final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, MapUtils.toMultiValueMap(queryParameters));
+
+            String lookupContext = queryParameters.getFirst(CONTEXT_PARAMETER);
+            if (lookupContext != null) {
+                criteria.setUUIDTypeContext(lookupContext);
+            }
 
             // Set the HTTP headers if a streamed response is required
             if (streamingOutput) {
@@ -1717,7 +1718,56 @@ public class QueryExecutorBean implements QueryExecutor {
                 asyncClose(queryId);
             }
         }
+    }
 
+    /**
+     *
+     * @param queryParameters
+     *            the parameters
+     * @param httpHeaders
+     *            the headers
+     * @return event results, either as a paged BaseQueryResponse or StreamingOutput
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
+     *                 query-session-id header in the request in a Cookie header or as a query parameter
+     * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
+     * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
+     *
+     * @HTTP 200 success
+     * @HTTP 204 success and no results
+     * @HTTP 400 invalid or missing parameter
+     * @HTTP 500 internal server error
+     */
+    @POST
+    @Path("/generateTagCloud")
+    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff"})
+    @GZIP
+    @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
+    @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
+    @Override
+    @Timed(name = "dw.query.generateTagCloud", absolute = true)
+    public <T> T generateTagCloud(MultivaluedMap<String,String> queryParameters, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
+        if (!queryParameters.containsKey("uuidPairs")) {
+            throw new BadRequestException(new IllegalArgumentException("uuidPairs missing from query parameters"), new VoidResponse());
+        }
+        T response;
+        String queryId = null;
+        try {
+            String uuidPairs = queryParameters.getFirst("uuidPairs");
+            final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, MapUtils.toMultiValueMap(queryParameters));
+            response = this.lookupUUIDUtil.generateTagCloud(criteria);
+            if (response instanceof BaseQueryResponse) {
+                queryId = ((BaseQueryResponse) response).getQueryId();
+            }
+            return response;
+        } finally {
+            if (null != queryId) {
+                asyncClose(queryId);
+            }
+        }
     }
 
     /**
@@ -2100,7 +2150,7 @@ public class QueryExecutorBean implements QueryExecutor {
             log.error("Query Failed", e);
             if (query != null) {
                 query.setActiveCall(false);
-                if (query.getLogic().getCollectQueryMetrics() == true) {
+                if (query.getLogic().getCollectQueryMetrics()) {
                     query.getMetric().setError(e);
                     try {
                         metrics.updateMetric(query.getMetric());
@@ -2246,8 +2296,6 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
-        } catch (Throwable t) {
-            throw t;
         }
     }
 
@@ -3439,7 +3487,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
 
         long start = System.nanoTime();
-        GenericResponse<String> createResponse = null;
+        GenericResponse<String> createResponse;
 
         try {
             createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
@@ -3466,7 +3514,7 @@ public class QueryExecutorBean implements QueryExecutor {
         final SerializationType serializationType = s;
         final Class<?> queryResponseClass = responseClass;
 
-        return new ExecuteStreamingOutputResponse(queryId, queryResponseClass, response, rq, serializationType, proxies);
+        return new ExecuteStreamingOutputResponse(this, queryId, queryResponseClass, response, rq, serializationType, proxies);
     }
 
     /**
@@ -3605,21 +3653,23 @@ public class QueryExecutorBean implements QueryExecutor {
         return new AsyncResult<>(queryId);
     }
 
-    private enum SerializationType {
-        JSON, XML, PB, YAML;
+    public enum SerializationType {
+        JSON, XML, PB, YAML
     }
 
-    public class ExecuteStreamingOutputResponse implements StreamingOutput {
-        private String queryId = null;
-        private Class<?> queryResponseClass = null;
-        private VoidResponse errorResponse = null;
-        private RunningQuery rq = null;
-        private SerializationType serializationType = SerializationType.XML;
-        private Collection<String> proxies = null;
+    public static class ExecuteStreamingOutputResponse implements StreamingOutput {
+        private final QueryExecutorBean queryExecutor;
+        private final String queryId;
+        private final Class<?> queryResponseClass;
+        private final VoidResponse errorResponse;
+        private final RunningQuery rq;
+        private final SerializationType serializationType;
+        private final Collection<String> proxies;
 
-        public ExecuteStreamingOutputResponse(String queryId, Class<?> queryResponseClass, VoidResponse errorResponse, RunningQuery rq,
-                        SerializationType serializationType, Collection<String> proxies) {
+        public ExecuteStreamingOutputResponse(QueryExecutorBean queryExecutor, String queryId, Class<?> queryResponseClass, VoidResponse errorResponse,
+                        RunningQuery rq, SerializationType serializationType, Collection<String> proxies) {
             super();
+            this.queryExecutor = queryExecutor;
             this.queryId = queryId;
             this.queryResponseClass = queryResponseClass;
             this.errorResponse = errorResponse;
@@ -3663,7 +3713,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     do {
                         try {
                             long callStart = System.nanoTime();
-                            BaseQueryResponse page = _next(rq, queryId, proxies);
+                            BaseQueryResponse page = queryExecutor._next(rq, queryId, proxies);
                             PageMetric pm = pageMetrics.get(pageMetrics.size() - 1);
 
                             // Wrap the output stream so that we can get a byte count
@@ -3738,7 +3788,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 throw new DatawaveWebApplicationException(qe, errorResponse, statusCode);
             } finally {
                 try {
-                    close(rq);
+                    queryExecutor.close(rq);
                 } catch (Exception e) {
                     log.error("Error returning connection on failed create", e);
                     QueryException qe = new QueryException(DatawaveErrorCode.CONNECTION_RETURN_ERROR, e);
@@ -3747,7 +3797,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
         }
-
     }
 
     private void testForUncaughtException(Query settings, ResultsPage resultList) throws QueryException {

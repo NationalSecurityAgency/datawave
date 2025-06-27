@@ -22,13 +22,13 @@ import datawave.microservice.cached.LockableCacheInspector;
 @CacheConfig(cacheNames = CACHE_NAME)
 public class StatusCache {
     public static final String CACHE_NAME = "auditReplay";
-    
+
     private final LockableCacheInspector cacheInspector;
-    
+
     public StatusCache(LockableCacheInspector cacheInspector) {
         this.cacheInspector = cacheInspector;
     }
-    
+
     @CachePut(key = "#id")
     public Status create(String id, String path, long sendRate, boolean replayUnfinished) {
         Status status = new Status();
@@ -40,44 +40,44 @@ public class StatusCache {
         status.setReplayUnfinishedFiles(replayUnfinished);
         return status;
     }
-    
+
     public Status retrieve(String id) {
         return cacheInspector.list(CACHE_NAME, Status.class, id);
     }
-    
+
     public List<String> retrieveAllIds() {
         return cacheInspector.listAll(CACHE_NAME, Status.class).stream().map(Status::getId).collect(Collectors.toList());
     }
-    
+
     @CachePut(key = "#status.getId()")
     public Status update(Status status) {
         status.setLastUpdated(new Date());
         return status;
     }
-    
+
     @CacheEvict(key = "#id")
     @CheckReturnValue
     public String delete(String id) {
         return "Evicted " + id;
     }
-    
+
     @CacheEvict(allEntries = true)
     public String deleteAll() {
         return "Evicted all entries";
     }
-    
+
     public void lock(String id) {
         cacheInspector.lock(CACHE_NAME, id);
     }
-    
+
     public void lock(String id, long leaseTimeMillis) {
         cacheInspector.lock(CACHE_NAME, id, leaseTimeMillis, TimeUnit.MILLISECONDS);
     }
-    
+
     public boolean tryLock(String id) {
         return cacheInspector.tryLock(CACHE_NAME, id);
     }
-    
+
     public boolean tryLock(String id, long waitTimeMillis) {
         try {
             return cacheInspector.tryLock(CACHE_NAME, id, waitTimeMillis, TimeUnit.MILLISECONDS);
@@ -85,7 +85,7 @@ public class StatusCache {
             return false;
         }
     }
-    
+
     public boolean tryLock(String id, long waitTimeMillis, long leaseTimeMillis) {
         try {
             return cacheInspector.tryLock(CACHE_NAME, id, waitTimeMillis, TimeUnit.MILLISECONDS, leaseTimeMillis, TimeUnit.MILLISECONDS);
@@ -93,13 +93,13 @@ public class StatusCache {
             return false;
         }
     }
-    
+
     public void unlock(String id) {
         cacheInspector.unlock(CACHE_NAME, id);
     }
-    
+
     public void forceUnlock(String id) {
         cacheInspector.forceUnlock(CACHE_NAME, id);
     }
-    
+
 }

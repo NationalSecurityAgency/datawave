@@ -30,60 +30,60 @@ import com.google.common.collect.Maps;
  */
 
 public interface MarkingFunctions {
-    
+
     ColumnVisibility combine(Collection<ColumnVisibility> columnVisibilities) throws MarkingFunctions.Exception;
-    
+
     @SuppressWarnings("unchecked")
     Map<String,String> combine(Map<String,String>... markings) throws MarkingFunctions.Exception;
-    
+
     ColumnVisibility translateToColumnVisibility(Map<String,String> markings) throws MarkingFunctions.Exception;
-    
+
     Map<String,String> translateFromColumnVisibility(ColumnVisibility columnVisibility) throws MarkingFunctions.Exception;
-    
+
     Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)
                     throws MarkingFunctions.Exception;
-    
+
     Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations)
                     throws MarkingFunctions.Exception;
-    
+
     byte[] flatten(ColumnVisibility vis);
-    
+
     @SuppressWarnings("serial")
     class Exception extends java.lang.Exception {
-        
+
         public Exception() {
             super();
         }
-        
+
         public Exception(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
             super(message, cause, enableSuppression, writableStackTrace);
         }
-        
+
         public Exception(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
         public Exception(String message) {
             super(message);
         }
-        
+
         public Exception(Throwable cause) {
             super(cause);
         }
     }
-    
+
     class Default implements MarkingFunctions {
         public static final String COLUMN_VISIBILITY = "columnVisibility";
-        
+
         @Override
         public ColumnVisibility combine(Collection<ColumnVisibility> expressions) {
-            
+
             // filter out any empty expressions, then flatten each one (to de-dupe) and concatenate with '&'
             // flatten the final combined ColumnVisibility and use that to make the ColumnVisibility to return
             return new ColumnVisibility(new ColumnVisibility(expressions.stream().map(ColumnVisibility::flatten).filter(b -> b.length > 0)
                             .map(b -> "(" + new String(b, UTF_8) + ")").collect(Collectors.joining("&")).getBytes(UTF_8)).flatten());
         }
-        
+
         @Override
         @SafeVarargs
         public final Map<String,String> combine(Map<String,String>... markings) {
@@ -92,39 +92,39 @@ public interface MarkingFunctions {
             return translateFromColumnVisibility(combine(Arrays.stream(markings).filter(m -> m.containsKey(COLUMN_VISIBILITY))
                             .map(this::translateToColumnVisibility).collect(Collectors.toSet())));
         }
-        
+
         @Override
         public ColumnVisibility translateToColumnVisibility(Map<String,String> markings) {
             ColumnVisibility cv = new ColumnVisibility(markings.get(COLUMN_VISIBILITY));
             return new ColumnVisibility(cv.flatten());
         }
-        
+
         @Override
         public Map<String,String> translateFromColumnVisibility(ColumnVisibility expression) {
             Map<String,String> markings = Maps.newHashMap();
             markings.put(COLUMN_VISIBILITY, new String(expression.getExpression(), Charsets.UTF_8));
             return markings;
         }
-        
+
         @Override
         public Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations) {
             return translateFromColumnVisibility(columnVisibility);
         }
-        
+
         @Override
         public Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations) {
             return translateFromColumnVisibility(columnVisibility);
         }
-        
+
         @Override
         public byte[] flatten(ColumnVisibility vis) {
             return FlattenedVisibilityCache.flatten(vis);
         }
-        
+
     }
-    
+
     class Util {
-        
+
         public static Object populate(Object obj, Map<String,String> source) {
             try {
                 BeanUtils.populate(obj, source);
@@ -134,13 +134,13 @@ public interface MarkingFunctions {
             return obj;
         }
     }
-    
+
     class Encoding {
         static private Logger log = LoggerFactory.getLogger(Encoding.class);
-        
+
         /**
          * Turn a set of markings into a serializable string
-         * 
+         *
          * @param markings
          *            the markings map to convert to a string
          * @return a serialized String version of {@code markings}
@@ -154,10 +154,10 @@ public interface MarkingFunctions {
                 return "";
             }
         }
-        
+
         /**
          * Turn a serialized set of markings into a map
-         * 
+         *
          * @param encodedMarkings
          *            the serialized String markings to convert back to a markings Map
          * @return a {@link Map} of the de-serialized markings from {@code encodedMarkings}
@@ -173,20 +173,20 @@ public interface MarkingFunctions {
             }
         }
     }
-    
+
     /**
      * this Factory for MarkingFunctions is designed to be used on the tservers, where there is a vfs-classloader
      */
     class Factory {
         public static final Logger log = LoggerFactory.getLogger(Factory.class);
-        
+
         private static MarkingFunctions markingFunctions;
-        
+
         public static synchronized MarkingFunctions createMarkingFunctions() {
             if (markingFunctions != null)
                 return markingFunctions;
             ClassLoader thisClassLoader = Factory.class.getClassLoader();
-            
+
             // ignore calls to close as this blows away the cache manager
             ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext();
             try {
@@ -207,7 +207,7 @@ public interface MarkingFunctions {
                 // none of the spring wiring will work.
                 log.warn("Could not load spring context files. got " + t);
             }
-            
+
             return markingFunctions;
         }
     }

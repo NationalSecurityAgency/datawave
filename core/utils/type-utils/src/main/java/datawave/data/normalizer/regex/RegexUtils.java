@@ -10,7 +10,7 @@ import datawave.data.normalizer.regex.visitor.StringVisitor;
 import datawave.data.type.util.NumericalEncoder;
 
 public class RegexUtils {
-    
+
     /**
      * Split the given string by all top-level alternations into individual regex segments to be further evaluated. Any pipes encapsulated within groups, e.g.
      * (1|2|3) will not count as alternations to split. See the following input examples:
@@ -24,7 +24,7 @@ public class RegexUtils {
      * <li>Input {@code "||"} will return the list {@code {"", "", ""}}}</li>
      * <li>Input {@code "|12||4|34|} will return the list {@code {"", "12", "", "4", "34"}}</li>
      * </ul>
-     * 
+     *
      * @param str
      *            the string to split
      * @return the split segments
@@ -36,7 +36,7 @@ public class RegexUtils {
             segments.add("");
             return segments;
         }
-        
+
         char[] chars = str.toCharArray();
         int strLength = chars.length;
         int lastPos = strLength - 1;
@@ -90,7 +90,7 @@ public class RegexUtils {
         }
         return segments;
     }
-    
+
     /**
      * Return whether the regex consists of a single simple number without any special operations, e.g. '1', '1\\.0', '-1', '-1\\.0'.
      */
@@ -132,7 +132,7 @@ public class RegexUtils {
         }
         return true;
     }
-    
+
     /**
      * Returns the escaped, encoded form of a string containing a number from part of a regex. The string must be a number, and may be escaped. See the
      * following input examples:
@@ -143,7 +143,7 @@ public class RegexUtils {
      * <li>Input {@code "-1\.2"} will return {@code "\!ZE1\.2"}</li>
      * <li>Input {@code "-12"} will return {@code "\!YE1\.2"}</li>
      * </ul>
-     * 
+     *
      * @param str
      *            the string to encode
      * @return the escaped, encoded number
@@ -151,10 +151,10 @@ public class RegexUtils {
     public static String encodeNumber(String str) {
         return escapeEncodedNumber(NumericalEncoder.encode(removeBackslashes(str)));
     }
-    
+
     /**
      * Return the given string with all backslashes removed from it.
-     * 
+     *
      * @param str
      *            the string
      * @return the string without any backslashes
@@ -162,7 +162,7 @@ public class RegexUtils {
     public static String removeBackslashes(String str) {
         return str.replaceAll(RegexConstants.ESCAPED_BACKSLASH, "");
     }
-    
+
     /**
      * Return an encoded whole number with the characters {@code . ! +} escaped by a backslash.
      */
@@ -176,10 +176,10 @@ public class RegexUtils {
         }
         return sb.toString();
     }
-    
+
     /**
      * Return the index of the first escaped period present in the children of the given node tree, or -1 if no such child is found.
-     * 
+     *
      * @param node
      *            the node
      * @return the index of the first escaped period, or -1 if not found
@@ -195,10 +195,10 @@ public class RegexUtils {
         }
         return -1;
     }
-    
+
     /**
      * Returns whether the first child in the given node tree is a minus sign.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the first child is a minus sign, or false otherwise
@@ -206,10 +206,10 @@ public class RegexUtils {
     public static boolean isNegativeRegex(Node node) {
         return isChar(node.getFirstChild(), RegexConstants.HYPHEN);
     }
-    
+
     /**
      * Return whether the given node is an escaped period.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the given node is an escaped period, or false otherwise.
@@ -217,10 +217,10 @@ public class RegexUtils {
     public static boolean isDecimalPoint(Node node) {
         return node instanceof EscapedSingleCharNode && ((EscapedSingleCharNode) node).getCharacter() == RegexConstants.PERIOD;
     }
-    
+
     /**
      * Return whether the given node is the given character, escaped or otherwise.
-     * 
+     *
      * @param node
      *            the node
      * @param character
@@ -235,10 +235,10 @@ public class RegexUtils {
         }
         return false;
     }
-    
+
     /**
      * Return whether the given node is a character class that would match against the given character.
-     * 
+     *
      * @param node
      *            the node
      * @param character
@@ -276,7 +276,7 @@ public class RegexUtils {
             throw new IllegalArgumentException("Node must be a " + CharClassNode.class.getSimpleName());
         }
     }
-    
+
     /**
      * Return whether the given node is a character class that would only match against the given character.
      *
@@ -321,10 +321,10 @@ public class RegexUtils {
             throw new IllegalArgumentException("Node must be a " + CharClassNode.class.getSimpleName());
         }
     }
-    
+
     /**
      * Return whether the given node is a regex element that would match against the given character.
-     * 
+     *
      * @param node
      *            the regex element
      * @param character
@@ -344,11 +344,11 @@ public class RegexUtils {
                 return false;
         }
     }
-    
+
     public static boolean groupNodeMatches(Node node, char character) {
         GroupNode group = (GroupNode) node;
         boolean matchFound = false;
-        
+
         for (Node child : group.getChildren()) {
             // If the current child is a single character, see if it is a match for the character.
             if (child instanceof SingleCharNode) {
@@ -362,7 +362,7 @@ public class RegexUtils {
         }
         return matchFound;
     }
-    
+
     /**
      * Return whether the given node is a regex element that can only match against the given character.
      *
@@ -380,7 +380,7 @@ public class RegexUtils {
                 return false;
         }
     }
-    
+
     /**
      * Return whether the given node is a regex element that can match against the character '0'.
      *
@@ -391,7 +391,7 @@ public class RegexUtils {
     public static boolean matchesZero(Node node) {
         return matchesChar(node, RegexConstants.ZERO);
     }
-    
+
     public static boolean matchesCharExplicitly(Node node, char character) {
         switch (node.getType()) {
             case SINGLE_CHAR:
@@ -404,14 +404,14 @@ public class RegexUtils {
                 return false;
         }
     }
-    
+
     public static boolean matchesZeroExplicitly(Node node) {
         return matchesCharExplicitly(node, RegexConstants.ZERO);
     }
-    
+
     /**
      * Return whether the given node is a regex element that can only match against the character '0'.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the node can match only against '0' or false otherwise.
@@ -419,10 +419,10 @@ public class RegexUtils {
     public static boolean matchesZeroOnly(Node node) {
         return matchesCharOnly(node, RegexConstants.ZERO);
     }
-    
+
     /**
      * Return whether the given node is a quantifier type.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the node is a quantifier type, or false otherwise
@@ -430,11 +430,11 @@ public class RegexUtils {
     public static boolean isQuantifier(Node node) {
         return RegexConstants.QUANTIFIER_TYPES.contains(node.getClass());
     }
-    
+
     /**
      * Return a range representing the number of occurrences the given node can match against. The left side will be at a minimum, 0, and the right side may be
      * a number, or null (infinity).
-     * 
+     *
      * @param node
      *            the node
      * @return the occurrence range
@@ -476,7 +476,7 @@ public class RegexUtils {
         }
         return Pair.of(min, max);
     }
-    
+
     /**
      * Return whether the given node represents a simple number regex.
      *
@@ -491,10 +491,10 @@ public class RegexUtils {
         String expression = StringVisitor.toString(node);
         return RegexConstants.SIMPLE_NUMBER_REGEX_PATTERN.matcher(expression).matches();
     }
-    
+
     /**
      * Return the given digit character as an integer.
-     * 
+     *
      * @param digit
      *            the digit character
      * @return the integer form
@@ -502,10 +502,10 @@ public class RegexUtils {
     public static int toInt(char digit) {
         return Character.digit(digit, RegexConstants.DECIMAL_RADIX);
     }
-    
+
     /**
      * Return the given int as a digit character.
-     * 
+     *
      * @param digit
      *            the int
      * @return the digit character
@@ -513,10 +513,10 @@ public class RegexUtils {
     public static char toChar(int digit) {
         return Character.forDigit(digit, RegexConstants.DECIMAL_RADIX);
     }
-    
+
     /**
      * Return whether the given quantifier node allows for zero occurrences.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the quantifier allows for zero occurrences, or false otherwise
@@ -536,10 +536,10 @@ public class RegexUtils {
                 throw new IllegalArgumentException("Unhandled quantifier type: " + RegexConstants.QUANTIFIER_TYPES);
         }
     }
-    
+
     /**
      * Return whether the given repetition quantifier node allows for zero occurrences.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the quantifier allows for zero occurrences, or false otherwise
@@ -552,10 +552,10 @@ public class RegexUtils {
             return ((IntegerRangeNode) child).getStart() == 0;
         }
     }
-    
+
     /**
      * Return the given repetition as an occurrence range.
-     * 
+     *
      * @param node
      *            the node
      * @return the range
@@ -574,10 +574,10 @@ public class RegexUtils {
             }
         }
     }
-    
+
     /**
      * Subtract one from the given range endpoints and return it.
-     * 
+     *
      * @param range
      *            the range
      * @return the updated range
@@ -587,10 +587,10 @@ public class RegexUtils {
         Integer right = range.getRight() == null ? null : (range.getRight() - 1);
         return Pair.of(left, right);
     }
-    
+
     /**
      * Return a new repetition node created from the given range.
-     * 
+     *
      * @param range
      *            the range
      * @return the new repetition node
@@ -602,10 +602,10 @@ public class RegexUtils {
             return new RepetitionNode(new IntegerRangeNode(range.getLeft(), range.getRight()));
         }
     }
-    
+
     /**
      * Return whether the given repetition quantifier is not a defined range, e.g. {x} rather than {x,y} or {x,}.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the repetition is not a range, or false otherwise
@@ -613,10 +613,10 @@ public class RegexUtils {
     public static boolean isNotRange(RepetitionNode node) {
         return node.getFirstChild() instanceof IntegerNode;
     }
-    
+
     /**
      * Return a copy of the given repetition as a range starting from zero.
-     * 
+     *
      * @param node
      *            the node
      * @return the new repetition quantifier
@@ -632,7 +632,7 @@ public class RegexUtils {
         }
         return new RepetitionNode(range);
     }
-    
+
     private RegexUtils() {
         throw new UnsupportedOperationException();
     }

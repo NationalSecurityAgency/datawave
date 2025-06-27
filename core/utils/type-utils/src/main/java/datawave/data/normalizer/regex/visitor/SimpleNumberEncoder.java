@@ -20,10 +20,10 @@ import datawave.data.type.util.NumericalEncoder;
  * </ul>
  */
 public class SimpleNumberEncoder extends SubExpressionVisitor {
-    
+
     /**
      * Return a copy of the given tree with all simple numbers encoded.
-     * 
+     *
      * @param node
      *            the node to encode
      * @return the encoded node
@@ -35,7 +35,7 @@ public class SimpleNumberEncoder extends SubExpressionVisitor {
         SimpleNumberEncoder visitor = new SimpleNumberEncoder();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     protected Object visitSubExpression(Node node) {
         // If the expression is a simple number, encode it.
@@ -47,7 +47,7 @@ public class SimpleNumberEncoder extends SubExpressionVisitor {
             return copy(node);
         }
     }
-    
+
     /**
      * Create an encoded simple number regex from the given node. It is expected that the given node represents a simple number regex.
      *
@@ -65,26 +65,26 @@ public class SimpleNumberEncoder extends SubExpressionVisitor {
                 sb.append(((SingleCharNode) child).getCharacter());
             }
         }
-        
+
         // Encode and escape the number.
         String encodedNumber = NumericalEncoder.encode(sb.toString());
         encodedNumber = RegexUtils.escapeEncodedNumber(encodedNumber);
-        
+
         // Parse the number to a node.
         Node encodedNode = RegexParser.parse(encodedNumber);
-        
+
         // If the original expression contained a starting anchor, include it in the encoded node.
         Node firstChild = node.getFirstChild();
         if (firstChild instanceof StartAnchorNode) {
             encodedNode.addChild(firstChild.shallowCopy(), 0);
         }
-        
+
         // If the original expression contained an ending anchor, include it in the encoded node.
         Node lastChild = node.getLastChild();
         if (lastChild instanceof EndAnchorNode) {
             encodedNode.addChild(lastChild.shallowCopy());
         }
-        
+
         return encodedNode;
     }
 }

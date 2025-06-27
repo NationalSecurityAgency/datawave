@@ -8,7 +8,7 @@ import datawave.microservice.querymetric.handler.QueryMetricCombiner;
 
 @Configuration
 public class EntryProcessorConfiguration {
-    
+
     @Bean
     MetricUpdateEntryProcessorFactory entryProcessorFactory(QueryMetricCombiner combiner) {
         return new MetricUpdateEntryProcessorFactory(combiner);

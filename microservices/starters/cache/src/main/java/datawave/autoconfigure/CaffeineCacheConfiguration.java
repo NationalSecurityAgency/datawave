@@ -25,15 +25,15 @@ import com.github.benmanes.caffeine.cache.CaffeineSpec;
 @Conditional(CacheCondition.class)
 public class CaffeineCacheConfiguration {
     private final CacheProperties cacheProperties;
-    
+
     private final CacheManagerCustomizers customizers;
-    
+
     private final Caffeine<Object,Object> caffeine;
-    
+
     private final CaffeineSpec caffeineSpec;
-    
+
     private final CacheLoader<Object,Object> cacheLoader;
-    
+
     CaffeineCacheConfiguration(CacheProperties cacheProperties, CacheManagerCustomizers customizers, ObjectProvider<Caffeine<Object,Object>> caffeine,
                     ObjectProvider<CaffeineSpec> caffeineSpec, ObjectProvider<CacheLoader<Object,Object>> cacheLoader) {
         this.cacheProperties = cacheProperties;
@@ -42,7 +42,7 @@ public class CaffeineCacheConfiguration {
         this.caffeineSpec = caffeineSpec.getIfAvailable();
         this.cacheLoader = cacheLoader.getIfAvailable();
     }
-    
+
     @Bean
     @Primary
     public CaffeineCacheManager cacheManager() {
@@ -53,7 +53,7 @@ public class CaffeineCacheConfiguration {
         }
         return this.customizers.customize(cacheManager);
     }
-    
+
     private CaffeineCacheManager createCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         setCacheBuilder(cacheManager);
@@ -62,7 +62,7 @@ public class CaffeineCacheConfiguration {
         }
         return cacheManager;
     }
-    
+
     private void setCacheBuilder(CaffeineCacheManager cacheManager) {
         String specification = this.cacheProperties.getCaffeine().getSpec();
         if (StringUtils.hasText(specification)) {

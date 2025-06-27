@@ -16,7 +16,7 @@ public class RequiredValueIfFieldEqualsValidator implements ConstraintValidator<
     private String fieldSetValue;
     private String requiredValueFieldName;
     private String requiredValueFieldValue;
-    
+
     @Override
     public void initialize(RequiredValueIfFieldEquals constraintAnnotation) {
         fieldName = constraintAnnotation.fieldName();
@@ -24,13 +24,13 @@ public class RequiredValueIfFieldEqualsValidator implements ConstraintValidator<
         requiredValueFieldName = constraintAnnotation.requiredValueFieldName();
         requiredValueFieldValue = constraintAnnotation.requiredValueFieldValue();
     }
-    
+
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
         if (value == null) {
             return true;
         }
-        
+
         try {
             final String fieldValue = BeanUtils.getProperty(value, fieldName);
             final String setFieldValue = BeanUtils.getProperty(value, requiredValueFieldName);
@@ -43,7 +43,7 @@ public class RequiredValueIfFieldEqualsValidator implements ConstraintValidator<
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
-        
+
         return true;
     }
 }

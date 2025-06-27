@@ -12,15 +12,15 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 // Purpose of this class is to override the name field in DatawaveUser
 // to use the commonName instead of the subjectDN/issuerDN
 public class OAuthUserInfo extends DatawaveUser {
-    
+
     private String name;
-    
+
     public OAuthUserInfo(DatawaveUser user) {
         super(user.getDn(), user.getUserType(), user.getEmail(), user.getAuths(), user.getRoles(), user.getRoleToAuthMapping(), user.getCreationTime(),
                         user.getExpirationTime());
         this.name = user.getCommonName();
     }
-    
+
     @JsonCreator
     public OAuthUserInfo(@JsonProperty(value = "dn", required = true) SubjectIssuerDNPair dn,
                     @JsonProperty(value = "userType", required = true) UserType userType, @JsonProperty(value = "email", required = true) String email,
@@ -30,7 +30,7 @@ public class OAuthUserInfo extends DatawaveUser {
                     @JsonProperty(value = "expirationTime", defaultValue = "-1L") long expirationTime) {
         super(dn, userType, email, auths, roles, roleToAuthMapping, creationTime, expirationTime);
     }
-    
+
     @Override
     public String getName() {
         return name;

@@ -11,14 +11,14 @@ import datawave.data.normalizer.regex.RegexUtils;
  * point.
  */
 public class DecimalPointValidator extends BaseVisitor {
-    
+
     public static void validate(Node node) {
         if (node != null) {
             DecimalPointValidator visitor = new DecimalPointValidator();
             node.accept(visitor, null);
         }
     }
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         if (node.getFirstChild() instanceof AlternationNode) {
@@ -28,10 +28,10 @@ public class DecimalPointValidator extends BaseVisitor {
         }
         return null;
     }
-    
+
     /**
      * Check the given expressions for valid decimal point specifications.
-     * 
+     *
      * @param node
      *            the node to validate
      */

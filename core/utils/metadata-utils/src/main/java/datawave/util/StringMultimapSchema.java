@@ -16,7 +16,7 @@ import io.protostuff.Schema;
  * This schema can be used by the protostuff api to serialize/deserialize a String Multimap
  */
 public class StringMultimapSchema implements Schema<Multimap<String,String>> {
-    
+
     @Override
     public String getFieldName(int number) {
         switch (number) {
@@ -26,7 +26,7 @@ public class StringMultimapSchema implements Schema<Multimap<String,String>> {
                 return null;
         }
     }
-    
+
     @Override
     public int getFieldNumber(String name) {
         switch (name) {
@@ -36,32 +36,32 @@ public class StringMultimapSchema implements Schema<Multimap<String,String>> {
                 return 0;
         }
     }
-    
+
     @Override
     public boolean isInitialized(Multimap<String,String> message) {
         return true;
     }
-    
+
     @Override
     public Multimap<String,String> newMessage() {
         return ArrayListMultimap.create();
     }
-    
+
     @Override
     public String messageName() {
         return Multimap.class.getSimpleName();
     }
-    
+
     @Override
     public String messageFullName() {
         return Multimap.class.getName();
     }
-    
+
     @Override
     public Class<? super Multimap<String,String>> typeClass() {
         return Multimap.class;
     }
-    
+
     @Override
     public void mergeFrom(Input input, Multimap<String,String> multimap) throws IOException {
         for (int number = input.readFieldNumber(this);; number = input.readFieldNumber(this)) {
@@ -77,50 +77,50 @@ public class StringMultimapSchema implements Schema<Multimap<String,String>> {
             }
         }
     }
-    
+
     @Override
     public void writeTo(Output output, Multimap<String,String> multimap) throws IOException {
         if (multimap != null)
             for (String key : multimap.keySet())
                 output.writeObject(1, new Entry(key, multimap.get(key)), entrySchema, true);
     }
-    
+
     private static class Entry {
         private String key;
         private Collection<String> values;
-        
+
         public Entry() {
             this.values = new ArrayList<>();
         }
-        
+
         public Entry(String key, Collection<String> values) {
             this.key = key;
             this.values = values;
         }
-        
+
         public String getKey() {
             return key;
         }
-        
+
         public void setKey(String key) {
             this.key = key;
         }
-        
+
         public Collection<String> getValues() {
             return values;
         }
-        
+
         public void setValues(Collection<String> values) {
             this.values = values;
         }
-        
+
         public void addValue(String value) {
             this.values.add(value);
         }
     }
-    
+
     private static Schema<Entry> entrySchema = new Schema<Entry>() {
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -132,7 +132,7 @@ public class StringMultimapSchema implements Schema<Multimap<String,String>> {
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             switch (name) {
@@ -144,32 +144,32 @@ public class StringMultimapSchema implements Schema<Multimap<String,String>> {
                     return 0;
             }
         }
-        
+
         @Override
         public boolean isInitialized(Entry entry) {
             return true;
         }
-        
+
         @Override
         public Entry newMessage() {
             return new Entry();
         }
-        
+
         @Override
         public String messageName() {
             return Entry.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return Entry.class.getName();
         }
-        
+
         @Override
         public Class<? super Entry> typeClass() {
             return Entry.class;
         }
-        
+
         @Override
         public void mergeFrom(Input input, Entry entry) throws IOException {
             for (int number = input.readFieldNumber(this);; number = input.readFieldNumber(this)) {
@@ -187,7 +187,7 @@ public class StringMultimapSchema implements Schema<Multimap<String,String>> {
                 }
             }
         }
-        
+
         @Override
         public void writeTo(Output output, Entry entry) throws IOException {
             if (entry.getKey() != null)

@@ -34,14 +34,14 @@ import datawave.microservice.audit.config.AuditServiceProperties;
 @EnableConfigurationProperties(AuditServiceDiscoveryProperties.class)
 @EnableDiscoveryClient
 public class AuditServiceDiscoveryConfiguration {
-    
+
     private static Logger logger = LoggerFactory.getLogger(AuditServiceDiscoveryConfiguration.class);
-    
+
     private final AuditServiceProperties serviceProperties;
     private final AuditServiceDiscoveryProperties discoveryProperties;
     private final AuditServiceProvider instanceProvider;
     private final HeartbeatMonitor monitor;
-    
+
     //@formatter:off
     @Autowired
     public AuditServiceDiscoveryConfiguration(
@@ -54,29 +54,29 @@ public class AuditServiceDiscoveryConfiguration {
         this.monitor = new HeartbeatMonitor();
     }
     //@formatter:on
-    
+
     @Bean
     public AuditServiceDiscoveryProperties auditDiscoveryProperties() {
         return new AuditServiceDiscoveryProperties();
     }
-    
+
     @Bean
     public AuditServiceProvider auditDiscoveryInstanceProvider(DiscoveryClient discoveryClient) {
         return new RetryableServiceProvider(serviceProperties, discoveryClient);
     }
-    
+
     @EventListener(ContextRefreshedEvent.class)
     public void startup() {
         refresh();
     }
-    
+
     @EventListener(HeartbeatEvent.class)
     public void heartbeat(HeartbeatEvent event) {
         if (monitor.update(event.getValue())) {
             refresh();
         }
     }
-    
+
     private void refresh() {
         logger.debug("Refreshing audit service instance");
         try {
@@ -90,7 +90,7 @@ public class AuditServiceDiscoveryConfiguration {
             }
         }
     }
-    
+
     @ConditionalOnProperty(value = "audit.discovery.failFast")
     @ConditionalOnClass({Retryable.class, Aspect.class, AopAutoConfiguration.class})
     @Configuration

@@ -30,23 +30,23 @@ import datawave.microservice.query.storage.QueryStorageCache;
 @ConditionalOnProperty(name = "datawave.query.executor.monitor.enabled", havingValue = "true", matchIfMissing = true)
 public class FindWorkMonitor {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final BusProperties busProperties;
     private final ExecutorProperties executorProperties;
     private final ExecutorStatusCache executorStatusCache;
     private final LockedCacheUpdateUtil<ExecutorPoolStatus> executorStatusUpdateUtil;
-    
+
     private final QueryStorageCache queryStorageCache;
     private final QueryExecutor queryExecutor;
     private final ExecutorStatusLogger executorStatusLogger = new ExecutorStatusLogger();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    
+
     private final String originService;
     private final String destinationService;
-    
+
     private long taskStartTime;
     private Future<Void> taskFuture;
-    
+
     public FindWorkMonitor(BusProperties busProperties, ExecutorProperties executorProperties, QueryProperties queryProperties,
                     ExecutorStatusCache executorStatusCache, QueryStorageCache cache, QueryExecutor executor) {
         this.busProperties = busProperties;
@@ -55,14 +55,14 @@ public class FindWorkMonitor {
         this.executorStatusUpdateUtil = new LockedCacheUpdateUtil<>(executorStatusCache);
         this.queryStorageCache = cache;
         this.queryExecutor = executor;
-        
+
         PathDestinationFactory pathDestinationFactory = new PathDestinationFactory();
         this.originService = pathDestinationFactory.getDestination(queryProperties.getQueryServiceName()).getDestinationAsString();
         this.destinationService = pathDestinationFactory
                         .getDestination(String.join("-", Arrays.asList(queryProperties.getExecutorServiceName(), executorProperties.getPool())))
                         .getDestinationAsString();
     }
-    
+
     // this runs in a separate thread every 30 seconds (by default)
     @Scheduled(cron = "${datawave.query.executor.monitor.scheduler-crontab:*/30 * * * * ?}")
     public void monitorTaskScheduler() {
@@ -85,21 +85,21 @@ public class FindWorkMonitor {
                 taskFuture.cancel(true);
             }
         }
-        
+
         // schedule a new monitor task if the previous one has finished
         if (taskFuture == null) {
             taskStartTime = System.currentTimeMillis();
             taskFuture = executor.submit(new FindWorkTask(queryStorageCache, queryExecutor, originService, destinationService, executorStatusLogger));
         }
-        
+
         // update the executor heartbeat on every iteration
         updateExecutorHeartbeat();
     }
-    
+
     private boolean isTaskLeaseExpired() {
         return (System.currentTimeMillis() - taskStartTime) > executorProperties.getMonitorTaskLeaseMillis();
     }
-    
+
     @EventListener
     private void initializeHeartbeatPool(ApplicationReadyEvent event) {
         executorStatusCache.lock(executorProperties.getPool());
@@ -113,7 +113,7 @@ public class FindWorkMonitor {
             executorStatusCache.unlock(executorProperties.getPool());
         }
     }
-    
+
     private void updateExecutorHeartbeat() {
         try {
             executorStatusUpdateUtil.lockedUpdate(executorProperties.getPool(), (executorStatus) -> {
