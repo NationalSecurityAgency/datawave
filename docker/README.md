@@ -8,7 +8,6 @@ out the [prereqs](#prereqs) at a minimum):
 
 ```shell
 # build docker images for datawave and all of the microservices
-# optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the datawave maven repository instead of from the CDN
 mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 
 # bootstrap the services, and bring them up using docker compose

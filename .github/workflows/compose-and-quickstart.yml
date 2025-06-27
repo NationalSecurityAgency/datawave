@@ -136,10 +136,10 @@ jobs:
                      -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
                      -Durl.maven=https://bogus.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz"
           
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false -Djkube.container-image.tags.1=latest clean install
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false -Djkube.container-image.tags.1=latest clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh
           attempt=0
