@@ -185,26 +185,17 @@ jobs:
           distribution: ${{env.JAVA_DISTRIBUTION}}
           java-version: ${{env.JAVA_VERSION}}
           cache: 'maven'
-      # Allow us to use the "--squash" option below
-      - name: Turn on Docker experimental features and move Docker data root
-        run: |
-          if [[ -f /etc/docker/daemon.json ]]; then
-            sudo sed -ri 's|\s*}\s*$|, "experimental": true, "data-root": "/mnt/docker" }|' /etc/docker/daemon.json
-          else
-            echo $'{\n    "experimental": true, "data-root": "/mnt/docker"\n}' | sudo tee /etc/docker/daemon.json
-          fi
-          sudo systemctl restart docker
-          echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
       # Clean up free space
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
       # Builds the quickstart docker image and run the web tests
-      - name: Quickstart Query Tests
+      - name: Quickstart Web Tests
         env:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress -Dstyle.color=always \
-              -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests -Pcompose -Dquickstart-docker clean package \
-              -Djkube.container-image.buildOptions="--squash --force-rm" -Ddatawave.quickstart.web.tests.skip=false
+              -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests -Pcompose -Dquickstart-docker clean install \
+              -Ddatawave.quickstart.web.tests.skip=false \
+              -Djkube.container-image.optimise=true -Djkube.container-image.nocache=true -Djkube.container-image.cleanup=remove
