@@ -59,13 +59,17 @@ jobs:
             echo "Nothing to do since this is a release branch."
           else
             # update datawave dependencies to use the latest snapshots
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
+                -Dstarters versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Djkube.container-image.tags.1=latest clean install
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
+                -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests \
+                -Djkube.container-image.tags.1=latest clean install
           
             # free up some space so that we don't run out
             docker system prune -f
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
+                -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
           
             cd docker
             ./bootstrap.sh
@@ -136,10 +140,13 @@ jobs:
                      -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
                      -Durl.maven=https://bogus.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz"
           
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false -Djkube.container-image.tags.1=latest clean install
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
+              -Djkube.container-image.tags.1=latest clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh
           attempt=0
@@ -167,3 +174,37 @@ jobs:
         run: |
           cd docker
           docker compose logs
+  quickstart-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up JDK ${{env.JAVA_VERSION}}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{env.JAVA_DISTRIBUTION}}
+          java-version: ${{env.JAVA_VERSION}}
+          cache: 'maven'
+      # Allow us to use the "--squash" option below
+      - name: Turn on Docker experimental features and move Docker data root
+        run: |
+          if [[ -f /etc/docker/daemon.json ]]; then
+            sudo sed -ri 's|\s*}\s*$|, "experimental": true, "data-root": "/mnt/docker" }|' /etc/docker/daemon.json
+          else
+            echo $'{\n    "experimental": true, "data-root": "/mnt/docker"\n}' | sudo tee /etc/docker/daemon.json
+          fi
+          sudo systemctl restart docker
+          echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
+      # Clean up free space
+      - uses: ./.github/actions/free-space
+        with:
+          tool-cache: false
+      # Builds the quickstart docker image and run the web tests
+      - name: Quickstart Query Tests
+        env:
+          USER_NAME: ${{ secrets.USER_NAME }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress -Dstyle.color=always \
+              -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests -Pcompose -Dquickstart-docker clean package \
+              -Djkube.container-image.buildOptions="--squash --force-rm" -Ddatawave.quickstart.web.tests.skip=false

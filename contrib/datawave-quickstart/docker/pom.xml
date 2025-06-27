@@ -11,6 +11,8 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <properties>
+        <datawave.quickstart.ingest.test.data.skip>${skipIngest}</datawave.quickstart.ingest.test.data.skip>
+        <datawave.quickstart.web.tests.skip>true</datawave.quickstart.web.tests.skip>
         <dist.accumulo>accumulo-${version.accumulo.tar.gz}.tar.gz</dist.accumulo>
         <dist.hadoop>hadoop-${version.hadoop.tar.gz}.tar.gz</dist.hadoop>
         <dist.maven>maven-${version.maven.tar.gz}.tar.gz</dist.maven>
@@ -209,8 +211,8 @@
                                             <DATAWAVE_COMMIT_ID>${git.commit.id}</DATAWAVE_COMMIT_ID>
                                             <DATAWAVE_BRANCH_NAME>${git.branch}</DATAWAVE_BRANCH_NAME>
                                             <DATAWAVE_BUILD_PROFILE>${build.env}</DATAWAVE_BUILD_PROFILE>
-                                            <DATAWAVE_SKIP_INGEST>${skipIngest}</DATAWAVE_SKIP_INGEST>
-                                            <DATAWAVE_SKIP_TESTS>true</DATAWAVE_SKIP_TESTS>
+                                            <DATAWAVE_INGEST_TEST_DATA_SKIP>${datawave.quickstart.ingest.test.data.skip}</DATAWAVE_INGEST_TEST_DATA_SKIP>
+                                            <DATAWAVE_WEB_TEST_SKIP>${datawave.quickstart.web.tests.skip}</DATAWAVE_WEB_TEST_SKIP>
                                             <ACCUMULO_URL>${url.accumulo}</ACCUMULO_URL>
                                             <HADOOP_URL>${url.hadoop}</HADOOP_URL>
                                             <MAVEN_URL>${url.maven}</MAVEN_URL>

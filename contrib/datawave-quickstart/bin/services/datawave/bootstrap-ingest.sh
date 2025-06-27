@@ -51,9 +51,9 @@ DW_DATAWAVE_INGEST_HDFS_BASEDIR=${DW_DATAWAVE_INGEST_HDFS_BASEDIR:-/datawave/ing
 
 # Set to any non-empty value other than 'false' to skip ingest of the raw data examples below
 
-DW_DATAWAVE_INGEST_TEST_SKIP=${DW_DATAWAVE_INGEST_TEST_SKIP:-false}
+DW_DATAWAVE_INGEST_TEST_DATA_SKIP=${DW_DATAWAVE_INGEST_TEST_DATA_SKIP:-false}
 
-# Example raw data files to be ingested (unless DW_DATAWAVE_INGEST_TEST_SKIP != 'false')
+# Example raw data files to be ingested (unless DW_DATAWAVE_INGEST_TEST_DATA_SKIP != 'false')
 
 DW_DATAWAVE_INGEST_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"}
 DW_DATAWAVE_INGEST_TEST_FILE_CSV=${DW_DATAWAVE_INGEST_TEST_FILE_CSV:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"}

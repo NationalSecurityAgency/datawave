@@ -4,8 +4,8 @@ ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
 ARG DATAWAVE_JAVA_HOME
 ARG DATAWAVE_BUILD_PROFILE
-ARG DATAWAVE_SKIP_INGEST=false
-ARG DATAWAVE_SKIP_TESTS=false
+ARG DATAWAVE_INGEST_TEST_DATA_SKIP
+ARG DATAWAVE_WEB_TEST_SKIP
 ARG DATAWAVE_MAVEN_REPO="https://maven.pkg.github.com/NationalSecurityAgency/datawave"
 
 ARG ACCUMULO_URL
@@ -68,7 +68,8 @@ RUN git init && \
     echo "export DW_WILDFLY_DIST_URI=\"$WILDFLY_URL\"" >> ~/.bashrc && \
     echo "export DW_ZOOKEEPER_DIST_URI=\"$ZOOKEEPER_URL\"" >> ~/.bashrc && \
     echo "export DW_DATAWAVE_BUILD_PROFILE=\"$DATAWAVE_BUILD_PROFILE\"" >> ~/.bashrc && \
-    echo "export DW_DATAWAVE_INGEST_TEST_SKIP=\"$DATAWAVE_SKIP_INGEST\"" >> ~/.bashrc && \
+    echo "export DW_DATAWAVE_INGEST_TEST_DATA_SKIP=\"$DATAWAVE_INGEST_TEST_DATA_SKIP\"" >> ~/.bashrc && \
+    echo "export DW_DATAWAVE_WEB_TEST_SKIP=\"$DATAWAVE_WEB_TEST_SKIP\"" >> ~/.bashrc && \
     echo "export DW_MAVEN_REPOSITORY=\"$DATAWAVE_MAVEN_REPO\"" >> ~/.bashrc && \
     echo "export DW_WGET_OPTS=\"-q --no-check-certificate\"" >> ~/.bashrc && \
     echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
@@ -82,7 +83,7 @@ RUN git init && \
 # stopped gracefully, and any cruft is purged.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall && [ $DATAWAVE_SKIP_TESTS == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
+    /bin/bash -c "source ~/.bashrc && allInstall && [ $DW_DATAWAVE_WEB_TEST_SKIP == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \
