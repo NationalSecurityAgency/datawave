@@ -29,4 +29,9 @@ public class IvaratorCacheDir {
     public String getPathURI() {
         return pathURI;
     }
+
+    @Override
+    public String toString() {
+        return pathURI;
+    }
 }

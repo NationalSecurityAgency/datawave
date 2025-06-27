@@ -31,8 +31,9 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.bloom.BloomFilter;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.CharArraySet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
@@ -123,7 +124,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      */
     public static final String OPT_BASE64 = "content.ingest.base64.dcolumn";
 
-    private static final Logger log = Logger.getLogger(ExtendedContentIndexingColumnBasedHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ExtendedContentIndexingColumnBasedHandler.class);
 
     protected static final String SPACE = " ";
 
@@ -275,7 +276,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     }
 
     /**
-     * Tokenize the event, and write all of the shard, shardIndex, and shardReverseIndex keys out to the context
+     * Tokenize the event, and write all the shard, shardIndex, and shardReverseIndex keys out to the context
      *
      * @param event
      *            the event
@@ -322,7 +323,9 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
 
         // Make sure the term length is greater than the minimum allowed length
         if (termAndZone.term.length() < tokenHelper.getTermLengthMinimum()) {
-            log.debug("Ignoring token of length " + termAndZone.term.length() + " because it is too short");
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring token of length {} because it is too short", termAndZone.term.length());
+            }
             counters.increment(ContentIndexCounters.TOO_SHORT_COUNTER, reporter);
             return;
         }
@@ -336,8 +339,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         // nfv = (NormalizedFieldAndValue) this.ingestHelper.normalize(nfv);
 
         for (NormalizedContentInterface nci : ncis) {
-            if (!(nci instanceof NormalizedFieldAndValue)) {
-                log.warn("Can't handle a " + nci.getClass() + "; must be a NormalizedFieldAndValue.");
+            if (!(nci instanceof NormalizedFieldAndValue) && log.isWarnEnabled()) {
+                log.warn("Can't handle a {}; must be a NormalizedFieldAndValue.", nci.getClass());
             }
             NormalizedFieldAndValue nfv = (NormalizedFieldAndValue) nci;
             byte[] fieldVisibility = getVisibility(event, nfv);
@@ -345,19 +348,19 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             // Build the event column key/value
             createShardEventColumn(event, contextWriter, context, nfv, this.shardId, fieldVisibility);
 
-            // Create a index normalized variant of the term and zone for indexing purposes
+            // Create an index normalized variant of the term and zone for indexing purposes
             TermAndZone indexedTermAndZone = new TermAndZone(nfv.getIndexedFieldValue(), nfv.getIndexedFieldName());
 
             org.apache.hadoop.util.bloom.Key alreadySeen = null;
             if ((alreadyIndexedTerms != null) && alreadyIndexedTerms
                             .membershipTest(alreadySeen = new org.apache.hadoop.util.bloom.Key(indexedTermAndZone.getToken().getBytes()))) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Not creating index mutations for " + termAndZone + " as we've already created mutations for it.");
+                    log.debug("Not creating index mutations for {} as we've already created mutations for it.", termAndZone);
                 }
                 counters.increment(ContentIndexCounters.BLOOM_FILTER_EXISTS, reporter);
             } else if ((tokenOffsetCache != null) && tokenOffsetCache.containsKey(indexedTermAndZone)) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Not creating index mutations for " + termAndZone + " as we've already created mutations for it.");
+                    log.debug("Not creating index mutations for {} as we've already created mutations for it.", termAndZone);
                 }
                 counters.increment(ContentIndexCounters.TOKEN_OFFSET_CACHE_EXISTS, reporter);
             } else {
@@ -529,7 +532,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     byte[] fieldVisibility) throws IOException, InterruptedException {
 
         if (log.isDebugEnabled()) {
-            log.debug("Creating a mutation for " + nFV.getIndexedFieldValue() + ':' + nFV.getIndexedFieldName());
+            log.debug("Creating a mutation for {}:{}", nFV.getIndexedFieldValue(), nFV.getIndexedFieldName());
         }
 
         // Still need the field index record for the token
@@ -629,7 +632,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     }
 
     /**
-     * Ensures all of the output streams are closed
+     * Ensures all the output streams are closed
      *
      * @param streams
      *            order to attempt closing: outermost first, innermost last
@@ -641,7 +644,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     stream.close();
                     return; // if outermost one closed, then we can stop
                 } catch (IOException e) {
-                    log.trace("Failed to close stream: " + stream.getClass().getCanonicalName(), e);
+                    log.trace("Failed to close stream: {}", stream.getClass().getCanonicalName(), e);
                 }
             }
         }
@@ -676,12 +679,12 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     throw new RuntimeException(e);
                 }
 
-                // verify that we're exeuting in a timely fashion
-                // ..if not warn.
+                // verify that we're executing in a timely fashion
+                // ; if not warn.
                 long currentRun = System.currentTimeMillis();
                 long delta = currentRun - lastRun;
                 if (delta > (INTERVAL * 1.5)) {
-                    log.warn("HeartBeatThread starved for cpu, " + "should execute every " + INTERVAL + " ms, " + "latest: " + delta + " ms.");
+                    log.warn("HeartBeatThread starved for cpu, should execute every {}ms, latest: {}ms.", INTERVAL, delta);
                 }
                 lastRun = currentRun;
                 counter++;
@@ -697,7 +700,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
 
         @Override
         public void run() {
-            log.debug("Writing out a document of size " + value.get().length + " bytes.");
+            log.debug("Writing out a document of size {} bytes.", value.get().length);
             Mutation m = new Mutation(new Text(shardId));
             m.put(k.getColumnFamily(), k.getColumnQualifier(), new ColumnVisibility(visibility), k.getTimestamp(), value);
             try {

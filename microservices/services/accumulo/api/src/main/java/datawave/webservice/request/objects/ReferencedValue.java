@@ -1,9 +1,8 @@
 package datawave.webservice.request.objects;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -42,14 +41,9 @@ public class ReferencedValue {
             byte[] incoming = null;
             String decoded = null;
 
-            try {
-                incoming = value.getBytes("UTF-8");
-                byte[] decodedBytes = Base64.decodeBase64(incoming);
-                decoded = new String(decodedBytes, Charset.forName("UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                // Should never happen with UTF-8!!! (but if it does we will be
-                // returning a null)
-            }
+            incoming = value.getBytes(StandardCharsets.UTF_8);
+            byte[] decodedBytes = Base64.decodeBase64(incoming);
+            decoded = new String(decodedBytes, Charset.forName("UTF-8"));
 
             return decoded;
         } else {
@@ -59,20 +53,12 @@ public class ReferencedValue {
 
     public byte[] getValueAsBytes() {
 
-        try {
-            byte[] incoming = value.getBytes("UTF-8");
-            if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
-                return Base64.decodeBase64(incoming);
-            } else {
-                return incoming;
-            }
-        } catch (UnsupportedEncodingException e) {
-            // Should never happen with UTF-8!!! (but if it does we will be
-            // returning a null)
+        byte[] incoming = value.getBytes(StandardCharsets.UTF_8);
+        if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
+            return Base64.decodeBase64(incoming);
+        } else {
+            return incoming;
         }
-
-        // Should never get here
-        return null;
     }
 
     public void setBase64Encoded(Boolean base64Encoded) {
@@ -85,7 +71,7 @@ public class ReferencedValue {
         if (isValidXML(value)) {
             this.value = value;
         } else {
-            this.value = new String(Base64.encodeBase64(value.getBytes(UTF_8)), UTF_8);
+            this.value = new String(Base64.encodeBase64(value.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
             this.base64Encoded = true;
         }
     }

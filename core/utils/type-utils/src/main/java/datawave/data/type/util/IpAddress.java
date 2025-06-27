@@ -23,6 +23,7 @@ public abstract class IpAddress implements Serializable, Comparable<IpAddress> {
      * Parse an address and return an appropriate representation
      *
      * @param address
+     *            the ip address
      * @return An IpV4 or IpV6 address
      */
     public static IpAddress parse(String address) {
