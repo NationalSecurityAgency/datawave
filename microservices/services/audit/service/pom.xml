@@ -23,7 +23,7 @@
         <version.datawave.hazelcast-client>4.0.2</version.datawave.hazelcast-client>
         <version.datawave.starter>4.0.5</version.datawave.starter>
         <version.hadoop>3.3.4</version.hadoop>
-        <version.zookeeper>3.8.0</version.zookeeper>
+        <version.zookeeper>3.8.4</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>

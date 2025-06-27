@@ -25,7 +25,7 @@
         <version.jaxb>2.3.3</version.jaxb>
         <version.microservice.hazelcast-client>4.0.2</version.microservice.hazelcast-client>
         <version.microservice.starter>4.0.3</version.microservice.starter>
-        <version.zookeeper>3.8.0</version.zookeeper>
+        <version.zookeeper>3.8.4</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
