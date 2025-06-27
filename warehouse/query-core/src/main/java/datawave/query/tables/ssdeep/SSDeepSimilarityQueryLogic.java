@@ -150,7 +150,8 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             throw new DatawaveFatalQueryException("Query exceeds max hash limit of " + config.getMaxHashes() + " count: " + queries.size());
         }
 
-        final Multimap<NGramTuple,SSDeepHash> queryMap = nGramEngine.preprocessQueries(queries);
+        final Multimap<SSDeepHash,NGramTuple> queryHashNGramMap = nGramEngine.createHashNGramMap(queries);
+        final Multimap<NGramTuple,SSDeepHash> queryMap = nGramEngine.preprocessQueries(queryHashNGramMap);
         final Set<Range> ranges = new TreeSet<>();
 
         final IntegerEncoding bucketEncoder = new IntegerEncoding(config.getBucketEncodingBase(), config.getBucketEncodingLength());
@@ -179,6 +180,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             log.debug("Ranges are: " + ranges);
         }
         config.getState().setRanges(ranges);
+        config.getState().setQueryHashNGramMap(queryHashNGramMap);
         config.getState().setQueryMap(queryMap);
     }
 

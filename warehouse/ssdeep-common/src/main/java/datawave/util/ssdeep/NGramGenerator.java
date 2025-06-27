@@ -79,18 +79,28 @@ public class NGramGenerator implements Serializable {
 
     /**
      *
-     * @param queries
+     * @param queryHashNGramMap
      *            expected to be a collection of SSDeep hashes in chunkSize:chunk:doubleChunk format
      * @return a multimap of NGramTuples mapped to the SSDeepHash from which they originated.
      */
-    public Multimap<NGramTuple,SSDeepHash> preprocessQueries(Collection<SSDeepHash> queries) {
+    public Multimap<NGramTuple,SSDeepHash> preprocessQueries(Multimap<SSDeepHash,NGramTuple> queryHashNGramMap) {
         Multimap<NGramTuple,SSDeepHash> queryMap = TreeMultimap.create();
 
-        for (SSDeepHash queryHash : queries) {
-            generateNgrams(queryHash).forEach(t -> queryMap.put(t, queryHash));
+        for (SSDeepHash queryHash : queryHashNGramMap.keys()) {
+            queryHashNGramMap.get(queryHash).forEach(t -> queryMap.put(t,queryHash));
         }
 
         return queryMap;
+    }
+
+    public Multimap<SSDeepHash,NGramTuple> createHashNGramMap(Collection<SSDeepHash> queries) {
+        Multimap<SSDeepHash,NGramTuple> hashNGramMap = TreeMultimap.create();
+
+        for (SSDeepHash queryHash : queries) {
+            generateNgrams(queryHash).forEach(t -> hashNGramMap.put(queryHash, t));
+        }
+
+        return hashNGramMap;
     }
 
     /**
