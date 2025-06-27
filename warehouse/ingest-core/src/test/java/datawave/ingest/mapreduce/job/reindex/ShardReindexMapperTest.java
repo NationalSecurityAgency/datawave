@@ -1521,7 +1521,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         options.put("matchSubstring", "true");
 
         filter.init(iterator, options, null);
-        filter.seek(new Range(), Collections.emptySet(), false);
+        filter.seek(new Range(new Key("a"), null), Collections.emptySet(), false);
 
         assertTrue(filter.hasTop());
         int count = 0;

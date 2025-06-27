@@ -51,12 +51,11 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public long sizeInBytes() {
-        long size = ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4) + 2L;
-        if (delegateString != null) {
-            size += (2L + delegateString.length());
+        if (sizeInBytes == Long.MAX_VALUE) {
+            // 4 for datawaveType reference
+            sizeInBytes = ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4);
         }
-        return size;
-        // 4 for datawaveType reference
+        return sizeInBytes;
     }
 
     public Type<T> getType() {
@@ -135,15 +134,15 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public int hashCode() {
-        if (this.hashCode == Integer.MIN_VALUE) {
+        if (hashcode == Integer.MIN_VALUE) {
             //  @formatter:off
-            this.hashCode = new HashCodeBuilder(2099, 2129)
+            hashcode = new HashCodeBuilder(2099, 2129)
                     .append(datawaveType.getDelegateAsString())
                     .append(super.hashCode())
                     .toHashCode();
             //  @formatter:on
         }
-        return hashCode;
+        return hashcode;
     }
 
     @Override
