@@ -49,9 +49,12 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public long sizeInBytes() {
-        return 20 + sizeInBytes(normalizedValue) + super.sizeInBytes(8);
-        // 20 is for a basic int Number
-        // 8 for string references
+        if (sizeInBytes == Long.MIN_VALUE) {
+            // 20 is for a basic int Number
+            // 8 for string references
+            sizeInBytes = 20 + sizeInBytes(normalizedValue) + super.sizeInBytes(8);
+        }
+        return sizeInBytes;
     }
 
     /**
@@ -153,10 +156,15 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(113, 127);
-        hcb.append(super.hashCode()).append(value);
-
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(113, 127)
+                    .append(super.hashCode())
+                    .append(value)
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
     }
 
     @Override

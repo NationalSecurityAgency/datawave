@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.4-SNAPSHOT</version>
+    <version>4.0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -41,6 +41,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.scm.id>github-datawave</project.scm.id>
         <project.version>${project.version}</project.version>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
