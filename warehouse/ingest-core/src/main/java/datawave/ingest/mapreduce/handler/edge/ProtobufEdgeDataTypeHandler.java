@@ -31,6 +31,7 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
@@ -604,6 +605,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
         fwdMetaSet.add(forwardBuilder.build());
         revMetaSet.add(reverseBuilder.build());
+    }
+
+    @VisibleForTesting
+    public Map<Key,Set<Metadata>> getEventMetadataRegistry() {
+        return this.eventMetadataRegistry;
     }
 
     protected String getEnrichmentFieldName(EdgeDefinition edgeDef) {
