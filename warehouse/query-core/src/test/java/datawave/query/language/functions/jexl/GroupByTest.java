@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
-import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.query.exception.BadRequestQueryException;
 
 class GroupByTest {
