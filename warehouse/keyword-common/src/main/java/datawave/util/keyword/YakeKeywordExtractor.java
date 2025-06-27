@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.ibm.icu.text.BreakIterator;
 
 import datawave.util.keyword.language.BaseYakeLanguage;
@@ -54,6 +56,12 @@ public class YakeKeywordExtractor {
     public static final int DEFAULT_MAX_CONTENT_LENGTH = 32768;
 
     private static final Logger log = LoggerFactory.getLogger(YakeKeywordExtractor.class);
+
+    /** A set of common number separators used in various locales */
+    private static final Set<Character> COMMON_NUMBER_SEPARATORS = new HashSet<Character>(Arrays.asList('.', ',', ' ', '\u00a0', // non-breaking space
+                    '\'', // apostrophe
+                    '\u202F' // narrow non-breaking space
+    ));
 
     /** minimum length for extracted keywords which are typically composed of multiple words/tokens */
     private final int minNGrams;
@@ -228,11 +236,9 @@ public class YakeKeywordExtractor {
      * @return the tag for the word.
      */
     protected static String calculateTag(String word, int position) {
-        try {
-            String word2 = word.replace(",", "");
-            Float.parseFloat(word2);
+        if (isNumber(word)) {
             return "d";
-        } catch (NumberFormatException e) {
+        } else {
             int wordLength = word.length();
             int digitCount = countDigits(word, wordLength);
             int alphaCount = countLetters(word, wordLength);
@@ -251,6 +257,39 @@ public class YakeKeywordExtractor {
 
             return "p";
         }
+    }
+
+    /**
+     * Checks a string to see if it is numeric, allows a leading sign plus digits, decimal points and commas.
+     *
+     * @param word
+     *            the word to check
+     * @return true if the word is a number, false otherwise - including null or empty strings.
+     */
+    @VisibleForTesting
+    protected static boolean isNumber(String word) {
+        if (word == null || word.isEmpty()) {
+            return false;
+        }
+
+        // allow leading positive or negative sign.
+        int startIndex = (word.charAt(0) == '-' || word.charAt(0) == '+') ? 1 : 0;
+
+        // allow digits, decimal or comma separators.
+        final int length = word.length();
+        boolean hasDigits = false;
+        for (int i = startIndex; i < length; i++) {
+            char c = word.charAt(i);
+            if (Character.isDigit(c)) {
+                hasDigits = true;
+            } else if (!COMMON_NUMBER_SEPARATORS.contains(c)) {
+                // anything else that isn't in the common number separators list we don't allow.
+                return false;
+            }
+        }
+
+        // must have at least one digit.
+        return hasDigits;
     }
 
     /**
@@ -455,7 +494,8 @@ public class YakeKeywordExtractor {
         final double count = tokenMap.size();
         final double avg = sum / count;
         final double std = Math.sqrt(IntStream.of(tokenFrequencies).mapToDouble(a -> Math.pow(((double) a) - avg, 2)).sum() / count);
-        final double maxTF = IntStream.of(tokenFrequencies).mapToDouble(x -> (double) x).max().orElse(0);
+        final double maxTF = IntStream.of(tokenFrequencies).max().orElse(0);
+
         final int numSentences = basicStats.stream().mapToInt(TokenValue::getValue).max().orElse(0) + 1;
 
         if (log.isDebugEnabled()) {
