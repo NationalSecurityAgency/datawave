@@ -83,8 +83,8 @@
         <value>datawave.ingest.table.config.ErrorMetadataTableConfigHelper</value>
     </property>
 
-    <!-- Marker property to indicate that we've supplied configuration for 
-        the "ERROR" type and the event mapper will pick this up and configure the 
+    <!-- Marker property to indicate that we've supplied configuration for
+        the "ERROR" type and the event mapper will pick this up and configure the
         default type handlers for the "ERROR" data type. -->
 
     <property>
@@ -122,7 +122,7 @@
         <name>error.handler.classes</name>
         <value>datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler,${ADDITIONAL_ERROR_HANDLER_CLASSES}</value>
     </property>
-    
+
     <property>
         <name>error.data.category.marking.default</name>
         <value>PRIVATE</value>
@@ -136,5 +136,15 @@
     <property>
         <name>partitioner.category.member.${table.name.errors.shard}</name>
         <value>shardedTables</value>
+    </property>
+
+    <property>
+        <name>error.data.category.index</name>
+        <value>*</value>
+    </property>
+
+    <property>
+        <name>error.data.category.index.reverse</name>
+        <value>*</value>
     </property>
 </configuration>
