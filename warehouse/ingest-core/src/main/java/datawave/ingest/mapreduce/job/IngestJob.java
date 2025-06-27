@@ -77,9 +77,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
 import datawave.ingest.config.TableConfigCache;
@@ -133,7 +132,7 @@ public class IngestJob implements Tool {
     public static final String REDUCE_TASKS_ARG_PREFIX = "-mapreduce.job.reduces=";
 
     protected boolean eventProcessingError = false;
-    protected Logger log = LoggerFactory.getLogger("datawave.ingest");
+    protected Logger log = Logger.getLogger("datawave.ingest");
     private ConsoleAppender ca = new ConsoleAppender();
 
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
@@ -257,8 +256,12 @@ public class IngestJob implements Tool {
         StopWatch sw = new StopWatch("Ingest Job");
         sw.start("local init");
 
+        Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
+
         ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
+        log.addAppender(ca);
+        log.setLevel(Level.INFO);
 
         // Initialize the markings file helper so we get the right markings file
         MarkingFunctions.Factory.createMarkingFunctions();
@@ -289,11 +292,11 @@ public class IngestJob implements Tool {
         TypeRegistry.getInstance(conf);
 
         log.info(conf.toString());
-        log.info("getStrings({}) = {}", TypeRegistry.INGEST_DATA_TYPES, conf.get(TypeRegistry.INGEST_DATA_TYPES));
-        log.info("getStrings('data.name') = {}", conf.get("data.name"));
+        log.info(String.format("getStrings('%s') = %s", TypeRegistry.INGEST_DATA_TYPES, conf.get(TypeRegistry.INGEST_DATA_TYPES)));
+        log.info(String.format("getStrings('data.name') = %s", conf.get("data.name")));
         int index = 0;
         for (String name : TypeRegistry.getTypeNames()) {
-            log.info("name[{}] = '{}'", index++, name);
+            log.info(String.format("name[%d] = '%s'", index++, name));
         }
 
         if (TypeRegistry.getTypes().isEmpty()) {
@@ -303,7 +306,7 @@ public class IngestJob implements Tool {
 
         this.tableNames = setupAndCacheTables(conf, createTables);
         if (createTables) {
-            log.info("Created tables: {} successfully!", tableNames);
+            log.info("Created tables: " + tableNames + " successfully!");
         }
 
         // get the source and output hadoop file systems
@@ -331,12 +334,12 @@ public class IngestJob implements Tool {
             try {
                 configureBulkPartitionerAndOutputFormatter(job, cbHelper, conf, outputFs);
             } catch (Exception e) {
-                log.error("", e);
-                log.info("Deleting orphaned directory: {}", workDirPath);
+                log.error(e);
+                log.info("Deleting orphaned directory: " + workDirPath);
                 try {
                     outputFs.delete(workDirPath, true);
                 } catch (Exception er) {
-                    log.error("Unable to remove directory: {}", workDirPath, er);
+                    log.error("Unable to remove directory: " + workDirPath, er);
                 }
                 return -1;
             }
@@ -354,13 +357,13 @@ public class IngestJob implements Tool {
         configureJob(job, conf, workDirPath, outputFs);
 
         // Log configuration
-        log.info("Types: {}", TypeRegistry.getTypeNames());
-        log.info("Tables: {}", tableNames);
-        log.info("InputFormat: {}", job.getInputFormatClass().getName());
-        log.info("Mapper: {}", job.getMapperClass().getName());
-        log.info("Reduce tasks: {}", (useMapOnly ? 0 : reduceTasks));
-        log.info("Split File: {} / {}", conf.get(TableSplitsCache.SPLITS_CACHE_DIR),
-                        conf.get(TableSplitsCache.SPLITS_CACHE_FILE, TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE));
+        log.info("Types: " + TypeRegistry.getTypeNames());
+        log.info("Tables: " + tableNames);
+        log.info("InputFormat: " + job.getInputFormatClass().getName());
+        log.info("Mapper: " + job.getMapperClass().getName());
+        log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
+        log.info("Split File: " + conf.get(TableSplitsCache.SPLITS_CACHE_DIR) + "/"
+                        + conf.get(TableSplitsCache.SPLITS_CACHE_FILE, TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE));
 
         // Note that if we run any other jobs in the same vm (such as a sampler), then we may
         // need to catch and throw away an exception here
@@ -373,7 +376,7 @@ public class IngestJob implements Tool {
 
         job.submit();
         JobID jobID = job.getJobID();
-        log.info("JOB ID: {}", jobID);
+        log.info("JOB ID: " + jobID);
 
         createFileWithRetries(outputFs, new Path(workDirPath, jobID.toString()));
 
@@ -403,15 +406,16 @@ public class IngestJob implements Tool {
                         File flag = flagFiles[0];
                         File targetFile = new File(flag.getAbsolutePath() + (pipelineId == null ? "" : '.' + pipelineId) + ".marker");
                         if (!flag.renameTo(targetFile)) {
-                            log.error("Unable to rename flag file: {}", flag.getAbsolutePath());
+                            log.error("Unable to rename flag file: " + flag.getAbsolutePath());
                             continue;
                         }
-                        log.info("Renamed flag file {} to {}", flag, targetFile);
+                        log.info("Renamed flag file " + flag + " to " + targetFile);
                     } else {
                         log.info("No more flag files to process");
+                        // + datatype);
                     }
                 } else {
-                    log.error("Flag file directory does not exist: {}", flagFileDir);
+                    log.error("Flag file directory does not exist: " + flagFileDir);
                 }
                 done = true;
             } else {
@@ -481,7 +485,7 @@ public class IngestJob implements Tool {
             markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job), job.getJobID());
             boolean deleted = outputFs.delete(workDirPath, true);
             if (!deleted) {
-                log.error("Unable to remove job working directory: {}", workDirPath);
+                log.error("Unable to remove job working directory: " + workDirPath);
             }
         } else {
             // now move the job directory over to the warehouse if needed
@@ -490,7 +494,7 @@ public class IngestJob implements Tool {
             if (!inputFs.equals(destFs) && !writeDirectlyToDest) {
                 Configuration distCpConf = conf;
                 // Use the configuration dir specified on the command-line for DistCP if necessary.
-                // Basically this means pulling in all the *-site.xml config files from the specified
+                // Basically this means pulling in all of the *-site.xml config files from the specified
                 // directory. By adding these resources last, their properties will override those in the
                 // current config.
                 if (distCpConfDir != null) {
@@ -503,7 +507,7 @@ public class IngestJob implements Tool {
                     }
                 }
 
-                log.info("Moving (using distcp) {} from {} to {}", unqualifiedWorkPath, inputFs.getUri(), destFs.getUri());
+                log.info("Moving (using distcp) " + unqualifiedWorkPath + " from " + inputFs.getUri() + " to " + destFs.getUri());
                 try {
                     distCpDirectory(unqualifiedWorkPath, inputFs, destFs, distCpConf, deleteAfterDistCp);
                 } catch (Exception e) {
@@ -568,7 +572,7 @@ public class IngestJob implements Tool {
                             setupHandler.setup(conf);
                         }
                     } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                        log.warn("Could not setup handler: {}", handler, e);
+                        log.warn("Could not setup handler: " + handler, e);
                     }
                 }
             }
@@ -582,7 +586,7 @@ public class IngestJob implements Tool {
         if (null == ingestHomeValue)
             throw new IllegalArgumentException("DATAWAVE_INGEST_HOME must be set in the environment.");
 
-        log.info("Replacing ${DATAWAVE_INGEST_HOME} with {}", ingestHomeValue);
+        log.info("Replacing ${DATAWAVE_INGEST_HOME} with " + ingestHomeValue);
 
         return ConfigurationHelper.interpolate(conf, "\\$\\{DATAWAVE_INGEST_HOME\\}", ingestHomeValue);
 
@@ -605,7 +609,7 @@ public class IngestJob implements Tool {
         List<String> activeResources = new ArrayList<>();
 
         inputPaths = args[0];
-        log.info("InputPaths is {}", inputPaths);
+        log.info("InputPaths is " + inputPaths);
         for (int i = 1; i < args.length; i++) {
             if (args[i].equals("-inputFileLists")) {
                 inputFileLists = true;
@@ -700,7 +704,7 @@ public class IngestJob implements Tool {
                 for (String jarString : jars) {
                     File jar = new File(jarString);
                     Path file = new Path(cacheBaseDir, jar.getName());
-                    log.info("Adding {} to job class path via distributed cache.", file);
+                    log.info("Adding " + file + " to job class path via distributed cache.");
                     jobDependencies.add(file);
                 }
             } else if (args[i].equals("-verboseCounters")) {
@@ -736,7 +740,7 @@ public class IngestJob implements Tool {
                 try {
                     reduceTasks = Integer.parseInt(args[i].substring(REDUCE_TASKS_ARG_PREFIX.length(), args[i].length()));
                 } catch (NumberFormatException e) {
-                    log.error("ERROR: mapreduce.job.reduces must be set to an integer ({}#)", REDUCE_TASKS_ARG_PREFIX);
+                    log.error("ERROR: mapred.reduce.tasks must be set to an integer (" + REDUCE_TASKS_ARG_PREFIX + "#)");
                     return null;
                 }
             } else if (args[i].equals("-jobObservers")) {
@@ -748,16 +752,16 @@ public class IngestJob implements Tool {
                 try {
                     String[] classes = jobObserverClasses.split(",");
                     for (String jobObserverClass : classes) {
-                        log.info("Adding job observer: {}", jobObserverClass);
+                        log.info("Adding job observer: " + jobObserverClass);
                         Class clazz = Class.forName(jobObserverClass);
                         Observer o = (Observer) clazz.getDeclaredConstructor().newInstance();
                         jobObservers.add(o);
                     }
                 } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-                    log.error("cannot instantiate job observer class '{}'", jobObserverClasses, e);
+                    log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
                     System.exit(-2);
                 } catch (ClassCastException e) {
-                    log.error("cannot cast '{}' to Observer", jobObserverClasses, e);
+                    log.error("cannot cast '" + jobObserverClasses + "' to Observer", e);
                     System.exit(-2);
                 }
             } else if (args[i].startsWith("-")) {
@@ -765,7 +769,7 @@ public class IngestJob implements Tool {
                 // (taking precedence over entries in *conf.xml files)
                 addConfOverride(args[i].substring(1));
             } else {
-                log.info("Adding resource {}", args[i]);
+                log.info("Adding resource " + args[i]);
                 conf.addResource(args[i]);
                 activeResources.add(args[i]);
             }
@@ -780,7 +784,7 @@ public class IngestJob implements Tool {
         // To enable passing the MONITOR_SERVER_HOME environment variable through to the monitor,
         // pull it into the configuration
         String monitorHostValue = System.getenv("MONITOR_SERVER_HOST");
-        log.info("Setting MONITOR_SERVER_HOST to {}", monitorHostValue);
+        log.info("Setting MONITOR_SERVER_HOST to " + monitorHostValue);
         if (null != monitorHostValue) {
             conf.set("MONITOR_SERVER_HOST", monitorHostValue);
         }
@@ -791,7 +795,7 @@ public class IngestJob implements Tool {
         }
 
         if ((!useMapOnly) && (reduceTasks == 0)) {
-            log.error("ERROR: -mapreduce.job.reduces must be set");
+            log.error("ERROR: -mapred.reduce.tasks must be set");
             return null;
         }
 
@@ -848,7 +852,7 @@ public class IngestJob implements Tool {
         SplitsFile.setupFile(job, conf);
         long after = System.currentTimeMillis();
 
-        log.info("Sharded splits files setup time: {}ms", (after - before));
+        log.info("Sharded splits files setup time: " + (after - before) + "ms");
 
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
         configureMultiRFileOutputFormatter(conf, compressionType, compressionTableDisallowList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
@@ -860,9 +864,9 @@ public class IngestJob implements Tool {
         // see if we need to do any accumulo setup on the input format class (initial for EventProcessingErrorTableFileInputFormat)
         if (inputFormat != null) {
             try {
-                log.info("Looking for {}.setup({}, {})", inputFormat.getName(), JobContext.class.getName(), AccumuloHelper.class.getName());
+                log.info("Looking for " + inputFormat.getName() + ".setup(" + JobContext.class.getName() + ", " + AccumuloHelper.class.getName() + ")");
                 Method setup = inputFormat.getMethod("setup", JobContext.class, AccumuloHelper.class);
-                log.info("Calling {}.setup({}, {})", inputFormat.getName(), JobContext.class.getName(), AccumuloHelper.class.getName());
+                log.info("Calling " + inputFormat.getName() + ".setup(" + JobContext.class.getName() + ", " + AccumuloHelper.class.getName() + ")");
                 setup.invoke(null, job, cbHelper);
             } catch (NoSuchMethodException nsme) {
                 // no problem, nothing to call
@@ -1064,9 +1068,9 @@ public class IngestJob implements Tool {
     protected void addConfOverride(String keyValue) {
         String[] strArr = keyValue.split("=", 2);
         if (strArr.length != 2) {
-            log.error("WARN: skipping bad property configuration {}", keyValue);
+            log.error("WARN: skipping bad property configuration " + keyValue);
         } else {
-            log.info("Setting {} = {}", strArr[0], strArr[1]);
+            log.info("Setting " + strArr[0] + " = \"" + strArr[1] + '"');
             confOverrides.add(strArr);
         }
     }
@@ -1078,17 +1082,17 @@ public class IngestJob implements Tool {
     }
 
     protected int jobFailed(Job job, RunningJob runningJob, FileSystem fs, Path workDir) throws IOException {
-        log.error("Map Reduce job {} was unsuccessful. Check the logs.", job.getJobName());
-        log.error("Since job was not successful, deleting work directory: {}", workDir);
+        log.error("Map Reduce job " + job.getJobName() + " was unsuccessful. Check the logs.");
+        log.error("Since job was not successful, deleting work directory: " + workDir);
         boolean deleted = fs.delete(workDir, true);
         if (!deleted) {
-            log.error("Unable to remove job working directory: {}", workDir);
+            log.error("Unable to remove job working directory: " + workDir);
         }
         if (runningJob.getJobState() == JobStatus.KILLED) {
             log.warn("Job was killed");
             return -2;
         } else {
-            log.error("Job failed with a jobstate of {}", runningJob.getJobState());
+            log.error("Job failed with a jobstate of " + runningJob.getJobState());
             return -3;
         }
     }
@@ -1104,23 +1108,23 @@ public class IngestJob implements Tool {
             try {
                 exception = null;
                 // create the file....ignoring the return value as we will be checking ourselves anyway....
-                log.info("Creating {}", file);
+                log.info("Creating " + file);
                 fs.createNewFile(file);
             } catch (Exception e) {
                 exception = e;
             }
             // check to see if the file exists in which case we are good to go
             try {
-                log.info("Verifying {} with {}", file, verification);
+                log.info("Verifying " + file + " with " + verification);
                 FileStatus[] files = fs.globStatus(verification);
                 if (files == null || files.length == 0) {
                     throw new FileNotFoundException("Failed to get status for " + file);
                 }
                 // we found the file!
-                log.info("Created {}", file);
+                log.info("Created " + file);
                 return true;
             } catch (Exception e) {
-                log.warn("Trying again to create {} in one second", file);
+                log.warn("Trying again to create " + file + " in one second");
                 // now this is getting frustrating....
                 // wait a sec and try again
                 Thread.sleep(1000);
@@ -1128,7 +1132,7 @@ public class IngestJob implements Tool {
         }
         // log the exception if any
         if (exception != null) {
-            log.error("Failed to create {}", file, exception);
+            log.error("Failed to create " + file, exception);
         }
         return false;
 
@@ -1182,7 +1186,7 @@ public class IngestJob implements Tool {
         }
         // log the input path list if we had to expand file lists
         if (inputFileLists) {
-            log.info("inputPathList is {}", inputPathList);
+            log.info("inputPathList is " + inputPathList);
         }
         return inputPathList.toArray(new Path[inputPathList.size()]);
     }
@@ -1234,7 +1238,7 @@ public class IngestJob implements Tool {
         try (InputStream is = new BufferedInputStream(new FileInputStream(flagFile))) {
             String flagFileBase = getBaseFlagFileName(flagFile.getName());
             Path destFile = new Path(workDir, flagFileBase);
-            log.info("Copying flag file into {}", destFile);
+            log.info("Copying flag file into " + destFile);
             try (OutputStream os = new BufferedOutputStream(fs.create(destFile))) {
 
                 byte[] buffer = new byte[2048];
@@ -1438,7 +1442,7 @@ public class IngestJob implements Tool {
         //@formatter:on
 
         DistCp cp = new DistCp(distcpConfig, options);
-        log.info("Starting distcp from {} to {}} with configuration: {}", srcPath, destPath, options);
+        log.info("Starting distcp from " + srcPath + " to " + destPath + " with configuration: " + options);
         try {
             cp.execute();
         } catch (Exception e) {
@@ -1503,7 +1507,7 @@ public class IngestJob implements Tool {
                 if (!fs.exists(statsDir))
                     fs.mkdirs(statsDir);
                 Path dst = new Path(statsDir, src.getName());
-                log.info("Copying file {} to {}", src, dst);
+                log.info("Copying file " + src + " to " + dst);
                 fs.copyFromLocalFile(false, true, src, dst);
                 // If this worked, then remove the local file
                 rawFS.delete(src, false);
@@ -1518,7 +1522,7 @@ public class IngestJob implements Tool {
         // now if configured, lets write the stats out to statsd
         CounterToStatsDConfiguration statsDConfig = new CounterToStatsDConfiguration(conf);
         if (statsDConfig.isConfigured()) {
-            log.info("Sending final counters via statsd: {}", statsDConfig);
+            log.info("Sending final counters via statsd: " + statsDConfig);
             CounterStatsDClient statsd = statsDConfig.getClient();
             try {
                 statsd.sendFinalStats(counters);

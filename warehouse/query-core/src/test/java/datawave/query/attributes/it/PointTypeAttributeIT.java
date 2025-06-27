@@ -61,8 +61,9 @@ public class PointTypeAttributeIT extends TypeAttributeIT {
         // serializing full type name: 50
         // serializing type name index: 23
         // kryo optimization: 41
-        verifyKryoPreservesValue(createNormalizedAttribute(), 41);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 41);
+        // serialize hash code: 46
+        verifyKryoPreservesValue(createNormalizedAttribute(), 46);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 46);
     }
 
     @Test
