@@ -1,10 +1,13 @@
 package datawave.query.model;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -19,8 +22,14 @@ import org.apache.hadoop.io.WritableUtils;
 public class DateFrequencyMap implements Map<String,Frequency>, Writable {
 
     public enum VERSION {
-        UNKNOWN, BASIC;
+        DFM1;
     }
+
+    public enum FORMAT {
+        BASIC, GZIP;
+    }
+
+    public static final FORMAT DEFAULT_FORMAT = FORMAT.GZIP;
 
     private final TreeMap<String,Frequency> dateToFrequencies;
 
@@ -195,9 +204,43 @@ public class DateFrequencyMap implements Map<String,Frequency>, Writable {
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
-        // Write the format version
-        WritableUtils.writeEnum(dataOutput, VERSION.BASIC);
+        // Write the version
+        WritableUtils.writeEnum(dataOutput, VERSION.DFM1);
 
+        // Write the format type depending on the data size
+        // we are guessing that we break even somewhere around 1K
+        FORMAT format = FORMAT.BASIC;
+        if (size() > 56) {
+            format = FORMAT.GZIP;
+        }
+        WritableUtils.writeEnum(dataOutput, format);
+
+        switch (format) {
+            case BASIC:
+                writeData(dataOutput);
+                break;
+            case GZIP:
+                // create a gzipped output
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                try (DataOutputStream out = new DataOutputStream(output)) {
+                    writeData(out);
+                }
+                output.close();
+                WritableUtils.writeCompressedByteArray(dataOutput, output.toByteArray());
+                break;
+            default:
+                throw new UnsupportedEncodingException("Unknown output format " + DEFAULT_FORMAT);
+        }
+    }
+
+    /**
+     * Write out the map fo a data output stream
+     *
+     * @param dataOutput
+     *            the output stream
+     * @throws IOException
+     */
+    private void writeData(DataOutput dataOutput) throws IOException {
         // Write the map's size.
         WritableUtils.writeVInt(dataOutput, dateToFrequencies.size());
 
@@ -216,15 +259,30 @@ public class DateFrequencyMap implements Map<String,Frequency>, Writable {
         VERSION ver = WritableUtils.readEnum(dataInput, VERSION.class);
 
         switch (ver) {
-            case BASIC:
-                readBasicMap(dataInput);
+            case DFM1:
+                FORMAT format = WritableUtils.readEnum(dataInput, FORMAT.class);
+                switch (format) {
+                    case BASIC:
+                        readData(dataInput);
+                        break;
+                    case GZIP:
+                        byte[] data = WritableUtils.readCompressedByteArray(dataInput);
+                        try (ByteArrayInputStream input = new ByteArrayInputStream(data)) {
+                            try (DataInputStream in = new DataInputStream(input)) {
+                                readData(in);
+                            }
+                        }
+                        break;
+                    default:
+                        throw new UnsupportedEncodingException("Unknown format " + format);
+                }
                 break;
             default:
                 throw new IOException("Unexpected DateFrequencyMap format: " + ver);
         }
     }
 
-    private void readBasicMap(DataInput dataInput) throws IOException {
+    private void readData(DataInput dataInput) throws IOException {
         // Read how many entries to expect.
         int entries = WritableUtils.readVInt(dataInput);
 
