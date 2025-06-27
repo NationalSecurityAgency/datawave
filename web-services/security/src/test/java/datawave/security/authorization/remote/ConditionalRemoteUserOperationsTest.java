@@ -35,6 +35,9 @@ import datawave.webservice.response.objects.KeyBase;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.keyword.TagCloudBase;
+import datawave.webservice.result.keyword.TagCloudEntryBase;
+import datawave.webservice.result.keyword.TagCloudResponseBase;
 
 public class ConditionalRemoteUserOperationsTest {
 
@@ -130,6 +133,21 @@ public class ConditionalRemoteUserOperationsTest {
 
         @Override
         public FieldCardinalityBase getFieldCardinality() {
+            return null;
+        }
+
+        @Override
+        public TagCloudBase getTagCloud() {
+            return null;
+        }
+
+        @Override
+        public TagCloudResponseBase getTagCloudQueryResponse() {
+            return null;
+        }
+
+        @Override
+        public TagCloudEntryBase getTagCloudEntry() {
             return null;
         }
 

@@ -22,10 +22,10 @@ import datawave.microservice.authorization.federation.config.FederatedAuthorizat
  * This class is used to dynamically create and register FederatedAuthorizationService beans via properties.
  */
 public class DynamicFederatedAuthorizationServiceBeanDefinitionRegistrar implements BeanDefinitionRegistryPostProcessor, Ordered {
-    
+
     public static final String FEDERATED_AUTHORIZATION_SERVICE_PREFIX = "datawave.authorization.federation.services";
     private final Map<String,FederatedAuthorizationServiceProperties> federatedAuthorizationProperties;
-    
+
     public DynamicFederatedAuthorizationServiceBeanDefinitionRegistrar(Environment environment) {
         // @formatter:off
         federatedAuthorizationProperties = Binder.get(environment)

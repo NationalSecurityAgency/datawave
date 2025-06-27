@@ -29,58 +29,58 @@ import datawave.microservice.querymetric.function.QueryMetricConsumer;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"CorrelatorTest", "QueryMetricTest", "hazelcast-writebehind", "correlator"})
 public class CorrelatorTest extends QueryMetricTestBase {
-    
+
     @Autowired
     private QueryMetricOperations queryMetricOperations;
-    
+
     @Autowired
     private CorrelatorProperties correlatorProperties;
-    
+
     @Autowired
     private Correlator correlator;
-    
+
     @Autowired
     private QueryMetricConsumer queryMetricConsumer;
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
         this.correlator.shutdown(false);
     }
-    
+
     @Test
     public void TestSizeLimitedQueue() throws Exception {
         this.correlatorProperties.setMaxCorrelationTimeMs(30000);
         this.correlatorProperties.setMaxCorrelationQueueSize(95);
         testMetricsCorrelated(100, 100);
     }
-    
+
     @Test
     public void TestTimeLimitedQueue() throws Exception {
         this.correlatorProperties.setMaxCorrelationTimeMs(500);
         this.correlatorProperties.setMaxCorrelationQueueSize(100);
         testMetricsCorrelated(100, 100);
     }
-    
+
     @Test
     public void TestNoStorageUntilShutdown() throws Exception {
         this.correlatorProperties.setMaxCorrelationTimeMs(60000);
         this.correlatorProperties.setMaxCorrelationQueueSize(100);
         testMetricsCorrelated(100, 10);
     }
-    
+
     @Test
     public void TestManyQueries() throws Exception {
         this.correlatorProperties.setMaxCorrelationTimeMs(500);
         this.correlatorProperties.setMaxCorrelationQueueSize(100);
         testMetricsCorrelated(1000, 20);
     }
-    
+
     public void testMetricsCorrelated(int numMetrics, int maxPages) throws Exception {
         List<BaseQueryMetric> updates = new ArrayList<>();
         List<BaseQueryMetric> metrics = new ArrayList<>();
@@ -89,7 +89,7 @@ public class CorrelatorTest extends QueryMetricTestBase {
             metrics.add(m);
             updates.add(m.duplicate());
         }
-        
+
         List<BaseQueryMetric> shuffledUpdates = new ArrayList<>();
         Random r = new Random();
         for (BaseQueryMetric m : metrics) {
@@ -105,11 +105,11 @@ public class CorrelatorTest extends QueryMetricTestBase {
                 shuffledUpdates.add(m2);
             }
         }
-        
+
         // randomize the order of metric updates
         Collections.shuffle(shuffledUpdates);
         updates.addAll(shuffledUpdates);
-        
+
         LinkedBlockingDeque<BaseQueryMetric> updateDeque = new LinkedBlockingDeque<>();
         updateDeque.addAll(updates);
         ExecutorService executorService = Executors.newFixedThreadPool(20);
@@ -135,7 +135,7 @@ public class CorrelatorTest extends QueryMetricTestBase {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
-                
+
             }
         }
         this.queryMetricOperations.ensureUpdatesProcessed(false);

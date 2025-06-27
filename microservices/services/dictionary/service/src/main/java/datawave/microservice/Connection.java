@@ -9,7 +9,7 @@ import lombok.Data;
 
 @Data
 public class Connection {
-    
+
     private AccumuloClient accumuloClient;
     private Set<Authorizations> auths;
     private String metadataTable;

@@ -23,43 +23,43 @@ import datawave.webservice.results.mr.MapReduceInfoResponse;
 
 public class MapReduceQueryStatus implements Serializable {
     private static final long serialVersionUID = -8731070243293603952L;
-    
+
     public enum MapReduceQueryState {
         DEFINED, SUBMITTED, RUNNING, SUCCEEDED, CLOSED, CANCELED, FAILED
     }
-    
+
     private String id;
-    
+
     private MapReduceQueryState state;
-    
+
     private String jobName;
-    
+
     private MultiValueMap<String,String> parameters;
-    
+
     private DatawaveUserDetails currentUser;
-    
+
     private Query query;
-    
+
     private GenericQueryConfiguration config;
-    
+
     private String jobId;
-    
+
     private String jobTracker;
-    
+
     private String hdfsUri;
-    
+
     private String workingDirectory;
-    
+
     private String resultsDirectory;
-    
+
     private long lastUpdatedMillis;
-    
+
     private DatawaveErrorCode errorCode;
-    
+
     private String failureMessage;
-    
+
     private String stackTrace;
-    
+
     public MapReduceInfoResponse toMapReduceInfoResponse() {
         MapReduceInfoResponse resp = new MapReduceInfoResponse();
         resp.setId(id);
@@ -76,7 +76,7 @@ public class MapReduceQueryStatus implements Serializable {
         resp.setJobExecutions(Collections.singletonList(jobExec));
         return resp;
     }
-    
+
     private String getStringRuntimeParameters() {
         StringBuilder builder = new StringBuilder();
         for (String key : parameters.keySet()) {
@@ -86,27 +86,27 @@ public class MapReduceQueryStatus implements Serializable {
         }
         return builder.toString();
     }
-    
+
     public boolean isRunning() {
         return state == SUBMITTED || state == RUNNING;
     }
-    
+
     public String getId() {
         return id;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }
-    
+
     public MapReduceQueryState getState() {
         return state;
     }
-    
+
     public void setState(MapReduceQueryState state) {
         this.state = state;
     }
-    
+
     public void setState(JobStatus.State state) {
         switch (state) {
             case RUNNING:
@@ -126,115 +126,115 @@ public class MapReduceQueryStatus implements Serializable {
                 break;
         }
     }
-    
+
     public String getJobName() {
         return jobName;
     }
-    
+
     public void setJobName(String jobName) {
         this.jobName = jobName;
     }
-    
+
     public MultiValueMap<String,String> getParameters() {
         return parameters;
     }
-    
+
     public void setParameters(MultiValueMap<String,String> parameters) {
         this.parameters = parameters;
     }
-    
+
     public DatawaveUserDetails getCurrentUser() {
         return currentUser;
     }
-    
+
     public void setCurrentUser(DatawaveUserDetails currentUser) {
         this.currentUser = currentUser;
     }
-    
+
     public Query getQuery() {
         return query;
     }
-    
+
     public void setQuery(Query query) {
         this.query = query;
     }
-    
+
     public GenericQueryConfiguration getConfig() {
         return config;
     }
-    
+
     public void setConfig(GenericQueryConfiguration config) {
         this.config = config;
     }
-    
+
     public String getJobId() {
         return jobId;
     }
-    
+
     public void setJobId(String jobId) {
         this.jobId = jobId;
     }
-    
+
     public String getJobTracker() {
         return jobTracker;
     }
-    
+
     public void setJobTracker(String jobTracker) {
         this.jobTracker = jobTracker;
     }
-    
+
     public String getHdfsUri() {
         return hdfsUri;
     }
-    
+
     public void setHdfsUri(String hdfsUri) {
         this.hdfsUri = hdfsUri;
     }
-    
+
     public String getWorkingDirectory() {
         return workingDirectory;
     }
-    
+
     public void setWorkingDirectory(String workingDirectory) {
         this.workingDirectory = workingDirectory;
     }
-    
+
     public String getResultsDirectory() {
         return resultsDirectory;
     }
-    
+
     public void setResultsDirectory(String resultsDirectory) {
         this.resultsDirectory = resultsDirectory;
     }
-    
+
     public long getLastUpdatedMillis() {
         return lastUpdatedMillis;
     }
-    
+
     public void setLastUpdatedMillis(long lastUpdatedMillis) {
         this.lastUpdatedMillis = lastUpdatedMillis;
     }
-    
+
     public DatawaveErrorCode getErrorCode() {
         return errorCode;
     }
-    
+
     public void setErrorCode(DatawaveErrorCode errorCode) {
         this.errorCode = errorCode;
     }
-    
+
     public String getFailureMessage() {
         return failureMessage;
     }
-    
+
     public void setFailureMessage(String failureMessage) {
         this.failureMessage = failureMessage;
     }
-    
+
     public String getStackTrace() {
         return stackTrace;
     }
-    
+
     public void setStackTrace(String stackTrace) {
         this.stackTrace = stackTrace;
     }

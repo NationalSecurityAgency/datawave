@@ -3,7 +3,8 @@ package datawave.ingest.data.normalizer;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -16,7 +17,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
  */
 public class SimpleGroupFieldNameParser {
     private static final long serialVersionUID = 1035918631638323565L;
-    private static final Logger log = Logger.getLogger(SimpleGroupFieldNameParser.class);
+    private static final Logger log = LoggerFactory.getLogger(SimpleGroupFieldNameParser.class);
     private static final char DOT = '.';
 
     public SimpleGroupFieldNameParser() {}
@@ -216,7 +217,9 @@ public class SimpleGroupFieldNameParser {
                 try {
                     revisedField = extractFieldNameComponents(field);
                 } catch (Exception e) {
-                    log.error("Failed to extract field name components: " + field.getIndexedFieldName() + '=' + field.getIndexedFieldValue(), e);
+                    if (log.isErrorEnabled()) {
+                        log.error("Failed to extract field name components: {}={}", field.getIndexedFieldName(), field.getIndexedFieldValue(), e);
+                    }
                     revisedField.setError(e);
                 }
                 results.put(revisedField.getIndexedFieldName(), revisedField);

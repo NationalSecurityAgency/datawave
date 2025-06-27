@@ -358,7 +358,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         if (boost != null) {
             float f = (float) 1.0;
             try {
-                f = Float.valueOf(boost.image).floatValue();
+                f = Float.parseFloat(boost.image);
                 // avoid boosting null queries, such as those caused by stop words
                 if (q != null) {
                     q = new BoostQueryNode(q, f);
@@ -445,7 +445,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                 if (fuzzy) {
                     float fms = defaultMinSimilarity;
                     try {
-                        fms = Float.valueOf(fuzzySlop.image.substring(1)).floatValue();
+                        fms = Float.parseFloat(fuzzySlop.image.substring(1));
                     } catch (Exception ignored) {}
                     if (fms < 0.0f) {
                         {
@@ -570,7 +570,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
 
                 if (fuzzySlop != null) {
                     try {
-                        phraseSlop = Float.valueOf(fuzzySlop.image.substring(1)).intValue();
+                        phraseSlop = Integer.parseInt(fuzzySlop.image.substring(1));
                         q = new SlopQueryNode(q, phraseSlop);
                     } catch (Exception ignored) {
                         /*
@@ -587,7 +587,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         if (boost != null) {
             float f = (float) 1.0;
             try {
-                f = Float.valueOf(boost.image).floatValue();
+                f = Float.parseFloat(boost.image);
                 // avoid boosting null queries, such as those caused by stop words
                 if (q != null) {
                     q = new BoostQueryNode(q, f);

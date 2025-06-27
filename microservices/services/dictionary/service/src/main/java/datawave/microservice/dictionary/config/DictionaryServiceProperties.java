@@ -17,11 +17,11 @@ public class DictionaryServiceProperties {
     @Valid
     private AccumuloProperties accumuloProperties = new AccumuloProperties();
     private System system = new System();
-    
+
     public AccumuloProperties getAccumuloProperties() {
         return accumuloProperties;
     }
-    
+
     @Getter
     @Setter
     public static class System {

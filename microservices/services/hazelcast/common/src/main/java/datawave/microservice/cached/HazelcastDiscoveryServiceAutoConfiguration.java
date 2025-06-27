@@ -25,7 +25,7 @@ public class HazelcastDiscoveryServiceAutoConfiguration {
     public HazelcastDiscoveryService hazelcastDiscoveryService(DiscoveryClient discoveryClient) {
         return new HazelcastDiscoveryService(discoveryClient);
     }
-    
+
     @Bean
     public DiscoveryServiceProvider hazelcastDiscoveryServiceProvider(HazelcastDiscoveryService hazelcastDiscoveryService) {
         return discoveryServiceSettings -> hazelcastDiscoveryService;

@@ -40,34 +40,34 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     private final DatawaveSecurityProperties securityProperties;
     private final JWTAuthenticationProvider jwtAuthenticationProvider;
     private final AuthenticationEntryPoint authenticationEntryPoint;
-    
+
     public JWTSecurityConfigurer(DatawaveSecurityProperties securityProperties, JWTAuthenticationProvider jwtAuthenticationProvider) {
         this.securityProperties = securityProperties;
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.authenticationEntryPoint = new Http403ForbiddenEntryPoint();
     }
-    
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         // Allow unauthenticated access to actuator info and health endpoints.
         http.authorizeRequests().requestMatchers(EndpointRequest.to("info", "health")).permitAll();
-        
+
         // Require users to have one of the defined manager roles for accessing any actuator endpoint other
         // than info or health (see above).
         if (!securityProperties.getManagerRoles().isEmpty()) {
             http = http.authorizeRequests().requestMatchers(EndpointRequest.toAnyEndpoint())
                             .hasAnyAuthority(securityProperties.getManagerRoles().toArray(new String[0])).and();
         }
-        
+
         // Apply this configuration to all requests...
         http = http.requestMatchers().anyRequest().and();
-        
+
         if (securityProperties.isRequireSsl()) {
             http.requiresChannel().anyRequest().requiresSecure();
         }
-        
+
         JWTAuthenticationFilter jwtFilter = new JWTAuthenticationFilter(false, authenticationManager(), authenticationEntryPoint);
-        
+
         // Allow CORS requests
         http.cors();
         // Disable CSRF protection since we're not using cookies anyway
@@ -91,17 +91,17 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
         DeniedAccessRoleFilter deniedAccessRoleFilter = new DeniedAccessRoleFilter(securityProperties);
         http.addFilterAfter(deniedAccessRoleFilter, AbstractPreAuthenticatedProcessingFilter.class);
     }
-    
+
     protected AllowedCallersFilter getAllowedCallersFilter(DatawaveSecurityProperties securityProperties) {
         return new AllowedCallersFilter(securityProperties, authenticationEntryPoint);
     }
-    
+
     @Override
     protected void configure(@NonNull AuthenticationManagerBuilder auth) throws Exception {
         Preconditions.checkNotNull(auth);
         auth.authenticationProvider(jwtAuthenticationProvider);
     }
-    
+
     /**
      * Configures web security to allow access to static resources without authentication.
      *
@@ -115,9 +115,9 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
         super.configure(web);
         web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
     }
-    
+
     protected AuthenticationEntryPoint getAuthenticationEntryPoint() {
         return authenticationEntryPoint;
     }
-    
+
 }

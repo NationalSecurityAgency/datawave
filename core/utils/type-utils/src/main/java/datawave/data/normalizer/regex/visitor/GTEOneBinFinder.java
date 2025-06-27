@@ -11,42 +11,42 @@ import datawave.data.normalizer.regex.RegexUtils;
  * one.
  */
 public class GTEOneBinFinder extends BinFinder {
-    
+
     private static final int MIN_BIN = 0;
     private static final int MAX_BIN = 25;
     private static final int INITIAL_ENDPOINT_VALUE = -1;
-    
+
     public static Pair<Integer,Integer> binRangeOf(Node node) {
         GTEOneBinFinder calculator = new GTEOneBinFinder(node);
         return calculator.getBinRange();
     }
-    
+
     protected GTEOneBinFinder(Node node) {
         super(node, MIN_BIN, MAX_BIN, INITIAL_ENDPOINT_VALUE);
     }
-    
+
     @Override
     protected Pair<Integer,Integer> getBinRange() {
         calculateRange();
         normalizeRange();
         return getEndpoints();
     }
-    
+
     /**
      * Calculate the bin range.
      */
     private void calculateRange() {
         // Skip any leading zero elements that only match a zero character.
         childrenIter.seekPastZeroOnlyElements();
-        
+
         // If a decimal point is present, and we have reached it after skipping zero-only elements, there's nothing further to do.
         if (childrenIter.index() == decimalPointIndex) {
             return;
         }
-        
+
         boolean lockedAtWildcard = false;
         boolean nonLeadingZeroSeen = false;
-        
+
         // Iterate through the remaining children up to the decimal point (if present).
         while (childrenIter.hasNext() && !(childrenIter.index() == decimalPointIndex)) {
             Node next = childrenIter.next();
@@ -75,7 +75,7 @@ public class GTEOneBinFinder extends BinFinder {
                 if (isRemainingZeroOnlyUntilEndOrDecimalPoint()) {
                     // The current element must occur at least once, so increment lower by one before locking it.
                     incrementLower();
-                    
+
                     // We want to update the bin range without modifying the lower bound, so lock the lower bound, update the bin range, and then unlock the
                     // lower bound. The lower bound must be unlocked afterwards to allow for any subsequent zero-only characters to be counted if seen.
                     lockLower();
@@ -94,25 +94,25 @@ public class GTEOneBinFinder extends BinFinder {
             }
         }
     }
-    
+
     /**
      * Return whether, if skipping all elements that can only match zero, there are no more elements or the next element is a decimal point.
-     * 
+     *
      * @return true if the remaining regex pattern will match zero either until the end or a decimal point, or false otherwise
      */
     private boolean isRemainingZeroOnlyUntilEndOrDecimalPoint() {
         // Make a note of the iterator's current index so that we can reset it later.
         int originalIndex = childrenIter.index();
-        
+
         // Skip past any quantifiers or question marks the current element may have had.
         childrenIter.seekPastQuantifiers();
         childrenIter.seekPastQuestionMarks();
-        
+
         // Find the next node that does not only match the character '0'.
         Node nextNonZeroOnlyNode = null;
         while (childrenIter.hasNext()) {
             Node next = childrenIter.next();
-            
+
             // If the current element does not match zero only, we've found our target node. Stop looping.
             if (!RegexUtils.matchesZeroOnly(next)) {
                 nextNonZeroOnlyNode = next;
@@ -123,10 +123,10 @@ public class GTEOneBinFinder extends BinFinder {
         }
         // Reset the iterator to the original index.
         childrenIter.setIndex(originalIndex);
-        
+
         return nextNonZeroOnlyNode == null || RegexUtils.isDecimalPoint(nextNonZeroOnlyNode);
     }
-    
+
     /**
      * Update the bin range with the current element, taking into account any specified quantifiers.
      */

@@ -24,10 +24,10 @@ import datawave.webservice.query.exception.QueryException;
 
 public class MonitorTask implements Callable<Void> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private static final String DATABASE_NAME_PLACEHOLDER = "%DATABASE_NAME%";
     private static final String DAYS_TO_LIVE_PLACEHOLDER = "%DAYS_TO_LIVE%";
-    
+
     private final MonitorProperties monitorProperties;
     private final CachedResultsQueryProperties cachedResultsQueryProperties;
     private final MonitorStatusCache monitorStatusCache;
@@ -35,7 +35,7 @@ public class MonitorTask implements Callable<Void> {
     private final CachedResultsQueryCache cachedResultsQueryCache;
     private final JdbcTemplate cachedResultsJdbcTemplate;
     private final String schema;
-    
+
     public MonitorTask(MonitorProperties monitorProperties, CachedResultsQueryProperties cachedResultsQueryProperties, MonitorStatusCache monitorStatusCache,
                     CachedResultsQueryService cachedResultsQueryService, CachedResultsQueryCache cachedResultsQueryCache,
                     JdbcTemplate cachedResultsJdbcTemplate) throws SQLException {
@@ -47,7 +47,7 @@ public class MonitorTask implements Callable<Void> {
         this.cachedResultsJdbcTemplate = cachedResultsJdbcTemplate;
         this.schema = cachedResultsJdbcTemplate.getDataSource().getConnection().getSchema();
     }
-    
+
     @Override
     public Void call() throws Exception {
         if (tryLock()) {
@@ -70,7 +70,7 @@ public class MonitorTask implements Callable<Void> {
         }
         return null;
     }
-    
+
     // Perform the following actions:
     // Find all result tables older than 24 hours
     // Drop the view & table for each of the result tables
@@ -84,7 +84,7 @@ public class MonitorTask implements Callable<Void> {
             }
             return tables;
         });
-        
+
         // drop each of the expired views/tables
         if (expiredTables != null) {
             for (String tableName : expiredTables) {
@@ -95,7 +95,7 @@ public class MonitorTask implements Callable<Void> {
                     } else if (tableName.startsWith("v")) {
                         statement = cachedResultsQueryProperties.getStatementTemplates().getDropView().replace(TABLE_PLACEHOLDER, tableName);
                     }
-                    
+
                     if (statement != null) {
                         cachedResultsJdbcTemplate.execute(statement);
                     }
@@ -103,7 +103,7 @@ public class MonitorTask implements Callable<Void> {
                     log.warn("Unable to drop expired table: {}", tableName, e);
                 }
             }
-            
+
             // delete the cache entries for the dropped tables/views
             for (String tableName : expiredTables) {
                 CachedResultsQueryStatus cachedResultsQueryStatus = cachedResultsQueryCache.lookupQueryStatus(tableName);
@@ -114,30 +114,30 @@ public class MonitorTask implements Callable<Void> {
                         log.warn("Unable to cancel cached results query: {}", cachedResultsQueryStatus.getDefinedQueryId(), e);
                     }
                 }
-                
+
                 if (cachedResultsQueryStatus.getAlias() != null) {
                     cachedResultsQueryCache.removeQueryIdByAliasLookup(cachedResultsQueryStatus.getAlias());
                 }
-                
+
                 if (cachedResultsQueryStatus.getView() != null) {
                     cachedResultsQueryCache.removeQueryIdByViewLookup(cachedResultsQueryStatus.getView());
                 }
-                
+
                 cachedResultsQueryCache.removeQueryStatus(cachedResultsQueryStatus.getDefinedQueryId());
             }
         }
     }
-    
+
     private String listExpiredTablesAndViews() {
         return cachedResultsQueryProperties.getStatementTemplates().getListExpiredTablesAndViews().replace(DATABASE_NAME_PLACEHOLDER, schema)
                         .replace(DAYS_TO_LIVE_PLACEHOLDER, Integer.toString(cachedResultsQueryProperties.getDaysToLive()));
     }
-    
+
     private boolean tryLock() throws InterruptedException {
         return monitorStatusCache.tryLock(monitorProperties.getLockWaitTime(), monitorProperties.getLockWaitTimeUnit(), monitorProperties.getLockLeaseTime(),
                         monitorProperties.getLockLeaseTimeUnit());
     }
-    
+
     private void unlock() {
         monitorStatusCache.unlock();
     }

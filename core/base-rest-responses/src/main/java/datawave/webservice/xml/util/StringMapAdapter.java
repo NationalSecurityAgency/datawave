@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
  * "default" one, which when triggered will then assume the "" prefix and push all of our own elements into the "ns2" prefix.
  */
 public class StringMapAdapter extends XmlAdapter<StringMapAdapter.StringMap,Map<String,String>> {
-    
+
     @Override
     public Map<String,String> unmarshal(StringMap v) throws Exception {
         HashMap<String,String> map = new HashMap<String,String>();
@@ -24,7 +24,7 @@ public class StringMapAdapter extends XmlAdapter<StringMapAdapter.StringMap,Map<
         }
         return map;
     }
-    
+
     @Override
     public StringMap marshal(Map<String,String> v) throws Exception {
         StringMap map = new StringMap();
@@ -35,20 +35,20 @@ public class StringMapAdapter extends XmlAdapter<StringMapAdapter.StringMap,Map<
         }
         return map;
     }
-    
+
     public static class StringMap {
         @XmlElement(name = "entry")
         private List<StringMapEntry> entries = new ArrayList<StringMapEntry>();
     }
-    
+
     public static class StringMapEntry {
         @XmlElement(name = "key")
         private String key;
         @XmlElement(name = "value")
         private String value;
-        
+
         public StringMapEntry() {}
-        
+
         public StringMapEntry(String key, String value) {
             this.key = key;
             this.value = value;

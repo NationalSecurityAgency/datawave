@@ -37,58 +37,58 @@ import org.slf4j.LoggerFactory;
 class InMemoryInstanceOperations implements InstanceOperations {
     private static final Logger log = LoggerFactory.getLogger(InMemoryInstanceOperations.class);
     InMemoryAccumulo acu;
-    
+
     public InMemoryInstanceOperations(InMemoryAccumulo acu) {
         this.acu = acu;
     }
-    
+
     @Override
     public Set<String> getScanServers() {
         return new HashSet<>();
     }
-    
+
     @Override
     public void setProperty(String property, String value) throws AccumuloException, AccumuloSecurityException {
         acu.setProperty(property, value);
     }
-    
+
     @Override
     public Map<String,String> modifyProperties(Consumer<Map<String,String>> mapMutator)
                     throws AccumuloException, AccumuloSecurityException, IllegalArgumentException, ConcurrentModificationException {
         mapMutator.accept(acu.systemProperties);
         return acu.systemProperties;
     }
-    
+
     @Override
     public void removeProperty(String property) throws AccumuloException, AccumuloSecurityException {
         acu.removeProperty(property);
     }
-    
+
     @Override
     public Map<String,String> getSystemConfiguration() throws AccumuloException, AccumuloSecurityException {
         return acu.systemProperties;
     }
-    
+
     @Override
     public Map<String,String> getSiteConfiguration() throws AccumuloException, AccumuloSecurityException {
         return acu.systemProperties;
     }
-    
+
     @Override
     public List<String> getManagerLocations() {
         return null;
     }
-    
+
     @Override
     public List<String> getTabletServers() {
         return new ArrayList<>();
     }
-    
+
     @Override
     public List<ActiveScan> getActiveScans(String tserver) throws AccumuloException, AccumuloSecurityException {
         return new ArrayList<>();
     }
-    
+
     @Override
     public boolean testClassLoad(String className, String asTypeName) throws AccumuloException, AccumuloSecurityException {
         try {
@@ -99,30 +99,30 @@ class InMemoryInstanceOperations implements InstanceOperations {
         }
         return true;
     }
-    
+
     @Override
     public List<ActiveCompaction> getActiveCompactions(String tserver) throws AccumuloException, AccumuloSecurityException {
         return new ArrayList<>();
     }
-    
+
     @Override
     public List<ActiveCompaction> getActiveCompactions() throws AccumuloException, AccumuloSecurityException {
         return new ArrayList<>();
     }
-    
+
     @Override
     public void ping(String tserver) throws AccumuloException {
-        
+
     }
-    
+
     @Override
     public void waitForBalance() throws AccumuloException {}
-    
+
     @Override
     public String getInstanceID() {
         return "in-memory-instance";
     }
-    
+
     @Override
     public InstanceId getInstanceId() {
         return InstanceId.of("in-memory-instance");

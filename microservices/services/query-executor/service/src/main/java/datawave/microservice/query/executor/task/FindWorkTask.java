@@ -22,10 +22,10 @@ public class FindWorkTask implements Callable<Void> {
     protected final QueryStorageCache queryStorageCache;
     protected final QueryExecutor executor;
     protected final ExecutorStatusLogger statusLogger;
-    
+
     private final String originService;
     private final String destinationService;
-    
+
     public FindWorkTask(QueryStorageCache queryStorageCache, QueryExecutor executor, String originService, String destinationService,
                     ExecutorStatusLogger statusLogger) {
         this.queryStorageCache = queryStorageCache;
@@ -34,7 +34,7 @@ public class FindWorkTask implements Callable<Void> {
         this.destinationService = destinationService;
         this.statusLogger = statusLogger;
     }
-    
+
     @Override
     public Void call() throws Exception {
         statusLogger.logStatus(executor);
@@ -105,7 +105,7 @@ public class FindWorkTask implements Callable<Void> {
         }
         return null;
     }
-    
+
     /**
      * For the specified query id, find tasks that are orphaned and reset their state
      *
@@ -117,7 +117,7 @@ public class FindWorkTask implements Callable<Void> {
     public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state) {
         recoverOrphanedTasks(queryId, state, false);
     }
-    
+
     /**
      * For the specified query id, find tasks that are orphaned and reset their state
      *
@@ -131,7 +131,7 @@ public class FindWorkTask implements Callable<Void> {
     public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state, boolean all) {
         recoverOrphanedTasks(queryId, state, Collections.emptyMap(), all);
     }
-    
+
     /**
      * For the specified query id, find tasks that are orphaned and reset their state
      *
@@ -145,10 +145,10 @@ public class FindWorkTask implements Callable<Void> {
     public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state, Map<QueryRequest.Method,TaskStates.TASK_STATE> overrides) {
         recoverOrphanedTasks(queryId, state, overrides, false);
     }
-    
+
     /**
      * For the specified query id, find tasks that are orphaned and reset their state
-     * 
+     *
      * @param queryId
      *            The query id
      * @param state
@@ -164,10 +164,10 @@ public class FindWorkTask implements Callable<Void> {
         try {
             // get the query states from the cache
             TaskStates taskStates = queryStorageCache.getTaskStates(queryId);
-            
+
             if (taskStates != null) {
                 log.debug("Searching for orphaned tasks for " + queryId);
-                
+
                 for (TaskKey taskKey : taskStates.getTasksForState(TaskStates.TASK_STATE.RUNNING,
                                 all ? -1 : executor.getExecutorProperties().getMaxOrphanedTasksToCheck())) {
                     QueryTask task = queryStorageCache.getTask(taskKey);

@@ -2,7 +2,6 @@ package datawave.ingest.mapreduce;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
 
 import java.io.File;
 
@@ -12,10 +11,11 @@ import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
 import datawave.ingest.table.config.ShardTableConfigHelper;
@@ -34,7 +34,7 @@ public class TableConfigHelperFactoryTest {
 
     private static final String TEST_SHARD_TABLE_NAME = "testShard";
 
-    @BeforeClass
+    @BeforeAll
     public static void startCluster() throws Exception {
         File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + TableConfigHelperFactoryTest.class.getName());
         if (macDir.exists())
@@ -44,7 +44,7 @@ public class TableConfigHelperFactoryTest {
         mac.start();
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         conf = new Configuration();
 
@@ -61,7 +61,7 @@ public class TableConfigHelperFactoryTest {
         recreateTable(tops, TEST_SHARD_TABLE_NAME);
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdown() throws Exception {
         mac.stop();
     }
@@ -81,8 +81,8 @@ public class TableConfigHelperFactoryTest {
         TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, TEST_SHARD_TABLE_NAME);
         TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
 
-        assertThat(testShardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));
-        assertThat(shardProperties.get("table.iterator.majc.agg"), nullValue());
+        MatcherAssert.assertThat(testShardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));
+        MatcherAssert.assertThat(shardProperties.get("table.iterator.majc.agg"), nullValue());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class TableConfigHelperFactoryTest {
         TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, TEST_SHARD_TABLE_NAME);
         TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
 
-        assertThat(testShardProperties.get("table.iterator.majc.agg"), nullValue());
-        assertThat(shardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));
+        MatcherAssert.assertThat(testShardProperties.get("table.iterator.majc.agg"), nullValue());
+        MatcherAssert.assertThat(shardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));
     }
 }

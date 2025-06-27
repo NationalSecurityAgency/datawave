@@ -33,27 +33,27 @@ import datawave.webservice.result.BaseQueryResponse;
 
 public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> extends ShardTableQueryMetricHandler<T> {
     private static final Logger log = LoggerFactory.getLogger(RemoteShardTableQueryMetricHandler.class);
-    
+
     private DatawaveUserDetails userDetails;
     private final ResponseObjectFactory responseObjectFactory;
     private final WebClient webClient;
     private final WebClient authWebClient;
     private final JWTTokenHandler jwtTokenHandler;
-    
+
     public RemoteShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, @Qualifier("warehouse") AccumuloClientPool clientPool,
                     QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions markingFunctions,
                     QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, ResponseObjectFactory responseObjectFactory,
                     WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler, DnUtils dnUtils) {
         super(queryMetricHandlerProperties, clientPool, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
-        
+
         this.responseObjectFactory = responseObjectFactory;
-        
+
         this.webClient = webClientBuilder.baseUrl(queryMetricHandlerProperties.getQueryServiceUri()).build();
         this.jwtTokenHandler = jwtTokenHandler;
-        
+
         this.authWebClient = webClientBuilder.baseUrl(queryMetricHandlerProperties.getAuthServiceUri()).build();
     }
-    
+
     protected String createBearerHeader() {
         if (userDetails == null) {
             final String jwt;
@@ -68,27 +68,27 @@ public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> exten
                 log.error("Timed out waiting for remote authorization response");
                 throw new IllegalStateException("Timed out waiting for remote authorization response", e);
             }
-            
+
             Collection<DatawaveUser> principals = jwtTokenHandler.createUsersFromToken(jwt);
             long createTime = principals.stream().map(DatawaveUser::getCreationTime).min(Long::compareTo).orElse(System.currentTimeMillis());
             userDetails = new DatawaveUserDetails(principals, createTime);
         }
-        
+
         return "Bearer " + jwtTokenHandler.createTokenFromUsers(userDetails.getPrimaryUser().getName(), userDetails.getProxiedUsers());
     }
-    
+
     protected BaseQueryResponse createAndNext(Query query) throws Exception {
         String bearerHeader = createBearerHeader();
         String beginDate = DefaultQueryParameters.formatDate(query.getBeginDate());
         String endDate = DefaultQueryParameters.formatDate(query.getEndDate());
         String expirationDate = DefaultQueryParameters.formatDate(query.getExpirationDate());
-        
+
         Collection<String> userAuths = new ArrayList<>(userDetails.getPrimaryUser().getAuths());
         if (clientAuthorizations != null) {
             Collection<String> connectorAuths = Arrays.asList(StringUtils.split(clientAuthorizations, ','));
             userAuths.retainAll(connectorAuths);
         }
-        
+
         try {
             // @formatter:off
             return webClient.post()
@@ -117,7 +117,7 @@ public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> exten
             throw new IllegalStateException("Timed out waiting for remote query createAndNext response", e);
         }
     }
-    
+
     protected BaseQueryResponse next(String queryId) throws Exception {
         String bearerHeader = createBearerHeader();
         try {
@@ -137,7 +137,7 @@ public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> exten
             throw new IllegalStateException("Timed out waiting for remote query next response", e);
         }
     }
-    
+
     @Override
     protected void close(String queryId) {
         // do nothing

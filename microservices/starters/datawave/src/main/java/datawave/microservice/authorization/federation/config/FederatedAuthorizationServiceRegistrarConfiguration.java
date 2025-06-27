@@ -18,7 +18,7 @@ public class FederatedAuthorizationServiceRegistrarConfiguration {
     public static DynamicFederatedAuthorizationServiceBeanDefinitionRegistrar federatedAuthorizationServiceBeanDefinitionRegistrar(Environment environment) {
         return new DynamicFederatedAuthorizationServiceBeanDefinitionRegistrar(environment);
     }
-    
+
     @Bean
     public CacheManager remoteOperationsCacheManager() {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("getRemoteUser", "listEffectiveAuthorizations");

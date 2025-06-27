@@ -23,7 +23,7 @@ import org.springframework.util.CollectionUtils;
 @ConditionalOnMissingBean(CacheManager.class)
 @Conditional(CacheCondition.class)
 class Cache2kCacheConfiguration {
-    
+
     @Bean
     @Primary
     SpringCache2kCacheManager cacheManager(CacheProperties cacheProperties, CacheManagerCustomizers customizers,
@@ -36,7 +36,7 @@ class Cache2kCacheConfiguration {
         }
         return customizers.customize(cacheManager);
     }
-    
+
     private Function<Cache2kBuilder<?,?>,Cache2kBuilder<?,?>> configureDefaults(ObjectProvider<Cache2kBuilderCustomizer> cache2kBuilderCustomizers) {
         return (builder) -> {
             cache2kBuilderCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));

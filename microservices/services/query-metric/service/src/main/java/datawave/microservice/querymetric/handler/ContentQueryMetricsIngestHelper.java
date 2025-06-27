@@ -27,30 +27,30 @@ import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ContentQueryMetricsIngestHelper.class);
     private static final Integer MAX_FIELD_VALUE_LENGTH = 500000;
-    
+
     private Set<String> contentIndexFields = new HashSet<>();
     private HelperDelegate<BaseQueryMetric> delegate;
-    
+
     public ContentQueryMetricsIngestHelper(boolean deleteMode, Collection<String> ignoredFields) {
         this(deleteMode, new HelperDelegate<>(ignoredFields));
     }
-    
+
     public ContentQueryMetricsIngestHelper(boolean deleteMode, HelperDelegate<BaseQueryMetric> delegate) {
         this.deleteMode = deleteMode;
         this.delegate = delegate;
     }
-    
+
     public Multimap<String,NormalizedContentInterface> getEventFieldsToDelete(BaseQueryMetric updatedQueryMetric, BaseQueryMetric storedQueryMetric) {
         return normalize(delegate.getEventFieldsToDelete(updatedQueryMetric, storedQueryMetric));
     }
-    
+
     @Override
     public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
         Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
-        
+
         for (Map.Entry<String,String> e : fields.entries()) {
             if (e.getValue() != null) {
                 String field = e.getKey();
@@ -69,39 +69,39 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
         }
         return results;
     }
-    
+
     public Multimap<String,NormalizedContentInterface> getEventFieldsToWrite(BaseQueryMetric updatedQueryMetric, BaseQueryMetric storedQueryMetric) {
         return normalize(delegate.getEventFieldsToWrite(updatedQueryMetric, storedQueryMetric));
     }
-    
+
     @Override
     public boolean isTermFrequencyField(String field) {
         return contentIndexFields.contains(field);
     }
-    
+
     @Override
     public String getTokenFieldNameDesignator() {
         return "";
     }
-    
+
     @Override
     public boolean isIndexOnlyField(String fieldName) {
         return false;
     }
-    
+
     public int getFieldSizeThreshold() {
         return helper.getFieldSizeThreshold();
     }
-    
+
     public static class HelperDelegate<T extends BaseQueryMetric> {
         private Collection<String> ignoredFields = Collections.EMPTY_LIST;
-        
+
         public HelperDelegate() {}
-        
+
         public HelperDelegate(Collection<String> ignoredFields) {
             this.ignoredFields = ignoredFields;
         }
-        
+
         protected boolean isChanged(String updated, String stored) {
             if ((StringUtils.isBlank(stored) && StringUtils.isNotBlank(updated)) || (stored != null && updated != null && !stored.equals(updated))) {
                 return true;
@@ -109,7 +109,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         protected boolean isChanged(long updated, long stored) {
             if (updated != stored) {
                 return true;
@@ -117,7 +117,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         protected boolean isChanged(BaseQueryMetric.Lifecycle updated, BaseQueryMetric.Lifecycle stored) {
             if ((stored == null && updated != null) || (stored != null && updated != null && (stored.ordinal() != updated.ordinal()))) {
                 return true;
@@ -125,7 +125,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         protected boolean isFirstWrite(Collection<?> updated, Collection<?> stored) {
             if ((stored == null || stored.isEmpty()) && (updated != null && !updated.isEmpty())) {
                 return true;
@@ -133,7 +133,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         protected boolean isFirstWrite(Map<?,?> updated, Map<?,?> stored) {
             if ((stored == null || stored.isEmpty()) && (updated != null && !updated.isEmpty())) {
                 return true;
@@ -141,7 +141,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         protected boolean isFirstWrite(String updated, String stored) {
             if (stored == null && StringUtils.isNotBlank(updated)) {
                 return true;
@@ -149,7 +149,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         protected boolean isFirstWrite(Object updated, Object stored) {
             if (stored == null && updated != null) {
                 return true;
@@ -157,7 +157,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         protected boolean isFirstWrite(long updated, long stored, long initValue) {
             if (stored == initValue && updated != initValue) {
                 return true;
@@ -165,14 +165,14 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 return false;
             }
         }
-        
+
         public Multimap<String,String> getEventFieldsToWrite(T updated, T stored) {
-            
+
             HashMultimap<String,String> fields = HashMultimap.create();
-            
+
             SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
             SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
-            
+
             if (!ignoredFields.contains("POSITIVE_SELECTORS")) {
                 if (isFirstWrite(updated.getPositiveSelectors(), stored == null ? null : stored.getPositiveSelectors())) {
                     fields.putAll("POSITIVE_SELECTORS", updated.getPositiveSelectors());
@@ -270,7 +270,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     fields.put("PROXY_SERVERS", StringUtils.join(updated.getProxyServers(), ","));
                 }
             }
-            
+
             Map<Long,PageMetric> storedPageMetricMap = new HashMap<>();
             if (stored != null) {
                 List<PageMetric> storedPageMetrics = stored.getPageTimes();
@@ -355,9 +355,9 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (isChanged(updated.getYieldCount(), stored == null ? -1 : stored.getYieldCount())) {
                 fields.put("YIELD_COUNT", Long.toString(updated.getYieldCount()));
             }
-            
+
             putExtendedFieldsToWrite(updated, stored, fields);
-            
+
             HashMultimap<String,String> truncatedFields = HashMultimap.create();
             fields.entries().forEach(e -> {
                 if (e.getValue().length() > MAX_FIELD_VALUE_LENGTH) {
@@ -368,18 +368,18 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             });
             return truncatedFields;
         }
-        
+
         protected void putExtendedFieldsToWrite(T updated, T stored, Multimap<String,String> fields) {
-            
+
         }
-        
+
         public Multimap<String,String> getEventFieldsToDelete(T updated, T stored) {
-            
+
             HashMultimap<String,String> fields = HashMultimap.create();
             if (updated != null && stored != null) {
-                
+
                 SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
-                
+
                 if (isChanged(updated.getCreateCallTime(), stored.getCreateCallTime())) {
                     fields.put("CREATE_CALL_TIME", Long.toString(stored.getCreateCallTime()));
                 }
@@ -474,9 +474,9 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             });
             return truncatedFields;
         }
-        
+
         protected void putExtendedFieldsToDelete(T updated, T stored, Multimap<String,String> fields) {
-            
+
         }
     }
 }

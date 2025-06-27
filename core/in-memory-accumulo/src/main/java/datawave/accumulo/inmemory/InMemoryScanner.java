@@ -31,10 +31,10 @@ import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 
 public class InMemoryScanner extends InMemoryScannerBase implements Scanner, ScannerRebuilder, Cloneable {
-    
+
     int batchSize = 0;
     Range range = new Range();
-    
+
     @Override
     public InMemoryScanner clone() {
         InMemoryScanner clone = new InMemoryScanner(table, getAuthorizations());
@@ -44,51 +44,51 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
         clone.retryTimeout = retryTimeout;
         return clone;
     }
-    
+
     InMemoryScanner(InMemoryTable table, Authorizations auths) {
         super(table, auths);
     }
-    
+
     @Override
     public void setRange(Range range) {
         this.range = range;
     }
-    
+
     @Override
     public Range getRange() {
         return this.range;
     }
-    
+
     @Override
     public void setBatchSize(int size) {
         this.batchSize = size;
     }
-    
+
     @Override
     public int getBatchSize() {
         return this.batchSize;
     }
-    
+
     @Override
     public void enableIsolation() {}
-    
+
     @Override
     public void disableIsolation() {}
-    
+
     static class RangeFilter extends Filter {
         Range range;
-        
+
         RangeFilter(SortedKeyValueIterator<Key,Value> i, Range range) {
             setSource(i);
             this.range = range;
         }
-        
+
         @Override
         public boolean accept(Key k, Value v) {
             return range.contains(k);
         }
     }
-    
+
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         SortedKeyValueIterator<Key,Value> i = new SortedMapIterator(table.table);
@@ -99,9 +99,9 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        
+
     }
-    
+
     @Override
     public Iterator<Entry<Key,Value>> rebuild(Key lastKey) {
         if (lastKey != null) {
@@ -109,19 +109,19 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
             Range newRange = new Range(lastKey, false, range.getEndKey(), range.isEndKeyInclusive());
             this.range = newRange;
         }
-        
+
         // now rebuild the iterator stack using the new range.
         return iterator();
     }
-    
+
     @Override
     public long getReadaheadThreshold() {
         return 0;
     }
-    
+
     @Override
     public void setReadaheadThreshold(long batches) {
-        
+
     }
-    
+
 }

@@ -24,17 +24,17 @@ import javax.validation.constraints.NotNull;
 @NotNull
 public @interface NotBlankIfFieldEquals {
     String fieldName();
-    
+
     String fieldValue();
-    
+
     String notBlankFieldName();
-    
+
     String message() default "{NotBlankIfFieldEquals.message}";
-    
+
     Class<?>[] groups() default {};
-    
+
     Class<? extends Payload>[] payload() default {};
-    
+
     @Target({TYPE, ANNOTATION_TYPE})
     @Retention(RUNTIME)
     @Documented

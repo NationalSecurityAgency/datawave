@@ -29,6 +29,6 @@ public class AndIteratorBuilder extends AbstractIteratorBuilder {
         if (includes.isEmpty()) {
             throw new IllegalStateException("AndIterator has no inclusive sources!");
         }
-        return new AndIterator(includes, excludes);
+        return new AndIterator(includes, excludes, waitWindowObserver);
     }
 }
