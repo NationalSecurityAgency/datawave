@@ -1951,11 +1951,9 @@ public class IngestTypePruningVisitorTest {
         ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
         ASTJexlScript queryModelAppliedJexl = QueryModelVisitor.applyModel(groomed, model, allFields);
 
-        System.out.println(" --- Giga Query --- ");
-        System.out.println("Is Giga Query valid? | " + validator.isValid(queryModelAppliedJexl));
+        System.out.println(" --- QUERY MODEL STUFF --- ");
+        System.out.println("POST-QM VALID? (You're trying to make this FALSE) -> | " + validator.isValid(queryModelAppliedJexl));
         PrintingVisitor.printQuery(queryModelAppliedJexl);
-
-
 
         // --- Removing Stuff (TM) ---
 
@@ -1963,13 +1961,14 @@ public class IngestTypePruningVisitorTest {
         tm.put("A",     "ingestType1", LcType.class.getTypeName());
         tm.put("B",     "ingestType1", LcType.class.getTypeName());
         tm.put("C",     "ingestType1", LcType.class.getTypeName());
-        tm.put("D",     "ingestType1", LcType.class.getTypeName());
+        tm.put("D",     "ingestType2", LcType.class.getTypeName());
         tm.put("C1",    "ingestType1", LcType.class.getTypeName());
         tm.put("C2",    "ingestType1", LcType.class.getTypeName());
         tm.put("C3",    "ingestType1", LcType.class.getTypeName());
-        tm.put("Dork",  "ingestType1", LcType.class.getTypeName());
+        tm.put("Dork",  "ingestType2", LcType.class.getTypeName());
 
         // !!!
+        System.out.println(" --- TYPE METADATA STUFF --- ");
         test(JexlStringBuildingVisitor.buildQuery(queryModelAppliedJexl), "", tm);
 
     }
