@@ -17,17 +17,17 @@ import org.springframework.cache.CacheManager;
 public class ConcurrentMapCacheInspector implements CacheInspector {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final CacheManager cacheManager;
-    
+
     public ConcurrentMapCacheInspector(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
     }
-    
+
     @Override
     public <T> T list(String cacheName, Class<T> cacheObjectType, String key) {
         Cache cache = cacheManager.getCache(cacheName);
         return cache.get(key, cacheObjectType);
     }
-    
+
     @Override
     public <T> List<? extends T> listAll(String cacheName, Class<T> cacheObjectType) {
         Cache cache = cacheManager.getCache(cacheName);
@@ -44,7 +44,7 @@ public class ConcurrentMapCacheInspector implements CacheInspector {
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public <T> List<? extends T> listMatching(String cacheName, Class<T> cacheObjectType, String substring) {
         Cache cache = cacheManager.getCache(cacheName);
@@ -63,7 +63,7 @@ public class ConcurrentMapCacheInspector implements CacheInspector {
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public <T> int evictMatching(String cacheName, Class<T> cacheObjectType, String substring) {
         org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);

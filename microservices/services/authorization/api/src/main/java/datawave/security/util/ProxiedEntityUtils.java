@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 public class ProxiedEntityUtils {
     private static final Logger log = LoggerFactory.getLogger(ProxiedEntityUtils.class);
-    
+
     public static String[] splitProxiedDNs(String proxiedDNs, boolean allowDups) {
         String[] dns;
         if (proxiedDNs.indexOf('<') < 0) {
@@ -29,12 +29,12 @@ public class ProxiedEntityUtils {
                 if (piece.trim().length() > 0)
                     dnCollection.add(piece);
             }
-            
+
             dns = dnCollection.toArray(new String[0]);
         }
         return dns;
     }
-    
+
     public static String[] splitProxiedSubjectIssuerDNs(String proxiedDNs) {
         String[] dns;
         if (proxiedDNs.indexOf('<') < 0) {
@@ -60,12 +60,12 @@ public class ProxiedEntityUtils {
                     dnList.add(issuer);
                 }
             }
-            
+
             dns = dnList.toArray(new String[0]);
         }
         return dns;
     }
-    
+
     public static String buildProxiedDN(String... dns) {
         StringBuilder sb = new StringBuilder();
         for (String dn : dns) {
@@ -77,16 +77,16 @@ public class ProxiedEntityUtils {
         }
         return sb.toString();
     }
-    
+
     public static String getCommonName(String dn) {
         String[] comps = getComponents(dn, "CN");
         return comps.length >= 1 ? comps[0] : null;
     }
-    
+
     public static String[] getOrganizationalUnits(String dn) {
         return getComponents(dn, "OU");
     }
-    
+
     public static String getShortName(String dn) {
         String cn = getCommonName(dn);
         if (cn == null)
@@ -97,7 +97,7 @@ public class ProxiedEntityUtils {
             sid = cn.substring(idx + 1);
         return sid;
     }
-    
+
     public static String[] getComponents(String dn, String componentName) {
         componentName = componentName.toUpperCase();
         ArrayList<String> components = new ArrayList<>();
@@ -113,7 +113,7 @@ public class ProxiedEntityUtils {
         }
         return components.toArray(new String[0]);
     }
-    
+
     /**
      * Attempts to normalize a DN by taking it and reversing the components if it doesn't start with CN. Some systems requires the DN components be in a
      * specific order, or that order reversed. We cannot arbitrarily reorder the components however, e.g., sorting them.

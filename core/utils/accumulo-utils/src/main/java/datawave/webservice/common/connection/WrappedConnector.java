@@ -25,17 +25,17 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("deprecation")
 public class WrappedConnector extends Connector {
     private static final Logger log = LoggerFactory.getLogger(WrappedConnector.class);
-    
+
     private Connector mock = null;
     private Connector real = null;
     private String scannerClassLoaderContext = null;
     private long scanBatchTimeoutSeconds = Long.MAX_VALUE;
-    
+
     public WrappedConnector(Connector real, Connector mock) {
         this.real = real;
         this.mock = mock;
     }
-    
+
     @Override
     public BatchScanner createBatchScanner(String tableName, Authorizations authorizations, int numQueryThreads) throws TableNotFoundException {
         BatchScannerDelegate delegate;
@@ -59,23 +59,23 @@ public class WrappedConnector extends Connector {
         }
         return delegate;
     }
-    
+
     @Override
     public BatchDeleter createBatchDeleter(String tableName, Authorizations authorizations, int numQueryThreads, long maxMemory, long maxLatency,
                     int maxWriteThreads) throws TableNotFoundException {
         return real.createBatchDeleter(tableName, authorizations, numQueryThreads, maxMemory, maxLatency, maxWriteThreads);
     }
-    
+
     @Override
     public BatchWriter createBatchWriter(String tableName, long maxMemory, long maxLatency, int maxWriteThreads) throws TableNotFoundException {
         return real.createBatchWriter(tableName, maxMemory, maxLatency, maxWriteThreads);
     }
-    
+
     @Override
     public MultiTableBatchWriter createMultiTableBatchWriter(long maxMemory, long maxLatency, int maxWriteThreads) {
         return real.createMultiTableBatchWriter(maxMemory, maxLatency, maxWriteThreads);
     }
-    
+
     @Override
     public BatchDeleter createBatchDeleter(String tableName, Authorizations authorizations, int numQueryThreads, BatchWriterConfig config)
                     throws TableNotFoundException {
@@ -87,22 +87,22 @@ public class WrappedConnector extends Connector {
         }
         return delegate;
     }
-    
+
     @Override
     public BatchWriter createBatchWriter(String tableName, BatchWriterConfig config) throws TableNotFoundException {
         return real.createBatchWriter(tableName, config);
     }
-    
+
     @Override
     public MultiTableBatchWriter createMultiTableBatchWriter(BatchWriterConfig config) {
         return real.createMultiTableBatchWriter(config);
     }
-    
+
     @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
         return real.createConditionalWriter(tableName, config);
     }
-    
+
     @Override
     public Scanner createScanner(String tableName, Authorizations authorizations) throws TableNotFoundException {
         ScannerDelegate delegate;
@@ -125,64 +125,64 @@ public class WrappedConnector extends Connector {
         }
         return delegate;
     }
-    
+
     @Override
     public Instance getInstance() {
         return real.getInstance();
     }
-    
+
     @Override
     public String whoami() {
         return real.whoami();
     }
-    
+
     @Override
     public synchronized TableOperations tableOperations() {
         return real.tableOperations();
     }
-    
+
     @Override
     public synchronized SecurityOperations securityOperations() {
         return real.securityOperations();
     }
-    
+
     @Override
     public synchronized InstanceOperations instanceOperations() {
         return real.instanceOperations();
     }
-    
+
     @Override
     public ReplicationOperations replicationOperations() {
         return real.replicationOperations();
     }
-    
+
     @Override
     public NamespaceOperations namespaceOperations() {
         return real.namespaceOperations();
     }
-    
+
     public Connector getMock() {
         return mock;
     }
-    
+
     public Connector getReal() {
         return real;
     }
-    
+
     public void setScannerClassLoaderContext(String scannerClassLoaderContext) {
         this.scannerClassLoaderContext = scannerClassLoaderContext;
     }
-    
+
     public void clearScannerClassLoaderContext() {
         this.scannerClassLoaderContext = null;
     }
-    
+
     public long getScanBatchTimeoutSeconds() {
         return scanBatchTimeoutSeconds;
     }
-    
+
     public void setScanBatchTimeoutSeconds(long scanBatchTimeoutSeconds) {
         this.scanBatchTimeoutSeconds = scanBatchTimeoutSeconds;
     }
-    
+
 }

@@ -22,15 +22,25 @@ import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
 public class FlattenDataManager extends AbstractDataManager {
 
     private static final Logger log = Logger.getLogger(FlattenDataManager.class);
+    private static FlattenDataManager INSTANCE;
 
     private final FlattenData flatData;
+
+    public static FlattenDataManager getInstance() {
+        return INSTANCE;
+    }
+
+    public static synchronized FlattenDataManager newInstance(final FlattenData data) {
+        INSTANCE = new FlattenDataManager(data);
+        return INSTANCE;
+    }
 
     /**
      *
      * @param data
      *            defines the configuration information for the requested flattener
      */
-    public FlattenDataManager(final FlattenData data) {
+    private FlattenDataManager(final FlattenData data) {
         super(FlattenBaseFields.EVENTID.name(), FlattenBaseFields.STARTDATE.name(), data.getMetadata());
         this.flatData = data;
     }

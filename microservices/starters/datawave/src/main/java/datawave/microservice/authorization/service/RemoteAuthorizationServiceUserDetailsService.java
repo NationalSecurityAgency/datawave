@@ -45,7 +45,7 @@ public class RemoteAuthorizationServiceUserDetailsService implements Authenticat
     private final WebClient webClient;
     private final JWTTokenHandler jwtTokenHandler;
     private final DatawaveUserDetailsFactory userDetailsFactory;
-    
+
     @Autowired
     public RemoteAuthorizationServiceUserDetailsService(WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler,
                     DatawaveUserDetailsFactory userDetailsFactory,
@@ -54,18 +54,18 @@ public class RemoteAuthorizationServiceUserDetailsService implements Authenticat
         this.jwtTokenHandler = jwtTokenHandler;
         this.userDetailsFactory = userDetailsFactory;
     }
-    
+
     @Override
     @Timed(name = "dw.remoteAuthorizationService.loadUserDetails", absolute = true)
     public UserDetails loadUserDetails(PreAuthenticatedAuthenticationToken token) throws UsernameNotFoundException {
         logger.debug("Authenticating {} via the authorization microservice", token);
-        
+
         Object principalObj = token.getPrincipal();
         if (!(principalObj instanceof ProxiedEntityPreauthPrincipal)) {
             return null;
         }
         ProxiedEntityPreauthPrincipal principal = (ProxiedEntityPreauthPrincipal) principalObj;
-        
+
         try {
             // @formatter:off
             String jwt = webClient.get()
@@ -88,7 +88,7 @@ public class RemoteAuthorizationServiceUserDetailsService implements Authenticat
             throw new UsernameNotFoundException(e.getMessage(), e);
         }
     }
-    
+
     private String buildDNChain(ProxiedEntityPreauthPrincipal principal, Function<SubjectIssuerDNPair,String> dnFunc) {
         // @formatter:off
         return "<" +

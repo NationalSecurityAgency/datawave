@@ -23,13 +23,13 @@ import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
 public class DatawaveEncryptionConfiguration {
     private final KeyProperties key;
     private final RsaProperties rsaProperties;
-    
+
     @Autowired
     public DatawaveEncryptionConfiguration(KeyProperties key, RsaProperties rsaProperties) {
         this.key = key;
         this.rsaProperties = rsaProperties;
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public TextEncryptorLocator textEncryptorLocator() {

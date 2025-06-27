@@ -29,7 +29,7 @@ import datawave.microservice.query.messaging.kafka.KafkaQueryResultsManager;
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.messaging.backend", havingValue = KAFKA)
 public class KafkaMessagingConfiguration {
-    
+
     @Bean
     public QueryResultsManager kafkaQueryResultsManager(MessagingProperties messagingProperties, @Autowired(required = false) KafkaAdmin kafkaAdmin,
                     @Autowired(required = false) ProducerFactory<String,String> kafkaProducerFactory,
@@ -43,46 +43,46 @@ public class KafkaMessagingConfiguration {
                 createConsumerFactory(messagingProperties, kafkaConfigProps, kafkaConsumerFactory));
         // @formatter:on
     }
-    
+
     public Map<String,Object> createKafkaConfigProps(MessagingProperties messagingProperties) {
         MessagingProperties.KafkaInstanceSettings instanceSettings = messagingProperties.getKafka().getInstanceSettings();
-        
+
         Map<String,Object> configProps = new HashMap<>();
         if (instanceSettings.getBootstrapServers() != null) {
             configProps.put(BOOTSTRAP_SERVERS_CONFIG, instanceSettings.getBootstrapServers());
         }
-        
+
         if (instanceSettings.getAutoOffsetReset() != null) {
             configProps.put(AUTO_OFFSET_RESET_CONFIG, instanceSettings.getAutoOffsetReset().name().toLowerCase());
         }
-        
+
         if (instanceSettings.isEnableAutoCommit() != null) {
             configProps.put(ENABLE_AUTO_COMMIT_CONFIG, instanceSettings.isEnableAutoCommit());
         }
-        
+
         if (instanceSettings.isAllowAutoCreateTopics() != null) {
             configProps.put(ALLOW_AUTO_CREATE_TOPICS_CONFIG, instanceSettings.isAllowAutoCreateTopics());
         }
-        
+
         return configProps;
     }
-    
+
     public AdminClient createAdminClient(MessagingProperties messagingProperties, Map<String,Object> queryKafkaConfigProps, KafkaAdmin kafkaAdmin) {
         AdminClient finalClient = null;
-        
+
         if (messagingProperties.getKafka().isUseDedicatedInstance()) {
             finalClient = AdminClient.create(queryKafkaConfigProps);
         } else {
             finalClient = AdminClient.create(kafkaAdmin.getConfigurationProperties());
         }
-        
+
         return finalClient;
     }
-    
+
     public ProducerFactory<String,String> createProducerFactory(MessagingProperties messagingProperties, Map<String,Object> queryKafkaConfigProps,
                     ProducerFactory<String,String> kafkaProducerFactory) {
         ProducerFactory<String,String> finalKafkaProducerFactory = null;
-        
+
         if (messagingProperties.getKafka().isUseDedicatedInstance()) {
             // @formatter:off
             finalKafkaProducerFactory = new DefaultKafkaProducerFactory<>(
@@ -93,14 +93,14 @@ public class KafkaMessagingConfiguration {
         } else {
             finalKafkaProducerFactory = kafkaProducerFactory;
         }
-        
+
         return finalKafkaProducerFactory;
     }
-    
+
     public ConsumerFactory<String,String> createConsumerFactory(MessagingProperties messagingProperties, Map<String,Object> queryKafkaConfigProps,
                     ConsumerFactory<String,String> kafkaConsumerFactory) {
         ConsumerFactory<String,String> finalKafkaConsumerFactory = null;
-        
+
         if (messagingProperties.getKafka().isUseDedicatedInstance()) {
             // @formatter:off
             finalKafkaConsumerFactory = new DefaultKafkaConsumerFactory<>(
@@ -111,7 +111,7 @@ public class KafkaMessagingConfiguration {
         } else {
             finalKafkaConsumerFactory = kafkaConsumerFactory;
         }
-        
+
         return finalKafkaConsumerFactory;
     }
 }

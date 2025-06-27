@@ -48,20 +48,20 @@ import datawave.query.model.IndexFieldHole;
 import datawave.util.time.DateHelper;
 
 class AllFieldMetadataHelperTest {
-    
+
     private static final String TABLE_METADATA = "metadata";
     private static final String[] AUTHS = {"FOO"};
     private static final String NULL_BYTE = "\0";
     private AccumuloClient accumuloClient;
     private AllFieldMetadataHelper helper;
-    
+
     @BeforeAll
     static void beforeAll() throws URISyntaxException {
         File dir = new File(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource(".")).toURI());
         File targetDir = dir.getParentFile();
         System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
     }
-    
+
     /**
      * Set up the accumulo client and initialize the helper.
      */
@@ -77,7 +77,7 @@ class AllFieldMetadataHelperTest {
         CompositeMetadataHelper compositeMetadataHelper = new CompositeMetadataHelper(accumuloClient, TABLE_METADATA, auths);
         helper = new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper, accumuloClient, TABLE_METADATA, auths, allMetadataAuths);
     }
-    
+
     /**
      * Clear the metadata table after each test.
      */
@@ -85,7 +85,7 @@ class AllFieldMetadataHelperTest {
     void tearDown() throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         accumuloClient.tableOperations().deleteRows(TABLE_METADATA, null, null);
     }
-    
+
     /**
      * Write the given mutations to the metadata table.
      */
@@ -99,18 +99,18 @@ class AllFieldMetadataHelperTest {
             throw new RuntimeException(e);
         }
     }
-    
+
     /**
      * Tests for {@link AllFieldMetadataHelper#getFieldIndexHoles(Set, Set, double)} and
      * {@link AllFieldMetadataHelper#getReversedFieldIndexHoles(Set, Set, double)}.
      */
     @Nested
     public class FieldIndexHoleTests {
-        
+
         private Set<String> fields = new HashSet<>();
         private Set<String> datatypes = new HashSet<>();
         private double minimumThreshold = 1.0d;
-        
+
         protected final Supplier<Map<String,Map<String,IndexFieldHole>>> INDEX_FUNCTION = () -> {
             try {
                 return helper.getFieldIndexHoles(fields, datatypes, minimumThreshold);
@@ -118,7 +118,7 @@ class AllFieldMetadataHelperTest {
                 throw new RuntimeException(e);
             }
         };
-        
+
         protected final Supplier<Map<String,Map<String,IndexFieldHole>>> REVERSED_INDEX_FUNCTION = () -> {
             try {
                 return helper.getReversedFieldIndexHoles(fields, datatypes, minimumThreshold);
@@ -126,18 +126,18 @@ class AllFieldMetadataHelperTest {
                 throw new RuntimeException(e);
             }
         };
-        
+
         protected Supplier<Map<String,Map<String,IndexFieldHole>>> getIndexHoleFunction(String cf) {
             return cf.equals("i") ? INDEX_FUNCTION : REVERSED_INDEX_FUNCTION;
         }
-        
+
         @AfterEach
         void tearDown() {
             fields.clear();
             datatypes.clear();
             givenMinimumThreshold(1.0d);
         }
-        
+
         /**
          * Test against data that has no field index holes.
          */
@@ -159,12 +159,12 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("EVENT_DATE", "maze", "20200101", "20200120", 1L);
             mutationCreator.addIndexMutations(cf, "EVENT_DATE", "maze", "20200101", "20200120", 1L);
             writeMutations(mutationCreator.getMutations());
-            
+
             // Verify that no index holes were found.
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             Assertions.assertTrue(fieldIndexHoles.isEmpty());
         }
-        
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on date gaps.
          */
@@ -176,14 +176,14 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("NAME", "csv", "20200101", "20200105", 1L);
             mutationCreator.addIndexMutations(cf, "NAME", "csv", "20200101", "20200105", 1L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(createFieldIndexHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-    
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on the threshold requirement.
          */
@@ -196,14 +196,14 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("NAME", "csv", "20200101", "20200105", 1L);
             mutationCreator.addIndexMutations(cf, "NAME", "csv", "20200101", "20200105", 1L);
             writeMutations(mutationCreator.getMutations());
-        
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(createFieldIndexHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -216,14 +216,14 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("NAME", "csv", "20200101", "20200105", 1L);
             mutationCreator.addIndexMutations(cf, "NAME", "csv", "20200101", "20200105", 1L);
             writeMutations(mutationCreator.getMutations());
-    
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(createFieldIndexHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-    
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on the
          * threshold requirement.
@@ -238,14 +238,14 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("NAME", "csv", "20200101", "20200105", 5L);
             mutationCreator.addIndexMutations(cf, "NAME", "csv", "20200101", "20200105", 5L);
             writeMutations(mutationCreator.getMutations());
-        
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(createFieldIndexHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the end of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -303,14 +303,14 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("NAME", "csv", "20200101", "20200105", 1L);
             mutationCreator.addIndexMutations(cf, "NAME", "csv", "20200101", "20200105", 1L);
             writeMutations(mutationCreator.getMutations());
-    
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(createFieldIndexHole("NAME", "wiki", dateRange("20200101", "20200109")));
             // @formatter:off
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-    
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -458,7 +458,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on both date
          * gaps and the threshold.
@@ -474,14 +474,14 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("NAME", "csv", "20200101", "20200105", 5L);
             mutationCreator.addIndexMutations(cf, "NAME", "csv", "20200101", "20200105", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(createFieldIndexHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on date gaps.
          */
@@ -494,7 +494,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200110", "20200113", 1L);
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200117", "20200118", 1L);
             writeMutations(mutationCreator.getMutations());
-    
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -505,7 +505,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on the threshold.
          */
@@ -522,7 +522,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200117", "20200118", 5L);
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200119", "20200120", 1L); // Will not meet threshold.
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -533,7 +533,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * date gaps.
@@ -547,7 +547,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("ZETA", "csv", "20200101", "20200105", 1L);
             mutationCreator.addIndexMutations(cf, "ZETA", "csv", "20200101", "20200105", 1L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -555,7 +555,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * the threshold.
@@ -570,7 +570,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("ZETA", "csv", "20200101", "20200105", 5L);
             mutationCreator.addIndexMutations(cf, "ZETA", "csv", "20200101", "20200105", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -578,7 +578,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on date gaps.
          */
@@ -591,7 +591,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200101", "20200103", 1L);
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200113", "20200115", 1L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -599,7 +599,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on the threshold.
          */
@@ -614,7 +614,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200110", "20200112", 1L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "NAME", "wiki", "20200113", "20200115", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -622,7 +622,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on date gaps.
          */
@@ -635,7 +635,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("EVENT_DATE", "wiki", "20200120", "20200125", 1L);
             mutationCreator.addFrequencyMutations("URI", "maze", "20200216", "20200328", 1L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -646,7 +646,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on the threshold.
          */
@@ -663,7 +663,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addFrequencyMutations("URI", "maze", "20200216", "20200328", 5L);
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200216", "20200328", 1L); // Will not meet threshold.
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -674,7 +674,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on date gaps.
          */
@@ -701,7 +701,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200304", "20200315", 1L);
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200317", "20200328", 1L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -713,7 +713,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on the threshold.
          */
@@ -748,7 +748,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200316", "20200316", 1L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200317", "20200328", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -760,7 +760,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on both dates and the threshold.
          */
@@ -792,7 +792,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200316", "20200316", 1L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200317", "20200328", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -804,7 +804,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test specifying a minimum percentage threshold other than the default of 1.0.
          */
@@ -812,7 +812,7 @@ class AllFieldMetadataHelperTest {
         @ValueSource(strings = {"i", "ri"})
         void testMinimumThresholdPercentageBelow100(String cf) {
             givenMinimumThreshold(0.75); // Index count must meet 75% of frequency count to not be considered field index hole.
-            
+
             FieldIndexHoleMutationCreator mutationCreator = new FieldIndexHoleMutationCreator();
             // Index holes for NAME-wiki on 20200103 and 20200105.
             mutationCreator.addFrequencyMutations("NAME", "wiki", "20200101", "20200105", 100L);
@@ -838,7 +838,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200316", "20200316", 74L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200317", "20200328", 99L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -850,7 +850,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test specifying one field to filter on.
          */
@@ -859,7 +859,7 @@ class AllFieldMetadataHelperTest {
         void testOneFieldSpecified(String cf) {
             // Retrieve field index holes for field NAME.
             givenFields("NAME");
-            
+
             FieldIndexHoleMutationCreator mutationCreator = new FieldIndexHoleMutationCreator();
             // Index holes for NAME-wiki on 20200103 and 20200105.
             mutationCreator.addFrequencyMutations("NAME", "wiki", "20200101", "20200105", 5L);
@@ -885,7 +885,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200316", "20200316", 1L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "URI", "maze", "20200317", "20200328", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -894,7 +894,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test specifying multiple fields to filter on.
          */
@@ -903,7 +903,7 @@ class AllFieldMetadataHelperTest {
         void testMultipleFieldsSpecified(String cf) {
             // Retrieve field index holes for fields URI and EVENT_DATE.
             givenFields("URI", "EVENT_DATE");
-            
+
             FieldIndexHoleMutationCreator mutationCreator = new FieldIndexHoleMutationCreator();
             // Index holes for NAME-wiki on 20200103 and 20200105.
             mutationCreator.addFrequencyMutations("NAME", "wiki", "20200101", "20200105", 5L);
@@ -937,7 +937,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "ZETA", "wiki", "20200122", "20200122", 1L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "ZETA", "wiki", "20200123", "20200125", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -947,7 +947,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test specifying datatypes.
          */
@@ -956,7 +956,7 @@ class AllFieldMetadataHelperTest {
         void testDatatypesSpecified(String cf) {
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             FieldIndexHoleMutationCreator mutationCreator = new FieldIndexHoleMutationCreator();
             // Index holes for NAME-wiki on 20200103 and 20200105.
             mutationCreator.addFrequencyMutations("NAME", "wiki", "20200101", "20200105", 5L);
@@ -1006,7 +1006,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "ZETA", "imdb", "20200122", "20200122", 1L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "ZETA", "imdb", "20200123", "20200125", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -1017,7 +1017,7 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         /**
          * Test specifying fields and datatypes.
          */
@@ -1028,7 +1028,7 @@ class AllFieldMetadataHelperTest {
             givenFields("NAME", "ZETA");
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             FieldIndexHoleMutationCreator mutationCreator = new FieldIndexHoleMutationCreator();
             // Index holes for NAME-wiki on 20200103 and 20200105.
             mutationCreator.addFrequencyMutations("NAME", "wiki", "20200101", "20200105", 5L);
@@ -1078,7 +1078,7 @@ class AllFieldMetadataHelperTest {
             mutationCreator.addIndexMutations(cf, "ZETA", "imdb", "20200122", "20200122", 1L); // Will not meet threshold.
             mutationCreator.addIndexMutations(cf, "ZETA", "imdb", "20200123", "20200125", 5L);
             writeMutations(mutationCreator.getMutations());
-            
+
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createFieldIndexHoleMap(
@@ -1087,19 +1087,19 @@ class AllFieldMetadataHelperTest {
             // @formatter:on
             Assertions.assertEquals(expected, fieldIndexHoles);
         }
-        
+
         private void givenFields(String... fields) {
             this.fields = Sets.newHashSet(fields);
         }
-        
+
         private void givenDatatypes(String... datatypes) {
             this.datatypes = Sets.newHashSet(datatypes);
         }
-        
+
         private void givenMinimumThreshold(double minimumThreshold) {
             this.minimumThreshold = minimumThreshold;
         }
-        
+
         protected Map<String,Map<String,IndexFieldHole>> createFieldIndexHoleMap(IndexFieldHole... holes) {
             Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = new HashMap<>();
             for (IndexFieldHole hole : holes) {
@@ -1108,53 +1108,53 @@ class AllFieldMetadataHelperTest {
             }
             return fieldIndexHoles;
         }
-        
+
         @SafeVarargs
         protected final IndexFieldHole createFieldIndexHole(String field, String datatype, Pair<Date,Date>... dateRanges) {
             return new IndexFieldHole(field, datatype, Sets.newHashSet(dateRanges));
         }
-        
+
         protected Pair<Date,Date> dateRange(String start, String end) {
             return Pair.of(DateHelper.parse(start), DateHelper.parse(end));
         }
     }
-    
+
     /**
      * Helper class for creating mutations in bulk for field index hole tests.
      */
     private static class FieldIndexHoleMutationCreator {
-        
+
         private final List<Mutation> mutations = new ArrayList<>();
-        
+
         private void addFrequencyMutations(String fieldName, String datatype, String startDate, String endDate, long count) {
             List<String> dates = getDatesInRange(startDate, endDate);
             dates.forEach(date -> addMutation(fieldName, "f", datatype, date, count));
         }
-        
+
         private void addIndexMutations(String cf, String fieldName, String datatype, String startDate, String endDate, long count) {
             List<String> dates = getDatesInRange(startDate, endDate);
             dates.forEach(date -> addMutation(fieldName, cf, datatype, date, count));
         }
-        
+
         private void addIndexMarkerMutation(String cf, String fieldName, String datatype, String endDate, boolean indexed) {
             addMutation(fieldName, cf, datatype, endDate, indexed);
         }
-        
+
         private void addIndexMarkerMutation(String cf, String fieldName, String datatype, String endDate) {
             addMutation(fieldName, cf, datatype, endDate);
         }
-        
+
         private void addIndexMarkerMutation(String cf, String fieldName, String datatype, String endDate, Class typeClass) {
             addMutation(fieldName, cf, datatype, endDate, typeClass);
         }
-        
+
         private List<String> getDatesInRange(String startDateStr, String endDateStr) {
             Date startDate = DateHelper.parse(startDateStr);
             Date endDate = DateHelper.parse(endDateStr);
-            
+
             List<String> dates = new ArrayList<>();
             dates.add(startDateStr);
-            
+
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(startDate);
             while (true) {
@@ -1166,41 +1166,41 @@ class AllFieldMetadataHelperTest {
                     break;
                 }
             }
-            
+
             return dates;
         }
-        
+
         private void addMutation(String row, String columnFamily, String datatype, String date, long count) {
             Mutation mutation = new Mutation(row);
             mutation.put(columnFamily, datatype + NULL_BYTE + date, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(count)));
             mutations.add(mutation);
         }
-        
+
         private void addMutation(String row, String columnFamily, String datatype, String date, boolean indexed) {
             Mutation mutation = new Mutation(row);
             mutation.put(columnFamily, datatype + NULL_BYTE + date + NULL_BYTE + indexed, new Value());
             mutations.add(mutation);
         }
-        
+
         private void addMutation(String row, String columnFamily, String datatype, String date) {
             Mutation mutation = new Mutation(row);
             mutation.put(columnFamily, datatype, getTimestamp(date), new Value());
             mutations.add(mutation);
         }
-        
+
         private void addMutation(String row, String columnFamily, String datatype, String date, Class type) {
             Mutation mutation = new Mutation(row);
             mutation.put(columnFamily, datatype + NULL_BYTE + type.getName(), getTimestamp(date), new Value());
             mutations.add(mutation);
         }
-        
+
         private long getTimestamp(String date) {
             return DateHelper.parse(date).getTime();
         }
-        
+
         private List<Mutation> getMutations() {
             return mutations;
         }
     }
-    
+
 }

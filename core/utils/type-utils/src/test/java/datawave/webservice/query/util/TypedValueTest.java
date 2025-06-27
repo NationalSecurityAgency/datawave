@@ -26,11 +26,11 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 
 public class TypedValueTest {
-    
+
     private static String EXPECTED_FORMAT;
     private static String EXPECTED_BASE64_FORMAT;
     private JAXBContext ctx;
-    
+
     @BeforeAll
     public static void setUpClass() throws Exception {
         System.setProperty("user.timezone", "GMT");
@@ -42,12 +42,12 @@ public class TypedValueTest {
         EXPECTED_BASE64_FORMAT = rdr.readLine();
         rdr.close();
     }
-    
+
     @BeforeEach
     public void setUp() throws Exception {
         ctx = JAXBContext.newInstance(TypedValue.class);
     }
-    
+
     @Test
     public void testPlainString() throws Exception {
         TypedValue value = new TypedValue("plainString");
@@ -56,7 +56,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:string", value.getType());
     }
-    
+
     @Test
     public void testEncodedStringString() throws Exception {
         TypedValue value = new TypedValue("encoded\0String");
@@ -65,7 +65,7 @@ public class TypedValueTest {
         assertTrue(value.isBase64Encoded());
         assertEquals("xs:string", value.getType());
     }
-    
+
     @Test
     public void testEncodedNoOpTypeString() throws Exception {
         BaseType<String> type = new NoOpType("encoded\0String");
@@ -75,7 +75,7 @@ public class TypedValueTest {
         assertTrue(value.isBase64Encoded());
         assertEquals("xs:string", value.getType());
     }
-    
+
     @Test
     public void testEncodedTypeString() throws Exception {
         BaseType<String> type = new LcNoDiacriticsType("encoded\0String");
@@ -85,7 +85,7 @@ public class TypedValueTest {
         assertTrue(value.isBase64Encoded());
         assertEquals("xs:string", value.getType());
     }
-    
+
     @Test
     public void testBoolean() throws Exception {
         TypedValue value = new TypedValue(Boolean.TRUE);
@@ -94,7 +94,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:boolean", value.getType());
     }
-    
+
     @Test
     public void testShort() throws Exception {
         TypedValue value = new TypedValue((short) 42);
@@ -103,7 +103,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:short", value.getType());
     }
-    
+
     @Test
     public void testInteger() throws Exception {
         TypedValue value = new TypedValue((int) 42);
@@ -112,7 +112,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:int", value.getType());
     }
-    
+
     @Test
     public void testLong() throws Exception {
         TypedValue value = new TypedValue(42L);
@@ -121,7 +121,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:long", value.getType());
     }
-    
+
     @Test
     public void testFloat() throws Exception {
         TypedValue value = new TypedValue(42.42f);
@@ -130,7 +130,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:float", value.getType());
     }
-    
+
     @Test
     public void testDouble() throws Exception {
         TypedValue value = new TypedValue(42.42);
@@ -139,7 +139,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:double", value.getType());
     }
-    
+
     @Test
     public void testBigDecimal() throws Exception {
         TypedValue value = new TypedValue(new BigDecimal("123456789012345678901234567890.123"));
@@ -148,7 +148,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:decimal", value.getType());
     }
-    
+
     @Test
     public void testBigInteger() throws Exception {
         TypedValue value = new TypedValue(new BigInteger("123456789012345678901234567890"));
@@ -157,7 +157,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:integer", value.getType());
     }
-    
+
     @Test
     public void testByte() throws Exception {
         TypedValue value = new TypedValue((byte) 42);
@@ -166,7 +166,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:byte", value.getType());
     }
-    
+
     @Test
     public void testByteArray() throws Exception {
         TypedValue value = new TypedValue(new byte[] {(byte) 1, (byte) 2, (byte) 3, (byte) 42});
@@ -175,7 +175,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:base64Binary", value.getType());
     }
-    
+
     @Test
     public void testDateTime() throws Exception {
         Calendar cal = Calendar.getInstance();
@@ -188,7 +188,7 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:dateTime", value.getType());
     }
-    
+
     @Test
     public void testDate() throws Exception {
         Date d = new Date(1408552225400L);
@@ -198,19 +198,19 @@ public class TypedValueTest {
         assertFalse(value.isBase64Encoded());
         assertEquals("xs:dateTime", value.getType());
     }
-    
+
     private String expected(String xsdType, String value) {
         return MessageFormat.format(EXPECTED_FORMAT, xsdType, value);
     }
-    
+
     private String expected64(String xsdType, String value) {
         return MessageFormat.format(EXPECTED_BASE64_FORMAT, xsdType, value);
     }
-    
+
     private String serialize(TypedValue value) throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ctx.createMarshaller().marshal(value, bos);
         return bos.toString();
     }
-    
+
 }

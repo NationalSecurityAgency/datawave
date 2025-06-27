@@ -28,33 +28,33 @@ import reactor.core.publisher.Mono;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"exceptionMapperTest", "permitAllWebTest"})
 public class RestExceptionHandlerTest {
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     private WebClient.Builder webClientBuilder;
-    
+
     @Autowired
     private TestOperations testOperations;
-    
+
     @Test
     public void testSingleQueryException() {
-        
+
         String expectedErrorCode = "400-1234";
         testOperations.setErrorCode(expectedErrorCode);
-        
+
         WebClient webClient = webClientBuilder.baseUrl("https://localhost:" + webServicePort + "/starter-test/v1").build();
-        
+
         ResponseEntity<VoidResponse> responseEntity = webClient.get().uri("/testSingleQueryException").retrieve()
                         .onStatus(HttpStatus::isError, response -> Mono.empty()).toEntity(VoidResponse.class).block();
         assertNotNull(responseEntity);
         assertEquals(400, responseEntity.getStatusCodeValue());
-        
+
         HttpHeaders headers = responseEntity.getHeaders();
         assertTrue(headers.containsKey(Constants.ERROR_CODE_HEADER), "ErrorCode header was missing from failed result.");
         assertEquals(expectedErrorCode, headers.getFirst(Constants.ERROR_CODE_HEADER));
-        
+
         VoidResponse vr = responseEntity.getBody();
         assertNotNull(vr);
         assertNotNull(vr.getExceptions());
@@ -63,24 +63,24 @@ public class RestExceptionHandlerTest {
         assertEquals(expectedErrorCode, vr.getExceptions().get(0).getCode());
         assertEquals("Exception with no cause caught", vr.getExceptions().get(0).getCause());
     }
-    
+
     @Test
     public void testNestedQueryException() {
-        
+
         String expectedErrorCode = "500-9999";
         testOperations.setErrorCode(expectedErrorCode);
-        
+
         WebClient webClient = webClientBuilder.baseUrl("https://localhost:" + webServicePort + "/starter-test/v1").build();
-        
+
         ResponseEntity<VoidResponse> responseEntity = webClient.get().uri("/testNestedQueryException").retrieve()
                         .onStatus(HttpStatus::isError, response -> Mono.empty()).toEntity(VoidResponse.class).block();
         assertNotNull(responseEntity);
         assertEquals(500, responseEntity.getStatusCodeValue());
-        
+
         HttpHeaders headers = responseEntity.getHeaders();
         assertTrue(headers.containsKey(Constants.ERROR_CODE_HEADER), "ErrorCode header was missing from failed result.");
         assertEquals(expectedErrorCode, headers.getFirst(Constants.ERROR_CODE_HEADER));
-        
+
         VoidResponse vr = responseEntity.getBody();
         assertNotNull(vr);
         assertNotNull(vr.getExceptions());
@@ -89,23 +89,23 @@ public class RestExceptionHandlerTest {
         assertEquals("400-1", vr.getExceptions().get(0).getCode());
         assertEquals(QueryException.class.getName() + ": nested exception", vr.getExceptions().get(0).getCause());
     }
-    
+
     @Test
     public void testNonQueryException() {
-        
+
         String expectedErrorCode = "400-9999";
         testOperations.setErrorCode(expectedErrorCode);
-        
+
         WebClient webClient = webClientBuilder.baseUrl("https://localhost:" + webServicePort + "/starter-test/v1").build();
-        
+
         ResponseEntity<VoidResponse> responseEntity = webClient.get().uri("/testNonQueryException").retrieve()
                         .onStatus(HttpStatus::isError, response -> Mono.empty()).toEntity(VoidResponse.class).block();
         assertNotNull(responseEntity);
         assertEquals(500, responseEntity.getStatusCodeValue());
-        
+
         HttpHeaders headers = responseEntity.getHeaders();
         assertFalse(headers.containsKey(Constants.ERROR_CODE_HEADER), "ErrorCode header was set from non-query failed result.");
-        
+
         VoidResponse vr = responseEntity.getBody();
         assertNotNull(vr);
         assertNotNull(vr.getExceptions());
@@ -114,7 +114,7 @@ public class RestExceptionHandlerTest {
         assertNull(vr.getExceptions().get(0).getCode());
         assertEquals("Exception with no cause caught", vr.getExceptions().get(0).getCause());
     }
-    
+
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestConfiguration {}
 }
@@ -123,21 +123,21 @@ public class RestExceptionHandlerTest {
 @RequestMapping(path = "/v1", produces = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE})
 class TestOperations {
     private String errorCode = "";
-    
+
     public void setErrorCode(String errorCode) {
         this.errorCode = errorCode;
     }
-    
+
     @RequestMapping("/testNonQueryException")
     public String testNonQueryException() {
         throw new RuntimeException("This is a non-query exception.");
     }
-    
+
     @RequestMapping("/testSingleQueryException")
     public String testSingleQueryException() throws QueryException {
         throw new QueryException("test exception", errorCode);
     }
-    
+
     @RequestMapping("/testNestedQueryException")
     public String testNestedQueryException() throws QueryException {
         QueryException qe = new QueryException("nested exception", new Exception("cause exception"), errorCode);

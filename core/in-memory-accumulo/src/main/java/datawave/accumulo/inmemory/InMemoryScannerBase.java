@@ -47,17 +47,17 @@ import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 
 public class InMemoryScannerBase extends ScannerOptions {
-    
+
     protected final InMemoryTable table;
     protected final Authorizations auths;
-    
+
     private ArrayList<SortedKeyValueIterator<Key,Value>> injectedIterators = new ArrayList<>();
-    
+
     InMemoryScannerBase(InMemoryTable mockTable, Authorizations authorizations) {
         this.table = mockTable;
         this.auths = authorizations;
     }
-    
+
     static HashSet<ByteSequence> createColumnBSS(Collection<Column> columns) {
         HashSet<ByteSequence> columnSet = new HashSet<>();
         for (Column c : columns) {
@@ -65,56 +65,56 @@ public class InMemoryScannerBase extends ScannerOptions {
         }
         return columnSet;
     }
-    
+
     static class InMemoryIteratorEnvironment implements IteratorEnvironment {
-        
+
         private final Authorizations auths;
-        
+
         InMemoryIteratorEnvironment(Authorizations auths) {
             this.auths = auths;
         }
-        
+
         @Override
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public AccumuloConfiguration getConfig() {
             return DefaultConfiguration.getInstance();
         }
-        
+
         @Override
         public PluginEnvironment getPluginEnv() {
             return MockPluginEnvironment.newInstance(getConfig());
         }
-        
+
         @Override
         public IteratorScope getIteratorScope() {
             return IteratorScope.scan;
         }
-        
+
         @Override
         public boolean isFullMajorCompaction() {
             return false;
         }
-        
+
         public boolean isUserCompaction() {
             return false;
         }
-        
+
         private ArrayList<SortedKeyValueIterator<Key,Value>> topLevelIterators = new ArrayList<>();
-        
+
         @Override
         public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
             topLevelIterators.add(iter);
         }
-        
+
         @Override
         public Authorizations getAuthorizations() {
             return auths;
         }
-        
+
         SortedKeyValueIterator<Key,Value> getTopLevelIterator(SortedKeyValueIterator<Key,Value> iter) {
             if (topLevelIterators.isEmpty())
                 return iter;
@@ -122,23 +122,23 @@ public class InMemoryScannerBase extends ScannerOptions {
             allIters.add(iter);
             return new MultiIterator(allIters, false);
         }
-        
+
         @Override
         public boolean isSamplingEnabled() {
             return false;
         }
-        
+
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
             return null;
         }
-        
+
         @Override
         public IteratorEnvironment cloneWithSamplingEnabled() {
             throw new SampleNotPresentException();
         }
     }
-    
+
     public SortedKeyValueIterator<Key,Value> createFilter(SortedKeyValueIterator<Key,Value> inner) throws IOException {
         byte[] defaultLabels = {};
         inner = new ColumnFamilySkippingIterator(DeletingIterator.wrap(inner, false, DeletingIterator.Behavior.PROCESS));
@@ -153,25 +153,25 @@ public class InMemoryScannerBase extends ScannerOptions {
                         .getTopLevelIterator(IteratorConfigUtil.loadIterators(injectedIterators, iterLoad.env(iterEnv).build()));
         return result;
     }
-    
+
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public Authorizations getAuthorizations() {
         return auths;
     }
-    
+
     @Override
     public void setClassLoaderContext(String context) {
         throw new UnsupportedOperationException();
     }
-    
+
     /**
      * Apply all injected iterators in order to the base wrapped iterator
-     * 
+     *
      * @param base
      * @return
      */
@@ -185,13 +185,13 @@ public class InMemoryScannerBase extends ScannerOptions {
                 throw new RuntimeException("Unable to apply injected iterators", e);
             }
         }
-        
+
         return prev;
     }
-    
+
     /**
      * Add an iterator to the front of the iterator stack
-     * 
+     *
      * @param injectedIterator
      */
     public void addInjectedIterator(SortedKeyValueIterator<Key,Value> injectedIterator) {

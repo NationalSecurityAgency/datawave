@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -16,7 +15,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SkippingIterator;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.InterruptibleIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.io.Text;
 
@@ -24,7 +22,7 @@ import org.apache.hadoop.io.Text;
  * This class and its sub classes implement Range queries against Column Families
  *
  */
-public abstract class ColumnRangeIterator extends SkippingIterator implements InterruptibleIterator {
+public abstract class ColumnRangeIterator extends SkippingIterator implements SortedKeyValueIterator<Key,Value> {
 
     public static final String RANGE_NAME = "RANGE_NAME";
     public static final String SKIP_LIMIT_NAME = "SKIP_LIMIT";
@@ -174,11 +172,6 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
         super.seek(range, columnFamilies, inclusive);
-    }
-
-    @Override
-    public void setInterruptFlag(AtomicBoolean flag) {
-        ((InterruptibleIterator) getSource()).setInterruptFlag(flag);
     }
 
     protected Text getColumnStart() {

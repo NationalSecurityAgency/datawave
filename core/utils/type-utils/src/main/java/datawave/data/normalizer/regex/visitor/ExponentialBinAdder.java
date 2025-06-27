@@ -20,10 +20,10 @@ import datawave.data.type.util.NumericalEncoder;
  * Implementation of {@link CopyVisitor} that will return a copy of the tree where all non-simple number patterns are enriched with bin information.
  */
 public class ExponentialBinAdder extends SubExpressionVisitor {
-    
+
     /**
      * Return a copy of the given tree with all regex patterns enriched with exponential bin information.
-     * 
+     *
      * @param node
      *            the node
      * @return the enriched node
@@ -35,18 +35,18 @@ public class ExponentialBinAdder extends SubExpressionVisitor {
         ExponentialBinAdder visitor = new ExponentialBinAdder();
         return (Node) node.accept(visitor, null);
     }
-    
+
     // Retrieves bins for negative numbers.
     private static final Function<Integer,Character> NEGATIVE_BIN_FUNCTION = NumericalEncoder::getNegativeBin;
-    
+
     // Retrieves bins for positive numbers.
     private static final Function<Integer,Character> POSITIVE_BIN_FUNCTION = NumericalEncoder::getPositiveBin;
-    
+
     @Override
     protected Object visitSubExpression(Node node) {
         List<Node> binNodes = new ArrayList<>();
         boolean negative = RegexUtils.isNegativeRegex(node);
-        
+
         // The bin information consist of:
         // 1. The lead sign that indicates whether the range covers positive (\+) or negative numbers (!).
         binNodes.add(getLeadSign(negative));
@@ -54,15 +54,15 @@ public class ExponentialBinAdder extends SubExpressionVisitor {
         binNodes.add(getBinRange(node, negative));
         // 3. An 'E' to separate the bin information from the beginning of the numeric regex pattern.
         binNodes.add(new SingleCharNode(RegexConstants.CAPITAL_E));
-        
+
         // Return an EncodedPatternNode copy rather than an ExpressionNode.
         EncodedPatternNode encodedPattern = new EncodedPatternNode(copy(node).getChildren());
-        
+
         // If we had a negative sign, remove it. We will have ! (negative) and \+ (positive) going forward.
         if (negative) {
             encodedPattern.removeFirstChild();
         }
-        
+
         // Insert the bin information at the beginning of the pattern.
         int insertIndex = 0;
         for (Node binNode : binNodes) {
@@ -71,10 +71,10 @@ public class ExponentialBinAdder extends SubExpressionVisitor {
         }
         return encodedPattern;
     }
-    
+
     /**
      * Return {@code "\+"} if negative is false, or {@code "!"} if negative is true.
-     * 
+     *
      * @param negative
      *            whether the regex pattern matches against negative numbers.
      * @return the lead sign
@@ -82,10 +82,10 @@ public class ExponentialBinAdder extends SubExpressionVisitor {
     private Node getLeadSign(boolean negative) {
         return negative ? new SingleCharNode(RegexConstants.EXCLAMATION_POINT) : new EscapedSingleCharNode(RegexConstants.PLUS);
     }
-    
+
     /**
      * Get the range of exponential bins that the regex pattern should cover.
-     * 
+     *
      * @param node
      *            the regex pattern
      * @param negative
@@ -98,10 +98,10 @@ public class ExponentialBinAdder extends SubExpressionVisitor {
         Pair<Integer,Integer> gteOneBinRange = GTEOneBinFinder.binRangeOf(node);
         // Get the bin range for numbers less than one that the pattern can match against.
         Pair<Integer,Integer> ltOneBinRange = LTOneBinFinder.binRangeOf(node);
-        
+
         // The target bin retrieval function depends on whether the pattern matches against negative numbers.
         Function<Integer,Character> binFunction = negative ? NEGATIVE_BIN_FUNCTION : POSITIVE_BIN_FUNCTION;
-        
+
         if (gteOneBinRange == null) {
             // If the regex pattern cannot match against numbers equal to or greater than one, return the bin info for numbers less than one only.
             return buildBinFromSingleRange(ltOneBinRange, binFunction);
@@ -114,17 +114,17 @@ public class ExponentialBinAdder extends SubExpressionVisitor {
             Node onePlusBin = buildBinFromSingleRange(gteOneBinRange, binFunction);
             // If a single character was returned, add it to the character class. Otherwise, a character class with a range was returned. Add the range.
             charClass.addChild(onePlusBin instanceof SingleCharNode ? onePlusBin : onePlusBin.getFirstChild());
-            
+
             Node subOneBin = buildBinFromSingleRange(ltOneBinRange, binFunction);
             // If a single character was returned, add it to the character class. Otherwise, a character class with a range was returned. Add the range.
             charClass.addChild(subOneBin instanceof SingleCharNode ? subOneBin : subOneBin.getFirstChild());
             return charClass;
         }
     }
-    
+
     /**
      * Return a bin info node for a single bin range.
-     * 
+     *
      * @param binRange
      *            the
      * @param binFunction
@@ -150,5 +150,5 @@ public class ExponentialBinAdder extends SubExpressionVisitor {
             return charClass;
         }
     }
-    
+
 }

@@ -35,15 +35,15 @@ import io.protostuff.Schema;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAuthorizationsList> implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "authMapping")
     @XmlJavaTypeAdapter(AuthMappingAdapter.class)
     public Map<String,Collection<String>> getAuthMapping() {
         return new TreeMap<String,Collection<String>>(authMapping);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -64,11 +64,11 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
         sb.append("]");
         return sb.toString();
     }
-    
+
     public static class AuthMapList {
         public List<AuthMapEntry> map = new LinkedList<AuthMapEntry>();
     }
-    
+
     @XmlType(propOrder = {"role", "authorizationString"})
     @XmlAccessorType(XmlAccessType.NONE)
     @SuppressWarnings("unused")
@@ -77,34 +77,34 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
         private String role;
         @XmlElement(name = "AuthorizationString")
         private String authorizationString;
-        
+
         public AuthMapEntry() {}
-        
+
         public AuthMapEntry(String role, String authorizationString) {
             super();
             this.role = role;
             this.authorizationString = authorizationString;
         }
-        
+
         public String getRole() {
             return role;
         }
-        
+
         public void setRole(String role) {
             this.role = role;
         }
-        
+
         public String getAuthorizationString() {
             return authorizationString;
         }
-        
+
         public void setAuthorizationString(String authorizationString) {
             this.authorizationString = authorizationString;
         }
     }
-    
+
     public static class AuthMappingAdapter extends XmlAdapter<AuthMapList,Map<String,Collection<String>>> {
-        
+
         @Override
         public Map<String,Collection<String>> unmarshal(AuthMapList v) throws Exception {
             Map<String,Collection<String>> results = new TreeMap<String,Collection<String>>();
@@ -116,7 +116,7 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
             }
             return results;
         }
-        
+
         @Override
         public AuthMapList marshal(Map<String,Collection<String>> v) throws Exception {
             AuthMapList map = new AuthMapList();
@@ -127,41 +127,41 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
             }
             return map;
         }
-        
+
     }
-    
+
     public static Schema<DefaultAuthorizationsList> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<DefaultAuthorizationsList> cachedSchema() {
         return SCHEMA;
     }
-    
+
     private static final Schema<DefaultAuthorizationsList> SCHEMA = new AuthListSchema<DefaultAuthorizationsList>() {
-        
+
         @Override
         public DefaultAuthorizationsList newMessage() {
             return new DefaultAuthorizationsList();
         }
-        
+
         @Override
         public Class<? super DefaultAuthorizationsList> typeClass() {
             return DefaultAuthorizationsList.class;
         }
-        
+
         @Override
         public String messageName() {
             return DefaultAuthorizationsList.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return DefaultAuthorizationsList.class.getName();
         }
     };
-    
+
     @Override
     public String getMainContent() {
         StringBuilder buf = new StringBuilder();
@@ -174,7 +174,7 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
                 buf.append("<tr>");
             else
                 buf.append("<tr class=\"highlight\">");
-            
+
             if (iter.hasNext())
                 buf.append("<td>").append(iter.next()).append("</td>");
             if (iter.hasNext())
@@ -198,7 +198,7 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
                     buf.append("<tr>");
                 else
                     buf.append("<tr class=\"highlight\">");
-                
+
                 if (iter.hasNext())
                     buf.append("<td>").append(iter.next()).append("</td>");
                 if (iter.hasNext())
@@ -210,7 +210,7 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
             }
             buf.append("</table>");
         }
-        
+
         buf.append("<h2>Roles to Accumulo Auths</h2>");
         buf.append("<table>");
         buf.append("<tr><th>Role</th><th>Accumulo Authorizations</th></tr>");
@@ -224,8 +224,8 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
             x++;
         }
         buf.append("</table>");
-        
+
         return buf.toString();
     }
-    
+
 }

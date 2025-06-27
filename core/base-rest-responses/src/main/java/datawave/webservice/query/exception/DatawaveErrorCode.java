@@ -224,7 +224,7 @@ public enum DatawaveErrorCode {
     INVALID_MAX_CONCURRENT_TASKS_OVERRIDE(400, 44, "Invalid max concurrent tasks override value."),
     WRONG_NUMBER_OF_ARGUMENTS(400, 45, "Wrong number of arguments."),
     ARGUMENTDESCRIPTOR_NODE_FOR_FUNCTION(400, 46, "Calling getArgumentDescriptor with node for a function."),
-    
+
     // 401 Unauthorized
     QUERY_OWNER_MISMATCH(401, 1, "Current user does not match user that defined query."),
     JOB_EXECUTION_UNAUTHORIZED(401, 2, "User not authorized to run this job."),
@@ -277,21 +277,21 @@ public enum DatawaveErrorCode {
     CURRENT_AND_PREVIOUS_EVENT_ORDER_INVALID(412, 16, "Current event and previous event are not in chronological order"),
     CURRENT_AND_NEXT_EVENT_ORDER_INVALID(412, 17, "Current event and next event are not in chronological order"),
     FIELD_PHRASE_QUERY_NOT_INDEXED(412, 18, "Field cannot be queried as a phrase since it was not indexed as such.");
-    
+
     private String message;
     private int httpCode;
     private int subCode;
-    
+
     DatawaveErrorCode(int httpCode, int subCode, String message) {
         this.httpCode = httpCode;
         this.subCode = subCode;
         this.message = message;
     }
-    
+
     public String getErrorCode() {
         return Integer.toString(httpCode) + "-" + Integer.toString(subCode);
     }
-    
+
     public static DatawaveErrorCode findCode(String errorCode) {
         String[] parts = StringUtils.split(errorCode, '-');
         if (parts.length == 2) {
@@ -309,10 +309,10 @@ public enum DatawaveErrorCode {
         }
         return UNKNOWN_SERVER_ERROR;
     }
-    
+
     @Override
     public String toString() {
         return message;
     }
-    
+
 }

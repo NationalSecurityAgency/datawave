@@ -9,9 +9,18 @@ public class Point extends AbstractGeometry<org.locationtech.jts.geom.Point> imp
     public Point(org.locationtech.jts.geom.Point jtsGeom) {
         super(jtsGeom);
     }
-    
+
     @Override
     public int compareTo(Point o) {
         return jtsGeom.compareTo(o.jtsGeom);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Point) {
+            Point p = (Point) o;
+            return jtsGeom.equals(p.jtsGeom);
+        }
+        return false;
     }
 }
