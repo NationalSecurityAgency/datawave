@@ -22,12 +22,6 @@ public class SSDeepSimilarityQueryState {
      */
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
-    /**
-     * The query hash ngram map is a map of the original query hashes and the ngrams produced from them.
-     * This allows us to compute this once and reuse the generated ngrams.
-     */
-    private Multimap<SSDeepHash,NGramTuple> queryHashNGramMap;
-
     private Set<Integer> seenHashes = new HashSet<>();
 
     private Map<String,Long> ngramCountMap = new HashMap<>();
@@ -46,14 +40,6 @@ public class SSDeepSimilarityQueryState {
 
     public void setQueryMap(Multimap<NGramTuple,SSDeepHash> queryMap) {
         this.queryMap = queryMap;
-    }
-
-    public Multimap<SSDeepHash,NGramTuple> getQueryHashNGramMap() {
-        return queryHashNGramMap;
-    }
-
-    public void setQueryHashNGramMap(Multimap<SSDeepHash,NGramTuple> queryHashNGramMap) {
-        this.queryHashNGramMap = queryHashNGramMap;
     }
 
     public Set<Integer> getSeenHashes() {
