@@ -1,5 +1,8 @@
 package datawave.util.ssdeep;
 
+import com.google.common.collect.Multimap;
+
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -15,10 +18,19 @@ public class SSDeepNGramOverlapScorer implements SSDeepHashScorer<Set<NGramTuple
     }
 
     public Set<NGramTuple> apply(SSDeepHash signature1, SSDeepHash signature2) {
-        Set<NGramTuple> ngrams1 = generator.generateNgrams(signature1);
-        Set<NGramTuple> ngrams2 = generator.generateNgrams(signature2);
+        Set<NGramTuple> ngrams = new HashSet<>();
 
-        ngrams1.retainAll(ngrams2);
-        return ngrams1;
+        if(signature1.getChunkSize() == signature2.getChunkSize()) {
+            return generator.calculateOverlappingNGrams(signature1.getChunk(), signature2.getChunk(), signature1.getChunkSize());
+        }
+        else if(signature1.hasDoubleChunk() && (signature1.getDoubleChunkSize() == signature2.getChunkSize())) {
+            return generator.calculateOverlappingNGrams(signature1.getDoubleChunk(), signature2.getChunk(), signature1.getDoubleChunkSize());
+        }
+        else if(signature2.hasDoubleChunk() && (signature1.getChunkSize() == signature2.getDoubleChunkSize())) {
+            return generator.calculateOverlappingNGrams(signature1.getChunk(), signature2.getDoubleChunk(), signature1.getChunkSize());
+        }
+        else {
+            return new HashSet<NGramTuple>();
+        }
     }
 }
