@@ -39,6 +39,7 @@ public class TypeAttributeTest extends AttributeTest {
         output.writeBoolean(false); // write metadata when not set
         output.writeString("delegate value as string");
         output.writeBoolean(false); // to keep false
+        output.writeInt(12, true); // hash code
         output.flush();
 
         Input input = new Input(baos.toByteArray());
