@@ -157,18 +157,15 @@ public class NGramGenerator implements Serializable {
         }
     }
 
-    public Set<NGramTuple> calculateOverlappingNGrams(String chunk1, String chunk2, int chunkSize) {
+    public Set<NGramTuple> calculateOverlappingNGrams(int chunkSize, String chunk1, String chunk2) {
         Set<NGramTuple> overlappingNGrams = new HashSet<>();
 
-        // I think min hash size needs to be calculated here
+        final int ngramCount = chunk2.length() - ngramSize;
 
-        String normalizedChunk1 = SSDeepHash.normalizeSSDeepChunk(chunk1, maxRepeatedChars);
-        String normalizedChunk2 = SSDeepHash.normalizeSSDeepChunk(chunk2, maxRepeatedChars);
-
-        for(int i = 0; i < chunk2.length()-6; i++) {
-            String ngramString = chunk2.substring(i, i+7);
-            if (chunk1.contains(ngramString)){
-                overlappingNGrams.add(new NGramTuple(chunkSize, ngramString));
+        for(int i = 0; i <= ngramCount; i++) {
+            String ngram = chunk2.substring(i, i + ngramSize);
+            if (chunk1.contains(ngram)){
+                overlappingNGrams.add(new NGramTuple(chunkSize, ngram));
             }
         }
 
