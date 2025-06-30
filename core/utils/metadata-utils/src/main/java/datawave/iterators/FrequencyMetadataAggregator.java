@@ -1,6 +1,7 @@
 package datawave.iterators;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -504,9 +505,12 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
                 DateFrequencyMap entryMap = new DateFrequencyMap(value.get());
                 dateFrequencies.incrementAll(entryMap);
             } catch (IOException e) {
-                Key key = super.getTopKey();
-                log.error("Failed to parse date frequency map from value for key " + key, e);
-                throw new IllegalArgumentException("Failed to parse date frequency map from value for key " + key, e);
+                log.error("Ignoring bogus date frequency map for " + currentRow + ' ' + currentColumnFamily + ':' + currentDatatype + ' ' + currentVisibility
+                                + ' ' + currentTimestamp + " -> " + Arrays.toString(value.get()));
+                // So this can happen if somebody forgot to remove the SummingCombiner from the table before aggregated
+                // keys were inserted. The only option here is to ignore the key. Chances are this would have happened
+                // for the f, i, and ri entries at the same time so the results will be the overall counts will be
+                // slightly off
             }
         } else {
             // If the current entry does not have an aggregated value, it has a count for a specific date. Increment the count for the date in the map.
