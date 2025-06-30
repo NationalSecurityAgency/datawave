@@ -16,10 +16,10 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_ZOOKEEPER_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ZOOKEEPER_VERSION="3.7.2"
+DW_ZOOKEEPER_VERSION="3.8.4"
 DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-${DW_ZOOKEEPER_VERSION}/apache-zookeeper-${DW_ZOOKEEPER_VERSION}-bin.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-6afbfc1afc8b9370281bd9862f37dbb1cb95ec54bb2ed4371831aa5c0f08cfee775050bd57ce5fc0836e61af27eed9f0076f54b98997dd0e15159196056e52ea}"
+DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-4d85d6f7644d5f36d9c4d65e78bd662ab35ebe1380d762c24c12b98af029027eee453437c9245dbdf2b9beb77cd6b690b69e26f91cf9d11b0a183a979c73fa43}"
 # shellcheck disable=SC2154
 # shellcheck disable=SC2034
 DW_ZOOKEEPER_DIST="$( { downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "zookeeper" "${DW_ZOOKEEPER_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
