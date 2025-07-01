@@ -120,7 +120,7 @@ public class UniqueFields implements Serializable, Cloneable {
                         if (granularityList.isEmpty()) {
                             uniqueFields.put(field, UniqueGranularity.ALL);
                         } else {
-                            String[] granularities = StringUtils.split(granularityList, Constants.COMMA);
+                            String[] granularities = granularityList.split(Constants.COMMA);
                             for (String granularity : granularities) {
                                 uniqueFields.put(field, parseGranularity(granularity));
                             }

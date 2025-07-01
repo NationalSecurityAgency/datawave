@@ -36,7 +36,6 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import datawave.util.StringUtils;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
@@ -253,7 +252,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.RENAME_FUNCTION:
                     for (JexlNode arg : args) {
                         String value = JexlNodes.getIdentifierOrLiteralAsString(arg);
-                        String[] parts = StringUtils.split(value, Constants.EQUALS);
+                        String[] parts = value.split(Constants.EQUALS);
                         fields.add(parts[0]);
                     }
                 case QueryFunctions.MATCH_REGEX:
