@@ -8,11 +8,11 @@ import java.util.List;
  */
 public class ShardIndexQueryTableProperties {
     private List<String> realmSuffixExclusionPatterns = new ArrayList<>();
-    
+
     public List<String> getRealmSuffixExclusionPatterns() {
         return realmSuffixExclusionPatterns;
     }
-    
+
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
         this.realmSuffixExclusionPatterns = realmSuffixExclusionPatterns;
     }

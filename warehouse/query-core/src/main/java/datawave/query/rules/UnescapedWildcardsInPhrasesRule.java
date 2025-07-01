@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
 
-import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.UnescapedWildcardsInQuotedPhrasesVisitor;
 
 /**
@@ -56,13 +55,9 @@ public class UnescapedWildcardsInPhrasesRule extends ShardQueryRule {
     // Return a formatted message for the given node.
     private String getFormattedMessage(QuotedFieldQueryNode node) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Unescaped wildcard found in phrase ");
+        sb.append("Wildcard found in phrase ");
         sb.append(formatQueryNode(node, true));
-        sb.append(". Wildcard is incorrect, or phrase should be ");
-        // Make a copy of the node with the suggested phrase format.
-        QuotedFieldQueryNode copy = (QuotedFieldQueryNode) BaseVisitor.copy(node);
-        copy.setText("/" + copy.getTextAsString() + "/");
-        sb.append(formatQueryNode(copy, false));
+        sb.append(". Wildcards are not allowed in phrases so it will be searched as a literal character.");
         return sb.toString();
     }
 

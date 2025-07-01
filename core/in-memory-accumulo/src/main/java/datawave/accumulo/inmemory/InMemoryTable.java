@@ -41,30 +41,30 @@ import org.apache.accumulo.core.security.TablePermission;
 import org.apache.hadoop.io.Text;
 
 public class InMemoryTable {
-    
+
     static class InMemoryMemKey extends Key {
         private int count;
-        
+
         InMemoryMemKey(Key key, int count) {
             super(key);
             this.count = count;
         }
-        
+
         @Override
         public int hashCode() {
             return super.hashCode() + count;
         }
-        
+
         @Override
         public boolean equals(Object other) {
             return (other instanceof InMemoryMemKey) && super.equals(other) && count == ((InMemoryMemKey) other).count;
         }
-        
+
         @Override
         public String toString() {
             return super.toString() + " count=" + count;
         }
-        
+
         @Override
         public int compareTo(Key o) {
             int compare = super.compareTo(o);
@@ -80,7 +80,7 @@ public class InMemoryTable {
             return 0;
         }
     }
-    
+
     final SortedMap<Key,Value> table = new ConcurrentSkipListMap<>();
     int mutationCount = 0;
     final Map<String,String> settings;
@@ -91,7 +91,7 @@ public class InMemoryTable {
     private InMemoryNamespace namespace;
     private String namespaceName;
     private String tableId;
-    
+
     InMemoryTable(boolean limitVersion, TimeType timeType, String tableId) {
         this.timeType = timeType;
         this.tableId = tableId;
@@ -102,7 +102,7 @@ public class InMemoryTable {
                 settings.put(key, entry.getValue());
         }
     }
-    
+
     InMemoryTable(InMemoryNamespace namespace, boolean limitVersion, TimeType timeType, String tableId, Map<String,String> properties) {
         this(limitVersion, timeType, tableId);
         Set<Entry<String,String>> set = namespace.settings.entrySet();
@@ -113,12 +113,12 @@ public class InMemoryTable {
             if (key.startsWith(Property.TABLE_PREFIX.getKey()))
                 settings.put(key, entry.getValue());
         }
-        
+
         for (Entry<String,String> initialProp : properties.entrySet()) {
             settings.put(initialProp.getKey(), initialProp.getValue());
         }
     }
-    
+
     public InMemoryTable(InMemoryNamespace namespace, TimeType timeType, String tableId, Map<String,String> properties) {
         this.timeType = timeType;
         this.tableId = tableId;
@@ -128,7 +128,7 @@ public class InMemoryTable {
             if (key.startsWith(Property.TABLE_PREFIX.getKey()))
                 settings.put(key, entry.getValue());
         }
-        
+
         Set<Entry<String,String>> set = namespace.settings.entrySet();
         Iterator<Entry<String,String>> entries = set.iterator();
         while (entries.hasNext()) {
@@ -138,7 +138,7 @@ public class InMemoryTable {
                 settings.put(key, entry.getValue());
         }
     }
-    
+
     synchronized void addMutation(Mutation m) {
         if (m.size() == 0)
             throw new IllegalArgumentException("Can not add empty mutations");
@@ -154,27 +154,27 @@ public class InMemoryTable {
                     key.setTimestamp(mutationCount);
                 else
                     key.setTimestamp(now);
-                
+
             table.put(new InMemoryMemKey(key, mutationCount), new Value(u.getValue()));
         }
     }
-    
+
     public void addSplits(SortedSet<Text> partitionKeys) {
         splits.addAll(partitionKeys);
     }
-    
+
     public Collection<Text> getSplits() {
         return splits;
     }
-    
+
     public void setLocalityGroups(Map<String,Set<Text>> groups) {
         localityGroups = groups;
     }
-    
+
     public Map<String,Set<Text>> getLocalityGroups() {
         return localityGroups;
     }
-    
+
     public void merge(Text start, Text end) {
         boolean reAdd = false;
         if (splits.contains(start))
@@ -183,23 +183,23 @@ public class InMemoryTable {
         if (reAdd)
             splits.add(start);
     }
-    
+
     public void setNamespaceName(String n) {
         this.namespaceName = n;
     }
-    
+
     public void setNamespace(InMemoryNamespace n) {
         this.namespace = n;
     }
-    
+
     public String getNamespaceName() {
         return this.namespaceName;
     }
-    
+
     public InMemoryNamespace getNamespace() {
         return this.namespace;
     }
-    
+
     public String getTableId() {
         return this.tableId;
     }

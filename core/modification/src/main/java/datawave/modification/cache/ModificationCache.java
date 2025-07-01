@@ -92,6 +92,8 @@ public class ModificationCache {
 
     /**
      * List the mutable fields in the cache
+     *
+     * @return list of mutable fields
      */
     public String listMutableFields() {
         return cache.toString();
@@ -101,6 +103,7 @@ public class ModificationCache {
      * Check to see if field for specified datatype is mutable
      *
      * @param datatype
+     *            the data type
      * @param field
      *            name of field
      * @return true if field is mutable for the given datatype

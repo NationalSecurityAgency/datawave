@@ -6,17 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 public class UnauthorizedQueryExceptionTest {
-    
+
     private UnauthorizedQueryException tqe;
-    
+
     private final String message = "Bad query exception";
     private final Throwable throwable = new Throwable("throws");
     private final String strErrCode = "401-1";
     private final DatawaveErrorCode code = DatawaveErrorCode.QUERY_OWNER_MISMATCH;
-    
+
     private final String assertMsg = "Current user does not match user that defined query. Bad query exception";
     private final String assertMsg2 = "Current user does not match user that defined query.";
-    
+
     @Test
     public void testEmptyConstructor() {
         tqe = new UnauthorizedQueryException();
@@ -25,7 +25,7 @@ public class UnauthorizedQueryExceptionTest {
         assertNull(tqe.getMessage());
         assertNull(tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageConstructor() {
         tqe = new UnauthorizedQueryException(message);
@@ -34,7 +34,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableConstructor() {
         tqe = new UnauthorizedQueryException(message, throwable);
@@ -43,7 +43,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowableErrorCodeConstructor() {
         tqe = new UnauthorizedQueryException(throwable, strErrCode);
@@ -52,7 +52,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(throwable.toString(), tqe.getMessage());
         assertEquals(throwable.toString(), tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableConstructor() {
         tqe = new UnauthorizedQueryException(code, throwable);
@@ -61,7 +61,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(assertMsg2, tqe.getMessage());
         assertEquals(assertMsg2, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeDebugMsgConstructor() {
         tqe = new UnauthorizedQueryException(code, message);
@@ -70,7 +70,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(assertMsg, tqe.getMessage());
         assertEquals(assertMsg, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableDebugMsgConstructor() {
         tqe = new UnauthorizedQueryException(code, throwable, message);
@@ -79,7 +79,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(assertMsg, tqe.getMessage());
         assertEquals(assertMsg, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeConstructor() {
         tqe = new UnauthorizedQueryException(code);
@@ -88,7 +88,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(assertMsg2, tqe.getMessage());
         assertEquals(assertMsg2, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageResponseStatus() {
         tqe = new UnauthorizedQueryException(message, 401);
@@ -97,7 +97,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableErrorCode() {
         tqe = new UnauthorizedQueryException(message, throwable, strErrCode);
@@ -106,7 +106,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageErrorCode() {
         tqe = new UnauthorizedQueryException(message, strErrCode);
@@ -115,7 +115,7 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowable() {
         tqe = new UnauthorizedQueryException(throwable);
@@ -124,5 +124,5 @@ public class UnauthorizedQueryExceptionTest {
         assertEquals(throwable.toString(), tqe.getMessage());
         assertEquals(throwable.toString(), tqe.getLocalizedMessage());
     }
-    
+
 }

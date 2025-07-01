@@ -8,7 +8,7 @@ public class ExecutorStatusLogger {
     private Logger log = Logger.getLogger(ExecutorStatusLogger.class);
     private String lastThreadPoolStatus = "";
     private volatile long lastThreadPoolStatusUpdate = 0;
-    
+
     private String getUpdatedStatus(QueryExecutor executor) {
         String newStatus = executor.toString();
         if (lastThreadPoolStatus.equals(newStatus)) {
@@ -22,7 +22,7 @@ public class ExecutorStatusLogger {
         }
         return newStatus;
     }
-    
+
     public void logStatus(QueryExecutor executor) {
         String newStatus = getUpdatedStatus(executor);
         if (newStatus != null) {

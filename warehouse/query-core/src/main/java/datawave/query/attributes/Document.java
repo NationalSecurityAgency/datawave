@@ -37,14 +37,17 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.cache.ClassCache;
 import datawave.util.time.DateHelper;
 
 public class Document extends AttributeBag<Document> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -377226620954754934L;
 
     private static final Logger log = Logger.getLogger(Document.class);
 
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
+
+    private static final ClassCache classCache = new ClassCache();
 
     private int _count = 0;
     long _bytes = 0;
@@ -777,7 +780,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
             output.writeString(entry.getKey());
 
             Attribute<?> attribute = entry.getValue();
-            output.writeString(attribute.getClass().getName());
+            int index = DatawaveAttributeIndex.getAttributeIndex(attribute.getClass().getTypeName());
+            output.writeInt(index, true);
+
+            if (index == 0) {
+                output.writeString(attribute.getClass().getName());
+            }
+
             attribute.write(kryo, output);
         }
 
@@ -798,30 +807,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
             // Get the fieldName
             String fieldName = input.readString();
 
-            // Get the class name for the concrete Attribute
-            String attrClassName = input.readString();
-            Class<?> clz;
-
-            // Get the Class for the name of the class of the concrete Attribute
-            try {
-                clz = Class.forName(attrClassName);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-
-            Attribute<?> attr;
-            if (Attribute.class.isAssignableFrom(clz)) {
-                // Get an instance of the concrete Attribute
-                try {
-                    attr = (Attribute<?>) clz.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-
+            String clazzName;
+            int index = input.readInt(true);
+            if (index == 0) {
+                clazzName = input.readString();
             } else {
-                throw new ClassCastException("Found class that was not an instance of Attribute");
+                clazzName = DatawaveAttributeIndex.getAttributeClassName(index);
             }
-            // Reload the attribute
+
+            // create the attribute and populate from the input
+            Attribute<?> attr = createAttributeFromClassName(clazzName);
             attr.read(kryo, input);
 
             // Add the attribute back to the Map
@@ -831,6 +826,36 @@ public class Document extends AttributeBag<Document> implements Serializable {
         this.shardTimestamp = input.readLong();
 
         this.invalidateMetadata();
+    }
+
+    /**
+     * Create the attribute from the provided class name, using the class cache as appropriate
+     *
+     * @param clazzName
+     *            the class name
+     * @return the attribute
+     */
+    private Attribute<?> createAttributeFromClassName(String clazzName) {
+        Class<?> clz;
+        try {
+            // Get the Class for the name of the class of the concrete Attribute
+            clz = classCache.get(clazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        Attribute<?> attr;
+        if (Attribute.class.isAssignableFrom(clz)) {
+            // Get an instance of the concrete Attribute
+            try {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new ClassCastException("Found class that was not an instance of Attribute");
+        }
+        return attr;
     }
 
     @Override

@@ -52,7 +52,7 @@ public class EntryParserTest {
 
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
 
         EntryParser parser = new EntryParser("hello", "world", true);
         Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
@@ -86,7 +86,7 @@ public class EntryParserTest {
 
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
 
         EntryParser parser = new EntryParser("hello", "world", false);
@@ -118,7 +118,7 @@ public class EntryParserTest {
 
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
 
         EntryParser parser = new EntryParser("hello", "world", false);

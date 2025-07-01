@@ -19,7 +19,7 @@ import datawave.webservice.query.result.logic.QueryLogicDescription;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryLogicResponse extends BaseResponse implements HtmlProvider {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5187717039580274354L;
     private static final String TITLE = "Deployed Query Logic", EMPTY = "";
 
     @XmlElement(name = "QueryLogic")
@@ -86,7 +86,7 @@ public class QueryLogicResponse extends BaseResponse implements HtmlProvider {
             String responseClassName = qld.getResponseClass();
             responseClassName = responseClassName.replaceAll("\\.", "/");
             String url = javadocs + responseClassName + html;
-            String label = responseClassName.substring(responseClassName.lastIndexOf("/") + 1);
+            String label = responseClassName.substring(responseClassName.lastIndexOf('/') + 1);
 
             builder.append("<td><a href='").append(url).append("'>" + label + "</a></td>");
 

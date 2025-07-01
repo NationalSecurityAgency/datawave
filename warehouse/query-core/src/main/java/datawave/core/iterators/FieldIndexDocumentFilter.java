@@ -1,7 +1,8 @@
 package datawave.core.iterators;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.ByteSequence;
@@ -47,11 +48,7 @@ public class FieldIndexDocumentFilter extends Filter {
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
         String suffix = NULL_BYTE + options.get(DATA_TYPE_OPT) + NULL_BYTE + options.get(EVENT_UID_OPT);
-        try {
-            cqSuffix = suffix.getBytes("UTF8");
-        } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException("Unable to encode using UTF8?", uee);
-        }
+        cqSuffix = suffix.getBytes(UTF_8);
     }
 
     @Override

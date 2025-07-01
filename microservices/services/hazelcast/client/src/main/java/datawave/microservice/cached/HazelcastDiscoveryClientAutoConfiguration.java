@@ -32,16 +32,16 @@ public class HazelcastDiscoveryClientAutoConfiguration extends HazelcastBaseClie
     @Bean
     public ClientConfig clientConfig(HazelcastClientProperties clientProperties, DiscoveryServiceProvider discoveryServiceProvider) {
         ClientConfig clientConfig = createClientConfig(clientProperties);
-        
+
         if (!clientProperties.isSkipDiscoveryConfiguration()) {
             // Set up Consul discovery of cluster members.
             clientConfig.setProperty("hazelcast.discovery.enabled", Boolean.TRUE.toString());
             clientConfig.getNetworkConfig().getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
         }
-        
+
         return clientConfig;
     }
-    
+
     /**
      * Normally, just producing a Hazelcast Config object would be enough for Spring Boot to use it and create a {@link HazelcastInstance}. However, that code
      * doesn't handle a {@link ClientConfig}, so we must produce our own instance with the client configuration we produce.

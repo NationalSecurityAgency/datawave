@@ -12,18 +12,18 @@ import datawave.microservice.cached.LockableCacheInspector;
 @CacheConfig(cacheNames = TaskStatesCache.CACHE_NAME)
 public class TaskStatesCache {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String CACHE_NAME = "TaskStatesCache";
-    
+
     private final LockableCacheInspector cacheInspector;
-    
+
     public TaskStatesCache(LockableCacheInspector cacheInspector) {
         this.cacheInspector = cacheInspector;
     }
-    
+
     /**
      * Store the task states for a query.
-     * 
+     *
      * @param taskStates
      *            the task states
      * @return the stored task states
@@ -33,10 +33,10 @@ public class TaskStatesCache {
         logStatus("Storing", taskStates, taskStates.getQueryKey().getQueryId());
         return taskStates;
     }
-    
+
     /**
      * Delete the task states for a query
-     * 
+     *
      * @param queryId
      *            The query id
      */
@@ -46,7 +46,7 @@ public class TaskStatesCache {
             log.debug("Deleted task statuses for " + queryId);
         }
     }
-    
+
     /**
      * Return the task states for a query
      *
@@ -59,7 +59,7 @@ public class TaskStatesCache {
         logStatus("Retrieved", states, queryId);
         return states;
     }
-    
+
     /**
      * Clear out the cache
      *
@@ -69,7 +69,7 @@ public class TaskStatesCache {
     public String clear() {
         return "Cleared " + CACHE_NAME + " cache";
     }
-    
+
     /**
      * A convenience method for logging task statuses
      *
@@ -87,10 +87,10 @@ public class TaskStatesCache {
             log.debug(msg + ' ' + (status == null ? "null tasks for " + key : "tasks for " + key));
         }
     }
-    
+
     /**
      * Get a query task states lock for a given query id
-     * 
+     *
      * @param queryId
      *            the query id
      * @return a task states lock
@@ -98,7 +98,7 @@ public class TaskStatesCache {
     public QueryStorageLock getTaskStatesLock(String queryId) {
         return new TaskStatesLock(queryId);
     }
-    
+
     /**
      * A lock object for the task states
      */
@@ -107,5 +107,5 @@ public class TaskStatesCache {
             super(CACHE_NAME, QueryKey.toUUIDKey(queryId), cacheInspector);
         }
     }
-    
+
 }

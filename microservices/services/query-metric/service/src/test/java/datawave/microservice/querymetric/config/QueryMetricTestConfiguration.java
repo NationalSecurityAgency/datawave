@@ -28,27 +28,27 @@ import datawave.microservice.config.accumulo.AccumuloProperties;
 @Profile("QueryMetricTest")
 @Configuration
 public class QueryMetricTestConfiguration {
-    
+
     public QueryMetricTestConfiguration() {}
-    
+
     @Bean
     @Lazy
     @Qualifier("warehouse")
     public AccumuloClientPool accumuloClientPool(@Qualifier("warehouse") AccumuloProperties accumuloProperties) throws Exception {
         return new AccumuloClientPool(new InMemoryAccumuloClientPoolFactory(accumuloProperties));
     }
-    
+
     @Bean
     @Lazy
     @Qualifier("warehouse")
     public AccumuloClientPoolFactory warehouseInstance(AccumuloProperties accumuloProperties) throws Exception {
         return new InMemoryAccumuloClientPoolFactory(accumuloProperties);
     }
-    
+
     public class InMemoryAccumuloClientPoolFactory extends AccumuloClientPoolFactory {
-        
+
         private AccumuloProperties accumuloProperties;
-        
+
         public InMemoryAccumuloClientPoolFactory(AccumuloProperties accumuloProperties) throws Exception {
             super(accumuloProperties.getUsername(), accumuloProperties.getPassword(), "mock", "mock");
             this.accumuloProperties = accumuloProperties;
@@ -60,7 +60,7 @@ public class QueryMetricTestConfiguration {
                 e.printStackTrace();
             }
         }
-        
+
         public PooledObject<AccumuloClient> makeObject() throws Exception {
             return new DefaultPooledObject(
                             new InMemoryAccumuloClient(this.accumuloProperties.getUsername(), new InMemoryInstance(accumuloProperties.getInstanceName())));

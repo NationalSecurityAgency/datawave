@@ -15,25 +15,25 @@ public class AccumuloClientConfiguration {
     private Logger log = Logger.getLogger(AccumuloClientConfiguration.class);
     private Map<String,Map<String,String>> hintsByTable = new HashMap<>();
     private Map<String,ScannerBase.ConsistencyLevel> consistencyByTable = new HashMap<>();
-    
+
     /**
      * Construct an empty configuration
      */
     public AccumuloClientConfiguration() {}
-    
+
     /**
      * Construct a configuration with the specified hints per table
-     * 
+     *
      * @param hints
      *            A map of table to the hints map
      */
     public AccumuloClientConfiguration(Map<String,Map<String,String>> hints) {
         this(hints, Collections.emptyMap());
     }
-    
+
     /**
      * Construct a configuration with the specified hints and consistency levels
-     * 
+     *
      * @param hints
      *            A map of table to hints map
      * @param levels
@@ -47,10 +47,10 @@ public class AccumuloClientConfiguration {
             setConsistency(table, levels.get(table));
         }
     }
-    
+
     /**
      * This will apply the configuration to a scanner
-     * 
+     *
      * @param scanner
      *            The scanner to configure
      * @param tableName
@@ -68,10 +68,10 @@ public class AccumuloClientConfiguration {
             scanner.setConsistencyLevel(consistencyByTable.get(tableName));
         }
     }
-    
+
     /**
      * This will take a second configuration and overlay it on top of this one.
-     * 
+     *
      * @param config
      *            The second configuration
      */
@@ -83,10 +83,10 @@ public class AccumuloClientConfiguration {
             setConsistency(table, config.consistencyByTable.get(table));
         }
     }
-    
+
     /**
      * Set the consistency configuration for a table
-     * 
+     *
      * @param table
      *            The table name
      * @param level
@@ -95,10 +95,10 @@ public class AccumuloClientConfiguration {
     public void setConsistency(String table, ScannerBase.ConsistencyLevel level) {
         consistencyByTable.put(table, level);
     }
-    
+
     /**
      * Add a configured hint for a table
-     * 
+     *
      * @param table
      *            The table
      * @param prop
@@ -109,10 +109,10 @@ public class AccumuloClientConfiguration {
     public void addHint(String table, String prop, String value) {
         addHints(table, Collections.singletonMap(prop, value));
     }
-    
+
     /**
      * Add a set of hints for a table. Note this will not remove other hints for this table.
-     * 
+     *
      * @param table
      *            The table
      * @param hints
@@ -127,10 +127,10 @@ public class AccumuloClientConfiguration {
             }
         }
     }
-    
+
     /**
      * Replace a set of hints for a table. This will remove previously configured hints for this table.
-     * 
+     *
      * @param table
      *            The table
      * @param hints
@@ -143,5 +143,5 @@ public class AccumuloClientConfiguration {
             hintsByTable.put(table, new HashMap<>(hints));
         }
     }
-    
+
 }

@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.Before;
 import org.junit.Test;
 
 import datawave.query.exceptions.InvalidQueryTreeException;
@@ -15,6 +16,11 @@ import datawave.query.jexl.visitors.validate.ASTValidator;
 public class InvertNodeVisitorTest {
 
     private final ASTValidator validator = new ASTValidator();
+
+    @Before
+    public void setup() {
+        validator.enableAll();
+    }
 
     @Test
     public void testInvertEq() {

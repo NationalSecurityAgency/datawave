@@ -19,7 +19,7 @@ import datawave.data.normalizer.regex.SingleCharNode;
  * </ol>
  */
 public class ZeroValueNormalizer extends SubExpressionVisitor {
-    
+
     public static Node expand(Node node) {
         if (node == null) {
             return null;
@@ -27,17 +27,17 @@ public class ZeroValueNormalizer extends SubExpressionVisitor {
         ZeroValueNormalizer normalizer = new ZeroValueNormalizer();
         return (Node) node.accept(normalizer, null);
     }
-    
+
     @Override
     protected Object visitSubExpression(Node node) {
         // If the node represents a simple number, return a copy of it.
         if (RegexUtils.isSimpleNumber(node)) {
             return copy(node);
         }
-        
+
         return normalizePattern(node, RegexUtils.isNegativeRegex(node));
     }
-    
+
     private Node normalizePattern(Node node, boolean negative) {
         // If the pattern can only match zero, simplify it to just '0'.
         if (matchesZeroOnly(node, negative)) {
@@ -53,10 +53,10 @@ public class ZeroValueNormalizer extends SubExpressionVisitor {
         // Otherwise the pattern can match numbers other than zero. Return a copy of it.
         return copy(node);
     }
-    
+
     /**
      * Return whether the given pattern will only match 0.
-     * 
+     *
      * @param node
      *            the node
      * @param negative
@@ -82,10 +82,10 @@ public class ZeroValueNormalizer extends SubExpressionVisitor {
             return !iter.hasNext();
         }
     }
-    
+
     /**
      * Return true if the given negative pattern can match zero.
-     * 
+     *
      * @param node
      *            the negative pattern
      * @return true if the pattern can match 0, or false otherwise
@@ -109,39 +109,39 @@ public class ZeroValueNormalizer extends SubExpressionVisitor {
             return !iter.hasNext();
         }
     }
-    
+
     /**
      * Return a new {@link ExpressionNode} that contains the expression {@code "0"}.
-     * 
+     *
      * @return the new node
      */
     private Node createZeroCharExpression() {
         return new ExpressionNode(new SingleCharNode(RegexConstants.ZERO));
     }
-    
+
     /**
      * Seek past all consecutive elements that only match zero in the given iterator, including any after a decimal point.
-     * 
+     *
      * @param iterator
      *            the iterator
      */
     private void seekPastAllZeroOnlyElements(NodeListIterator iterator) {
         seekPast(iterator, NodeListIterator::seekPastZeroOnlyElements);
     }
-    
+
     /**
      * Seek past all consecutive elements that can match zero in the given iterator, including any after a decimal point.
-     * 
+     *
      * @param iterator
      *            the iterator
      */
     private void seekPastAllZeroMatchingElements(NodeListIterator iterator) {
         seekPast(iterator, NodeListIterator::seekPastZeroMatchingElements);
     }
-    
+
     /**
      * Seek past elements using the given delegate function. If a decimal point is present, seek past that as well.
-     * 
+     *
      * @param iter
      *            the iterator
      * @param delegate

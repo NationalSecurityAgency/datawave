@@ -76,7 +76,7 @@ jobs:
       run: | 
         export JAVA_HOME="$ACCUMULO_JAVA"
         cd "$GITHUB_WORKSPACE/accumulo"
-        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave -V -B -e -ntp "-Dstyle.color=always" -DskipTests -T1C clean source:jar deploy -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml"
+        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -DskipTests -T1C clean source:jar deploy -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml"
     - name: Log in to the Container registry
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
@@ -94,6 +94,6 @@ jobs:
       run: |
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        mvn -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml" clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
+        mvn -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml" clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  

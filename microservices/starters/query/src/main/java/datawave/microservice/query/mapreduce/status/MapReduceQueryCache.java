@@ -19,9 +19,9 @@ public class MapReduceQueryCache {
     private MapReduceQueryStatusCache queryStatusCache;
     private MapReduceQueryIdByJobIdCache queryIdByJobIdCache;
     private MapReduceQueryIdByUsernameCache queryIdByUsernameCache;
-    
+
     private LockedCacheUpdateUtil<MapReduceQueryStatus> queryStatusLockedCacheUpdateUtil;
-    
+
     public MapReduceQueryCache(MapReduceQueryStatusCache queryStatusCache, MapReduceQueryIdByJobIdCache queryIdByJobIdCache,
                     MapReduceQueryIdByUsernameCache queryIdByUsernameCache) {
         this.queryStatusCache = queryStatusCache;
@@ -29,28 +29,28 @@ public class MapReduceQueryCache {
         this.queryIdByUsernameCache = queryIdByUsernameCache;
         this.queryStatusLockedCacheUpdateUtil = new LockedCacheUpdateUtil<>(queryStatusCache);
     }
-    
+
     public MapReduceQueryStatus createQuery(String mrQueryId, String jobName, MultiValueMap<String,String> parameters, DatawaveUserDetails currentUser)
                     throws InterruptedException {
         addQueryIdByUsernameLookup(currentUser.getUsername(), mrQueryId);
         return queryStatusCache.create(mrQueryId, jobName, parameters, null, currentUser);
     }
-    
+
     public MapReduceQueryStatus createQuery(String mrQueryId, String jobName, MultiValueMap<String,String> parameters, Query query,
                     DatawaveUserDetails currentUser) throws InterruptedException {
         addQueryIdByUsernameLookup(currentUser.getUsername(), mrQueryId);
         return queryStatusCache.create(mrQueryId, jobName, parameters, query, currentUser);
     }
-    
+
     public MapReduceQueryStatus getQueryStatus(String mrQueryId) {
         return queryStatusCache.get(mrQueryId);
     }
-    
+
     public MapReduceQueryStatus updateQueryStatus(String mrQueryId, CacheUpdater<MapReduceQueryStatus> updater, long waitTimeMillis, long leaseTimeMillis)
                     throws QueryException, InterruptedException {
         return queryStatusLockedCacheUpdateUtil.lockedUpdate(mrQueryId, updater, waitTimeMillis, leaseTimeMillis);
     }
-    
+
     public MapReduceQueryStatus removeQuery(String mrQueryId) throws InterruptedException {
         MapReduceQueryStatus mapReduceQueryStatus = queryStatusCache.get(mrQueryId);
         queryStatusCache.remove(mrQueryId);
@@ -58,19 +58,19 @@ public class MapReduceQueryCache {
         removeQueryIdByUsernameLookup(mapReduceQueryStatus.getCurrentUser().getUsername(), mrQueryId);
         return mapReduceQueryStatus;
     }
-    
+
     public String putQueryIdByJobIdLookup(String jobId, String mrQueryId) {
         return queryIdByJobIdCache.update(jobId, mrQueryId);
     }
-    
+
     public String lookupQueryIdByJobId(String jobId) {
         return queryIdByJobIdCache.get(jobId);
     }
-    
+
     public void removeQueryIdByJobIdLookup(String jobId) {
         queryIdByJobIdCache.remove(jobId);
     }
-    
+
     private Set<String> addQueryIdByUsernameLookup(String username, String mrQueryId) throws InterruptedException {
         Set<String> mrQueryIds = null;
         if (queryIdByUsernameCache.tryLock(username, TimeUnit.SECONDS.toMillis(30), TimeUnit.SECONDS.toMillis(30))) {
@@ -87,7 +87,7 @@ public class MapReduceQueryCache {
         }
         return mrQueryIds;
     }
-    
+
     public Set<String> lookupQueryIdsByUsername(String username) {
         Set<String> queryIds = queryIdByUsernameCache.get(username);
         if (queryIds == null) {
@@ -95,7 +95,7 @@ public class MapReduceQueryCache {
         }
         return queryIds;
     }
-    
+
     public Set<String> removeQueryIdByUsernameLookup(String username, String mrQueryId) throws InterruptedException {
         Set<String> mrQueryIds = null;
         if (queryIdByUsernameCache.tryLock(username, TimeUnit.SECONDS.toMillis(30), TimeUnit.SECONDS.toMillis(30))) {
@@ -115,7 +115,7 @@ public class MapReduceQueryCache {
         }
         return mrQueryIds;
     }
-    
+
     public void removeAllQueryIdByUsernameLookups(String username) {
         queryIdByUsernameCache.removeAll(username);
     }
