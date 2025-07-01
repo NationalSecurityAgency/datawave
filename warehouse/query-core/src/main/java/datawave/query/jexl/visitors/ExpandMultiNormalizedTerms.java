@@ -343,8 +343,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     }
                                     normalizedTerms.add(normTerm);
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
-                                    if (normalizer.normalizedRegexIsLossy(term)) {
-                                        normalizer.normalizedRegexIsLossy(term);
+                                    if ((!term.equals(normTerm)) && normalizer.normalizedRegexIsLossy(term)) {
                                         JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
                                                         EVALUATION_ONLY);
                                         // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)

@@ -173,7 +173,7 @@ public class WiseGuysIngest {
                             timeStamp + sopranoTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "GEO" + "\u0000" + "POINT(20 20)", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
 
-            mutation.put(datatype + "\u0000" + caponeUID, "BAIL.0" + "\u0000" + "1234987", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "BAIL.0" + "\u0000" + "0.05", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.0" + "\u0000" + "ALPHONSE", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.1" + "\u0000" + "FRANK", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.2" + "\u0000" + "RALPH", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
@@ -311,7 +311,7 @@ public class WiseGuysIngest {
             mutation.put("BAIL".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
             bw.addMutation(mutation);
-            mutation = new Mutation(numberType.normalize("1234987"));
+            mutation = new Mutation(numberType.normalize("0.05"));
             mutation.put("BAIL".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
             bw.addMutation(mutation);
@@ -653,6 +653,19 @@ public class WiseGuysIngest {
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
             bw.addMutation(mutation);
 
+            mutation = new Mutation(new StringBuilder(numberType.normalize("12345")).reverse());
+            mutation.put("BAIL".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(new StringBuilder(numberType.normalize("123401")).reverse());
+            mutation.put("BAIL".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(new StringBuilder(numberType.normalize("0.05")).reverse());
+            mutation.put("BAIL".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            bw.addMutation(mutation);
+
             // add some index-only fields
             mutation = new Mutation(new StringBuilder("chicago").reverse());
             mutation.put("LOCATION", shard + "\u0000" + datatype, columnVisibility, timeStamp,
@@ -726,7 +739,7 @@ public class WiseGuysIngest {
                             emptyValue);
             mutation.put("fi\u0000" + "BAIL", numberType.normalize("123401") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp,
                             emptyValue);
-            mutation.put("fi\u0000" + "BAIL", numberType.normalize("1234987") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
+            mutation.put("fi\u0000" + "BAIL", numberType.normalize("0.05") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
                             emptyValue);
 
             // geo
@@ -912,6 +925,8 @@ public class WiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("BAIL")), emptyValue);
             bw.addMutation(mutation);
 
