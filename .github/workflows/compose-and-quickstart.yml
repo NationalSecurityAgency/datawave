@@ -42,7 +42,6 @@ jobs:
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
-      
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
@@ -51,9 +50,6 @@ jobs:
           cache: 'maven'
       # Builds the quickstart and microservice docker images and runs a query test
       - name: Docker Compose Query Tests
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           if [[ ${{ steps.extract_branch.outputs.branch }} =~ ^release/version* ]] then
             echo "Nothing to do since this is a release branch."
@@ -129,9 +125,6 @@ jobs:
             ${{ runner.os }}-maven-
       # Builds the quickstart and microservice docker images and runs a query test
       - name: Docker Compose Query Tests
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           # set some bogus URLs to trigger dependency download via maven
           DIST_URLS="-Durl.zookeeper=https://bogus.apache.org/zookeeper/zookeeper-3.8.4/apache-zookeeper-3.8.4-bin.tar.gz.tar.gz \
@@ -179,21 +172,18 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      # Clean up free space
+      - uses: ./.github/actions/free-space
+        with:
+          tool-cache: false
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
           distribution: ${{env.JAVA_DISTRIBUTION}}
           java-version: ${{env.JAVA_VERSION}}
           cache: 'maven'
-      # Clean up free space
-      - uses: ./.github/actions/free-space
-        with:
-          tool-cache: false
       # Builds the quickstart docker image and run the web tests
       - name: Quickstart Web Tests
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress -Dstyle.color=always \
               -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests -Pcompose -Dquickstart-docker clean install \
