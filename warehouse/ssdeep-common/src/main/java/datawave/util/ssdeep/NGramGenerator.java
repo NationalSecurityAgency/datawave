@@ -162,9 +162,9 @@ public class NGramGenerator implements Serializable {
 
         final int ngramCount = chunk2.length() - ngramSize;
 
-        for(int i = 0; i <= ngramCount; i++) {
+        for (int i = 0; i <= ngramCount; i++) {
             String ngram = chunk2.substring(i, i + ngramSize);
-            if (chunk1.contains(ngram)){
+            if (chunk1.contains(ngram)) {
                 overlappingNGrams.add(new NGramTuple(chunkSize, ngram));
             }
         }

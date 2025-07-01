@@ -1,9 +1,9 @@
 package datawave.util.ssdeep;
 
-import com.google.common.collect.Multimap;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import com.google.common.collect.Multimap;
 
 /**
  * Implements scoring between a pair of hashes based on the number of ngrams they have in common. Returns a unique set of the overlapping ngrams as a result,
@@ -18,24 +18,21 @@ public class SSDeepNGramOverlapScorer implements SSDeepHashScorer<Set<NGramTuple
     }
 
     public Set<NGramTuple> apply(SSDeepHash signature1, SSDeepHash signature2) {
-        if(signature1.getChunkSize() == signature2.getChunkSize()) {
+        if (signature1.getChunkSize() == signature2.getChunkSize()) {
             Set<NGramTuple> ngrams = new HashSet<>();
 
             ngrams.addAll(generator.calculateOverlappingNGrams(signature1.getChunkSize(), signature1.getChunk(), signature2.getChunk()));
 
-            if(signature1.hasDoubleChunk() && signature2.hasDoubleChunk()) {
+            if (signature1.hasDoubleChunk() && signature2.hasDoubleChunk()) {
                 ngrams.addAll(generator.calculateOverlappingNGrams(signature1.getDoubleChunkSize(), signature1.getDoubleChunk(), signature2.getDoubleChunk()));
             }
 
             return ngrams;
-        }
-        else if(signature1.hasDoubleChunk() && (signature1.getDoubleChunkSize() == signature2.getChunkSize())) {
+        } else if (signature1.hasDoubleChunk() && (signature1.getDoubleChunkSize() == signature2.getChunkSize())) {
             return generator.calculateOverlappingNGrams(signature1.getDoubleChunkSize(), signature1.getDoubleChunk(), signature2.getChunk());
-        }
-        else if(signature2.hasDoubleChunk() && (signature1.getChunkSize() == signature2.getDoubleChunkSize())) {
+        } else if (signature2.hasDoubleChunk() && (signature1.getChunkSize() == signature2.getDoubleChunkSize())) {
             return generator.calculateOverlappingNGrams(signature1.getChunkSize(), signature1.getChunk(), signature2.getDoubleChunk());
-        }
-        else {
+        } else {
             return new HashSet<NGramTuple>();
         }
     }
