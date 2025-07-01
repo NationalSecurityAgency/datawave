@@ -29,8 +29,6 @@ public class DateFrequencyMap implements Map<String,Frequency>, Writable {
         BASIC, GZIP;
     }
 
-    public static final FORMAT DEFAULT_FORMAT = FORMAT.GZIP;
-
     private final TreeMap<String,Frequency> dateToFrequencies;
 
     public DateFrequencyMap() {
@@ -229,7 +227,7 @@ public class DateFrequencyMap implements Map<String,Frequency>, Writable {
                 WritableUtils.writeCompressedByteArray(dataOutput, output.toByteArray());
                 break;
             default:
-                throw new UnsupportedEncodingException("Unknown output format " + DEFAULT_FORMAT);
+                throw new UnsupportedEncodingException("Unknown output format " + format);
         }
     }
 

@@ -504,9 +504,9 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             try {
                 DateFrequencyMap entryMap = new DateFrequencyMap(value.get());
                 dateFrequencies.incrementAll(entryMap);
-            } catch (IOException e) {
+            } catch (IOException | IllegalArgumentException e) {
                 log.error("Ignoring bogus date frequency map for " + currentRow + ' ' + currentColumnFamily + ':' + currentDatatype + ' ' + currentVisibility
-                                + ' ' + currentTimestamp + " -> " + Arrays.toString(value.get()));
+                                + ' ' + currentTimestamp + " -> " + Arrays.toString(value.get()), e);
                 // So this can happen if somebody forgot to remove the SummingCombiner from the table before aggregated
                 // keys were inserted. The only option here is to ignore the key. Chances are this would have happened
                 // for the f, i, and ri entries at the same time so the results will be the overall counts will be
