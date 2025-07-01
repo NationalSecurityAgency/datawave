@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
@@ -11,6 +12,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
+import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.InvalidQueryTreeException;
@@ -21,13 +23,16 @@ import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.util.AllFieldMetadataHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.TypeMetadataHelper;
 import datawave.test.JexlNodeAssert;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -56,8 +61,8 @@ public class FindInvalidPreQueryModelTest {
 
     private static final int MAX_ATTEMPTS = 10_000;
     private static final Random RNG = new Random();
-    private static final List<String> CANON_FIELDS = Arrays.asList("A", "B", "C", "D");
-    private static final List<String> CANON_VALUES = Arrays.asList("pickle", "banana", "carrot", "apple", "durian");
+    private static final List<String> CANON_FIELDS = Arrays.asList("A", "B", "C", "D", "E", "F", "G");
+    private static final List<String> CANON_VALUES = Arrays.asList("pickle", "banana", "carrot", "apple", "durian", "pineapple", "lard");
 
     private final SimpleDateFormat filterFormat = new SimpleDateFormat("yyyyMMdd:HH:mm:ss:SSSZ");
     private final ASTValidator validator = new ASTValidator();
@@ -68,11 +73,12 @@ public class FindInvalidPreQueryModelTest {
     private MockDateIndexHelper dateIndexHelper;
     private ASTJexlScript queryTree;
     private ScannerFactory scannerFactory;
+    private AccumuloClient client;
     // utility class created to get around some exception finding composite terms
     class SethsMockMetadataHelper extends MockMetadataHelper {
 
-        public SethsMockMetadataHelper() {
-            super();
+        public SethsMockMetadataHelper(AllFieldMetadataHelper afmh) {
+            super(afmh);
         }
 
 
@@ -88,7 +94,16 @@ public class FindInvalidPreQueryModelTest {
         @Override
         public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
 
-            Multimap<String,String> indexedFields = HashMultimap.create();//this.allFieldMetadataHelper.loadReverseIndexedFields();
+
+            // Fields to datatypes for our MetadataHelper
+            Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
+            fieldsToDatatypes.put("A", "datatype1");
+            fieldsToDatatypes.put("B", "datatype2");
+            fieldsToDatatypes.put("C", "datatype3");
+            fieldsToDatatypes.put("D", "datatype4");
+            addFieldsToDatatypes(fieldsToDatatypes);
+
+            Multimap<String, String> indexedFields = this.allFieldMetadataHelper.loadReverseIndexedFields();
 
             Set<String> fields = new HashSet<>();
             if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
@@ -108,7 +123,17 @@ public class FindInvalidPreQueryModelTest {
     }
     @BeforeEach
     public void setUp() throws AccumuloSecurityException {
-        SethsMockMetadataHelper mockMetadataHelper = new SethsMockMetadataHelper();
+
+        client = new InMemoryAccumuloClient("seth", new InMemoryInstance("seth's cool client"));
+
+        final Set<Authorizations> allMetadataAuths = Collections.emptySet();
+        final HashSet<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations("ALL"));
+        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, client, TableName.METADATA, auths, false);
+        CompositeMetadataHelper cmh = new CompositeMetadataHelper(client, TableName.METADATA, auths);
+        AllFieldMetadataHelper afmh = new AllFieldMetadataHelper(tmh, cmh, client, TableName.METADATA, auths, allMetadataAuths);
+
+        SethsMockMetadataHelper mockMetadataHelper = new SethsMockMetadataHelper(afmh);
 
         planner = new DefaultQueryPlanner();
 
@@ -116,13 +141,12 @@ public class FindInvalidPreQueryModelTest {
 
         planner.setDateIndexHelper(new MockDateIndexHelper());
 
+
         config = new ShardQueryConfiguration();
-        config.setClient(new InMemoryAccumuloClient("seth", new InMemoryInstance("seth's cool client")));
+        config.setClient(client);
 
         HashSet<Authorizations> authorizationsHashSet = new HashSet<>();
         authorizationsHashSet.add(new Authorizations("ALL"));
-        authorizationsHashSet.add(new Authorizations("SOME"));
-        authorizationsHashSet.add(new Authorizations("JUST_A_FEW"));
 
         config.setAuthorizations(authorizationsHashSet);
         settings = new QueryImpl();

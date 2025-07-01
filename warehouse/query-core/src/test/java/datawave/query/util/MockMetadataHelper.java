@@ -72,6 +72,11 @@ public class MockMetadataHelper extends MetadataHelper {
                         Collections.emptySet());
     }
 
+    public MockMetadataHelper(AllFieldMetadataHelper afmd) {
+        super(afmd, Collections.emptySet(), getClient(), TableName.METADATA, Collections.emptySet(),
+                Collections.emptySet());
+    }
+
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
         final Set<Authorizations> allMetadataAuths = Collections.emptySet();
         final Set<Authorizations> auths = Collections.emptySet();
