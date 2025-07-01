@@ -3,8 +3,6 @@ package datawave.util.ssdeep;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.common.collect.Multimap;
-
 /**
  * Implements scoring between a pair of hashes based on the number of ngrams they have in common. Returns a unique set of the overlapping ngrams as a result,
  * the overlap score is calculated based on the size of this set.
