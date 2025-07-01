@@ -23,10 +23,10 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 @ConditionalOnClass({Undertow.class, UndertowServletWebServerFactory.class})
 public class UndertowServletWebServerCustomizer implements WebServerFactoryCustomizer<UndertowServletWebServerFactory> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     @Override
     public void customize(UndertowServletWebServerFactory factory) {
-        
+
         factory.addDeploymentInfoCustomizers(deploymentInfo -> {
             // Use the initial handler chain to set the request start time as early as possible in the call chain.
             // The ServletRequestContext won't be set on the exchange just yet, though, so we'll need to copy that
@@ -36,7 +36,7 @@ public class UndertowServletWebServerCustomizer implements WebServerFactoryCusto
                     Connectors.setRequestStartTime(httpServerExchange);
                 }
                 httpHandler.handleRequest(httpServerExchange);
-                
+
             });
             deploymentInfo.addInnerHandlerChainWrapper(httpHandler -> httpServerExchange -> {
                 ServletRequestContext ctx = httpServerExchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);

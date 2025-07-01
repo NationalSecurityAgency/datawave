@@ -52,10 +52,10 @@ public class OAuthOperationsV2 {
     private final JWTTokenHandler tokenHandler;
     private final CachedDatawaveUserService cachedDatawaveUserService;
     private final OAuthProperties oAuthProperties;
-    
+
     private Cache authCache;
     private Map<String,Long> authExpirationMap = new ConcurrentHashMap<>();
-    
+
     @Autowired
     public OAuthOperationsV2(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, OAuthProperties oAuthProperties,
                     CacheManager cacheManager) {
@@ -64,11 +64,11 @@ public class OAuthOperationsV2 {
         this.oAuthProperties = oAuthProperties;
         this.authCache = cacheManager.getCache("oauthAuthorizations");
     }
-    
+
     public void authorize(@AuthenticationPrincipal DatawaveUserDetails currentUser, HttpServletResponse response, @RequestParam String client_id,
                     @RequestParam String redirect_uri, @RequestParam String response_type, @RequestParam(required = false) String state)
                     throws IllegalArgumentException, IOException {
-        
+
         AuthorizedClient client = this.oAuthProperties.getAuthorizedClients().get(client_id);
         if (client == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "unauthorized_client (client_id not registered)");
@@ -89,11 +89,11 @@ public class OAuthOperationsV2 {
         }
         response.sendRedirect(builder.toString());
     }
-    
+
     public OAuthTokenResponse token(@AuthenticationPrincipal DatawaveUserDetails currentUser, HttpServletResponse response, @RequestParam String grant_type,
                     @RequestParam String client_id, @RequestParam String client_secret, @RequestParam(required = false) String code,
                     @RequestParam(required = false) String refresh_token, @RequestParam(required = false) String redirect_uri) throws IOException {
-        
+
         AuthorizedClient client = this.oAuthProperties.getAuthorizedClients().get(client_id);
         if (client == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "unauthorized_client (client_id not registered)");
@@ -103,7 +103,7 @@ public class OAuthOperationsV2 {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "unauthorized_client - (incorrect client_secret)");
             return null;
         }
-        
+
         Collection<SubjectIssuerDNPair> userDnsToLookupAndAdd = new LinkedHashSet<>();
         if (grant_type.equals(GRANT_AUTHORIZATION_CODE)) {
             if (StringUtils.isBlank(code)) {
@@ -177,14 +177,14 @@ public class OAuthOperationsV2 {
         String refreshToken = tokenHandler.createTokenFromUsers(name, usersForRefreshToken, JWTTokenHandler.REFRESH_TOKEN_CLAIM, refreshTokenExpire);
         return new OAuthTokenResponse(idToken, idToken, refreshToken, this.oAuthProperties.getIdTokenTtl(TimeUnit.SECONDS));
     }
-    
+
     /**
      * Returns the {@link DatawaveUserDetails} that represents the authenticated calling user.
      */
     public OAuthUserInfo user(@AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return new OAuthUserInfo(currentUser.getPrimaryUser());
     }
-    
+
     /**
      * Returns the {@link DatawaveUserDetails} that represents the authenticated calling user.
      */
@@ -193,21 +193,21 @@ public class OAuthOperationsV2 {
         currentUser.getProxiedUsers().forEach(u -> users.add(new OAuthUserInfo(u)));
         return users;
     }
-    
+
     private AuthorizationRequest getAuthorizationRequest(String code) {
         return this.authCache.get(code, AuthorizationRequest.class);
     }
-    
+
     private void putAuthorizationRequest(String code, AuthorizationRequest authRequest) {
         this.authCache.put(code, authRequest);
         this.authExpirationMap.put(code, (System.currentTimeMillis() + this.oAuthProperties.getAuthCodeTtl(TimeUnit.MILLISECONDS)));
     }
-    
+
     private void removeAuthorizationRequest(String code) {
         this.authCache.evict(code);
         this.authExpirationMap.remove(code);
     }
-    
+
     @Scheduled(fixedDelay = 1000)
     private void expireAuthRequests() {
         if (!authExpirationMap.isEmpty()) {

@@ -18,7 +18,7 @@ import org.springframework.core.type.ClassMetadata;
  * supported types and configuration classes.
  */
 public class CacheCondition extends SpringBootCondition {
-    
+
     @Override
     public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
         String sourceClass = "";
@@ -39,5 +39,5 @@ public class CacheCondition extends SpringBootCondition {
         } catch (BindException ex) {}
         return ConditionOutcome.noMatch(message.because("unknown cache type"));
     }
-    
+
 }

@@ -48,7 +48,7 @@ public class DocumentCountCardinality implements Function<Entry<Key,Document>,En
         if (prevDoc.size() > 0) {
             String dayOrShard = key.getRow().toString();
             if (FacetedSearchType.DAY_COUNT == type) {
-                dayOrShard = dayOrShard.substring(0, dayOrShard.indexOf("_"));
+                dayOrShard = dayOrShard.substring(0, dayOrShard.indexOf('_'));
             }
 
             FieldValueCardinality fvC = new FieldValueCardinality();

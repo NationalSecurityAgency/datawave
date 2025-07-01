@@ -13,13 +13,13 @@ import org.springframework.context.annotation.Scope;
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 public class DiscoveryQueryConfiguration {
-    
+
     @Bean
     @ConfigurationProperties("datawave.query.logic.logics.discovery-query")
     public ShardIndexQueryTableProperties discoveryQueryProperties() {
         return new ShardIndexQueryTableProperties();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<String> discoveryQueryRealmSuffixExclusionPatterns() {

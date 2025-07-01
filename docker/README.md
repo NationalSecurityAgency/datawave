@@ -9,7 +9,7 @@ out the [prereqs](#prereqs) at a minimum):
 ```shell
 # build docker images for datawave and all of the microservices
 # optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the maven repository
-mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
+mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 
 # bootstrap the services, and bring them up using docker compose
 cd docker
@@ -186,10 +186,10 @@ Build the Datawave Quickstart docker image using the following build command:
 
 ```
 # To build the quickstart docker image, and all of the microservice images, run this
-mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install -T1C
 
 # To build just the quickstart docker image, run this
-mvn -Pcompose -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install -T1C
 ```
 Note that the quickstart-docker property is set.  This property is a shortcut which activates the `docker` and `quickstart` profiles without activating the `docker` profile for the microservices.
 
@@ -201,10 +201,31 @@ This command also prevents the microservice services from building with `-DskipS
 If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
 your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
 
-If desired, you can start and test the wildfly deployment embedded in the Datawave Quickstart by running the following command:
+If desired, you can ensure wildfly is started when creating the containers via `docker compose up -d` by changing the datawave-bootstrap.sh argument `--accumulo` to `--web` for the quickstart service in the docker-compose.yml file:
+
 ```
-docker run -m 8g datawave/quickstart-compose datawave-bootstrap.sh --test
+services:
+  quickstart:
+    profiles:
+      - quickstart
+    # To run the wildfly webservice, change `--accumulo` to `--web`
+    command: ["datawave-bootstrap.sh", "--web"]
 ```
+
+Alternatively, you can start and test the wildfly deployment after creating the containers:
+
+```
+# Enter the docker-quickstart container shell.
+docker exec -ti docker-quickstart-1 bash
+
+# Start wildfly and test it.
+[root@e80487d9f063 datawave-quickstart]# datawaveWebStart && datawaveWebTest
+
+# Exit the docker container shell.
+[root@e80487d9f063 datawave-quickstart]# exit
+```
+
+To stop the wildfly deployment, repeat the steps above using the command `datawaveWebStop` instead of `datawaveWebStart  && datawaveWebTest`.
 
 #### Hybrid Datawave Quickstart Setup
 
@@ -249,7 +270,7 @@ datawaveWebStop
 If you haven't done so already, you can build the Datawave Microservice docker images using the following build command:
 
 ```
-mvn -Pcompose -Dservices -Dmicroservice-docker -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dservices -Dmicroservice-docker -Ddist -DskipTests -DskipITs clean install -T1C
 ```
 
 Note that the microservice-docker property is set.  This property is a shortcut which activates the `docker` profile for just the microservices.

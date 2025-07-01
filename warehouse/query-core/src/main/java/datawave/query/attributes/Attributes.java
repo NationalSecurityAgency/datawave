@@ -23,16 +23,18 @@ import com.esotericsoftware.kryo.io.Output;
 import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.util.cache.ClassCache;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4677957768640489928L;
     private static final Logger log = Logger.getLogger(Attributes.class);
     private Set<Attribute<? extends Comparable<?>>> attributes;
     private int _count = 0;
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
-    private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
+
+    private static final ClassCache classCache = new ClassCache();
 
     /**
      * Should sizes of documents be tracked
@@ -88,8 +90,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     }
 
     public void add(Attribute<? extends Comparable<?>> attr) {
-        if (!this.attributes.contains(attr)) {
-            this.attributes.add(attr);
+        boolean updated = this.attributes.add(attr);
+        if (updated) {
             this._count += attr.size();
             if (trackSizes) {
                 this._bytes += attr.sizeInBytes() + 24 + 24;
@@ -132,14 +134,14 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         int numAttrs = WritableUtils.readVInt(in);
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
-            String attrClassName = WritableUtils.readString(in);
-            Class<?> clz;
-
             // Get the name of the concrete Attribute
+
+            String attrClassName = WritableUtils.readString(in);
+            Class<?> clz = null;
             try {
-                clz = Class.forName(attrClassName);
+                clz = classCache.get(attrClassName);
             } catch (ClassNotFoundException e) {
-                throw new IOException(e);
+                throw new RuntimeException(e);
             }
 
             if (!Attribute.class.isAssignableFrom(clz)) {
@@ -285,8 +287,14 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         output.writeInt(this.attributes.size(), true);
 
         for (Attribute<? extends Comparable<?>> attr : this.attributes) {
-            // Write out the concrete Attribute class
-            output.writeString(attr.getClass().getName());
+
+            int index = DatawaveAttributeIndex.getAttributeIndex(attr.getClass().getTypeName());
+            output.writeInt(index, true);
+
+            if (index == 0) {
+                // Write out the concrete Attribute class, if not found in the index
+                output.writeString(attr.getClass().getName());
+            }
 
             // Defer to the concrete instance to write() itself
             attr.write(kryo, output);
@@ -301,30 +309,17 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
-            String attrClassName = input.readString();
-            Class<?> clz;
 
-            // Get the name of the concrete Attribute
-            try {
-                clz = Class.forName(attrClassName);
-            } catch (ClassNotFoundException e) {
-                log.error("could not find class for \"" + attrClassName + "\"");
-                throw new RuntimeException(e);
+            String clazzName;
+            int index = input.readInt(true);
+            if (index == 0) {
+                clazzName = input.readString();
+            } else {
+                clazzName = DatawaveAttributeIndex.getAttributeClassName(index);
             }
 
-            if (!Attribute.class.isAssignableFrom(clz)) {
-                throw new ClassCastException("Found class that was not an instance of Attribute");
-            }
-
-            // Get the Class for the name of the class of the concrete Attribute
-            Attribute<?> attr;
-            try {
-                attr = (Attribute<?>) clz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-
-            // Reload the attribute
+            // create the attribute and populate from the input
+            Attribute<?> attr = createAttributeFromClassName(clazzName);
             attr.read(kryo, input);
 
             // Add the attribute back to the Set
@@ -332,6 +327,36 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         }
 
         invalidateMetadata();
+    }
+
+    /**
+     * Create the attribute from the provided class name, using the class cache as appropriate
+     *
+     * @param clazzName
+     *            the class name
+     * @return the attribute
+     */
+    private Attribute<?> createAttributeFromClassName(String clazzName) {
+        Class<?> clz;
+        try {
+            // Get the Class for the name of the class of the concrete Attribute
+            clz = classCache.get(clazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        Attribute<?> attr;
+        if (Attribute.class.isAssignableFrom(clz)) {
+            // Get an instance of the concrete Attribute
+            try {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new ClassCastException("Found class that was not an instance of Attribute");
+        }
+        return attr;
     }
 
     /*

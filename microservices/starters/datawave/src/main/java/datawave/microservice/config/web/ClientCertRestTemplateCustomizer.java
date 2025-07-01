@@ -28,24 +28,24 @@ public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer 
     private final SSLContext sslContext;
     private final int maxConnectionsTotal;
     private final int maxConnectionsPerRoute;
-    
+
     @Autowired
     public ClientCertRestTemplateCustomizer(@Qualifier("outboundJDKSslContext") SSLContext sslContext, RestClientProperties restClientProperties) {
         this.sslContext = sslContext;
         this.maxConnectionsTotal = restClientProperties.getMaxConnectionsTotal();
         this.maxConnectionsPerRoute = restClientProperties.getMaxConnectionsPerRoute();
     }
-    
+
     @Override
     public void customize(RestTemplate restTemplate) {
         restTemplate.setRequestFactory(clientHttpRequestFactory());
     }
-    
+
     protected ClientHttpRequestFactory clientHttpRequestFactory() {
         HttpClient httpClient = customizeHttpClient(HttpClients.custom(), sslContext).build();
         return new HttpComponentsClientHttpRequestFactory(httpClient);
     }
-    
+
     protected HttpClientBuilder customizeHttpClient(HttpClientBuilder httpClientBuilder, SSLContext sslContext) {
         if (sslContext != null) {
             httpClientBuilder.setSSLContext(sslContext);

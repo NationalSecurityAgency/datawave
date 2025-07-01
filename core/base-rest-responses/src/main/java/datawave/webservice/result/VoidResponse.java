@@ -15,50 +15,50 @@ import io.protostuff.Schema;
 
 @XmlRootElement(name = "VoidResponse")
 public class VoidResponse extends BaseResponse implements Message<VoidResponse> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     public static Schema<VoidResponse> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<VoidResponse> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public String toString() {
         return "VoidResponse{} " + super.toString();
     }
-    
+
     @XmlTransient
     private static final Schema<VoidResponse> SCHEMA = new Schema<VoidResponse>() {
         // schema methods
-        
+
         public VoidResponse newMessage() {
             return new VoidResponse();
         }
-        
+
         public Class<VoidResponse> typeClass() {
             return VoidResponse.class;
         }
-        
+
         public String messageName() {
             return VoidResponse.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return VoidResponse.class.getName();
         }
-        
+
         public boolean isInitialized(VoidResponse message) {
             return true;
         }
-        
+
         public void writeTo(Output output, VoidResponse message) throws IOException {
             output.writeUInt64(1, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -66,7 +66,7 @@ public class VoidResponse extends BaseResponse implements Message<VoidResponse> 
                         output.writeString(2, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -74,10 +74,10 @@ public class VoidResponse extends BaseResponse implements Message<VoidResponse> 
                         output.writeObject(3, exception, QueryExceptionType.getSchema(), true);
                 }
             }
-            
+
             output.writeBool(4, message.getHasResults(), false);
         }
-        
+
         public void mergeFrom(Input input, VoidResponse message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
             int number;
@@ -105,7 +105,7 @@ public class VoidResponse extends BaseResponse implements Message<VoidResponse> 
             if (exceptions != null)
                 message.setExceptions(exceptions);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -120,12 +120,12 @@ public class VoidResponse extends BaseResponse implements Message<VoidResponse> 
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number;
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<>();
         {
             fieldMap.put("operationTimeMs", 1);

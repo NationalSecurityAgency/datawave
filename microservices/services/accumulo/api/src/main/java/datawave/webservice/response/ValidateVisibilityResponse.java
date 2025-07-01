@@ -17,17 +17,17 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ValidateVisibilityResponse extends BaseResponse {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "Visibilities")
     @XmlElement(name = "Visibility")
     List<Visibility> visibilityList = null;
-    
+
     public List<Visibility> getVisibilityList() {
         return visibilityList;
     }
-    
+
     public void setVisibilityList(List<Visibility> visibilityList) {
         this.visibilityList = visibilityList;
     }

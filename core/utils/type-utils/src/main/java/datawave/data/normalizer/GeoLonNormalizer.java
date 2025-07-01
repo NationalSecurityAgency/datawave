@@ -7,10 +7,10 @@ import datawave.data.normalizer.GeoNormalizer.ParseException;
 import datawave.data.type.util.NumericalEncoder;
 
 public class GeoLonNormalizer extends AbstractNormalizer<String> {
-    
+
     private static final long serialVersionUID = 2026515023484372154L;
     private static final Logger log = LoggerFactory.getLogger(GeoLonNormalizer.class);
-    
+
     public String normalize(String fieldValue) {
         double val;
         try {
@@ -27,20 +27,20 @@ public class GeoLonNormalizer extends AbstractNormalizer<String> {
             throw new IllegalArgumentException("Failed to normalize value as a GeoLon: " + fieldValue);
         }
     }
-    
+
     /**
      * We cannot support regex against numbers
      */
-    
+
     public String normalizeRegex(String fieldRegex) {
         throw new IllegalArgumentException("Cannot normalize a regex against a numeric field");
     }
-    
+
     @Override
     public String normalizeDelegateType(String delegateIn) {
         return normalize(delegateIn);
     }
-    
+
     @Override
     public String denormalize(String in) {
         if (NumericalEncoder.isPossiblyEncoded(in)) {
@@ -54,5 +54,5 @@ public class GeoLonNormalizer extends AbstractNormalizer<String> {
         }
         return in;
     }
-    
+
 }

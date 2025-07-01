@@ -32,29 +32,29 @@ import io.undertow.UndertowOptions;
 public class UndertowCustomizer implements WebServerFactoryCustomizer<UndertowServletWebServerFactory>, ApplicationContextAware {
     @Value("${undertow.enable.http2:true}")
     private boolean enableHttp2;
-    
+
     @Value("${undertow.thread.daemon:false}")
     private boolean useDaemonThreads;
-    
+
     private ApplicationContext applicationContext;
-    
+
     private ServerProperties serverProperties;
     private DatawaveServerProperties datawaveServerProperties;
-    
+
     @Override
     public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
-    
+
     @Override
     public void customize(UndertowServletWebServerFactory factory) {
         serverProperties = applicationContext.getBean(ServerProperties.class);
         datawaveServerProperties = applicationContext.getBean(DatawaveServerProperties.class);
-        
+
         Http2 http2 = new Http2();
         http2.setEnabled(enableHttp2);
         factory.setHttp2(http2);
-        
+
         // @formatter:off
         factory.addBuilderCustomizers(c -> {
             // Ensure that the request start time is set on the request by Undertow

@@ -84,6 +84,12 @@ public abstract class GroupingTest {
     @RunWith(Arquillian.class)
     public static class ShardRange extends GroupingTest {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected String getRange() {
             return "SHARD";
@@ -92,6 +98,12 @@ public abstract class GroupingTest {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends GroupingTest {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected String getRange() {

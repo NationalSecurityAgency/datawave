@@ -26,53 +26,58 @@ import datawave.webservice.result.BaseResponse;
 @XmlRootElement(name = "Model")
 @XmlAccessorType(XmlAccessType.NONE)
 public class Model extends BaseResponse implements Serializable, HtmlProvider {
-    
+
     private static final long serialVersionUID = 1L;
     private String jqueryUri;
     private String dataTablesUri;
+    private String systemName;
     private static final String TITLE = "Model Description", EMPTY = "";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[3, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
-    
-    public Model(String jqueryUri, String datatablesUri) {
+
+    public Model(String jqueryUri, String datatablesUri, String systemName) {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
-        
+        this.systemName = systemName;
     }
-    
+
+    public Model(String jqueryUri, String datatablesUri) {
+        this(jqueryUri, datatablesUri, "unknown");
+    }
+
     // Only used in ModelBeanTest now
     public Model() {};
-    
+
     @XmlAttribute(name = "name", required = true)
     private String name = null;
-    
+
     @XmlElementWrapper(name = "Mappings")
     @XmlElement(name = "Mapping")
     private TreeSet<FieldMapping> fields = new TreeSet<FieldMapping>();
-    
+
     public String getName() {
         return name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public TreeSet<FieldMapping> getFields() {
         return fields;
     }
-    
+
     public void setFields(TreeSet<FieldMapping> fields) {
         this.fields = fields;
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(name).append(fields).toHashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null)
@@ -84,12 +89,12 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         Model other = (Model) obj;
         return new EqualsBuilder().append(name, other.name).append(fields, other.fields).isEquals();
     }
-    
+
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("name", name).append("fields", fields).toString();
     }
-    
+
     /*
      * (non-Javadoc)
      *
@@ -99,7 +104,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     public String getTitle() {
         return TITLE;
     }
-    
+
     /*
      * (non-Javadoc)
      *
@@ -109,7 +114,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     public String getPageHeader() {
         return TITLE;
     }
-    
+
     /*
      * (non-Javadoc)
      *
@@ -122,7 +127,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         }
         return "";
     }
-    
+
     /*
      * (non-Javadoc)
      *
@@ -131,14 +136,14 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        
+        builder.append("<div id = \"system-name\"><p>Cluster: ").append(systemName).append("</p></div>");
         builder.append("<div>\n");
         builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
         builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
-        
+
         builder.append("<thead><tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th><th>Attributes</th></tr></thead>");
         builder.append("<tbody>");
-        
+
         // first gather the model fields that are deemed "lenient" (i.e. where the model field name has a lenient attribute)
         Multimap<String,String> modelFieldAttributes = HashMultimap.create();
         for (FieldMapping field : this.getFields()) {
@@ -146,7 +151,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
                 modelFieldAttributes.putAll(field.getModelFieldName(), field.getAttributes());
             }
         }
-        
+
         for (FieldMapping f : this.getFields()) {
             // don't include model field attributes
             if (f.isFieldMapping()) {
@@ -163,14 +168,14 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
                 builder.append("</tr>");
             }
         }
-        
+
         builder.append("</tbody>");
         builder.append("  </table>\n");
         builder.append("  <div class=\"dataTables_info\" id=\"myTable_info\" role=\"status\" aria-live=\"polite\"></div>\n");
         builder.append("</div>\n");
         builder.append("</div>");
-        
+
         return builder.toString();
     }
-    
+
 }

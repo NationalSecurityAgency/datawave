@@ -21,7 +21,7 @@ import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.Auditor;
 
 public class OozieJob extends MapReduceJob {
-    
+
     public static final String WORKFLOW = "workFlow";
     public static final String OOZIE_CLIENT = "oozie.client";
     public static final String JOB_TRACKER = "jobTracker";
@@ -29,55 +29,55 @@ public class OozieJob extends MapReduceJob {
     public static final String QUEUE_NAME = "queueName";
     public static final String OUTPUT_WF_ID = "outputWfId";
     public static final String OUT_DIR = "outDir";
-    
+
     protected Auditor.AuditType auditType = Auditor.AuditType.ACTIVE;
-    
+
     public OozieJob(MapReduceQueryProperties mapReduceQueryProperties) {
         super(mapReduceQueryProperties);
     }
-    
+
     @Override
     public String createId(DatawaveUserDetails currentUser) {
         return String.join("_", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), UUID.randomUUID().toString());
     }
-    
+
     @Override
     public void initializeConfiguration(QueryLogicFactory queryLogicFactory, AccumuloConnectionFactory accumuloConnectionFactory,
                     MapReduceQueryStatus mapReduceQueryStatus, Job job) throws Exception {
         throw new NotImplementedException();
     }
-    
+
     public void initializeOozieConfiguration(String jobId, Properties oozieProperties, MultiValueMap<String,String> queryParameters) throws Exception {
-        
+
         // set the configured job properties
         for (Map.Entry<String,String> entry : getMapReduceJobProperties().getJobConfigurationProperties().entrySet()) {
             oozieProperties.setProperty(entry.getKey(), entry.getValue());
         }
-        
+
         // set the user-defined job properties
         for (String key : queryParameters.keySet()) {
             oozieProperties.setProperty(key, queryParameters.getFirst(key));
         }
-        
+
         oozieProperties.setProperty(JOB_TRACKER, getMapReduceJobProperties().getJobTracker());
         oozieProperties.setProperty(NAME_NODE, getMapReduceJobProperties().getHdfsUri());
         oozieProperties.setProperty(QUEUE_NAME, getMapReduceJobProperties().getQueueName());
         oozieProperties.setProperty(OUTPUT_WF_ID, jobId);
-        
+
         _initializeOozieConfiguration(jobId, oozieProperties, queryParameters);
     }
-    
+
     @Override
     protected void _initializeConfiguration(QueryLogicFactory queryLogicFactory, AccumuloConnectionFactory accumuloConnectionFactory,
                     MapReduceQueryStatus mapReduceQueryStatus, Job job, Path jobDir) throws Exception {
         throw new NotImplementedException();
     }
-    
+
     // Subclasses will override this method
     protected void _initializeOozieConfiguration(String jobId, Properties oozieProperties, MultiValueMap<String,String> queryParameters) throws Exception {
-        
+
     }
-    
+
     public void validateWorkflowParameter(Properties oozieConf) {
         // Validate the required runtime parameters exist
         if (null != getMapReduceJobProperties().getRequiredRuntimeParameters() && !getMapReduceJobProperties().getRequiredRuntimeParameters().isEmpty()) {
@@ -87,7 +87,7 @@ public class OozieJob extends MapReduceJob {
                     throw new IllegalArgumentException("Required runtime parameter '" + parameter + "' must be set");
             }
         }
-        
+
         // Validate the required parameters exist
         if (null != getMapReduceJobProperties().getRequiredParameters() && !getMapReduceJobProperties().getRequiredParameters().isEmpty()) {
             // Loop over the required parameter names and make sure an entry exists in the queryParameters
@@ -96,21 +96,21 @@ public class OozieJob extends MapReduceJob {
                     throw new IllegalArgumentException("Required parameter '" + parameter + "' must be set");
             }
         }
-        
+
     }
-    
+
     public Auditor.AuditType getAuditType() {
         return auditType;
     }
-    
+
     public void setAuditType(Auditor.AuditType auditType) {
         this.auditType = auditType;
     }
-    
+
     public String getQuery(MultiValueMap<String,String> queryParameters) {
         return "";
     }
-    
+
     public List<String> getSelectors(MultiValueMap<String,String> queryParameters) {
         return new ArrayList<>();
     }

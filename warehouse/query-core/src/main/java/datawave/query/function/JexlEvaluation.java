@@ -5,6 +5,7 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.JexlArithmetic;
+import org.apache.commons.jexl3.JexlScript;
 import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -59,8 +60,10 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
         this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
 
+        JexlScript jexlScript = this.engine.createScript(this.query);
+
         // Evaluate the JexlContext against the Script
-        this.script = DatawaveJexlScript.create((Script) this.engine.createScript(this.query));
+        this.script = DatawaveJexlScript.create((Script) jexlScript);
     }
 
     public JexlArithmetic getArithmetic() {

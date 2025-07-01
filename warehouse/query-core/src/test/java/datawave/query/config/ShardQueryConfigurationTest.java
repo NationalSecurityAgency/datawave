@@ -37,6 +37,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
@@ -312,6 +313,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hitList", true);
         defaultValues.put("dateIndexTimeTravel", false);
         updatedValues.put("dateIndexTimeTravel", true);
+        defaultValues.put("dateIndexIterator", false);
+        updatedValues.put("dateIndexIterator", true);
         defaultValues.put("beginDateCap", -1L);
         updatedValues.put("beginDateCap", 1000L);
         defaultValues.put("failOutsideValidDateRange", true);
@@ -394,6 +397,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hdfsFileCompressionCodec", "sunny");
         defaultValues.put("zookeeperConfig", null);
         updatedValues.put("zookeeperConfig", "file://etc/zookeeper/conf");
+        defaultValues.put("localIvaratorCacheDirConfigs", Collections.emptyList());
+        updatedValues.put("localIvaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("file:///tmp/ivarators")));
         defaultValues.put("ivaratorCacheDirConfigs", Collections.emptyList());
         updatedValues.put("ivaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("hdfs://instance-a/ivarators")));
         defaultValues.put("ivaratorFstHdfsBaseURIs", null);
@@ -443,6 +448,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("indexOnlyFilterFunctionsEnabled", true);
         defaultValues.put("compositeFilterFunctionsEnabled", false);
         updatedValues.put("compositeFilterFunctionsEnabled", true);
+        defaultValues.put("disableIteratorUniqueFields", false);
+        updatedValues.put("disableIteratorUniqueFields", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
         defaultValues.put("uniqueCacheBufferSize", 100);
@@ -475,6 +482,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("summaryOptions", SummaryOptions.from(String.valueOf(SummaryOptions.DEFAULT_SIZE)));
         defaultValues.put("summaryIterator", ContentSummaryIterator.class);
         updatedValues.put("summaryIterator", ContentSummaryIterator.class);
+        defaultValues.put("summaryFieldName", null);
+        updatedValues.put("summaryFieldName", "SUMMARY");
         defaultValues.put("fiFieldSeek", -1);
         updatedValues.put("fiFieldSeek", 10);
         defaultValues.put("fiNextSeek", -1);
@@ -610,8 +619,12 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
         updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
 
-        defaultValues.put("shardsAndDaysHintAllowed", true);
-        updatedValues.put("shardsAndDaysHintAllowed", false);
+        defaultValues.put("useDocumentScheduler", false);
+        updatedValues.put("useDocumentScheduler", true);
+
+        DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
+        defaultValues.put("documentScannerConfig", null);
+        updatedValues.put("documentScannerConfig", documentScannerConfig);
     }
 
     private Query createQuery(String query) {

@@ -47,31 +47,31 @@ import datawave.webservice.dictionary.data.DescriptionBase;
 @Scope("prototype")
 public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
     private static final Logger log = LoggerFactory.getLogger(MetadataDescriptionsHelper.class);
-    
+
     private final MarkingFunctions markingFunctions;
     private final ResponseObjectFactory<DESC,?,?,?,?> responseObjectFactory;
-    
+
     private String metadataTableName;
     private AccumuloClient accumuloClient;
     private Set<Authorizations> fullUserAuths;
-    
+
     public MetadataDescriptionsHelper(MarkingFunctions markingFunctions, ResponseObjectFactory<DESC,?,?,?,?> responseObjectFactory) {
         this.markingFunctions = markingFunctions;
         this.responseObjectFactory = responseObjectFactory;
     }
-    
+
     public void initialize(AccumuloClient accumuloClient, String metadataTableName, Set<Authorizations> fullUserAuths) {
         this.accumuloClient = accumuloClient;
         this.metadataTableName = metadataTableName;
         this.fullUserAuths = fullUserAuths;
     }
-    
+
     public SetMultimap<MetadataEntry,DESC> getDescriptions(Set<String> ingestTypeFilter) throws TableNotFoundException, MarkingFunctions.Exception {
-        
+
         SetMultimap<MetadataEntry,DESC> descriptions = loadDescriptions();
-        
+
         SetMultimap<MetadataEntry,DESC> descs = HashMultimap.create();
-        
+
         if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
             descs.putAll(descriptions);
         } else {
@@ -81,43 +81,43 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
                 }
             }
         }
-        
+
         return descs;
     }
-    
+
     public SetMultimap<String,DESC> getFieldDescriptions(Set<String> ingestTypeFilter)
                     throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
         SetMultimap<MetadataEntry,DESC> descriptions = getDescriptions(ingestTypeFilter);
         SetMultimap<String,DESC> fieldDescriptions = HashMultimap.create();
-        
+
         for (MetadataEntry entry : descriptions.keySet()) {
             String fieldName = entry.getFieldName();
-            
+
             fieldDescriptions.putAll(fieldName, descriptions.get(entry));
         }
-        
+
         return fieldDescriptions;
     }
-    
+
     public SetMultimap<MetadataEntry,DESC> getDescriptions(String datatype) throws TableNotFoundException, MarkingFunctions.Exception {
         return getDescriptions(Collections.singleton(datatype));
     }
-    
+
     public Set<DESC> getDescriptions(String fieldname, String datatype) throws TableNotFoundException, MarkingFunctions.Exception {
         SetMultimap<MetadataEntry,DESC> descriptions = getDescriptions(datatype);
         MetadataEntry desired = new MetadataEntry(fieldname, datatype);
         if (descriptions.containsKey(desired)) {
             return descriptions.get(desired);
         }
-        
+
         return Collections.emptySet();
     }
-    
+
     public void setDescription(MetadataEntry entry, DescriptionBase desc)
                     throws TableNotFoundException, MutationsRejectedException, MarkingFunctions.Exception {
         setDescriptions(entry, Collections.singleton(desc));
     }
-    
+
     public void setDescriptions(MetadataEntry entry, Set<? extends DescriptionBase> descs)
                     throws TableNotFoundException, MutationsRejectedException, MarkingFunctions.Exception {
         BatchWriter bw = null;
@@ -135,15 +135,15 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
                 bw.close();
             }
         }
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Invalidating base table cache and metadata cache to add " + entry.getFieldName());
         }
     }
-    
+
     /**
      * Remove model descriptions
-     * 
+     *
      * @param entry
      *            metadata entry
      * @param desc
@@ -167,22 +167,22 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
                 bw.close();
             }
         }
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Invalidating base table cache and metadata cache to add " + entry.getFieldName());
         }
-        
+
     }
-    
+
     protected SetMultimap<MetadataEntry,DESC> loadDescriptions() throws TableNotFoundException, MarkingFunctions.Exception {
         if (log.isTraceEnabled())
             log.trace("loadDescriptions from table: " + metadataTableName);
         // unlike other entries, the desc colf entries have many auths set. We'll use the fullUserAuths in the scanner instead
         // of the minimal set in this.auths
         Scanner scanner = ScannerHelper.createScanner(accumuloClient, metadataTableName, fullUserAuths);
-        
+
         SetMultimap<MetadataEntry,DESC> descriptions = HashMultimap.create();
-        
+
         scanner.setRange(new Range());
         scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_DESC);
         for (Entry<Key,Value> entry : scanner) {
@@ -191,18 +191,18 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
             DESC desc = this.responseObjectFactory.getDescription();
             desc.setDescription(entry.getValue().toString());
             desc.setMarkings(getMarkings(entry.getKey()));
-            
+
             descriptions.put(mentry, desc);
         }
-        
+
         return Multimaps.unmodifiableSetMultimap(descriptions);
-        
+
     }
-    
+
     private Map<String,String> getMarkings(Key k) throws MarkingFunctions.Exception {
         return getMarkings(k.getColumnVisibilityParsed());
     }
-    
+
     private Map<String,String> getMarkings(ColumnVisibility visibility) throws MarkingFunctions.Exception {
         return markingFunctions.translateFromColumnVisibility(visibility);
     }

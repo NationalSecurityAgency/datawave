@@ -38,9 +38,9 @@ class UnescapedWildcardsInPhrasesRuleTest extends ShardQueryRuleTest {
     @Test
     void testQuotedPhraseWithUnescapedWildcard() throws Exception {
         givenQuery("FOO:\"*abc\" OR FOO:\"de*f\" OR FOO:\"efg*\"");
-        expectMessage("Unescaped wildcard found in phrase FOO:\"*abc\". Wildcard is incorrect, or phrase should be FOO:/*abc/");
-        expectMessage("Unescaped wildcard found in phrase FOO:\"de*f\". Wildcard is incorrect, or phrase should be FOO:/de*f/");
-        expectMessage("Unescaped wildcard found in phrase FOO:\"efg*\". Wildcard is incorrect, or phrase should be FOO:/efg*/");
+        expectMessage("Wildcard found in phrase FOO:\"*abc\". Wildcards are not allowed in phrases so it will be searched as a literal character.");
+        expectMessage("Wildcard found in phrase FOO:\"de*f\". Wildcards are not allowed in phrases so it will be searched as a literal character.");
+        expectMessage("Wildcard found in phrase FOO:\"efg*\". Wildcards are not allowed in phrases so it will be searched as a literal character.");
         assertResult();
     }
 
@@ -50,7 +50,7 @@ class UnescapedWildcardsInPhrasesRuleTest extends ShardQueryRuleTest {
     @Test
     void testUnfieldedQuotedPhraseWithUnescapedWildcard() throws Exception {
         givenQuery("\"*abc\"");
-        expectMessage("Unescaped wildcard found in phrase \"*abc\". Wildcard is incorrect, or phrase should be /*abc/");
+        expectMessage("Wildcard found in phrase \"*abc\". Wildcards are not allowed in phrases so it will be searched as a literal character.");
         assertResult();
     }
 

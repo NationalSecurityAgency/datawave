@@ -15,12 +15,12 @@ public class MapReduceLayoutFactory implements LayoutFactory {
             public String getLibraryLocation(String libraryName, LibraryScope scope) {
                 return "lib/";
             }
-            
+
             @Override
             public String getClassesLocation() {
                 return "classes/";
             }
-            
+
             @Override
             public String getRepackagedClassesLocation() {
                 return "classes/";

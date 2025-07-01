@@ -13,17 +13,17 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.Lists;
 
 public class TestAuditParameters {
-    
+
     private AuditParameters auditParameters = null;
     private Map<String,List<String>> paramsMap = null;
-    
+
     @BeforeEach
     public void setup() {
         this.auditParameters = new AuditParameters();
         this.paramsMap = new HashMap<>();
         resetParamsMap(this.paramsMap);
     }
-    
+
     private void resetParamsMap(Map<String,List<String>> paramsMap) {
         paramsMap.clear();
         paramsMap.put(AuditParameters.USER_DN, Lists.newArrayList("Last First Middle uid"));
@@ -32,12 +32,12 @@ public class TestAuditParameters {
         paramsMap.put(AuditParameters.QUERY_AUDIT_TYPE, Lists.newArrayList("PASSIVE"));
         paramsMap.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Lists.newArrayList("(AUTH1&AUTH2)"));
     }
-    
+
     @Test
     public void validateAuditParamsSuccess() {
         this.auditParameters.validate(this.paramsMap);
     }
-    
+
     @Test
     public void validateRequiredAuditParamMissing() {
         for (String p : this.auditParameters.getRequiredAuditParameters()) {
@@ -51,7 +51,7 @@ public class TestAuditParameters {
             }
         }
     }
-    
+
     @Test
     public void validateRequiredAuditParamDuplicated() {
         for (String p : this.auditParameters.getRequiredAuditParameters()) {
@@ -65,14 +65,14 @@ public class TestAuditParameters {
             }
         }
     }
-    
+
     @Test
     public void validateEmptyAuths() {
         this.paramsMap.remove(AuditParameters.QUERY_AUTHORIZATIONS);
         this.paramsMap.put(AuditParameters.QUERY_AUTHORIZATIONS, Lists.newArrayList(""));
         assertThrows(NullPointerException.class, () -> this.auditParameters.validate(this.paramsMap));
     }
-    
+
     @Test
     public void handlesSpacesInAuths() {
         this.paramsMap.remove(AuditParameters.QUERY_AUTHORIZATIONS);
@@ -80,7 +80,7 @@ public class TestAuditParameters {
         this.auditParameters.validate(this.paramsMap);
         assertEquals("AUTH1,AUTH2,AUTH3", this.auditParameters.getAuths());
     }
-    
+
     @Test
     public void handlesBlanksInAuths() {
         this.paramsMap.remove(AuditParameters.QUERY_AUTHORIZATIONS);

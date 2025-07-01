@@ -24,7 +24,7 @@ public class RabbitDiscoveryConfiguration {
     public RabbitDiscoveryInstanceProvider rabbitDiscoveryInstanceProvider(DiscoveryClient discoveryClient) {
         return new RabbitDiscoveryInstanceProvider(discoveryClient);
     }
-    
+
     @ConditionalOnProperty(value = "spring.rabbitmq.discovery.failFast")
     @ConditionalOnClass({Retryable.class, Aspect.class, AopAutoConfiguration.class})
     @Configuration
@@ -32,7 +32,7 @@ public class RabbitDiscoveryConfiguration {
     @Import(AopAutoConfiguration.class)
     @EnableConfigurationProperties(RetryProperties.class)
     protected static class RetryConfiguration {
-        
+
         @Bean
         @ConditionalOnMissingBean(name = "rabbitDiscoveryRetryInterceptor")
         public RetryOperationsInterceptor rabbitDiscoveryRetryInterceptor(RetryProperties properties) {

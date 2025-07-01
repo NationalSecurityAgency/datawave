@@ -380,7 +380,7 @@ public class AccumuloSyntaxParser implements SyntaxParser {
         if (boost != null) {
             float f = (float) 1.0;
             try {
-                f = Float.valueOf(boost.image).floatValue();
+                f = Float.parseFloat(boost.image);
                 // avoid boosting null queries, such as those caused by stop words
                 if (q != null) {
                     q = new BoostQueryNode(q, f);
@@ -467,7 +467,7 @@ public class AccumuloSyntaxParser implements SyntaxParser {
                 if (fuzzy) {
                     float fms = defaultMinSimilarity;
                     try {
-                        fms = Float.valueOf(fuzzySlop.image.substring(1)).floatValue();
+                        fms = Float.parseFloat(fuzzySlop.image.substring(1));
                     } catch (Exception ignored) {}
                     if (fms < 0.0f) {
                         {
@@ -592,7 +592,7 @@ public class AccumuloSyntaxParser implements SyntaxParser {
 
                 if (fuzzySlop != null) {
                     try {
-                        phraseSlop = Float.valueOf(fuzzySlop.image.substring(1)).intValue();
+                        phraseSlop = Integer.parseInt(fuzzySlop.image.substring(1));
                         q = new SlopQueryNode(q, phraseSlop);
                     } catch (Exception ignored) {
                         /*
@@ -609,7 +609,7 @@ public class AccumuloSyntaxParser implements SyntaxParser {
         if (boost != null) {
             float f = (float) 1.0;
             try {
-                f = Float.valueOf(boost.image).floatValue();
+                f = Float.parseFloat(boost.image);
                 // avoid boosting null queries, such as those caused by stop words
                 if (q != null) {
                     q = new BoostQueryNode(q, f);
@@ -747,7 +747,9 @@ public class AccumuloSyntaxParser implements SyntaxParser {
         throw generateParseException();
     }
 
-    static private final class LookaheadSuccess extends java.lang.Error {}
+    static private final class LookaheadSuccess extends java.lang.Error {
+        private static final long serialVersionUID = -4371149864858129526L;
+    }
 
     final private LookaheadSuccess jj_ls = new LookaheadSuccess();
 

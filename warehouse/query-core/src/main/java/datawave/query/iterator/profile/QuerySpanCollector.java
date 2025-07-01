@@ -22,7 +22,10 @@ public class QuerySpanCollector {
             synchronized (this) {
                 seekCount.addAndGet(querySpan.getSeekCount());
                 nextCount.addAndGet(querySpan.getNextCount());
-                yield.set(querySpan.getYield());
+                // if yield is set in any querySpan that reports to this collector, then yield should be true
+                if (querySpan.getYield()) {
+                    yield.set(true);
+                }
                 sourceCount.addAndGet(querySpan.getSourceCount());
                 Map<String,Long> timers = querySpan.getStageTimers();
                 for (Map.Entry<String,Long> entry : timers.entrySet()) {
@@ -42,18 +45,32 @@ public class QuerySpanCollector {
         }
     }
 
-    private QuerySpan combineQuerySpans() {
-
+    /**
+     * A snapshot of the current values.
+     *
+     * @param reset
+     *            - return a QuerySpan and reset the values in this object
+     * @return a QuerySpan with the current values of this object
+     */
+    private QuerySpan snapshot(boolean reset) {
         QuerySpan combinedQuerySpan = null;
         if (hasEntries()) {
             synchronized (this) {
                 combinedQuerySpan = new QuerySpan(null);
-                combinedQuerySpan.setNext(this.nextCount.getAndSet(0));
-                combinedQuerySpan.setSeek(this.seekCount.getAndSet(0));
-                combinedQuerySpan.setYield(this.yield.getAndSet(false));
-                combinedQuerySpan.setSourceCount(this.sourceCount.getAndSet(0));
-                combinedQuerySpan.setStageTimers(this.stageTimers);
-                this.stageTimers.clear();
+                if (reset) {
+                    combinedQuerySpan.setNext(this.nextCount.getAndSet(0));
+                    combinedQuerySpan.setSeek(this.seekCount.getAndSet(0));
+                    combinedQuerySpan.setYield(this.yield.getAndSet(false));
+                    combinedQuerySpan.setSourceCount(this.sourceCount.getAndSet(0));
+                    combinedQuerySpan.setStageTimers(this.stageTimers);
+                    this.stageTimers.clear();
+                } else {
+                    combinedQuerySpan.setNext(this.nextCount.get());
+                    combinedQuerySpan.setSeek(this.seekCount.get());
+                    combinedQuerySpan.setYield(this.yield.get());
+                    combinedQuerySpan.setSourceCount(this.sourceCount.get());
+                    combinedQuerySpan.setStageTimers(this.stageTimers);
+                }
             }
         }
         return combinedQuerySpan;
@@ -68,9 +85,9 @@ public class QuerySpanCollector {
         }
     }
 
-    public QuerySpan getCombinedQuerySpan(QuerySpan querySpan) {
+    public QuerySpan getCombinedQuerySpan(QuerySpan querySpan, boolean reset) {
 
-        QuerySpan combinedQuerySpan = null;
+        QuerySpan combinedQuerySpan;
         synchronized (this) {
             if (querySpan != null) {
                 addQuerySpan(querySpan);
@@ -78,7 +95,7 @@ public class QuerySpanCollector {
             if (log.isTraceEnabled()) {
                 logStack();
             }
-            combinedQuerySpan = combineQuerySpans();
+            combinedQuerySpan = snapshot(reset);
         }
         return combinedQuerySpan;
     }

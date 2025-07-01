@@ -67,7 +67,7 @@ public class WikipediaIngestHelper extends ExtendedContentIngestHelper implement
         try {
             WikipediaContentHandler handler = new WikipediaContentHandler(fields, ignoreFields);
             XMLReader parser = XMLReaderFactory.createXMLReader();
-            parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
+            parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             parser.setFeature("http://xml.org/sax/features/external-general-entities", false);
             parser.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             parser.setContentHandler(handler);

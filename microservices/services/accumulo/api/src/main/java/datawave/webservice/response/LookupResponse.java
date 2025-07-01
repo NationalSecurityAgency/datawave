@@ -17,17 +17,17 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class LookupResponse extends BaseResponse {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "Entries")
     @XmlElement(name = "Entry")
     private List<Entry> entries = null;
-    
+
     public List<Entry> getEntries() {
         return entries;
     }
-    
+
     public void setEntries(List<Entry> entries) {
         this.entries = entries;
     }

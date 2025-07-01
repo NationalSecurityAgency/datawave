@@ -29,7 +29,7 @@ public class BaseResponseAdvice implements ResponseBodyAdvice<BaseResponse> {
     public boolean supports(@NonNull MethodParameter returnType, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
         return BaseResponse.class.isAssignableFrom(returnType.getParameterType());
     }
-    
+
     @Override
     public BaseResponse beforeBodyWrite(BaseResponse baseResponse, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
                     @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType, @NonNull ServerHttpRequest serverHttpRequest,

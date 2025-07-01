@@ -15,30 +15,30 @@ import datawave.microservice.cached.LockableCacheInspector;
 @CacheConfig(cacheNames = ExecutorStatusCache.CACHE_NAME)
 public class ExecutorStatusCache extends LockableCache<ExecutorPoolStatus> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String CACHE_NAME = "ExecutorStatusCache";
-    
+
     public ExecutorStatusCache(LockableCacheInspector cacheInspector) {
         super(cacheInspector, CACHE_NAME);
     }
-    
+
     @Override
     @CachePut(key = "#poolName")
     public ExecutorPoolStatus update(String poolName, ExecutorPoolStatus executorPoolStatus) {
         log.debug("Updating executor pool status for pool: {}", executorPoolStatus.getPoolName());
         return executorPoolStatus;
     }
-    
+
     @CacheEvict(key = "#poolName")
     public void delete(String poolName) {
         log.debug("Deleting executor pool status for pool: {}", poolName);
     }
-    
+
     @CacheEvict(allEntries = true)
     public void evictAll() {
         log.debug("Evicting all executor pool status");
     }
-    
+
     @Override
     public ExecutorPoolStatus get(String poolName) {
         ExecutorPoolStatus poolStatus = null;
@@ -50,7 +50,7 @@ public class ExecutorStatusCache extends LockableCache<ExecutorPoolStatus> {
         }
         return poolStatus;
     }
-    
+
     public Map<String,ExecutorPoolStatus> getPoolStatusMap() {
         List<? extends ExecutorPoolStatus> executorPoolStatusList = cacheInspector.listAll(CACHE_NAME, ExecutorPoolStatus.class);
         Map<String,ExecutorPoolStatus> statusByPool = new LinkedHashMap<>();

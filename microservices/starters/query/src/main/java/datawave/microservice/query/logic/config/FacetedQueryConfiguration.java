@@ -18,16 +18,16 @@ import datawave.query.language.parser.QueryParser;
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 public class FacetedQueryConfiguration {
-    
+
     @Autowired
     private ApplicationContext appContext;
-    
+
     @Bean
     @ConfigurationProperties("datawave.query.logic.logics.faceted-query")
     public ShardQueryLogicProperties facetedQueryProperties() {
         return new ShardQueryLogicProperties();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,QueryParser> facetedQuerySyntaxParsers() {

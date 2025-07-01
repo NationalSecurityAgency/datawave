@@ -13,20 +13,20 @@ import org.junit.jupiter.api.Test;
 import datawave.microservice.querymetric.config.QueryMetricTransportType;
 
 public abstract class QueryMetricOperationsTest extends QueryMetricTestBase {
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
     }
-    
+
     @Test
     public void MetricStoredCorrectlyInCachesAndAccumulo() throws Exception {
-        
+
         String queryId = createQueryId();
         BaseQueryMetric m = createMetric(queryId);
         long created = m.getCreateDate().getTime();
@@ -45,10 +45,10 @@ public abstract class QueryMetricOperationsTest extends QueryMetricTestBase {
         metricAssertEquals("incomingQueryMetricsCache metric wrong", m, incomingQueryMetricsCache.get(queryId, QueryMetricUpdateHolder.class).getMetric());
         metricAssertEquals("accumulo metric wrong", m, shardTableQueryMetricHandler.getQueryMetric(queryId));
     }
-    
+
     @Test
     public void MultipleMetricsStoredCorrectlyInCachesAndAccumulo() throws Exception {
-        
+
         List<BaseQueryMetric> metrics = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             String id = createQueryId();
@@ -78,10 +78,10 @@ public abstract class QueryMetricOperationsTest extends QueryMetricTestBase {
             metricAssertEquals("incomingQueryMetricsCache metric wrong", m, incomingQueryMetricsCache.get(queryId, QueryMetricUpdateHolder.class).getMetric());
         });
     }
-    
+
     @Test
     public void MultipleMetricsAsListStoredCorrectlyInCachesAndAccumulo() throws Exception {
-        
+
         List<BaseQueryMetric> metrics = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             String id = createQueryId();

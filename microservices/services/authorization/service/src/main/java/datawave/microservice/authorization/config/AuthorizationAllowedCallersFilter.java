@@ -14,15 +14,15 @@ import datawave.microservice.config.security.AllowedCallersFilter;
 
 public class AuthorizationAllowedCallersFilter extends AllowedCallersFilter {
     private static final Pattern oauthPattern = Pattern.compile("/v\\d*/oauth/.*");
-    
+
     public AuthorizationAllowedCallersFilter(DatawaveSecurityProperties securityProperties, AuthenticationEntryPoint authenticationEntryPoint) {
         super(securityProperties, authenticationEntryPoint);
     }
-    
+
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain)
                     throws ServletException, IOException {
-        
+
         if (AuthorizationAllowedCallersFilter.enforceAllowedCallersForRequest(httpServletRequest)) {
             super.doFilterInternal(httpServletRequest, httpServletResponse, filterChain);
         } else {
@@ -30,7 +30,7 @@ public class AuthorizationAllowedCallersFilter extends AllowedCallersFilter {
             filterChain.doFilter(httpServletRequest, httpServletResponse);
         }
     }
-    
+
     public static boolean enforceAllowedCallersForRequest(HttpServletRequest httpServletRequest) {
         return !oauthPattern.matcher(httpServletRequest.getServletPath()).matches();
     }
