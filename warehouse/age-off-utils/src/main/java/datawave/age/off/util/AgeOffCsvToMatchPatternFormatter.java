@@ -22,7 +22,7 @@ public class AgeOffCsvToMatchPatternFormatter {
     private static final char EQUALS = '=';
     private static final char NEW_LINE = '\n';
     private static final char SPACE = ' ';
-    Pattern NUMBERS_ONLY_DURATION = Pattern.compile("\\d+");
+    private static final Pattern NUMBERS_ONLY_DURATION = Pattern.compile("\\d+");
     private final AgeOffCsvToMatchPatternFormatterConfiguration configuration;
     private AgeOffCsvColumnInformation columnInformation;
 
