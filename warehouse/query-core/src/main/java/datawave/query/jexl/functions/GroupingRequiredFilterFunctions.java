@@ -184,11 +184,11 @@ public class GroupingRequiredFilterFunctions {
             for (int i = 2; i < args.length; i += 2) {
 
                 if (args[i] instanceof Iterable) {
-                    for (Object fv : (Iterable) args[i]) {
-                        manageMatchesInGroupRemainingArgs(fv, args[i + 1].toString(), context, allMatches, currentMatch);
+                    for (Object fv : (Iterable<?>) args[i]) {
+                        manageMatchesInGroupRemainingArgs(fv, args[i + 1].toString(), context, allMatches, currentMatch, positionFromRight);
                     }
                 } else if (args[i] instanceof ValueTuple) {
-                    manageMatchesInGroupRemainingArgs(args[i], args[i + 1].toString(), context, allMatches, currentMatch);
+                    manageMatchesInGroupRemainingArgs(args[i], args[i + 1].toString(), context, allMatches, currentMatch, positionFromRight);
                 }
             }
         });
@@ -219,11 +219,13 @@ public class GroupingRequiredFilterFunctions {
      *            group of matches
      * @param currentMatch
      *            a current match
+     * @param positionFromRight
+     *            the number of groups used to calculate context
      */
     private static void manageMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
-                    ValueTuple currentMatch) {
+                    ValueTuple currentMatch, int positionFromRight) {
         String fieldName = ValueTuple.getFieldName(fieldValue);
-        String subgroup = getSubgroup(fieldName);
+        String subgroup = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(fieldName, positionFromRight);
         if (subgroup != null && subgroup.equals(context)) {
             // includeRegex will return either an emptyCollection, or a SingletonCollection containing
             // the first match that was found
@@ -290,11 +292,14 @@ public class GroupingRequiredFilterFunctions {
                     // look for a match on FREDO
                     for (Object fieldValue : (Iterable<?>) args[i]) {
                         String fieldName = ValueTuple.getFieldName(fieldValue);
+                        String nextRegex = args[i + 1].toString();
+                        String matchToLeftOfPeriod = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft);
                         // @formatter:off
                         manageMatchesInGroupLeftRemainingArgs(fieldValue,
-                                args[i + 1].toString(), // regex
-                                allMatches, theFirstMatch,
-                                EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft), // the next match
+                                nextRegex, // regex
+                                allMatches,
+                                theFirstMatch,
+                                matchToLeftOfPeriod, // the next match
                                 currentMatch);
                         // @formatter:on
                     }
