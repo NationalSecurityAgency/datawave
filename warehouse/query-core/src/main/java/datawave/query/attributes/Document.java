@@ -14,16 +14,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
@@ -48,6 +54,18 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
 
     private static final ClassCache classCache = new ClassCache();
+
+    //  @formatter:off
+    private static final LoadingCache<Text, Long> timestampCache = CacheBuilder.newBuilder()
+            .maximumSize(128)
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .build(new CacheLoader<>() {
+                @Override
+                public Long load(Text row) {
+                    return DateHelper.parseWithGMT(row.toString()).getTime();
+                }
+            });
+    //  @formatter:on
 
     private int _count = 0;
     long _bytes = 0;
@@ -163,8 +181,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
-            this.shardTimestamp = DateHelper.parseWithGMT(docKey.getRow().toString()).getTime();
-        } catch (DateTimeParseException e) {
+            this.shardTimestamp = timestampCache.get(docKey.getRow());
+        } catch (DateTimeParseException | ExecutionException e) {
             log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
             this.shardTimestamp = Long.MAX_VALUE;
@@ -780,7 +798,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
             output.writeString(entry.getKey());
 
             Attribute<?> attribute = entry.getValue();
-            output.writeString(attribute.getClass().getName());
+            int index = DatawaveAttributeIndex.getAttributeIndex(attribute.getClass().getTypeName());
+            output.writeInt(index, true);
+
+            if (index == 0) {
+                output.writeString(attribute.getClass().getName());
+            }
+
             attribute.write(kryo, output);
         }
 
@@ -801,30 +825,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
             // Get the fieldName
             String fieldName = input.readString();
 
-            // Get the class name for the concrete Attribute
-            String attrClassName = input.readString();
-            Class<?> clz;
-
-            // Get the Class for the name of the class of the concrete Attribute
-            try {
-                clz = classCache.get(attrClassName);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-
-            Attribute<?> attr;
-            if (Attribute.class.isAssignableFrom(clz)) {
-                // Get an instance of the concrete Attribute
-                try {
-                    attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                    throw new RuntimeException(e);
-                }
-
+            String clazzName;
+            int index = input.readInt(true);
+            if (index == 0) {
+                clazzName = input.readString();
             } else {
-                throw new ClassCastException("Found class that was not an instance of Attribute");
+                clazzName = DatawaveAttributeIndex.getAttributeClassName(index);
             }
-            // Reload the attribute
+
+            // create the attribute and populate from the input
+            Attribute<?> attr = createAttributeFromClassName(clazzName);
             attr.read(kryo, input);
 
             // Add the attribute back to the Map
@@ -834,6 +844,36 @@ public class Document extends AttributeBag<Document> implements Serializable {
         this.shardTimestamp = input.readLong();
 
         this.invalidateMetadata();
+    }
+
+    /**
+     * Create the attribute from the provided class name, using the class cache as appropriate
+     *
+     * @param clazzName
+     *            the class name
+     * @return the attribute
+     */
+    private Attribute<?> createAttributeFromClassName(String clazzName) {
+        Class<?> clz;
+        try {
+            // Get the Class for the name of the class of the concrete Attribute
+            clz = classCache.get(clazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        Attribute<?> attr;
+        if (Attribute.class.isAssignableFrom(clz)) {
+            // Get an instance of the concrete Attribute
+            try {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new ClassCastException("Found class that was not an instance of Attribute");
+        }
+        return attr;
     }
 
     @Override

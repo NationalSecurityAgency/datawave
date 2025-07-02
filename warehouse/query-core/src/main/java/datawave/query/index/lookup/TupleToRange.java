@@ -126,7 +126,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
             }
 
             if (log.isTraceEnabled()) {
-                log.trace(queryNode + " " + indexMatch.getNode());
+                log.trace(queryNode.toString() + " " + indexMatch.getNode());
             }
 
             if (log.isTraceEnabled() && null != indexMatch.getNode()) {

@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -758,59 +759,61 @@ public class JexlASTHelperTest {
     @Test
     public void testIdentifierDeconstructionWithGroupings() {
         // no prefix or grouping
-        testDeconstructionGroupingTrue("FIELD", "FIELD");
+        testDeconstructionGroupingTrue("FIELD", "FIELD", false);
 
         // has a simple grouping, does not have a prefix
-        testDeconstructionGroupingTrue("FIELD.1", "FIELD.1");
+        testDeconstructionGroupingTrue("FIELD.1", "FIELD.1", false);
 
         // has a complex grouping, does not have a prefix
-        testDeconstructionGroupingTrue("FIELD.1.2", "FIELD.1.2");
+        testDeconstructionGroupingTrue("FIELD.1.2", "FIELD.1.2", false);
 
         // has a prefix, does not have a grouping
-        testDeconstructionGroupingTrue("FIELD", "$FIELD");
+        testDeconstructionGroupingTrue("FIELD", "$FIELD", true);
 
         // has a prefix, has a simple grouping
-        testDeconstructionGroupingTrue("FIELD.1", "$FIELD.1");
+        testDeconstructionGroupingTrue("FIELD.1", "$FIELD.1", true);
 
         // has a prefix, has a complex grouping
-        testDeconstructionGroupingTrue("FIELD.1.2", "$FIELD.1.2");
+        testDeconstructionGroupingTrue("FIELD.1.2", "$FIELD.1.2", true);
 
         // empty string should return untouched
-        testDeconstructionGroupingTrue("", "");
+        testDeconstructionGroupingTrue("", "", false);
     }
 
     @Test
     public void testIdentifierDeconstructionWithoutGroupings() {
         // no prefix or grouping
-        testDeconstructionGroupingFalse("FIELD", "FIELD");
+        testDeconstructionGroupingFalse("FIELD", "FIELD", false);
 
         // has a simple grouping, does not have a prefix
-        testDeconstructionGroupingFalse("FIELD", "FIELD.1");
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1", true);
 
         // has a complex grouping, does not have a prefix
-        testDeconstructionGroupingFalse("FIELD", "FIELD.1.2");
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1.2", true);
 
         // has a prefix, does not have a grouping
-        testDeconstructionGroupingFalse("FIELD", "$FIELD");
+        testDeconstructionGroupingFalse("FIELD", "$FIELD", true);
 
         // has a prefix, has a simple grouping
-        testDeconstructionGroupingFalse("FIELD", "$FIELD.1");
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1", true);
 
         // has a prefix, has a complex grouping
-        testDeconstructionGroupingFalse("FIELD", "$FIELD.1.2");
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1.2", true);
 
         // empty string should remain untouched
-        testDeconstructionGroupingFalse("", "");
+        testDeconstructionGroupingFalse("", "", false);
     }
 
-    private void testDeconstructionGroupingTrue(String expected, String input) {
+    private void testDeconstructionGroupingTrue(String expected, String input, boolean expectNewObject) {
         String actual = JexlASTHelper.deconstructIdentifier(input, true);
         assertEquals(expected, actual);
+        assertEquals("Expected new object", expectNewObject, !Objects.equals(input, actual));
     }
 
-    private void testDeconstructionGroupingFalse(String expected, String input) {
+    private void testDeconstructionGroupingFalse(String expected, String input, boolean expectNewObject) {
         String actual = JexlASTHelper.deconstructIdentifier(input, false);
         assertEquals(expected, actual);
+        assertEquals("Expected a new object", expectNewObject, !Objects.equals(input, actual));
     }
 
     // Verify the nesting order between 'or' and 'and' in a Jexl query.
