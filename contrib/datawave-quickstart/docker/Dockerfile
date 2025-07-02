@@ -22,6 +22,19 @@ ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
 ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
 
+ENV DW_ACCUMULO_DIST_URI=$ACCUMULO_URL
+ENV DW_HADOOP_DIST_URI=$HADOOP_URL
+ENV DW_MAVEN_DIST_URI=$MAVEN_URL
+ENV DW_WILDFLY_DIST_URI=$WILDFLY_URL
+ENV DW_ZOOKEEPER_DIST_URI=$ZOOKEEPER_URL
+ENV DW_DATAWAVE_BUILD_PROFILE=$DATAWAVE_BUILD_PROFILE
+ENV DW_DATAWAVE_INGEST_TEST_DATA_SKIP=$DATAWAVE_INGEST_TEST_DATA_SKIP
+ENV DW_DATAWAVE_WEB_TEST_SKIP=$DATAWAVE_WEB_TEST_SKIP
+ENV DW_MAVEN_REPOSITORY=$DATAWAVE_MAVEN_REPO
+ENV DW_WGET_OPTS="-q --no-check-certificate"
+ENV JAVA_HOME=$DATAWAVE_JAVA_HOME
+ENV PATH=$JAVA_HOME/bin:$PATH
+
 # Bind services to all interfaces
 ENV DW_BIND_HOST=0.0.0.0
 
@@ -61,20 +74,7 @@ RUN git init && \
     git add . && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
-    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
-    echo "export DW_ACCUMULO_DIST_URI=\"$ACCUMULO_URL\"" >> ~/.bashrc && \
-    echo "export DW_HADOOP_DIST_URI=\"$HADOOP_URL\"" >> ~/.bashrc && \
-    echo "export DW_MAVEN_DIST_URI=\"$MAVEN_URL\"" >> ~/.bashrc && \
-    echo "export DW_WILDFLY_DIST_URI=\"$WILDFLY_URL\"" >> ~/.bashrc && \
-    echo "export DW_ZOOKEEPER_DIST_URI=\"$ZOOKEEPER_URL\"" >> ~/.bashrc && \
-    echo "export DW_DATAWAVE_BUILD_PROFILE=\"$DATAWAVE_BUILD_PROFILE\"" >> ~/.bashrc && \
-    echo "export DW_DATAWAVE_INGEST_TEST_DATA_SKIP=\"$DATAWAVE_INGEST_TEST_DATA_SKIP\"" >> ~/.bashrc && \
-    echo "export DW_DATAWAVE_WEB_TEST_SKIP=\"$DATAWAVE_WEB_TEST_SKIP\"" >> ~/.bashrc && \
-    echo "export DW_MAVEN_REPOSITORY=\"$DATAWAVE_MAVEN_REPO\"" >> ~/.bashrc && \
-    echo "export DW_WGET_OPTS=\"-q --no-check-certificate\"" >> ~/.bashrc && \
-    echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
-    echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
-    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
+    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
 
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
@@ -83,7 +83,7 @@ RUN git init && \
 # stopped gracefully, and any cruft is purged.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall && [ ${DW_DATAWAVE_WEB_TEST_SKIP} == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
+    /bin/bash -c "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh && allInstall && [ ${DW_DATAWAVE_WEB_TEST_SKIP} == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \
