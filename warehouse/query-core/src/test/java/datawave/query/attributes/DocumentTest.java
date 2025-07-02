@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
@@ -313,5 +316,41 @@ public class DocumentTest {
 
     protected Entry<Key,Document> deserialize(Entry<Key,Value> entry) {
         return deserializer.apply(entry);
+    }
+
+    @Test
+    public void testConsumeRawData() {
+        Set<Key> keys = Set.of(documentKey);
+
+        Value value = new Value();
+        List<Entry<Key,Value>> entries = new ArrayList<>();
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_A\0value-a"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_B\0value-b"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_C\0value-c"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_D\0value-d"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_E\0value-e"), value));
+
+        List<Key> documentKeys = createDocumentKeys();
+
+        int max = 1_000_000;
+        for (int i = 0; i < max; i++) {
+            Key randomDocumentKey = documentKeys.get(rand.nextInt(documentKeys.size()));
+            Document d = new Document(randomDocumentKey, keys, false, entries.iterator(), new TypeMetadata(), null, false, true, null, true, true);
+            assertEquals(6, d.size());
+        }
+    }
+
+    private List<Key> createDocumentKeys() {
+        List<Key> keys = new ArrayList<>();
+        keys.add(new Key("20250601", "datatype\0uid"));
+        keys.add(new Key("20250602", "datatype\0uid"));
+        keys.add(new Key("20250603", "datatype\0uid"));
+        keys.add(new Key("20250604", "datatype\0uid"));
+        keys.add(new Key("20250605", "datatype\0uid"));
+        keys.add(new Key("20250606", "datatype\0uid"));
+        keys.add(new Key("20250607", "datatype\0uid"));
+        keys.add(new Key("20250608", "datatype\0uid"));
+        keys.add(new Key("20250609", "datatype\0uid"));
+        return keys;
     }
 }
