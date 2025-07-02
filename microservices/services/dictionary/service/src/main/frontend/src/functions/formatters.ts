@@ -21,7 +21,7 @@ interface Record {
 *  Specifically, for the descriptions block, it checks to see if the value is undefined/null (doesn't have a description).
 *  Or if the description value has a length of 0 (if something was pulled incorrectly in the JSON).
 */
-export function parseVal(colName: string, colValue: any) : string {
+export function parseVal(colName: string, colValue: any, colDataTypeCount?: any) : string {
   if (colName === 'Types') {
     if (colValue == undefined) {
       return '';
@@ -45,6 +45,8 @@ export function parseVal(colName: string, colValue: any) : string {
     const description = firstEntry.decription || '';
 
     return `${marking} ${markingAccess} ${description}`;
+  } else if (colName === 'dataType' && /^[1-9]\d*\s+types?$/.test(colDataTypeCount)) {
+    return colDataTypeCount;
   } else {
     return colValue.toString();
   }
@@ -84,10 +86,6 @@ export function toggleVisibility(row: any) {
   row.toggleVisibility();
 }
 
-export function toggleCount(row: any) {
-  row.toggleCount();
-}
-
 // Set the Visibility in DOM, sorts and filters by lastUpdated, and the respective row to render button.
 export function setVisibility(rows: readonly any[]) {
   const fieldVisibility: Map<string, Ref<boolean>> = new Map<
@@ -122,11 +120,10 @@ export function setVisibility(rows: readonly any[]) {
       buttonValues.has(row.internalFieldName) &&
       row.lastUpdated == buttonValues.get(row.internalFieldName)
     ) {
-      row['duplicate'] = 0;
+      row['duplicate'] = 1;
       row['button'] = true;
 
-      row['dataTypeBAK'] = row.dataType;
-      row['dataType'] = countValues.get(row.internalFieldName) + ' types';
+      row['dataTypeCount'] = countValues.get(row.internalFieldName) + ' types';
     }
     // Checks to Render Collapsible Row - Refreshes on Search
     else if (
@@ -135,11 +132,15 @@ export function setVisibility(rows: readonly any[]) {
     ) {
       row['duplicate'] = 1;
       row['button'] = false;
+
+      row['dataTypeCount'] = 0 + ' types';
     }
     // Renders a Normal Row (No Button, not Collapsible)
     else {
       row['duplicate'] = 0;
       row['button'] = false;
+
+      row['dataTypeCount'] = 0 + ' types';
     }
 
     const internalFieldName = row.internalFieldName;
@@ -153,12 +154,6 @@ export function setVisibility(rows: readonly any[]) {
       visibility!.value = !visibility?.value;
     };
     row['isVisible'] = visibility;
-
-    row['toggleCount'] = () => {
-      const temp = row['dataType'];
-      row['dataType'] = row['dataTypeBAK'];
-      row['dataTypeBAK'] = temp;
-    };
   }
 
   return rows;
