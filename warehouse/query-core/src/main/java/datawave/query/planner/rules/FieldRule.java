@@ -18,7 +18,7 @@ public abstract class FieldRule {
         parseRules(config);
     }
 
-    abstract void parseRules(GenericQueryConfiguration config);
+    public abstract void parseRules(GenericQueryConfiguration config);
 
     public abstract boolean shouldPrune(JexlNode node, MetadataHelper helper);
 
