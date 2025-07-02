@@ -30,13 +30,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.DateNormalizer;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.util.StringUtils;
 
 /*
  The edge table may contain different versions of the edge key structure. In order to be able to generate the new keys
@@ -52,7 +52,7 @@ import datawave.util.StringUtils;
 
 public class EdgeKeyVersioningCache {
 
-    private static final Logger log = Logger.getLogger(EdgeKeyVersioningCache.class);
+    private static final Logger log = LoggerFactory.getLogger(EdgeKeyVersioningCache.class);
 
     public static final String METADATA_TABLE_NAME = "metadata.table.name";
     public static final String KEY_VERSION_CACHE_DIR = "datawave.ingest.key.version.cache.dir";
@@ -98,7 +98,7 @@ public class EdgeKeyVersioningCache {
      */
 
     public void updateCache(FileSystem fs) throws AccumuloSecurityException, AccumuloException, IOException, TableNotFoundException {
-        log.info("Reading the " + metadataTableName + " for edge key version ...");
+        log.info("Reading the {} for edge key version ...", metadataTableName);
         if (this.cbHelper == null) {
             this.cbHelper = new AccumuloHelper();
             this.cbHelper.setup(conf);
@@ -117,7 +117,7 @@ public class EdgeKeyVersioningCache {
                 for (Map.Entry<Key,Value> entry : scanner) {
                     String cq = entry.getKey().getColumnQualifier().toString();
 
-                    String parts[] = StringUtils.split(cq, '/');
+                    String parts[] = cq.split("/");
 
                     Integer versionNum = NumericalEncoder.decode(parts[0]).intValue();
 
@@ -134,7 +134,7 @@ public class EdgeKeyVersioningCache {
                  * "old" edge key from being created...that is, with EdgeKey.DATE_TYPE.OLD_EVENT (See ProtobufEdgeDataTypeHandler.writeEdges)
                  */
                 Date then = new Date(0);
-                log.warn("Could not find any edge key version entries in the " + metadataTableName + " table. Automatically seeding with date: " + then);
+                log.warn("Could not find any edge key version entries in the {} table. Automatically seeding with date: {}", metadataTableName, then);
                 String dateString = seedMetadataTable(client, then.getTime(), 1);
                 versionDates.put(1, dateString);
             }
@@ -165,11 +165,11 @@ public class EdgeKeyVersioningCache {
                     throw new IOException("Failed to rename temporary splits file");
                 }
             } catch (Exception e) {
-                log.warn("Unable to rename " + tmpVersionFile + " to " + this.versioningCache + " probably because somebody else replaced it", e);
+                log.warn("Unable to rename {} to {} probably because somebody else replaced it", tmpVersionFile, this.versioningCache, e);
                 try {
                     fs.delete(tmpVersionFile, false);
                 } catch (Exception e2) {
-                    log.error("Unable to clean up " + tmpVersionFile, e2);
+                    log.error("Unable to clean up {}", tmpVersionFile, e2);
                 }
             }
         } catch (Exception e) {
@@ -202,7 +202,7 @@ public class EdgeKeyVersioningCache {
         String line;
         Map<Integer,String> tmpVersions = new TreeMap<>();
         while ((line = in.readLine()) != null) {
-            String parts[] = StringUtils.split(line, '\t');
+            String parts[] = line.split("\t");
             tmpVersions.put(Integer.parseInt(parts[0]), parts[1]);
         }
         in.close();
@@ -247,11 +247,11 @@ public class EdgeKeyVersioningCache {
     private void ensureTableExists(AccumuloClient client) throws AccumuloSecurityException, AccumuloException {
         TableOperations tops = client.tableOperations();
         if (!tops.exists(metadataTableName)) {
-            log.info("Creating table: " + metadataTableName);
+            log.info("Creating table: {}", metadataTableName);
             try {
                 tops.create(metadataTableName);
             } catch (TableExistsException e) {
-                log.error(metadataTableName + " already exists someone got here first.");
+                log.error("{} already exists someone got here first.", metadataTableName);
             }
         }
     }

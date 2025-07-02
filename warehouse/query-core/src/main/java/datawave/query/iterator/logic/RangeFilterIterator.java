@@ -22,7 +22,6 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 
 /**

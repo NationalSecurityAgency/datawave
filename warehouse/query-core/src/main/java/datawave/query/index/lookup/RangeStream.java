@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,7 +32,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -69,6 +74,7 @@ import com.google.common.collect.Sets;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
+import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -97,7 +103,7 @@ import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 import datawave.query.util.TypeMetadata;
-import datawave.util.StringUtils;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -145,6 +151,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected boolean termCounts = false;
 
     protected Set<String> indexOnlyFields = Sets.newHashSet();
+
+    protected NumShardFinder numShardFinder;
 
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
@@ -199,7 +207,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
         // Guards against the case of a very oddly formed JEXL query, e.g. ("foo")
         if (null == ranges) {
-            this.context = StreamContext.UNINDEXED;
+            this.context = StreamContext.ABSENT;
             this.itr = Collections.emptyIterator();
         } else {
             // we can build the iterator at a later point, grabbing the top most
@@ -211,7 +219,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isDebugEnabled()) {
             log.debug("Query returned a stream with a context of " + this.context);
             if (queryStream != null) {
-                for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                for (String line : queryStream.getContextDebug().split("\n")) {
                     log.debug(line);
                 }
             }
@@ -241,22 +249,45 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                         queryStream = streams.iterator().next();
                     }
                 }
-                if (queryStream.context() == StreamContext.VARIABLE) {
-                    if (queryStream instanceof Union) {
-                        context = StreamContext.ABSENT;
-                        queryStream = null;
-                        itr = Collections.emptyIterator();
-                        return itr;
-                    } else {
-                        context = StreamContext.PRESENT;
+
+                if (queryStream instanceof Intersection) {
+                    switch (queryStream.context()) {
+                        case VARIABLE:
+                            // a union with a mix of executable and non-executable terms is still executable
+                            // touch up the context to reflect this
+                            this.context = StreamContext.PRESENT;
+                            break;
+                        case ABSENT:
+                        case DELAYED:
+                        case INITIALIZED:
+                        case NO_OP:
+                        case PRESENT:
+                        default:
+                            this.context = queryStream.context();
+                    }
+                } else if (queryStream instanceof Union) {
+                    switch (queryStream.context()) {
+                        case VARIABLE:
+                            // all terms in a top level union must be executable
+                            this.context = StreamContext.ABSENT;
+                            this.itr = Collections.emptyIterator();
+                            return itr;
+                        case ABSENT:
+                        case DELAYED:
+                        case INITIALIZED:
+                        case NO_OP:
+                        case PRESENT:
+                        default:
+                            this.context = queryStream.context();
                     }
                 } else {
+                    // use the delegate context
                     context = queryStream.context();
                 }
 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
-                    for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                    for (String line : queryStream.getContextDebug().split("\n")) {
                         log.debug(line);
                     }
                 }
@@ -393,7 +424,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.noOp(node);
 
         } else if (builder.size() == 0) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.noData(node);
         } else {
 
             Union union = builder.build(executor);
@@ -401,22 +432,14 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             switch (union.context()) {
                 case ABSENT:
                     return ScannerStream.noData(union.currentNode(), union);
-                case IGNORED:
-                    return ScannerStream.ignored(union.currentNode(), union);
-                case DELAYED_FIELD:
-                    return ScannerStream.delayedExpression(union.currentNode());
+                case DELAYED:
+                    return ScannerStream.delayed(union.currentNode());
                 case PRESENT:
                 case VARIABLE:
-                case EXCEEDED_TERM_THRESHOLD:
-                case EXCEEDED_VALUE_THRESHOLD:
                     return union;
-                case UNINDEXED:
-                    return ScannerStream.unindexed(union.currentNode(), union);
-                case UNKNOWN_FIELD:
                 case INITIALIZED:
-                    return ScannerStream.unknownField(union.currentNode(), union);
                 default:
-                    return ScannerStream.unknownField(node, union);
+                    throw new RuntimeException("unhandled scanner context");
             }
         }
     }
@@ -426,7 +449,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // if we have a term threshold marker, then we simply could not expand an _ANYFIELD_ identifier, so return EXCEEDED_THRESHOLD
         if (instance.isType(EXCEEDED_TERM)) {
-            return ScannerStream.exceededTermThreshold(node);
+            return ScannerStream.delayed(node);
         } else if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
             try {
                 // When we exceeded the expansion threshold for a regex, the field is an index-only field, and we can't
@@ -450,17 +473,31 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     log.debug("{\"" + JexlASTHelper.getLiterals(node) + "\"} requires a full field index scan.");
                 }
             }
-            JexlNode wrappedNode = JexlNodes.wrap(node);
-            return ScannerStream.exceededValueThreshold(createFullFieldIndexScanList(config, wrappedNode).iterator(), wrappedNode);
+
+            JexlNode wrapped = JexlNodes.wrap(node);
+            ShardSpecificIndexIterator iter = new ShardSpecificIndexIterator(wrapped, getNumShardFinder(), config.getBeginDate(), config.getEndDate());
+            return ScannerStream.withData(iter, wrapped);
+
         } else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
-            return ScannerStream.ignored(node);
+            return ScannerStream.delayed(node);
         } else if (instance.isType(DROPPED)) {
             return ScannerStream.noOp(node);
         } else if (instance.isType(INDEX_HOLE)) {
-            return ScannerStream.ignored(node);
+            return ScannerStream.delayed(node);
         } else if (instance.isType(BOUNDED_RANGE)) {
+            LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
+            if (range == null) {
+                throw new RuntimeException("BoundedRange was null");
+            }
+
+            if (isIndexed(range.getFieldName(), config.getIndexedFields())) {
+                JexlNode wrapped = JexlNodes.wrap(node);
+                ShardSpecificIndexIterator iter = new ShardSpecificIndexIterator(wrapped, getNumShardFinder(), config.getBeginDate(), config.getEndDate());
+                return ScannerStream.withData(iter, wrapped);
+            }
+
             // here we must have a bounded range that was not expanded, so it must not be expandable via the index
-            return ScannerStream.ignored(node);
+            return ScannerStream.delayed(node);
         } else {
             Intersection.Builder builder = Intersection.builder();
             builder.setUidIntersector(uidIntersector);
@@ -484,26 +521,20 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 return ScannerStream.noOp(node);
 
             } else if (builder.size() == 0) {
-                return ScannerStream.unindexed(node);
+                return ScannerStream.noData(node);
             } else {
                 Intersection build = builder.build(executor);
                 switch (build.context()) {
                     case ABSENT:
                         return ScannerStream.noData(build.currentNode(), build);
-                    case IGNORED:
-                        return ScannerStream.ignored(build.currentNode(), build);
-                    case EXCEEDED_TERM_THRESHOLD:
-                    case EXCEEDED_VALUE_THRESHOLD:
                     case PRESENT:
                     case VARIABLE:
+                    case DELAYED:
                         return build;
-                    case UNINDEXED:
-                        return ScannerStream.unindexed(build.currentNode(), build);
-                    case UNKNOWN_FIELD:
                     case INITIALIZED:
-                        return ScannerStream.unknownField(build.currentNode(), build);
                     default:
-                        return ScannerStream.unknownField(node, build);
+                        // if the intersection's context is still INITIALIZED after the initializer is run then something is very, very wrong
+                        throw new RuntimeException("unhandled stream context: " + build.context());
                 }
             }
         }
@@ -519,21 +550,21 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         // We are looking for identifier = literal
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op == null) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         final String fieldName = op.deconstructIdentifier();
 
         // Null literals cannot be resolved against the index.
         if (op.getLiteralValue() == null) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         // toString of String returns the String
         String literal = op.getLiteralValue().toString();
 
         if (QueryOptions.DEFAULT_DATATYPE_FIELDNAME.equals(fieldName)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         // Check if field is not indexed
@@ -541,14 +572,17 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             try {
                 if (this.getAllFieldsFromHelper().contains(fieldName)) {
                     log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not indexed.");
-                    return ScannerStream.unindexed(node);
+                    return ScannerStream.delayed(node);
                 }
             } catch (TableNotFoundException e) {
                 log.error(e);
                 throw new RuntimeException(e);
             }
             log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
-            return ScannerStream.unknownField(node);
+
+            // even though the field is not indexed it may still be valuable when evaluating an event. mark this scanner stream as delayed, so it is correctly
+            // propagated
+            return ScannerStream.delayed(node);
         }
 
         // Final case, field is indexed
@@ -630,12 +664,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isTraceEnabled()) {
             log.trace("building delayed expression for function");
         }
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -643,34 +677,34 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isTraceEnabled()) {
             log.trace("NOT FIELD " + JexlStringBuildingVisitor.buildQuery(node));
         }
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
     public Object visit(ASTERNode node, Object data) {
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op == null) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         final String fieldName = op.deconstructIdentifier();
 
         // HACK to make EVENT_DATATYPE queries work
         if (QueryOptions.DEFAULT_DATATYPE_FIELDNAME.equals(fieldName)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         if (isUnOrNotFielded(node)) {
-            return ScannerStream.noData(node);
+            return ScannerStream.delayed(node);
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         try {
             if (!this.getAllFieldsFromHelper().contains(fieldName)) {
-                return ScannerStream.unknownField(node);
+                return ScannerStream.delayed(node);
             }
         } catch (TableNotFoundException e) {
             log.error(e);
@@ -682,12 +716,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
     public Object visit(ASTTrueNode node, Object data) {
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -729,10 +763,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -742,10 +776,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -755,10 +789,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -768,10 +802,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     public Object descend(JexlNode node, Object data) {
@@ -808,14 +842,106 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         String identifier = JexlASTHelper.getIdentifier(node);
         if (Constants.SHARD_DAY_HINT.equals(identifier)) {
             JexlNode myNode = JexlNodeFactory.createExpression(node);
-            String[] shardsAndDays = StringUtils.split(JexlASTHelper.getLiteralValue(node).toString(), ',');
-            if (shardsAndDays.length > 0) {
-                return ScannerStream.withData(createIndexScanList(shardsAndDays).iterator(), myNode);
-            } else {
+            String[] shardsAndDays = JexlASTHelper.getLiteralValue(node).toString().split(",");
+
+            if (shardsAndDays.length == 0) {
                 return ScannerStream.noData(myNode);
             }
+
+            // it is important that we check for a day range. in that case we need to build a different iterator
+            // to preserve search parallelism.
+            boolean hintContainsDays = checkHintForDays(shardsAndDays);
+            if (hintContainsDays) {
+                // need to create special purpose iterator
+                HintToShardIterator shim = new HintToShardIterator(shardsAndDays, getNumShardFinder());
+                return ScannerStream.withData(shim, myNode);
+            }
+
+            return ScannerStream.withData(createIndexScanList(shardsAndDays).iterator(), myNode);
         }
         return null;
+    }
+
+    /**
+     * Checks an array of shard and day hints to see if it contains a day (i.e., no underscore)
+     *
+     * @param shardsAndDays
+     *            an array of shards and days hints
+     * @return true if a day hint is present
+     */
+    private boolean checkHintForDays(String[] shardsAndDays) {
+        for (String hint : shardsAndDays) {
+            if (!hint.contains("_")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected synchronized NumShardFinder getNumShardFinder() {
+        if (numShardFinder == null) {
+            numShardFinder = new NumShardFinder(config.getClient());
+        }
+        return numShardFinder;
+    }
+
+    /**
+     * Minimal code required to populate the num shards cache
+     */
+    public static class NumShardFinder {
+
+        protected final AccumuloClient client;
+        protected final TreeMap<String,Integer> cache = new TreeMap<>();
+
+        public NumShardFinder(AccumuloClient client) {
+            this.client = client;
+            // prepopulate the cache
+            populateCache();
+        }
+
+        public int getNumShards(String day) {
+            // this object could be called from multiple threads via the concurrent scanner initializer
+            // so synchronize for safety
+            synchronized (cache) {
+                Map.Entry<String,Integer> entry = cache.floorEntry(day);
+                if (entry != null) {
+                    return entry.getValue();
+                }
+                return 0;
+            }
+        }
+
+        private void populateCache() {
+            if (client == null) {
+                log.warn("no client configured, will not populate num shards");
+                return;
+            }
+            try (Scanner scanner = client.createScanner(TableName.METADATA)) {
+                scanner.setRange(Range.exact(NumShards.NUM_SHARDS, NumShards.NUM_SHARDS_CF));
+                int scannedKeys = 0;
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    // num_shards ns:date_shards
+                    // num_shards ns:20050207_17
+                    String cq = entry.getKey().getColumnQualifier().toString();
+                    if (!cq.contains("_")) {
+                        log.warn("invalid num_shards entry");
+                        continue;
+                    }
+
+                    scannedKeys++;
+                    String[] parts = cq.split("_");
+                    cache.put(parts[0], Integer.parseInt(parts[1]));
+                }
+
+                if (scannedKeys == 0) {
+                    log.fatal("no entries in num_shards cache");
+                }
+            } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+                // an exception here shouldn't kill the query
+                log.warn("exception thrown while trying to scan num shards cache: " + e.getMessage());
+            }
+        }
+
     }
 
     public Range rangeForTerm(String term, String field, ShardQueryConfiguration config) {
@@ -857,6 +983,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      *            a JexlNode
      * @return The list of index info ranges
      */
+    @Deprecated(forRemoval = true)
     public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
 

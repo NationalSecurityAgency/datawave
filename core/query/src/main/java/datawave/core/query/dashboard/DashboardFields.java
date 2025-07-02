@@ -4,14 +4,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 
 public final class DashboardFields {
 
-    private static final Logger log = Logger.getLogger(DashboardFields.class);
+    private static final Logger log = LoggerFactory.getLogger(DashboardFields.class);
     private static final String NUM_RESULTS = "NUM_RESULTS";
     private static final String ERROR_MESSAGE = "ERROR_MESSAGE";
     private static final String CREATE_CALL_TIME = "CREATE_CALL_TIME";
@@ -51,7 +52,7 @@ public final class DashboardFields {
                         try {
                             pageReturnTime = Long.parseLong(strArray.get(1));
                         } catch (NumberFormatException ex) {
-                            log.warn(ex);
+                            log.warn("", ex);
                         }
                     }
                     break;
@@ -59,7 +60,7 @@ public final class DashboardFields {
                     try {
                         createCallTime = Long.parseLong(f.getValueString());
                     } catch (NumberFormatException ex) {
-                        log.warn(ex);
+                        log.warn("NumberFormatException:", ex);
                         return;
                     }
                     break;
@@ -67,7 +68,7 @@ public final class DashboardFields {
                     try {
                         setupTime = Long.parseLong(f.getValueString());
                     } catch (NumberFormatException ex) {
-                        log.warn(ex);
+                        log.warn("NumberFormatException:", ex);
                         return;
                     }
                     break;
@@ -78,7 +79,7 @@ public final class DashboardFields {
                     try {
                         results = Integer.parseInt(f.getValueString());
                     } catch (NumberFormatException ex) {
-                        log.warn(ex);
+                        log.warn("NumberFormatException:", ex);
                         return;
                     }
                     break;

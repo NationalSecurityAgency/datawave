@@ -14,7 +14,6 @@ import org.apache.log4j.Logger;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
-import datawave.util.StringUtils;
 
 public class ContentKeyValueFactory {
 
@@ -31,7 +30,7 @@ public class ContentKeyValueFactory {
 
         c.setShardId(key.getRow().toString());
 
-        String[] field = StringUtils.split(key.getColumnQualifier().toString(), Constants.NULL_BYTE_STRING);
+        String[] field = key.getColumnQualifier().toString().split(Constants.NULL_BYTE_STRING);
         if (field.length > 0)
             c.setDatatype(field[0]);
         if (field.length > 1)
@@ -45,25 +44,29 @@ public class ContentKeyValueFactory {
              * We are storing 'documents' in this column gzip'd and base64 encoded. Base64.decode detects and handles compression.
              */
             byte[] contents = value.get();
-            try {
-                contents = decompress(Base64.getMimeDecoder().decode(contents));
-            } catch (IOException e) {
-                log.error("Error decompressing Base64 encoded GZIPInputStream", e);
-            } catch (Exception e) {
-                // Thrown when data is not Base64 encoded. Try GZIP
-                try {
-                    contents = decompress(contents);
-                } catch (IOException ioe) {
-                    log.error("Error decompressing GZIPInputStream", e);
-                }
-            }
-
+            contents = decodeAndDecompressContent(contents);
             c.setContents(contents);
         }
 
         EventKeyValueFactory.parseColumnVisibility(c, key, auths, markingFunctions);
 
         return c;
+    }
+
+    public static byte[] decodeAndDecompressContent(byte[] contents) {
+        try {
+            contents = decompress(Base64.getMimeDecoder().decode(contents));
+        } catch (IOException e) {
+            log.error("Error decompressing Base64 encoded GZIPInputStream", e);
+        } catch (Exception e) {
+            // Thrown when data is not Base64 encoded. Try GZIP
+            try {
+                contents = decompress(contents);
+            } catch (IOException ioe) {
+                log.error("Error decompressing GZIPInputStream", e);
+            }
+        }
+        return contents;
     }
 
     private static boolean isCompressed(byte[] compressed) {

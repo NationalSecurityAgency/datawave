@@ -17,6 +17,7 @@ import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
@@ -38,6 +39,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         generic.addIndexField(CityField.COUNTRY.name());
         generic.addIndexOnlyField(CityField.STATE.name());
 
+        CityDataManager.newInstance();
         accumuloSetup.setData(FileType.CSV, new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
         client = accumuloSetup.loadTables(log);
     }

@@ -3,7 +3,6 @@ package datawave.query.predicate;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Collections;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;

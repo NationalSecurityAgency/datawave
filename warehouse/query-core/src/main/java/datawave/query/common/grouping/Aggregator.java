@@ -1,7 +1,6 @@
 package datawave.query.common.grouping;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.security.ColumnVisibility;

@@ -20,9 +20,19 @@ import datawave.query.testframework.GroupsDataType.GroupField;
 public class GroupsDataManager extends AbstractDataManager {
 
     private static final Logger log = Logger.getLogger(GroupsDataManager.class);
+    private static GroupsDataManager INSTANCE = new GroupsDataManager();
 
-    public GroupsDataManager() {
+    private GroupsDataManager() {
         super(GroupField.EVENT_ID.name(), GroupField.START_DATE.name(), GroupField.getMetadata());
+    }
+
+    public static GroupsDataManager getInstance() {
+        return INSTANCE;
+    }
+
+    public static synchronized GroupsDataManager newInstance() {
+        INSTANCE = new GroupsDataManager();
+        return INSTANCE;
     }
 
     @Override

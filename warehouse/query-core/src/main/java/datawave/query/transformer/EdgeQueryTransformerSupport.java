@@ -213,7 +213,7 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         }
         if (columnValues.containsKey(fields.getCountsFieldName())) {
             String countStr = columnValues.get(fields.getCountsFieldName());
-            String[] countSplit = StringUtils.split(countStr, '\0');
+            String[] countSplit = countStr.split("\0");
             List<Long> countListAsLongs = new ArrayList<>();
             for (String s : countSplit) {
                 countListAsLongs.add(Long.valueOf(s));

@@ -3,7 +3,6 @@ package datawave.query.index.lookup;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -17,7 +16,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
@@ -137,13 +135,13 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 if (!ignore)
                     for (String uid : uidInfo.third()) {
                         if (log.isTraceEnabled())
-                            log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1]);
+                            log.trace("Adding uid " + uid.split("\u0000")[1]);
                         uids.add(uid);
                     }
                 src.next();
             }
             if (ignore) {
-                tv = new IndexInfo(count);
+                tv = new IndexInfo(count > 0 ? count : -1);
             } else {
                 if (parseTldUids) {
                     // For each uid in the list of uids, parse out the tld portion from the whole uid.

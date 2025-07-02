@@ -12,112 +12,175 @@ import datawave.query.statsd.QueryStatsDClient;
  */
 public class MultiThreadedQuerySpan extends QuerySpan {
 
-    private ThreadLocal<QuerySpan> threadLocalQuerySpan = new ThreadLocal<>();
+    private ThreadLocal<QuerySpan> threadLocalQuerySpan = ThreadLocal.withInitial(() -> new QuerySpan(client));
 
-    public QuerySpan getThreadSpecificQuerySpan() {
-        QuerySpan querySpan = threadLocalQuerySpan.get();
-        if (querySpan == null) {
-            querySpan = new QuerySpan(client);
-            threadLocalQuerySpan.set(querySpan);
-        }
-        return querySpan;
-    }
+    private QuerySpanCollector querySpanCollector;
 
-    public MultiThreadedQuerySpan(QueryStatsDClient client) {
+    public MultiThreadedQuerySpan(QuerySpanCollector querySpanCollector, QueryStatsDClient client) {
         super(client);
+        this.querySpanCollector = querySpanCollector;
     }
 
     @Override
     public QuerySpan createSource() {
-        QuerySpan newSpan = new MultiThreadedQuerySpan(client);
-        getThreadSpecificQuerySpan().addSource(newSpan);
-        return newSpan;
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            QuerySpan newSpan = new MultiThreadedQuerySpan(querySpanCollector, client);
+            querySpan.addSource(newSpan);
+            return newSpan;
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public long getSourceCount() {
-        return getThreadSpecificQuerySpan().getSourceCount();
+        return threadLocalQuerySpan.get().getSourceCount();
     }
 
     public long getNextCount() {
-        return getThreadSpecificQuerySpan().getNextCount();
+        return threadLocalQuerySpan.get().getNextCount();
     }
 
     public long getSeekCount() {
-        return getThreadSpecificQuerySpan().getSeekCount();
+        return threadLocalQuerySpan.get().getSeekCount();
     }
 
     public boolean getYield() {
-        return getThreadSpecificQuerySpan().getYield();
+        return threadLocalQuerySpan.get().getYield();
     }
 
     @Override
     public synchronized void next() {
-        getThreadSpecificQuerySpan().next();
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.next();
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public synchronized void seek() {
-        getThreadSpecificQuerySpan().seek();
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.seek();
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public synchronized void yield() {
-        getThreadSpecificQuerySpan().yield();
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.yield();
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public void reset() {
-        super.reset();
-        getThreadSpecificQuerySpan().reset();
+        threadLocalQuerySpan.get().reset();
     }
 
     @Override
     public void addStageTimer(Stage stageName, long elapsed) {
-        getThreadSpecificQuerySpan().addStageTimer(stageName, elapsed);
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.addStageTimer(stageName, elapsed);
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public Long getStageTimer(String stageName) {
-        return getThreadSpecificQuerySpan().getStageTimer(stageName);
+        return threadLocalQuerySpan.get().getStageTimer(stageName);
     }
 
     @Override
     public Map<String,Long> getStageTimers() {
-        return getThreadSpecificQuerySpan().getStageTimers();
+        return threadLocalQuerySpan.get().getStageTimers();
     }
 
     @Override
     public long getStageTimerTotal() {
-        return getThreadSpecificQuerySpan().getStageTimerTotal();
+        return threadLocalQuerySpan.get().getStageTimerTotal();
     }
 
     @Override
     public void setSeek(long seek) {
-        getThreadSpecificQuerySpan().setSeek(seek);
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.setSeek(seek);
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public void setNext(long next) {
-        getThreadSpecificQuerySpan().setNext(next);
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.setNext(next);
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public void setYield(boolean yield) {
-        getThreadSpecificQuerySpan().setYield(yield);
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.setYield(yield);
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public void setSourceCount(long sourceCount) {
-        getThreadSpecificQuerySpan().setSourceCount(sourceCount);
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.setSourceCount(sourceCount);
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     @Override
     public void setStageTimers(Map<String,Long> stageTimers) {
-        getThreadSpecificQuerySpan().setStageTimers(stageTimers);
+        QuerySpan querySpan = threadLocalQuerySpan.get();
+        try {
+            querySpan.setStageTimers(stageTimers);
+        } finally {
+            if (querySpanCollector != null) {
+                querySpanCollector.addQuerySpan(querySpan);
+            }
+        }
     }
 
     public String toString() {
-        return getThreadSpecificQuerySpan().toString();
+        return threadLocalQuerySpan.get().toString();
     }
 }
