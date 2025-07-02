@@ -12,7 +12,7 @@ import com.google.common.collect.Iterables;
  */
 public class IpV4Address extends IpAddress {
     private static final long serialVersionUID = -3258500702340145500L;
-    private byte[] ipaddress = new byte[4];
+    private final byte[] ipaddress = new byte[4];
     private int wildcardLoc = -1;
     private int numOctets = 4;
 
@@ -96,6 +96,7 @@ public class IpV4Address extends IpAddress {
      * Parse an address assume the specified radix
      *
      * @param address
+     *            the address
      * @param radix
      *            The radix (e.g. 10 for decimal, 16 for hexidecimal, ...). 0 means that Number.decode() will be used
      * @param dotted
@@ -172,8 +173,9 @@ public class IpV4Address extends IpAddress {
      * Parse an address assume the specified radix. It attempts first as a dotted notation, then as a single number
      *
      * @param address
+     *            the address
      * @param radix
-     *            10 for decimal, 8 for octal, 16 for hexidecimal, 0 to use Number.decode
+     *            10 for decimal, 8 for octal, 16 for hexadecimal, 0 to use Number.decode
      * @return An IpV4Address
      * @throws IllegalArgumentException
      *             if the radix is not 0, 10, 8, 16, or the address cannot be parsed
@@ -192,6 +194,7 @@ public class IpV4Address extends IpAddress {
      * Parse an address. It attempts first as radix 10, then as radix 16, then as radix 8, then as radix 0
      *
      * @param address
+     *            the address
      * @return An IpV4Address
      * @throws IllegalArgumentException
      *             if it cannot be parsed
@@ -216,6 +219,7 @@ public class IpV4Address extends IpAddress {
      * Parse an address. It attempts first as radix 10, then as radix 16, then as radix 8, then as radix 0
      *
      * @param address
+     *            the address
      * @return An IpV4Address
      * @throws IllegalArgumentException
      *             if it cannot be parsed

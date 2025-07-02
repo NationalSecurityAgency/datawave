@@ -37,6 +37,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
@@ -312,6 +313,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hitList", true);
         defaultValues.put("dateIndexTimeTravel", false);
         updatedValues.put("dateIndexTimeTravel", true);
+        defaultValues.put("dateIndexIterator", false);
+        updatedValues.put("dateIndexIterator", true);
         defaultValues.put("beginDateCap", -1L);
         updatedValues.put("beginDateCap", 1000L);
         defaultValues.put("failOutsideValidDateRange", true);
@@ -615,6 +618,13 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
         updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
+
+        defaultValues.put("useDocumentScheduler", false);
+        updatedValues.put("useDocumentScheduler", true);
+
+        DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
+        defaultValues.put("documentScannerConfig", null);
+        updatedValues.put("documentScannerConfig", documentScannerConfig);
     }
 
     private Query createQuery(String query) {

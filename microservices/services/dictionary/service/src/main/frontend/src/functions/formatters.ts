@@ -1,16 +1,52 @@
-/* eslint-disable no-var */
 import { Ref, WritableComputedRef, computed, defineComponent, ref } from 'vue';
 
-// Parses a Value to remove uncessessary 'undefined' or empty values.
-export function parseVal(colName: any, colValue: any): string {
-  if (colName === 'Types' || colName === 'Descriptions') {
+interface Entry {
+  key: string;
+  value: string;
+}
+
+interface Markings {
+  entry: Entry[];
+}
+
+interface Record {
+  decription: string;
+  markings: Markings;
+}
+
+/*
+*  Parses a Value to remove uncessessary 'undefined' or empty values and filters Description, here is how it works:
+*  In this function, colValue can either be a populated array, an array that is null, or a string.
+*  In the Descriptions and Types column, the value here will always be an array. Every other column is a string (hence 'any' type)
+*  Specifically, for the descriptions block, it checks to see if the value is undefined/null (doesn't have a description).
+*  Or if the description value has a length of 0 (if something was pulled incorrectly in the JSON).
+*/
+export function parseVal(colName: string, colValue: any) : string {
+  if (colName === 'Types') {
     if (colValue == undefined) {
       return '';
     } else {
       return colValue.toString();
     }
+  } else if (colName === 'Descriptions') {
+    if (colValue == undefined || colValue.length === 0) {
+      return '';
+    }
+
+    const firstEntry = colValue[0] as Record;
+    if (!firstEntry.markings || !firstEntry.markings.entry) {
+      return '';
+    }
+
+    const markingsEntry = firstEntry.markings.entry;
+
+    const marking = markingsEntry.length > 0 ? markingsEntry[0].value : '';
+    const markingAccess = markingsEntry.length > 1 ? markingsEntry[1].value : '';
+    const description = firstEntry.decription || '';
+
+    return `${marking} ${markingAccess} ${description}`;
   } else {
-    return colValue;
+    return colValue.toString();
   }
 }
 

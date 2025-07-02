@@ -13,7 +13,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Multimap;
@@ -42,7 +43,7 @@ import datawave.util.TextUtil;
  */
 public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
 
-    private static final Logger log = Logger.getLogger(AtomDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(AtomDataTypeHandler.class);
 
     public static final String ATOM_TYPE = "atom";
     public static final String ATOM_TABLE_NAME = ATOM_TYPE + ".table.name";
@@ -85,11 +86,11 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
         String overrides = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_FIELD_VALUE_OVERRIDES, String.class);
         fieldOverrides = StringUtils.split(overrides, ',', true); // keeps empty elements
 
-        sCategories = StringUtils.split(ConfigurationHelper.isNull(context.getConfiguration(), ATOM_CATEGORY_SUB_FIELD, String.class), ',', false);
+        sCategories = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_CATEGORY_SUB_FIELD, String.class).split(",");
 
         Set<String> tSet;
         for (String s : sCategories) {
-            String field_value[] = StringUtils.split(s, ':', false);
+            String field_value[] = s.split(":");
             if (field_value.length == 2 && (!Strings.isNullOrEmpty(field_value[0]) && !Strings.isNullOrEmpty(field_value[1]))) {
 
                 if (!subCategories.containsKey(field_value[0])) {

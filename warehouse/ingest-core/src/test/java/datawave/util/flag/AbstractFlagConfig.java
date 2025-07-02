@@ -83,7 +83,7 @@ public class AbstractFlagConfig {
         ArrayList<File> inputdirs = new ArrayList<>(10);
         for (FlagDataTypeConfig fc : this.fmc.getFlagConfigs()) {
             for (String s : fc.getFolder()) {
-                for (String folder : StringUtils.split(s, ',')) {
+                for (String folder : s.split(",")) {
                     folder = folder.trim();
                     if (!folder.startsWith(this.fmc.getBaseHDFSDir())) {
                         // we do this conditionally because once the FileMaker is created and the setup call is made, this

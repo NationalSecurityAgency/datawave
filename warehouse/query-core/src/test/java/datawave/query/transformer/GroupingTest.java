@@ -251,7 +251,7 @@ public abstract class GroupingTest {
     }
 
     private static final String COUNT_FIELD = "COUNT";
-    private static final Set<String> FIELDS_OF_INTEREST = ImmutableSet.of("GENDER", "GEN", "BIRTHDAY", "AGE", "AG", "RECORD");
+    private static final Set<String> FIELDS_OF_INTEREST = ImmutableSet.of("GENDER", "GEN", "BIRTHDAY", "AGE", "AG", "RECORD", "BIRTH_DATE");
     private static final Logger log = Logger.getLogger(GroupingTest.class);
     private static final String COLVIS_MARKING = "columnVisibility";
     private static final String REDUCED_COLVIS = "ALL&E&I";
@@ -1101,6 +1101,75 @@ public abstract class GroupingTest {
         expectGroup(Group.of("MALE").withCount(2).withAggregate(Aggregate.of("AG").withCount("2").withMax("40").withMin("24").withSum("64").withAverage("32")));
         expectGroup(Group.of("FEMALE").withCount(1)
                         .withAggregate(Aggregate.of("AG").withCount("1").withMax("18").withMin("18").withSum("18").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that when specifying that a field should be truncated to year when grouping via a Lucene function, that the correct grouping is performed.
+     */
+    @Test
+    public void testGroupingWhileTruncatingToYearViaLucene() throws Exception {
+        givenNonModelData();
+
+        givenQuery("(UUID:CORLEONE) and #GROUPBY('GENDER','BIRTH_DATE[YEAR]')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("1925", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925", "MALE").withCount(1));
+        expectGroup(Group.of("1910", "MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that when specifying that a field should be truncated to year when grouping via a Jexl function, that the correct grouping is performed.
+     */
+    @Test
+    public void testGroupingWhileTruncatingToYearViaJexl() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ 'CORLEONE' && f:groupby('GENDER','BIRTH_DATE[YEAR]')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("1925", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925", "MALE").withCount(1));
+        expectGroup(Group.of("1910", "MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that when specifying that a field should be truncated to year when grouping via a query parameter, that the correct grouping is performed.
+     */
+    @Test
+    public void testGroupingWhileTruncatingToYearViaQueryParameter() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ 'CORLEONE'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER,BIRTH_DATE[YEAR]");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("1925", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925", "MALE").withCount(1));
+        expectGroup(Group.of("1910", "MALE").withCount(3));
 
         // Run the test queries and collect their results.
         collectQueryResults();

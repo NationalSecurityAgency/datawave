@@ -36,7 +36,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
@@ -173,7 +172,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             client = connectionFactory.getClient(null, null, Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
-            connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
+            connectorAuthorizationCollection = Lists.newArrayList(connectorAuthorizations.split(","));
             reload();
 
             if (tablesChecked.compareAndSet(false, true))
@@ -611,7 +610,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("HOST")) {
                         m.setHost(fieldValue);
                     } else if (fieldName.equals("PROXY_SERVERS")) {
-                        m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
+                        m.setProxyServers(Arrays.asList(fieldValue.split(",")));
                     } else if (fieldName.equals("AUTHORIZATIONS")) {
                         m.setQueryAuthorizations(fieldValue);
                     } else if (fieldName.equals("QUERY_TYPE")) {
