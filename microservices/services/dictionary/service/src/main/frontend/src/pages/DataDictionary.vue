@@ -131,7 +131,6 @@
               >
                 <label style="cursor: pointer;">
                   {{
-
                     Formatters.maxSubstring(
                       Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
                     )
