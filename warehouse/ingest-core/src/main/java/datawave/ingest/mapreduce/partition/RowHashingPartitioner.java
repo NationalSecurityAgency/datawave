@@ -14,6 +14,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.StringUtils;
 
 /**
  * Attempts to distribute rows among reducers evenly. This can also be configured to also shuffle specific column families within each row
@@ -59,7 +60,7 @@ public class RowHashingPartitioner extends Partitioner<BulkIngestKey,Value> impl
         // build the colFams set
         String columnFamiliesCsv = conf.get(propertyName, "");
         if (!columnFamiliesCsv.isEmpty()) {
-            String[] cfs = columnFamiliesCsv.split(",");
+            String[] cfs = StringUtils.split(columnFamiliesCsv, ',');
             colFams = new HashSet<>();
             for (String cf : cfs) {
                 colFams.add(new Text(cf));

@@ -46,6 +46,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 
 public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT>, FacetedEstimator<RawRecordContainer> {
@@ -125,10 +126,10 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
             for (Map.Entry<String,String> category : categories.entrySet()) {
                 final String fields = category.getValue();
                 Preconditions.checkNotNull(fields);
-                final String[] fieldArray = fields.split(categoryDelimiter);
+                final String[] fieldArray = StringUtils.split(fields, categoryDelimiter.charAt(0));
                 Preconditions.checkArgument(fieldArray.length == 2);
                 final String pivot = fieldArray[0];
-                final String[] facets = fieldArray[1].split(",");
+                final String[] facets = StringUtils.split(fieldArray[1], ',');
                 pivotMap.putAll(pivot, ImmutableList.copyOf(facets));
             }
         } else {
