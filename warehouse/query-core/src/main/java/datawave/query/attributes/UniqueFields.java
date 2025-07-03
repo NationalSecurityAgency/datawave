@@ -31,20 +31,20 @@ public class UniqueFields implements Serializable, Cloneable {
 
     private static final String MOST_RECENT_UNIQUE = "_MOST_RECENT_";
     private static final String MAX_UNIQUE_COUNT = "_MAX_COUNT_";
-
-    private final TreeMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
+    
+    private final TreeMultimap<String,TemporalGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
     private int maxCount;
 
     /**
      * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
-     * {@link UniqueFields#toString()}. Any fields not specified with a {@link UniqueGranularity} name will be added with the default ALL granularity. All
+     * {@link UniqueFields#toString()}. Any fields not specified with a {@link TemporalGranularity} name will be added with the default ALL granularity. All
      * whitespace will be stripped before parsing. See below for certain edge cases:
      * <ul>
      * <li>Given null, null will be returned.</li>
      * <li>Given an empty or blank string, an empty {@link UniqueFields} will be returned.</li>
      * <li>Given {@code field1[],field2[DAY]}, or {@code field1,field2[DAY]}, or {@code field1[ALL],field2[DAY]}, a {@link UniqueFields} will be returned where
-     * field1 is added with {@link UniqueGranularity#ALL}, and field2 is added with {@link UniqueGranularity#TRUNCATE_TEMPORAL_TO_DAY}.</li>
+     * field1 is added with {@link TemporalGranularity#ALL}, and field2 is added with {@link TemporalGranularity#TRUNCATE_TEMPORAL_TO_DAY}.</li>
      * </ul>
      *
      * @param string
@@ -84,7 +84,7 @@ public class UniqueFields implements Serializable, Cloneable {
                         uniqueFields.setMostRecent(true);
                     } else {
                         // Add the field only if its not blank. Ignore cases with consecutive trailing commas like field1[ALL],,
-                        uniqueFields.put(field, UniqueGranularity.ALL);
+                        uniqueFields.put(field, TemporalGranularity.ALL);
                     }
                 }
                 break; // There are no more fields to be parsed.
@@ -104,7 +104,7 @@ public class UniqueFields implements Serializable, Cloneable {
                         uniqueFields.setMostRecent(true);
                     } else {
                         // Add the field only if it's not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
-                        uniqueFields.put(field, UniqueGranularity.ALL);
+                        uniqueFields.put(field, TemporalGranularity.ALL);
                     }
                 }
                 currentIndex = nextComma + 1; // Advance to the start of the next field.
@@ -130,11 +130,11 @@ public class UniqueFields implements Serializable, Cloneable {
                         String granularityList = string.substring((nextStartBracket + 1), nextEndBracket);
                         // An empty granularity list, e.g. field[] is equivalent to field[ALL].
                         if (granularityList.isEmpty()) {
-                            uniqueFields.put(field, UniqueGranularity.ALL);
+                            uniqueFields.put(field, TemporalGranularity.ALL);
                         } else {
-                            String[] granularities = StringUtils.split(granularityList, Constants.COMMA);
+                            String[] granularities = granularityList.split(Constants.COMMA);
                             for (String granularity : granularities) {
-                                uniqueFields.put(field, parseGranularity(granularity));
+                                uniqueFields.put(field, TemporalGranularity.of(granularity));
                             }
                         }
                     }
@@ -144,15 +144,6 @@ public class UniqueFields implements Serializable, Cloneable {
         }
 
         return uniqueFields;
-    }
-
-    // Return the parsed granularity instance, or throw an exception if one could not be parsed.
-    private static UniqueGranularity parseGranularity(String granularity) {
-        try {
-            return UniqueGranularity.of(granularity.toUpperCase());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid unique granularity given: " + granularity);
-        }
     }
 
     /**
@@ -176,7 +167,7 @@ public class UniqueFields implements Serializable, Cloneable {
      * @param fieldMap
      *            the field map to use
      */
-    public UniqueFields(SortedSetMultimap<String,UniqueGranularity> fieldMap) {
+    public UniqueFields(SortedSetMultimap<String,TemporalGranularity> fieldMap) {
         putAll(fieldMap);
     }
 
@@ -193,20 +184,20 @@ public class UniqueFields implements Serializable, Cloneable {
      *
      * @param fields
      */
-    public UniqueFields set(Multimap<String,UniqueGranularity> fields) {
+    public UniqueFields set(Multimap<String,TemporalGranularity> fields) {
         return clear().putAll(fields);
     }
 
     /**
-     * Put a field-{@link UniqueGranularity} key pair into this {@link UniqueFields}.
+     * Put a field-{@link TemporalGranularity} key pair into this {@link UniqueFields}.
      *
      * @param field
      *            the field
-     * @param uniqueGranularity
+     * @param temporalGranularity
      *            the granularity
      */
-    public UniqueFields put(String field, UniqueGranularity uniqueGranularity) {
-        fieldMap.put(JexlASTHelper.deconstructIdentifier(field).toUpperCase(), uniqueGranularity);
+    public UniqueFields put(String field, TemporalGranularity temporalGranularity) {
+        fieldMap.put(JexlASTHelper.deconstructIdentifier(field).toUpperCase(), temporalGranularity);
         return this;
     }
 
@@ -216,7 +207,7 @@ public class UniqueFields implements Serializable, Cloneable {
      * @param fieldMap
      *            the field map to add entries from
      */
-    public UniqueFields putAll(Multimap<String,UniqueGranularity> fieldMap) {
+    public UniqueFields putAll(Multimap<String,TemporalGranularity> fieldMap) {
         if (fieldMap != null) {
             for (String field : fieldMap.keySet()) {
                 this.fieldMap.putAll(JexlASTHelper.deconstructIdentifier(field).toUpperCase(), fieldMap.get(field));
@@ -234,7 +225,7 @@ public class UniqueFields implements Serializable, Cloneable {
      *            the replacement
      */
     public void replace(String field, String replacement) {
-        Collection<UniqueGranularity> value = fieldMap.removeAll(field);
+        Collection<TemporalGranularity> value = fieldMap.removeAll(field);
         if (!value.isEmpty()) {
             fieldMap.putAll(replacement, value);
         }
@@ -254,7 +245,7 @@ public class UniqueFields implements Serializable, Cloneable {
      *
      * @return the field map
      */
-    public TreeMultimap<String,UniqueGranularity> getFieldMap() {
+    public TreeMultimap<String,TemporalGranularity> getFieldMap() {
         return fieldMap;
     }
 
@@ -265,9 +256,9 @@ public class UniqueFields implements Serializable, Cloneable {
      *            the model to find mappings from
      */
     public void remapFields(Multimap<String,String> model) {
-        Multimap<String,UniqueGranularity> newFieldMap = TreeMultimap.create(fieldMap);
+        Multimap<String,TemporalGranularity> newFieldMap = TreeMultimap.create(fieldMap);
         for (String field : fieldMap.keySet()) {
-            Collection<UniqueGranularity> granularities = fieldMap.get(field);
+            Collection<TemporalGranularity> granularities = fieldMap.get(field);
             if (model.containsKey(field)) {
                 model.get(field).forEach((newField) -> newFieldMap.putAll(newField, granularities));
             }
@@ -295,13 +286,13 @@ public class UniqueFields implements Serializable, Cloneable {
      * @return a set containing the result of each transformation
      */
     public Set<String> transformValues(String field, Collection<String> values) {
-        Collection<UniqueGranularity> granularities = fieldMap.get(field);
+        Collection<TemporalGranularity> granularities = fieldMap.get(field);
         // If there is no granularity, or only the ALL granularity was specified, return the original values.
-        if (granularities.isEmpty() || (granularities.size() == 1 && granularities.contains(UniqueGranularity.ALL))) {
+        if (granularities.isEmpty() || (granularities.size() == 1 && granularities.contains(TemporalGranularity.ALL))) {
             return Sets.newHashSet(values);
         } else {
             Set<String> transformedValues = new HashSet<>();
-            for (UniqueGranularity granularity : granularities) {
+            for (TemporalGranularity granularity : granularities) {
                 values.stream().map(granularity::transform).forEach(transformedValues::add);
             }
             return transformedValues;
@@ -309,14 +300,14 @@ public class UniqueFields implements Serializable, Cloneable {
     }
 
     public String transformValue(String field, String value) {
-        Collection<UniqueGranularity> granularities = fieldMap.get(field);
+        Collection<TemporalGranularity> granularities = fieldMap.get(field);
         // If there is no granularity, or only the ALL granularity was specified, return the original values.
-        if (granularities.isEmpty() || (granularities.size() == 1 && granularities.contains(UniqueGranularity.ALL))) {
+        if (granularities.isEmpty() || (granularities.size() == 1 && granularities.contains(TemporalGranularity.ALL))) {
             return value;
         } else {
             StringBuilder combinedValue = new StringBuilder();
             String separator = "";
-            for (UniqueGranularity granularity : granularities) {
+            for (TemporalGranularity granularity : granularities) {
                 combinedValue.append(separator).append(granularity.transform(value));
             }
             return combinedValue.toString();
@@ -351,7 +342,7 @@ public class UniqueFields implements Serializable, Cloneable {
             String field = fieldIterator.next();
             sb.append(field).append(Constants.BRACKET_START);
             // Write each granularity for the field.
-            Iterator<UniqueGranularity> valueIterator = fieldMap.get(field).iterator();
+            Iterator<TemporalGranularity> valueIterator = fieldMap.get(field).iterator();
             while (valueIterator.hasNext()) {
                 sb.append(valueIterator.next().getName());
                 if (valueIterator.hasNext()) {
