@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Test;
 
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
@@ -24,7 +25,10 @@ public class LcNoDiacriticsListTypeAttributeIT extends TypeAttributeIT {
 
     @Test
     public void testNormalizer() {
-        List<String> expected = List.of("ab", "cd", "ef");
+        List<Pair> expected = Lists.newArrayList();
+        expected.add(Pair.of("ab", Type.Category.LIST_ELEMENT));
+        expected.add(Pair.of("cd", Type.Category.LIST_ELEMENT));
+        expected.add(Pair.of("ef", Type.Category.LIST_ELEMENT));
 
         LcNoDiacriticsListType listType = new LcNoDiacriticsListType(normalizedData);
         List<Pair<String,Type.Category>> normalized = listType.normalizeToMany(normalizedData);
