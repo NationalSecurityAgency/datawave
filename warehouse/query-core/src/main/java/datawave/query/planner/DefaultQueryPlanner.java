@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -33,6 +34,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.TreeMultimap;
+import datawave.data.type.DateType;
+import datawave.data.type.RawDateType;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.common.grouping.GroupFields;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -963,7 +970,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // groom the query so that any nodes with the literal on the left and the identifier on
         // the right will be re-ordered to simplify subsequent processing
 
-        config.setQueryTree(timedInvertSwappedNodes(timers, config.getQueryTree()));
+        {
+
+            config.setQueryTree(timedInvertSwappedNodes(timers, config.getQueryTree()));
+        }
 
         config.setQueryTree(timedFixNotNullIntent(timers, config.getQueryTree()));
 
@@ -1014,6 +1024,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // +-------------------------------------+
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
+
+        // Verify that any fields specified for unique with temporal granularities such as unique_by_hour are date-time fields.
+        validateUniqueFields(config.getUniqueFields());
+
+        // Verify that any fields specified for grouping with temporal granularities such as #GROUP(FIELD[HOUR]) are date-time fields.
+        validateGroupFields(config.getGroupFields());
 
         Set<String> indexOnlyFields = getIndexOnlyFields();
 
@@ -1081,6 +1097,75 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         timeScanHintRules(timers, "Apply scan hint rules", config);
 
         return config.getQueryTree();
+    }
+
+    // The set of date time field types.
+    protected static final Set<String> dateTypes = Set.of(DateType.class.getName(), RawDateType.class.getName());
+
+    /**
+     * Verify that the given unique fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL).
+     *
+     * @param uniqueFields
+     *            the unique fields to validate
+     */
+    protected void validateUniqueFields(UniqueFields uniqueFields) {
+        if (uniqueFields != null && !uniqueFields.isEmpty()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(uniqueFields.getFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException(
+                                "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: " + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Verify that the given grouping fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param groupFields
+     *            the grouping fields
+     */
+    protected void validateGroupFields(GroupFields groupFields) {
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(groupFields.getGroupByFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException("The following group-by fields are not date fields and cannot be used with temporal truncation: "
+                                + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Return the set of non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param fields
+     *            the fields to check
+     * @return the set of non-datetime fields
+     */
+    protected Set<String> getNonTemporalFields(TreeMultimap<String,TemporalGranularity> fields) {
+        // Get the set of all fields mapped to a temporal granularity other than ALL.
+        Set<String> fieldsToCheck = new HashSet<>();
+        for (String field : fields.keySet()) {
+            NavigableSet<TemporalGranularity> granularities = fields.get(field);
+            if (!granularities.isEmpty() && !(granularities.size() == 1 && granularities.contains(TemporalGranularity.ALL))) {
+                fieldsToCheck.add(field);
+            }
+        }
+
+        Set<String> invalidFields = new HashSet<>();
+
+        // Check the field types.
+        if (!fieldsToCheck.isEmpty()) {
+            TypeMetadata typeMetadata = getTypeMetadata();
+            for (String field : fieldsToCheck) {
+                Set<String> fieldTypes = typeMetadata.getNormalizerNamesForField(field);
+                // If field types were returned, verify that they contain one of the date time types. Otherwise, add it as an invalid field.
+                if (!fieldTypes.isEmpty() && Sets.intersection(fieldTypes, dateTypes).isEmpty()) {
+                    invalidFields.add(field);
+                }
+            }
+        }
+
+        return invalidFields;
     }
 
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
@@ -3472,6 +3557,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
         return compositeMetadata;
+    }
+
+    protected void setTypeMetadata(TypeMetadata typeMetadata) {
+        this.typeMetadata = typeMetadata;
     }
 
     protected TypeMetadata getTypeMetadata() {
