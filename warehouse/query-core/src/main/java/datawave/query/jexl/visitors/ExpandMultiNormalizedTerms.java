@@ -258,12 +258,18 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             // create a marked bounded range node
             JexlNode boundedRange = QueryPropertyMarker.create(rangeNode, BOUNDED_RANGE);
 
+            LiteralRange<?> normalizedRange = JexlASTHelper.findRange().getRange(boundedRange);
             String rangeString = JexlStringBuildingVisitor.buildQueryWithoutParse(boundedRange);
-            aliasedBounds.putIfAbsent(rangeString, boundedRange);
+            if (normalizedRange.isLowerBoundGreaterThanUpperBound()) {
+                log.warn("after normalization range lower bound was greater than upper bound " + normalizedRange);
+            } else {
+                aliasedBounds.putIfAbsent(rangeString, boundedRange);
+            }
         }
 
         if (aliasedBounds.isEmpty()) {
-            return node;
+            // we do not return the original term because the range might not actually be a valid bounded range
+            throw new IllegalStateException("After applying normalizers to bounded range, no valid range was found");
         } else {
             this.expandedNodes.addAll(aliasedBounds.values());
 

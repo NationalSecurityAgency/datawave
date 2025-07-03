@@ -214,6 +214,22 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms(original, expected);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testBoundedNormalizedBoundsCaseWithTextNormalizer() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        String original = "((_Bounded_ = true) && (FOO > '4' && FOO < '10'))";
+        String expected = "((_Bounded_ = true) && (FOO > '4' && FOO < '10'))";
+        expandTerms(original, expected);
+    }
+
     @Test
     public void testMultiNormalizedBounds() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
@@ -243,6 +259,22 @@ public class ExpandMultiNormalizedTermsTest {
 
         String original = "((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
         String expected = "((((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((_Bounded_ = true) && (FOO > '1' && FOO < '10'))))";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testBoundedMultiNormalizedBoundsWithInvalidTextRange() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        String original = "((_Bounded_ = true) && (FOO > 4 && FOO < 10))";
+        String expected = "((_Bounded_ = true) && (FOO > '+aE4' && FOO < '+bE1'))";
         expandTerms(original, expected);
     }
 
@@ -316,7 +348,7 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms(original, expected);
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void testBoundedNormalizedAndUnNormalizedBoundsCase() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
