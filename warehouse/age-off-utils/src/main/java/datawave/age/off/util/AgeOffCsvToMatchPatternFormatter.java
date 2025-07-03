@@ -3,6 +3,7 @@ package datawave.age.off.util;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ public class AgeOffCsvToMatchPatternFormatter {
     private static final char EQUALS = '=';
     private static final char NEW_LINE = '\n';
     private static final char SPACE = ' ';
+    private static final Pattern NUMBERS_ONLY_DURATION = Pattern.compile("\\d+");
     private final AgeOffCsvToMatchPatternFormatterConfiguration configuration;
     private AgeOffCsvColumnInformation columnInformation;
 
@@ -122,7 +124,13 @@ public class AgeOffCsvToMatchPatternFormatter {
             log.error("Unable to find non-empty override or duration {}", Arrays.toString(tokens));
             throw new IllegalStateException("Unable to find non-empty override or duration from tokens: " + Arrays.toString(tokens));
         }
-        sb.append(attemptValueMapping(value));
+
+        // in the case that we are processing a file which is formatted differently, ensure that we write out the duration here in a similar manner
+        if (NUMBERS_ONLY_DURATION.matcher(value).matches()) {
+            sb.append(attemptValueMapping(value + "d"));
+        } else {
+            sb.append(attemptValueMapping(value));
+        }
     }
 
     private String attemptValueMapping(String originalValue) {
