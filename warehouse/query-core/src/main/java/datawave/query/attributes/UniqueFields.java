@@ -31,7 +31,7 @@ public class UniqueFields implements Serializable, Cloneable {
 
     private static final String MOST_RECENT_UNIQUE = "_MOST_RECENT_";
     private static final String MAX_UNIQUE_COUNT = "_MAX_COUNT_";
-    
+
     private final TreeMultimap<String,TemporalGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
     private int maxCount;
