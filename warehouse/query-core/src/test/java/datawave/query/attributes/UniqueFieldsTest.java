@@ -77,8 +77,8 @@ public class UniqueFieldsTest {
     @Test
     public void testUniqueFieldsWithMostRecentToString() {
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("fieldA", UniqueGranularity.ALL);
-        uniqueFields.put("fieldB", UniqueGranularity.ALL);
+        uniqueFields.put("fieldA", TemporalGranularity.ALL);
+        uniqueFields.put("fieldB", TemporalGranularity.ALL);
         uniqueFields.setMostRecent(true);
         assertEquals("_MOST_RECENT_,FIELDA[ALL],FIELDB[ALL]", uniqueFields.toString());
     }
@@ -86,8 +86,8 @@ public class UniqueFieldsTest {
     @Test
     public void testUniqueFieldsWithMaxCountToString() {
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("fieldA", UniqueGranularity.ALL);
-        uniqueFields.put("fieldB", UniqueGranularity.ALL);
+        uniqueFields.put("fieldA", TemporalGranularity.ALL);
+        uniqueFields.put("fieldB", TemporalGranularity.ALL);
         uniqueFields.setMaxCount(3);
         assertEquals("_MAX_COUNT_[3],FIELDA[ALL],FIELDB[ALL]", uniqueFields.toString());
     }
@@ -296,7 +296,7 @@ public class UniqueFieldsTest {
     @Test
     public void testParsingMostRecentAndMaxCount() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldA", TemporalGranularity.ALL);
         expected.setMostRecent(true);
         expected.setMaxCount(3);
 

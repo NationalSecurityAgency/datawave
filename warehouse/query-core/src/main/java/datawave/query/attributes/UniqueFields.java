@@ -317,7 +317,7 @@ public class UniqueFields implements Serializable, Cloneable {
     /**
      * Returns this {@link UniqueFields} as a formatted string that can later be parsed back into a {@link UniqueFields} using {@link UniqueFields#from(String)}
      * . This is also what will be used when serializing a {@link UniqueFields} to JSON/XML. The string will have the format
-     * {@code field:[UniqueGranularity, ...],...}, e.g. {@code field1[DAY,HOUR],field2[ALL]}
+     * {@code field:[TemporalGranularity, ...],...}, e.g. {@code field1[DAY,HOUR],field2[ALL]}
      *
      * @return a formatted string
      */

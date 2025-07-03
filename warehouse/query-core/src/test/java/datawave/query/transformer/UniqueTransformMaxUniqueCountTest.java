@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.UniqueGranularity;
+import datawave.query.attributes.TemporalGranularity;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.sortedset.FileSortedSet;
@@ -78,7 +78,7 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
 
-        givenValueTransformerForFields(UniqueGranularity.ALL, "attr0", "Attr1", "ATTR2");
+        givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
 
         assertUniqueDocuments();
     }
@@ -103,7 +103,7 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
 
-        givenValueTransformerForFields(UniqueGranularity.ALL, "attr0", "Attr1", "ATTR2");
+        givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
 
         assertUniqueDocuments();
     }
@@ -129,7 +129,7 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
         givenInputDocument(4).withKeyValue("attr2", randomValues.get(4));
         givenInputDocument(5).withKeyValue("attr2", randomValues.get(4)); // Should not be included in results.
 
-        givenValueTransformerForFields(UniqueGranularity.ALL, "attr0", "Attr1", "ATTR2");
+        givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
 
         assertUniqueDocuments();
     }
