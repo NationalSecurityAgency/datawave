@@ -62,7 +62,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         Collection<String> s = new HashSet<>();
 
         if (c != null) {
-            String[] names = datawave.util.StringUtils.split(c, ',');
+            String[] names = c.split(",");
             for (String n : names) {
                 n = n.trim();
                 if (n.isEmpty())
