@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.UniqueGranularity;
+import datawave.query.attributes.TemporalGranularity;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.sortedset.FileSortedSet;
@@ -78,7 +78,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
         givenInputDocument(2).withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument(3).withKeyValue("attr2", randomValues.get(4)).isExpectedToBeUnique();
 
-        givenValueTransformerForFields(UniqueGranularity.ALL, "attr0", "Attr1", "ATTR2");
+        givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
 
         assertUniqueDocuments();
     }

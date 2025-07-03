@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -18,12 +19,15 @@ import org.junit.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.TypeAttribute;
 import datawave.test.GroupsAssert;
 
@@ -50,6 +54,8 @@ public class DocumentGrouperTest {
         inverseReverseMap.put("LOC", "BUILDING");
         inverseReverseMap.put("LOC", "LOCATION");
         inverseReverseMap.put("PEAK", "HEIGHT");
+        inverseReverseMap.put("END", "EXPIRATION_DATE");
+        inverseReverseMap.put("START", "CREATION_DATE");
 
         reverseMap.put("GENERE", "GEN");
         reverseMap.put("GENDER", "GEN");
@@ -58,6 +64,8 @@ public class DocumentGrouperTest {
         reverseMap.put("BUILDING", "LOC");
         reverseMap.put("LOCATION", "LOC");
         reverseMap.put("HEIGHT", "PEAK");
+        reverseMap.put("EXPIRATION_DATE", "END");
+        reverseMap.put("CREATION_DATE", "START");
     }
 
     @Before
@@ -1066,8 +1074,215 @@ public class DocumentGrouperTest {
         // @formatter:on
     }
 
+    /**
+     * Verify that a grouping operation where specifying to truncate a date field to the day results in the expected groupings.
+     */
+    @Test
+    public void testGroupingWithTruncateToDay() {
+        Multimap<String,TemporalGranularity> groupByFieldMap = HashMultimap.create();
+        groupByFieldMap.put("GENDER", TemporalGranularity.ALL);
+        groupByFieldMap.put("EXPIRATION_DATE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        givenGroupFields(groupByFieldMap);
+
+        // 2025-02-04T10:04:46.0000912
+        // 2025-01-05T12:15:30:5585555
+
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.A.B.C.1").withDateType("2025-01-05T12:15:30.558Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.A.B.2").withDateType("2025-01-05T20:13:30.343Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.C.3").withDateType("2025-01-05T12:15:30.534Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.B.C.1").withDateType("2025-12-12T04:15:30.4545585"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.2").withDateType("2025-01-12T12:05:30.6545585"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.3").withDateType("2025-12-12T12:22:30.6555474"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.4").withDateType("2025-12-12T11:11:22.6455733"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.HAT.V.B.1").withDateType("2025-01-05T23:15:30.6534070"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.HAT.V.B.2").withDateType("2025-01-05T16:01:15.8755555"));
+
+        // Direct match to EXPIRATION_DATE.FOO.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.A.C.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.FOO.2
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.V.S.2").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.FOO.3
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.F.3").withLcNoDiacritics("FEMALE"));
+        // No direct match with an AGE record, should be ignored since we have a direct match for a GENDER entry elsewhere.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.F.G.4").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.V.C.A.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.BAR.2.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.2").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.3.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.3").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.4.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.4").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.HAT.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.HAT.G.S.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.HAT.2.
+        givenDocumentEntry(DocumentEntry.of("GENDER.HAT.G.S.2").withLcNoDiacritics("MALE"));
+
+        executeGrouping();
+
+        // We should end up with the following groupings:
+        // 2025-01-05-MALE (Count of 3)
+        // 2025-01-05-FEMALE (Count of 2)
+        // 2025-01-12-FEMALE (Count of 1)
+        // 2025-12-12-MALE (Count of 1)
+        // 2025-12-12-FEMALE (Count of 2)
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(5);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(3);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(2);
+    }
+
+    /**
+     * Verify that a grouping operation where specifying multiple granularities for the same date field results in the expected groupings.
+     */
+    @Test
+    public void testGroupingWithTruncateToDayAndYear() {
+        Multimap<String,TemporalGranularity> groupByFieldMap = HashMultimap.create();
+        groupByFieldMap.put("GENDER", TemporalGranularity.ALL);
+        groupByFieldMap.putAll("EXPIRATION_DATE", Set.of(TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY, TemporalGranularity.TRUNCATE_TEMPORAL_TO_YEAR));
+        givenGroupFields(groupByFieldMap);
+
+        // 2025-02-04T10:04:46.0000912
+        // 2025-01-05T12:15:30:5585555
+
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.A.B.C.1").withDateType("2025-01-05T12:15:30.558Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.A.B.2").withDateType("2025-01-05T20:13:30.343Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.C.3").withDateType("2025-01-05T12:15:30.534Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.B.C.1").withDateType("2025-12-12T04:15:30.454Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.2").withDateType("2025-01-12T12:05:30.654Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.3").withDateType("2025-12-12T12:22:30.655Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.4").withDateType("2025-12-12T11:11:22.645Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.HAT.V.B.1").withDateType("2025-01-05T23:15:30.653Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.HAT.V.B.2").withDateType("2025-01-05T16:01:15.875Z"));
+
+        // Direct match to EXPIRATION_DATE.FOO.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.A.C.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.FOO.2
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.V.S.2").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.FOO.3
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.F.3").withLcNoDiacritics("FEMALE"));
+        // No direct match with an AGE record, should be ignored since we have a direct match for a GENDER entry elsewhere.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.F.G.4").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.V.C.A.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.BAR.2.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.2").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.3.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.3").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.4.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.4").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.HAT.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.HAT.G.S.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.HAT.2.
+        givenDocumentEntry(DocumentEntry.of("GENDER.HAT.G.S.2").withLcNoDiacritics("MALE"));
+
+        executeGrouping();
+
+        // We should end up with the following groupings:
+        // 2025-01-05-MALE (Count of 3)
+        // 2025-01-05-FEMALE (Count of 2)
+        // 2025-01-12-FEMALE (Count of 1)
+        // 2025-12-12-MALE (Count of 1)
+        // 2025-12-12-FEMALE (Count of 2)
+        // 2025-MALE (Count of 4)
+        // 2025-FEMALE (Count of 5)
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(7);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(3);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025")).hasCount(4);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025")).hasCount(5);
+    }
+
+    /**
+     * Verify that a grouping operation where specifying granularities for multiple date fields results in the expected groupings.
+     */
+    @Test
+    public void testGroupingWithTruncateMultipleFields() {
+        Multimap<String,TemporalGranularity> groupByFieldMap = HashMultimap.create();
+        groupByFieldMap.put("GENDER", TemporalGranularity.ALL);
+        groupByFieldMap.putAll("EXPIRATION_DATE", Set.of(TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY, TemporalGranularity.TRUNCATE_TEMPORAL_TO_YEAR));
+        groupByFieldMap.putAll("CREATION_DATE", Set.of(TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR));
+        givenGroupFields(groupByFieldMap);
+
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.A.B.C.1").withDateType("2025-01-05T12:15:30.558Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.A.B.2").withDateType("2025-01-05T20:13:30.343Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.FOO.C.3").withDateType("2025-01-05T12:15:30.534Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.B.C.1").withDateType("2025-12-12T04:15:30.454Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.2").withDateType("2025-01-12T12:05:30.654Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.3").withDateType("2025-12-12T12:22:30.655Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.BAR.V.A.4").withDateType("2025-12-12T11:11:22.645Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.HAT.V.B.1").withDateType("2025-01-05T23:15:30.653Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.HAT.V.B.2").withDateType("2025-01-05T16:01:15.875Z"));
+        givenDocumentEntry(DocumentEntry.of("EXPIRATION_DATE.OTHER.V.B.1").withDateType("2025-01-05T16:01:15.875Z")); // No match to any other entry.
+
+        givenDocumentEntry(DocumentEntry.of("CREATION_DATE.FOO.A.B.C.1").withDateType("2025-01-05T10:15:22.655Z"));
+        givenDocumentEntry(DocumentEntry.of("CREATION_DATE.FOO.A.B.2").withDateType("2025-01-05T22:15:15.653Z"));
+        givenDocumentEntry(DocumentEntry.of("CREATION_DATE.FOO.C.3").withDateType("2025-01-05T10:15:01.558Z"));
+        givenDocumentEntry(DocumentEntry.of("CREATION_DATE.BAR.B.C.1").withDateType("2025-01-05T10:15:30.655Z"));
+        givenDocumentEntry(DocumentEntry.of("CREATION_DATE.BAR.V.A.2").withDateType("2025-01-05T10:15:22.454Z"));
+        givenDocumentEntry(DocumentEntry.of("CREATION_DATE.BRAIN.V.A.1").withDateType("2025-01-05T10:15:22.454Z")); // No match to any other entry.
+
+        // Direct match to EXPIRATION_DATE.FOO.1 and CREATION_DATE.FOO.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.A.C.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.FOO.2 and CREATION_DATE.FOO.2.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.V.S.2").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.FOO.3 and CREATION_DATE.FOO.3.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.F.3").withLcNoDiacritics("FEMALE"));
+        // No direct match with an AGE record, should be ignored since we have a direct match for a GENDER entry elsewhere.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.F.G.4").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.1 and CREATION_DATE.BAR.1.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.V.C.A.1").withLcNoDiacritics("MALE"));
+        // Direct match to EXPIRATION_DATE.BAR.2 and CREATION_DATE.BAR.2.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.2").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.3. No match to CREATION_DATE.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.3").withLcNoDiacritics("FEMALE"));
+        // Direct match to EXPIRATION_DATE.BAR.4. No match to CREATION_DATE.
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.G.S.4").withLcNoDiacritics("FEMALE"));
+
+        executeGrouping();
+
+        // We should end up with the following groupings: [EXPIRATION_DATE, GENDER, CREATION_DATE]
+        // 2025-01-05, FEMALE, 2025-01-05T10 (Count of 1)
+        // 2025-01-05, MALE, 2025-01-05T10 (Count of 1)
+        // 2025-01-05, FEMALE, 2025-01-05T22 (Count of 1)
+        // 2025-01-12, FEMALE, 2025-01-05T10 (Count of 1)
+        // 2025-12-12, MALE, 2025-01-05T10 (Count of 1)
+        // 2025, FEMALE, 2025-01-05T22 (Count of 1)
+        // 2025, MALE, 2025-01-05T10 (Count of 2)
+        // 2025, FEMALE, 2025-01-05T10 (Count of 2)
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        // Groupings for GENDER[ALL], EXPIRATION_DATE[DAY], CREATION_DATE[HOUR]
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T22"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
+        // Groupings for GENDER[ALL], EXPIRATION_DATE[YEAR], CREATION_DATE[HOUR]
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T22")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10")).hasCount(2);
+    }
+
     private void givenGroupFields(String... fields) {
-        groupFields.setGroupByFields(Sets.newHashSet(Arrays.asList(fields)));
+        Multimap<String,TemporalGranularity> groupByFieldMap = HashMultimap.create();
+        Arrays.asList(fields).forEach((field) -> groupByFieldMap.put(field, TemporalGranularity.ALL));
+        groupFields.setGroupByFieldMap(groupByFieldMap);
+    }
+
+    private void givenGroupFields(Multimap<String,TemporalGranularity> map) {
+        groupFields.setGroupByFieldMap(map);
     }
 
     private void givenSumFields(String... fields) {
@@ -1119,6 +1334,12 @@ public class DocumentGrouperTest {
         return createGroupingAttribute(key, new LcNoDiacriticsType(value));
     }
 
+    private GroupingAttribute<?> stringKey(String key, String value) {
+        StringType stringType = new StringType();
+        stringType.setDelegate(value);
+        return createGroupingAttribute(key, stringType);
+    }
+
     private GroupingAttribute<?> createGroupingAttribute(String key, Type<?> type) {
         return new GroupingAttribute<>(type, new Key(key), true);
     }
@@ -1150,6 +1371,11 @@ public class DocumentGrouperTest {
 
         public DocumentEntry withLcNoDiacritics(String value, ColumnVisibility visibility) {
             addTypedAttribute(new LcNoDiacriticsType(value), visibility);
+            return this;
+        }
+
+        public DocumentEntry withDateType(String value) {
+            addTypedAttribute(new DateType(value), COLVIS_ALL);
             return this;
         }
 

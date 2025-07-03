@@ -13,7 +13,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
@@ -95,7 +94,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
         // TODO: Handle other parameters here
 
-        String[] parts = StringUtils.split(term, '/');
+        String[] parts = term.split("/");
 
         if (parts.length != 3) {
             throw new IllegalArgumentException(

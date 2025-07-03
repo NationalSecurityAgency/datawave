@@ -86,11 +86,11 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
         String overrides = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_FIELD_VALUE_OVERRIDES, String.class);
         fieldOverrides = StringUtils.split(overrides, ',', true); // keeps empty elements
 
-        sCategories = StringUtils.split(ConfigurationHelper.isNull(context.getConfiguration(), ATOM_CATEGORY_SUB_FIELD, String.class), ',', false);
+        sCategories = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_CATEGORY_SUB_FIELD, String.class).split(",");
 
         Set<String> tSet;
         for (String s : sCategories) {
-            String field_value[] = StringUtils.split(s, ':', false);
+            String field_value[] = s.split(":");
             if (field_value.length == 2 && (!Strings.isNullOrEmpty(field_value[0]) && !Strings.isNullOrEmpty(field_value[1]))) {
 
                 if (!subCategories.containsKey(field_value[0])) {
