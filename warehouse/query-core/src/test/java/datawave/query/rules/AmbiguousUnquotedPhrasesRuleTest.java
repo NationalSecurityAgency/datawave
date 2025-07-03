@@ -21,6 +21,43 @@ class AmbiguousUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
         assertResult();
     }
 
+    @Test
+    void testQueryWithGroupedAmbiguousPhrases() throws Exception {
+        givenQuery("FOO:(abc def ghi)");
+        expectMessage("Portion will be interpreted as: ( FOO:abc AND FOO:def AND FOO:ghi )");
+        assertResult();
+    }
+
+    @Test
+    void testQueryWithGroupedAmbiguousPhrases1() throws Exception {
+        givenQuery("(FOO:abc def ghi)");
+        expectMessage("Portion will be interpreted as: ( FOO:abc AND def AND ghi )");
+        expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: ( FOO:abc AND def AND ghi ). Recommended: FOO:\"abc def ghi\"");
+        assertResult();
+    }
+
+    @Test
+    void testQueryWithGroupedAmbiguousPhrases2() throws Exception {
+        givenQuery("(FOO:abc AND FOO:def AND FOO:ghi)");
+        expectMessage("Portion will be interpreted as: ( FOO:abc AND FOO:def AND FOO:ghi )");
+        assertResult();
+    }
+
+    @Test
+    void testQueryWithGroupedAmbiguousPhrases3() throws Exception {
+        givenQuery("FOO:(abc (def ghi))");
+        expectMessage("Portion will be interpreted as: ( FOO:abc AND ( FOO:def AND FOO:ghi ) )");
+        assertResult();
+    }
+
+    @Test
+    void testQueryWithGroupedAmbiguousPhrases4() throws Exception {
+        givenQuery("FOO:(abc def ghi) FOO:jkl mno");
+        expectMessage("Portion will be interpreted as: ( FOO:abc AND FOO:def AND FOO:ghi )");
+        expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: FOO:jkl AND mno. Recommended: FOO:\"jkl mno\"");
+        assertResult();
+    }
+
     /**
      * Test a query with ambiguous phrases after an unquoted fielded term.
      */
@@ -58,8 +95,9 @@ class AmbiguousUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
      */
     @Test
     void testMultipleFieldsWithAmbiguousPhrases() throws Exception {
-        givenQuery("FOO:abc def ghi OR BAR:aaa bbb ccc AND 333 HAT:\"111\" 222 AND HEN:car VEE:elephant zebra VEE:deer");
+        givenQuery("FOO:abc def ghi OR BAR:aaa bbb ccc AND 333 HAT:\"111\" 222 AND HEN:car VEE:elephant zebra VEE:deer FOO:(abc def ghi)");
 
+        expectMessage("Portion will be interpreted as: ( FOO:abc AND FOO:def AND FOO:ghi )");
         expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: FOO:abc AND def AND ghi. Recommended: FOO:\"abc def ghi\"");
         expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: BAR:aaa AND bbb AND ccc. Recommended: BAR:\"aaa bbb ccc\"");
         expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: VEE:elephant AND zebra. Recommended: VEE:\"elephant zebra\"");

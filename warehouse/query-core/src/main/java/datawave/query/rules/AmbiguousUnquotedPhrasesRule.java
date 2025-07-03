@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+import datawave.query.lucene.visitors.AmbiguousGroupedTermsVisitor;
 import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
@@ -39,6 +40,9 @@ public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
         QueryRuleResult result = new QueryRuleResult(getName());
         try {
             QueryNode luceneQuery = (QueryNode) config.getParsedQuery();
+            List<QueryNode> interpretNodes = AmbiguousGroupedTermsVisitor.check(luceneQuery, AmbiguousGroupedTermsVisitor.JUNCTION.AND);
+            interpretNodes.stream().map(this::interpretMessage).forEach(result::addMessage);
+
             List<QueryNode> nodes = AmbiguousUnfieldedTermsVisitor.check(luceneQuery, AmbiguousUnfieldedTermsVisitor.JUNCTION.AND);
             nodes.stream().map(this::formatMessage).forEach(result::addMessage);
         } catch (Exception e) {
@@ -51,6 +55,16 @@ public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
     @Override
     public QueryRule copy() {
         return new AmbiguousUnquotedPhrasesRule(name);
+    }
+
+    private String interpretMessage(QueryNode node) {
+        // @formatter:off
+        return new StringBuilder()
+                //.append(query)
+                .append("Portion will be interpreted as: ")
+                .append(LuceneQueryStringBuildingVisitor.build(node))
+                .toString();
+        // @formatter:on
     }
 
     // Return a message about the given nodes.
