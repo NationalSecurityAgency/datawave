@@ -9,7 +9,7 @@
     <artifactId>datawave-core-connection-pool</artifactId>
     <name>${project.artifactId}</name>
     <properties>
-        <version.dnsjava>2.1.8</version.dnsjava>
+        <version.dnsjava>3.6.3</version.dnsjava>
     </properties>
     <dependencies>
         <dependency>
