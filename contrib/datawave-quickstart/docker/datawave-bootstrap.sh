@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source /opt/datawave/contrib/datawave-quickstart/bin/env.sh
+source ~/.bashrc
 
 # If DW_CONTAINER_HOST is defined update Accumulo and Hadoop bind hosts
 if [ ! -z "${DW_CONTAINER_HOST}" ] && [ "${DW_CONTAINER_HOST}" != "localhost" ] ; then

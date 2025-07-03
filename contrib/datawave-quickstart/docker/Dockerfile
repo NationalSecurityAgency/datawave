@@ -76,6 +76,8 @@ RUN git init && \
     git config user.name "Root User" && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
 
+RUN echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
+
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
 # the quickstart environment. Likewise, 'allInstall' and 'datawaveStart' wrapper functions are
@@ -83,7 +85,7 @@ RUN git init && \
 # stopped gracefully, and any cruft is purged.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh && allInstall && [ ${DW_DATAWAVE_WEB_TEST_SKIP} == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
+    /bin/bash -c "source ~/.bashrc && allInstall && [[ ${DW_DATAWAVE_WEB_TEST_SKIP} == true ]] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \
