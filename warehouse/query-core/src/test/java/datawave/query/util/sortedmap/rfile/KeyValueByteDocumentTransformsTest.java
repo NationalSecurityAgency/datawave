@@ -25,7 +25,7 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.util.TypeMetadata;
 
-public class KeyValueByteDocumenTransformsTest {
+public class KeyValueByteDocumentTransformsTest {
 
     protected final byte[] template = new byte[] {5, 2, 29, 4, 8, 3, 25, 23, 6, 21, 7, 16};
 
