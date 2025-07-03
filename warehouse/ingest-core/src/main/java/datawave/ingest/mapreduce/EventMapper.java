@@ -320,7 +320,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 String fieldValidators = context.getConfiguration().get(typeStr + FieldValidator.FIELD_VALIDATOR_NAMES);
 
                 if (fieldValidators != null) {
-                    String[] validatorClasses = StringUtils.split(fieldValidators, ",");
+                    String[] validatorClasses = fieldValidators.split(",");
                     for (String validatorClass : validatorClasses) {
                         try {
                             Class<? extends FieldValidator> clazz = Class.forName(validatorClass).asSubclass(FieldValidator.class);

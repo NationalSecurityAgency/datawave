@@ -331,9 +331,9 @@ public class IngestFieldFilter {
          */
         public void load(String fieldsStr, boolean fieldCountMustMatch) throws IllegalArgumentException {
             if (StringUtils.isNotBlank(fieldsStr)) {
-                for (String pair : StringUtils.split(fieldsStr, PAIR_DELIM)) {
+                for (String pair : fieldsStr.split(",")) {
                     if (!StringUtils.isBlank(pair)) {
-                        String[] tokens = StringUtils.split(pair, VALUE_DELIM);
+                        String[] tokens = pair.split(":");
                         if (tokens.length == 2) {
                             List<String> left = parseFields(tokens[0]);
                             List<String> right = parseFields(tokens[1]);
