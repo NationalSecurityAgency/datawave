@@ -1,5 +1,7 @@
 import { Ref, WritableComputedRef, computed, defineComponent, ref } from 'vue';
 
+const regexDataType = /^[1-9]\d*\s+types?$/;
+
 interface Entry {
   key: string;
   value: string;
@@ -45,7 +47,7 @@ export function parseVal(colName: string, colValue: any, colDataTypeCount?: any)
     const description = firstEntry.decription || '';
 
     return `${marking} ${markingAccess} ${description}`;
-  } else if (colName === 'dataType' && /^[1-9]\d*\s+types?$/.test(colDataTypeCount)) {
+  } else if (colName === 'dataType' && regexDataType.test(colDataTypeCount)) {
     return colDataTypeCount;
   } else {
     return colValue.toString();
