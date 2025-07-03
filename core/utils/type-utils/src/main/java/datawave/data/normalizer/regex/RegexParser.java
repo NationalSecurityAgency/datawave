@@ -10,10 +10,10 @@ import org.apache.commons.lang3.StringUtils;
  * intended to be a fully comprehensive regex parser. Some native regex characters may be restricted.
  */
 public class RegexParser {
-    
+
     /**
      * Parses the given regex and returns a {@link ExpressionNode} tree representing the parsed regex. If the string is null, null will be returned.
-     * 
+     *
      * @param regex
      *            the regex to parse
      * @return the {@link Node} tree
@@ -26,7 +26,7 @@ public class RegexParser {
         // Ensure the root node is always an expression node.
         return node instanceof ExpressionNode ? (ExpressionNode) node : createExpressionWithChild(node);
     }
-    
+
     /**
      * Parses a regex expression from the given string that may contain alternations. Depending on the expression, one of the following will be returned:
      * <ul>
@@ -36,7 +36,7 @@ public class RegexParser {
      * <li>If the expression does not contain any top-level alternations, an {@link ExpressionNode} with the parsed expression as its children will be
      * returned.</li>
      * </ul>
-     * 
+     *
      * @param string
      *            the string
      * @return the parsed node
@@ -46,7 +46,7 @@ public class RegexParser {
         if (StringUtils.isBlank(string)) {
             return new EmptyNode();
         }
-        
+
         List<String> expressions = RegexUtils.splitOnAlternations(string);
         Node node;
         if (expressions.size() > 1) {
@@ -66,21 +66,21 @@ public class RegexParser {
         // If the parsed node is not an AlternationNode, GroupNode, or ExpressionNode, wrap it in an ExpressionNode.
         return requiresWrap(node) ? createExpressionWithChild(node) : node;
     }
-    
+
     /**
      * Parses a subset of a regex expression that does not contain any top-level alternations, i.e. pipes.
-     * 
+     *
      * @param string
      *            the regex to parse
      * @return the parsed node
      */
     private static Node parseExpression(String string) {
-        
+
         // If the string is blank, return an EmptyNode.
         if (StringUtils.isBlank(string)) {
             return new EmptyNode();
         }
-        
+
         List<Node> nodes = new ArrayList<>();
         RegexReader reader = new RegexReader(string);
         while (reader.hasNext()) {
@@ -89,7 +89,7 @@ public class RegexParser {
             String content = reader.capturedExpression();
             nodes.add(createNode(type, content));
         }
-        
+
         // If we have a single child parsed from the expression, wrap it in an expression node if it is not already a wrapper node. Otherwise, return the child.
         if (nodes.size() == 1) {
             Node child = nodes.get(0);
@@ -101,10 +101,10 @@ public class RegexParser {
             return expressionNode;
         }
     }
-    
+
     /**
      * Return a new {@link ExpressionNode} with the given node as its child.
-     * 
+     *
      * @param child
      *            the child
      * @return the new node
@@ -114,7 +114,7 @@ public class RegexParser {
         node.addChild(child);
         return node;
     }
-    
+
     /**
      * Return whether the given node should be wrapped in an {@link ExpressionNode}. A node should not be wrapped if it is an instance of one of the following:
      * <ul>
@@ -122,7 +122,7 @@ public class RegexParser {
      * <li>{@link GroupNode}</li>
      * <li>{@link AlternationNode}</li>
      * </ul>
-     * 
+     *
      * @param node
      *            the node
      * @return true if the given node is a wrapper type, or false otherwise.
@@ -130,7 +130,7 @@ public class RegexParser {
     private static boolean requiresWrap(Node node) {
         return node != null && !(node instanceof ExpressionNode || node instanceof AlternationNode || node instanceof GroupNode);
     }
-    
+
     /**
      * Return a new node of the specified type with the given content if applicable.
      *
@@ -168,11 +168,11 @@ public class RegexParser {
                 throw new IllegalArgumentException("Unable to create new node of type " + type);
         }
     }
-    
+
     /**
      * Return a new {@link Node} from the given escaped character. In the case of {@code \d}, a new {@link DigitCharClassNode} will be returned. Otherwise, a
      * new {@link EscapedSingleCharNode} with the character will be returned.
-     * 
+     *
      * @param content
      *            the content
      * @return the new node
@@ -184,7 +184,7 @@ public class RegexParser {
         }
         return new EscapedSingleCharNode(character);
     }
-    
+
     /**
      * Return a new {@link RepetitionNode} parsed from the given expression. It is expected that the given content is an interval expression in the form
      * {@code {x}}, {@code {x,y}}, {@code {x,}}, or {@code {,y}}.
@@ -207,7 +207,7 @@ public class RegexParser {
         }
         return node;
     }
-    
+
     /**
      * Return a new {@link CharClassNode} parsed from the given expression. Parsing negated character classes is supported. The character class may only contain
      * the following: digits, a period, a hyphen, a numerical range.
@@ -263,7 +263,7 @@ public class RegexParser {
         }
         return node;
     }
-    
+
     /**
      * Return a new {@link GroupNode} parsed from the given expression.
      *
@@ -280,7 +280,7 @@ public class RegexParser {
         }
         return groupNode;
     }
-    
+
     /**
      * Return the given string with the first and last character trimmed. If the string has a length less than 3, an empty string will be returned.
      *
@@ -295,7 +295,7 @@ public class RegexParser {
             return str.substring(1, (str.length() - 1));
         }
     }
-    
+
     /**
      * Do not allow this class to be instantiated.
      */

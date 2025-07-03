@@ -21,12 +21,12 @@ import datawave.security.authorization.DatawaveUser;
 @Component
 public class DatawaveUserDetailsFactory {
     private final Set<String> requiredRoles;
-    
+
     @Autowired
     public DatawaveUserDetailsFactory(DatawaveSecurityProperties securityProperties) {
         this.requiredRoles = securityProperties.getRequiredRoles();
     }
-    
+
     public DatawaveUserDetails create(Collection<? extends DatawaveUser> proxiedUsers, long creationTime) {
         List<DatawaveUser> proxiedUserList = new ArrayList<>(proxiedUsers);
         boolean removeRequiredRoles = proxiedUserList.stream().anyMatch(u -> Collections.disjoint(u.getRoles(), requiredRoles));

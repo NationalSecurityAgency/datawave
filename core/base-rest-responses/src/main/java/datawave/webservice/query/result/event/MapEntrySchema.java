@@ -9,25 +9,25 @@ import io.protostuff.Schema;
 
 public class MapEntrySchema implements Schema<MapEntrySchema.MutableMapEntry> {
     public static final MapEntrySchema SCHEMA = new MapEntrySchema();
-    
+
     public static class MutableMapEntry implements Map.Entry<String,String> {
         private String key;
         private String value;
-        
+
         @Override
         public String getKey() {
             return key;
         }
-        
+
         public void setKey(String key) {
             this.key = key;
         }
-        
+
         @Override
         public String getValue() {
             return value;
         }
-        
+
         @Override
         public String setValue(String value) {
             String oldValue = this.value;
@@ -35,25 +35,25 @@ public class MapEntrySchema implements Schema<MapEntrySchema.MutableMapEntry> {
             return oldValue;
         }
     }
-    
+
     public static class DelegateMapEntry extends MutableMapEntry {
         private Map.Entry<String,String> delegate;
-        
+
         @Override
         public String getKey() {
             return delegate.getKey();
         }
-        
+
         @Override
         public String getValue() {
             return delegate.getValue();
         }
-        
+
         public void setDelegate(Map.Entry<String,String> delegate) {
             this.delegate = delegate;
         }
     }
-    
+
     @Override
     public String getFieldName(int number) {
         switch (number) {
@@ -65,7 +65,7 @@ public class MapEntrySchema implements Schema<MapEntrySchema.MutableMapEntry> {
                 return null;
         }
     }
-    
+
     @Override
     public int getFieldNumber(String name) {
         switch (name) {
@@ -77,32 +77,32 @@ public class MapEntrySchema implements Schema<MapEntrySchema.MutableMapEntry> {
                 return 0;
         }
     }
-    
+
     @Override
     public boolean isInitialized(MutableMapEntry message) {
         return true;
     }
-    
+
     @Override
     public MutableMapEntry newMessage() {
         return new MutableMapEntry();
     }
-    
+
     @Override
     public String messageName() {
         return Map.class.getSimpleName();
     }
-    
+
     @Override
     public String messageFullName() {
         return Map.class.getName();
     }
-    
+
     @Override
     public Class<? super MutableMapEntry> typeClass() {
         return Map.Entry.class;
     }
-    
+
     @Override
     public void mergeFrom(Input input, MutableMapEntry message) throws IOException {
         int number;
@@ -120,7 +120,7 @@ public class MapEntrySchema implements Schema<MapEntrySchema.MutableMapEntry> {
             }
         }
     }
-    
+
     @Override
     public void writeTo(Output output, MutableMapEntry message) throws IOException {
         output.writeString(1, message.getKey(), false);

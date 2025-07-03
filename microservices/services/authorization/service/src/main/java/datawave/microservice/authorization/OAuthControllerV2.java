@@ -29,14 +29,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping(path = "/v2/oauth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class OAuthControllerV2 {
-    
+
     private final OAuthOperationsV2 oauthOperations;
-    
+
     @Autowired
     public OAuthControllerV2(OAuthOperationsV2 oauthOperations) {
         this.oauthOperations = oauthOperations;
     }
-    
+
     @Operation(summary = "Authorizes the calling user to produce a JWT value",
                     description = "The returned JWT can be passed to other calls in a header. For example: \"Authorization: bearer <JWT value>\".<br>"
                                     + "The user can be determined with from the supplied client certificate or trusted headers ("
@@ -47,7 +47,7 @@ public class OAuthControllerV2 {
                     throws IllegalArgumentException, IOException {
         oauthOperations.authorize(currentUser, response, client_id, redirect_uri, response_type, state);
     }
-    
+
     @Operation(summary = "Authorizes the calling user to produce a JWT value",
                     description = "The returned JWT can be passed to other calls in a header. For example: \"Authorization: bearer <JWT value>\".<br>"
                                     + "The user can be determined with from the supplied client certificate or trusted headers ("
@@ -58,7 +58,7 @@ public class OAuthControllerV2 {
                     @RequestParam(required = false) String refresh_token, @RequestParam(required = false) String redirect_uri) throws IOException {
         return oauthOperations.token(currentUser, response, grant_type, client_id, client_secret, code, refresh_token, redirect_uri);
     }
-    
+
     /**
      * Returns the {@link DatawaveUserDetails} that represents the authenticated calling user.
      */
@@ -71,7 +71,7 @@ public class OAuthControllerV2 {
     public OAuthUserInfo user(@AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return oauthOperations.user(currentUser);
     }
-    
+
     /**
      * Returns the {@link DatawaveUserDetails} that represents the authenticated calling user.
      */

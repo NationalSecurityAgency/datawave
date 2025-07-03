@@ -23,97 +23,97 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(propOrder = {"sourceField", "sinkField", "enrichmentField", "enrichmentIndex", "jexlPrecondition"})
 public class EventField implements Serializable, Message<EventField> {
-    
+
     private static final long serialVersionUID = -1133131083937142620L;
-    
+
     private enum FIELD_BASE implements FieldAccessor {
         SOURCE(1, "sourceField"), SINK(2, "sinkField"), ENRICHMENT(3, "enrichmentField"), ENRICHMENT_INDEX(4, "enrichmentIndex"), UNKNOWN(0, "UNKNOWN");
-        
+
         final int fn;
         final String name;
-        
+
         FIELD_BASE(int fn, String name) {
             this.fn = fn;
             this.name = name;
         }
-        
+
         public int getFieldNumber() {
             return fn;
         }
-        
+
         public String getFieldName() {
             return name;
         }
     }
-    
+
     private static final ProtostuffField<FIELD_BASE> FIELD = new ProtostuffField<>(FIELD_BASE.class);
-    
+
     @XmlAttribute(required = true)
     private String sourceField;
-    
+
     @XmlAttribute(required = true)
     private String sinkField;
-    
+
     @XmlAttribute
     private String enrichmentField;
-    
+
     @XmlAttribute
     private String enrichmentIndex;
-    
+
     @XmlAttribute
     private String jexlPrecondition;
-    
+
     //
     // Getters/Setters
     //
     public String getSourceField() {
         return sourceField;
     }
-    
+
     public void setSourceField(String sourceField) {
         this.sourceField = sourceField;
     }
-    
+
     public String getSinkField() {
         return sinkField;
     }
-    
+
     public void setSinkField(String sinkField) {
         this.sinkField = sinkField;
     }
-    
+
     public String getEnrichmentField() {
         return enrichmentField;
     }
-    
+
     public void setEnrichmentField(String enrichmentField) {
         this.enrichmentField = enrichmentField;
     }
-    
+
     public boolean hasEnrichment() {
         return !StringUtils.isEmpty(this.enrichmentField) && !StringUtils.isEmpty(this.enrichmentIndex);
     }
-    
+
     public String getEnrichmentIndex() {
         return enrichmentIndex;
     }
-    
+
     public void setEnrichmentIndex(String enrichmentIndex) {
         this.enrichmentIndex = enrichmentIndex;
     }
-    
+
     public boolean hasJexlPrecondition() {
         return (getJexlPrecondition() != null);
     }
-    
+
     public String getJexlPrecondition() {
         return jexlPrecondition;
     }
-    
+
     public void setJexlPrecondition(String jexlPrecondition) {
         this.jexlPrecondition = jexlPrecondition;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -122,28 +122,28 @@ public class EventField implements Serializable, Message<EventField> {
          * if (this.enrichmentField == null && this.jexlPrecondition == null) { sb.append("]"); } else if (this.enrichmentField != null && this.jexlPrecondition
          * == null) { sb.append(" | ").append(this.enrichmentField).append("=").append(this.enrichmentIndex).append("]"); } else if (this.enrichmentField ==
          * null && this.jexlPrecondition != null) { sb.append(" | ").append(this.jexlPrecondition).append("]"); }
-         * 
+         *
          * else { sb.append(" | ").append(this.enrichmentField).append("=").append(this.enrichmentIndex);
          * sb.append(" | ").append(this.jexlPrecondition).append("]"); }
          */
-        
+
         sb.append(" | ");
-        
+
         if (this.enrichmentField != null) {
             sb.append(this.enrichmentField).append("=").append(this.enrichmentIndex);
         }
-        
+
         sb.append(" | ");
-        
+
         if (this.jexlPrecondition != null) {
             sb.append(this.jexlPrecondition);
         }
-        
+
         sb.append("]");
-        
+
         return sb.toString();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof EventField)) {
@@ -155,12 +155,12 @@ public class EventField implements Serializable, Message<EventField> {
                             && Objects.equal(other.getEnrichmentIndex(), this.getEnrichmentIndex());
         }
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hashCode(this.getSourceField(), this.getSinkField(), this.getEnrichmentField(), this.getEnrichmentIndex());
     }
-    
+
     //
     // protostuff
     //
@@ -168,39 +168,39 @@ public class EventField implements Serializable, Message<EventField> {
     public Schema<EventField> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<EventField> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<EventField> SCHEMA = new Schema<EventField>() {
-        
+
         @Override
         public EventField newMessage() {
             return new EventField();
         }
-        
+
         @Override
         public Class<? super EventField> typeClass() {
             return EventField.class;
         }
-        
+
         @Override
         public String messageName() {
             return EventField.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return EventField.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(EventField message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, EventField message) throws IOException {
             if (message.sourceField != null)
@@ -212,7 +212,7 @@ public class EventField implements Serializable, Message<EventField> {
             if (message.enrichmentIndex != null)
                 output.writeString(FIELD_BASE.ENRICHMENT_INDEX.getFieldNumber(), message.enrichmentIndex, false);
         }
-        
+
         @Override
         public void mergeFrom(Input input, EventField message) throws IOException {
             int number;
@@ -237,7 +237,7 @@ public class EventField implements Serializable, Message<EventField> {
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             FIELD_BASE field = FIELD.parseFieldNumber(number);
@@ -246,12 +246,12 @@ public class EventField implements Serializable, Message<EventField> {
             }
             return field.getFieldName();
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             return FIELD.parseFieldName(name).getFieldNumber();
         }
-        
+
     };
-    
+
 }

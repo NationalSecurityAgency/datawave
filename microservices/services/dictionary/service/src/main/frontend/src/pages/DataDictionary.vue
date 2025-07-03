@@ -24,6 +24,7 @@
     </div>
     <div class="row" style="width: 100%; height: 80%">
       <p class="information">
+        <br />
         Cluster: {{ system?.systemName }} <br />
         When a value is present in the forward index types, this means that a
         field is indexed and informs you how your query terms will be treated
@@ -133,7 +134,7 @@
               :key="col.name"
               :props="props"
               style="font-size: 13px;"
-              @click="Feature.copyLabel(col.value)"
+              @click="Feature.copyLabel(col.name, col.value)"
             >
               <label style="cursor: pointer;">
                 {{

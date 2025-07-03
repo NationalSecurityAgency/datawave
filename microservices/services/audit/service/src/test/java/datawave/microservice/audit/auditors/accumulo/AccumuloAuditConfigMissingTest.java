@@ -19,21 +19,21 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ContextConfiguration(classes = AccumuloAuditConfigMissingTest.AccumuloAuditConfigTestConfiguration.class)
 @ActiveProfiles({"AccumuloAuditConfigMissingTest", "missing"})
 public class AccumuloAuditConfigMissingTest {
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     @Test
     public void testBeansMissing() {
         assertFalse(context.containsBean("accumuloAuditMessageHandler"));
         assertFalse(context.containsBean("accumuloAuditor"));
         assertFalse(context.containsBean("connector"));
     }
-    
+
     @Configuration
     @Profile("AccumuloAuditConfigMissingTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class AccumuloAuditConfigTestConfiguration {
-        
+
     }
 }

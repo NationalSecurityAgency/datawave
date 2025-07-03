@@ -16,20 +16,20 @@ import datawave.microservice.metadata.tablecache.task.TableCacheReloadMonitor;
 @EnableScheduling
 @ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheConfig {
-    
+
     @Bean
     @ConfigurationProperties("datawave.table.cache")
     @ConditionalOnMissingBean(AccumuloTableCacheProperties.class)
     public AccumuloTableCacheProperties tableCacheConfiguration() {
         return new AccumuloTableCacheProperties();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(AccumuloTableCache.class)
     public AccumuloTableCache tableCache(AccumuloTableCacheProperties accumuloTableCacheProperties) {
         return new AccumuloTableCacheImpl(accumuloTableCacheProperties);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(TableCacheReloadMonitor.class)
     public TableCacheReloadMonitor tableCacheMonitor(AccumuloTableCache cache, AccumuloTableCacheProperties properties) {

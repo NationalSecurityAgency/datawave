@@ -21,13 +21,13 @@ public class AuthorizationEvictionEventListener implements ApplicationListener<A
     private Logger log = LoggerFactory.getLogger(getClass());
     private final CachedDatawaveUserService userService;
     private final ServiceMatcher serviceMatcher;
-    
+
     @Autowired
     public AuthorizationEvictionEventListener(CachedDatawaveUserService userService, ServiceMatcher serviceMatcher) {
         this.userService = userService;
         this.serviceMatcher = serviceMatcher;
     }
-    
+
     @Override
     public void onApplicationEvent(AuthorizationEvictionEvent event) {
         // Ignore events that this service instance published, since we publish from a place

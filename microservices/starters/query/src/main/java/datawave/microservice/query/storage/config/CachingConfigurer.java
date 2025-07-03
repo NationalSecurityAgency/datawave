@@ -18,37 +18,37 @@ import org.springframework.context.annotation.Configuration;
 @EnableCaching
 @ConditionalOnProperty(name = "datawave.query.storage.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class CachingConfigurer extends CachingConfigurerSupport {
-    
+
     @Bean
     @Override
     public CacheErrorHandler errorHandler() {
         return new QueryCacheErrorHandler();
     }
-    
+
     private static class QueryCacheErrorHandler implements CacheErrorHandler {
         private final Logger logger = LoggerFactory.getLogger(this.getClass());
-        
+
         @Override
         public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
             logger.error("Exception retrieving value for " + key + " from cache " + cache.getName(), exception);
             // preserve the underlying stack trace by wrapping the exception instead of rethrowing it.
             throw new RuntimeException(exception);
         }
-        
+
         @Override
         public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
             logger.error("Exception putting value " + key + " => " + value + " in cache " + cache.getName(), exception);
             // preserve the underlying stack trace by wrapping the exception instead of rethrowing it.
             throw new RuntimeException(exception);
         }
-        
+
         @Override
         public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
             logger.error("Exception evicting " + key + " from cache " + cache.getName(), exception);
             // preserve the underlying stack trace by wrapping the exception instead of rethrowing it.
             throw new RuntimeException(exception);
         }
-        
+
         @Override
         public void handleCacheClearError(RuntimeException exception, Cache cache) {
             logger.error("Exception clearing cache " + cache.getName(), exception);

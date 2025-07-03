@@ -158,6 +158,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String START_TIME = "start.time";
     public static final String END_TIME = "end.time";
     public static final String YIELD_THRESHOLD_MS = "yield.threshold.ms";
+    public static final String MAX_YIELDS = "max.yields";
 
     public static final String FILTER_MASKED_VALUES = "filter.masked.values";
     public static final String INCLUDE_DATATYPE = "include.datatype";
@@ -396,6 +397,7 @@ public class QueryOptions implements OptionDescriber {
     protected long maxIvaratorResults = -1;
 
     protected long yieldThresholdMs = Long.MAX_VALUE;
+    protected long maxYields = 10;
 
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
     protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
@@ -548,6 +550,7 @@ public class QueryOptions implements OptionDescriber {
         this.maxIvaratorResults = other.maxIvaratorResults;
 
         this.yieldThresholdMs = other.yieldThresholdMs;
+        this.maxYields = other.maxYields;
 
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
@@ -784,7 +787,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setDocumentPermutationClasses(String documentPermutationClassesStr) {
-        setDocumentPermutationClasses(Arrays.asList(StringUtils.split(documentPermutationClassesStr, ',')));
+        setDocumentPermutationClasses(Arrays.asList(documentPermutationClassesStr.split(",")));
     }
 
     public boolean isIncludeRecordId() {
@@ -1400,6 +1403,7 @@ public class QueryOptions implements OptionDescriber {
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
                         "The threshold in milliseconds that the query iterator will evaluate consecutive documents to false before yielding the scan.");
+        options.put(MAX_YIELDS, "The maximum number of times to yield on the same startKey without making progress.");
         options.put(COMPRESS_SERVER_SIDE_RESULTS, "GZIP compress the serialized Documents before returning to the webserver");
         options.put(MAX_EVALUATION_PIPELINES, "The max number of evaluation pipelines");
         options.put(SERIAL_EVALUATION_PIPELINE, "Forces us to use the serial pipeline. Allows us to still have a single thread for evaluation");
@@ -1658,7 +1662,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+                HashSet<String> set = Sets.newHashSet(filterCsv.split(","));
 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
 
@@ -1894,6 +1898,10 @@ public class QueryOptions implements OptionDescriber {
             this.setYieldThresholdMs(Long.parseLong(options.get(YIELD_THRESHOLD_MS)));
         }
 
+        if (options.containsKey(MAX_YIELDS)) {
+            this.setMaxYields(Long.parseLong(options.get(MAX_YIELDS)));
+        }
+
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
             this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
         }
@@ -2041,14 +2049,14 @@ public class QueryOptions implements OptionDescriber {
         Map<String,Set<String>> mapping = new HashMap<>();
 
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
                 } else {
-                    String[] values = StringUtils.split(entrySplits[1], ',');
+                    String[] values = entrySplits[1].split(",");
                     HashSet<String> dataTypes = new HashSet<>();
 
                     Collections.addAll(dataTypes, values);
@@ -2068,9 +2076,9 @@ public class QueryOptions implements OptionDescriber {
     public static Set<String> fetchDataTypeKeys(String data) {
         Set<String> keys = Sets.newHashSet();
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
@@ -2185,7 +2193,7 @@ public class QueryOptions implements OptionDescriber {
 
     public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
-        for (String field : StringUtils.split(fieldStr, ',')) {
+        for (String field : fieldStr.split(",")) {
             if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
                 fields.add(field);
             }
@@ -2219,7 +2227,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {
-        return Sets.newHashSet(StringUtils.split(colFams, ','));
+        return Sets.newHashSet(colFams.split(","));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -2383,6 +2391,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setYieldThresholdMs(long yieldThresholdMs) {
         this.yieldThresholdMs = yieldThresholdMs;
+    }
+
+    public long getMaxYields() {
+        return maxYields;
+    }
+
+    public void setMaxYields(long maxYields) {
+        this.maxYields = maxYields;
     }
 
     public int getFiFieldSeek() {

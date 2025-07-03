@@ -16,16 +16,16 @@ import datawave.data.normalizer.regex.SingleCharNode;
  * </ul>
  */
 public class NumericCharClassValidator extends BaseVisitor {
-    
+
     private static final String ERROR_MESSAGE = "Character classes may only contain numeric characters and numeric ranges.";
-    
+
     public static void validate(Node node) {
         if (node != null) {
             NumericCharClassValidator visitor = new NumericCharClassValidator();
             node.accept(visitor, null);
         }
     }
-    
+
     @Override
     public Object visitCharClass(CharClassNode node, Object data) {
         for (Node child : node.getChildren()) {
@@ -42,13 +42,13 @@ public class NumericCharClassValidator extends BaseVisitor {
         }
         return null;
     }
-    
+
     private void validate(SingleCharNode node) {
         if (!RegexConstants.ALL_DIGITS.contains(node.getCharacter())) {
             throw new IllegalArgumentException(ERROR_MESSAGE);
         }
     }
-    
+
     private void validate(CharRangeNode node) {
         if (!RegexConstants.ALL_DIGITS.contains(node.getStart())) {
             throw new IllegalArgumentException(ERROR_MESSAGE);
@@ -57,5 +57,5 @@ public class NumericCharClassValidator extends BaseVisitor {
             throw new IllegalArgumentException(ERROR_MESSAGE);
         }
     }
-    
+
 }

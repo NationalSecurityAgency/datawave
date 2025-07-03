@@ -26,23 +26,23 @@ import datawave.webservice.common.audit.Auditor;
  * An implementation for {@link Auditor}, which writes audit messages to Accumulo.
  */
 public class AccumuloAuditor implements Auditor {
-    
+
     private static Logger log = LoggerFactory.getLogger(AccumuloAuditor.class);
-    
+
     private SimpleDateFormat formatter = new SimpleDateFormat(Auditor.ISO_8601_FORMAT_STRING);
-    
+
     private String tableName;
-    
+
     private AccumuloClient accumuloClient;
-    
+
     private ConcurrentHashMap<String,Long> auditTimers = new ConcurrentHashMap<>();
-    
+
     public AccumuloAuditor(String tableName, AccumuloClient client) {
         this.tableName = tableName;
         this.accumuloClient = client;
         init();
     }
-    
+
     private void init() {
         try {
             if (!accumuloClient.tableOperations().exists(tableName))
@@ -53,14 +53,14 @@ public class AccumuloAuditor implements Auditor {
             log.warn("Accumulo Audit Table [{}] already exists.", tableName, e);
         }
     }
-    
+
     @Override
     public void audit(AuditParameters msg) throws Exception {
         String auditId = msg.getAuditId();
         if (auditId == null) {
             auditId = UUID.randomUUID().toString();
         }
-        
+
         // save the start time of the audit call
         auditTimers.put(auditId, System.currentTimeMillis());
         try {
@@ -77,7 +77,7 @@ public class AccumuloAuditor implements Auditor {
             auditTimers.remove(auditId);
         }
     }
-    
+
     public ConcurrentHashMap<String,Long> getAuditTimers() {
         return auditTimers;
     }

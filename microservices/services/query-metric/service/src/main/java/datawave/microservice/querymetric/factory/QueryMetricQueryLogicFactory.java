@@ -14,13 +14,13 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 @Component
 public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic> {
-    
+
     private MarkingFunctions markingFunctions;
     private ResponseObjectFactory responseObjectFactory;
     private QueryMetricHandlerProperties queryMetricHandlerProperties;
     private DateIndexHelperFactory dateIndexHelperFactory;
     private MetadataHelperFactory metadataHelperFactory;
-    
+
     @Autowired
     public QueryMetricQueryLogicFactory(MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
                     DateIndexHelperFactory dateIndexHelperFactory, MetadataHelperFactory metadataHelperFactory,
@@ -31,10 +31,10 @@ public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic
         this.metadataHelperFactory = metadataHelperFactory;
         this.queryMetricHandlerProperties = queryMetricHandlerProperties;
     }
-    
+
     @Override
     public ShardQueryLogic getObject() throws Exception {
-        
+
         ShardQueryLogic logic = new ShardQueryLogic();
         logic.setMarkingFunctions(markingFunctions);
         logic.setTableName(this.queryMetricHandlerProperties.getShardTableName());
@@ -51,7 +51,7 @@ public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic
         logic.setMaxEvaluationPipelines(1); // use SerialIterator
         return logic;
     }
-    
+
     @Override
     public Class<?> getObjectType() {
         return ShardQueryLogic.class;

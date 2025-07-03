@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.0</version>
+        <version>5.0.4</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave</artifactId>
-    <version>4.0.5-SNAPSHOT</version>
+    <version>4.0.6-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-spring-boot-starter</url>
     <licenses>
         <license>
@@ -17,20 +17,20 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-spring-boot-starter.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-spring-boot-starter.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-spring-boot-starter</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <version.accumulo>2.1.1</version.accumulo>
         <version.beanutils>1.9.4</version.beanutils>
-        <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
+        <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.authorization-api>4.0.1</version.datawave.authorization-api>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.cache-starter>4.0.0</version.datawave.cache-starter>
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
-        <version.datawave.metadata-utils>4.0.5</version.datawave.metadata-utils>
+        <version.datawave.metadata-utils>4.0.16</version.datawave.metadata-utils>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.dropwizard-metrics>4.1.2</version.dropwizard-metrics>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
@@ -69,53 +69,86 @@
                 <exclusions>
                     <!-- Exclude log4j since with spring boot we're using log4j2 -->
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                     <!-- Exclude java servlet and JSP api jars since the hadoop versions are old and spring includes newer version -->
                     <exclusion>
-                        <artifactId>servlet-api</artifactId>
                         <groupId>javax.servlet</groupId>
+                        <artifactId>servlet-api</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>jsp-api</artifactId>
                         <groupId>javax.servlet.jsp</groupId>
+                        <artifactId>jsp-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.datawave.accumulo-utils}</version>
                 <exclusions>
                     <!-- Exclude log4j since with spring boot we're using log4j2 -->
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.logging</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>ch.qos.logback</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>junit</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <!--
                     NOTE: We have a severe allergy to netty-tcnative and its transitives.
                     Causes surefire JVMs to core dump in dramatic fashion
                     -->
                     <exclusion>
-                        <artifactId>netty-tcnative</artifactId>
                         <groupId>io.netty</groupId>
+                        <artifactId>netty-tcnative</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>servlet-api</artifactId>
                         <groupId>javax.servlet</groupId>
+                        <artifactId>servlet-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${version.datawave.base-rest-responses}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>common-utils</artifactId>
+                <version>${version.datawave.common-utils}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>metadata-utils</artifactId>
+                <version>${version.datawave.metadata-utils}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -123,39 +156,6 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
                 <version>${version.datawave.authorization-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave.base-rest-responses}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>common-utils</artifactId>
-                <version>${version.datawave.common-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>metadata-utils</artifactId>
-                <version>${version.datawave.metadata-utils}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.apache.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>ch.qos.logback</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>slf4j-reload4j</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -178,28 +178,28 @@
                 <version>${version.accumulo}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>junit</artifactId>
                         <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>servlet-api</artifactId>
                         <groupId>javax.servlet</groupId>
+                        <artifactId>servlet-api</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.logging</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>ch.qos.logback</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -250,20 +250,20 @@
             <artifactId>commons-beanutils</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>authorization-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>base-rest-responses</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -334,8 +334,8 @@
             <artifactId>spring-boot-starter-undertow</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>undertow-websockets-jsr</artifactId>
                     <groupId>io.undertow</groupId>
+                    <artifactId>undertow-websockets-jsr</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -348,12 +348,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>spring-boot-starter-logging</artifactId>
                     <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
                     <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -375,8 +375,8 @@
             <artifactId>spring-cloud-starter-bus-amqp</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>spring-boot-starter-logging</artifactId>
                     <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -385,16 +385,16 @@
             <artifactId>spring-cloud-starter-consul-discovery</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>*</artifactId>
                     <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.springframework.cloud</groupId>
                     <artifactId>spring-cloud-netflix-core</artifactId>
-                    <groupId>org.springframework.cloud</groupId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>spring-cloud-starter-netflix-ribbon</artifactId>
                     <groupId>org.springframework.cloud</groupId>
+                    <artifactId>spring-cloud-starter-netflix-ribbon</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

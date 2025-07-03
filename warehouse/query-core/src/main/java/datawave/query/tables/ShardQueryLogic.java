@@ -4,6 +4,7 @@ import static datawave.query.jexl.functions.QueryFunctions.GROUPBY_FUNCTION;
 import static datawave.query.jexl.functions.QueryFunctions.UNIQUE_FUNCTION;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +43,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
@@ -60,12 +62,15 @@ import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.next.scanner.DocumentScannerConfig;
+import datawave.next.scanner.DocumentScheduler;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
+import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
@@ -104,6 +109,7 @@ import datawave.query.rules.QueryValidationResult;
 import datawave.query.rules.ShardQueryValidationConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
+import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
@@ -467,6 +473,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
+        if (dateIndexHelper != null) {
+            dateIndexHelper.setUseIterator(isDateIndexIterator());
+        }
 
         initializeQueryModel(config, metadataHelper, dateIndexHelper);
 
@@ -555,6 +564,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         DateIndexHelper dateIndexHelper = prepareDateIndexHelper(config.getClient(), this.getDateIndexTableName(), config.getAuthorizations());
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
+        }
+        if (dateIndexHelper != null) {
+            dateIndexHelper.setUseIterator(isDateIndexIterator());
         }
 
         QueryPlanner queryPlanner = getQueryPlanner();
@@ -999,12 +1011,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the GROUP_FIELDS parameter if given
         String groupFieldsParam = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(groupFieldsParam)) {
-            String[] groupFields = StringUtils.split(groupFieldsParam, Constants.PARAM_VALUE_SEP);
+            TreeMultimap<String,TemporalGranularity> groupByFieldMap = GroupFields.parseGroupByFields(groupFieldsParam);
 
             // Only set the group fields if we were actually given some.
-            if (groupFields.length > 0) {
+            if (!groupByFieldMap.isEmpty()) {
                 GroupFields groupByFields = config.getGroupFields();
-                groupByFields.setGroupByFields(Sets.newHashSet(groupFields));
+                groupByFields.setGroupByFieldMap(groupByFieldMap);
 
                 // Update the sum fields if given.
                 String sumFieldsParam = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
@@ -1350,7 +1362,29 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
+        // ony optimize if unique fields are not requested. The suspicion is that the unique transform on the query iterator
+        // is reducing the amount of network traffic between scanners and webservice, and we don't want to overwhelm
+        // the unique transform in the webservice.
+        if (isUseDocumentScheduler() && config.getDocumentScannerConfig() != null && !isCheckpointable() && !isFullTableScanEnabled()) {
+
+            QueryPlanner queryPlanner = getQueryPlanner();
+            if (planner instanceof DefaultQueryPlanner) {
+                DefaultQueryPlanner dqp = (DefaultQueryPlanner) queryPlanner;
+                DocumentScheduler documentScheduler = new DocumentScheduler(config);
+                documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
+                return documentScheduler;
+            }
+        }
+
         return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+    }
+
+    protected VisitorFunction getVisitorFunction(MetadataHelper metadataHelper) {
+        try {
+            return new VisitorFunction(getConfig(), metadataHelper);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
@@ -2847,6 +2881,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setSpeculativeScanning(speculativeScanning);
     }
 
+    public boolean getSerializeQueryIterator() {
+        return getConfig().getSerializeQueryIterator();
+    }
+
+    public void setSerializeQueryIterator(boolean serializeQueryIterator) {
+        getConfig().setSerializeQueryIterator(serializeQueryIterator);
+    }
+
     public boolean getAllowShortcutEvaluation() {
         return getConfig().getAllowShortcutEvaluation();
     }
@@ -3410,5 +3452,29 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         getConfig().setNoExpansionIfCurrentDateTypes(noExpansionIfCurrentDateTypes);
+    }
+
+    public boolean isUseDocumentScheduler() {
+        return getConfig().isUseDocumentScheduler();
+    }
+
+    public void setUseDocumentScheduler(boolean useDocumentScheduler) {
+        getConfig().setUseDocumentScheduler(useDocumentScheduler);
+    }
+
+    public void setDocumentScannerConfig(DocumentScannerConfig documentScannerConfig) {
+        this.getConfig().setDocumentScannerConfig(documentScannerConfig);
+    }
+
+    public DocumentScannerConfig getDocumentScannerConfig() {
+        return getConfig().getDocumentScannerConfig();
+    }
+
+    public boolean isDateIndexIterator() {
+        return getConfig().isDateIndexIterator();
+    }
+
+    public void setDateIndexIterator(boolean dateIndexIterator) {
+        getConfig().setDateIndexIterator(dateIndexIterator);
     }
 }

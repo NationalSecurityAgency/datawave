@@ -10,7 +10,7 @@ import org.apache.commons.collections4.map.LRUMap;
 public class ColumnVisibilityCache {
     @SuppressWarnings("unchecked")
     private static Map<ByteSequence,ColumnVisibility> cache = Collections.synchronizedMap(new LRUMap(256));
-    
+
     public static ColumnVisibility get(ByteSequence bytes) {
         ColumnVisibility vis = cache.get(bytes);
         if (vis == null) {

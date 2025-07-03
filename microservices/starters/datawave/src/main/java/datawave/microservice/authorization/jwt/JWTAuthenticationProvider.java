@@ -30,13 +30,13 @@ import io.jsonwebtoken.UnsupportedJwtException;
 public class JWTAuthenticationProvider implements AuthenticationProvider {
     private final JWTTokenHandler tokenHandler;
     private final DatawaveUserDetailsFactory userDetailsFactory;
-    
+
     @Autowired
     public JWTAuthenticationProvider(JWTTokenHandler tokenHandler, DatawaveUserDetailsFactory userDetailsFactory) {
         this.tokenHandler = tokenHandler;
         this.userDetailsFactory = userDetailsFactory;
     }
-    
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         if (authentication instanceof JWTPreauthToken) {
@@ -56,7 +56,7 @@ public class JWTAuthenticationProvider implements AuthenticationProvider {
         }
         return null;
     }
-    
+
     @Override
     public boolean supports(Class<?> authentication) {
         return JWTPreauthToken.class.isAssignableFrom(authentication);

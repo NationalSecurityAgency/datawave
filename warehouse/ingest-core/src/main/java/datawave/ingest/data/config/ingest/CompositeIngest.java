@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
@@ -78,7 +79,7 @@ public interface CompositeIngest {
     class CompositeFieldNormalizer {
 
         private static final long serialVersionUID = -3892470989028896718L;
-        private static final Logger log = Logger.getLogger(CompositeFieldNormalizer.class);
+        private static final Logger log = LoggerFactory.getLogger(CompositeFieldNormalizer.class);
 
         private static final String DEFAULT_SEPARATOR = new String(Character.toChars(Character.MAX_CODE_POINT));
 
@@ -149,7 +150,7 @@ public interface CompositeIngest {
 
                     // if any members are indexOnly fields, skip this one
                     if (!Sets.intersection(Sets.newHashSet(componentFields), indexOnly).isEmpty()) {
-                        log.warn("rejecting " + compositeField + " which includes index only field in " + indexOnly);
+                        log.warn("rejecting {} which includes index only field in {}", compositeField, indexOnly);
                         continue;
                     }
 
@@ -187,7 +188,7 @@ public interface CompositeIngest {
             Set<String> emptySet = Collections.emptySet();
             ignoreNormalizationForFields = (null != ignoreNormalization) ? cleanSet(ignoreNormalization) : emptySet;
 
-            log.debug("setup with composites " + this.compositeToFieldMap);
+            log.debug("setup with composites {}", this.compositeToFieldMap);
         }
 
         /**
