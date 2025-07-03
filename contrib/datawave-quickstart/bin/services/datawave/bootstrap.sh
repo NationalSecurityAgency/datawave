@@ -27,7 +27,7 @@ source "${DW_DATAWAVE_SERVICE_DIR}/bootstrap-user.sh"
 
 # Selected Maven profile for the DataWave build
 
-DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
+DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-compose}
 
 # Maven command
 DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipServices -DskipTests -DskipITs -Dmaven.build.cache.enabled=false clean package --builder smart -T1.0C}"
