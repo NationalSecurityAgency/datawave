@@ -225,10 +225,9 @@ public class GroupingRequiredFilterFunctions {
      */
     private static void manageMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
                     ValueTuple currentMatch, int positionFromRight) {
-
         Key candidateMetadata = ValueTuple.getSourceMetadata(fieldValue);
         Key currentMetadata = ValueTuple.getSourceMetadata(currentMatch);
-        if (!currentMetadata.equals(candidateMetadata)) {
+        if (candidateMetadata != null && currentMetadata != null && !currentMetadata.equals(candidateMetadata)) {
             return; // only allow matching within the same document key
         }
 
@@ -345,10 +344,9 @@ public class GroupingRequiredFilterFunctions {
 
     private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, String regex, Collection<ValueTuple> allMatches, String theFirstMatch,
                     String theNextMatch, ValueTuple currentMatch) {
-
         Key candidateMetadata = ValueTuple.getSourceMetadata(fieldValue);
         Key currentMetadata = ValueTuple.getSourceMetadata(currentMatch);
-        if (!currentMetadata.equals(candidateMetadata)) {
+        if (candidateMetadata != null && currentMetadata != null && !currentMetadata.equals(candidateMetadata)) {
             return; // only allow matching within the same document key
         }
 
