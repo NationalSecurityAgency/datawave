@@ -16,6 +16,7 @@ import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.fs.RandomVolumeChooser;
 import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,10 +94,10 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
     private TreeMap<Long,Set<String>> getTiers(TableId tableId, ServiceEnvironment.Configuration tableConfig, Set<String> options, String configuredTiers) {
         TreeMap<Long,Set<String>> daysToVolumes = new TreeMap<>();
         daysToVolumes.put(Long.MAX_VALUE, options);
-        for (String tier : configuredTiers.split(",")) {
+        for (String tier : StringUtils.split(configuredTiers, ',')) {
             log.debug("Determining volumes for tier {} using property {} for Table id: {}", tier,
                             Property.TABLE_ARBITRARY_PROP_PREFIX + PROPERTY_PREFIX + tier + VOLUME_SUFFIX, tableId);
-            Set<String> volumesForCurrentTier = Arrays.stream(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + VOLUME_SUFFIX).split(","))
+            Set<String> volumesForCurrentTier = Arrays.stream(StringUtils.split(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + VOLUME_SUFFIX), ','))
                             .collect(Collectors.toSet());
             long daysBackForCurrentTier = Long.parseLong(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + DAYS_BACK_SUFFIX));
             if (daysBackForCurrentTier >= 0) {

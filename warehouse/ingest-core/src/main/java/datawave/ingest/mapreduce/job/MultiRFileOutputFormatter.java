@@ -50,6 +50,7 @@ import com.google.common.collect.Maps;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 
@@ -147,7 +148,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if (tableListString == null) {
             return Collections.emptySet();
         } else {
-            String[] tables = tableListString.split(",");
+            String[] tables = StringUtils.split(tableListString, ',');
             return new HashSet<>(Arrays.asList(tables));
         }
     }
@@ -379,7 +380,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if (log.isInfoEnabled())
             log.info("Configured table names are " + configNames);
 
-        String[] configuredTableNames = configNames.split(",");
+        String[] configuredTableNames = StringUtils.split(configNames, ',', false);
 
         if (configuredTableNames.length > 0)
             tableList.addAll(Arrays.asList(configuredTableNames));

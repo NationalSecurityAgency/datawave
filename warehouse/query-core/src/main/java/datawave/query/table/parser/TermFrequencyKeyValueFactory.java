@@ -6,6 +6,7 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -23,7 +24,7 @@ public class TermFrequencyKeyValueFactory {
         TermFrequencyKeyValue t = new TermFrequencyKeyValue();
         t.setShardId(key.getRow().toString());
 
-        String[] field = key.getColumnQualifier().toString().split("\0");
+        String[] field = StringUtils.split(key.getColumnQualifier().toString(), "\0");
         if (field.length > 0) {
             t.setDatatype(field[0]);
         }

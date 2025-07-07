@@ -8,6 +8,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Logger;
 
+import datawave.util.StringUtils;
+
 /**
  * Mapper to produce counts from the processingErrors table.
  *
@@ -19,7 +21,7 @@ public class ProcessingErrorsMapper extends Mapper<Key,Value,Text,Text> {
 
     public void map(Key key, Value value, Context context) throws IOException, InterruptedException {
         // format of the row == JobName\0DataType\0UID
-        final String[] rowSplit = key.getRow().toString().split("\0");
+        final String[] rowSplit = StringUtils.split(key.getRow().toString(), "\0");
         log.info("Have key " + key);
         final String cfString = key.getColumnFamily().toString();
 
@@ -31,7 +33,7 @@ public class ProcessingErrorsMapper extends Mapper<Key,Value,Text,Text> {
 
             context.write(new Text(dataType + "\0" + jobName + "\0cnt"), new Text("1"));
         } else if ("info".equals(cfString)) {
-            final String[] cqSplit = key.getColumnQualifier().toString().split("\0");
+            final String[] cqSplit = StringUtils.split(key.getColumnQualifier().toString(), "\0");
 
             context.write(new Text(dataType + "\0" + jobName + "\0" + cqSplit[0] + "\0infocnt"), new Text(cqSplit[1]));
         }

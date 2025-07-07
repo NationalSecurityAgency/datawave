@@ -1,5 +1,7 @@
 package datawave.webservice.query.exception;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Enum to define error codes for the web service
  *
@@ -291,7 +293,7 @@ public enum DatawaveErrorCode {
     }
 
     public static DatawaveErrorCode findCode(String errorCode) {
-        String[] parts = errorCode.split("-");
+        String[] parts = StringUtils.split(errorCode, '-');
         if (parts.length == 2) {
             try {
                 int httpCode = Integer.parseInt(parts[0]);
