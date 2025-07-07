@@ -146,7 +146,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      */
     private static final String DATATYPE_ERROR = ".error";
 
-
     private static final String PROPERTY_MALFORMED = " property malformed: ";
 
     private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
@@ -163,6 +162,14 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected Set<String> reverseIndexedFields = Sets.newHashSet();
     protected Map<String,Pattern> reverseIndexedPatterns = Maps.newHashMap();
     protected Set<String> reverseUnindexedFields = Sets.newHashSet();
+
+    /** SETH NOTE
+     * Pulled these from the 2 chunks above. Only grabbed the first var, but you may need
+     * to grab the other 2 for each. Not sure if this will be necessary though.
+     */
+    protected Set<String> errorIndexedFields = Sets.newHashSet();
+    protected Set<String> errorReverseIndexedFields = Sets.newHashSet();
+
 
     // for all the atoms that are normalized, but not indexed
     protected Set<String> normalizedFields = Sets.newHashSet();
@@ -271,6 +278,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
         }
 
+
+        /** SETH NOTE
+         * This is most likely the start of the chunk that needs to be cloned
+         * for the error index stuff.
+         */
+
         // Process the indexed fields
         if (config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
@@ -304,6 +317,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
 
+
+        /** SETH NOTE
+         * This is what Laura was talking about-- the Allow/Disallow is mutually exclusive.
+         * I haven't seen this same block above for the non-reverse index fields. Maybe
+         * I need to take another look.
+         */
         // Ensure that we have only an allowlist or a disallowlist of fields to
         // reverse index
         if (config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null

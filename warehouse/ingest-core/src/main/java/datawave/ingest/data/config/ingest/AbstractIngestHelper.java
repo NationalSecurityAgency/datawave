@@ -27,8 +27,15 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     /* Map of field names to normalizers, null key is the default normalizer */
     protected MaskedFieldHelper mfHelper = null;
     protected Set<String> shardExclusions = new HashSet<>();
+
+    /** SETH NOTE
+     * I'm wondering if I'll have to make a version of the following for
+     * the error indexing or not. Worth to keep it noted in the meantime.
+     */
     protected boolean hasIndexDisallowlist = false;
     protected boolean hasReverseIndexDisallowlist = false;
+
+
 
     public boolean getReplaceMalformedUTF8() {
         return replaceMalformedUTF8;
