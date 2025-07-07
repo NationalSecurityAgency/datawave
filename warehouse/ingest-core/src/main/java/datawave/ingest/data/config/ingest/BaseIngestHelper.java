@@ -139,7 +139,16 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
 
+    /**
+     * <p>Configuration inserted between the <datatype> and the <field-constant> for explicit error parsing.</p>
+     * <p>For example:</p>
+     * <p>{@code String target = <some-datatype> + DATATYPE_ERROR + INDEX_FIELDS;}</p>
+     */
+    private static final String DATATYPE_ERROR = ".error";
+
+
     private static final String PROPERTY_MALFORMED = " property malformed: ";
+
     private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
