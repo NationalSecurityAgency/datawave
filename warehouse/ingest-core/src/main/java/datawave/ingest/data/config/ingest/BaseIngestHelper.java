@@ -166,10 +166,16 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /** SETH NOTE
      * Pulled these from the 2 chunks above. Only grabbed the first var, but you may need
      * to grab the other 2 for each. Not sure if this will be necessary though.
+     *
+     * UPDATE 1: Seems like I will have to add them.
      */
     protected Set<String> errorIndexedFields = Sets.newHashSet();
-    protected Set<String> errorReverseIndexedFields = Sets.newHashSet();
+    protected Map<String,Pattern> errorIndexedPatterns = Maps.newHashMap();
+    protected Set<String> errorUnindexedFields = Sets.newHashSet();
 
+    protected Set<String> errorReverseIndexedFields = Sets.newHashSet();
+    protected Map<String,Pattern> errorReverseIndexedPatterns = Maps.newHashMap();
+    protected Set<String> errorReverseUnindexedFields = Sets.newHashSet();
 
     // for all the atoms that are normalized, but not indexed
     protected Set<String> normalizedFields = Sets.newHashSet();
@@ -278,6 +284,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
         }
 
+        // --- INDEX_FIELDS ---
 
         /** SETH NOTE
          * This is most likely the start of the chunk that needs to be cloned
@@ -317,6 +324,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
 
+        // --- REVERSE INDEX FIELDS ---
 
         /** SETH NOTE
          * This is what Laura was talking about-- the Allow/Disallow is mutually exclusive.
@@ -370,6 +378,108 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
 
         }
+
+
+        // --- BEGIN SETHS ERROR FIELDS ---
+
+        // --- ERROR INDEX_FIELDS ---
+
+        /** SETH NOTE
+         * This is most likely the start of the chunk that needs to be cloned
+         * for the error index stuff.
+         */
+
+        // Process the indexed fields
+        if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS) != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
+            }
+            super.setHasIndexDisallowlist(true); //todo (make error version)
+            configProperty = DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS;
+        } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + INDEX_FIELDS) != null) {
+            log.debug("ErrorIndexedFields specified.");
+            super.setHasIndexDisallowlist(false); //todo (make error version)
+            configProperty = DATATYPE_ERROR + INDEX_FIELDS;
+        }
+
+        // Load the proper list of fields to (not) index
+        if (fieldConfigHelper != null && log.isInfoEnabled()) {
+            log.info("Using error field config helper for {}", this.getType().typeName());
+        } else if (configProperty == null && log.isWarnEnabled()) {
+            log.warn("No error index fields or error disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
+        } else {
+            this.errorIndexedFields = Sets.newHashSet();
+            Collection<String> errorIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty);
+            if (null != errorIndexedStrings && !errorIndexedStrings.isEmpty()) {
+                for (String errorIndexedString : errorIndexedStrings) {
+                    this.errorIndexedFields.add(errorIndexedString.trim());
+                }
+                this.moveToPatternMap(this.errorIndexedFields, this.errorIndexedPatterns);
+            } else {
+                if (log.isWarnEnabled()) {
+                    log.warn("{} not specified.", this.getType().typeName() + DATATYPE_ERROR + configProperty);
+                }
+            }
+        }
+
+        // --- ERROR REVERSE INDEX FIELDS ---
+
+        /** SETH NOTE
+         * This is what Laura was talking about-- the Allow/Disallow is mutually exclusive.
+         * I haven't seen this same block above for the non-reverse index fields. Maybe
+         * I need to take another look.
+         */
+        // Ensure that we have only an allowlist or a disallowlist of fields to
+        // reverse index
+        if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
+                && config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
+            throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both.  Type: "
+                    + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS) + "  "
+                    + config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS));
+        }
+
+        configProperty = null;
+
+        // Process the error reverse index fields
+        if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS);
+            }
+
+            this.setHasReverseIndexDisallowlist(true); //todo (error version)
+
+            configProperty = DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS;
+        } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Reverse Index specified for: {}", this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
+            }
+            this.setHasReverseIndexDisallowlist(false); //todo (error version)
+            configProperty = DATATYPE_ERROR + REVERSE_INDEX_FIELDS;
+        }
+
+        // Load the proper list of fields to (not) reverse index
+        if (configProperty == null && log.isWarnEnabled()) {
+            log.warn("No error reverse index fields or error disallowlist reverse index fields specified, not generating reverse index fields for {}",
+                    this.getType().typeName());
+        } else {
+            errorReverseIndexedFields = Sets.newHashSet();
+            Collection<String> errorReverseIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty);
+            if (null != errorReverseIndexedStrings && !errorReverseIndexedStrings.isEmpty()) {
+                for (String errorReverseIndexedString : errorReverseIndexedStrings) {
+                    errorReverseIndexedFields.add(errorReverseIndexedString.trim());
+                }
+                this.moveToPatternMap(this.errorReverseIndexedFields, this.errorReverseIndexedPatterns);
+            } else {
+                if (log.isWarnEnabled()) {
+                    log.warn("{} not specified", this.getType().typeName() + DATATYPE_ERROR + configProperty);
+                }
+            }
+
+        }
+
+        /** SETH NOTE
+         * Not sure if I'll need what's after this. I'll start with the above block and add to it as needed.
+         */
 
         // gather the list of all indexed fields across all types
         // this list is only used for generating warnings if we are not indexing
