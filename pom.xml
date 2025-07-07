@@ -133,7 +133,8 @@
         <version.powermock>2.0.9</version.powermock>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
-        <version.slf4j>1.7.36</version.slf4j>
+        <version.slf4j>2.0.17</version.slf4j>
+        <version.slf4j2.impl>2.20.0</version.slf4j2.impl>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
@@ -1033,6 +1034,11 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${version.httpcomponents-httpcore}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j2-impl</artifactId>
+                <version>${version.slf4j2.impl}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.lucene</groupId>
