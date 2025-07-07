@@ -12,7 +12,7 @@ interface Markings {
 }
 
 interface Record {
-  decription: string;
+  description: string;
   markings: Markings;
 }
 
@@ -44,7 +44,7 @@ export function parseVal(colName: string, colValue: any, colDataTypeCount?: any)
 
     const marking = markingsEntry.length > 0 ? markingsEntry[0].value : '';
     const markingAccess = markingsEntry.length > 1 ? markingsEntry[1].value : '';
-    const description = firstEntry.decription || '';
+    const description = firstEntry.description || '';
 
     return `${marking} ${markingAccess} ${description}`;
   } else if (colName === 'dataType' && regexDataType.test(colDataTypeCount)) {
