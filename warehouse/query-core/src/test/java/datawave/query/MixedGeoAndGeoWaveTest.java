@@ -82,6 +82,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -681,7 +682,7 @@ public class MixedGeoAndGeoWaveTest {
     }
 
     // Note: Trying to ingest non-point WKT as PointType will not work. PointType can only be used for POINT wkt
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = InvalidQueryException.class)
     public void polyPointTest() throws Exception {
         String query = "geo:within_bounding_box(" + POLY_POINT_FIELD + ", '-1_-1', '1_1')";
         getQueryResults(query);
