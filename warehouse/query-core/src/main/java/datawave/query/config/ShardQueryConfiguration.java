@@ -42,6 +42,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
@@ -286,6 +287,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String limitFieldsField = null;
     private boolean hitList = false;
     private boolean dateIndexTimeTravel = false;
+    private boolean dateIndexIterator = false;
     private boolean ignoreNonExistentFields = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
@@ -356,7 +358,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
+    // tserver side ivarator cache dir configs
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
+    // webserver side ivarator cache dir configs (e.g. for unique transform on webserver)
+    private List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
 
@@ -393,6 +398,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private GroupFields groupFields = new GroupFields();
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
+
+    private boolean disableIteratorUniqueFields = false;
     private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
@@ -445,6 +452,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     // The class for the summary iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
+
+    // The name of the field to write a summary to when requested
+    private String summaryFieldName = null;
 
     /**
      * A bloom filter to avoid duplicate results if needed
@@ -535,11 +545,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
 
-    /**
-     * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
-     * present in {@link #noExpansionIfCurrentDateTypes}, and the query's end date is the current date.
-     */
-    private boolean shardsAndDaysHintAllowed = true;
+    private boolean useDocumentScheduler = false;
+    private DocumentScannerConfig documentScannerConfig;
 
     /**
      * Default constructor
@@ -671,6 +678,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
+        this.setDateIndexIterator(other.isDateIndexIterator());
         this.setBeginDateCap(other.getBeginDateCap());
         this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
         this.setRawTypes(other.isRawTypes());
@@ -712,6 +720,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
+        this.setLocalIvaratorCacheDirConfigs(
+                        null == other.getLocalIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getLocalIvaratorCacheDirConfigs()));
         this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
@@ -740,6 +750,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
+        this.setDisableIteratorUniqueFields(other.isDisableIteratorUniqueFields());
         this.setUniqueFields(other.getUniqueFields());
         log.info("Checkpointing with " + getUniqueFields());
         this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
@@ -762,6 +773,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExcerptIterator(other.getExcerptIterator());
         this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
         this.setSummaryIterator(other.getSummaryIterator());
+        this.setSummaryFieldName(other.getSummaryFieldName());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
         this.setEventFieldSeek(other.getEventFieldSeek());
@@ -786,7 +798,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
-        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
+        this.setUseDocumentScheduler(other.isUseDocumentScheduler());
+        this.setDocumentScannerConfig(other.getDocumentScannerConfig());
     }
 
     /**
@@ -794,7 +807,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * needs to be copied over here.
      *
      * @param other
+     *            the other configuration
      * @param queries
+     *            the collection of queries
      */
     public ShardQueryConfiguration(ShardQueryConfiguration other, Collection<QueryData> queries) {
         super(other);
@@ -816,6 +831,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
+        this.setLocalIvaratorCacheDirConfigs(
+                        null == other.getLocalIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getLocalIvaratorCacheDirConfigs()));
         this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
 
@@ -1540,6 +1557,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
     }
 
+    public void setLocalIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs) {
+        this.localIvaratorCacheDirConfigs = localIvaratorCacheDirConfigs;
+    }
+
+    public List<IvaratorCacheDirConfig> getLocalIvaratorCacheDirConfigs() {
+        return localIvaratorCacheDirConfigs;
+    }
+
     public String getIvaratorFstHdfsBaseURIs() {
         return ivaratorFstHdfsBaseURIs;
     }
@@ -1870,6 +1895,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dateIndexTimeTravel = dateIndexTimeTravel;
     }
 
+    public boolean isDateIndexIterator() {
+        return dateIndexIterator;
+    }
+
+    public void setDateIndexIterator(boolean dateIndexIterator) {
+        this.dateIndexIterator = dateIndexIterator;
+    }
+
     public boolean getIgnoreNonExistentFields() {
         return ignoreNonExistentFields;
     }
@@ -1904,6 +1937,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public String getGroupFieldsBatchSizeAsString() {
         return "" + groupFieldsBatchSize;
+    }
+
+    public boolean isDisableIteratorUniqueFields() {
+        return disableIteratorUniqueFields;
+    }
+
+    public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
+        this.disableIteratorUniqueFields = disableIteratorUniqueFields;
     }
 
     public UniqueFields getUniqueFields() {
@@ -2657,6 +2698,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.summaryIterator = summaryIterator;
     }
 
+    public String getSummaryFieldName() {
+        return summaryFieldName;
+    }
+
+    public void setSummaryFieldName(String summaryFieldName) {
+        this.summaryFieldName = summaryFieldName;
+    }
+
     public int getFiFieldSeek() {
         return fiFieldSeek;
     }
@@ -3033,6 +3082,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getHdfsSiteConfigURLs(), that.getHdfsSiteConfigURLs()) &&
                 Objects.equals(getHdfsFileCompressionCodec(), that.getHdfsFileCompressionCodec()) &&
                 Objects.equals(getZookeeperConfig(), that.getZookeeperConfig()) &&
+                Objects.equals(getLocalIvaratorCacheDirConfigs(), that.getLocalIvaratorCacheDirConfigs()) &&
                 Objects.equals(getIvaratorCacheDirConfigs(), that.getIvaratorCacheDirConfigs()) &&
                 Objects.equals(getIvaratorFstHdfsBaseURIs(), that.getIvaratorFstHdfsBaseURIs()) &&
                 Objects.equals(getQueryModel(), that.getQueryModel()) &&
@@ -3066,8 +3116,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
- isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
 
         // @formatter:on
     }
@@ -3217,6 +3266,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getHdfsSiteConfigURLs(),
                 getHdfsFileCompressionCodec(),
                 getZookeeperConfig(),
+                getLocalIvaratorCacheDirConfigs(),
                 getIvaratorCacheDirConfigs(),
                 getIvaratorFstHdfsBaseURIs(),
                 getIvaratorCacheBufferSize(),
@@ -3276,8 +3326,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes(),
-                isShardsAndDaysHintAllowed()
+                getNoExpansionIfCurrentDateTypes()
         );
         // @formatter:on
     }
@@ -3321,11 +3370,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
     }
 
-    public boolean isShardsAndDaysHintAllowed() {
-        return shardsAndDaysHintAllowed;
+    public DocumentScannerConfig getDocumentScannerConfig() {
+        return documentScannerConfig;
     }
 
-    public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
-        this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
+    public void setDocumentScannerConfig(DocumentScannerConfig documentScannerConfig) {
+        this.documentScannerConfig = documentScannerConfig;
+    }
+
+    public boolean isUseDocumentScheduler() {
+        return useDocumentScheduler;
+    }
+
+    public void setUseDocumentScheduler(boolean useDocumentScheduler) {
+        this.useDocumentScheduler = useDocumentScheduler;
     }
 }

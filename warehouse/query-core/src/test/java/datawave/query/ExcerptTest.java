@@ -73,6 +73,11 @@ public abstract class ExcerptTest {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
     }
 
     @RunWith(Arquillian.class)
@@ -97,6 +102,11 @@ public abstract class ExcerptTest {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
     }
 
     private static final Logger log = Logger.getLogger(datawave.query.ExcerptTest.class);

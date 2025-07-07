@@ -45,24 +45,24 @@ import datawave.microservice.audit.health.rabbit.config.RabbitHealthProperties;
 @ContextConfiguration(classes = RabbitHealthCheckerTest.RabbitHealthCheckerTestConfiguration.class)
 @ActiveProfiles({"RabbitHealthTest", "rabbit-config"})
 public class RabbitHealthCheckerTest {
-    
+
     private static final String NODES_URL = "http://localhost:15672/api/nodes/";
     private static final String EXCHANGES_URL = "http://localhost:15672/api/exchanges/";
     private static final String QUEUES_URL = "http://localhost:15672/api/queues/";
     private static final String BINDINGS_URL = "http://localhost:15672/api/bindings/";
-    
+
     private static final String QUEUE_URL = "http://localhost:15672/api/queues/%2F/";
     private static final String EXCHANGE_URL = "http://localhost:15672/api/exchanges/%2F/";
     private static final String BINDING_URL = "http://localhost:15672/api/bindings/%2F/";
-    
+
     private ObjectMapper mapper = new ObjectMapper();
-    
+
     private MockRestServiceServer mockServer;
     private RabbitHealthChecker healthChecker;
-    
+
     @Autowired
     private RabbitHealthProperties rabbitHealthProperties;
-    
+
     @BeforeEach
     public void beforeTest() {
         healthChecker = new RabbitHealthChecker(rabbitHealthProperties, "localhost", "guest", "guest");
@@ -71,7 +71,7 @@ public class RabbitHealthCheckerTest {
         assertNotNull(restTemplate);
         mockServer = MockRestServiceServer.createServer(restTemplate);
     }
-    
+
     @Test
     public void everythingHealthyTest() throws Exception {
         // runHealthCheck() calls
@@ -79,24 +79,24 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertTrue(healthChecker.isHealthy());
         assertEquals(Status.UP, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
-        
+
         assertEquals(rabbitHealthProperties.getHealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
     }
-    
+
     @Test
     public void everythingUnhealthyTest() {
         // runHealthCheck() calls
@@ -104,22 +104,22 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withServerError());
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withServerError());
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withServerError());
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(withServerError());
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withServerError());
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
     }
-    
+
     @Test
     public void missingNodeAtInitTest() throws Exception {
         // runHealthCheck() calls
@@ -127,28 +127,28 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
     }
-    
+
     @Test
     public void missingNodeAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(ExpectedCount.times(4), requestTo(NODES_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getMissingNodeInfo()), MediaType.APPLICATION_JSON));
@@ -158,44 +158,44 @@ public class RabbitHealthCheckerTest {
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(ExpectedCount.times(4), requestTo(BINDINGS_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals(1, healthChecker.getOutageStats().get(0).get("numNodesMissing"));
-        
+
         mockServer.verify();
     }
-    
+
     @Test
     @DirtiesContext
     public void missingNodeAfterHealthyNeverFailTest() throws Exception {
         rabbitHealthProperties.getCluster().setFailIfNodeMissing(false);
-        
+
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(ExpectedCount.times(4), requestTo(NODES_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getMissingNodeInfo()), MediaType.APPLICATION_JSON));
@@ -205,34 +205,34 @@ public class RabbitHealthCheckerTest {
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(ExpectedCount.times(4), requestTo(BINDINGS_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertTrue(healthChecker.isHealthy());
         assertEquals(Status.UP, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getHealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         mockServer.verify();
     }
-    
+
     @Test
     public void stoppedNodeAtInitTest() throws Exception {
         // runHealthCheck() calls
@@ -240,28 +240,28 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
     }
-    
+
     @Test
     public void stoppedNodeAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(ExpectedCount.times(4), requestTo(NODES_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getStoppedNodeInfo()), MediaType.APPLICATION_JSON));
@@ -271,44 +271,44 @@ public class RabbitHealthCheckerTest {
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(ExpectedCount.times(4), requestTo(BINDINGS_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals(1, healthChecker.getOutageStats().get(0).get("numNodesMissing"));
-        
+
         mockServer.verify();
     }
-    
+
     @Test
     @DirtiesContext
     public void stoppedNodeAfterHealthyNeverFailTest() throws Exception {
         rabbitHealthProperties.getCluster().setFailIfNodeMissing(false);
-        
+
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(ExpectedCount.times(4), requestTo(NODES_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getStoppedNodeInfo()), MediaType.APPLICATION_JSON));
@@ -318,34 +318,34 @@ public class RabbitHealthCheckerTest {
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(ExpectedCount.times(4), requestTo(BINDINGS_URL))
                         .andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
         assertTrue(healthChecker.isHealthy());
-        
+
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertTrue(healthChecker.isHealthy());
         assertEquals(Status.UP, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getHealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         mockServer.verify();
     }
-    
+
     @Test
     @DirtiesContext
     public void missingQueueAtInitTest() throws Exception {
@@ -354,96 +354,96 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getMissingQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck();
     }
-    
+
     @Test
     @DirtiesContext
     public void missingQueueAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getMissingQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals("[audit.log.dlq]", healthChecker.getOutageStats().get(0).get("missingQueues").toString());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck(1);
     }
-    
+
     @Test
     @DirtiesContext
     public void fixableInvalidQueueAtInitTest() throws Exception {
@@ -452,33 +452,33 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getFixableInvalidQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andExpect(method(HttpMethod.GET))
                         .andRespond(withSuccess(mapper.writeValueAsString(getFixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
@@ -487,57 +487,57 @@ public class RabbitHealthCheckerTest {
                         .andRespond(withSuccess(mapper.writeValueAsString(getFixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck();
     }
-    
+
     @Test
     @DirtiesContext
     public void fixableInvalidQueueAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getFixableInvalidQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals("[audit.log.dlq, audit.log]", healthChecker.getOutageStats().get(0).get("invalidQueues").toString());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andExpect(method(HttpMethod.GET))
                         .andRespond(withSuccess(mapper.writeValueAsString(getFixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
@@ -546,16 +546,16 @@ public class RabbitHealthCheckerTest {
                         .andRespond(withSuccess(mapper.writeValueAsString(getFixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck(1);
     }
-    
+
     @Test
     @DirtiesContext
     public void unfixableInvalidQueueAtInitTest() throws Exception {
@@ -564,102 +564,102 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getUnfixableInvalidQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andExpect(method(HttpMethod.GET))
                         .andRespond(withSuccess(mapper.writeValueAsString(getUnfixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.GET))
                         .andRespond(withSuccess(mapper.writeValueAsString(getUnfixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck();
     }
-    
+
     @Test
     @DirtiesContext
     public void unfixableInvalidQueueAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getUnfixableInvalidQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals("[audit.log.dlq, audit.log]", healthChecker.getOutageStats().get(0).get("invalidQueues").toString());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andExpect(method(HttpMethod.GET))
                         .andRespond(withSuccess(mapper.writeValueAsString(getUnfixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andExpect(method(HttpMethod.GET))
                         .andRespond(withSuccess(mapper.writeValueAsString(getUnfixableInvalidQueueInfo()[0]), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck(1);
     }
-    
+
     @Test
     @DirtiesContext
     public void missingExchangeAtInitTest() throws Exception {
@@ -668,96 +668,96 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getMissingExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(EXCHANGE_URL + "audit")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck();
     }
-    
+
     @Test
     @DirtiesContext
     public void missingExchangeAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getMissingExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals("[audit]", healthChecker.getOutageStats().get(0).get("missingExchanges").toString());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(EXCHANGE_URL + "audit")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck(1);
     }
-    
+
     @Test
     @DirtiesContext
     public void invalidExchangeAtInitTest() throws Exception {
@@ -766,102 +766,102 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getInvalidExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(EXCHANGE_URL + "audit")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(EXCHANGE_URL + "audit")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
         mockServer.expect(requestTo(EXCHANGE_URL + "DLX")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(EXCHANGE_URL + "DLX")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck();
     }
-    
+
     @Test
     @DirtiesContext
     public void invalidExchangeAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getInvalidExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals("[DLX, audit]", healthChecker.getOutageStats().get(0).get("invalidExchanges").toString());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(EXCHANGE_URL + "audit")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(EXCHANGE_URL + "audit")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
         mockServer.expect(requestTo(EXCHANGE_URL + "DLX")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(EXCHANGE_URL + "DLX")).andExpect(method(HttpMethod.PUT)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck(1);
     }
-    
+
     @Test
     @DirtiesContext
     public void missingBindingAtInitTest() throws Exception {
@@ -870,96 +870,96 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getMissingBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(BINDING_URL + "e/audit/q/audit.log")).andExpect(method(HttpMethod.POST)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck();
     }
-    
+
     @Test
     @DirtiesContext
     public void missingBindingAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getMissingBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals("{audit=[audit.log]}", healthChecker.getOutageStats().get(0).get("missingBindings").toString());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(BINDING_URL + "e/audit/q/audit.log")).andExpect(method(HttpMethod.POST)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck(1);
     }
-    
+
     @Test
     @DirtiesContext
     public void invalidBindingAtInitTest() throws Exception {
@@ -968,144 +968,144 @@ public class RabbitHealthCheckerTest {
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getInvalidBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         healthChecker.runHealthCheck();
-        
+
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(0, healthChecker.getOutageStats().size());
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(BINDING_URL + "e/audit/e/audit.log/lalaland")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(BINDING_URL + "e/audit/q/audit.log")).andExpect(method(HttpMethod.POST)).andRespond(withSuccess());
         mockServer.expect(requestTo(BINDING_URL + "e/DLX/q/audit.log.dlq/say.what")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(BINDING_URL + "e/DLX/q/audit.log.dlq")).andExpect(method(HttpMethod.POST)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck();
     }
-    
+
     @Test
     @DirtiesContext
     public void invalidBindingAfterHealthyTest() throws Exception {
         goodHealthCheck();
-        
+
         // missing runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getInvalidBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // missing health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // unhealthy call
         healthChecker.runHealthCheck();
-        
+
         // ends up unhealthy with an outage stat
         assertFalse(healthChecker.isHealthy());
         assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(1, healthChecker.getOutageStats().size());
-        
+
         assertEquals("current", healthChecker.getOutageStats().get(0).get("stopDate"));
         assertEquals("{DLX=[audit.log.dlq], audit=[audit.log]}", healthChecker.getOutageStats().get(0).get("invalidBindings").toString());
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // test recovery
         // recovery turned off
         rabbitHealthProperties.setAttemptRecovery(false);
         healthChecker.recover();
         assertFalse(healthChecker.isHealthy());
-        
+
         // recovery turned on
         rabbitHealthProperties.setAttemptRecovery(true);
-        
+
         mockServer.expect(requestTo(BINDING_URL + "e/audit/e/audit.log/lalaland")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(BINDING_URL + "e/audit/q/audit.log")).andExpect(method(HttpMethod.POST)).andRespond(withSuccess());
         mockServer.expect(requestTo(BINDING_URL + "e/DLX/q/audit.log.dlq/say.what")).andExpect(method(HttpMethod.DELETE)).andRespond(withSuccess());
         mockServer.expect(requestTo(BINDING_URL + "e/DLX/q/audit.log.dlq")).andExpect(method(HttpMethod.POST)).andRespond(withSuccess());
-        
+
         healthChecker.recover();
-        
+
         mockServer.verify();
         mockServer.reset();
-        
+
         // finally run a health check and return the correct configuration to show that our status changes
         goodHealthCheck(1);
     }
-    
+
     private void goodHealthCheck() throws Exception {
         goodHealthCheck(0);
     }
-    
+
     private void goodHealthCheck(int numOutages) throws Exception {
         // healthy runHealthCheck() calls
         mockServer.expect(requestTo(NODES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyNodeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(EXCHANGES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyExchangeInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUES_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyQueueInfo()), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(BINDINGS_URL)).andRespond(withSuccess(mapper.writeValueAsString(getHealthyBindingInfo()), MediaType.APPLICATION_JSON));
-        
+
         // healthy health() calls
         mockServer.expect(requestTo(QUEUE_URL + "audit.log")).andRespond(
                         withSuccess(mapper.writeValueAsString(createAuditQueue("audit.log", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
         mockServer.expect(requestTo(QUEUE_URL + "audit.log.dlq")).andRespond(withSuccess(
                         mapper.writeValueAsString(createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)), MediaType.APPLICATION_JSON));
-        
+
         // healthy call
         healthChecker.runHealthCheck();
-        
+
         // starts out healthy
         assertTrue(healthChecker.isHealthy());
         assertEquals(Status.UP, healthChecker.health().getStatus());
         assertEquals(rabbitHealthProperties.getHealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         assertEquals(numOutages, healthChecker.getOutageStats().size());
-        
+
         mockServer.verify();
         mockServer.reset();
     }
-    
+
     private NodeInfo[] getHealthyNodeInfo() {
         return new NodeInfo[] {createNode("rabbit1@rabbit1", true), createNode("rabbit2@rabbit2", true), createNode("rabbit3@rabbit3", true)};
     }
-    
+
     private NodeInfo[] getMissingNodeInfo() {
         return new NodeInfo[] {createNode("rabbit1@rabbit1", true), createNode("rabbit2@rabbit2", true)};
     }
-    
+
     private NodeInfo[] getStoppedNodeInfo() {
         return new NodeInfo[] {createNode("rabbit1@rabbit1", false), createNode("rabbit2@rabbit2", true), createNode("rabbit3@rabbit3", true)};
     }
-    
+
     private NodeInfo createNode(String name, boolean running) {
         NodeInfo node = new NodeInfo();
         node.setName(name);
@@ -1113,19 +1113,19 @@ public class RabbitHealthCheckerTest {
         node.setType("disc");
         return node;
     }
-    
+
     private ExchangeInfo[] getHealthyExchangeInfo() {
         return new ExchangeInfo[] {createExchange("audit", "topic", true, false, false), createExchange("DLX", "direct", true, false, false)};
     }
-    
+
     private ExchangeInfo[] getMissingExchangeInfo() {
         return new ExchangeInfo[] {createExchange("DLX", "direct", true, false, false)};
     }
-    
+
     private ExchangeInfo[] getInvalidExchangeInfo() {
         return new ExchangeInfo[] {createExchange("audit", "fanout", false, true, false), createExchange("DLX", "topic", true, false, true)};
     }
-    
+
     private ExchangeInfo createExchange(String name, String type, boolean durable, boolean autoDelete, boolean internal) {
         ExchangeInfo exchange = new ExchangeInfo();
         exchange.setName(name);
@@ -1135,15 +1135,15 @@ public class RabbitHealthCheckerTest {
         exchange.setInternal(internal);
         return exchange;
     }
-    
+
     private QueueInfo[] getHealthyQueueInfo() {
         return new QueueInfo[] {createAuditQueue("audit.log", true, false, false, 0, 0), createAuditDeadLetterQueue("audit.log.dlq", true, false, false, 0, 0)};
     }
-    
+
     private QueueInfo[] getMissingQueueInfo() {
         return new QueueInfo[] {createAuditQueue("audit.log", true, false, false, 0, 0)};
     }
-    
+
     private QueueInfo[] getFixableInvalidQueueInfo() {
         Map<String,Object> dlqArgs = new HashMap<>();
         dlqArgs.put("x-dead-letter-exchange", "BOGUS");
@@ -1151,7 +1151,7 @@ public class RabbitHealthCheckerTest {
         return new QueueInfo[] {createQueue("audit.log", false, true, false, dlqArgs, 0, 0),
                 createAuditDeadLetterQueue("audit.log.dlq", true, false, true, 0, 0)};
     }
-    
+
     private QueueInfo[] getUnfixableInvalidQueueInfo() {
         Map<String,Object> dlqArgs = new HashMap<>();
         dlqArgs.put("x-dead-letter-exchange", "BOGUS");
@@ -1159,14 +1159,14 @@ public class RabbitHealthCheckerTest {
         return new QueueInfo[] {createQueue("audit.log", false, true, false, dlqArgs, 7, 5),
                 createAuditDeadLetterQueue("audit.log.dlq", true, false, true, 0, 0)};
     }
-    
+
     private QueueInfo createAuditQueue(String name, boolean durable, boolean exclusive, boolean autoDelete, long unackedMessages, long readyMessages) {
         Map<String,Object> dlqArgs = new HashMap<>();
         dlqArgs.put("x-dead-letter-exchange", "DLX");
         dlqArgs.put("x-dead-letter-routing-key", name);
         return createQueue(name, durable, exclusive, autoDelete, dlqArgs, unackedMessages, readyMessages);
     }
-    
+
     private QueueInfo createExtraArgsAuditQueue(String name, boolean durable, boolean exclusive, boolean autoDelete, long unackedMessages, long readyMessages) {
         Map<String,Object> dlqArgs = new HashMap<>();
         dlqArgs.put("x-dead-letter-exchange", "DLX");
@@ -1174,12 +1174,12 @@ public class RabbitHealthCheckerTest {
         dlqArgs.put("extraArg", "dontCare");
         return createQueue(name, durable, exclusive, autoDelete, dlqArgs, unackedMessages, readyMessages);
     }
-    
+
     private QueueInfo createAuditDeadLetterQueue(String name, boolean durable, boolean exclusive, boolean autoDelete, long unackedMessages,
                     long readyMessages) {
         return createQueue(name, durable, exclusive, autoDelete, null, unackedMessages, readyMessages);
     }
-    
+
     private QueueInfo createQueue(String name, boolean durable, boolean exclusive, boolean autoDelete, Map<String,Object> arguments, long unackedMessages,
                     long readyMessages) {
         QueueInfo queue = new QueueInfo();
@@ -1194,7 +1194,7 @@ public class RabbitHealthCheckerTest {
         queue.setMessagesReady(readyMessages);
         return queue;
     }
-    
+
     private BindingInfo createBinding(String destination, String destinationType, String source, String routingKey, Map<String,Object> arguments) {
         BindingInfo binding = new BindingInfo();
         binding.setDestination(destination);
@@ -1205,20 +1205,20 @@ public class RabbitHealthCheckerTest {
             binding.setArguments(arguments);
         return binding;
     }
-    
+
     private BindingInfo[] getHealthyBindingInfo() {
         return new BindingInfo[] {createBinding("audit.log", "queue", "audit", "#", null), createBinding("audit.log.dlq", "queue", "DLX", "audit.log", null)};
     }
-    
+
     private BindingInfo[] getMissingBindingInfo() {
         return new BindingInfo[] {createBinding("audit.log.dlq", "queue", "DLX", "audit.log", null)};
     }
-    
+
     private BindingInfo[] getInvalidBindingInfo() {
         return new BindingInfo[] {createBinding("audit.log", "exchange", "audit", "lalaland", null),
                 createBinding("audit.log.dlq", "queue", "DLX", "say.what", null)};
     }
-    
+
     @Configuration
     @Profile("RabbitHealthTest")
     @EnableConfigurationProperties(RabbitHealthProperties.class)

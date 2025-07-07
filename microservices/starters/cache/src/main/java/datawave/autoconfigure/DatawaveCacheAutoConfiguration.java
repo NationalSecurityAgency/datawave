@@ -47,38 +47,38 @@ public class DatawaveCacheAutoConfiguration {
     public CacheManagerCustomizers cacheManagerCustomizers(ObjectProvider<List<CacheManagerCustomizer<?>>> customizers) {
         return new CacheManagerCustomizers(customizers.getIfAvailable());
     }
-    
+
     @Bean
     public CacheManagerValidator cacheAutoConfigurationValidator(CacheProperties cacheProperties, ObjectProvider<CacheManager> cacheManager) {
         return new CacheManagerValidator(cacheProperties, cacheManager);
     }
-    
+
     /**
      * Bean used to validate that a CacheManager exists and provide a more meaningful exception.
      */
     static class CacheManagerValidator implements InitializingBean {
-        
+
         private final CacheProperties cacheProperties;
-        
+
         private final ObjectProvider<CacheManager> cacheManager;
-        
+
         CacheManagerValidator(CacheProperties cacheProperties, ObjectProvider<CacheManager> cacheManager) {
             this.cacheProperties = cacheProperties;
             this.cacheManager = cacheManager;
         }
-        
+
         @Override
         public void afterPropertiesSet() {
             notNull(this.cacheManager.getIfAvailable(), () -> "No cache manager could be auto-configured, check your configuration " + "(caching type is '"
                             + this.cacheProperties.getType() + "')");
         }
     }
-    
+
     /**
      * {@link ImportSelector} to add {@link CacheType} configuration classes with the exception of those listed as unsupported.
      */
     static class CacheConfigurationImportSelector implements ImportSelector {
-        
+
         @Override
         public String[] selectImports(AnnotationMetadata importingClassMetadata) {
             // Filter out unsupported cache types
@@ -90,6 +90,6 @@ public class DatawaveCacheAutoConfiguration {
             }
             return imports;
         }
-        
+
     }
 }

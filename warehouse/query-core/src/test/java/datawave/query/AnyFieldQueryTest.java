@@ -62,6 +62,7 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -79,6 +80,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         FieldConfig generic = new GenericCityFields();
         generic.addReverseIndexField(CityField.STATE.name());
         generic.addReverseIndexField(CityField.CONTINENT.name());
+        CityDataManager.newInstance();
         DataTypeHadoopConfig dataType = new CitiesDataType(CityEntry.generic, generic);
 
         accumuloSetup.setData(FileType.CSV, dataType);
@@ -1409,6 +1411,16 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // test running the query
         expect = anyRo + AND_OP + cityY;
         runTest(query, expect);
+    }
+
+    @Test
+    public void testNumeric() throws Exception {
+        String query = Constants.ANY_FIELD + EQ_OP + "'12345'";
+        String expect = CityField.CITY + EQ_OP + "'12345'" + OR_OP + CityField.STATE + EQ_OP + "'12345'";
+
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
     }
 
     @Test

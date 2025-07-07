@@ -23,7 +23,6 @@ import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;
-import datawave.util.StringUtils;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -125,7 +124,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         event.setFields(new ArrayList<>(values));
 
         Metadata metadata = new Metadata();
-        String[] colfParts = StringUtils.split(colf, '\0');
+        String[] colfParts = colf.split("\0");
         if (colfParts.length >= 1) {
             metadata.setDataType(colfParts[0]);
         }

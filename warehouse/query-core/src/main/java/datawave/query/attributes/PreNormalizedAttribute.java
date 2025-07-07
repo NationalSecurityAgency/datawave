@@ -22,7 +22,7 @@ import datawave.query.jexl.DatawaveJexlContext;
  *
  */
 public class PreNormalizedAttribute extends Attribute<PreNormalizedAttribute> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -15927664283551620L;
     protected String value;
 
     public String getValue() {
@@ -40,8 +40,11 @@ public class PreNormalizedAttribute extends Attribute<PreNormalizedAttribute> im
 
     @Override
     public long sizeInBytes() {
-        return sizeInBytes(value) + super.sizeInBytes(4);
-        // 4 for string reference
+        if (sizeInBytes == Long.MIN_VALUE) {
+            // 4 bytes for string reference
+            sizeInBytes = sizeInBytes(value) + super.sizeInBytes(4);
+        }
+        return sizeInBytes;
     }
 
     @Override
@@ -59,10 +62,15 @@ public class PreNormalizedAttribute extends Attribute<PreNormalizedAttribute> im
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(2141, 2137);
-        hcb.append(super.hashCode()).append(this.getData());
-
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(2141, 2137)
+                    .append(super.hashCode())
+                    .append(this.getData())
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
     }
 
     @Override

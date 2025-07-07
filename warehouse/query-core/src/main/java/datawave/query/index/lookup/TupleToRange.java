@@ -30,6 +30,10 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     protected ShardQueryConfiguration config;
 
     /**
+     * The constructor
+     *
+     * @param tableName
+     *            the table name
      * @param currentNode
      *            the jexl node
      * @param config
@@ -83,6 +87,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     }
 
     /**
+     * Determine if this is a shard range
      *
      * @param shard
      *            a shard string
@@ -93,8 +98,10 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     }
 
     /**
+     * Create document ranges
      *
-     *
+     * @param tableName
+     *            the table name
      * @param queryNode
      *            a query node
      * @param shard
@@ -119,7 +126,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
             }
 
             if (log.isTraceEnabled()) {
-                log.trace(queryNode + " " + indexMatch.getNode());
+                log.trace(queryNode.toString() + " " + indexMatch.getNode());
             }
 
             if (log.isTraceEnabled() && null != indexMatch.getNode()) {

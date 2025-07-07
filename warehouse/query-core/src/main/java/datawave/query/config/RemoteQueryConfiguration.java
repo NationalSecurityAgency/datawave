@@ -53,7 +53,9 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
      * needs to be copied over here.
      *
      * @param other
+     *            the other configuration
      * @param queries
+     *            the collection of queries
      */
     public RemoteQueryConfiguration(RemoteQueryConfiguration other, Collection<QueryData> queries) {
         this(other);

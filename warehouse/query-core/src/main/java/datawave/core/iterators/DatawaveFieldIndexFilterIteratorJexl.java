@@ -69,11 +69,15 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
     }
 
     @Override
-    public String toString() {
+    protected String toStringImpl(boolean includeQueryId) {
         StringBuilder builder = new StringBuilder();
-        builder.append("DatawaveFieldIndexFilterIteratorJexl (").append(queryId).append(") fName=").append(getFieldName()).append(", filter=").append(filter)
-                        .append(", lowerBound=").append(getFieldValue()).append(", lowerInclusive=").append(lowerInclusive).append(", upperBound=")
-                        .append(upperBound).append(", upperInclusive=").append(upperInclusive).append(", negated=").append(isNegated()).append("}");
+        builder.append(getClass().getSimpleName());
+        if (includeQueryId) {
+            builder.append(" (").append(queryId).append(")");
+        }
+        builder.append(" {fName=").append(getFieldName()).append(", filter=").append(filter).append(", lowerBound=").append(getFieldValue())
+                        .append(", lowerInclusive=").append(lowerInclusive).append(", upperBound=").append(upperBound).append(", upperInclusive=")
+                        .append(upperInclusive).append(", negated=").append(isNegated()).append("}");
 
         return builder.toString();
     }

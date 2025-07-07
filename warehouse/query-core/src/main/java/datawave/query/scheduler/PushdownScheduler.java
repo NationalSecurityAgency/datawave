@@ -134,11 +134,17 @@ public class PushdownScheduler extends Scheduler {
     }
 
     /**
-     * @return
+     * Concatenate Iterators
+     *
+     * @return the concatenated iterators
      * @throws ParseException
+     *             if there is an error parsing
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws AccumuloSecurityException
+     *             if there is a security issue with Accumulo
      * @throws AccumuloException
+     *             if there is a general Accumulo error
      */
     protected Iterator<Result> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
         boolean hasNext = config.getQueriesIter().hasNext();
@@ -154,7 +160,7 @@ public class PushdownScheduler extends Scheduler {
             tableId = ctx.getTableId(tableName);
         }
 
-        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(config, settings, tableId));
+        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), getPushdownFunction());
 
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery()).setConfig(config);
@@ -183,6 +189,10 @@ public class PushdownScheduler extends Scheduler {
         session.updateIdentifier(config.getQuery().getId().toString());
 
         return session;
+    }
+
+    protected PushdownFunction getPushdownFunction() {
+        return new PushdownFunction(config, settings, tableId);
     }
 
     protected Iterator<QueryData> getQueryDataIterator() {

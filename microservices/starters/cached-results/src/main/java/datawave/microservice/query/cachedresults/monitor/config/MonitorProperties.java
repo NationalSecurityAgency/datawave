@@ -27,71 +27,71 @@ public class MonitorProperties {
     private long lockLeaseTime = TimeUnit.MINUTES.toMillis(1);
     @NotNull
     private TimeUnit lockLeaseTimeUnit = TimeUnit.MILLISECONDS;
-    
+
     public String getSchedulerCrontab() {
         return schedulerCrontab;
     }
-    
+
     public void setSchedulerCrontab(String schedulerCrontab) {
         this.schedulerCrontab = schedulerCrontab;
     }
-    
+
     public long getMonitorInterval() {
         return monitorInterval;
     }
-    
+
     public long getMonitorIntervalMillis() {
         return monitorIntervalUnit.toMillis(monitorInterval);
     }
-    
+
     public void setMonitorInterval(long monitorInterval) {
         this.monitorInterval = monitorInterval;
     }
-    
+
     public TimeUnit getMonitorIntervalUnit() {
         return monitorIntervalUnit;
     }
-    
+
     public void setMonitorIntervalUnit(TimeUnit monitorIntervalUnit) {
         this.monitorIntervalUnit = monitorIntervalUnit;
     }
-    
+
     public long getLockWaitTime() {
         return lockWaitTime;
     }
-    
+
     public long getLockWaitTimeMillis() {
         return lockWaitTimeUnit.toMillis(lockWaitTime);
     }
-    
+
     public void setLockWaitTime(long lockWaitTime) {
         this.lockWaitTime = lockWaitTime;
     }
-    
+
     public TimeUnit getLockWaitTimeUnit() {
         return lockWaitTimeUnit;
     }
-    
+
     public void setLockWaitTimeUnit(TimeUnit lockWaitTimeUnit) {
         this.lockWaitTimeUnit = lockWaitTimeUnit;
     }
-    
+
     public long getLockLeaseTime() {
         return lockLeaseTime;
     }
-    
+
     public long getLockLeaseTimeMillis() {
         return lockLeaseTimeUnit.toMillis(lockLeaseTime);
     }
-    
+
     public void setLockLeaseTime(long lockLeaseTime) {
         this.lockLeaseTime = lockLeaseTime;
     }
-    
+
     public TimeUnit getLockLeaseTimeUnit() {
         return lockLeaseTimeUnit;
     }
-    
+
     public void setLockLeaseTimeUnit(TimeUnit lockLeaseTimeUnit) {
         this.lockLeaseTimeUnit = lockLeaseTimeUnit;
     }

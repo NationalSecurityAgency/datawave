@@ -7,15 +7,15 @@ import com.hazelcast.map.EntryProcessor;
 import datawave.microservice.querymetric.handler.QueryMetricCombiner;
 
 public class MetricUpdateEntryProcessor implements EntryProcessor<String,QueryMetricUpdateHolder,Long> {
-    
+
     private QueryMetricCombiner combiner;
     private QueryMetricUpdateHolder metricUpdate;
-    
+
     public MetricUpdateEntryProcessor(QueryMetricUpdateHolder metricUpdate, QueryMetricCombiner combiner) {
         this.metricUpdate = metricUpdate;
         this.combiner = combiner;
     }
-    
+
     @Override
     public Long process(Map.Entry<String,QueryMetricUpdateHolder> entry) {
         QueryMetricUpdateHolder storedHolder;
@@ -33,7 +33,7 @@ public class MetricUpdateEntryProcessor implements EntryProcessor<String,QueryMe
             storedHolder.setMetricType(metricType);
             storedHolder.updateLowestLifecycle(this.metricUpdate.getLowestLifecycle());
         }
-        
+
         if (metricType.equals(QueryMetricType.DISTRIBUTED) && updatedMetric != null) {
             // these values are added incrementally in a distributed update. Because we can not be sure
             // exactly when the incomingQueryMetricCache value is stored, it would otherwise be possible

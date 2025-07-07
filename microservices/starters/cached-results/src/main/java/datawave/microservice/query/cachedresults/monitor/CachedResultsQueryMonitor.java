@@ -24,7 +24,7 @@ import datawave.microservice.query.cachedresults.status.cache.CachedResultsQuery
                 matchIfMissing = true)
 public class CachedResultsQueryMonitor {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final MonitorProperties monitorProperties;
     private final CachedResultsQueryProperties cachedResultsQueryProperties;
     private final MonitorStatusCache cachedResultsMonitorStatusCache;
@@ -32,10 +32,10 @@ public class CachedResultsQueryMonitor {
     private final JdbcTemplate cachedResultsJdbcTemplate;
     private final CachedResultsQueryCache cachedResultsQueryCache;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    
+
     private long taskStartTime;
     private Future<Void> taskFuture;
-    
+
     public CachedResultsQueryMonitor(MonitorProperties monitorProperties, CachedResultsQueryProperties cachedResultsQueryProperties,
                     MonitorStatusCache cachedResultsMonitorStatusCache, CachedResultsQueryService cachedResultsQueryService,
                     JdbcTemplate cachedResultsJdbcTemplate, CachedResultsQueryCache cachedResultsQueryCache) {
@@ -46,7 +46,7 @@ public class CachedResultsQueryMonitor {
         this.cachedResultsJdbcTemplate = cachedResultsJdbcTemplate;
         this.cachedResultsQueryCache = cachedResultsQueryCache;
     }
-    
+
     // this runs in a separate thread every 30 minutes (by default)
     @Scheduled(cron = "${datawave.query.cached-results.monitor.scheduler-crontab:0 0/30 * * * ?}")
     public void monitorTaskScheduler() {
@@ -66,7 +66,7 @@ public class CachedResultsQueryMonitor {
                 taskFuture.cancel(true);
             }
         }
-        
+
         // schedule a new monitor task if the previous one has finished/expired
         if (taskFuture == null && isMonitorIntervalExpired()) {
             taskStartTime = System.currentTimeMillis();
@@ -86,11 +86,11 @@ public class CachedResultsQueryMonitor {
             }
         }
     }
-    
+
     private boolean isTaskLeaseExpired() {
         return (System.currentTimeMillis() - taskStartTime) > monitorProperties.getMonitorIntervalMillis();
     }
-    
+
     private boolean isMonitorIntervalExpired() {
         return (System.currentTimeMillis() - cachedResultsMonitorStatusCache.getStatus().getLastCheckedMillis()) > monitorProperties.getMonitorIntervalMillis();
     }

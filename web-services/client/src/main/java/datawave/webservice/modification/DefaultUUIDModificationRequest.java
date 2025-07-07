@@ -21,7 +21,7 @@ import org.springframework.util.MultiValueMap;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultUUIDModificationRequest extends ModificationRequestBase implements Serializable {
 
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = -1993315218692972415L;
 
     @XmlElementWrapper(name = "Events", required = true)
     @XmlElement(name = "Event", required = true)

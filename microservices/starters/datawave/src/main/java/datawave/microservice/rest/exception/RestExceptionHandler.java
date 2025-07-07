@@ -23,7 +23,7 @@ import datawave.webservice.result.VoidResponse;
 @ConditionalOnClass(QueryException.class)
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatus status, WebRequest request) {
         logger.debug("Handling exception {}", ex.getMessage(), ex);
@@ -34,14 +34,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         vr.addException(ex);
         return new ResponseEntity<>(vr, headers, status);
     }
-    
+
     @Override
     protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatus status,
                     WebRequest request) {
         // Overrides the parent in order to include the exception message in the body.
         return handleExceptionInternal(ex, ex.getMessage(), headers, status, request);
     }
-    
+
     /**
      * Handle exceptions of type {@link QueryException}. We will pull out the error code from the exception and add a header with the code. Then the exception
      * will be turned into a {@link VoidResponse} and returned.
@@ -52,13 +52,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
         }
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.set(Constants.ERROR_CODE_HEADER, e.getBottomQueryException().getErrorCode());
-        
+
         return handleExceptionInternal(e, null, headers, status, request);
     }
-    
+
     /**
      * Handle a spring {@link AccessDeniedException} by re-throwing the exception. Otherwise, the exception would have been handled in
      * {@link #handleGenericException(Exception, WebRequest)} and turned into a 500 error rather than a 403. While we could return a {@link VoidResponse} here
@@ -68,7 +68,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
         throw ex;
     }
-    
+
     /**
      * This is a catch-all handler for exceptions that aren't caught anywhere else. We simply turn the exception into a {@link VoidResponse} and return it.
      */

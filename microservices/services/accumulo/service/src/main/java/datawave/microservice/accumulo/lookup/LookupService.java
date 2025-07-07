@@ -59,15 +59,15 @@ import datawave.webservice.response.objects.KeyBase;
 @Service
 @ConditionalOnProperty(name = "accumulo.lookup.enabled", havingValue = "true", matchIfMissing = true)
 public class LookupService {
-    
+
     public static final String ALLOWED_ENCODING = "[base64, none]";
-    
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private enum Encoding {
         none, base64
     }
-    
+
     public interface Parameter {
         String TABLE = "table";
         String ROW = "row";
@@ -80,7 +80,7 @@ public class LookupService {
         String USE_AUTHS = "useAuthorizations";
         String END_ENTRY = "endEntry";
     }
-    
+
     private final SecurityMarking auditSecurityMarking;
     private final MarkingFunctions markingFunctions;
     private final AccumuloClient connection;
@@ -88,10 +88,10 @@ public class LookupService {
     private final LookupProperties lookupProperties;
     private final UserAuthFunctions userAuthFunctions;
     private final ResponseObjectFactory responseObjectFactory;
-    
+
     // Optional, thus using setter injection
     private AuditClient auditor;
-    
+
     //@formatter:off
     @Autowired
     public LookupService(
@@ -114,12 +114,12 @@ public class LookupService {
             this.auditor = null;
     }
     //@formatter:on
-    
+
     @Autowired(required = false)
     public void setAuditor(AuditClient auditor) {
         this.auditor = auditor;
     }
-    
+
     /**
      * Look up one or more entries in Accumulo by table, row, and optionally colFam and colQual
      *
@@ -127,20 +127,20 @@ public class LookupService {
      *            lookup request
      * @param currentUser
      *            user proxy chain associated with the lookup
-     *            
+     *
      * @return datawave.webservice.response.LookupResponse
      * @throws QueryException
      *             on error
      */
     public LookupResponse lookup(LookupRequest request, DatawaveUserDetails currentUser) throws QueryException {
-        
+
         Preconditions.checkNotNull(request, "Request argument cannot be null");
         Preconditions.checkNotNull(currentUser, "User argument cannot be null");
-        
+
         final LookupResponse response = responseObjectFactory.createLookupResponse();
-        
+
         validateRequest(request, response);
-        
+
         //@formatter:off
         if (null != auditor) {
             final AuditClient.Request auditRequest = new AuditRequest.Builder()
@@ -162,19 +162,19 @@ public class LookupService {
             }
         }
         //@formatter:on
-        
+
         BatchScanner batchScanner = null;
         Set<Authorizations> mergedAuths = null;
-        
+
         final List<Entry> entryList = new ArrayList<>();
-        
+
         try {
             final Authorizations primaryUserAuths = userAuthFunctions.getRequestedAuthorizations(request.auths, currentUser.getPrimaryUser());
             mergedAuths = userAuthFunctions.mergeAuthorizations(primaryUserAuths, currentUser.getProxiedUsers(), u -> u != currentUser.getPrimaryUser());
             batchScanner = ScannerHelper.createBatchScanner(connection, request.table, mergedAuths, lookupProperties.getNumQueryThreads());
-            
+
             final List<Range> ranges = new ArrayList<>();
-            
+
             Key begin;
             Key end;
             if (request.colFam == null && request.colQual == null) {
@@ -189,25 +189,25 @@ public class LookupService {
             }
             ranges.add(new Range(begin, true, end, true));
             batchScanner.setRanges(ranges);
-            
+
             final Iterator<Map.Entry<Key,Value>> itr = batchScanner.iterator();
-            
+
             int currEntry = -1;
             while (itr.hasNext()) {
-                
+
                 currEntry++;
                 Map.Entry<Key,Value> entry = itr.next();
-                
+
                 if (currEntry < request.beginEntry) {
                     continue;
                 }
-                
+
                 final Key k = entry.getKey();
                 final Value v = entry.getValue();
                 final String currRow = k.getRow().toString();
                 final String currCf = k.getColumnFamily().toString();
                 final String currCq = k.getColumnQualifier().toString();
-                
+
                 if (!currRow.equals(request.row)) {
                     continue;
                 }
@@ -217,14 +217,14 @@ public class LookupService {
                 if (request.colQual != null && !currCq.equals(request.colQual)) {
                     continue;
                 }
-                
+
                 //@formatter:off
                 final Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(
                     new ColumnVisibility(k.getColumnVisibility()),
                     mergedAuths
                 );
                 //@formatter:on
-                
+
                 final KeyBase responseKey = responseObjectFactory.createKey();
                 responseKey.setRow(currRow);
                 responseKey.setColFam(currCf);
@@ -232,7 +232,7 @@ public class LookupService {
                 responseKey.setMarkings(markings);
                 responseKey.setTimestamp(k.getTimestamp());
                 entryList.add(responseObjectFactory.createEntry(responseKey, v.get()));
-                
+
                 if (currEntry == request.endEntry) {
                     break;
                 }
@@ -247,27 +247,27 @@ public class LookupService {
             if (batchScanner != null) {
                 batchScanner.close();
             }
-            
+
             HashSet<String> mergedAuthsSet = new HashSet<>();
             if (null != mergedAuths) {
                 for (Authorizations authorizations : mergedAuths)
                     mergedAuthsSet.addAll(Arrays.asList(authorizations.toString().split(",")));
             }
-            
+
             if (null != response.getExceptions()) {
                 logResponseErrors(response.getExceptions());
             }
         }
-        
+
         response.setHasResults(!entryList.isEmpty());
         response.setEntries(entryList);
         return response;
     }
-    
+
     private void addEncodeException(LookupResponse response, String encParamName) {
         response.addException(new IllegalArgumentException(String.format("Query parameter \"%s\" should be one of %s", encParamName, ALLOWED_ENCODING)));
     }
-    
+
     private void checkAuditParameters(MultiValueMap<String,String> parameters) throws BadRequestQueryException {
         try {
             auditSecurityMarking.clear();
@@ -277,15 +277,15 @@ public class LookupService {
             throw new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
         }
     }
-    
+
     private void validateRequest(LookupRequest request, LookupResponse response) throws QueryException {
-        
+
         log.debug("Lookup request: {}", request);
-        
+
         if (null != auditor) {
             checkAuditParameters(request.params);
         }
-        
+
         if (request.rowEnc != null) {
             if (Encoding.valueOf(request.rowEnc.toLowerCase()) == Encoding.base64) {
                 request.row = base64Decode(request.row);
@@ -293,7 +293,7 @@ public class LookupService {
                 addEncodeException(response, Parameter.ROW_ENCODING);
             }
         }
-        
+
         if (request.colFam != null && request.cfEnc != null) {
             if (Encoding.valueOf(request.cfEnc.toLowerCase()) == Encoding.base64) {
                 request.colFam = base64Decode(request.colFam);
@@ -301,7 +301,7 @@ public class LookupService {
                 addEncodeException(response, Parameter.CF_ENCODING);
             }
         }
-        
+
         if (request.colQual != null && request.cqEnc != null) {
             if (Encoding.valueOf(request.cqEnc.toLowerCase()) == Encoding.base64) {
                 request.colQual = base64Decode(request.colQual);
@@ -309,20 +309,20 @@ public class LookupService {
                 addEncodeException(response, Parameter.CQ_ENCODING);
             }
         }
-        
+
         if (request.beginEntry < 0) {
             response.addException(new IllegalArgumentException(String.format("Query parameter \"%s\" cannot be negative", Parameter.BEGIN_ENTRY)));
         }
-        
+
         if (request.endEntry < 0) {
             response.addException(new IllegalArgumentException(String.format("Query parameter \"%s\" cannot be negative", Parameter.END_ENTRY)));
         }
-        
+
         if (request.endEntry < request.beginEntry) {
             response.addException(new IllegalArgumentException(
                             String.format("Query parameter \"%s\" cannot be smaller than \"%s\"", Parameter.END_ENTRY, Parameter.BEGIN_ENTRY)));
         }
-        
+
         if (request.auths != null) {
             try {
                 new Authorizations(request.auths.getBytes(UTF_8));
@@ -330,7 +330,7 @@ public class LookupService {
                 response.addException(new IllegalArgumentException(String.format("Invalid argument %s for \"%s\"", request.auths, Parameter.USE_AUTHS)));
             }
         }
-        
+
         final List<?> exceptionList = response.getExceptions();
         if (exceptionList != null && exceptionList.size() > 0) {
             log.error("Bad request: " + request);
@@ -338,59 +338,59 @@ public class LookupService {
             throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, String.format("%s errors were encountered during query setup", exceptionList.size()));
         }
     }
-    
+
     private void logResponseErrors(List<?> exceptionList) {
         exceptionList.forEach(ex -> log.error(ex.toString()));
     }
-    
+
     /**
      * Request and builder extensions for lookup-specific audits
      */
     private static class AuditRequest extends AuditClient.Request {
-        
+
         private AuditRequest(Builder b) {
             super(b);
         }
-        
+
         private static class Builder extends AuditClient.Request.Builder {
-            
+
             private String table;
             private String row;
             private String colFam;
             private String colQual;
             private String auths;
             private LookupAuditProperties auditConfig;
-            
+
             public Builder withTable(String table) {
                 this.table = table;
                 return this;
             }
-            
+
             Builder withRow(String row) {
                 this.row = row;
                 return this;
             }
-            
+
             Builder withAuths(String auths) {
                 this.auths = auths;
                 return this;
             }
-            
+
             Builder withCF(String cf) {
                 this.colFam = cf;
                 return this;
             }
-            
+
             Builder withCQ(String cq) {
                 this.colQual = cq;
                 return this;
             }
-            
+
             Builder withAuditConfig(LookupAuditProperties auditConfig) {
                 this.auditConfig = auditConfig;
                 return this;
             }
-            
+
             @Override
             public AuditClient.Request build() {
                 // create base query
@@ -408,10 +408,10 @@ public class LookupService {
                 if (StringUtils.isNotBlank(this.auths)) {
                     this.params.set(AuditParameters.QUERY_AUTHORIZATIONS, this.auths);
                 }
-                
+
                 withQueryExpression(sb.toString());
                 withQueryLogic("AccumuloLookup");
-                
+
                 // determine AuditType from config
                 withAuditType(this.auditConfig.getDefaultAuditType());
                 for (LookupAuditProperties.AuditConfiguration entry : this.auditConfig.getTableConfig()) {
@@ -424,13 +424,13 @@ public class LookupService {
             }
         }
     }
-    
+
     static String base64Decode(String value) {
         return null == value ? null : new String(Base64.decodeBase64(value.getBytes(UTF_8)), UTF_8);
     }
-    
+
     public static class LookupRequest {
-        
+
         private String table;
         private String row;
         private String rowEnc;
@@ -442,11 +442,11 @@ public class LookupService {
         private int beginEntry = 0;
         private int endEntry = Integer.MAX_VALUE;
         private MultiValueMap<String,String> params;
-        
+
         private LookupRequest() {}
-        
+
         public LookupRequest(Builder b) {
-            
+
             this.table = b.table;
             this.row = b.row;
             this.rowEnc = b.rowEnc;
@@ -456,7 +456,7 @@ public class LookupService {
             this.cqEnc = b.cqEnc;
             this.auths = b.auths;
             this.params = b.params;
-            
+
             if (StringUtils.isNotBlank(b.beginEntry)) {
                 this.beginEntry = Integer.parseInt(b.beginEntry);
             }
@@ -464,12 +464,12 @@ public class LookupService {
                 this.endEntry = Integer.parseInt(b.endEntry);
             }
         }
-        
+
         @Override
         public String toString() {
             return ToStringBuilder.reflectionToString(this).toString();
         }
-        
+
         public static class Builder {
             private String table;
             private String row;
@@ -482,62 +482,62 @@ public class LookupService {
             private String beginEntry;
             private String endEntry;
             private MultiValueMap<String,String> params;
-            
+
             public Builder withTable(String table) {
                 this.table = table;
                 return this;
             }
-            
+
             public Builder withRow(String row) {
                 this.row = row;
                 return this;
             }
-            
+
             public Builder withRowEnc(String rowEnc) {
                 this.rowEnc = rowEnc;
                 return this;
             }
-            
+
             public Builder withColFam(String colFam) {
                 this.colFam = colFam;
                 return this;
             }
-            
+
             public Builder withColFamEnc(String cfEnc) {
                 this.cfEnc = cfEnc;
                 return this;
             }
-            
+
             public Builder withColQual(String colQual) {
                 this.colQual = colQual;
                 return this;
             }
-            
+
             public Builder withColQualEnc(String cqEnc) {
                 this.cqEnc = cqEnc;
                 return this;
             }
-            
+
             public Builder withAuths(String auths) {
                 this.auths = auths;
                 return this;
             }
-            
+
             public Builder withBeginEntry(String beginEntry) {
                 this.beginEntry = beginEntry;
                 return this;
             }
-            
+
             public Builder withEndEntry(String endEntry) {
                 this.endEntry = endEntry;
                 return this;
             }
-            
+
             public Builder withParameters(MultiValueMap<String,String> params) {
                 this.params = params;
                 return this;
             }
-            
+
             public LookupRequest build() {
                 return new LookupRequest(this);
             }

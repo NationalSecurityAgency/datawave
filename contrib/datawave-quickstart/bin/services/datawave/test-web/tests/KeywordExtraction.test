@@ -1,0 +1,81 @@
+
+################################################################
+# Test /Query/generateTagCloud endpoint
+
+# Note that the uidType values "PAGE_ID" and "PAGE_TITLE" are known fields in
+# our Wikipedia records known to uniquely identify articles. They are configured
+# for the lookupUUID service via QueryLogicFactory.xml
+
+# Moreover, any field in DataWave's data dictionary known to provide a
+# unique-ish key for its related documents may be registered in QLF.xml
+# for this purpose
+
+# First, Extract wikipedia keywords by PAGE_ID
+
+TEST_UID_TYPE="PAGE_ID"
+TEST_UID="12"
+
+setCurlData uuidPairs=${TEST_UID_TYPE}:${TEST_UID} \
+      content.view.names=REVISION_TEXT
+
+configureTest \
+      ExtractKeywordsByPageId \
+      "Performs keyword extraction based on the PAGE_ID field in our wiki data" \
+      "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/generateTagCloud" \
+      "application/xml;charset=UTF-8" \
+      200
+
+runTest
+
+################################################################
+# Extract wikipedia keywords from an article that produces no keywords by PAGE_ID
+
+TEST_UID_TYPE="PAGE_ID"
+TEST_UID="10"
+
+setCurlData uuidPairs=${TEST_UID_TYPE}:${TEST_UID} \
+      content.view.names=REVISION_TEXT
+
+configureTest \
+      ExtractEmptyKeywordsByPageId \
+      "Performs keyword extraction based on the PAGE_ID field in our wiki data, expected no keywords" \
+      "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/generateTagCloud" \
+      "application/xml;charset=UTF-8" \
+      200
+
+runTest
+
+################################################################
+# Extract wikipedia keywords from multiple articles by PAGE_ID
+#
+# This requires that enwiki-20250519-pages-articles-medium.xml.gz is loaded
+
+setCurlData uuidPairs=$( urlencode "PAGE_ID:52160661 OR PAGE_ID:14124151 OR PAGE_ID:17006490 OR PAGE_ID:15271 OR PAGE_ID:21725" )
+
+configureTest \
+      ExtractMultipleKeywordsByPageId \
+      "Performs keyword extraction based on the PAGE_ID field in our wiki data from mutiple pages" \
+      "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/generateTagCloud" \
+      "application/xml;charset=UTF-8" \
+      200
+
+runTest
+
+################################################################
+# Extract wikipedia keywords from multiple articles and languages by PAGE_ID
+#
+# This requires that:
+# . dewiki-20250520-pages-articles-brief.xml
+# . enwiki-20130305-pages-articles-brief.xml
+# . eswiki-20250520-pages-articles-brief.xml
+# . frwiki-20250520-pages-articles-brief.xml
+# x are loaded
+
+setCurlData uuidPairs=$( urlencode "PAGE_ID:129455 OR PAGE_ID:19596 OR PAGE_ID:38720 OR PAGE_ID:725 OR PAGE_ID:471581 OR PAGE_ID:15421 OR PAGE_ID:21725 OR PAGE_ID:53979379" )
+
+configureTest \
+      ExtractMultipleKeywordLanguagesByPageId \
+      "Performs keyword extraction based on the PAGE_ID field in our wiki data from mutiple pages in multiple languages" \
+      "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/generateTagCloud" \
+      "application/xml;charset=UTF-8" \
+      200

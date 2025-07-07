@@ -176,7 +176,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         q.addParameter("delimiter", ",");
         q.addParameter("query.syntax", "LIST");
 
-        List<String> expected = new ArrayList();
+        List<String> expected = new ArrayList<>();
         expected.add("MARS");
         expected.add("JUPITER");
         expected.add("VENUS");

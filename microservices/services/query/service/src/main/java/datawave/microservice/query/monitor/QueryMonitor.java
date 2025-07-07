@@ -32,7 +32,7 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 @ConditionalOnProperty(name = "datawave.query.monitor.enabled", havingValue = "true", matchIfMissing = true)
 public class QueryMonitor {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final MonitorProperties monitorProperties;
     private final QueryExpirationProperties expirationProperties;
     private final MonitorStatusCache monitorStatusCache;
@@ -43,13 +43,13 @@ public class QueryMonitor {
     private final QueryManagementService queryManagementService;
     private final QueryMetricFactory queryMetricFactory;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    
+
     private long taskStartTime;
     private Future<Void> taskFuture;
-    
+
     @Value("${datawave.connection.factory.default-pool:default}")
     private String defaultConnectionPool;
-    
+
     public QueryMonitor(MonitorProperties monitorProperties, QueryProperties queryProperties, MonitorStatusCache monitorStatusCache,
                     QueryStorageCache queryStorageCache, ExecutorStatusCache executorStatusCache, QueryResultsManager queryResultsManager,
                     QueryManagementService queryManagementService, QueryMetricFactory queryMetricFactory) {
@@ -63,7 +63,7 @@ public class QueryMonitor {
         this.queryManagementService = queryManagementService;
         this.queryMetricFactory = queryMetricFactory;
     }
-    
+
     // this runs in a separate thread every 30 seconds (by default)
     @Scheduled(cron = "${datawave.query.monitor.scheduler-crontab:*/30 * * * * ?}")
     public void monitorTaskScheduler() {
@@ -83,10 +83,10 @@ public class QueryMonitor {
                 taskFuture.cancel(true);
             }
         }
-        
+
         // pull the list of query status ONCE and share it between the monitor task and the query count method
         List<QueryStatus> queryStatusList = queryStorageCache.getQueryStatus();
-        
+
         // schedule a new monitor task if the previous one has finished/expired
         if (taskFuture == null && isMonitorIntervalExpired()) {
             taskStartTime = System.currentTimeMillis();
@@ -103,19 +103,19 @@ public class QueryMonitor {
                             queryMetricFactory));
             // @formatter:on
         }
-        
+
         // independent of the monitor task, count the number of running queries per pool, per connectionPool
         storeQueryCountsInExecutorStatusCache(queryStatusList);
     }
-    
+
     private boolean isTaskLeaseExpired() {
         return (System.currentTimeMillis() - taskStartTime) > monitorProperties.getMonitorIntervalMillis();
     }
-    
+
     private boolean isMonitorIntervalExpired() {
         return (System.currentTimeMillis() - monitorStatusCache.getStatus().getLastCheckedMillis()) > monitorProperties.getMonitorIntervalMillis();
     }
-    
+
     private void storeQueryCountsInExecutorStatusCache(List<QueryStatus> queryStatusList) {
         Map<String,Map<String,Integer>> queryCountByPool = new LinkedHashMap<>();
         for (QueryStatus queryStatus : queryStatusList) {
@@ -125,16 +125,16 @@ public class QueryMonitor {
                         queryStatus.getQueryKey().getQueryPool(),
                         k -> new LinkedHashMap<>());
                 // @formatter:on
-                
+
                 String connectionPoolName = queryStatus.getConfig().getConnPoolName();
                 if (connectionPoolName == null) {
                     connectionPoolName = defaultConnectionPool;
                 }
-                
+
                 countsByConnectionPool.merge(connectionPoolName, 1, Integer::sum);
             }
         }
-        
+
         // write this to the query pool status cache
         for (String queryPool : queryCountByPool.keySet()) {
             try {

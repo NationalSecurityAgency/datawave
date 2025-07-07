@@ -15,7 +15,7 @@ import datawave.security.util.ScannerHelper;
  * Scanner factory for {@link WrappedAccumuloClient} that allows the table cache to be bypassed, if desired
  */
 public class WrappedScannerHelper extends ScannerHelper {
-    
+
     public static Scanner createScanner(WrappedAccumuloClient connector, String tableName, Collection<Authorizations> authorizations, boolean skipCache)
                     throws TableNotFoundException {
         if (authorizations == null || authorizations.isEmpty()) {
@@ -26,7 +26,7 @@ public class WrappedScannerHelper extends ScannerHelper {
         addVisibilityFilters(iter, scanner);
         return scanner;
     }
-    
+
     public static BatchScanner createBatchScanner(WrappedAccumuloClient connector, String tableName, Collection<Authorizations> authorizations,
                     int numQueryThreads, boolean skipCache) throws TableNotFoundException {
         if (authorizations == null || authorizations.isEmpty()) {
