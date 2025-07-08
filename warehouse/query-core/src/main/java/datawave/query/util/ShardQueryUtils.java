@@ -38,9 +38,9 @@ public class ShardQueryUtils {
     public static ASTJexlScript upperCaseIdentifiers(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script) {
         GroupFields groupFields = config.getGroupFields();
         if (groupFields != null && groupFields.hasGroupByFields()) {
+            Sets.newHashSet(groupFields.getGroupByFields()).forEach(field -> groupFields.replaceGroupByField(field, field.toUpperCase()));
             groupFields.setMaxFields(toUpperCase(groupFields.getMaxFields()));
             groupFields.setSumFields(toUpperCase(groupFields.getSumFields()));
-            groupFields.setGroupByFields(toUpperCase(groupFields.getGroupByFields()));
             groupFields.setAverageFields(toUpperCase(groupFields.getAverageFields()));
             groupFields.setCountFields(toUpperCase(groupFields.getCountFields()));
             groupFields.setMinFields(toUpperCase(groupFields.getMinFields()));

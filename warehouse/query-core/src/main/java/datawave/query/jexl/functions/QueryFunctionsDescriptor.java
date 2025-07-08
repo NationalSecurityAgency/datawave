@@ -26,6 +26,7 @@ import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
@@ -34,6 +35,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.language.functions.jexl.GroupByDate;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -205,7 +207,6 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.MIN:
                 case QueryFunctions.MAX:
                 case QueryFunctions.AVERAGE:
-                case QueryFunctions.GROUPBY_FUNCTION:
                 case QueryFunctions.NO_EXPANSION:
                 case QueryFunctions.LENIENT_FIELDS_FUNCTION:
                 case QueryFunctions.STRICT_FIELDS_FUNCTION:
@@ -218,6 +219,14 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION:
                 case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
                 case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION:
+                case GroupByDate.GROUPBY_YEAR_FUNCTION:
+                case GroupByDate.GROUPBY_MONTH_FUNCTION:
+                case GroupByDate.GROUPBY_DAY_FUNCTION:
+                case GroupByDate.GROUPBY_HOUR_FUNCTION:
+                case GroupByDate.GROUPBY_TENTH_OF_HOUR_FUNCTION:
+                case GroupByDate.GROUPBY_MINUTE_FUNCTION:
+                case GroupByDate.GROUPBY_SECOND_FUNCTION:
+                case GroupByDate.GROUPBY_MILLISECOND_FUNCTION:
                     // In practice each of these functions should be parsed from the query
                     // almost immediately. This implementation is added for consistency
                     for (JexlNode arg : args) {
@@ -230,6 +239,20 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                     } else {
                         for (int i = 1; i < args.size(); i += 2) {
                             fields.addAll(JexlASTHelper.getIdentifierNames(args.get(i)));
+                        }
+                    }
+                    break;
+                case QueryFunctions.GROUPBY_FUNCTION:
+                    for (JexlNode arg : args) {
+                        if (arg instanceof ASTStringLiteral) {
+                            // FIELD[GRANULARITY] is represented by an ASTStringLiteral
+                            String literal = ((ASTStringLiteral) arg).getLiteral();
+                            fields.addAll(GroupFields.from(literal).getGroupByFields());
+                        } else {
+                            // otherwise it's just an ASTIdentifier
+                            for (String identifier : JexlASTHelper.getIdentifierNames(arg)) {
+                                fields.addAll(GroupFields.from(identifier).getGroupByFields());
+                            }
                         }
                     }
                     break;
@@ -352,6 +375,14 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MONTH_FUNCTION:
             case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
             case QueryFunctions.GROUPBY_FUNCTION:
+            case GroupByDate.GROUPBY_MILLISECOND_FUNCTION:
+            case GroupByDate.GROUPBY_SECOND_FUNCTION:
+            case GroupByDate.GROUPBY_MINUTE_FUNCTION:
+            case GroupByDate.GROUPBY_TENTH_OF_HOUR_FUNCTION:
+            case GroupByDate.GROUPBY_HOUR_FUNCTION:
+            case GroupByDate.GROUPBY_DAY_FUNCTION:
+            case GroupByDate.GROUPBY_MONTH_FUNCTION:
+            case GroupByDate.GROUPBY_YEAR_FUNCTION:
             case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
             case QueryFunctions.MATCH_REGEX:
             case QueryFunctions.INCLUDE_TEXT:
