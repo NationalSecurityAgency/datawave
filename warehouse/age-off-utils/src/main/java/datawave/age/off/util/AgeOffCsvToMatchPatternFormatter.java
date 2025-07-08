@@ -108,7 +108,9 @@ public class AgeOffCsvToMatchPatternFormatter {
                 log.error("Unable to process override {}", Arrays.toString(tokens));
                 throw new IllegalStateException("Unable to process override from " + Arrays.toString(tokens));
             }
-            value = tokens[columnInformation.overrideColumnNumber].trim();
+            if (!(tokens[columnInformation.overrideColumnNumber].trim()).contains("-1")) {
+                value = tokens[columnInformation.overrideColumnNumber].trim();
+            }
         }
 
         // if overrides are disabled or override was missing
