@@ -4,13 +4,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 
-import datawave.data.type.DateType;
-import datawave.data.type.LcNoDiacriticsListType;
-import datawave.query.attributes.TemporalGranularity;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.common.grouping.GroupFields;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.Assertions;
@@ -18,17 +11,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import datawave.data.type.DateType;
+import datawave.data.type.LcNoDiacriticsListType;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockDateIndexHelper;
+import datawave.query.util.TypeMetadata;
 import datawave.test.JexlNodeAssert;
 import datawave.util.time.DateHelper;
 
