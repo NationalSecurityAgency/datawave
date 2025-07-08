@@ -1103,7 +1103,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected static final Set<String> dateTypes = Set.of(DateType.class.getName(), RawDateType.class.getName());
 
     /**
-     * Verify that the given unique fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL).
+     * Verify that the given unique fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
      *
      * @param uniqueFields
      *            the unique fields to validate
