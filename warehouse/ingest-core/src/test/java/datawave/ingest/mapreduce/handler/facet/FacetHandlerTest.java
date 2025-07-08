@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -312,7 +312,7 @@ public class FacetHandlerTest {
             for (FacetResult pair : results) {
                 switch (tableName) {
                     case DATAWAVE_FACETS:
-                        String facet = pair.getFirst().getKey().toString() + " " + FacetHandler.extractCardinality(pair.getSecond());
+                        String facet = pair.getLeft().getKey().toString() + " " + FacetHandler.extractCardinality(pair.getRight());
                         log.debug(tableName + " " + facet);
                         if (!expectedFacets.remove(facet)) {
                             unexpectedFacets.add(facet);
@@ -320,7 +320,7 @@ public class FacetHandlerTest {
                         facetKeyCounts.compute(facet, (k, v) -> 1 + (v == null ? 0 : v));
                         break;
                     case DATAWAVE_FACET_METADATA:
-                        String facetMetadata = pair.getFirst().getKey().toString();
+                        String facetMetadata = pair.getLeft().getKey().toString();
                         log.debug(tableName + " " + facetMetadata);
                         if (!expectedFacetMetadata.remove(facetMetadata)) {
                             unexpectedFacetMetadata.add(facetMetadata);
@@ -328,14 +328,14 @@ public class FacetHandlerTest {
                         facetMetadataKeyCounts.compute(facetMetadata, (k, v) -> 1 + (v == null ? 0 : v));
                         break;
                     case DATAWAVE_FACET_HASHES:
-                        String facetHash = pair.getFirst().getKey().toString();
+                        String facetHash = pair.getLeft().getKey().toString();
                         log.debug(tableName + " " + facetHash);
                         if (!expectedFacetHashes.remove(facetHash)) {
                             unexpectedFacetHashes.add(facetHash);
                         }
                         break;
                     default:
-                        String item = tableName + " " + pair.getFirst().getKey().toString();
+                        String item = tableName + " " + pair.getLeft().getKey().toString();
                         log.warn("Unexpected table name/key: " + item);
                         totallyUnexpected.add(item);
                         break;
@@ -652,13 +652,33 @@ public class FacetHandlerTest {
     }
 
     private static class FacetResult extends Pair<BulkIngestKey,Value> implements Comparable<Pair<BulkIngestKey,Value>> {
+
+        private final BulkIngestKey key;
+        private final Value value;
+
         public FacetResult(BulkIngestKey f, Value s) {
-            super(f, s);
+            this.key = f;
+            this.value = s;
         }
 
         @Override
         public int compareTo(Pair<BulkIngestKey,Value> o) {
-            return getFirst().compareTo(o.getFirst());
+            return getLeft().compareTo(o.getLeft());
+        }
+
+        @Override
+        public BulkIngestKey getLeft() {
+            return key;
+        }
+
+        @Override
+        public Value getRight() {
+            return value;
+        }
+
+        @Override
+        public Value setValue(Value value) {
+            throw new UnsupportedOperationException();
         }
     }
 }
