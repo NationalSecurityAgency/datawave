@@ -323,10 +323,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 newQuery = JexlStringBuildingVisitor.buildQuery(script);
             }
 
-            pruneIvaratorConfigs(script, newIteratorSetting);
-
-            pruneEmptyOptions(newIteratorSetting);
-
             if (config.getReduceQueryFieldsPerShard()) {
                 reduceQueryFields(script, newIteratorSetting);
             }
@@ -340,6 +336,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             }
 
             if (config.getPruneQueryOptions()) {
+                pruneIvaratorConfigs(script, newIteratorSetting);
+
+                pruneEmptyOptions(newIteratorSetting);
+
                 pruneQueryOptions(script, newIteratorSetting);
             }
 
