@@ -13,7 +13,11 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResultPostprocessor;
 import datawave.microservice.query.Query;
+import datawave.next.CountScheduler;
+import datawave.next.SimpleQueryVisitor;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
@@ -22,9 +26,8 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
 
 /**
  * A simple extension of the basic ShardQueryTable which applies a counting iterator on top of the "normal" iterator stack.
- *
- *
- *
+ * <p>
+ * TODO: optimize this so a specialized query iterator returns single counts that are then aggregated
  */
 public class CountingShardQueryLogic extends ShardQueryLogic {
     private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
@@ -66,6 +69,18 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
+        // planner should already have run
+        QueryPlanner planner = getQueryPlanner();
+        if (planner instanceof DefaultQueryPlanner && config.getDocumentScannerConfig() != null) {
+            DefaultQueryPlanner dqp = (DefaultQueryPlanner) planner;
+            boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
+            if (simple) {
+                CountScheduler countScheduler = new CountScheduler(config);
+                countScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
+                return countScheduler;
+            }
+        }
+
         PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;

@@ -87,18 +87,18 @@ public class QueryController {
     private final LookupService lookupService;
     private final StreamingService streamingService;
     private final TranslateIdService translateIdService;
-    
+
     private final StreamingProperties streamingProperties;
-    
+
     private final Supplier<DatawaveUserDetails> serverUserDetailsSupplier;
-    
+
     // Note: baseMethodStatsContext needs to be request scoped
     private final BaseMethodStatsFilter.BaseMethodStatsContext baseMethodStatsContext;
     // Note: queryMetricsEnrichmentContest needs to be request scoped
     private final QueryMetricsEnrichmentFilterAdvice.QueryMetricsEnrichmentContext queryMetricsEnrichmentContext;
     // Note: querySessionIdContext needs to be request scoped
     private final QuerySessionIdAdvice.QuerySessionIdContext querySessionIdContext;
-    
+
     public QueryController(QueryProperties queryProperties, QueryManagementService queryManagementService, LookupService lookupService,
                     StreamingService streamingService, TranslateIdService translateIdService, StreamingProperties streamingProperties,
                     @Qualifier("serverUserDetailsSupplier") Supplier<DatawaveUserDetails> serverUserDetailsSupplier,
@@ -116,7 +116,7 @@ public class QueryController {
         this.queryMetricsEnrichmentContext = queryMetricsEnrichmentContext;
         this.querySessionIdContext = querySessionIdContext;
     }
-    
+
     // @see QueryManagementService#define(String, MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -251,7 +251,7 @@ public class QueryController {
         querySessionIdContext.setQueryId(response.getResult());
         return response;
     }
-    
+
     // @see QueryManagementService#listQueryLogic(DatawaveUserDetails)
     @Operation(summary = "Gets a list of descriptions for the configured query logics, sorted by query logic name.",
                     description = "The descriptions include things like the audit type, optional and required parameters, required roles, and response class.")
@@ -261,7 +261,7 @@ public class QueryController {
     public QueryLogicResponse listQueryLogic(@AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return queryManagementService.listQueryLogic(currentUser);
     }
-    
+
     // @see QueryManagementService#create(String, MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -399,7 +399,7 @@ public class QueryController {
         querySessionIdContext.setQueryId(response.getResult());
         return response;
     }
-    
+
     // @see QueryManagementService#plan(String, MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -548,7 +548,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.plan(queryLogic, parameters, getPool(headers), currentUser);
     }
-    
+
     // @see QueryManagementService#predict(String, MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -678,7 +678,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.predict(queryLogic, parameters, getPool(headers), currentUser);
     }
-    
+
     // @see LookupService#lookupUUID(MultiValueMap, String, DatawaveUserDetails)
     // @see LookupService#lookupUUID(MultiValueMap, String, DatawaveUserDetails, StreamingResponseListener)
     // @formatter:off
@@ -814,7 +814,7 @@ public class QueryController {
                     @Parameter(hidden = true) @RequestParam MultiValueMap<String,String> parameters, @RequestHeader HttpHeaders headers,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         parameters.add(LOOKUP_UUID_PAIRS, String.join(LOOKUP_KEY_VALUE_DELIMITER, uuidType, uuid));
-        
+
         if (Boolean.parseBoolean(parameters.getFirst(LOOKUP_STREAMING))) {
             MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
             CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
@@ -824,7 +824,7 @@ public class QueryController {
             return lookupService.lookupUUID(parameters, getPool(headers), currentUser);
         }
     }
-    
+
     // @see LookupService#lookupUUID(MultiValueMap, String, DatawaveUserDetails)
     // @see LookupService#lookupUUID(MultiValueMap, String, DatawaveUserDetails, StreamingResponseListener)
     // @formatter:off
@@ -974,7 +974,7 @@ public class QueryController {
             return lookupService.lookupUUID(parameters, getPool(headers), currentUser);
         }
     }
-    
+
     // @see LookupService#lookupContentUUID(MultiValueMap, String, DatawaveUserDetails)
     // @see LookupService#lookupContentUUID(MultiValueMap, String, DatawaveUserDetails, StreamingResponseListener)
     // @formatter:off
@@ -1110,7 +1110,7 @@ public class QueryController {
                     @Parameter(hidden = true) @RequestParam MultiValueMap<String,String> parameters, @RequestHeader HttpHeaders headers,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         parameters.add(LOOKUP_UUID_PAIRS, String.join(LOOKUP_KEY_VALUE_DELIMITER, uuidType, uuid));
-        
+
         if (Boolean.parseBoolean(parameters.getFirst(LOOKUP_STREAMING))) {
             MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
             CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
@@ -1120,7 +1120,7 @@ public class QueryController {
             return lookupService.lookupContentUUID(parameters, getPool(headers), currentUser);
         }
     }
-    
+
     // @see LookupService#lookupContentUUID(MultiValueMap, String, DatawaveUserDetails)
     // @see LookupService#lookupContentUUID(MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
@@ -1270,7 +1270,7 @@ public class QueryController {
             return lookupService.lookupContentUUID(parameters, getPool(headers), currentUser);
         }
     }
-    
+
     // @see TranslateIdService#translateId(String, MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1390,7 +1390,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return translateIdService.translateId(id, parameters, getPool(headers), currentUser);
     }
-    
+
     // @see TranslateIdService#translateIds(MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1515,7 +1515,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return translateIdService.translateIds(parameters, getPool(headers), currentUser);
     }
-    
+
     // @see QueryManagementService#createAndNext(String, MultiValueMap, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1659,7 +1659,7 @@ public class QueryController {
         querySessionIdContext.setQueryId(response.getQueryId());
         return response;
     }
-    
+
     // @see QueryManagementService#next(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1707,7 +1707,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.next(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#cancel(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1747,7 +1747,7 @@ public class QueryController {
                     throws QueryException {
         return queryManagementService.cancel(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#adminCancel(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1787,7 +1787,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.adminCancel(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#close(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1827,7 +1827,7 @@ public class QueryController {
                     throws QueryException {
         return queryManagementService.close(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#adminClose(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1867,7 +1867,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.adminClose(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#reset(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1916,7 +1916,7 @@ public class QueryController {
         querySessionIdContext.setQueryId(response.getResult());
         return response;
     }
-    
+
     // @see QueryManagementService#remove(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1952,7 +1952,7 @@ public class QueryController {
                     throws QueryException {
         return queryManagementService.remove(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#adminRemove(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -1985,7 +1985,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.adminRemove(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#update(String, MultiValueMap, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2117,7 +2117,7 @@ public class QueryController {
                     throws QueryException {
         return queryManagementService.update(queryId, parameters, currentUser);
     }
-    
+
     // @see QueryManagementService#duplicate(String, MultiValueMap, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2243,7 +2243,7 @@ public class QueryController {
                     throws QueryException {
         return queryManagementService.duplicate(queryId, parameters, currentUser);
     }
-    
+
     // @see QueryManagementService#list(String, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2267,7 +2267,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.list(queryId, queryName, currentUser);
     }
-    
+
     // @see QueryManagementService#adminList(String, String, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2294,7 +2294,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.adminList(queryId, queryName, user, currentUser);
     }
-    
+
     // @see QueryManagementService#list(String, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2317,7 +2317,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.list(queryId, null, currentUser);
     }
-    
+
     // @see QueryManagementService#plan(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2349,7 +2349,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.plan(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#predictions(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2381,7 +2381,7 @@ public class QueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.predictions(queryId, currentUser);
     }
-    
+
     // @see QueryManagementService#adminCancelAll(DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2413,7 +2413,7 @@ public class QueryController {
     public VoidResponse adminCancelAll(@AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.adminCancelAll(currentUser);
     }
-    
+
     // @see QueryManagementService#adminCloseAll(DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2445,7 +2445,7 @@ public class QueryController {
     public VoidResponse adminCloseAll(@AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.adminCloseAll(currentUser);
     }
-    
+
     // @see QueryManagementService#adminRemoveAll(DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -2474,7 +2474,7 @@ public class QueryController {
     public VoidResponse adminRemoveAll(@AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return queryManagementService.adminRemoveAll(currentUser);
     }
-    
+
     // @see StreamingService#createAndExecute(String, MultiValueMap, String, DatawaveUserDetails, DatawaveUserDetails, StreamingResponseListener)
     // @formatter:off
     @Operation(
@@ -2613,14 +2613,14 @@ public class QueryController {
         CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
         String queryId = streamingService.createAndExecute(queryLogic, parameters, getPool(headers), currentUser, serverUserDetailsSupplier.get(),
                         new CountingResponseBodyEmitterListener(emitter, contentType));
-        
+
         // unfortunately this needs to be set manually. ResponseBodyAdvice does not run for streaming endpoints
         queryMetricsEnrichmentContext.setMethodType(EnrichQueryMetrics.MethodType.CREATE);
         queryMetricsEnrichmentContext.setQueryId(queryId);
-        
+
         return createStreamingResponse(emitter, contentType);
     }
-    
+
     // @see StreamingService#execute(String, DatawaveUserDetails, DatawaveUserDetails, StreamingResponseListener)
     // @formatter:off
     @Operation(
@@ -2667,29 +2667,29 @@ public class QueryController {
         MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
         CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
         streamingService.execute(queryId, currentUser, serverUserDetailsSupplier.get(), new CountingResponseBodyEmitterListener(emitter, contentType));
-        
+
         return createStreamingResponse(emitter, contentType);
     }
-    
+
     private MediaType determineContentType(List<MediaType> acceptedMediaTypes, MediaType defaultMediaType) {
         MediaType mediaType = null;
-        
+
         if (acceptedMediaTypes != null && !acceptedMediaTypes.isEmpty()) {
             MediaType.sortBySpecificityAndQuality(acceptedMediaTypes);
             mediaType = acceptedMediaTypes.get(0);
         }
-        
+
         if (mediaType == null || MediaType.ALL.equals(mediaType)) {
             mediaType = defaultMediaType;
         }
-        
+
         return mediaType;
     }
-    
+
     private String getPool(HttpHeaders headers) {
         return headers.getFirst(queryProperties.getPoolHeader());
     }
-    
+
     private ResponseEntity<ResponseBodyEmitter> createStreamingResponse(ResponseBodyEmitter emitter, MediaType contentType) {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(contentType);

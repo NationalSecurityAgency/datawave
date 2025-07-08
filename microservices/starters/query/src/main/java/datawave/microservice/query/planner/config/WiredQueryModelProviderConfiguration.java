@@ -8,13 +8,13 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class WiredQueryModelProviderConfiguration {
-    
+
     @Bean
     @ConfigurationProperties("datawave.query.planner.wired-query-model-provider")
     public WiredQueryModelProviderProperties wiredQueryModelProviderProperties() {
         return new WiredQueryModelProviderProperties();
     }
-    
+
     @Bean
     public Map<String,String> wiredQueryModelProviderQueryModel() {
         return wiredQueryModelProviderProperties().getWiredQueryModelProviderQueryModel();

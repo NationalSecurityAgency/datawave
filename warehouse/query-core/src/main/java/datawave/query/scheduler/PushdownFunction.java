@@ -113,4 +113,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         }
         return chunks;
     }
+
+    protected ShardQueryConfiguration getConfig() {
+        return config;
+    }
 }

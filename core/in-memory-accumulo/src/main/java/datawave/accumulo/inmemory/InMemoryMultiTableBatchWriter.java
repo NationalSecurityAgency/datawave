@@ -29,12 +29,12 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 public class InMemoryMultiTableBatchWriter implements MultiTableBatchWriter {
     InMemoryAccumulo acu = null;
     Map<String,InMemoryBatchWriter> bws = null;
-    
+
     public InMemoryMultiTableBatchWriter(InMemoryAccumulo acu) {
         this.acu = acu;
         bws = new HashMap<>();
     }
-    
+
     @Override
     public BatchWriter getBatchWriter(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (!bws.containsKey(table)) {
@@ -42,13 +42,13 @@ public class InMemoryMultiTableBatchWriter implements MultiTableBatchWriter {
         }
         return bws.get(table);
     }
-    
+
     @Override
     public void flush() throws MutationsRejectedException {}
-    
+
     @Override
     public void close() throws MutationsRejectedException {}
-    
+
     @Override
     public boolean isClosed() {
         throw new UnsupportedOperationException();

@@ -32,28 +32,28 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
     private final List<DatawaveUser> proxiedUsers = new ArrayList<>();
     private final List<SimpleGrantedAuthority> roles;
     private final long creationTime;
-    
+
     DatawaveUserDetails(Collection<? extends DatawaveUser> proxiedUsers, List<SimpleGrantedAuthority> roles, long creationTime) {
         this.proxiedUsers.addAll(proxiedUsers);
         this.username = DatawaveUserDetails.orderProxiedUsers(this.proxiedUsers).stream().map(DatawaveUser::getName).collect(Collectors.joining(" -> "));
         this.roles = (roles != null) ? roles : getPrimaryUser().getRoles().stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
         this.creationTime = creationTime;
     }
-    
+
     @JsonCreator
     public DatawaveUserDetails(@JsonProperty("proxiedUsers") Collection<? extends DatawaveUser> proxiedUsers, @JsonProperty("creationTime") long creationTime) {
         this(proxiedUsers, null, creationTime);
     }
-    
+
     public DatawaveUserDetails(Collection<? extends DatawaveUser> proxiedUsers) {
         this(proxiedUsers, System.currentTimeMillis());
     }
-    
+
     @Override
     public Collection<? extends DatawaveUser> getProxiedUsers() {
         return Collections.unmodifiableCollection(proxiedUsers);
     }
-    
+
     @Override
     @JsonIgnore
     public List<String> getProxyServers() {
@@ -67,19 +67,19 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
         // @formatter:on
         return proxyServers.isEmpty() ? null : proxyServers;
     }
-    
+
     @Override
     @JsonIgnore
     public String getName() {
         return username;
     }
-    
+
     @Override
     @JsonIgnore
     public String getShortName() {
         return ProxiedEntityUtils.getShortName(getPrimaryUser().getName());
     }
-    
+
     /**
      * Gets the {@link DatawaveUser} that represents the primary user in this ProxiedUserDetails. If there is only one DatawaveUser, then it is the primaryUser.
      * If there is more than one DatawaveUser, then the first (and presumably only) DatawaveUser whose {@link DatawaveUser#getUserType()} is
@@ -93,7 +93,7 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
     public DatawaveUser getPrimaryUser() {
         return DatawaveUserDetails.findPrimaryUser(this.proxiedUsers);
     }
-    
+
     static protected DatawaveUser findPrimaryUser(List<DatawaveUser> datawaveUsers) {
         if (datawaveUsers.isEmpty()) {
             return null;
@@ -101,7 +101,7 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
             return datawaveUsers.get(findPrimaryUserPosition(datawaveUsers));
         }
     }
-    
+
     static protected int findPrimaryUserPosition(List<DatawaveUser> datawaveUsers) {
         if (datawaveUsers.isEmpty()) {
             return -1;
@@ -114,7 +114,7 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
             return 0;
         }
     }
-    
+
     /*
      * The purpose here is to return a List of DatawaveUsers where the original caller is first followed by any entities in X-ProxiedEntitiesChain in the order
      * that they were traversed and ending with the entity that made the final call. The List that is passed is not modified. This method makes the following
@@ -133,7 +133,7 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
         }
         return users;
     }
-    
+
     @Override
     @JsonIgnore
     public Collection<? extends Collection<String>> getAuthorizations() {
@@ -144,7 +144,7 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
                         .collect(Collectors.toList()));
         // @formatter:on
     }
-    
+
     @Override
     @JsonIgnore
     public String[] getDNs() {
@@ -155,28 +155,28 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
                 .toArray(String[]::new);
         // @formatter:on
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        
+
         DatawaveUserDetails that = (DatawaveUserDetails) o;
-        
+
         if (!username.equals(that.username))
             return false;
         return proxiedUsers.equals(that.proxiedUsers);
     }
-    
+
     @Override
     public int hashCode() {
         int result = username.hashCode();
         result = 31 * result + proxiedUsers.hashCode();
         return result;
     }
-    
+
     @Override
     public String toString() {
         // @formatter:off
@@ -186,53 +186,53 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
                 '}';
         // @formatter:on
     }
-    
+
     @Override
     @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles;
     }
-    
+
     @Override
     @JsonIgnore
     public String getPassword() {
         return "";
     }
-    
+
     @Override
     @JsonIgnore
     public String getUsername() {
         return username;
     }
-    
+
     @Override
     @JsonIgnore
     public boolean isAccountNonExpired() {
         return true;
     }
-    
+
     @Override
     @JsonIgnore
     public boolean isAccountNonLocked() {
         return true;
     }
-    
+
     @Override
     @JsonIgnore
     public boolean isCredentialsNonExpired() {
         return true;
     }
-    
+
     @Override
     @JsonIgnore
     public boolean isEnabled() {
         return true;
     }
-    
+
     public long getCreationTime() {
         return creationTime;
     }
-    
+
     @Override
     @SuppressWarnings("unchecked")
     public <T extends ProxiedUserDetails> T newInstance(List<DatawaveUser> proxiedUsers) {

@@ -57,7 +57,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
      *            the current query for which we are transforming results.
      * @return a map of shard/datatye/uid mapped to their corresponding identifiers.
      */
-    public Map<Metadata,String> extractMetadadaIdMap(Query querySettings) {
+    public static Map<Metadata,String> extractMetadadaIdMap(Query querySettings) {
         final String query = querySettings.getQuery().trim();
         final Map<Metadata,String> metadataIdMap = new HashMap<>();
 

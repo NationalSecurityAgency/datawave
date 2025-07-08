@@ -10,10 +10,10 @@ import datawave.webservice.dictionary.edge.MetadataBase;
 
 public interface EdgeDictionary<EDGE extends EdgeDictionaryBase<EDGE,META>,META extends MetadataBase<META>> {
     char COL_SEPARATOR = '/';
-    
+
     EDGE getEdgeDictionary(String metadataTableName, AccumuloClient accumuloClient, Set<Authorizations> auths, int numThreads) throws Exception;
-    
+
     String getEdgeDictionarySystem();
-    
+
     void setEdgeDictionarySystem(String edgeDictionarySystem);
 }

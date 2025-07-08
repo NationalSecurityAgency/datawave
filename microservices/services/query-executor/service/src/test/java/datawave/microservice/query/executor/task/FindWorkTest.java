@@ -23,8 +23,8 @@ import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,63 +83,63 @@ import datawave.query.testframework.GenericCityFields;
 @ContextConfiguration(classes = FindWorkTest.FindWorkTestConfiguration.class)
 public class FindWorkTest {
     private static final Logger log = Logger.getLogger(FindWorkTest.class);
-    
+
     private static DataTypeHadoopConfig dataType;
     private static List<TestAccumuloSetup> dataToCleanup = new ArrayList<>();
-    
+
     @Autowired
     public TestAccumuloSetup accumuloSetup;
-    
+
     @Autowired
     private QueryLogicFactory queryLogicFactory;
-    
+
     @Autowired
     private ExecutorProperties executorProperties;
-    
+
     @Autowired
     private QueryProperties queryProperties;
-    
+
     @Autowired
     private BusProperties busProperties;
-    
+
     @Autowired
     private ApplicationContext appCtx;
-    
+
     @Autowired
     private ApplicationEventPublisher publisher;
-    
+
     @Autowired
     protected QueryStorageCache storageService;
-    
+
     @Autowired
     private QueryResultsManager queueManager;
-    
+
     @Autowired
     private LinkedList<RemoteQueryRequestEvent> queryRequestsEvents;
-    
+
     @Autowired
     protected AccumuloConnectionFactory connectionFactory;
-    
+
     @Autowired
     protected List<QueryMetricClient.Request> requests;
-    
+
     @Autowired
     protected QueryMetricClient metricClient;
-    
+
     @Autowired
     protected QueryMetricFactory metricFactory;
-    
+
     @Autowired
     protected Map<String,Queue<QueryRequest>> queryRequests;
-    
+
     @Autowired
     protected FindWorkTask findWorkTask;
-    
+
     public String TEST_POOL = "TestPool";
-    
+
     public static HashSet<BaseQueryMetric.Prediction> predictions = Sets.newHashSet(new BaseQueryMetric.Prediction("Success", 0.5d),
                     new BaseQueryMetric.Prediction("Elephants", 0.0d));
-    
+
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", StandardCharsets.UTF_8.name());
@@ -151,7 +151,7 @@ public class FindWorkTest {
             System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
         } catch (URISyntaxException se) {
             log.error("failed to get URI for .", se);
-            Assert.fail();
+            Assertions.fail();
         }
         FieldConfig generic = new GenericCityFields();
         generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
@@ -160,16 +160,16 @@ public class FindWorkTest {
             dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
         } catch (Exception e) {
             log.error("Failed to load cities data type", e);
-            Assert.fail();
+            Assertions.fail();
         }
     }
-    
+
     public Query getQuery() throws ParseException {
         String city = "rome";
         String country = "italy";
         String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
                         + ":\"" + country + "\"')";
-        
+
         Query query = new QueryImpl();
         query.setQuery(queryStr);
         query.setQueryLogicName("EventQuery");
@@ -183,7 +183,7 @@ public class FindWorkTest {
         query.addParameter("query.syntax", "LUCENE");
         return query;
     }
-    
+
     @AfterAll
     public static void cleanupData() {
         synchronized (dataToCleanup) {
@@ -193,108 +193,108 @@ public class FindWorkTest {
             dataToCleanup.clear();
         }
     }
-    
+
     private void testCreateOrphans(TaskStates.TASK_STATE initialState, QueryStatus.CREATE_STAGE initialStage, TaskStates.TASK_STATE expectedState,
                     QueryRequest.Method expectedAction) throws Exception {
         TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
-        
+
         // now set the initial stage
         storageService.updateCreateStage(key.getQueryId(), initialStage);
-        
+
         // and test
         testOrphans(key, initialState, expectedState, expectedAction);
     }
-    
+
     private void testOrphans(TaskKey key, TaskStates.TASK_STATE initialState, TaskStates.TASK_STATE expectedState, QueryRequest.Method expectedAction)
                     throws Exception {
         assertNotNull(key);
-        
+
         // now put the task in a running state in the PLAN stage
         storageService.updateTaskState(key, initialState);
-        
+
         // wait until the timeout
         Thread.sleep(2 * executorProperties.getOrphanThresholdMs());
-        
+
         // execute the find work task to reset the now orphaned task
         findWorkTask.call();
-        
+
         // verify the task has been set to an expected state
         TaskStates states = storageService.getTaskStates(key.getQueryId());
         assertEquals(expectedState, states.getState(key.getTaskId()));
-        
+
         // Should have an expected request
         assertEquals(1, queryRequests.get(key.getQueryId()).size());
         QueryRequest request = queryRequests.get(key.getQueryId()).poll();
         assertEquals(key.getQueryId(), request.getQueryId());
         assertEquals(expectedAction, request.getMethod());
     }
-    
+
     @Test
     public void testFindNoOrphans() throws Exception {
         testCreateOrphans(TaskStates.TASK_STATE.READY, QueryStatus.CREATE_STAGE.CREATE, TaskStates.TASK_STATE.READY, QueryRequest.Method.CREATE);
     }
-    
+
     @Test
     public void testOrphanedCreateCreate() throws Exception {
         testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.CREATE, TaskStates.TASK_STATE.READY, QueryRequest.Method.CREATE);
     }
-    
+
     @Test
     public void testOrphanedCreatePlan() throws Exception {
         testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.PLAN, TaskStates.TASK_STATE.READY, QueryRequest.Method.CREATE);
     }
-    
+
     @Test
     public void testOrphanedCreateTask() throws Exception {
         testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.TASK, TaskStates.TASK_STATE.FAILED, QueryRequest.Method.NEXT);
     }
-    
+
     @Test
     public void testOrphanedCreateResults() throws Exception {
         testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.RESULTS, TaskStates.TASK_STATE.COMPLETED, QueryRequest.Method.NEXT);
     }
-    
+
     @Test
     public void testOrphanedNext() throws Exception {
         TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
-        
+
         // Assume the create task is complete
         storageService.updateTaskState(key, TaskStates.TASK_STATE.COMPLETED);
         storageService.updateCreateStage(key.getQueryId(), QueryStatus.CREATE_STAGE.RESULTS);
-        
+
         // create a next task
         QueryTask task = storageService.createTask(QueryRequest.Method.NEXT, new QueryCheckpoint(key.getQueryKey()));
         testOrphans(task.getTaskKey(), TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.NEXT);
     }
-    
+
     @Test
     public void testOrphanedPlan() throws Exception {
         TaskKey key = storageService.planQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()));
         testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.PLAN);
     }
-    
+
     @Test
     public void testOrphanedPredict() throws Exception {
         TaskKey key = storageService.predictQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()));
         testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.PREDICT);
     }
-    
+
     private void checkFailed(String queryId) {
         QueryStatus status = storageService.getQueryStatus(queryId);
         if (status.getQueryState() == QueryStatus.QUERY_STATE.FAIL) {
             throw new RuntimeException(status.getFailureMessage() + " : " + status.getStackTrace());
         }
     }
-    
+
     public static class TestAccumuloSetup extends AccumuloSetup {
-        
+
         @Override
         public void after() {
             super.after();
         }
-        
+
         @Override
         public void before() {
             try {
@@ -304,7 +304,7 @@ public class FindWorkTest {
             }
         }
     }
-    
+
     @Configuration
     @Profile("FindWorkTest")
     @ComponentScan(basePackages = "datawave.microservice")
@@ -320,32 +320,32 @@ public class FindWorkTest {
             return new TestQueryExecutor(queryRequests, executorProperties, queryProperties, busProperties, appCtx, connectionFactory, cache, queues,
                             queryLogicFactory, predictor, publisher, metricFactory, metricClient);
         }
-        
+
         @Bean
         public Map<String,Queue<QueryRequest>> queryRequests() {
             return new HashMap<>();
         }
-        
+
         @Bean
         public FindWorkTask findWorkTask(QueryStorageCache cache, QueryExecutor executor) {
             return new FindWorkTask(cache, executor, null, null, new ExecutorStatusLogger());
         }
-        
+
         @Bean
         public List<QueryMetricClient.Request> requests() {
             return new ArrayList<>();
         }
-        
+
         @Bean
         public QueryMetricClient metricClient(final List<QueryMetricClient.Request> requests) {
             return new QueryMetricClient(new RestTemplateBuilder(), null, null, null, null) {
-                
+
                 @Override
                 public void submit(Request request) throws Exception {
                     log.debug("Submitted request " + request);
                     requests.add(request);
                 }
-                
+
                 @Override
                 protected HttpEntity createRequestEntity(DatawaveUserDetails user, DatawaveUserDetails trustedUser, Object body)
                                 throws JsonProcessingException {
@@ -353,17 +353,17 @@ public class FindWorkTest {
                 }
             };
         }
-        
+
         @Bean
         public QueryMetricFactory metricFactory() {
             return new QueryMetricFactoryImpl();
         }
-        
+
         @Bean
         public LinkedList<RemoteQueryRequestEvent> testQueryRequestEvents() {
             return new LinkedList<>();
         }
-        
+
         @Bean
         @Primary
         public QueryPredictor testQueryPredictor() {
@@ -374,7 +374,7 @@ public class FindWorkTest {
                 }
             };
         }
-        
+
         @Bean
         @Primary
         public ApplicationEventPublisher testPublisher() {
@@ -383,12 +383,12 @@ public class FindWorkTest {
                 public void publishEvent(ApplicationEvent event) {
                     saveEvent(event);
                 }
-                
+
                 @Override
                 public void publishEvent(Object event) {
                     saveEvent(event);
                 }
-                
+
                 private void saveEvent(Object event) {
                     if (event instanceof RemoteQueryRequestEvent) {
                         testQueryRequestEvents().addLast(((RemoteQueryRequestEvent) event));
@@ -396,7 +396,7 @@ public class FindWorkTest {
                 }
             };
         }
-        
+
         @Bean
         @Primary
         TestAccumuloSetup testAccumuloSetup() throws Exception {
@@ -408,55 +408,55 @@ public class FindWorkTest {
             }
             return accumuloSetup;
         }
-        
+
         @Bean
         @Primary
         public AccumuloClient testClient(TestAccumuloSetup accumuloSetup) throws Exception {
             return accumuloSetup.loadTables(log);
         }
-        
+
         @Bean
         @Primary
         public AccumuloConnectionFactory testConnectionFactory(AccumuloClient client) {
             return new AccumuloConnectionFactory() {
-                
+
                 @Override
                 public void close() throws Exception {
-                    
+
                 }
-                
+
                 @Override
                 public AccumuloClient getClient(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap)
                                 throws Exception {
                     return client;
                 }
-                
+
                 @Override
                 public AccumuloClient getClient(String userDN, Collection<String> proxyServers, String poolName, Priority priority,
                                 Map<String,String> trackingMap) throws Exception {
                     return client;
                 }
-                
+
                 @Override
                 public void returnClient(AccumuloClient client) throws Exception {
-                    
+
                 }
-                
+
                 @Override
                 public String report() {
                     return null;
                 }
-                
+
                 @Override
                 public List<ConnectionPool> getConnectionPools() {
                     return null;
                 }
-                
+
                 @Override
                 public int getConnectionUsagePercent() {
                     return 0;
                 }
-                
+
                 @Override
                 public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
                     return new HashMap<>();
@@ -464,10 +464,10 @@ public class FindWorkTest {
             };
         }
     }
-    
+
     public static class TestQueryExecutor extends QueryExecutor {
         private final Map<String,Queue<QueryRequest>> requests;
-        
+
         public TestQueryExecutor(Map<String,Queue<QueryRequest>> queryRequests, ExecutorProperties executorProperties, QueryProperties queryProperties,
                         BusProperties busProperties, ApplicationContext appCtx, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache,
                         QueryResultsManager queues, QueryLogicFactory queryLogicFactory, QueryPredictor predictor, ApplicationEventPublisher publisher,
@@ -476,7 +476,7 @@ public class FindWorkTest {
                             metricFactory, metricClient);
             this.requests = queryRequests;
         }
-        
+
         @Override
         public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService) {
             synchronized (requests) {
@@ -489,5 +489,5 @@ public class FindWorkTest {
             }
         }
     }
-    
+
 }

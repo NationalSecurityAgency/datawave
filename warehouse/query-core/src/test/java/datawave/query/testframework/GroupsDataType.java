@@ -142,14 +142,6 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         }
     }
 
-    // ==================================
-    // data manager info
-    private static final RawDataManager manager = new GroupsDataManager();
-
-    public static RawDataManager getManager() {
-        return manager;
-    }
-
     /**
      * Creates a groups datatype entry with all of the key/value configuration settings.
      *
@@ -181,7 +173,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
      *             ingest file name error
      */
     public GroupsDataType(final String datatype, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
-        super(datatype, ingestFile, config, manager);
+        super(datatype, ingestFile, config, GroupsDataManager.getInstance());
 
         // NOTE: see super for default settings
         // set datatype settings

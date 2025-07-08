@@ -20,7 +20,7 @@ public class WrappedAccumuloClientPoolFactory extends AccumuloClientPoolFactory 
     private Logger log = LoggerFactory.getLogger(getClass());
     private AccumuloClientPoolFactory accumuloClientPoolFactory;
     private AccumuloClient inMemoryAccumuloClient;
-    
+
     public WrappedAccumuloClientPoolFactory(AccumuloClientPoolFactory accumuloClientPoolFactory) {
         super("", "", "", "");
         this.accumuloClientPoolFactory = accumuloClientPoolFactory;
@@ -30,7 +30,7 @@ public class WrappedAccumuloClientPoolFactory extends AccumuloClientPoolFactory 
             log.error(e.getMessage(), e);
         }
     }
-    
+
     @Override
     public PooledObject<AccumuloClient> makeObject() throws Exception {
         return new DefaultPooledObject(new WrappedAccumuloClient(this.accumuloClientPoolFactory.makeObject().getObject(), inMemoryAccumuloClient));

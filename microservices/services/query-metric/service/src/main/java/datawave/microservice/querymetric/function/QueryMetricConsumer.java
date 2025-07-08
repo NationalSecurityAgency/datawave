@@ -16,17 +16,17 @@ import datawave.microservice.querymetric.QueryMetricUpdateHolder;
 
 public class QueryMetricConsumer implements Consumer<QueryMetricUpdate> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private QueryMetricOperations queryMetricOperations;
     private Correlator correlator;
     private QueryMetricOperationsStats stats;
-    
+
     public QueryMetricConsumer(QueryMetricOperations queryMetricOperations, Correlator correlator, QueryMetricOperationsStats stats) {
         this.queryMetricOperations = queryMetricOperations;
         this.correlator = correlator;
         this.stats = stats;
     }
-    
+
     @Override
     public void accept(QueryMetricUpdate queryMetricUpdate) {
         try {
@@ -39,7 +39,7 @@ public class QueryMetricConsumer implements Consumer<QueryMetricUpdate> {
                 log.debug("storing update for {}", queryMetricUpdate.getMetric().getQueryId());
                 this.queryMetricOperations.storeMetricUpdate(new QueryMetricUpdateHolder(queryMetricUpdate));
             }
-            
+
             if (this.correlator.isEnabled()) {
                 List<QueryMetricUpdate> correlatedUpdates;
                 do {
@@ -62,7 +62,7 @@ public class QueryMetricConsumer implements Consumer<QueryMetricUpdate> {
             throw new RuntimeException(e);
         }
     }
-    
+
     private boolean shouldCorrelate(QueryMetricUpdate update) {
         // add the first update for a metric to get it into the cache
         if ((update.getMetric().getLifecycle().ordinal() <= BaseQueryMetric.Lifecycle.DEFINED.ordinal())) {

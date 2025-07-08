@@ -36,6 +36,7 @@ import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -60,6 +61,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         for (String idx : generic.getIndexFields()) {
             generic.addReverseIndexField(idx);
         }
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
@@ -294,7 +296,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         String state = "'ohio'";
         for (TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP
-                            + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
+                            + "'ohio~'" + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
 
             this.logic.setInitialMaxTermThreshold(3);
             this.logic.setFinalMaxTermThreshold(3);

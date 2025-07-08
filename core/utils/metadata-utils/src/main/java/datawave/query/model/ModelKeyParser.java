@@ -45,35 +45,35 @@ import com.google.common.base.Joiner;
  */
 // @formatter:on
 public class ModelKeyParser {
-    
+
     public static final String NULL_BYTE = "\0";
     public static final Value NULL_VALUE = new Value(new byte[0]);
-    
+
     @Deprecated
     public static final String INDEX_ONLY = "index_only";
-    
+
     public static final String ATTRIBUTES = "attrs";
-    
+
     public static final String MODEL = "model";
-    
+
     private static Logger log = Logger.getLogger(ModelKeyParser.class);
-    
+
     public static FieldMapping parseKey(Key key) {
         return parseKey(key, NULL_VALUE);
     }
-    
+
     public static FieldMapping parseKey(Key key, Value value) {
         String row = key.getRow().toString();
         String[] colf = key.getColumnFamily().toString().split(NULL_BYTE);
         String[] colq = key.getColumnQualifier().toString().split(NULL_BYTE);
         String cv = key.getColumnVisibility().toString();
-        
+
         String datatype = null;
         Direction direction;
         String dataField;
         String modelField;
         List<String> attributes = new ArrayList<>();
-        
+
         if (colf.length == 1) {
             // no datatype, this is only the model name
         } else if (colf.length == 2) {
@@ -81,10 +81,10 @@ public class ModelKeyParser {
         } else {
             throw new IllegalArgumentException("Key in unknown format, colf parts: " + colf.length);
         }
-        
+
         // we can have attributes no matter the mapping
         attributes.addAll(Arrays.asList(StringUtils.split(new String(value.get(), StandardCharsets.UTF_8), ',')));
-        
+
         if (1 == colq.length) {
             if (colq[0].isEmpty()) {
                 throw new IllegalArgumentException("Expected a column qualifier for a model key: " + key);
@@ -118,13 +118,13 @@ public class ModelKeyParser {
             log.error("Error parsing key: " + key);
             throw new IllegalArgumentException("Key in unknown format, colq parts: " + colq.length);
         }
-        
+
         return new FieldMapping(datatype, dataField, modelField, direction, cv, attributes);
     }
-    
+
     public static Key createKey(FieldMapping mapping, String modelName) {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
-        
+
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
         if (mapping.isFieldMapping()) {
             String inName = Direction.REVERSE.equals(mapping.getDirection()) ? mapping.getFieldName() : mapping.getModelFieldName();
@@ -146,10 +146,10 @@ public class ModelKeyParser {
             );
         }
     }
-    
+
     /**
      * Get the colq and the value for an attributes entry
-     * 
+     *
      * @param attributes
      * @return A string array of 2: {colq, value}
      */
@@ -171,20 +171,20 @@ public class ModelKeyParser {
             return new String[] {ModelKeyParser.ATTRIBUTES, Joiner.on(',').join(attributes)};
         }
     }
-    
+
     private static Set<String> getAttrNames(Set<String> attributes) {
         return attributes.stream().map(a -> (a.indexOf('=') >= 0 ? a.substring(0, a.indexOf('=')) : null)).collect(Collectors.toSet());
     }
-    
+
     private static Set<String> getAttrValues(Set<String> attributes) {
         return attributes.stream().map(a -> (a.indexOf('=') >= 0 ? a.substring(a.indexOf('=') + 1) : a)).collect(Collectors.toSet());
     }
-    
+
     public static Mutation createMutation(FieldMapping mapping, String modelName) {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
-        
+
         if (mapping.isFieldMapping()) {
             if (Direction.REVERSE.equals(mapping.getDirection())) {
                 // Reverse mappings should not have indexOnly designators. If they do, scrub it off.
@@ -203,12 +203,12 @@ public class ModelKeyParser {
         }
         return m;
     }
-    
+
     public static Mutation createDeleteMutation(FieldMapping mapping, String modelName) {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
-        
+
         if (mapping.isFieldMapping()) {
             if (Direction.REVERSE.equals(mapping.getDirection())) {
                 m = new Mutation(mapping.getFieldName());

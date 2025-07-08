@@ -16,7 +16,7 @@ public class AccumuloConnectionFactoryConfig {
     public ConnectionPoolsProperties connectionPoolsProperties() {
         return new ConnectionPoolsProperties();
     }
-    
+
     @Bean
     public AccumuloConnectionFactory accumuloConnectionFactory(AccumuloTableCache accumuloTableCache, ConnectionPoolsProperties connectionPoolsProperties) {
         return AccumuloConnectionFactoryImpl.getInstance(accumuloTableCache, connectionPoolsProperties);

@@ -2,6 +2,8 @@
 /* JavaCCOptions:KEEP_LINE_COL=null */
 package datawave.query.language.parser.lucene;
 
+import java.util.List;
+
 import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.messages.QueryParserMessages;
 import org.apache.lucene.queryparser.flexible.messages.Message;
@@ -31,7 +33,7 @@ public class ParseException extends QueryNodeParseException {
      * @param tokenImageVal
      *            the token image
      */
-    public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, String[] tokenImageVal) {
+    public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, List<String> tokenImageVal) {
         super(new MessageImpl(QueryParserMessages.INVALID_SYNTAX, initialise(currentTokenVal, expectedTokenSequencesVal, tokenImageVal)));
         this.currentToken = currentTokenVal;
         this.expectedTokenSequences = expectedTokenSequencesVal;
@@ -74,7 +76,7 @@ public class ParseException extends QueryNodeParseException {
      * This is a reference to the "tokenImage" array of the generated parser within which the parse error occurred. This array is defined in the generated
      * ...Constants interface.
      */
-    public String[] tokenImage;
+    public List<String> tokenImage;
 
     /**
      * It uses "currentToken" and "expectedTokenSequences" to generate a parse error message and returns it. If this object has been created due to a parse
@@ -88,7 +90,7 @@ public class ParseException extends QueryNodeParseException {
      *            the token image
      * @return parse error message string
      */
-    private static String initialise(Token currentToken, int[][] expectedTokenSequences, String[] tokenImage) {
+    private static String initialise(Token currentToken, int[][] expectedTokenSequences, List<String> tokenImage) {
         String eol = System.getProperty("line.separator", "\n");
         StringBuilder expected = new StringBuilder();
         int maxSize = 0;
@@ -97,7 +99,7 @@ public class ParseException extends QueryNodeParseException {
                 maxSize = expectedTokenSequences[i].length;
             }
             for (int j = 0; j < expectedTokenSequences[i].length; j++) {
-                expected.append(tokenImage[expectedTokenSequences[i][j]]).append(' ');
+                expected.append(tokenImage.get(expectedTokenSequences[i][j])).append(' ');
             }
             if (expectedTokenSequences[i][expectedTokenSequences[i].length - 1] != 0) {
                 expected.append("...");
@@ -110,10 +112,10 @@ public class ParseException extends QueryNodeParseException {
             if (i != 0)
                 retval += " ";
             if (tok.kind == 0) {
-                retval += tokenImage[0];
+                retval += tokenImage.get(0);
                 break;
             }
-            retval += " " + tokenImage[tok.kind];
+            retval += " " + tokenImage.get(tok.kind);
             retval += " \"";
             retval += add_escapes(tok.image);
             retval += " \"";

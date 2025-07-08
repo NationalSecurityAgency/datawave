@@ -42,7 +42,7 @@ import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 
 public class QueryMetricTest {
-    
+
     private static QueryMetric queryMetric = null;
     private static Map<String,String> markings = null;
     private static List<String> negativeSelectors = null;
@@ -50,7 +50,7 @@ public class QueryMetricTest {
     private static List<String> positiveSelectors = null;
     private static List<String> proxyServers = null;
     private static final String DEFAULT_ERROR_CODE = "500-1";
-    
+
     @BeforeAll
     public static void setup() {
         queryMetric = new QueryMetric();
@@ -68,16 +68,16 @@ public class QueryMetricTest {
         proxyServers = new ArrayList<>();
         proxyServers.add("proxyServer1");
     }
-    
+
     @Test
     public void testSetError() {
         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, "test");
         Exception e = new Exception(qe);
-        
+
         queryMetric.setError(e);
         assertEquals("The query contained fields which do not exist in the data dictionary for any specified datatype. test", queryMetric.getErrorMessage());
         assertEquals("400-16", queryMetric.getErrorCode());
-        
+
         Exception ioe = new IOException("ioe");
         Exception nrqe = new NoResultsQueryException(NO_QUERY_RESULTS_FOUND, ioe);
         Exception rte1 = new RuntimeException("rte1", nrqe);
@@ -85,14 +85,14 @@ public class QueryMetricTest {
         queryMetric.setError(rte2);
         assertEquals(NO_QUERY_RESULTS_FOUND.toString(), queryMetric.getErrorMessage());
         assertEquals("204-6", queryMetric.getErrorCode());
-        
+
         queryMetric.setErrorCode("");
         Throwable t = new Throwable("non-datawave error");
         queryMetric.setError(t);
         assertEquals("non-datawave error", queryMetric.getErrorMessage());
         assertEquals(DEFAULT_ERROR_CODE, queryMetric.getErrorCode());
     }
-    
+
     @Test
     public void testSettersGetters() {
         Date d = new Date();
@@ -120,7 +120,7 @@ public class QueryMetricTest {
         queryMetric.setSetupTime(0);
         queryMetric.setUser("user");
         queryMetric.setUserDN("userDN");
-        
+
         assertEquals(d, queryMetric.getBeginDate());
         assertEquals("PUBLIC", queryMetric.getColumnVisibility());
         assertEquals(0, queryMetric.getCreateCallTime());
@@ -149,7 +149,7 @@ public class QueryMetricTest {
         assertEquals("user", queryMetric.getUser());
         assertEquals("userDN", queryMetric.getUserDN());
     }
-    
+
     @Test
     public void testJsonSerialization() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -158,7 +158,7 @@ public class QueryMetricTest {
         QueryMetric deserializedMetric = objectMapper.readValue(metricAsBytes, QueryMetric.class);
         assertEquals(queryMetric, deserializedMetric);
     }
-    
+
     @Test
     public void testXmlSerialization() throws Exception {
         JAXBContext jaxbContext = JAXBContext.newInstance(QueryMetric.class);
@@ -169,7 +169,7 @@ public class QueryMetricTest {
         QueryMetric deserializedMetric = (QueryMetric) unmarshaller.unmarshal(new ByteArrayInputStream(baos.toByteArray()));
         assertEquals(queryMetric, deserializedMetric);
     }
-    
+
     @Test
     public void testProtobufSerialization() throws Exception {
         Schema<QueryMetric> schema = (Schema<QueryMetric>) queryMetric.getSchemaInstance();
@@ -179,14 +179,14 @@ public class QueryMetricTest {
         ProtostuffIOUtil.mergeFrom(baos.toByteArray(), deserializedMetric, schema);
         assertEquals(queryMetric, deserializedMetric);
     }
-    
+
     @Test
     public void testProtobufCompleteness() throws Exception {
         testSchemaCompleteness(QueryMetric.class);
         testSchemaCompleteness(PageMetric.class);
         testSchemaCompleteness(Prediction.class);
     }
-    
+
     public void testSchemaCompleteness(Class clazz) throws Exception {
         Object o = null;
         try {
@@ -220,7 +220,7 @@ public class QueryMetricTest {
             }
         }
     }
-    
+
     @Test
     public void testVersionSerialization() throws Exception {
         QueryMetric qm = new QueryMetric();
@@ -250,11 +250,11 @@ public class QueryMetricTest {
         qm.setSetupTime(0);
         qm.setUser("user");
         qm.setUserDN("userDN");
-        
+
         // The version is added to queryMetric objects by default through injection, so we can verify
         // the object on creation.
         assertEquals(BaseQueryMetric.discoveredVersionMap, qm.getVersionMap());
-        
+
         Schema<QueryMetric> schema = (Schema<QueryMetric>) qm.getSchemaInstance();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ProtostuffIOUtil.writeTo(baos, qm, schema, LinkedBuffer.allocate());
@@ -262,7 +262,7 @@ public class QueryMetricTest {
         ProtostuffIOUtil.mergeFrom(baos.toByteArray(), deserializedMetric, schema);
         assertEquals(qm, deserializedMetric);
     }
-    
+
     @Test
     public void testPageMetricParsing1() {
         PageMetric pmRef1 = new PageMetric("localhost", "aa-bb-cc-dd", 2500, 2000, 3500, 3600, 1000, 2200, 3000, 10000);
@@ -271,7 +271,7 @@ public class QueryMetricTest {
         PageMetric pm1 = PageMetric.parse(pmText1);
         assertEquals(pmRef1, pm1, "page metrics not equal");
     }
-    
+
     @Test
     public void testPageMetricParsing2() {
         PageMetric pmRef1 = new PageMetric(null, "aa-bb-cc-dd", 2500, 2000, 3500, 3600, 1000, 2200, 3000, 10000);
@@ -280,7 +280,7 @@ public class QueryMetricTest {
         PageMetric pm1 = PageMetric.parse(pmText1);
         assertEquals(pmRef1, pm1, "page metrics not equal");
     }
-    
+
     @Test
     public void testPageMetricParsingLegacy1() {
         PageMetric pmRef1 = new PageMetric(null, null, 2500, 2000, 3500, 3600, -1, 2200, 3000, 10000);
@@ -289,7 +289,7 @@ public class QueryMetricTest {
         PageMetric pm1 = PageMetric.parse(pmText1);
         assertEquals(pmRef1, pm1, "page metrics not equal");
     }
-    
+
     @Test
     public void testPageMetricParsingLegacy2() {
         PageMetric pmRef1 = new PageMetric(null, null, 2500, 2000, 0, 0, -1, 2200, 3000, 10000);
@@ -298,7 +298,7 @@ public class QueryMetricTest {
         PageMetric pm1 = PageMetric.parse(pmText1);
         assertEquals(pmRef1, pm1, "page metrics not equal");
     }
-    
+
     @Test
     public void testPageMetricParsingLegacy3() {
         PageMetric pmRef1 = new PageMetric(null, null, 2500, 2000, 0, 0, -1, 0, 0, -1);

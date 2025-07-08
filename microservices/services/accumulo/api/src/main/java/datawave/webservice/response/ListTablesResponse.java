@@ -16,17 +16,17 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ListTablesResponse extends BaseResponse {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "Tables")
     @XmlElement(name = "Table")
     private List<String> tables = null;
-    
+
     public List<String> getTables() {
         return tables;
     }
-    
+
     public void setTables(List<String> tables) {
         this.tables = tables;
     }

@@ -17,21 +17,21 @@ import lombok.Setter;
 @ConfigurationProperties(prefix = "datawave.modification.query")
 @Validated
 public class ModificationQueryProperties {
-    
+
     @NotBlank
     private String queryPool;
-    
+
     @NotBlank
     private String queryURI;
-    
+
     @Positive
     protected long remoteQueryTimeout = 1L;
-    
+
     @NotNull
     protected TimeUnit remoteQueryTimeoutUnit = TimeUnit.MINUTES;
-    
+
     public long getRemoteQueryTimeoutMillis() {
         return remoteQueryTimeoutUnit.toMillis(remoteQueryTimeout);
     }
-    
+
 }

@@ -19,7 +19,7 @@ import org.springframework.core.type.ClassMetadata;
  */
 public class HazelcastCacheCondition extends SpringBootCondition {
     public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        
+
         String sourceClass = "";
         if (metadata instanceof ClassMetadata) {
             sourceClass = ((ClassMetadata) metadata).getClassName();

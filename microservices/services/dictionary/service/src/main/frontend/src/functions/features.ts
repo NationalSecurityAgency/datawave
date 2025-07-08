@@ -2,12 +2,12 @@ import { Notify} from 'quasar';
 import * as Formatters from './formatters';
 
 // Feature - Copies the Label to Clipboard
-export async function copyLabel(colValue: any) {
-  await navigator.clipboard.writeText(colValue);
+export async function copyLabel(colName: string, colValue: any) {
+  await navigator.clipboard.writeText(Formatters.parseVal(colName, colValue));
   Notify.create({
     type: 'info',
     message: Formatters.maxSubstring(
-                  Formatters.parseVal('CopyPaste', colValue), 'CopyPaste'
+                  Formatters.parseVal(colName, colValue), 'CopyPaste'
                 ) + ' Copied to Clipboard.',
     color: 'cyan-8',
     icon: 'bi-clipboard-fill'

@@ -22,13 +22,13 @@ import datawave.webservice.results.modification.MutableFieldListResponse;
 @RequestMapping(path = "/v1", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE, PROTOSTUFF_VALUE,
         "text/x-yaml", "application/x-yaml", "text/yaml", "application/x-protobuf"})
 public class ModificationCacheController {
-    
+
     private final ModificationCache cache;
-    
+
     public ModificationCacheController(ModificationCache cache) {
         this.cache = cache;
     }
-    
+
     /**
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
@@ -47,7 +47,7 @@ public class ModificationCacheController {
         this.cache.reloadMutableFieldCache();
         return new VoidResponse();
     }
-    
+
     @GetMapping("/getMutableFieldList")
     @Timed(name = "dw.modification.mutable.field.list", absolute = true)
     public List<MutableFieldListResponse> getMutableFieldList() {

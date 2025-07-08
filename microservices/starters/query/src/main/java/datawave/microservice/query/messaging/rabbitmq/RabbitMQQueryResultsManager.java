@@ -22,33 +22,33 @@ import datawave.microservice.query.messaging.config.MessagingProperties;
 
 public class RabbitMQQueryResultsManager implements QueryResultsManager {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String RABBITMQ = "rabbitmq";
-    
+
     static final String QUERY_RESULTS_EXCHANGE = "queryResults";
     static final String QUERY_QUEUE_PREFIX = QUERY_RESULTS_EXCHANGE + ".";
-    
+
     private final MessagingProperties messagingProperties;
     private final RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
     private final CachingConnectionFactory connectionFactory;
     private final ClaimCheck claimCheck;
-    
+
     private final RabbitAdmin rabbitAdmin;
     private final DirectRabbitListenerContainerFactory listenerContainerFactory;
-    
+
     public RabbitMQQueryResultsManager(MessagingProperties messagingProperties, RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry,
                     CachingConnectionFactory cachingConnectionFactory, ClaimCheck claimCheck) {
         this.messagingProperties = messagingProperties;
         this.rabbitListenerEndpointRegistry = rabbitListenerEndpointRegistry;
         this.connectionFactory = cachingConnectionFactory;
         this.claimCheck = claimCheck;
-        
+
         rabbitAdmin = new RabbitAdmin(cachingConnectionFactory);
         listenerContainerFactory = new DirectRabbitListenerContainerFactory();
         listenerContainerFactory.setConnectionFactory(cachingConnectionFactory);
         listenerContainerFactory.setConsumersPerQueue(messagingProperties.getConcurrency());
     }
-    
+
     /**
      * Create a listener for a specified listener id
      *
@@ -63,10 +63,10 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
         ensureQueueCreated(queryId);
         return new RabbitMQQueryResultsListener(listenerContainerFactory, rabbitListenerEndpointRegistry, claimCheck, listenerId, queryId);
     }
-    
+
     /**
      * Create a publisher for a specific query id.
-     * 
+     *
      * @param queryId
      *            The query ID to publish to
      * @return a query result publisher
@@ -76,7 +76,7 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
         ensureQueueCreated(queryId);
         return new RabbitMQQueryResultsPublisher(messagingProperties.getRabbitmq(), new RabbitTemplate(connectionFactory), claimCheck, queryId);
     }
-    
+
     /**
      * Ensure a queue is created for a given pool
      *
@@ -89,17 +89,17 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
             if (log.isInfoEnabled()) {
                 log.debug("Creating exchange/queue " + queryId);
             }
-            
+
             TopicExchange exchange = new TopicExchange(QUERY_RESULTS_EXCHANGE, messagingProperties.getRabbitmq().isDurable(), false);
             Queue queue = new Queue(QUERY_QUEUE_PREFIX + queryId, messagingProperties.getRabbitmq().isDurable(), false, false);
             Binding binding = BindingBuilder.bind(queue).to(exchange).with(queryId);
-            
+
             rabbitAdmin.declareExchange(exchange);
             rabbitAdmin.declareQueue(queue);
             rabbitAdmin.declareBinding(binding);
         }
     }
-    
+
     @Override
     public void deleteQuery(String queryId) {
         try {
@@ -109,12 +109,12 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
         } catch (AmqpIOException e) {
             log.error("Failed to delete queue " + queryId, e);
         }
-        
+
         if (claimCheck != null) {
             claimCheck.delete(queryId);
         }
     }
-    
+
     @Override
     public void emptyQuery(String queryId) {
         try {
@@ -123,12 +123,12 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
             // log an continue
             log.error("Failed to empty queue " + queryId, e);
         }
-        
+
         if (claimCheck != null) {
             claimCheck.empty(queryId);
         }
     }
-    
+
     @Override
     public int getNumResultsRemaining(String queryId) {
         QueueInformation queueInfo = rabbitAdmin.getQueueInfo(QUERY_QUEUE_PREFIX + queryId);

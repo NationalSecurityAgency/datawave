@@ -15,19 +15,19 @@ import datawave.microservice.cached.LockableCacheInspector;
 @CacheConfig(cacheNames = CACHE_NAME)
 public class MapReduceQueryIdByUsernameCache extends LockableCache<Set<String>> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String CACHE_NAME = "mapReduceQueryIdByUsernameCache";
-    
+
     public MapReduceQueryIdByUsernameCache(LockableCacheInspector cacheInspector) {
         super(cacheInspector, CACHE_NAME);
     }
-    
+
     @Override
     @SuppressWarnings("unchecked")
     public Set<String> get(String username) {
         return (Set<String>) cacheInspector.list(CACHE_NAME, Set.class, username);
     }
-    
+
     @Override
     @CachePut(key = "#username")
     public Set<String> update(String username, Set<String> ids) {
@@ -36,7 +36,7 @@ public class MapReduceQueryIdByUsernameCache extends LockableCache<Set<String>> 
         }
         return ids;
     }
-    
+
     @CacheEvict(key = "#username")
     public void removeAll(String username) {
         if (log.isDebugEnabled()) {

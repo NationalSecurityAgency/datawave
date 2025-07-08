@@ -32,13 +32,13 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 @ImportResource(locations = {"${datawave.query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}"})
 public class QueryLogicFactoryConfiguration {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     @Bean
     @ConditionalOnProperty(name = "datawave.defaults.ResponseObjectFactory.enabled", havingValue = "true", matchIfMissing = true)
     public ResponseObjectFactory responseObjectFactory() {
         return new DefaultResponseObjectFactory();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Set<String> tokenizedFields(QueryParserProperties queryParserProperties) {
@@ -48,7 +48,7 @@ public class QueryLogicFactoryConfiguration {
         }
         return tokenizedFields;
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Set<String> skipTokenizeUnfieldedFields(QueryParserProperties queryParserProperties) {
@@ -58,7 +58,7 @@ public class QueryLogicFactoryConfiguration {
         }
         return skipTokenizeUnfieldedFields;
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Set<String> tokenizerStopwords(QueryParserProperties queryParserProperties) {
@@ -68,7 +68,7 @@ public class QueryLogicFactoryConfiguration {
         }
         return tokenizerStopwords;
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<UUIDType> uuidTypes(LookupProperties lookupProperties) {
@@ -78,7 +78,7 @@ public class QueryLogicFactoryConfiguration {
         }
         return uuidTypes;
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,String> edgeModelBaseFieldMap(EdgeModelProperties edgeProperties) {
@@ -88,7 +88,7 @@ public class QueryLogicFactoryConfiguration {
         }
         return fieldMap;
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,String> edgeModelKeyUtilFieldMap(EdgeModelProperties edgeProperties) {
@@ -98,7 +98,7 @@ public class QueryLogicFactoryConfiguration {
         }
         return fieldMap;
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,String> edgeModelTransformFieldMap(EdgeModelProperties edgeProperties) {
@@ -108,5 +108,5 @@ public class QueryLogicFactoryConfiguration {
         }
         return fieldMap;
     }
-    
+
 }
