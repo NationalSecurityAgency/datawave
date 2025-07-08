@@ -70,7 +70,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     @Override
     public boolean isReverseIndexedField(String fieldName) {
         if(hasErrorReverseIndexConfig()) {
-            return super.isErrorReverseIndexField(fieldName);
+            return super.isErrorReverseIndexedField(fieldName);
         } else {
             return super.isIndexedField(fieldName);
         }
