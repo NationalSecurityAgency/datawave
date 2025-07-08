@@ -12,4 +12,9 @@ public interface FieldConfigHelper {
     boolean isTokenizedField(String fieldName);
 
     boolean isReverseTokenizedField(String fieldName);
+
+    boolean isErrorIndexedField(String fieldName);
+
+    boolean isErrorReverseIndexedField(String fieldName);
+
 }

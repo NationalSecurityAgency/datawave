@@ -48,4 +48,31 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     public Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields) {
         return super.normalizeMap(fields);
     }
+
+    private boolean hasErrorIndexConfig(){
+        return !super.errorIndexedFields.isEmpty();
+    }
+
+    private boolean hasErrorReverseIndexConfig(){
+        return !super.errorReverseIndexedFields.isEmpty();
+
+    }
+
+    @Override
+    public boolean isIndexedField(String fieldName) {
+        if(hasErrorIndexConfig()) {
+            return super.isErrorIndexedField(fieldName);
+        } else {
+            return super.isIndexedField(fieldName);
+        }
+    }
+
+    @Override
+    public boolean isReverseIndexedField(String fieldName) {
+        if(hasErrorReverseIndexConfig()) {
+            return super.isErrorReverseIndexField(fieldName);
+        } else {
+            return super.isIndexedField(fieldName);
+        }
+    }
 }

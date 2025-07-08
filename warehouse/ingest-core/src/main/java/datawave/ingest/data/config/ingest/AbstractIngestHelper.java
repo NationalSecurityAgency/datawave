@@ -31,9 +31,14 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     /** SETH NOTE
      * I'm wondering if I'll have to make a version of the following for
      * the error indexing or not. Worth to keep it noted in the meantime.
+     *
+     * UPDATE 1: Yup! Looks like it.
      */
     protected boolean hasIndexDisallowlist = false;
     protected boolean hasReverseIndexDisallowlist = false;
+
+    protected boolean hasErrorIndexDisallowlist = false;
+    protected boolean hasErrorReverseIndexDisallowlist = false;
 
 
 
@@ -144,6 +149,22 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
 
     protected void setHasReverseIndexDisallowlist(boolean hasReverseIndexDisallowlist) {
         this.hasReverseIndexDisallowlist = hasReverseIndexDisallowlist;
+    }
+
+    protected void setHasErrorIndexDisallowlist(boolean hasErrorIndexDisallowlist) {
+        this.hasErrorIndexDisallowlist = hasErrorIndexDisallowlist;
+    }
+
+    protected boolean hasErrorIndexDisallowlist() {
+        return this.hasErrorIndexDisallowlist;
+    }
+
+    protected boolean hasErrorReverseIndexDisallowlist() {
+        return this.hasErrorReverseIndexDisallowlist;
+    }
+
+    protected void setHasErrorReverseIndexDisallowlist(boolean hasErrorReverseIndexDisallowlist) {
+        this.hasErrorReverseIndexDisallowlist = hasErrorReverseIndexDisallowlist;
     }
 
     public void upperCaseSetEntries(Set<String> input, String warnMessage) {

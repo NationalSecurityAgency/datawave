@@ -394,11 +394,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             if (log.isDebugEnabled()) {
                 log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
             }
-            super.setHasIndexDisallowlist(true); //todo (make error version)
+            super.setHasErrorIndexDisallowlist(true);
             configProperty = DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + INDEX_FIELDS) != null) {
             log.debug("ErrorIndexedFields specified.");
-            super.setHasIndexDisallowlist(false); //todo (make error version)
+            super.setHasErrorIndexDisallowlist(false);
             configProperty = DATATYPE_ERROR + INDEX_FIELDS;
         }
 
@@ -446,14 +446,14 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS);
             }
 
-            this.setHasReverseIndexDisallowlist(true); //todo (error version)
+            this.setHasErrorReverseIndexDisallowlist(true);
 
             configProperty = DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
                 log.debug("Reverse Index specified for: {}", this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
             }
-            this.setHasReverseIndexDisallowlist(false); //todo (error version)
+            this.setHasErrorReverseIndexDisallowlist(false);
             configProperty = DATATYPE_ERROR + REVERSE_INDEX_FIELDS;
         }
 
@@ -723,6 +723,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
         return indexOnlyFields.contains(fieldName);
     }
+
+
 
     @Override
     public void addIndexOnlyField(String fieldName) {
@@ -1000,6 +1002,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         return this.hasIndexDisallowlist() ? !isIndexed(fieldName) : isIndexed(fieldName);
     }
 
+
     private boolean isIndexed(String fieldName) {
         if (fieldConfigHelper != null && fieldConfigHelper.isIndexedField(fieldName)) {
             return true;
@@ -1050,6 +1053,65 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             return false;
         }
     }
+
+    public boolean isErrorIndexedField(String fieldName) {
+        if (fieldConfigHelper != null) {
+            return fieldConfigHelper.isErrorIndexedField(fieldName);
+        }
+        return this.hasErrorIndexDisallowlist() ? !isErrorIndexed(fieldName) : isErrorIndexed(fieldName);
+    }
+
+    private boolean isErrorIndexed(String fieldName) {
+        if (fieldConfigHelper != null && fieldConfigHelper.isErrorIndexedField(fieldName)) {
+            return true;
+        } else if (this.errorIndexedFields.contains(fieldName)) {
+            return true;
+        } else if (this.errorUnindexedFields.contains(fieldName)) {
+            return false;
+        } else if (this.errorIndexedPatterns.isEmpty()) { // avoids filling unindexedFields if not necessary
+            return false;
+        } else {
+            for (Pattern pattern : this.errorIndexedPatterns.values()) {
+                if (pattern.matcher(fieldName).matches()) {
+                    this.errorIndexedFields.add(fieldName); // update so we don't need to match the next time we see it
+                    return true;
+                }
+            }
+            this.errorUnindexedFields.add(fieldName);
+            return false;
+        }
+    }
+
+    public boolean isErrorReverseIndexedField(String fieldName) {
+        if (fieldConfigHelper != null) {
+            return fieldConfigHelper.isErrorReverseIndexedField(fieldName);
+        }
+        return this.hasErrorReverseIndexDisallowlist() ? !isErrorReverseIndexed(fieldName) : isErrorReverseIndexed(fieldName);
+    }
+
+    private boolean isErrorReverseIndexed(String fieldName) {
+        if (fieldConfigHelper != null && fieldConfigHelper.isErrorReverseIndexedField(fieldName)) {
+            return true;
+        } else if (this.errorReverseIndexedFields.contains(fieldName)) {
+            return true;
+        } else if (this.errorReverseUnindexedFields.contains(fieldName)) {
+            return false;
+        } else if (this.errorReverseIndexedPatterns.isEmpty()) { // avoids filling errorReverseUnindexedFields if not necessary
+            return false;
+        } else {
+            for (Pattern pattern : this.errorReverseIndexedPatterns.values()) {
+                if (pattern.matcher(fieldName).matches()) {
+                    this.errorReverseIndexedFields.add(fieldName); // update so we don't need to match the next time we see it
+                    return true;
+                }
+            }
+            this.errorReverseUnindexedFields.add(fieldName);
+            return false;
+        }
+    }
+
+
+
 
     /**
      * This is a helper routine that will create the normalized forms of a value given a set of fields
