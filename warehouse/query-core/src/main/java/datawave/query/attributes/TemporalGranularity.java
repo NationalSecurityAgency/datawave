@@ -12,61 +12,61 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import datawave.data.normalizer.DateNormalizer;
 
 /**
- * Represents different levels of granularity supported by the {@code #unique()} function. This class is also responsible for providing the functionality to
- * transform values such that they conform to the specified granularity.
+ * Represents different levels of granularity supported by the {@code #unique()} and {@code #groupby} function. This class is also responsible for providing the
+ * functionality to transform values such that they conform to the specified granularity.
  */
-public enum UniqueGranularity {
+public enum TemporalGranularity {
 
     /**
-     * A {@link UniqueGranularity} implementation that will always return the original value.
+     * A {@link TemporalGranularity} implementation that will always return the original value.
      */
     ALL("ALL", Function.identity()),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day. Otherwise, the original
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day. Otherwise, the original
      * value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_DAY("DAY", new DateTimeValueFormatter("yyyy-MM-dd")),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour. Otherwise, the original
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour. Otherwise, the original
      * value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_HOUR("HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH")),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the month. Otherwise, the original
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the month. Otherwise, the original
      * value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_MONTH("MONTH", new DateTimeValueFormatter("yyyy-MM")),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the year. Otherwise, the original
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the year. Otherwise, the original
      * value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_YEAR("YEAR", new DateTimeValueFormatter("yyyy")),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the second. Otherwise, the original
-     * value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the second. Otherwise, the
+     * original value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_SECOND("SECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss")),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the millisecond. Otherwise, the
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the millisecond. Otherwise, the
      * original value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_MILLISECOND("MILLISECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS")),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the tenth of an hour. Otherwise, the
-     * original value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the tenth of an hour. Otherwise,
+     * the original value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR("TENTH_OF_HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:m", true)),
 
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
-     * value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the
+     * original value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_MINUTE("MINUTE", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm"));
 
@@ -74,38 +74,39 @@ public enum UniqueGranularity {
     private final Function<String,String> function;
 
     @JsonCreator
-    public static UniqueGranularity of(String name) {
+    public static TemporalGranularity of(String name) {
+        name = name.toUpperCase();
         switch (name) {
             case "ALL":
-                return UniqueGranularity.ALL;
+                return TemporalGranularity.ALL;
             case "YEAR":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_YEAR;
             case "MONTH":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             case "DAY":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY;
             case "HOUR":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR;
             case "TENTH_OF_HOUR":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR;
             case "MINUTE":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE;
             case "SECOND":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND;
             case "MILLISECOND":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND;
+                return TemporalGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND;
             default:
-                throw new IllegalArgumentException("No " + UniqueGranularity.class.getSimpleName() + " exists with the name " + name);
+                throw new IllegalArgumentException("No " + TemporalGranularity.class.getSimpleName() + " exists with the name " + name);
         }
     }
 
-    UniqueGranularity(String name, Function<String,String> function) {
+    TemporalGranularity(String name, Function<String,String> function) {
         this.name = name;
         this.function = function;
     }
 
     /**
-     * Return the unique name of this {@link UniqueGranularity}.
+     * Return the unique name of this {@link TemporalGranularity}.
      *
      * @return the name
      */
