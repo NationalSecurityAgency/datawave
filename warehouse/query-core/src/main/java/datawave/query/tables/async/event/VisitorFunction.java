@@ -47,6 +47,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.IngestTypeVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -209,6 +210,22 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             LinkedList<String> debug = null;
             if (log.isTraceEnabled()) {
                 debug = new LinkedList<>();
+            }
+
+            if (config.getPruneQueryByIngestTypes()) {
+                try {
+                    TypeMetadata typeMetadata = metadataHelper.getTypeMetadata();
+                    Set<String> ingestTypes = config.getDatatypeFilter();
+                    if (ingestTypes.isEmpty()) {
+                        // datatype filter was empty signifying a search across all ingest types
+                        script = (ASTJexlScript) IngestTypePruningVisitor.prune(script, typeMetadata);
+                    } else {
+                        // datatype filter can be used to prune the resulting query tree
+                        script = (ASTJexlScript) IngestTypePruningVisitor.prune(script, typeMetadata, ingestTypes);
+                    }
+                } catch (TableNotFoundException e) {
+                    log.error("Failed to get type metadata, continuing without ingest type pruning", e);
+                }
             }
 
             if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
