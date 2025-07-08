@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -133,7 +134,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
                             String attrExtra = entry.getKey().substring(BooksField.AUTHOR.name().length());
                             Attribute attr = entry.getValue();
                             String name = attr.getData().toString();
-                            String[] parts = name.split(" ");
+                            String[] parts = StringUtils.split(name, ' ');
                             if (parts.length > 1) {
                                 attrs.put(AUTHOR_FIRST_NAME + attrExtra, new Content(parts[0], attr.getMetadata(), false, attr));
                             }

@@ -85,7 +85,7 @@ public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> exten
 
         Collection<String> userAuths = new ArrayList<>(userDetails.getPrimaryUser().getAuths());
         if (clientAuthorizations != null) {
-            Collection<String> connectorAuths = Arrays.asList(clientAuthorizations.split(","));
+            Collection<String> connectorAuths = Arrays.asList(StringUtils.split(clientAuthorizations, ','));
             userAuths.retainAll(connectorAuths);
         }
 

@@ -2,6 +2,8 @@ package datawave.query.planner;
 
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
 import datawave.query.model.QueryModel;
 
 /**
@@ -23,7 +25,7 @@ public class WiredQueryModelProvider implements QueryModelProvider {
     public void setQueryModel(Map<String,String> mappings) {
         QueryModel model = new QueryModel();
         for (Map.Entry<String,String> mapping : mappings.entrySet()) {
-            for (String value : mapping.getValue().split(",")) {
+            for (String value : StringUtils.split(mapping.getValue(), ',')) {
                 model.addTermToModel(mapping.getKey(), value);
                 model.addTermToReverseModel(value, mapping.getKey());
             }

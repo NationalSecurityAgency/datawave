@@ -12,6 +12,7 @@ import com.google.common.collect.Maps;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
+import datawave.util.StringUtils;
 
 public class EventKeyValueFactory {
 
@@ -23,13 +24,13 @@ public class EventKeyValueFactory {
         EventKeyValue e = new EventKeyValue();
         e.setShardId(key.getRow().toString());
 
-        String[] parts = key.getColumnFamily().toString().split(Constants.NULL_BYTE_STRING);
+        String[] parts = StringUtils.split(key.getColumnFamily().toString(), Constants.NULL_BYTE_STRING);
         if (parts.length > 0)
             e.setDatatype(parts[0]);
         if (parts.length > 1)
             e.setUid(parts[1]);
 
-        String[] field = key.getColumnQualifier().toString().split(Constants.NULL_BYTE_STRING);
+        String[] field = StringUtils.split(key.getColumnQualifier().toString(), Constants.NULL_BYTE_STRING);
         if (field.length > 0)
             e.setFieldName(field[0]);
         if (field.length > 1)
