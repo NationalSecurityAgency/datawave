@@ -19,6 +19,7 @@ import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -180,7 +181,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         tempPath.toFile().deleteOnExit();
     }
 
-    private List<Map.Entry<Key,Value>> addIndexedField(String row, String dataType, String uid, String field, String value) {
+    protected List<Map.Entry<Key,Value>> addIndexedField(String row, String dataType, String uid, String field, String value) {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, field, value, dataType, uid, eventTimestamp), EMPTY_VALUE));
@@ -1625,7 +1626,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         if (docKeyHit == null) {
             assertTrue(results.isEmpty());
         } else {
-            assertTrue("Expected hit, but got none", results.size() > 0);
+            assertFalse("Expected hit, but got none", results.isEmpty());
             Map.Entry<Key,Document> entry = results.remove(0);
             Key next = entry.getKey();
             assertNotNull(next);
