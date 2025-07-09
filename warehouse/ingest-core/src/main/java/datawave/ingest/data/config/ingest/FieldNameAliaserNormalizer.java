@@ -12,6 +12,7 @@ import org.apache.hadoop.conf.Configuration;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.util.StringUtils;
 
 /**
  * This class supports aliasing fieldname, and will ensure field names are normalized appropriately. Only [A-Z0-9_.] is permitted in the end.
@@ -62,7 +63,7 @@ public class FieldNameAliaserNormalizer {
         String[] a = config.getStrings(type.typeName() + FIELD_ALIASES, (String[]) null);
         if (null != a) {
             for (String s : a) {
-                String[] parts = s.split(":");
+                String[] parts = StringUtils.split(s, ':');
                 if (parts.length == 2)
                     _fieldNameAliases.put(parts[0], parts[1]);
                 else
@@ -74,12 +75,12 @@ public class FieldNameAliaserNormalizer {
         if (indexAliasesAllowed) {
             String indexAliasesConfig = config.get(type.typeName() + INDEX_ALIASES, null);
             if (null != indexAliasesConfig) {
-                for (String indexAliasStr : indexAliasesConfig.split(";")) {
+                for (String indexAliasStr : StringUtils.split(indexAliasesConfig, ';')) {
                     if (!indexAliasStr.isEmpty()) {
-                        String[] parts = indexAliasStr.split(":");
+                        String[] parts = StringUtils.split(indexAliasStr, ':');
                         if (parts.length == 2) {
                             HashSet<String> aliases = new HashSet<>();
-                            for (String alias : parts[1].split(",")) {
+                            for (String alias : StringUtils.split(parts[1], ',')) {
                                 aliases.add(canonicalizeFieldName(alias, FIELD.NAME));
                             }
                             _indexNameAliases.put(parts[0], aliases);

@@ -47,6 +47,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.IngestTypeVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -63,6 +64,7 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -210,6 +212,22 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 debug = new LinkedList<>();
             }
 
+            if (config.getPruneQueryByIngestTypes()) {
+                try {
+                    TypeMetadata typeMetadata = metadataHelper.getTypeMetadata();
+                    Set<String> ingestTypes = config.getDatatypeFilter();
+                    if (ingestTypes.isEmpty()) {
+                        // datatype filter was empty signifying a search across all ingest types
+                        script = (ASTJexlScript) IngestTypePruningVisitor.prune(script, typeMetadata);
+                    } else {
+                        // datatype filter can be used to prune the resulting query tree
+                        script = (ASTJexlScript) IngestTypePruningVisitor.prune(script, typeMetadata, ingestTypes);
+                    }
+                } catch (TableNotFoundException e) {
+                    log.error("Failed to get type metadata, continuing without ingest type pruning", e);
+                }
+            }
+
             if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
                 if (null == script) {
                     script = JexlASTHelper.parseAndFlattenJexlQuery(query);
@@ -322,10 +340,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 newQuery = JexlStringBuildingVisitor.buildQuery(script);
             }
 
-            pruneIvaratorConfigs(script, newIteratorSetting);
-
-            pruneEmptyOptions(newIteratorSetting);
-
             if (config.getReduceQueryFieldsPerShard()) {
                 reduceQueryFields(script, newIteratorSetting);
             }
@@ -339,6 +353,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             }
 
             if (config.getPruneQueryOptions()) {
+                pruneIvaratorConfigs(script, newIteratorSetting);
+
+                pruneEmptyOptions(newIteratorSetting);
+
                 pruneQueryOptions(script, newIteratorSetting);
             }
 
@@ -691,7 +709,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
         if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
-            String[] choices = config.getIvaratorFstHdfsBaseURIs().split(",");
+            String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
             int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());
             return path.toUri();

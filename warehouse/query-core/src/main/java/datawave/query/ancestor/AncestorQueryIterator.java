@@ -43,6 +43,7 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
@@ -107,7 +108,9 @@ public class AncestorQueryIterator extends QueryIterator {
         // when we are town down and rebuilt, ensure the range is okay even for the middle of a tree shifting to the next
         // child and making the range inclusive if it's exclusive to avoid hitting the defeat inside QueryIterator for a
         // document specific range but not being inclusive start
-        if (!range.isStartKeyInclusive()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!range.isStartKeyInclusive() && !WaitWindowObserver.hasBeginMarker(range.getStartKey())) {
             Key oldStartKey = range.getStartKey();
             Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily() + Constants.NULL_BYTE_STRING,
                             oldStartKey.getColumnQualifier().toString());

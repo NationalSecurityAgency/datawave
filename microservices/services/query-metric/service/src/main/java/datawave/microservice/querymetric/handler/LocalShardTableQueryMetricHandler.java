@@ -59,7 +59,7 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
 
         Collection<String> auths = new ArrayList<>();
         if (clientAuthorizations != null) {
-            auths.addAll(Arrays.asList(clientAuthorizations.split(",")));
+            auths.addAll(Arrays.asList(StringUtils.split(clientAuthorizations, ',')));
         }
         DatawaveUser datawaveUser = new DatawaveUser(SubjectIssuerDNPair.of("admin"), USER, null, auths, null, null, System.currentTimeMillis());
         datawavePrincipal = new DatawavePrincipal(Collections.singletonList(datawaveUser));

@@ -24,6 +24,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.log4j.Level;
@@ -180,7 +181,7 @@ public class CardinalityScanner {
         String dateOpt = cl.getOptionValue(D_OPT);
         if (dateOpt != null) {
             if (dateOpt.contains("-")) {
-                String[] splits = dateOpt.split("-");
+                String[] splits = StringUtils.split(dateOpt, '-');
                 config.setBeginDate(splits[0].trim());
                 config.setEndDate(splits[1].trim());
             } else {

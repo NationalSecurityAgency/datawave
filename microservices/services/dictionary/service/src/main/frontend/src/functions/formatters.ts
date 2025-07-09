@@ -1,5 +1,7 @@
 import { Ref, WritableComputedRef, computed, defineComponent, ref } from 'vue';
 
+const regexDataType = /^[1-9]\d*\s+types?$/;
+
 interface Entry {
   key: string;
   value: string;
@@ -10,7 +12,7 @@ interface Markings {
 }
 
 interface Record {
-  decription: string;
+  description: string;
   markings: Markings;
 }
 
@@ -21,7 +23,7 @@ interface Record {
 *  Specifically, for the descriptions block, it checks to see if the value is undefined/null (doesn't have a description).
 *  Or if the description value has a length of 0 (if something was pulled incorrectly in the JSON).
 */
-export function parseVal(colName: string, colValue: any) : string {
+export function parseVal(colName: string, colValue: any, colDataTypeCount?: any) : string {
   if (colName === 'Types') {
     if (colValue == undefined) {
       return '';
@@ -42,9 +44,11 @@ export function parseVal(colName: string, colValue: any) : string {
 
     const marking = markingsEntry.length > 0 ? markingsEntry[0].value : '';
     const markingAccess = markingsEntry.length > 1 ? markingsEntry[1].value : '';
-    const description = firstEntry.decription || '';
+    const description = firstEntry.description || '';
 
     return `${marking} ${markingAccess} ${description}`;
+  } else if (colName === 'dataType' && regexDataType.test(colDataTypeCount)) {
+    return colDataTypeCount;
   } else {
     return colValue.toString();
   }
@@ -91,10 +95,18 @@ export function setVisibility(rows: readonly any[]) {
     Ref<boolean>
   >();
   const buttonValues: Map<string, number> = new Map<string, number>();
+  const countValues: Map<string, number> = new Map<string, number>();
 
   for (const row of rows) {
     let rowMostRecentUpdated: number = row.lastUpdated;
     const currentRowInternalFieldName: any = row.internalFieldName;
+    const currentRowDataType: any = row.dataType;
+
+    if (currentRowDataType) {
+      let currentValue = countValues.get(currentRowInternalFieldName) || 0;
+      countValues.set(currentRowInternalFieldName, ++currentValue);
+    }
+
     for (const scan of rows) {
       if (currentRowInternalFieldName === scan.internalFieldName && rowMostRecentUpdated < scan.lastUpdated) {
         rowMostRecentUpdated = scan.lastUpdated;
@@ -110,8 +122,10 @@ export function setVisibility(rows: readonly any[]) {
       buttonValues.has(row.internalFieldName) &&
       row.lastUpdated == buttonValues.get(row.internalFieldName)
     ) {
-      row['duplicate'] = 0;
+      row['duplicate'] = 1;
       row['button'] = true;
+
+      row['dataTypeCount'] = countValues.get(row.internalFieldName) + ' types';
     }
     // Checks to Render Collapsible Row - Refreshes on Search
     else if (
@@ -120,11 +134,15 @@ export function setVisibility(rows: readonly any[]) {
     ) {
       row['duplicate'] = 1;
       row['button'] = false;
+
+      row['dataTypeCount'] = 0 + ' types';
     }
     // Renders a Normal Row (No Button, not Collapsible)
     else {
       row['duplicate'] = 0;
       row['button'] = false;
+
+      row['dataTypeCount'] = 0 + ' types';
     }
 
     const internalFieldName = row.internalFieldName;
