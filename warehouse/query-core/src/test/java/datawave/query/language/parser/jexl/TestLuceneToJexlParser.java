@@ -1,5 +1,7 @@
 package datawave.query.language.parser.jexl;
 
+import java.util.Collections;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Assert;
 import org.junit.Test;
@@ -85,6 +87,16 @@ public class TestLuceneToJexlParser {
     }
 
     @Test
+    public void testDontTokenizeRegex() throws Exception {
+        LuceneToJexlQueryParser parser = getQueryParser();
+        parser.setTokenizeUnfieldedQueries(true);
+
+        QueryNode node = parser.parse("TOKENIZED:(/hello\\/\\w{4}/)");
+        String query = node.getOriginalQuery();
+        Assert.assertEquals("(TOKENIZED =~ 'hello/\\w{4}')", query);
+    }
+
+    @Test
     public void evalOnlyTest() throws Exception {
         LuceneToJexlQueryParser parser = getQueryParser();
 
@@ -99,6 +111,7 @@ public class TestLuceneToJexlParser {
 
     public static LuceneToJexlQueryParser getQueryParser() {
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
+        parser.setTokenizedFields(Collections.singleton("TOKENIZED"));
 
         for (JexlQueryFunction queryFunction : parser.getAllowedFunctions()) {
             if (queryFunction instanceof EvaluationOnly) {

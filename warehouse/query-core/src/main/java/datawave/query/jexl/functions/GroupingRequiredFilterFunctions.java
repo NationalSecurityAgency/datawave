@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 
 import datawave.query.attributes.ValueTuple;
@@ -224,6 +225,12 @@ public class GroupingRequiredFilterFunctions {
      */
     private static void manageMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
                     ValueTuple currentMatch, int positionFromRight) {
+        Key candidateMetadata = ValueTuple.getSourceMetadata(fieldValue);
+        Key currentMetadata = ValueTuple.getSourceMetadata(currentMatch);
+        if (candidateMetadata != null && currentMetadata != null && !currentMetadata.equals(candidateMetadata)) {
+            return; // only allow matching within the same document key
+        }
+
         String fieldName = ValueTuple.getFieldName(fieldValue);
         String subgroup = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(fieldName, positionFromRight);
         if (subgroup != null && subgroup.equals(context)) {
@@ -337,6 +344,11 @@ public class GroupingRequiredFilterFunctions {
 
     private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, String regex, Collection<ValueTuple> allMatches, String theFirstMatch,
                     String theNextMatch, ValueTuple currentMatch) {
+        Key candidateMetadata = ValueTuple.getSourceMetadata(fieldValue);
+        Key currentMetadata = ValueTuple.getSourceMetadata(currentMatch);
+        if (candidateMetadata != null && currentMetadata != null && !currentMetadata.equals(candidateMetadata)) {
+            return; // only allow matching within the same document key
+        }
 
         if (theNextMatch != null && theNextMatch.equals(theFirstMatch)) {
             if (log.isTraceEnabled()) {
