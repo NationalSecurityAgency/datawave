@@ -51,29 +51,31 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
     /**
      * Checks if error-index-fields have been initialized yet.
+     *
      * @return FALSE if errorIndexedFields is empty, TRUE if it's not.
      */
-    private boolean hasErrorIndexConfig(){
+    private boolean hasErrorIndexConfig() {
         return !super.errorIndexedFields.isEmpty();
     }
 
     /**
      * Checks if error-reverse-index-fields have been initialized yet.
+     *
      * @return FALSE if errorReverseIndexedFields is empty, TRUE if it's not.
      */
-    private boolean hasErrorReverseIndexConfig(){
+    private boolean hasErrorReverseIndexConfig() {
         return !super.errorReverseIndexedFields.isEmpty();
 
     }
 
     /**
-     * Checks if the {@code fieldName} has been indexed in either the
-     * index-field map or the error-index-field map.
+     * Checks if the {@code fieldName} has been indexed in either the index-field map or the error-index-field map.
+     *
      * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
      */
     @Override
     public boolean isIndexedField(String fieldName) {
-        if(hasErrorIndexConfig()) {
+        if (hasErrorIndexConfig()) {
             return super.isErrorIndexedField(fieldName);
         } else {
             return super.isIndexedField(fieldName);
@@ -81,13 +83,13 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     }
 
     /**
-     * Checks if the {@code fieldName} has been indexed in either the
-     * reverse-index-field map or the error-reverse-index-field map.
+     * Checks if the {@code fieldName} has been indexed in either the reverse-index-field map or the error-reverse-index-field map.
+     *
      * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
      */
     @Override
     public boolean isReverseIndexedField(String fieldName) {
-        if(hasErrorReverseIndexConfig()) {
+        if (hasErrorReverseIndexConfig()) {
             return super.isErrorReverseIndexedField(fieldName);
         } else {
             return super.isIndexedField(fieldName);

@@ -28,9 +28,8 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     protected MaskedFieldHelper mfHelper = null;
     protected Set<String> shardExclusions = new HashSet<>();
 
-    /** SETH NOTE
-     * I'm wondering if I'll have to make a version of the following for
-     * the error indexing or not. Worth to keep it noted in the meantime.
+    /**
+     * SETH NOTE I'm wondering if I'll have to make a version of the following for the error indexing or not. Worth to keep it noted in the meantime.
      *
      * UPDATE 1: Yup! Looks like it.
      */
@@ -40,8 +39,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     // Same usage as the variables above, but for the error variants.
     protected boolean hasErrorIndexDisallowlist = false;
     protected boolean hasErrorReverseIndexDisallowlist = false;
-
-
 
     public boolean getReplaceMalformedUTF8() {
         return replaceMalformedUTF8;
@@ -154,6 +151,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
 
     /**
      * Setter for {@code hasErrorIndexDisallowList}.
+     *
      * @param hasErrorIndexDisallowlist
      */
     protected void setHasErrorIndexDisallowlist(boolean hasErrorIndexDisallowlist) {
@@ -162,6 +160,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
 
     /**
      * Setter for {@code hasErrorIndexDisallowList}.
+     *
      * @param hasErrorReverseIndexDisallowlist
      */
     protected void setHasErrorReverseIndexDisallowlist(boolean hasErrorReverseIndexDisallowlist) {
