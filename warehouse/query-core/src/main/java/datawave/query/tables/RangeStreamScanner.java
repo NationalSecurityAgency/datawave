@@ -505,7 +505,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
     public IndexInfo readInfoFromValue(Value value) {
         try {
-            IndexInfo info = ValueSerializer.newSerializer(IndexInfo.class, KRYO).deserialize(value, IndexInfo::new);
+            IndexInfo info = valueSerializer.deserialize(value, IndexInfo::new);
             if (log.isTraceEnabled()) {
                 for (IndexMatch match : info.uids()) {
                     log.trace("match is " + StringUtils.split(match.getUid(), '\u0000')[1]);
