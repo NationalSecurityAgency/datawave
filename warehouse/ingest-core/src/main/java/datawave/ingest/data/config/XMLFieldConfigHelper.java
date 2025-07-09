@@ -204,6 +204,22 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         return isNoMatchReverseTokenized();
     }
 
+    /**
+     * TODO: Complete these once you get the OK on keeping these in the FieldConfigHelper. Keeps the compiler nice and quiet :)
+     */
+    @Override
+    public boolean isErrorIndexedField(String fieldName) {
+        return false;
+    }
+
+    /**
+     * TODO: Complete these once you get the OK on keeping these in the FieldConfigHelper. Keeps the compiler nice and quiet :)
+     */
+    @Override
+    public boolean isErrorReverseIndexedField(String fieldName) {
+        return false;
+    }
+
     public boolean isNoMatchStored() {
         return noMatchStored;
     }
