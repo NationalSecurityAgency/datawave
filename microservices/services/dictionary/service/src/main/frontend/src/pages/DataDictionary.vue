@@ -268,54 +268,28 @@ onMounted(() => {
     console.log('Error fetching and formatting rows: ' + reason);
   });
 
-  // This block is similar to watch() methods below, but handles the search when initially set via the URL.
-  const q = route.query.search;
-
-  // Converts to valid string and then queries if filter is changed.
-  if (Array.isArray(q)) {
-    changeFilter.value = q[0] || '';
-  } else if (q !== null && q !== undefined) {
-    changeFilter.value = q;
-  }
+  // This line is similar to the one in the watch() method below, but handles the search when initially set via the URL.
+  changeFilter.value = Formatters.filterSearch(route.query.search, changeFilter.value);
 
   if (changeFilter.value) {
     queryTable();
   }
 });
 
-// This watch() handles initial changes (if a search query was added to loaded page).
-// Logic: Input -> URL (UI -> URL)
-watch(changeFilter, (val) => {
-  router.replace({
-    query: {
-      ...route.query,
-      search: val || undefined,
-    },
-  });
-});
-
 // This watch() handles a URL Change from a previous query.
 // Logic: Input + Table (reactive URL -> UI + Filters)
 watch(
   () => route.query.search,
-  (val) => {
-    let newVal = '';
-
+  (searchVal) => {
     // Converts the input into a valid string to be queried.
-    if (Array.isArray(val)) {
-      newVal = val[0] || '';
-    } else if (val !== null && val !== undefined) {
-      newVal = val;
-    }
+    let searchValNew = Formatters.filterSearch(searchVal, '');
 
-    if (newVal !== changeFilter.value) {
-      changeFilter.value = newVal;
-      if (newVal) {
-
+    if (searchValNew !== changeFilter.value) {
+      changeFilter.value = searchValNew;
+      if (searchValNew) {
         // Triggers a re-query if the user has changed to a new value.
         queryTable();
       } else {
-
         // This retriggers back to the original state if user clears.
         filter.value = '';
         const originalRows = rows;
@@ -362,6 +336,15 @@ function exportTable(this: any) {
 async function queryTable(this: any) {
   // Wait Until User Enters...
   await waitUp();
+
+  // Handles the URL change to reflect when the user searches.
+  // Logic: Input -> URL (UI -> URL)
+  router.replace({
+    query: {
+      ...route.query,
+      search: changeFilter.value || undefined,
+    },
+  });
 
   // 1 - Filter the Rows
   const rowsToExport = table.value?.filteredSortedRows.filter(() => true);
