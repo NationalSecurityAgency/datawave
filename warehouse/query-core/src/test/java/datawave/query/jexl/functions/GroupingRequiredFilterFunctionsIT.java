@@ -102,11 +102,38 @@ public class GroupingRequiredFilterFunctionsIT {
     }
 
     @Test
-    public void testTLD_matchesInGroup() {
+    public void testTLD_matchesInGroup_miss() {
         withQuery("grouping:matchesInGroup(FIELD, 'a', FIELD, 'b')");
         withData("FIELD.1.2.3", "a", "uid.1");
         withData("FIELD.1.2.3", "b", "uid.2");
         // grouping should not match across different child documents
+        evaluate(false);
+    }
+
+    @Test
+    public void testTLD_matchesInGroup_hit() {
+        withQuery("grouping:matchesInGroup(FIELD, 'a', FIELD, 'b')");
+        withData("FIELD.1.2.3", "a", "uid.1.2");
+        withData("FIELD.1.2.3", "b", "uid.1.2");
+        // grouping will match in the same child document
+        evaluate(true);
+    }
+
+    @Test
+    public void testTLD_matchesInGroupLeft_miss() {
+        withQuery("grouping:matchesInGroupLeft(FIELD, 'a', FIELD, 'b')");
+        withData("FIELD.1.2.3", "a", "uid.1");
+        withData("FIELD.1.2.3", "b", "uid.2");
+        // grouping should not match across different child documents
+        evaluate(false);
+    }
+
+    @Test
+    public void testTLD_matchesInGroupLeft_hit() {
+        withQuery("grouping:matchesInGroupLeft(FIELD, 'a', FIELD, 'b')");
+        withData("FIELD.1.2.3", "a", "uid.1.2");
+        withData("FIELD.1.2.3", "b", "uid.1.2");
+        // grouping will match in the same child document
         evaluate(true);
     }
 
