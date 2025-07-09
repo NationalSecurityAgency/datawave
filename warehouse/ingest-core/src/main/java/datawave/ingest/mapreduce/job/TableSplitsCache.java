@@ -41,6 +41,7 @@ import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
 import datawave.ingest.util.ShardLocationTrieMap;
+import datawave.util.StringUtils;
 
 /**
  * This class encapsulates the split points found in the accumulo.metadata table. Methods are also supplied to distribute the split points via a distributed job
@@ -365,7 +366,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         List<Text> tmpSplits = null;
 
         while ((line = in.readLine()) != null) {
-            String[] parts = line.split(this.delimiter);
+            String[] parts = StringUtils.split(line, this.delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
                 if (!tmpSplitLocations.isEmpty()) {
                     this.splitLocations.put(tableName, tmpSplitLocations);

@@ -31,6 +31,7 @@ import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.query.data.parsers.DatawaveKey;
+import datawave.util.StringUtils;
 
 class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private static final Logger log = Logger.getLogger(StatsHyperLogMapper.class);
@@ -44,7 +45,7 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     static final int DEFAULT_INPUT_INTERVAL = 10_000_000;
     static final int DEFAULT_OUTPUT_INTERVAL = 100;
 
-    private static final String NULL_STR = "\0";
+    private static final char NULL_CHAR = '\0';
 
     // ===========================
     // instance members
@@ -138,7 +139,7 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         }
 
         // range should find all field index rows
-        String[] colf = key.getColumnFamily().toString().split(NULL_STR);
+        String[] colf = StringUtils.split(key.getColumnFamily().toString(), NULL_CHAR);
         if ("fi".equals(colf[0])) {
             this.total++;
             if (0 == this.total % this.logInputInterval) {

@@ -20,6 +20,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 
+import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 import datawave.util.time.DateHelper;
 
@@ -91,7 +92,7 @@ public class GenerateShardSplits {
             } else if (args[i].equals("-addShardMarkers")) {
                 addShardMarkers = true;
             } else if (args[i].equals("-addDataTypeMarkers")) {
-                shardMarkerTypes = args[i + 1].split(",");
+                shardMarkerTypes = StringUtils.split(args[i + 1], ',');
                 // skip over cmd, for loop will skip over arg
                 i++;
             } else {

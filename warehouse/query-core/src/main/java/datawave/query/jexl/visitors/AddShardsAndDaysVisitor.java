@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.util.StringUtils;
 
 /**
  * When SHARDS_AND_DAYS hints are supplied via the OPTIONS function, they should be added back into the query tree either by updating an existing
@@ -36,7 +37,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
         }
 
         // @formatter:off
-        List<String> validShardsAndDays = Arrays.stream(shardsAndDays.split( ","))
+        List<String> validShardsAndDays = Arrays.stream(StringUtils.split(shardsAndDays, ','))
                         .map(String::trim)              // Strip whitespace.
                         .filter(s -> !s.isEmpty())      // Remove empty strings.
                         .distinct()                     // Remove duplicates.
@@ -104,7 +105,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
     // Merge the given shards and days with the shard and days in this visitor's list.
     private String mergeShardsAndDays(String shardsAndDays) {
         // Remove any duplicate shards and days hints from the initial list.
-        String[] values = shardsAndDays.split(",");
+        String[] values = StringUtils.split(shardsAndDays, ',');
         for (String value : values) {
             this.shardsAndDays.remove(value);
         }
