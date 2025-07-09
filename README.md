@@ -24,14 +24,9 @@ and released independently.  The following subdirectories contain those independ
 versioned modules:
 
 ```
-core/utils/type-utils
 contrib/datawave-utils
-core/base-rest-responses
 core/in-memory-accumulo
 core/metrics-reporter
-core/utils/accumulo-utils
-core/utils/common-utils
-core/utils/metadata-utils
 microservices/microservice-parent
 microservices/microservice-service-parent
 microservices/starters/audit
@@ -76,14 +71,14 @@ git subrepo pull <dir>
 
 It is recommended to build the project using multiple threads.  This will not build the starters, utilities, and services.
 ```
-mvn -Pdocker,dist clean install -T 1C
+mvn -Ddocker-release -Ddist clean install -T 1C
 ```
 
 If you want to build the starters, util modules, and services as well then try this
 ```
-mvn -Pdocker,dist -Dstarters -Dservices -Dutils clean install -T 1C
+mvn -Ddocker-release -Dmicroservice-docker -Ddist -Dutils -Dservices -Dstarters clean install -T 1C
 ```
-If you want to build the service apis but not the services themselveds then add -DonlyServiceApis
+If you want to build the service apis but not the services themselves then add -DonlyServiceApis
 
 NOTE: The util modules, starters, and services are actually tagged and deployed separately.
   Hence the snapshot versions within those sub repos are not connected together.

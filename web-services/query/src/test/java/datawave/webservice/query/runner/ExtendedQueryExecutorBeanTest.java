@@ -47,7 +47,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Before;
@@ -64,7 +63,6 @@ import org.springframework.util.MultiValueMap;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import datawave.core.common.audit.PrivateAuditConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -92,7 +90,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.user.UserOperationsBean;
-import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
@@ -2777,6 +2774,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.lookupUUIDConfiguration.getUuidTypes()).andReturn(null);
         expect(this.lookupUUIDConfiguration.getBeginDate()).andReturn("not a date");
         expect(this.lookupUUIDConfiguration.getBatchLookupUpperLimit()).andReturn(0);
+        expect(this.lookupUUIDConfiguration.getTagCloudLookupUpperLimit()).andReturn(0);
         expect(this.lookupUUIDConfiguration.getContentLookupTypes()).andReturn(Collections.emptyMap());
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         LookupUUIDConfiguration tmpCfg = new LookupUUIDConfiguration();
@@ -3859,7 +3857,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
         setInternalState(subject, ManagedExecutorService.class, executor);
-        setInternalState(subject, Logger.class, Logger.getLogger(QueryExecutorBean.class));
 
         subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
 

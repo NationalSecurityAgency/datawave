@@ -65,33 +65,33 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class AuditController {
     // Note: This must match 'confirmAckChannel' in the service configuration. Default set in bootstrap.yml.
     public static final String CONFIRM_ACK_CHANNEL = "confirmAckChannel";
-    
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final AuditProperties auditProperties;
-    
+
     private final AuditParameters restAuditParams;
-    
+
     private final AuditMessageSupplier auditSource;
-    
+
     @Autowired(required = false)
     private HealthChecker healthChecker;
-    
+
     @Autowired(required = false)
     @Qualifier("fileAuditor")
     private Auditor fileAuditor;
-    
+
     private static final Map<String,CountDownLatch> correlationLatchMap = new ConcurrentHashMap<>();
-    
+
     public AuditController(AuditProperties auditProperties, @Qualifier("restAuditParams") AuditParameters restAuditParams, AuditMessageSupplier auditSource) {
         this.auditProperties = auditProperties;
         this.restAuditParams = restAuditParams;
         this.auditSource = auditSource;
     }
-    
+
     /**
      * Receives producer confirm acks, and disengages the latch associated with the given correlation ID.
-     * 
+     *
      * @param message
      *            the confirmation ack message
      */
@@ -99,7 +99,7 @@ public class AuditController {
     @ServiceActivator(inputChannel = CONFIRM_ACK_CHANNEL)
     public void processConfirmAck(Message<?> message) {
         Object headerObj = message.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
-        
+
         if (headerObj != null) {
             String correlationId = headerObj.toString();
             if (correlationLatchMap.containsKey(correlationId)) {
@@ -111,7 +111,7 @@ public class AuditController {
             log.warn("No correlation ID found in confirm ack message");
         }
     }
-    
+
     /**
      * Passes audit messages to the messaging infrastructure.
      * <p>
@@ -124,15 +124,15 @@ public class AuditController {
     private boolean sendMessage(AuditParameters parameters) {
         if (healthChecker == null || healthChecker.isHealthy()) {
             String auditId = parameters.getAuditId();
-            
+
             CountDownLatch latch = null;
             if (auditProperties.isConfirmAckEnabled()) {
                 latch = new CountDownLatch(1);
                 correlationLatchMap.put(auditId, latch);
             }
-            
+
             boolean success = auditSource.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).setCorrelationId(auditId).build());
-            
+
             if (auditProperties.isConfirmAckEnabled()) {
                 try {
                     success = success && latch.await(auditProperties.getConfirmAckTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -142,13 +142,13 @@ public class AuditController {
                     correlationLatchMap.remove(auditId);
                 }
             }
-            
+
             return success;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Performs auditing for the given parameters, via the configured Auditors.
      *
@@ -231,24 +231,24 @@ public class AuditController {
     public String audit(@Parameter(hidden = true) @RequestParam MultiValueMap<String,String> parameters) {
         restAuditParams.clear();
         restAuditParams.validate(parameters);
-        
+
         log.info("[{}] Received audit request with parameters {}", restAuditParams.getAuditId(), restAuditParams);
-        
+
         if (!audit(restAuditParams))
             throw new RuntimeException("Unable to process audit message with id [" + restAuditParams.getAuditId() + "]");
-        
+
         return restAuditParams.getAuditId();
     }
-    
+
     public boolean audit(AuditParameters auditParameters) {
-        
+
         boolean success;
         final long auditStartTime = System.currentTimeMillis();
         long currentTime;
         int attempts = 0;
-        
+
         Retry retry = auditProperties.getRetry();
-        
+
         do {
             if (attempts++ > 0) {
                 try {
@@ -257,34 +257,34 @@ public class AuditController {
                     // Ignore -- we'll just end up retrying a little too fast
                 }
             }
-            
+
             if (log.isDebugEnabled())
                 log.debug("[{}] Audit attempt {} of {}", auditParameters.getAuditId(), attempts, retry.getMaxAttempts());
-            
+
             success = sendMessage(auditParameters);
             currentTime = System.currentTimeMillis();
         } while (!success && (currentTime - auditStartTime) < retry.getFailTimeoutMillis() && attempts < retry.getMaxAttempts());
-        
+
         // last ditch effort to write the audit message to fileSystem for subsequent processing
         if (!success && fileAuditor != null) {
             success = true;
             try {
                 log.debug("[{}] Attempting to log audit to the filesystem", auditParameters.getAuditId());
-                
+
                 fileAuditor.audit(auditParameters);
             } catch (Exception e) {
                 log.error("[{}] Unable to save audit to the filesystem", auditParameters.getAuditId(), e);
                 success = false;
             }
         }
-        
+
         if (!success)
             log.warn("[{}] Audit failed. {attempts = {}, elapsedMillis = {}{}}", auditParameters.getAuditId(), attempts, (currentTime - auditStartTime),
                             ((fileAuditor != null) ? ", hdfsElapsedMillis = " + (System.currentTimeMillis() - currentTime) : ""));
         else
             log.info("[{}] Audit successful. {attempts = {}, elapsedMillis = {}{}}", auditParameters.getAuditId(), attempts, (currentTime - auditStartTime),
                             ((fileAuditor != null) ? ", hdfsElapsedMillis = " + (System.currentTimeMillis() - currentTime) : ""));
-        
+
         return success;
     }
 }

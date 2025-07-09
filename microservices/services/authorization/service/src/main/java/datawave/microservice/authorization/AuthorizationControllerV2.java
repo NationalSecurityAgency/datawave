@@ -36,14 +36,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping(path = "/v2", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthorizationControllerV2 {
-    
+
     private final AuthorizationOperationsV2 authOperations;
-    
+
     @Autowired
     public AuthorizationControllerV2(@Qualifier("authOperationsV2") AuthorizationOperationsV2 authOperations) {
         this.authOperations = authOperations;
     }
-    
+
     @Operation(summary = "Returns a JWT of the current user/proxied user(s)",
                     description = "The returned JWT can be passed to other calls in a header. For example: \"Authorization: Bearer <JWT value>\".<br>"
                                     + "The JWT is created from the proxied users if present or from the supplied client certificate "
@@ -52,7 +52,7 @@ public class AuthorizationControllerV2 {
     public String user(@AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return authOperations.user(currentUser);
     }
-    
+
     @Operation(summary = "Lists the effective Accumulo user authorizations for the calling user.")
     @RequestMapping(path = "/listEffectiveAuthorizations", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE,
             MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE, PROTOSTUFF_VALUE, MediaType.TEXT_HTML_VALUE, "text/x-yaml", "application/x-yaml"})
@@ -62,7 +62,7 @@ public class AuthorizationControllerV2 {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return authOperations.listEffectiveAuthorizations(currentUser, federate);
     }
-    
+
     @Operation(summary = "Clears any cached credentials for the calling user.")
     @RequestMapping(path = "/flushCachedCredentials", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE,
             MediaType.TEXT_XML_VALUE, PROTOSTUFF_VALUE, MediaType.TEXT_HTML_VALUE, "text/x-yaml", "application/x-yaml"})
@@ -72,7 +72,7 @@ public class AuthorizationControllerV2 {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return authOperations.flushCachedCredentials(currentUser, federate);
     }
-    
+
     /**
      * Returns the {@link DatawaveUserDetails} that represents the authenticated calling user.
      */
@@ -83,7 +83,7 @@ public class AuthorizationControllerV2 {
     public DatawaveUserDetails hello(@AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return authOperations.hello(currentUser);
     }
-    
+
     /**
      * Evicts the user identified by the {@link DatawaveUser#getName()} of username from the authentication cache.
      * <p>
@@ -101,7 +101,7 @@ public class AuthorizationControllerV2 {
     public String evictUser(@Parameter(description = "The username (e.g., subjectDn<issuerDn>) to evict") @RequestParam String username) {
         return authOperations.evictUser(username);
     }
-    
+
     /**
      * Evicts all users whose name ({@link DatawaveUser#getName()}) contains the supplied substring from the authentication cache.
      * <p>
@@ -117,7 +117,7 @@ public class AuthorizationControllerV2 {
     public String evictUsersMatching(@Parameter(description = "A substring to search for in user names to evict") @RequestParam String substring) {
         return authOperations.evictUsersMatching(substring);
     }
-    
+
     /**
      * Evicts all users from the authentication cache.
      * <p>
@@ -133,7 +133,7 @@ public class AuthorizationControllerV2 {
     public String evictAll() {
         return authOperations.evictAll();
     }
-    
+
     /**
      * Lists the user, if any, contained in the authentication cache and having a {@link DatawaveUser#getName()} of name.
      * <p>
@@ -150,7 +150,7 @@ public class AuthorizationControllerV2 {
     public DatawaveUser listCachedUser(@Parameter(description = "The username (e.g., subjectDn<issuerDn>) to evict") @RequestParam String username) {
         return authOperations.listCachedUser(username);
     }
-    
+
     /**
      * Lists the users, if any, contained in the authentication cache and containing substring in their {@link DatawaveUser#getName()}.
      * <p>
@@ -168,7 +168,7 @@ public class AuthorizationControllerV2 {
                     @Parameter(description = "A substring to search for in user names to list") @RequestParam String substring) {
         return authOperations.listCachedUsersMatching(substring);
     }
-    
+
     /**
      * Lists all users stored in the authentication cache.
      * <p>

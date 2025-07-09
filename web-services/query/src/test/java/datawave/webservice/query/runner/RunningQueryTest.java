@@ -28,8 +28,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.Sets;
-
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -37,7 +35,6 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.AuthorizationException;

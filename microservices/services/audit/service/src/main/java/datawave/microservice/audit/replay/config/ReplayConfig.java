@@ -25,7 +25,7 @@ import datawave.microservice.cached.UniversalLockableCacheInspector;
 @EnableConfigurationProperties(ReplayProperties.class)
 @ConditionalOnProperty(name = "audit.replay.enabled", havingValue = "true")
 public class ReplayConfig {
-    
+
     @RefreshScope
     @Bean
     public ThreadPoolTaskExecutor auditReplayExecutor(ReplayProperties replayProperties) {
@@ -38,7 +38,7 @@ public class ReplayConfig {
         executor.initialize();
         return executor;
     }
-    
+
     @Bean
     public StatusCache replayStatusCache(@Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
                     CacheManager cacheManager) {

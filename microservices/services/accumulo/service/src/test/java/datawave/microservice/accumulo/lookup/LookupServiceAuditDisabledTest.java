@@ -55,29 +55,29 @@ import datawave.webservice.response.objects.DefaultKey;
 @ComponentScan(basePackages = "datawave.microservice")
 @ActiveProfiles({"mock", "lookup-with-audit-disabled"})
 public class LookupServiceAuditDisabledTest {
-    
+
     public static final String BASE_PATH = "/accumulo/v1/lookup";
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     private MockAccumuloDataService mockDataService;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     private JWTRestTemplate jwtRestTemplate;
-    
+
     private MultiValueMap<String,String> requestHeaders;
-    
+
     private DatawaveUserDetails defaultUserDetails;
-    
+
     private String testTableName;
-    
+
     @BeforeEach
     public void setup() {
         requestHeaders = new LinkedMultiValueMap<>();
@@ -86,14 +86,14 @@ public class LookupServiceAuditDisabledTest {
         jwtRestTemplate = restTemplateBuilder.build(JWTRestTemplate.class);
         testTableName = MockAccumuloDataService.WAREHOUSE_MOCK_TABLE;
     }
-    
+
     @Test
     public void verifyAutoConfig() {
         assertTrue(context.containsBean("auditLookupSecurityMarking"), "auditLookupSecurityMarking bean not found");
         assertTrue(context.containsBean("lookupService"), "lookupService bean not found");
         assertTrue(context.containsBean("lookupController"), "lookupController bean not found");
         assertTrue(context.containsBean("lookupConfiguration"), "lookupConfiguration bean not found");
-        
+
         assertFalse(context.containsBean("auditServiceConfiguration"), "auditServiceConfiguration bean should not be present");
         assertFalse(context.containsBean("auditServiceInstanceProvider"), "auditServiceInstanceProvider bean should not be present");
         assertFalse(context.containsBean("statsService"), "statsService bean should not have been found");
@@ -101,17 +101,17 @@ public class LookupServiceAuditDisabledTest {
         assertFalse(context.containsBean("adminService"), "adminService bean should not have been found");
         assertFalse(context.containsBean("adminController"), "adminController bean should not have been found");
     }
-    
+
     @Test
     public void testLookupAllRowsAndVerifyResults() {
-        
+
         String queryString = String.join("&", "useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
-        
+
         for (String rowid : Arrays.asList("row1", "row2", "row3")) {
             LookupResponse response = doLookup(defaultUserDetails, path(testTableName + "/" + rowid), queryString);
-            
+
             assertEquals(5, response.getEntries().size(), "LookupResponse should have had 5 entries");
-            
+
             //@formatter:off
             assertEquals(0,
                 response.getEntries().stream().filter(
@@ -135,10 +135,10 @@ public class LookupServiceAuditDisabledTest {
             //@formatter:on
         }
     }
-    
+
     @Test
     public void testLookupWithColFamAndColQual() {
-        
+
         //@formatter:off
         String queryString = String.join("&",
             "useAuthorizations=B",
@@ -148,15 +148,15 @@ public class LookupServiceAuditDisabledTest {
             LookupService.Parameter.CQ + "=cq2",
             LookupService.Parameter.CQ_ENCODING + "=none");
         //@formatter:on
-        
+
         String rowid = "row3";
         LookupResponse response = doLookup(defaultUserDetails, path(testTableName + "/" + rowid), queryString);
         assertEquals(1, response.getEntries().size(), "Lookup should have matched 1 entry");
     }
-    
+
     @Test
     public void testLookupWithBase64Params() {
-        
+
         //@formatter:off
         String queryString = String.join("&",
             "useAuthorizations=B",
@@ -167,15 +167,15 @@ public class LookupServiceAuditDisabledTest {
             LookupService.Parameter.CQ_ENCODING + "=base64",
             LookupService.Parameter.ROW_ENCODING + "=base64");
         //@formatter:on
-        
+
         String rowidBase64 = Base64.encodeBase64URLSafeString("row3".getBytes());
         LookupResponse response = doLookup(defaultUserDetails, path(testTableName + "/" + rowidBase64), queryString);
         assertEquals(1, response.getEntries().size(), "Lookup should have matched 1 entry");
     }
-    
+
     @Test
     public void testLookupBeginEndSubset() {
-        
+
         //@formatter:off
         String queryString = String.join("&",
             "useAuthorizations=A,B,C,D,E,F,G,H,I",
@@ -184,14 +184,14 @@ public class LookupServiceAuditDisabledTest {
             LookupService.Parameter.BEGIN_ENTRY + "=2",
             LookupService.Parameter.END_ENTRY + "=5");
         //@formatter:on
-        
+
         String rowid = "row1";
         LookupResponse response = doLookup(defaultUserDetails, path(testTableName + "/" + rowid), queryString);
         assertEquals(4, response.getEntries().size(), "Lookup should have returned 4 entries");
         assertEquals("cq3", response.getEntries().get(0).getKey().getColQual(), "First result should be cq3");
         assertEquals("cq6", response.getEntries().get(3).getKey().getColQual(), "Last result should be cq6");
     }
-    
+
     @Test
     public void testErrorOnBeginGreaterThanEnd() {
         //@formatter:off
@@ -205,10 +205,10 @@ public class LookupServiceAuditDisabledTest {
                 () -> doLookup(defaultUserDetails, path(testTableName + "/row2"), queryString));
         //@formatter:on
     }
-    
+
     @Test
     public void testLookupWithBeginEqualToEnd() {
-        
+
         //@formatter:off
         String queryString = String.join("&",
             "useAuthorizations=A,B,C,D,E,F,G,H,I",
@@ -217,36 +217,36 @@ public class LookupServiceAuditDisabledTest {
             LookupService.Parameter.BEGIN_ENTRY + "=3",
             LookupService.Parameter.END_ENTRY + "=3");
         //@formatter:on
-        
+
         String rowid = "row1";
         LookupResponse response = doLookup(defaultUserDetails, path(testTableName + "/" + rowid), queryString);
         assertEquals(1, response.getEntries().size(), "Lookup should have matched 1 entry");
         assertEquals("cq4", response.getEntries().get(0).getKey().getColQual(), "Result should be cq4");
     }
-    
+
     @Test
     public void testLookupWithAllAssignedAuths() {
-        
+
         LookupResponse lookupResponse;
-        
+
         // Query with useAuthorizations param with all assigned auths requested. Should get all 12 entries returned
-        
+
         String queryString = String.join("&", "useAuthorizations=A,B,C,D,E,F,G,H,I", "columnVisibility=foo");
         for (String row : Arrays.asList("row1", "row2", "row3")) {
             lookupResponse = doLookup(defaultUserDetails, path(testTableName + "/" + row), queryString);
             assertEquals(12, lookupResponse.getEntries().size(), "Lookup should have returned all entries");
         }
-        
+
         // Now query without useAuthorizations param. All of user's assigned auths should be utilized by default
         // (same as above)
-        
+
         for (String row : Arrays.asList("row1", "row2", "row3")) {
             queryString = "columnVisibility=foo";
             lookupResponse = doLookup(defaultUserDetails, path(testTableName + "/" + row), queryString);
             assertEquals(12, lookupResponse.getEntries().size(), "Lookup should have returned all entries");
         }
     }
-    
+
     @Test
     public void testErrorOnUserWithInsufficientRoles() {
         DatawaveUserDetails userDetails = TestHelper.userDetails(Arrays.asList("ThisRoleIsNoGood", "IAmRoot"),
@@ -254,22 +254,22 @@ public class LookupServiceAuditDisabledTest {
         String queryString = String.join("&", "useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
         assertHttpException(HttpClientErrorException.class, 403, () -> doLookup(userDetails, path(testTableName + "/row1"), queryString));
     }
-    
+
     @Test
     public void testErrorOnUserWithInsufficientAuths() {
         DatawaveUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "C"));
         String queryString = String.join("&", "useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
         assertHttpException(HttpServerErrorException.class, 500, () -> doLookup(userDetails, path(testTableName + "/row2"), queryString));
     }
-    
+
     @Test
     public void testErrorOnTableDoesNotExist() {
         DatawaveUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "B", "C"));
         String queryString = String.join("&", "useAuthorizations=A,B,C", "columnVisibility=foo");
-        
+
         assertHttpException(HttpServerErrorException.class, 500, () -> doLookup(userDetails, BASE_PATH + "/THIS_TABLE_DOES_NOT_EXIST/row2", queryString));
     }
-    
+
     @Test
     public void testLookupRowDoesNotExist() {
         DatawaveUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "B", "C"));
@@ -277,7 +277,7 @@ public class LookupServiceAuditDisabledTest {
         LookupResponse lr = doLookup(userDetails, path(testTableName + "/ThisRowDoesNotExist"), queryString);
         assertEquals(0, lr.getEntries().size(), "Test should have returned response with zero entries");
     }
-    
+
     /**
      * Lookups here should return one or more valid Accumulo table entries. If not, an exception is thrown
      */
@@ -289,7 +289,7 @@ public class LookupServiceAuditDisabledTest {
         assertNotNull(response.getBody());
         return JAXB.unmarshal(new StringReader(response.getBody()), LookupResponse.class);
     }
-    
+
     private String path(String pathParams) {
         return BASE_PATH + "/" + pathParams;
     }

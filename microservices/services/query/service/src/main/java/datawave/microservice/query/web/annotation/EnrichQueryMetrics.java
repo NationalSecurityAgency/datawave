@@ -13,6 +13,6 @@ public @interface EnrichQueryMetrics {
     enum MethodType {
         NONE, CREATE, NEXT, CREATE_AND_NEXT
     };
-    
+
     MethodType methodType();
 }

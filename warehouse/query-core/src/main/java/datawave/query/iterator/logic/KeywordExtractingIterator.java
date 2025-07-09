@@ -1,18 +1,18 @@
 package datawave.query.iterator.logic;
 
-import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.getDtUid;
-import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.getSortedCFs;
-
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ArrayByteSequence;
@@ -28,11 +28,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import datawave.query.Constants;
 import datawave.query.table.parser.ContentKeyValueFactory;
-import datawave.query.util.keyword.KeywordExtractor;
-import datawave.query.util.keyword.KeywordResults;
+import datawave.util.keyword.KeywordExtractor;
+import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.VisibleContent;
 
 /** An iterator that will execute the keyword extractor when given 'd' column ranges to scan for specific documents */
 public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
@@ -41,27 +44,21 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     private static final Collection<ByteSequence> D_COLUMN_FAMILY_BYTE_SEQUENCE = Collections
                     .singleton(new ArrayByteSequence(Constants.D_COLUMN_FAMILY.getBytes()));
 
-    public static final String MIN_NGRAMS = "min.ngram.count";
-    public static final String MAX_NGRAMS = "max.ngram.count";
-    public static final String MAX_KEYWORDS = "max.keyword.count";
-    public static final String MAX_SCORE = "max.score";
-    public static final String MAX_CONTENT_CHARS = "max.content.chars";
     public static final String VIEW_NAMES = "view.names";
     public static final String DOCUMENT_LANGUAGES = "document.languages";
-    public static final String ONLY_SPECIFIED_VIEWS = "only.specified.views";
 
-    public static final Map<String,String> defaultMapOptions;
+    public static final String DEFAULT_VIEW_NAMES = "CONTENT";
+
+    private static final Map<String,String> defaultMapOptions;
 
     static {
         defaultMapOptions = Maps.newHashMap();
-        defaultMapOptions.put(MIN_NGRAMS, "minimum number of words (ngrams) per keyword");
-        defaultMapOptions.put(MAX_NGRAMS, "maximum number of words (ngrams) per keyword");
-        defaultMapOptions.put(MAX_KEYWORDS, "maximum number of keywords to extract");
-        defaultMapOptions.put(MAX_SCORE, "max keyword score allowed (smaller scores are better)");
-        defaultMapOptions.put(MAX_CONTENT_CHARS, "max number of input characters to process");
+        defaultMapOptions.put(KeywordExtractor.MIN_NGRAMS, "minimum number of words (ngrams) per keyword");
+        defaultMapOptions.put(KeywordExtractor.MAX_NGRAMS, "maximum number of words (ngrams) per keyword");
+        defaultMapOptions.put(KeywordExtractor.MAX_KEYWORDS, "maximum number of keywords to extract");
+        defaultMapOptions.put(KeywordExtractor.MAX_SCORE, "max keyword score allowed (smaller scores are better)");
+        defaultMapOptions.put(KeywordExtractor.MAX_CONTENT_CHARS, "max number of input characters to process");
         defaultMapOptions.put(VIEW_NAMES, "a comma separated list of views to extract keywords from, in priority order");
-        defaultMapOptions.put(ONLY_SPECIFIED_VIEWS,
-                        "only extract keywords from the views specified in the iterator options, " + "not from the default list configured in the iterator");
     }
 
     private static final int MAX_CONTENT_ONE_HUNDRED_MB = 100 * 1024 * 1024;
@@ -75,12 +72,6 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
      * A map of dtUid to language, discovered via query parameters
      */
     protected final Map<String,String> documentLanguageMap = new HashMap<>();
-
-    /**
-     * if we will only look at the view names specified in the query parameters instead of merging those views with the list of views in the configuration and
-     * then using the resulting list.
-     */
-    protected boolean onlySpecifiedViews;
 
     /** the underlying source */
     protected SortedKeyValueIterator<Key,Value> source;
@@ -96,6 +87,9 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
 
     /** the underlying D column scan range */
     protected Range scanRange;
+
+    /** max content length to send to the keyword extractor */
+    protected int maxContentLength = MAX_CONTENT_ONE_HUNDRED_MB;
 
     /** the top key */
     protected Key tk;
@@ -118,7 +112,6 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         it.documentLanguageMap.clear();
         it.documentLanguageMap.putAll(documentLanguageMap);
 
-        it.onlySpecifiedViews = onlySpecifiedViews;
         it.columnFamilies = new TreeSet<>(columnFamilies);
         it.iteratorOptions = new HashMap<>(iteratorOptions);
 
@@ -134,35 +127,24 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         this.source = source;
         this.iteratorOptions = iteratorOptions;
 
-        // todo: move this to configuration.
-        preferredViews.add("CONTENT");
-
-        // if "ONLY" we will clear the view names list so that we only use the ones passed in as arguments to the
-        // query instead of merging those passed in with the ones that were configured
-        if (iteratorOptions.containsKey(ONLY_SPECIFIED_VIEWS)) {
-            onlySpecifiedViews = Boolean.parseBoolean(iteratorOptions.get(ONLY_SPECIFIED_VIEWS));
-            if (onlySpecifiedViews) {
-                preferredViews.clear();
-            }
-        } else {
-            onlySpecifiedViews = false;
+        final String viewNames = iteratorOptions.getOrDefault(VIEW_NAMES, DEFAULT_VIEW_NAMES);
+        if (viewNames.equals(DEFAULT_VIEW_NAMES)) {
+            log.warn("No content view names for keyword extraction were specified in the iterator option {}, using defaults {} instead", VIEW_NAMES,
+                            DEFAULT_VIEW_NAMES);
         }
 
-        // add the view names to the list in the order specified. If the view name is already in the list we
-        // will remove it and add it at the front to maintain priority order (which is why we traverse the params backwards
-        if (iteratorOptions.containsKey(VIEW_NAMES)) {
-            String[] nameList = iteratorOptions.get(VIEW_NAMES).split(Constants.COMMA);
-            for (int i = nameList.length - 1; i >= 0; i--) {
-                String name = nameList[i];
-                preferredViews.remove(name);
-                preferredViews.add(0, name);
-            }
-        }
+        final String[] nameList = viewNames.split(Constants.COMMA);
+        preferredViews.clear();
+        preferredViews.addAll(Arrays.asList(nameList));
 
         // add entries passed in via iterator options to the document language map.
         if (iteratorOptions.containsKey(DOCUMENT_LANGUAGES)) {
             documentLanguageMap.clear();
             documentLanguageMap.putAll(deserializeMap(iteratorOptions.get(DOCUMENT_LANGUAGES)));
+        }
+
+        if (iteratorOptions.containsKey(KeywordExtractor.MAX_CONTENT_CHARS)) {
+            maxContentLength = Integer.parseInt(iteratorOptions.get(KeywordExtractor.MAX_CONTENT_CHARS));
         }
     }
 
@@ -216,7 +198,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         }
 
         // store the content that we'll use for keyword extraction.
-        final Map<String,byte[]> foundContent = new HashMap<>();
+        final Map<String,VisibleContent> foundContent = new HashMap<>();
         Key top = source.getTopKey();
 
         // while we have d keys for the same document
@@ -224,16 +206,17 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
             top = source.getTopKey();
             Value value = source.getTopValue();
             String currentViewName = getViewName(top);
+            String visibility = getVisibility(top);
 
             for (String name : preferredViews) {
                 if (name.endsWith("*")) {
                     String truncatedName = name.substring(0, name.length() - 1);
                     if (currentViewName.startsWith(truncatedName)) {
-                        addFoundContent(foundContent, currentViewName, value.get());
+                        addFoundContent(foundContent, currentViewName, value.get(), visibility);
                     }
                 } else {
                     if (currentViewName.equals(name)) {
-                        addFoundContent(foundContent, currentViewName, value.get());
+                        addFoundContent(foundContent, currentViewName, value.get(), visibility);
                     }
                 }
             }
@@ -243,8 +226,9 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         }
 
         // extract keywords from the found content.
-        String language = documentLanguageMap.get(dtUid);
-        KeywordExtractor keywordExtractor = new KeywordExtractor(preferredViews, foundContent, language, iteratorOptions);
+        String documentUid = getDocumentIdentifier(top.getRow().toString(), dtUid);
+        String language = documentLanguageMap.get(documentUid);
+        KeywordExtractor keywordExtractor = new KeywordExtractor(documentUid, preferredViews, foundContent, language, iteratorOptions);
         KeywordResults results = keywordExtractor.extractKeywords();
 
         if (results != null) {
@@ -274,15 +258,11 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         return dtUid;
     }
 
-    private static void addFoundContent(Map<String,byte[]> foundContent, String currentViewName, byte[] content) {
-        if (content.length < MAX_CONTENT_ONE_HUNDRED_MB) {
-            foundContent.put(currentViewName + Constants.COLON + Boolean.TRUE, content);
-        } else {
-            content = ContentKeyValueFactory.decodeAndDecompressContent(content);
-            // pre-truncate big content to MAX_SUMMARY_SIZE
-            content = new String(content).substring(0, MAX_CONTENT_ONE_HUNDRED_MB).getBytes();
-            foundContent.put(currentViewName + Constants.COLON + Boolean.FALSE, content);
-        }
+    private void addFoundContent(Map<String,VisibleContent> foundContent, String currentViewName, byte[] encodedContent, String visibility) {
+        final byte[] decodedContent = ContentKeyValueFactory.decodeAndDecompressContent(encodedContent);
+        final String decodedString = new String(decodedContent, StandardCharsets.UTF_8);
+        final String input = decodedString.substring(0, Math.min(decodedString.length(), maxContentLength));
+        foundContent.put(currentViewName, new VisibleContent(visibility, input));
     }
 
     /**
@@ -308,14 +288,25 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     /**
      * Get the view name from the end of the column qualifier of the d key
      *
-     * @param dKey
+     * @param key
      *            the d key
      * @return the view name
      */
-    private static String getViewName(Key dKey) {
-        String cq = dKey.getColumnQualifier().toString();
+    protected String getViewName(Key key) {
+        String cq = key.getColumnQualifier().toString();
         int index = cq.lastIndexOf(Constants.NULL);
         return cq.substring(index + 1);
+    }
+
+    /**
+     * Get the visibility string from the key.
+     *
+     * @param key
+     *            the d key
+     * @return the view name
+     */
+    protected String getVisibility(Key key) {
+        return key.getColumnVisibility().toString();
     }
 
     /**
@@ -327,6 +318,34 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
      */
     private static String getDtUidFromDocumentKey(Key key) {
         return getDtUid(key.getColumnQualifier().toString());
+    }
+
+    // get the dt/uid from the beginning of a given string
+    protected static String getDtUid(String str) {
+        int index = str.indexOf(Constants.NULL);
+        index = str.indexOf(Constants.NULL, index + 1);
+        return index == -1 ? str : str.substring(0, index);
+    }
+
+    /**
+     * Turn a set of column families into a sorted string set
+     *
+     * @param columnFamilies
+     *            the column families
+     * @return a sorted set of column families as Strings
+     */
+    protected static SortedSet<String> getSortedCFs(Collection<ByteSequence> columnFamilies) {
+        return columnFamilies.stream().map(m -> {
+            try {
+                return Text.decode(m.getBackingArray(), m.offset(), m.length());
+            } catch (CharacterCodingException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    protected static String getDocumentIdentifier(String row, String dtUid) {
+        return row + "/" + dtUid.replaceAll("\0", "/");
     }
 
     @Override
@@ -343,13 +362,11 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         boolean valid = (options == null || options.isEmpty());
         if (!valid) {
             try {
-                validateIntOption(MIN_NGRAMS, options);
-                validateIntOption(MAX_NGRAMS, options);
-                validateIntOption(MAX_KEYWORDS, options);
-                validateFloatOption(MAX_SCORE, options);
-                validateIntOption(MAX_CONTENT_CHARS, options);
-                validateBooleanOption(ONLY_SPECIFIED_VIEWS, options);
-
+                validateIntOption(KeywordExtractor.MIN_NGRAMS, options);
+                validateIntOption(KeywordExtractor.MAX_NGRAMS, options);
+                validateIntOption(KeywordExtractor.MAX_KEYWORDS, options);
+                validateFloatOption(KeywordExtractor.MAX_SCORE, options);
+                validateIntOption(KeywordExtractor.MAX_CONTENT_CHARS, options);
                 valid = true;
             } catch (Exception e) {
                 if (log.isDebugEnabled()) {
@@ -360,55 +377,42 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         return valid;
     }
 
-    public static void setOptions(IteratorSetting si, int minNgrams, int maxNgrams, int maxKeywords, float maxScore, int maxContentChars, Set<String> viewNames,
-                    Map<String,String> documentLanguageMap, boolean onlySpecified) {
+    public static void setOptions(IteratorSetting si, int minNgrams, int maxNgrams, int maxKeywords, float maxScore, int maxContentChars,
+                    List<String> viewNames, Map<String,String> documentLanguageMap) {
 
         if (minNgrams > 0) {
-            si.addOption(MIN_NGRAMS, String.valueOf(minNgrams));
+            si.addOption(KeywordExtractor.MIN_NGRAMS, String.valueOf(minNgrams));
         }
 
         if (maxNgrams > 0) {
-            si.addOption(MAX_NGRAMS, String.valueOf(maxNgrams));
+            si.addOption(KeywordExtractor.MAX_NGRAMS, String.valueOf(maxNgrams));
         }
 
         if (maxKeywords > 0) {
-            si.addOption(MAX_KEYWORDS, String.valueOf(maxKeywords));
+            si.addOption(KeywordExtractor.MAX_KEYWORDS, String.valueOf(maxKeywords));
         }
 
         if (maxScore > 0) {
-            si.addOption(MAX_SCORE, String.valueOf(maxScore));
+            si.addOption(KeywordExtractor.MAX_SCORE, String.valueOf(maxScore));
         }
 
         if (maxContentChars > 0) {
-            si.addOption(MAX_CONTENT_CHARS, String.valueOf(maxContentChars));
+            si.addOption(KeywordExtractor.MAX_CONTENT_CHARS, String.valueOf(maxContentChars));
         }
 
         si.addOption(VIEW_NAMES, String.join(",", viewNames));
         si.addOption(DOCUMENT_LANGUAGES, serializeMap(documentLanguageMap));
-        si.addOption(ONLY_SPECIFIED_VIEWS, String.valueOf(onlySpecified));
     }
 
+    private static final Gson gson = new Gson();
+    private static final TypeToken<Map<String,String>> typeToken = new TypeToken<>() {};
+
     private static String serializeMap(Map<String,String> map) {
-        final StringBuilder b = new StringBuilder();
-        for (Map.Entry<String,String> e : map.entrySet()) {
-            b.append(e.getKey()).append("%%").append(e.getValue()).append("@@");
-        }
-        if (b.length() > 0) {
-            b.setLength(b.length() - 2); // remove last delimiter.
-        }
-        return b.toString();
+        return gson.toJson(map);
     }
 
     public static Map<String,String> deserializeMap(String string) {
-        final Map<String,String> map = new HashMap<>();
-        final String[] entries = string.split("@@");
-        for (String entry : entries) {
-            String[] parts = entry.split("%%");
-            if (parts.length == 2) {
-                map.put(parts[0], parts[1]);
-            }
-        }
-        return map;
+        return gson.fromJson(string, typeToken.getType());
     }
 
     @SuppressWarnings("unused")

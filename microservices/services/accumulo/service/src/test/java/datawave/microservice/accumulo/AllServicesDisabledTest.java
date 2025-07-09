@@ -17,10 +17,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ComponentScan(basePackages = "datawave.microservice")
 @ActiveProfiles({"all-services-disabled"})
 public class AllServicesDisabledTest {
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     @Test
     public void verifyAutoConfig() {
         assertTrue(context.containsBean("accumuloService"), "accumuloService bean should have been found");

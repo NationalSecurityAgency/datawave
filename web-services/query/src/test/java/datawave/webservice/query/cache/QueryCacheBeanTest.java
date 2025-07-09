@@ -22,7 +22,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.query.runner.RunningQuery;

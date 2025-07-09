@@ -47,7 +47,7 @@ public class InMemoryAccumulo {
     Map<String,InMemoryUser> users = new HashMap<>();
     final FileSystem fs;
     final AtomicInteger tableIdCounter = new AtomicInteger(0);
-    
+
     InMemoryAccumulo(FileSystem fs) {
         InMemoryUser root = new InMemoryUser("root", new PasswordToken(new byte[0]), Authorizations.EMPTY);
         root.permissions.add(SystemPermission.SYSTEM);
@@ -59,40 +59,40 @@ public class InMemoryAccumulo {
         createTable("root", ReplicationTable.NAME, true, TimeType.LOGICAL);
         this.fs = fs;
     }
-    
+
     public FileSystem getFileSystem() {
         return fs;
     }
-    
+
     void setProperty(String key, String value) {
         systemProperties.put(key, value);
     }
-    
+
     String removeProperty(String key) {
         return systemProperties.remove(key);
     }
-    
+
     public void addMutation(String table, Mutation m) {
         InMemoryTable t = tables.get(table);
         t.addMutation(m);
     }
-    
+
     public BatchScanner createBatchScanner(String tableName, Authorizations authorizations) {
         return new InMemoryBatchScanner(tables.get(tableName), authorizations);
     }
-    
+
     public void createTable(String username, String tableName, boolean useVersions, TimeType timeType) {
         Map<String,String> opts = Collections.emptyMap();
         createTable(username, tableName, useVersions, timeType, opts);
     }
-    
+
     public void createTable(String username, String tableName, boolean useVersions, TimeType timeType, Map<String,String> properties) {
         String namespace = TableNameUtil.qualify(tableName).getFirst();
-        
+
         if (!namespaceExists(namespace)) {
             return;
         }
-        
+
         InMemoryNamespace n = namespaces.get(namespace);
         InMemoryTable t = new InMemoryTable(n, useVersions, timeType, Integer.toString(tableIdCounter.incrementAndGet()), properties);
         t.userPermissions.put(username, EnumSet.allOf(TablePermission.class));
@@ -100,15 +100,15 @@ public class InMemoryAccumulo {
         t.setNamespace(n);
         tables.put(tableName, t);
     }
-    
+
     public void createTable(String username, String tableName, TimeType timeType, Map<String,String> properties) {
         String namespace = TableNameUtil.qualify(tableName).getFirst();
         HashMap<String,String> props = new HashMap<>(properties);
-        
+
         if (!namespaceExists(namespace)) {
             return;
         }
-        
+
         InMemoryNamespace n = namespaces.get(namespace);
         InMemoryTable t = new InMemoryTable(n, timeType, Integer.toString(tableIdCounter.incrementAndGet()), props);
         t.userPermissions.put(username, EnumSet.allOf(TablePermission.class));
@@ -116,7 +116,7 @@ public class InMemoryAccumulo {
         t.setNamespace(n);
         tables.put(tableName, t);
     }
-    
+
     public void createNamespace(String username, String namespace) {
         if (!namespaceExists(namespace)) {
             InMemoryNamespace n = new InMemoryNamespace();
@@ -124,19 +124,19 @@ public class InMemoryAccumulo {
             namespaces.put(namespace, n);
         }
     }
-    
+
     public void addSplits(String tableName, SortedSet<Text> partitionKeys) {
         tables.get(tableName).addSplits(partitionKeys);
     }
-    
+
     public Collection<Text> getSplits(String tableName) {
         return tables.get(tableName).getSplits();
     }
-    
+
     public void merge(String tableName, Text start, Text end) {
         tables.get(tableName).merge(start, end);
     }
-    
+
     private boolean namespaceExists(String namespace) {
         return namespaces.containsKey(namespace);
     }

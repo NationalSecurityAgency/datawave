@@ -31,14 +31,14 @@ import datawave.webservice.dictionary.data.DefaultFields;
 import datawave.webservice.metadata.DefaultMetadataField;
 
 public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,DefaultDescription,DefaultDictionaryField> {
-    
+
     private final MarkingFunctions markingFunctions;
     private final ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory;
     private final MetadataHelperFactory metadataHelperFactory;
     private final MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory;
     private Map<String,String> normalizationMap = Maps.newHashMap();
     private String dataDictionarySystem = "";
-    
+
     public DataDictionaryImpl(MarkingFunctions markingFunctions,
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     MetadataHelperFactory metadataHelperFactory, MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory) {
@@ -47,27 +47,27 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         this.metadataHelperFactory = metadataHelperFactory;
         this.metadataDescriptionsHelperFactory = metadataDescriptionsHelperFactory;
     }
-    
+
     @Override
     public Map<String,String> getNormalizationMap() {
         return normalizationMap;
     }
-    
+
     @Override
     public void setNormalizationMap(Map<String,String> normalizationMap) {
         this.normalizationMap = normalizationMap;
     }
-    
+
     @Override
     public String getDataDictionarySystem() {
         return dataDictionarySystem;
     }
-    
+
     @Override
     public void setDataDictionarySystem(String dataDictionarySystem) {
         this.dataDictionarySystem = dataDictionarySystem;
     }
-    
+
     /**
      * Retrieve metadata fields from the specified metadata table, aggregated by field name and data type.
      *
@@ -91,7 +91,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
                         numThreads);
         return scanner.getFields(aliases, dataTypeFilters);
     }
-    
+
     /**
      * Set the specified description to the metadata table for the field name and data type combination supplied by the description.
      *
@@ -108,7 +108,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
     public void setDescription(Connection connectionConfig, DefaultDictionaryField description) throws Exception {
         this.setDescriptions(connectionConfig, description.getFieldName(), description.getDatatype(), description.getDescriptions());
     }
-    
+
     /**
      * Set the specified description to the metadata table for the specified field name and data type combination.
      *
@@ -129,7 +129,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
     public void setDescription(Connection connectionConfig, String fieldName, String datatype, DefaultDescription description) throws Exception {
         setDescriptions(connectionConfig, fieldName, datatype, Collections.singleton(description));
     }
-    
+
     /**
      * Set the specified descriptions to the metadata table for the specified field name and data type combination.
      *
@@ -153,13 +153,13 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         if (null != alias) {
             fieldName = alias;
         }
-        
+
         // TODO The query model is effectively busted because it doesn't uniquely reference field+datatype
         MetadataEntry mentry = new MetadataEntry(fieldName, datatype);
         MetadataDescriptionsHelper<DefaultDescription> helper = getInitializedDescriptionsHelper(connectionConfig);
         helper.setDescriptions(mentry, descriptions);
     }
-    
+
     /**
      * Retrieve all descriptions for metadata field entries.
      *
@@ -177,7 +177,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         Multimap<MetadataEntry,DefaultDescription> descriptions = descriptionsHelper.getDescriptions((Set<String>) null);
         return transformKeys(descriptions, connectionConfig);
     }
-    
+
     /**
      * Retrieves all descriptions for metadata entries with the specified data type.
      *
@@ -197,7 +197,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         Multimap<MetadataEntry,DefaultDescription> descriptions = helper.getDescriptions(datatype);
         return transformKeys(descriptions, connectionConfig);
     }
-    
+
     /**
      * Retrieves all descriptions for metadata entries with the specified field name and data type combination.
      *
@@ -219,7 +219,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         MetadataDescriptionsHelper<DefaultDescription> helper = getInitializedDescriptionsHelper(connectionConfig);
         return alias == null ? helper.getDescriptions(fieldName, datatype) : helper.getDescriptions(alias, datatype);
     }
-    
+
     /**
      * Deletes the specified description for the specified field name and data type combination.
      *
@@ -245,7 +245,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         MetadataDescriptionsHelper<DefaultDescription> descriptionsHelper = getInitializedDescriptionsHelper(connectionConfig);
         descriptionsHelper.removeDescription(new MetadataEntry(fieldName, datatype), description);
     }
-    
+
     // Transform the MetadataEntry key of the specified map into <fieldName,dataType> entries.
     // If an alias exists for a field name, that alias will be returned instead of the field name.
     private Multimap<Entry<String,String>,DefaultDescription> transformKeys(Multimap<MetadataEntry,DefaultDescription> descriptions,
@@ -264,14 +264,14 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         }
         return transformedDescriptions;
     }
-    
+
     // Return a new, initialized metadata description helper.
     private MetadataDescriptionsHelper<DefaultDescription> getInitializedDescriptionsHelper(Connection connectionConfig) {
         MetadataDescriptionsHelper<DefaultDescription> helper = metadataDescriptionsHelperFactory.createMetadataDescriptionsHelper();
         helper.initialize(connectionConfig.getAccumuloClient(), connectionConfig.getMetadataTable(), connectionConfig.getAuths());
         return helper;
     }
-    
+
     // Return the alias map for the query model in the specified connection config.
     private Map<String,String> getAliases(Connection connectionConfig) throws ExecutionException, TableNotFoundException {
         MetadataHelper helper = metadataHelperFactory.createMetadataHelper(connectionConfig.getAccumuloClient(), connectionConfig.getMetadataTable(),
@@ -279,7 +279,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
         QueryModel model = helper.getQueryModel(connectionConfig.getModelTable(), connectionConfig.getModelName());
         return model != null ? model.getReverseQueryMapping() : Collections.emptyMap();
     }
-    
+
     // Retrieve the alias for the specified field name from the alias map for the specified field name.
     private String getAlias(String fieldName, Connection connectionConfig) throws ExecutionException, TableNotFoundException {
         Map<String,String> map = getAliases(connectionConfig);

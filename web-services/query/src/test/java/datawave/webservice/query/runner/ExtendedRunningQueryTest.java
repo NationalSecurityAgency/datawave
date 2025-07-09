@@ -38,7 +38,6 @@ import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -314,6 +313,8 @@ public class ExtendedRunningQueryTest {
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         long maxResults = 100L;
+        int pageSize = 5;
+        int maxPageSize = 5;
 
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -340,6 +341,8 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
+        expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
+        expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getUserOperations(this.query)).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
 
@@ -471,7 +474,6 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
-
         // now that the results thread is separate from the running query thread, we could continue getting stuff
         expect(this.transformIterator.getTransformer()).andReturn(transformer).anyTimes();
         expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext()).anyTimes();

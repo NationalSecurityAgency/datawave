@@ -390,16 +390,6 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
 
     @Override
-    public UserOperations getUserOperations() {
-        return delegate.getUserOperations();
-    }
-
-    @Override
-    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
-        delegate.preInitialize(settings, queryAuths);
-    }
-
-    @Override
     public void setClientConfig(AccumuloClientConfiguration config) {
         delegate.setClientConfig(config);
     }

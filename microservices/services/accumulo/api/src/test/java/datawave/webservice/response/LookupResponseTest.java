@@ -25,16 +25,16 @@ import datawave.webservice.response.objects.Entry;
 import datawave.webservice.response.objects.KeyBase;
 
 public class LookupResponseTest {
-    
+
     private LookupResponse lookupResponse;
     private ObjectMapper objectMapper;
-    
+
     @BeforeEach
     public void setup() {
         objectMapperSetup();
         responseSetup();
     }
-    
+
     private void responseSetup() {
         lookupResponse = new LookupResponse();
         List<Entry> entryList = new ArrayList<>();
@@ -55,7 +55,7 @@ public class LookupResponseTest {
         lookupResponse.setHasResults(true);
         lookupResponse.setOperationTimeMS(10);
     }
-    
+
     private void objectMapperSetup() {
         objectMapper = new ObjectMapper();
         // Map LookupResponse's abstract KeyBase field to concrete impl
@@ -65,7 +65,7 @@ public class LookupResponseTest {
         // For testing json deserialization via LR's jaxb annotations
         objectMapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector(TypeFactory.defaultInstance()));
     }
-    
+
     @Test
     public void testLookupResponseSerDe() throws IOException {
         String ser = objectMapper.writeValueAsString(lookupResponse);
@@ -84,7 +84,7 @@ public class LookupResponseTest {
             assertEquals(1, de.getExceptions().stream().map(QueryExceptionType::getMessage).filter(
                 str -> str.equals("Exception message " + fi)).count());
             //@formatter:on
-            
+
             assertTrue(de.getMessages().contains("Message " + fi));
         }
         assertEquals(lookupResponse.getHasResults(), de.getHasResults());

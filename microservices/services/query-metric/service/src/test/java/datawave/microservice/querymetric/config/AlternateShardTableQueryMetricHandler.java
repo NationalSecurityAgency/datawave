@@ -18,7 +18,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 
 public class AlternateShardTableQueryMetricHandler extends LocalShardTableQueryMetricHandler<AlternateQueryMetric> {
-    
+
     public AlternateShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
                     @Qualifier("warehouse") AccumuloClientPool accumuloClientPool, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
                     MarkingFunctions markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
@@ -26,12 +26,12 @@ public class AlternateShardTableQueryMetricHandler extends LocalShardTableQueryM
         super(queryMetricHandlerProperties, accumuloClientPool, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser,
                         dnUtils);
     }
-    
+
     @Override
     public ContentQueryMetricsIngestHelper getQueryMetricsIngestHelper(boolean deleteMode, Collection<String> ignoredFields) {
         return new AlternateContentQueryMetricsIngestHelper(deleteMode, ignoredFields);
     }
-    
+
     @Override
     public AlternateQueryMetric toMetric(EventBase event) {
         AlternateQueryMetric queryMetric = super.toMetric(event);

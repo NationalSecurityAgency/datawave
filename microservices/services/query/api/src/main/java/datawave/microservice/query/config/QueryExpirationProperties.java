@@ -41,201 +41,201 @@ public class QueryExpirationProperties {
     private long shortCircuitTimeout = Math.round(0.97 * callTimeout);
     @NotNull
     private TimeUnit shortCircuitTimeoutUnit = TimeUnit.MINUTES;
-    
+
     @Positive
     @Deprecated // to be replaced by the long running query timeout
     private int maxLongRunningTimeoutRetries = 3;
-    
+
     @Positive
     private long longRunningQueryTimeout = (maxLongRunningTimeoutRetries + 1) * callTimeoutUnit.toMinutes(callTimeout);
-    
+
     @NotNull
     private TimeUnit longRunningQueryTimeoutUnit = TimeUnit.MINUTES;
-    
+
     public long getIdleTimeout() {
         return idleTimeout;
     }
-    
+
     public long getIdleTimeoutMillis() {
         return idleTimeoutUnit.toMillis(idleTimeout);
     }
-    
+
     public void setIdleTimeout(long idleTimeout) {
         this.idleTimeout = idleTimeout;
     }
-    
+
     public TimeUnit getIdleTimeoutUnit() {
         return idleTimeoutUnit;
     }
-    
+
     public void setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
         this.idleTimeoutUnit = idleTimeoutUnit;
     }
-    
+
     public long getProgressTimeout() {
         return progressTimeout;
     }
-    
+
     public long getProgressTimeoutMillis() {
         return progressTimeoutUnit.toMillis(progressTimeout);
     }
-    
+
     public void setProgressTimeout(long progressTimeout) {
         this.progressTimeout = progressTimeout;
     }
-    
+
     public TimeUnit getProgressTimeoutUnit() {
         return progressTimeoutUnit;
     }
-    
+
     public void setProgressTimeoutUnit(TimeUnit progressTimeoutUnit) {
         this.progressTimeoutUnit = progressTimeoutUnit;
     }
-    
+
     public long getCallTimeout() {
         return callTimeout;
     }
-    
+
     public long getCallTimeoutMillis() {
         return callTimeoutUnit.toMillis(callTimeout);
     }
-    
+
     public void setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
     }
-    
+
     public TimeUnit getCallTimeoutUnit() {
         return callTimeoutUnit;
     }
-    
+
     public void setCallTimeoutUnit(TimeUnit callTimeoutUnit) {
         this.callTimeoutUnit = callTimeoutUnit;
     }
-    
+
     public long getCallTimeoutInterval() {
         return callTimeoutInterval;
     }
-    
+
     public long getCallTimeoutIntervalMillis() {
         return callTimeoutIntervalUnit.toMillis(callTimeoutInterval);
     }
-    
+
     public void setCallTimeoutInterval(long callTimeoutInterval) {
         this.callTimeoutInterval = callTimeoutInterval;
     }
-    
+
     public TimeUnit getCallTimeoutIntervalUnit() {
         return callTimeoutIntervalUnit;
     }
-    
+
     public void setCallTimeoutIntervalUnit(TimeUnit callTimeoutIntervalUnit) {
         this.callTimeoutIntervalUnit = callTimeoutIntervalUnit;
     }
-    
+
     public long getPageMinTimeout() {
         return pageMinTimeout;
     }
-    
+
     public long getPageMinTimeoutMillis() {
         return pageMinTimeoutUnit.toMillis(pageMinTimeout);
     }
-    
+
     public void setPageMinTimeout(long pageMinTimeout) {
         this.pageMinTimeout = pageMinTimeout;
     }
-    
+
     public TimeUnit getPageMinTimeoutUnit() {
         return pageMinTimeoutUnit;
     }
-    
+
     public void setPageMinTimeoutUnit(TimeUnit pageMinTimeoutUnit) {
         this.pageMinTimeoutUnit = pageMinTimeoutUnit;
     }
-    
+
     public long getPageMaxTimeout() {
         return pageMaxTimeout;
     }
-    
+
     public long getPageMaxTimeoutMillis() {
         return pageMaxTimeoutUnit.toMillis(pageMaxTimeout);
     }
-    
+
     public void setPageMaxTimeout(long pageMaxTimeout) {
         this.pageMaxTimeout = pageMaxTimeout;
     }
-    
+
     public TimeUnit getPageMaxTimeoutUnit() {
         return pageMaxTimeoutUnit;
     }
-    
+
     public void setPageMaxTimeoutUnit(TimeUnit pageMaxTimeoutUnit) {
         this.pageMaxTimeoutUnit = pageMaxTimeoutUnit;
     }
-    
+
     public long getShortCircuitCheckTime() {
         return shortCircuitCheckTime;
     }
-    
+
     public long getShortCircuitCheckTimeMillis() {
         return shortCircuitCheckTimeUnit.toMillis(shortCircuitCheckTime);
     }
-    
+
     public void setShortCircuitCheckTime(long shortCircuitCheckTime) {
         this.shortCircuitCheckTime = shortCircuitCheckTime;
     }
-    
+
     public TimeUnit getShortCircuitCheckTimeUnit() {
         return shortCircuitCheckTimeUnit;
     }
-    
+
     public void setShortCircuitCheckTimeUnit(TimeUnit shortCircuitCheckTimeUnit) {
         this.shortCircuitCheckTimeUnit = shortCircuitCheckTimeUnit;
     }
-    
+
     public long getShortCircuitTimeout() {
         return shortCircuitTimeout;
     }
-    
+
     public long getShortCircuitTimeoutMillis() {
         return shortCircuitTimeoutUnit.toMillis(shortCircuitTimeout);
     }
-    
+
     public void setShortCircuitTimeout(long shortCircuitTimeout) {
         this.shortCircuitTimeout = shortCircuitTimeout;
     }
-    
+
     public TimeUnit getShortCircuitTimeoutUnit() {
         return shortCircuitTimeoutUnit;
     }
-    
+
     public void setShortCircuitTimeoutUnit(TimeUnit shortCircuitTimeoutUnit) {
         this.shortCircuitTimeoutUnit = shortCircuitTimeoutUnit;
     }
-    
+
     public int getMaxLongRunningTimeoutRetries() {
         return maxLongRunningTimeoutRetries;
     }
-    
+
     public void setMaxLongRunningTimeoutRetries(int maxLongRunningTimeoutRetries) {
         this.maxLongRunningTimeoutRetries = maxLongRunningTimeoutRetries;
     }
-    
+
     public long getLongRunningQueryTimeout() {
         return longRunningQueryTimeout;
     }
-    
+
     public void setLongRunningQueryTimeout(long longRunningQueryTimeout) {
         this.longRunningQueryTimeout = longRunningQueryTimeout;
     }
-    
+
     public TimeUnit getLongRunningQueryTimeoutUnit() {
         return longRunningQueryTimeoutUnit;
     }
-    
+
     public void setLongRunningQueryTimeoutUnit(TimeUnit longRunningQueryTimeoutUnit) {
         this.longRunningQueryTimeoutUnit = longRunningQueryTimeoutUnit;
     }
-    
+
     public long getLongRunningQueryTimeoutMillis() {
         return longRunningQueryTimeoutUnit.toMillis(longRunningQueryTimeout);
     }

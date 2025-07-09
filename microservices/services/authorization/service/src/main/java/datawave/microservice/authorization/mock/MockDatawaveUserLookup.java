@@ -23,27 +23,27 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 @CacheConfig(cacheNames = CACHE_NAME)
 public class MockDatawaveUserLookup {
     private final MockDULProperties mockDULProperties;
-    
+
     public MockDatawaveUserLookup(MockDULProperties mockDULProperties) {
         this.mockDULProperties = mockDULProperties;
     }
-    
+
     @Cacheable(key = "#dn.toString()")
     public DatawaveUser lookupUser(SubjectIssuerDNPair dn) {
         return buildUser(dn);
     }
-    
+
     @Cacheable(key = "#dn.toString()")
     public DatawaveUser reloadUser(SubjectIssuerDNPair dn) {
         return buildUser(dn);
     }
-    
+
     private DatawaveUser buildUser(SubjectIssuerDNPair dn) {
         UserType userType = UserType.USER;
         if (mockDULProperties.getServerDnRegex() != null && Pattern.matches(mockDULProperties.getServerDnRegex(), dn.subjectDN())) {
             userType = UserType.SERVER;
         }
-        
+
         Map<String,String> rolesToAuths = new TreeMap<>();
         String userEmail = null;
         MockDatawaveUser mockDatawaveUser = mockDULProperties.getMockUsers().get(dn.toString());
@@ -54,7 +54,7 @@ public class MockDatawaveUserLookup {
         if (rolesToAuths.isEmpty()) {
             rolesToAuths = mockDULProperties.getGlobalRolesToAuths();
         }
-        
+
         HashMultimap<String,String> mapping = HashMultimap.create();
         rolesToAuths.forEach(mapping::put);
         return new DatawaveUser(dn, userType, userEmail, rolesToAuths.values(), rolesToAuths.keySet(), mapping, System.currentTimeMillis());

@@ -62,7 +62,6 @@ import org.xml.sax.SAXException;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -92,7 +91,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameterBuilder;
 import datawave.webservice.common.audit.AuditParameters;
@@ -682,6 +680,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(null).anyTimes();
+        persister.remove(q);
+        EasyMock.expectLastCall().anyTimes();
 
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         metric.populate(q);

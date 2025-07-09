@@ -27,16 +27,16 @@ import datawave.security.authorization.DatawaveUser;
  * @see datawave.accumulo.util.security.UserAuthFunctions.Default
  */
 public interface UserAuthFunctions {
-    
+
     /**
      * System property for overriding {@link Default} instance at runtime, if desired.
-     * 
+     *
      * @see #getInstance()
      */
     String DEFAULT_CLASS_OVERRIDE_PROPERTY = "datawave.user.auth.functions.class";
-    
+
     char REQUESTED_AUTHS_DELIMITER = ',';
-    
+
     /**
      * If {@code requestedAuths} contains elements that don't appear in {@link DatawaveUser#getAuths()}, implementors will throw an exception indicating that
      * authorizations have been requested which the user has not been granted.
@@ -45,12 +45,12 @@ public interface UserAuthFunctions {
      *            The set of requested Accumulo authorizations (comma-delimited)
      * @param user
      *            The DataWave user for whom authorizations are being requested
-     *            
+     *
      * @throws AuthorizationException
      *             when the requested auths are not valid for the user
      */
     void validateRequestedAuthorizations(String requestedAuths, DatawaveUser user) throws AuthorizationException;
-    
+
     /**
      * Typically, implementations will simply compute the intersection of the two sets, {@code requestedAuths} and {@link DatawaveUser#getAuths()}, and then
      * return the resulting set in the form of an {@link Authorizations} instance.
@@ -68,11 +68,11 @@ public interface UserAuthFunctions {
      *            The set of requested Accumulo authorizations (comma-delimited)
      * @param user
      *            The DataWave user for whom authorizations are being requested
-     *            
+     *
      * @return {@link Authorizations} instance appropriate for the given inputs
      */
     Authorizations getRequestedAuthorizations(String requestedAuths, DatawaveUser user);
-    
+
     /**
      * Typically, implementations will simply compute the intersection of the two sets, {@code requestedAuths} and {@link DatawaveUser#getAuths()}, and then
      * return the resulting set in the form of an {@link Authorizations} instance.
@@ -92,11 +92,11 @@ public interface UserAuthFunctions {
      *            The DataWave user for whom authorizations are being requested
      * @param throwOnMissingAuths
      *            If true then an exception is thrown if the user is missing any of the requested auths
-     *            
+     *
      * @return {@link Authorizations} instance appropriate for the given inputs
      */
     Authorizations getRequestedAuthorizations(String requestedAuths, DatawaveUser user, boolean throwOnMissingAuths);
-    
+
     /**
      * This method provides a merged view of the auths from the specified proxy chain and from those in {@code primaryUserAuths}, e.g., as precomputed by
      * {@link #getRequestedAuthorizations(String, DatawaveUser)} perhaps.
@@ -111,17 +111,17 @@ public interface UserAuthFunctions {
      * @param proxiedUserTest
      *            A predicate that, given a user from {@code proxyChain}, indicates whether or not that user is the primary user. The predicate should return
      *            {@code true} if the user is NOT the primary user.
-     *            
+     *
      * @return A set of {@link Authorizations}, one per user entity represented by the user chain including {@code primaryUserAuths}
      */
     LinkedHashSet<Authorizations> mergeAuthorizations(Authorizations primaryUserAuths, Collection<? extends DatawaveUser> proxyChain,
                     Predicate<? super DatawaveUser> proxiedUserTest);
-    
+
     /**
      * Default implementation of {@link UserAuthFunctions}
      */
     class Default implements UserAuthFunctions {
-        
+
         /**
          *
          * @throws AuthorizationException
@@ -135,13 +135,13 @@ public interface UserAuthFunctions {
                 throw new AuthorizationException(e);
             }
         }
-        
+
         /**
          *
          * @return IFF every element in {@code requestedAuths} also exists in {@link DatawaveUser#getAuths()} then {@code requestedAuths} is translated to
          *         {@link Authorizations} and returned. If either of {@code requestedAuths} or {@link DatawaveUser#getAuths()} is empty/null, then
          *         {@link Authorizations#EMPTY} is returned. If any requested auths are missing in {@link DatawaveUser#getAuths()}, then an exception is thrown
-         *         
+         *
          * @throws IllegalArgumentException
          *             if {@code requestedAuths} contains elements that do not exist in {@link DatawaveUser#getAuths()}
          */
@@ -149,13 +149,13 @@ public interface UserAuthFunctions {
         public Authorizations getRequestedAuthorizations(String requestedAuths, DatawaveUser user) {
             return getRequestedAuthorizations(requestedAuths, user, true);
         }
-        
+
         /**
          *
          * @return IFF every element in {@code requestedAuths} also exists in {@link DatawaveUser#getAuths()} then {@code requestedAuths} is translated to
          *         {@link Authorizations} and returned. If either of {@code requestedAuths} or {@link DatawaveUser#getAuths()} is empty/null, then
          *         {@link Authorizations#EMPTY} is returned. If any requested auths are missing in {@link DatawaveUser#getAuths()}, then an exception is thrown
-         *         
+         *
          * @throws IllegalArgumentException
          *             if {@code requestedAuths} contains elements that do not exist in {@link DatawaveUser#getAuths()}
          */
@@ -166,7 +166,7 @@ public interface UserAuthFunctions {
             }
             return UserAuthFunctions.getRequestedAuthorizations(requestedAuths, user::getAuths, throwOnMissingAuths);
         }
-        
+
         /**
          * If the specified {@code primaryUserAuths} is {@code null}, then a set of size = 1 will will be returned, and its one element will be a default
          * Authorizations instance (i.e., {@code new Authorizations()}
@@ -175,12 +175,12 @@ public interface UserAuthFunctions {
         public LinkedHashSet<Authorizations> mergeAuthorizations(Authorizations primaryUserAuths, Collection<? extends DatawaveUser> proxyChain,
                         Predicate<? super DatawaveUser> proxiedUserTest) {
             LinkedHashSet<Authorizations> mergedAuths = new LinkedHashSet<>();
-            
+
             if (null == primaryUserAuths) {
                 mergedAuths.add(Authorizations.EMPTY);
             } else {
                 mergedAuths.add(primaryUserAuths);
-                
+
                 if (null != proxyChain) {
                     // Now simply add the auths from each non-primary user to the merged auths set
                     // @formatter:off
@@ -195,7 +195,7 @@ public interface UserAuthFunctions {
             return mergedAuths;
         }
     }
-    
+
     /**
      * @return If {@code throwOnMissingAuths} is {@code false}, returns the intersection of {@code requestedAuths} and {@code authSupplier.get()} as an
      *         {@link Authorizations} instance. If {@code throwOnMissingAuths} is {@code true}, the same intersection is computed, but
@@ -206,9 +206,9 @@ public interface UserAuthFunctions {
         if (!Strings.isNullOrEmpty(requestedAuths)) {
             requested = new HashSet<>(splitAuths(requestedAuths));
         }
-        
+
         Authorizations authorizations = null;
-        
+
         if (null != authSupplier) {
             HashSet<String> missingAuths = (requested == null) ? new HashSet<>() : new HashSet<>(requested);
             HashSet<String> userAuths = new HashSet<>(authSupplier.get());
@@ -219,22 +219,22 @@ public interface UserAuthFunctions {
                 }
                 authorizations = new Authorizations(userAuths.toArray(new String[userAuths.size()]));
             }
-            
+
             if (!missingAuths.isEmpty() && throwOnMissingAuths) {
                 throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
                                 + ", User: " + userAuths);
             }
         }
-        
+
         if (null == authorizations) {
             authorizations = Authorizations.EMPTY;
         }
         return authorizations;
     }
-    
+
     /**
      * Converts comma-delimited {@code requestedAuths} to a list
-     * 
+     *
      * @param requestedAuths
      *            comma-delimited list of authorizations
      * @return List containing the auth tokens from {@code requestedAuths}
@@ -242,10 +242,10 @@ public interface UserAuthFunctions {
     static List<String> splitAuths(String requestedAuths) {
         return Arrays.asList(Iterables.toArray(Splitter.on(REQUESTED_AUTHS_DELIMITER).omitEmptyStrings().trimResults().split(requestedAuths), String.class));
     }
-    
+
     /**
      * Converts auths string collection to an {@link Authorizations} instance
-     * 
+     *
      * @param auths
      *            Auths to convert
      * @return {@link Authorizations} equivalent of the specified string collection
@@ -253,7 +253,7 @@ public interface UserAuthFunctions {
     static Authorizations toAuthorizations(Collection<String> auths) {
         return new Authorizations(auths.stream().map(String::trim).map(s -> s.getBytes(UTF_8)).collect(Collectors.toList()));
     }
-    
+
     /**
      * Gets a {@link Default} instance, which may be overridden at runtime via system property {@link #DEFAULT_CLASS_OVERRIDE_PROPERTY}, if desired. Impl
      * overrides must be thread-safe
@@ -263,15 +263,15 @@ public interface UserAuthFunctions {
     static UserAuthFunctions getInstance() {
         return Holder.INSTANCE;
     }
-    
+
     /**
      * On-demand holder for UserAuthFunctions singleton
      */
     class Holder {
         private static final UserAuthFunctions INSTANCE = createUserAuthFunctions();
-        
+
         private Holder() {}
-        
+
         private static UserAuthFunctions createUserAuthFunctions() {
             final String classOverride = System.getProperty(DEFAULT_CLASS_OVERRIDE_PROPERTY);
             if (null == classOverride) {

@@ -34,22 +34,22 @@ import datawave.autoconfigure.DatawaveCacheAutoConfiguration;
                 classes = {HazelcastCacheInspectorTest.InspectorConfiguration.class, DatawaveCacheAutoConfiguration.class})
 public class HazelcastCacheInspectorTest {
     private static final String CACHE_NAME = "cacheinspector-test";
-    
+
     @Autowired
     private CacheManager cacheManager;
-    
+
     @Autowired
     @Qualifier("cacheInspectorFactory")
     private Function<CacheManager,CacheInspector> cacheInspectorFactory;
-    
+
     private CacheInspector cacheInspector;
-    
+
     private Cache cache;
-    
+
     @BeforeEach
     public void setup() {
         cacheInspector = cacheInspectorFactory.apply(cacheManager);
-        
+
         cache = cacheManager.getCache(CACHE_NAME);
         cache.clear();
         cache.put("key1", "value1");
@@ -59,49 +59,49 @@ public class HazelcastCacheInspectorTest {
         cache.put("key4", "value4");
         cache.put("key5", "value5");
     }
-    
+
     @Test
     public void testCacheManagerType() {
         assertTrue(cacheManager instanceof HazelcastCacheManager);
     }
-    
+
     @Test
     public void testGet() {
         String value = cacheInspector.list(CACHE_NAME, String.class, "key3a");
         assertEquals("value3a", value);
     }
-    
+
     @Test
     public void testListAll() {
         List<? extends String> users = cacheInspector.listAll(CACHE_NAME, String.class);
         users.sort(String::compareTo);
         assertEquals(Arrays.asList("value1", "value2", "value3a", "value3b", "value4", "value5"), users);
     }
-    
+
     @Test
     public void testListMatching() {
         // Force a specific value into memory (cache only allows 1 in memory at a time)
         cache.get("key4");
-        
+
         // List matching users, but not in memory
         List<? extends String> users = cacheInspector.listMatching(CACHE_NAME, String.class, "ey3");
         users.sort(String::compareTo);
         assertEquals(Arrays.asList("value3a", "value3b"), users);
     }
-    
+
     @Test
     public void testEvictMatching() {
         List<? extends String> users = cacheInspector.listAll(CACHE_NAME, String.class);
         users.sort(String::compareTo);
         assertEquals(Arrays.asList("value1", "value2", "value3a", "value3b", "value4", "value5"), users);
-        
+
         cacheInspector.evictMatching(CACHE_NAME, String.class, "ey3");
-        
+
         users = cacheInspector.listAll(CACHE_NAME, String.class);
         users.sort(String::compareTo);
         assertEquals(Arrays.asList("value1", "value2", "value4", "value5"), users);
     }
-    
+
     @ComponentScan(basePackages = "datawave.microservice")
     public static class InspectorConfiguration {
         @Bean
