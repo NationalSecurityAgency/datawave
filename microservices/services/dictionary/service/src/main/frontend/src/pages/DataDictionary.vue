@@ -268,7 +268,7 @@ onMounted(() => {
     console.log('Error fetching and formatting rows: ' + reason);
   });
 
-  // This block is similar to watch() methods below, but handles the search when initially set not added.
+  // This block is similar to watch() methods below, but handles the search when initially set via the URL.
   const q = route.query.search;
 
   // Converts to valid string and then queries if filter is changed.
