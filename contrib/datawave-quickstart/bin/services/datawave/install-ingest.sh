@@ -16,7 +16,8 @@ hadoopIsInstalled || fatal "DataWave Ingest requires that Hadoop be installed"
 accumuloIsInstalled || fatal "DataWave Ingest requires that Accumulo be installed"
 
 datawaveIngestIsInstalled && info "DataWave Ingest is already installed" && exit 1
-
+getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
+DW_DATAWAVE_INGEST_DIST="${tarball}"
 [ -f "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_DIST}" ] || fatal "DataWave Ingest tarball not found"
 
 TARBALL_BASE_DIR="${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_BASEDIR}"

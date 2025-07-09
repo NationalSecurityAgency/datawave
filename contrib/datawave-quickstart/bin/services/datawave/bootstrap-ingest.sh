@@ -80,9 +80,6 @@ DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-"shardS
 
 DW_DATAWAVE_MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS:-"-useInlineCombiner -ingestMetricsDisabled"}
 
-getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
-DW_DATAWAVE_INGEST_DIST="${tarball}"
-
 # Service helpers...
 
 DW_DATAWAVE_INGEST_CMD_START="( cd ${DW_DATAWAVE_INGEST_HOME}/bin/system && ./start-all.sh -allforce )"
@@ -148,10 +145,9 @@ function datawaveIngestUninstall() {
 }
 
 function datawaveIngestInstall() {
+    export DW_SKIP_INGEST_EXAMPLES=${DW_SKIP_INGEST_EXAMPLES:-false}
 
-   export DW_SKIP_INGEST_EXAMPLES=${DW_SKIP_INGEST_EXAMPLES:-false}
-
-   "${DW_DATAWAVE_SERVICE_DIR}"/install-ingest.sh
+    "${DW_DATAWAVE_SERVICE_DIR}"/install-ingest.sh
 }
 
 function datawaveIngestLoadJobCache() {

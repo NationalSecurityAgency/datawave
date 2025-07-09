@@ -10,12 +10,14 @@ source "${THIS_DIR}/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 source "${SERVICES_DIR}/accumulo/bootstrap.sh"
 
-# If Wildfly is not installed, verify that the two checksums match before installing.
-datawaveWebIsInstalled || verifyChecksum "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" "${DW_WILDFLY_DIST_SHA512_CHECKSUM}"
+# If Wildfly is not installed, bootstrap and verify that the two checksums match before installing.
+datawaveWebIsInstalled || bootstrapWeb && verifyChecksum "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" "${DW_WILDFLY_DIST_SHA512_CHECKSUM}"
 
 accumuloIsInstalled || fatal "DataWave Web requires that Accumulo be installed"
 
 datawaveWebIsInstalled && info "DataWave Web is already installed" && exit 1
+getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
+DW_DATAWAVE_WEB_DIST="${tarball}"
 
 [ -f "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_DIST}" ] || fatal "DataWave Web tarball not found"
 

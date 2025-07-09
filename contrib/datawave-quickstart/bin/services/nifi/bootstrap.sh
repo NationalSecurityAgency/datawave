@@ -1,13 +1,13 @@
 # Sourced by env.sh
 
-DW_NIFI_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DW_NIFI_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
 # You may override DW_NIFI_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_NIFI_DIST_URI should, if possible, be using https. There are potential security risks by using http.
 DW_NIFI_DIST_URI="${DW_NIFI_DIST_URI:-https://dlcdn.apache.org/nifi/1.25.0/nifi-1.25.0-bin.zip}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_NIFI_DIST_SHA512_CHECKSUM="${DW_NIFI_DIST_SHA512_CHECKSUM:-3798e8923cfc9099b785ee2019e9a0fe8bcd36301946f19d21d414800ca6b7fedd1bbe28764fa446262a2f47b1c608651208c8d8790c73bea9ebd839f42dbab1}"
-DW_NIFI_DIST="$( downloadTarball "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" && echo "${tarball}" )"
+DW_NIFI_DIST="$( basename "${DW_NIFI_DIST_URI}" )"
 DW_NIFI_BASEDIR="nifi-install"
 DW_NIFI_SYMLINK="nifi"
 
@@ -20,6 +20,17 @@ export PATH=${NIFI_HOME}/bin:$PATH
 DW_NIFI_CMD_START="( cd ${NIFI_HOME}/bin && ./nifi.sh start )"
 DW_NIFI_CMD_STOP="( cd ${NIFI_HOME}/bin && ./nifi.sh stop )"
 DW_NIFI_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'org.apache.nifi'"
+
+function bootstrapNifi() {
+    if [ ! -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ]; then
+        info "Nifi distribution not detected. Attempting to bootstrap a dedicated install..."
+        downloadTarball "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" || \
+          return 1
+        DW_NIFI_DIST="${tarball}"
+    else
+      info "Nifi distribution detected. Using local file ${DW_NIFI_DIST}"
+    fi
+}
 
 function nifiIsRunning() {
     DW_NIFI_PID_LIST="$(eval "${DW_NIFI_CMD_FIND_ALL_PIDS}")"

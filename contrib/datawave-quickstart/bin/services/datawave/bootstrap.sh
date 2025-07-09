@@ -7,7 +7,7 @@
 
 # Current script dir
 
-DW_DATAWAVE_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DW_DATAWAVE_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
 # Source/repository root
 
@@ -27,7 +27,7 @@ source "${DW_DATAWAVE_SERVICE_DIR}/bootstrap-user.sh"
 
 # Selected Maven profile for the DataWave build
 
-DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-compose}
+DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
 # Maven command
 DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipServices -DskipTests -DskipITs -Dmaven.build.cache.enabled=false clean package --builder smart -T1.0C}"
@@ -256,11 +256,6 @@ function datawaveBuildSucceeded() {
 }
 
 function buildDataWave() {
-
-   if ! mavenIsInstalled ; then
-      ! mavenInstall && error "Maven install failed. Please correct" && return 1
-   fi
-
    [[ "$1" == "--verbose" ]] && local verbose=true
 
    ! setBuildPropertyOverrides && error "Aborting DataWave build" && return 1

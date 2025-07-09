@@ -1,17 +1,22 @@
 # Sourced by env.sh
 
-DW_MAVEN_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-DW_MAVEN_VERSION="3.9.10"
+DW_MAVEN_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
+DW_MAVEN_VERSION="3.9.8"
 # You may override DW_MAVEN_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 DW_MAVEN_DIST_URI="${DW_MAVEN_DIST_URI:-https://dlcdn.apache.org/maven/maven-3/${DW_MAVEN_VERSION}/binaries/apache-maven-${DW_MAVEN_VERSION}-bin.tar.gz}"
 DW_MAVEN_DIST="$( basename "${DW_MAVEN_DIST_URI}" )"
 DW_MAVEN_BASEDIR="maven-install"
 DW_MAVEN_SYMLINK="maven"
 
-function bootstrapEmbeddedMaven() {
+function bootstrapMaven() {
     if [ ! -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_DIST}" ]; then
-        info "Maven 3.x not detected. Attempting to bootstrap a dedicated install..."
-        DW_MAVEN_DIST="$( { downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}"; } && echo "${tarball}" )"
+        info "Maven distribution not detected. Attempting to bootstrap a dedicated install..."
+        downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}" || \
+          return 1
+        DW_MAVEN_DIST="${tarball}"
+    else
+      info "Maven distribution detected. Using local file ${DW_MAVEN_DIST}"
     fi
 
     export MAVEN_HOME="${DW_CLOUD_HOME}/${DW_MAVEN_SYMLINK}"
@@ -19,36 +24,16 @@ function bootstrapEmbeddedMaven() {
     export PATH="${MAVEN_HOME}/bin:${PATH}"
 }
 
-function embeddedMavenIsInstalled() {
-    [ -f "${DW_CLOUD_HOME}/${DW_MAVEN_SYMLINK}/bin/mvn" ] && [ -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_BASEDIR}/bin/mvn" ] && bootstrapEmbeddedMaven && return 0
-    return 1
-}
-
 function mavenIsInstalled() {
-    embeddedMavenIsInstalled && return 0
-
-    local mvncmd="$( which mvn 2> /dev/null )"
-
-    if [[ -z "${mvncmd}" && -n "${MAVEN_HOME}" && -x "${MAVEN_HOME}/bin/mvn" ]] ; then
-        mvncmd="${MAVEN_HOME}/bin/mvn"
-    elif [[ -z "${mvncmd}" && -n "${M2_HOME}" && -x "${M2_HOME}/bin/mvn" ]] ; then
-        mvncmd="${M2_HOME}/bin/mvn"
+    if [ -f "${DW_CLOUD_HOME}/${DW_MAVEN_SYMLINK}/bin/mvn" ] && [ -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_BASEDIR}/bin/mvn" ]; then
+      return 0
     fi
-
-    if [ -n "${mvncmd}" ] ; then
-        # Maven already set in this environment. If it's 3.x then we're good to go
-        [[ -n "$( ${mvncmd} -version 2>&1 | grep 'Apache Maven 3' )" ]] && return 0
-        warn "Maven installation detected, but not Apache Maven 3.x: '${mvncmd}'"
-    fi
-
-    # If we're here then we need to bootstrap a dedicated Maven 3.x
-    bootstrapEmbeddedMaven
-
     return 1
 }
 
 function mavenInstall() {
     mavenIsInstalled && info "Maven is already installed" && return 1
+    bootstrapMaven
     [ ! -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_DIST}" ] && error "Maven tarball not found" && return 1
     ! mkdir "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_BASEDIR}" && error "Failed to create Maven base directory" && return 1
     tar xf "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_DIST}" -C "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_BASEDIR}" --strip-components=1
@@ -58,7 +43,7 @@ function mavenInstall() {
 }
 
 function mavenUninstall() {
-    if embeddedMavenIsInstalled ; then
+    if mavenIsInstalled ; then
         if [ -L "${DW_CLOUD_HOME}/${DW_MAVEN_SYMLINK}" ] ; then
             ( cd "${DW_CLOUD_HOME}" && unlink "${DW_MAVEN_SYMLINK}" ) || error "Failed to remove Maven symlink"
         fi
@@ -67,7 +52,7 @@ function mavenUninstall() {
             rm -rf "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_BASEDIR}"
         fi
 
-        ! embeddedMavenIsInstalled && info "Maven uninstalled" || error "Maven uninstall failed"
+        ! mavenIsInstalled && info "Maven uninstalled" || error "Maven uninstall failed"
     else
         info "Maven not installed. Nothing to do"
     fi
@@ -114,8 +99,3 @@ function mavenDisplayBinaryInfo() {
      echo " Local: Not loaded"
   fi
 }
-
-# Eager-loading here since Maven is required to build DataWave,
-# as opposed to lazy-loading like the other services...
-
-! mavenIsInstalled && mavenInstall
