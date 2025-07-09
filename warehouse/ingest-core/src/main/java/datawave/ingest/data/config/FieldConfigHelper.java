@@ -13,6 +13,10 @@ public interface FieldConfigHelper {
 
     boolean isReverseTokenizedField(String fieldName);
 
+    /** SETH NOTE
+     * Should this be documented? Not sure what the concensus is for
+     * abstract methods.
+     */
     boolean isErrorIndexedField(String fieldName);
 
     boolean isErrorReverseIndexedField(String fieldName);

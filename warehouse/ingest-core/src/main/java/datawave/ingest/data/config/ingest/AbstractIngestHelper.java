@@ -37,6 +37,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     protected boolean hasIndexDisallowlist = false;
     protected boolean hasReverseIndexDisallowlist = false;
 
+    // Same usage as the variables above, but for the error variants.
     protected boolean hasErrorIndexDisallowlist = false;
     protected boolean hasErrorReverseIndexDisallowlist = false;
 
@@ -151,20 +152,34 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
         this.hasReverseIndexDisallowlist = hasReverseIndexDisallowlist;
     }
 
+    /**
+     * Setter for {@code hasErrorIndexDisallowList}.
+     * @param hasErrorIndexDisallowlist
+     */
     protected void setHasErrorIndexDisallowlist(boolean hasErrorIndexDisallowlist) {
         this.hasErrorIndexDisallowlist = hasErrorIndexDisallowlist;
     }
 
+    /**
+     * Setter for {@code hasErrorIndexDisallowList}.
+     * @param hasErrorReverseIndexDisallowlist
+     */
+    protected void setHasErrorReverseIndexDisallowlist(boolean hasErrorReverseIndexDisallowlist) {
+        this.hasErrorReverseIndexDisallowlist = hasErrorReverseIndexDisallowlist;
+    }
+
+    /**
+     * Getter for {@code hasErrorIndexDisallowList}.
+     */
     protected boolean hasErrorIndexDisallowlist() {
         return this.hasErrorIndexDisallowlist;
     }
 
+    /**
+     * Getter for {@code hasErrorReverseIndexDisallowList}.
+     */
     protected boolean hasErrorReverseIndexDisallowlist() {
         return this.hasErrorReverseIndexDisallowlist;
-    }
-
-    protected void setHasErrorReverseIndexDisallowlist(boolean hasErrorReverseIndexDisallowlist) {
-        this.hasErrorReverseIndexDisallowlist = hasErrorReverseIndexDisallowlist;
     }
 
     public void upperCaseSetEntries(Set<String> input, String warnMessage) {

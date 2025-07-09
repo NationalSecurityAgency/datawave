@@ -169,10 +169,13 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      *
      * UPDATE 1: Seems like I will have to add them.
      */
+
+    // Same usage as the variables above, but for the error variants.
     protected Set<String> errorIndexedFields = Sets.newHashSet();
     protected Map<String,Pattern> errorIndexedPatterns = Maps.newHashMap();
     protected Set<String> errorUnindexedFields = Sets.newHashSet();
 
+    // Same usage as the variables above, but for the error reverse variants.
     protected Set<String> errorReverseIndexedFields = Sets.newHashSet();
     protected Map<String,Pattern> errorReverseIndexedPatterns = Maps.newHashMap();
     protected Set<String> errorReverseUnindexedFields = Sets.newHashSet();
@@ -380,7 +383,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
 
 
-        // --- BEGIN SETHS ERROR FIELDS ---
+        // === BEGIN SETH'S ERROR FIELDS ===
 
         // --- ERROR INDEX_FIELDS ---
 
@@ -389,7 +392,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
          * for the error index stuff.
          */
 
-        // Process the indexed fields
+        // Process the error indexed fields in the same way as the normal index fields, but with DATATYPE_ERROR appended to the datatype.
         if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
                 log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
@@ -429,8 +432,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
          * I haven't seen this same block above for the non-reverse index fields. Maybe
          * I need to take another look.
          */
+
         // Ensure that we have only an allowlist or a disallowlist of fields to
-        // reverse index
+        // error-reverse-index
         if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
                 && config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
             throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both.  Type: "
@@ -457,7 +461,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             configProperty = DATATYPE_ERROR + REVERSE_INDEX_FIELDS;
         }
 
-        // Load the proper list of fields to (not) reverse index
+        // Load the proper list of fields to (not) error-reverse-index
         if (configProperty == null && log.isWarnEnabled()) {
             log.warn("No error reverse index fields or error disallowlist reverse index fields specified, not generating reverse index fields for {}",
                     this.getType().typeName());
@@ -1002,7 +1006,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         return this.hasIndexDisallowlist() ? !isIndexed(fieldName) : isIndexed(fieldName);
     }
 
-
     private boolean isIndexed(String fieldName) {
         if (fieldConfigHelper != null && fieldConfigHelper.isIndexedField(fieldName)) {
             return true;
@@ -1054,6 +1057,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
+    /**
+     * Checks if the fieldName is an error-index field. Fields are marked in the {@code setup()} method.
+     * @param fieldName the fieldName to test
+     * @return TRUE if the fieldName provided has been identified as an error-index field, FALSE if not.
+     */
     public boolean isErrorIndexedField(String fieldName) {
         if (fieldConfigHelper != null) {
             return fieldConfigHelper.isErrorIndexedField(fieldName);
@@ -1061,6 +1069,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         return this.hasErrorIndexDisallowlist() ? !isErrorIndexed(fieldName) : isErrorIndexed(fieldName);
     }
 
+    /**
+     * Helper method for {@link this.isErrorIndexedField()}.
+     * @param fieldName the fieldName to test
+     * @return TRUE if the fieldName provided has been identified as an error-index field, FALSE if not.
+     */
     private boolean isErrorIndexed(String fieldName) {
         if (fieldConfigHelper != null && fieldConfigHelper.isErrorIndexedField(fieldName)) {
             return true;
@@ -1082,6 +1095,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
+    /**
+     * Checks if the fieldName is an error-reverse-index field. Fields are marked in the {@code setup()} method.
+     * @param fieldName the fieldName to test
+     * @return TRUE if the fieldName provided has been identified as an error-reverse-index field, FALSE if not.
+     */
     public boolean isErrorReverseIndexedField(String fieldName) {
         if (fieldConfigHelper != null) {
             return fieldConfigHelper.isErrorReverseIndexedField(fieldName);
@@ -1089,6 +1107,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         return this.hasErrorReverseIndexDisallowlist() ? !isErrorReverseIndexed(fieldName) : isErrorReverseIndexed(fieldName);
     }
 
+    /**
+     * Helper method for {@link this.isErrorReverseIndexedField()}.
+     * @param fieldName the fieldName to test
+     * @return TRUE if the fieldName provided has been identified as an error-reverse-index field, FALSE if not.
+     */
     private boolean isErrorReverseIndexed(String fieldName) {
         if (fieldConfigHelper != null && fieldConfigHelper.isErrorReverseIndexedField(fieldName)) {
             return true;
@@ -1109,9 +1132,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             return false;
         }
     }
-
-
-
 
     /**
      * This is a helper routine that will create the normalized forms of a value given a set of fields

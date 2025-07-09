@@ -49,15 +49,28 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         return super.normalizeMap(fields);
     }
 
+    /**
+     * Checks if error-index-fields have been initialized yet.
+     * @return FALSE if errorIndexedFields is empty, TRUE if it's not.
+     */
     private boolean hasErrorIndexConfig(){
         return !super.errorIndexedFields.isEmpty();
     }
 
+    /**
+     * Checks if error-reverse-index-fields have been initialized yet.
+     * @return FALSE if errorReverseIndexedFields is empty, TRUE if it's not.
+     */
     private boolean hasErrorReverseIndexConfig(){
         return !super.errorReverseIndexedFields.isEmpty();
 
     }
 
+    /**
+     * Checks if the {@code fieldName} has been indexed in either the
+     * index-field map or the error-index-field map.
+     * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
+     */
     @Override
     public boolean isIndexedField(String fieldName) {
         if(hasErrorIndexConfig()) {
@@ -67,6 +80,11 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         }
     }
 
+    /**
+     * Checks if the {@code fieldName} has been indexed in either the
+     * reverse-index-field map or the error-reverse-index-field map.
+     * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
+     */
     @Override
     public boolean isReverseIndexedField(String fieldName) {
         if(hasErrorReverseIndexConfig()) {
