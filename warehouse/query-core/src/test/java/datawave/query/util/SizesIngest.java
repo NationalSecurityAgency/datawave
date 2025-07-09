@@ -3,10 +3,8 @@ package datawave.query.util;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -22,6 +20,10 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.util.GeometricShapeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
@@ -86,7 +88,7 @@ public class SizesIngest {
     private final int sizeLargeRatio = 10;
     private final int sizeTotal = sizeSmallRatio + sizeMediumRatio + sizeLargeRatio;
 
-    private List<Map<String,String>> events;
+    private List<Multimap<String,String>> events;
     private final AccumuloClient client;
 
     public SizesIngest(AccumuloClient client) {
@@ -146,14 +148,15 @@ public class SizesIngest {
     private void writeShardIndex(String shard, RangeType type) throws Exception {
         long ts = DateHelper.parse(ROW).getTime();
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD_INDEX)) {
-            for (Map<String,String> event : events) {
-                Map<String,String> inverted = invert(event);
+            for (Multimap<String,String> event : events) {
+                Multimap<String,String> inverted = invert(event);
                 for (String value : inverted.keySet()) {
                     Mutation m = new Mutation(value);
-                    String field = inverted.get(value);
-                    String uid = uidForEvent(shard, event.get("COUNTER"));
-                    m.put(field, shard + "\0" + datatype, cv, ts, getValue(type, uid));
-                    bw.addMutation(m);
+                    for (String field : inverted.get(value)) {
+                        String uid = uidForEvent(shard, event.get("COUNTER").iterator().next());
+                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(type, uid));
+                        bw.addMutation(m);
+                    }
                 }
             }
         }
@@ -163,16 +166,17 @@ public class SizesIngest {
         long ts = DateHelper.parse(ROW).getTime();
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD)) {
             Mutation m = new Mutation(shard);
-            for (Map<String,String> event : events) {
-                String uid = uidForEvent(shard, event.get("COUNTER"));
+            for (Multimap<String,String> event : events) {
+                String uid = uidForEvent(shard, event.get("COUNTER").iterator().next());
                 // only indexed fields
                 for (String field : indexedFields) {
-                    String value = event.get(field);
-                    if (value != null) {
-                        String normalizedValue = normalizerForField(field).normalize(value);
-                        String cf = "fi\0" + field;
-                        String cq = normalizedValue + "\0" + datatype + "\0" + uid;
-                        m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                    for (String value : event.get(field)) {
+                        if (value != null) {
+                            String normalizedValue = normalizerForField(field).normalize(value);
+                            String cf = "fi\0" + field;
+                            String cq = normalizedValue + "\0" + datatype + "\0" + uid;
+                            m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                        }
                     }
                 }
             }
@@ -184,13 +188,15 @@ public class SizesIngest {
         long ts = DateHelper.parse(ROW).getTime();
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD)) {
             Mutation m = new Mutation(shard);
-            for (Map<String,String> event : events) {
-                String uid = uidForEvent(shard, event.get("COUNTER"));
+            for (Multimap<String,String> event : events) {
+                String uid = uidForEvent(shard, event.get("COUNTER").iterator().next());
                 String cf = datatype + "\0" + uid;
                 // all fields
                 for (String field : event.keySet()) {
-                    String cq = field + "\0" + event.get(field);
-                    m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                    for (String value : event.get(field)) {
+                        String cq = field + "\0" + value;
+                        m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                    }
                 }
             }
             bw.addMutation(m);
@@ -204,8 +210,8 @@ public class SizesIngest {
         }
     }
 
-    private Map<String,String> createRandomEvent() {
-        Map<String,String> event = new HashMap<>();
+    private Multimap<String,String> createRandomEvent() {
+        Multimap<String,String> event = HashMultimap.create();
         event.put("COLOR", getRandomValue(colorValues));
         event.put("SIZE", getRandomSize(sizeValues));
         event.put("SHAPE", getRandomValue(shapeValues));
@@ -223,8 +229,9 @@ public class SizesIngest {
         return event;
     }
 
-    private void addVertices(Map<String,String> event) {
-        int n = getVertexForShape(event.get("SHAPE"));
+    private void addVertices(Multimap<String,String> event) {
+        Preconditions.checkArgument(event.get("SHAPE").size() == 1);
+        int n = getVertexForShape(event.get("SHAPE").iterator().next());
         event.put("VERTEX", String.valueOf(n));
 
         if (n == 0) {
@@ -281,7 +288,7 @@ public class SizesIngest {
         return "POINT(" + x + " " + y + ")";
     }
 
-    private void addRandomTypedFields(Map<String,String> event) {
+    private void addRandomTypedFields(Multimap<String,String> event) {
         int n = rand.nextInt(EXTRA_TYPED_FIELDS_PER_EVENT);
         for (int i = 0; i < n; i++) {
             String field = getRandomValue(extraFields);
@@ -359,15 +366,24 @@ public class SizesIngest {
         return UID.builder().newId(data.getBytes(), (Date) null).toString();
     }
 
-    private Map<String,String> invert(Map<String,String> event) {
-        Map<String,String> inverted = new HashMap<>();
-        for (Map.Entry<String,String> entry : event.entrySet()) {
-            if (indexedFields.contains(entry.getKey())) {
-                // normalize indexed fields
-                String normalizedValue = normalizerForField(entry.getKey()).normalize(entry.getValue());
-                inverted.put(normalizedValue, entry.getKey());
-            } else {
-                inverted.put(entry.getValue(), entry.getKey());
+    /**
+     * Inverts and normalized indexed fields from an event for use in the shard index
+     *
+     * @param event
+     *            the event
+     * @return the inverted and normalized indexed fields
+     */
+    private Multimap<String,String> invert(Multimap<String,String> event) {
+        Multimap<String,String> inverted = HashMultimap.create();
+        for (String key : event.keySet()) {
+            // only invert and normalize indexed fields
+            if (indexedFields.contains(key)) {
+                Normalizer<?> normalizer = normalizerForField(key);
+                for (String value : event.get(key)) {
+                    // normalize indexed fields
+                    String normalizedValue = normalizer.normalize(value);
+                    inverted.put(normalizedValue, key);
+                }
             }
         }
         return inverted;
