@@ -17,61 +17,61 @@ import datawave.microservice.query.remote.QueryRequest;
  */
 public class QueryTask implements Serializable {
     private static final long serialVersionUID = 579211458890999398L;
-    
+
     private final int taskId;
     private final QueryRequest.Method action;
     private final QueryCheckpoint queryCheckpoint;
     // datetime of last service interaction
     private long lastUpdatedMillis = System.currentTimeMillis();
-    
+
     public QueryTask(int taskId, QueryRequest.Method action, QueryCheckpoint queryCheckpoint) {
         this.taskId = taskId;
         this.action = action;
         this.queryCheckpoint = queryCheckpoint;
     }
-    
+
     @JsonIgnore
     public TaskKey getTaskKey() {
         return new TaskKey(taskId, queryCheckpoint.getQueryKey());
     }
-    
+
     /**
      * The action to perform
-     * 
+     *
      * @return the action
      */
     public QueryRequest.Method getAction() {
         return action;
     }
-    
+
     /**
      * Get the query checkpoint on which to perform the next task
-     * 
+     *
      * @return A query checkpoint
      */
     public QueryCheckpoint getQueryCheckpoint() {
         return queryCheckpoint;
     }
-    
+
     /**
      * Get the last updated time for this query task
-     * 
+     *
      * @return the last updated time
      */
     public long getLastUpdatedMillis() {
         return lastUpdatedMillis;
     }
-    
+
     /**
      * Update the last updated time for this query task
-     * 
+     *
      * @param lastUpdatedMillis
      *            The last updated date/time
      */
     public void setLastUpdatedMillis(long lastUpdatedMillis) {
         this.lastUpdatedMillis = lastUpdatedMillis;
     }
-    
+
     /**
      * Get the task id
      *
@@ -80,21 +80,21 @@ public class QueryTask implements Serializable {
     public int getTaskId() {
         return taskId;
     }
-    
+
     @Override
     public String toString() {
         return getTaskKey() + " with " + getQueryCheckpoint().getQueries() + "; lastUpdated : " + new Date(lastUpdatedMillis);
     }
-    
+
     /**
      * Get a somewhat simpler message for debugging purposes
-     * 
+     *
      * @return A debug string
      */
     public String toDebug() {
         return getTaskKey().toString();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryTask) {
@@ -104,15 +104,15 @@ public class QueryTask implements Serializable {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(getTaskId()).toHashCode();
     }
-    
+
     /**
      * Get the key used to store a query task containing the specified components
-     * 
+     *
      * @param taskId
      *            The task id
      * @param queryKey

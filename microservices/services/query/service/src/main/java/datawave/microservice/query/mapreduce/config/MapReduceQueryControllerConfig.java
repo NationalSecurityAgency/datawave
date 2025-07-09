@@ -14,12 +14,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MapReduceQueryControllerConfig {
     @Autowired
     MapReduceQueryProperties mapReduceQueryProperties;
-    
+
     @Bean
     public WebSecurityCustomizer ignoreMapReduceUpdateState() {
         return (web) -> web.ignoring().antMatchers("/v1/mapreduce/updateState");
     }
-    
+
     @Bean
     public ThreadPoolTaskExecutor mvcTaskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
@@ -29,7 +29,7 @@ public class MapReduceQueryControllerConfig {
         taskExecutor.setThreadNamePrefix(mapReduceQueryProperties.getExecutor().getThreadNamePrefix());
         return taskExecutor;
     }
-    
+
     @Bean
     public WebMvcConfigurer taskExecutorConfiguration() {
         return new WebMvcConfigurer() {

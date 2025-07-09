@@ -11,25 +11,25 @@ import java.util.Objects;
  */
 public abstract class AbstractGeometry<T extends org.locationtech.jts.geom.Geometry> implements Serializable {
     protected final T jtsGeom;
-    
+
     public AbstractGeometry(T jtsGeom) {
         this.jtsGeom = jtsGeom;
     }
-    
+
     public T getJTSGeometry() {
         return jtsGeom;
     }
-    
+
     @Override
     public String toString() {
         return jtsGeom.toText();
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hashCode(jtsGeom);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof Geometry) {

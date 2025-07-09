@@ -18,14 +18,14 @@ import org.springframework.boot.DefaultApplicationArguments;
 import org.xml.sax.SAXException;
 
 public class ConfigCheckApplicationTest {
-    
+
     public static String resourcesAbsolutePath;
-    
+
     @BeforeAll
     public static void beforeAll() {
         resourcesAbsolutePath = new File("src/test/resources").getAbsolutePath();
     }
-    
+
     @Test
     public void testRenderXmlFromYaml() throws IOException, SAXException, ParserConfigurationException {
         // @formatter:off
@@ -36,17 +36,17 @@ public class ConfigCheckApplicationTest {
                 "--yaml=" + "application-query.yml"
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/QueryLogicFactory.xml"), StandardCharsets.UTF_8);
-        
+
         assertEquals(expectedOutput, output.getMessage());
         assertFalse(output.isError());
     }
-    
+
     @Test
     public void testRenderXmlFromProperties() throws IOException, SAXException, ParserConfigurationException {
         // @formatter:off
@@ -57,17 +57,17 @@ public class ConfigCheckApplicationTest {
                 "--properties=" + "default.properties"
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/QueryLogicFactory.xml"), StandardCharsets.UTF_8);
-        
+
         assertEquals(expectedOutput, output.getMessage());
         assertFalse(output.isError());
     }
-    
+
     @Test
     public void testXmlPropertyAnalyzerWithYaml() throws IOException {
         // @formatter:off
@@ -78,17 +78,17 @@ public class ConfigCheckApplicationTest {
                 "--yaml=" + "application-query.yml"
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/analysis.txt"), StandardCharsets.UTF_8);
-        
+
         assertEquals(expectedOutput, output.getMessage());
         assertFalse(output.isError());
     }
-    
+
     @Test
     public void testXmlPropertyAnalyzerWithProperties() throws IOException {
         // @formatter:off
@@ -99,17 +99,17 @@ public class ConfigCheckApplicationTest {
                 "--properties=" + "default.properties,database.properties"
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/analysis.txt"), StandardCharsets.UTF_8);
-        
+
         assertEquals(expectedOutput, output.getMessage());
         assertFalse(output.isError());
     }
-    
+
     @Test
     public void testXmlPropertyAnalyzerFullReportWithYaml() throws IOException {
         // @formatter:off
@@ -121,17 +121,17 @@ public class ConfigCheckApplicationTest {
                 "--fullreport"
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/fullReport.txt"), StandardCharsets.UTF_8);
-        
+
         assertEquals(expectedOutput, output.getMessage());
         assertFalse(output.isError());
     }
-    
+
     @Test
     public void testXmlPropertyAnalyzerFullReportWithProperties() throws IOException {
         // @formatter:off
@@ -143,17 +143,17 @@ public class ConfigCheckApplicationTest {
                 "--fullreport"
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/fullReport.txt"), StandardCharsets.UTF_8);
-        
+
         assertEquals(expectedOutput, output.getMessage());
         assertFalse(output.isError());
     }
-    
+
     @Test
     public void testKeyValueComparator() throws IOException {
         // @formatter:off
@@ -163,17 +163,17 @@ public class ConfigCheckApplicationTest {
                 Path.of(resourcesAbsolutePath, "rendered/webservice/analysis.txt").toFile().getAbsolutePath()
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/comparison.diff"), StandardCharsets.UTF_8);
-        
-        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf('\n', output.getMessage().indexOf('\n') + 1) + 1));
+
+        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf("\n", output.getMessage().indexOf("\n") + 1) + 1));
         assertFalse(output.isError());
     }
-    
+
     @Test
     public void testFullComparator() throws IOException {
         // @formatter:off
@@ -183,14 +183,14 @@ public class ConfigCheckApplicationTest {
                 Path.of(resourcesAbsolutePath, "rendered/webservice/fullReport.txt").toFile().getAbsolutePath()
         };
         // @formatter:on
-        
+
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
-        
+
         Output output = new CommandRunner(args).run();
-        
+
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/fullComparison.diff"), StandardCharsets.UTF_8);
-        
-        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf('\n', output.getMessage().indexOf('\n') + 1) + 1));
+
+        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf("\n", output.getMessage().indexOf("\n") + 1) + 1));
         assertFalse(output.isError());
     }
 }

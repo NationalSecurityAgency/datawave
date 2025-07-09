@@ -27,23 +27,23 @@ public class ProtostuffHttpMessageConverter extends AbstractHttpMessageConverter
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     public static final MediaType PROTOSTUFF = new MediaType("application", "x-protostuff", DEFAULT_CHARSET);
     public static final String PROTOSTUFF_VALUE = "application/x-protostuff";
-    
+
     private ThreadLocal<LinkedBuffer> buffer = ThreadLocal.withInitial(() -> LinkedBuffer.allocate(4096));
-    
+
     public ProtostuffHttpMessageConverter() {
         setSupportedMediaTypes(Collections.singletonList(PROTOSTUFF));
     }
-    
+
     @Override
     protected boolean supports(@NonNull Class<?> clazz) {
         return Message.class.isAssignableFrom(clazz);
     }
-    
+
     @Override
     protected MediaType getDefaultContentType(Message<?> message) {
         return PROTOSTUFF;
     }
-    
+
     @Override
     protected @NonNull Message<?> readInternal(@NonNull Class<? extends Message<?>> clazz, @NonNull HttpInputMessage inputMessage)
                     throws IOException, HttpMessageNotReadableException {
@@ -51,7 +51,7 @@ public class ProtostuffHttpMessageConverter extends AbstractHttpMessageConverter
         if (contentType == null) {
             contentType = PROTOSTUFF;
         }
-        
+
         if (PROTOSTUFF.isCompatibleWith(contentType)) {
             try {
                 // noinspection unchecked
@@ -62,10 +62,10 @@ public class ProtostuffHttpMessageConverter extends AbstractHttpMessageConverter
                 throw new HttpMessageNotReadableException("Unable to read protostuff message: " + e.getMessage(), e, inputMessage);
             }
         }
-        
+
         throw new UnsupportedOperationException("Reading protostuff messages from media types other than " + PROTOSTUFF + " is not supported.");
     }
-    
+
     @Override
     protected void writeInternal(@NonNull Message<?> message, @NonNull HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
         MediaType contentType = outputMessage.getHeaders().getContentType();
@@ -73,7 +73,7 @@ public class ProtostuffHttpMessageConverter extends AbstractHttpMessageConverter
             contentType = getDefaultContentType(message);
             state(contentType != null, "No content type");
         }
-        
+
         try {
             @SuppressWarnings("unchecked")
             Schema<Object> schema = (Schema<Object>) message.cachedSchema();

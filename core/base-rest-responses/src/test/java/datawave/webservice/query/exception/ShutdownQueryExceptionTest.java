@@ -6,17 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 public class ShutdownQueryExceptionTest {
-    
+
     private ShutdownQueryException sqe;
-    
+
     private final String message = "Bad query exception";
     private final Throwable throwable = new Throwable("throws");
     private final String strErrCode = "500-26";
     private final DatawaveErrorCode code = DatawaveErrorCode.SERVER_SHUTDOWN;
-    
+
     private final String assertMsg = "Server being shut down. Bad query exception";
     private final String assertMsg2 = "Server being shut down.";
-    
+
     @Test
     public void testEmptyConstructor() {
         sqe = new ShutdownQueryException();
@@ -25,7 +25,7 @@ public class ShutdownQueryExceptionTest {
         assertNull(sqe.getMessage());
         assertNull(sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageConstructor() {
         sqe = new ShutdownQueryException(message);
@@ -34,7 +34,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(message, sqe.getMessage());
         assertEquals(message, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableConstructor() {
         sqe = new ShutdownQueryException(message, throwable);
@@ -43,7 +43,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(message, sqe.getMessage());
         assertEquals(message, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowableErrorCodeConstructor() {
         sqe = new ShutdownQueryException(throwable, strErrCode);
@@ -52,7 +52,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(throwable.toString(), sqe.getMessage());
         assertEquals(throwable.toString(), sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableConstructor() {
         sqe = new ShutdownQueryException(code, throwable);
@@ -61,7 +61,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(assertMsg2, sqe.getMessage());
         assertEquals(assertMsg2, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeDebugMsgConstructor() {
         sqe = new ShutdownQueryException(code, message);
@@ -70,7 +70,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(assertMsg, sqe.getMessage());
         assertEquals(assertMsg, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableDebugMsgConstructor() {
         sqe = new ShutdownQueryException(code, throwable, message);
@@ -79,7 +79,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(assertMsg, sqe.getMessage());
         assertEquals(assertMsg, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeConstructor() {
         sqe = new ShutdownQueryException(code);
@@ -88,7 +88,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(assertMsg2, sqe.getMessage());
         assertEquals(assertMsg2, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageResponseStatus() {
         sqe = new ShutdownQueryException(message, 500);
@@ -97,7 +97,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(message, sqe.getMessage());
         assertEquals(message, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableErrorCode() {
         sqe = new ShutdownQueryException(message, throwable, strErrCode);
@@ -106,7 +106,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(message, sqe.getMessage());
         assertEquals(message, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageErrorCode() {
         sqe = new ShutdownQueryException(message, strErrCode);
@@ -115,7 +115,7 @@ public class ShutdownQueryExceptionTest {
         assertEquals(message, sqe.getMessage());
         assertEquals(message, sqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowable() {
         sqe = new ShutdownQueryException(throwable);

@@ -41,6 +41,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold;
     protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
+    protected int termNumber;
 
     protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
@@ -77,6 +78,14 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
 
     public void setIvaratorCacheDirs(List<IvaratorCacheDir> ivaratorCacheDirs) {
         this.ivaratorCacheDirs = ivaratorCacheDirs;
+    }
+
+    public void setTermNumber(int termNumber) {
+        this.termNumber = termNumber;
+    }
+
+    public int getTermNumber() {
+        return termNumber;
     }
 
     public String getHdfsFileCompressionCodec() {

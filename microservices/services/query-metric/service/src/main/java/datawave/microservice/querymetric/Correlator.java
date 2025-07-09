@@ -16,17 +16,17 @@ import datawave.microservice.querymetric.config.CorrelatorProperties;
 
 @Component
 public class Correlator {
-    
+
     private CorrelatorProperties correlatorProperties;
     private boolean isShuttingDown = false;
     private Map<String,List<QueryMetricUpdate>> updates = new HashMap<>();
     private LinkedHashMap<String,Long> created = new LinkedHashMap<>();
-    
+
     @Autowired
     public Correlator(CorrelatorProperties correlatorProperties) {
         this.correlatorProperties = correlatorProperties;
     }
-    
+
     public void addMetricUpdate(QueryMetricUpdate update) {
         String queryId = update.getMetric().getQueryId();
         synchronized (this.updates) {
@@ -39,7 +39,7 @@ public class Correlator {
             updatesForQuery.add(update);
         }
     }
-    
+
     public List<QueryMetricUpdate> getMetricUpdates(Set<String> inProcess) {
         long now = System.currentTimeMillis();
         long maxQueueSize = this.correlatorProperties.getMaxCorrelationQueueSize();
@@ -52,12 +52,12 @@ public class Correlator {
             // If shuttingDown, then just return the oldest entry
             Map.Entry<String,Long> oldestAvailableEntry = this.created.entrySet().stream().filter(e -> this.isShuttingDown || !inProcess.contains(e.getKey()))
                             .findFirst().orElse(null);
-            
+
             // If we have reached the max queue size, then don't filter by !inProcess
             if (oldestAvailableEntry == null && numEntries >= maxQueueSize) {
                 oldestAvailableEntry = this.created.entrySet().stream().findFirst().orElse(null);
             }
-            
+
             if (oldestAvailableEntry != null) {
                 long maxAge = now - oldestAvailableEntry.getValue();
                 oldestQueryId = oldestAvailableEntry.getKey();
@@ -69,15 +69,15 @@ public class Correlator {
         }
         return returnedUpdates;
     }
-    
+
     public boolean isEnabled() {
         return this.correlatorProperties.isEnabled();
     }
-    
+
     public void shutdown(boolean isShuttingDown) {
         this.isShuttingDown = isShuttingDown;
     }
-    
+
     public boolean isShuttingDown() {
         return isShuttingDown;
     }

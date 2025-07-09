@@ -38,7 +38,7 @@ import datawave.util.timely.TcpClient;
 import datawave.util.timely.UdpClient;
 
 public class QueryMetricOperationsStats {
-    
+
     private Logger log = LoggerFactory.getLogger(getClass());
     private static final String RatePerSec_1_Min_Avg = ".RatePerSec_1_Min_Avg";
     private static final String RatePerSec_5_Min_Avg = ".RatePerSec_5_Min_Avg";
@@ -56,7 +56,7 @@ public class QueryMetricOperationsStats {
     private Map<METERS,Meter> meterMap = new HashMap<>();
     private TcpClient timelyTcpClient;
     private UdpClient timelyUdpClient;
-    
+
     protected TimelyProperties timelyProperties;
     protected ShardTableQueryMetricHandler handler;
     protected AccumuloMapStore mapStore;
@@ -67,21 +67,21 @@ public class QueryMetricOperationsStats {
     protected Map<String,Long> logicCountMap = new HashMap<>();
     protected List<String> queryStatsToWriteToTimely = Collections.synchronizedList(new ArrayList<>());
     protected Map<String,String> staticTags = new LinkedHashMap<>();
-    
+
     public enum TIMERS {
         QUERY, QUERY_FROM_CACHE, QUERY_FROM_CACHE_AND_ACCUMULO, QUERY_FROM_ACCUMULO, REST, STORE
     }
-    
+
     public enum METERS {
         MESSAGE_RECEIVE
     }
-    
+
     /*
      * Timer Hierarchy
      *
      * REST - receive request and send it out to the message queue MESSAGE - receive message and do all of the following CORRELATE COMBINE STORE ENTRY
      */
-    
+
     public QueryMetricOperationsStats(TimelyProperties timelyProperties, ShardTableQueryMetricHandler handler, CacheManager cacheManager,
                     @Qualifier("lastWrittenQueryMetrics") Cache lastWrittenCache, AccumuloMapStore mapStore) {
         this.timelyProperties = timelyProperties;
@@ -114,15 +114,15 @@ public class QueryMetricOperationsStats {
             log.error(e.getMessage(), e);
         }
     }
-    
+
     public Timer getTimer(TIMERS name) {
         return this.timerMap.get(name);
     }
-    
+
     public Meter getMeter(METERS name) {
         return this.meterMap.get(name);
     }
-    
+
     protected void addCacheStats(Map<String,Double> serviceStats) {
         Cache incomingCache = this.cacheManager.getCache(INCOMING_METRICS);
         if (incomingCache != null) {
@@ -135,11 +135,11 @@ public class QueryMetricOperationsStats {
             serviceStats.put("lastWrittenQueryMetric.estimatedSize", Double.valueOf(estimatedSize));
         }
     }
-    
+
     public void writeServiceStatsToTimely() {
         if (this.timelyProperties.isEnabled()) {
             List<String> serviceStatsToWriteToTimely = new ArrayList<>();
-            
+
             long timestamp = System.currentTimeMillis();
             Map<String,Double> serviceStatsDouble = getServiceStats();
             addCacheStats(serviceStatsDouble);
@@ -164,9 +164,9 @@ public class QueryMetricOperationsStats {
                 }
             }
         }
-        
+
     }
-    
+
     public void writeQueryStatsToTimely() {
         if (this.timelyProperties.isEnabled()) {
             List<String> tempMetricsToWrite = new ArrayList<>();
@@ -202,7 +202,7 @@ public class QueryMetricOperationsStats {
             }
         }
     }
-    
+
     public Map<String,String> getLocalMapStats(LocalMapStats localMapStats) {
         Map<String,String> stats = new LinkedHashMap<>();
         DecimalFormat nFormat = new DecimalFormat("#,##0");
@@ -219,7 +219,7 @@ public class QueryMetricOperationsStats {
         stats.put("dirtyEntryCount", nFormat.format(localMapStats.getDirtyEntryCount()));
         return stats;
     }
-    
+
     private String formatDate(long milliseconds) {
         if (milliseconds <= 0) {
             return "";
@@ -228,7 +228,7 @@ public class QueryMetricOperationsStats {
             return sdf.format(new Date(milliseconds));
         }
     }
-    
+
     public Map<String,String> formatStats(Map<String,Double> stats, boolean useSeparators) {
         DecimalFormat dFormat = useSeparators ? new DecimalFormat("#,##0.00") : new DecimalFormat("#0.00");
         DecimalFormat nFormat = useSeparators ? new DecimalFormat("#,##0") : new DecimalFormat("#0");
@@ -242,7 +242,7 @@ public class QueryMetricOperationsStats {
         });
         return formattedStats;
     }
-    
+
     public Map<String,Double> getServiceStats() {
         Map<String,Double> stats = new LinkedHashMap<>();
         addTimerStats("store", getTimer(TIMERS.STORE), stats);
@@ -256,11 +256,11 @@ public class QueryMetricOperationsStats {
         addMeterStats("message.receive", getMeter(METERS.MESSAGE_RECEIVE), stats);
         return stats;
     }
-    
+
     public void queueTimelyMetrics(QueryMetricUpdate update) {
         queueTimelyMetrics(update.getMetric());
     }
-    
+
     public void queueTimelyMetrics(BaseQueryMetric queryMetric) {
         if (this.timelyProperties.isEnabled()) {
             String queryType = queryMetric.getQueryType();
@@ -278,7 +278,7 @@ public class QueryMetricOperationsStats {
                                     + getCommonTags() + "\n");
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " QUERY_LOGIC="
                                     + logic + getCommonTags() + "\n");
-                    
+
                     // write NUM_RESULTS
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " HOST=" + host
                                     + getCommonTags() + "\n");
@@ -300,7 +300,7 @@ public class QueryMetricOperationsStats {
             }
         }
     }
-    
+
     protected String getCommonTags() {
         Map<String,String> tags = new LinkedHashMap<>();
         tags.putAll(this.timelyProperties.getTags());
@@ -311,7 +311,7 @@ public class QueryMetricOperationsStats {
             return "";
         }
     }
-    
+
     public void logServiceStats() {
         Map<String,Double> stats = getServiceStats();
         Map<String,String> serviceStats = formatStats(stats, true);
@@ -326,7 +326,7 @@ public class QueryMetricOperationsStats {
         String accumuloLat = serviceStats.get("accumulo.write" + Latency_Mean);
         log.info("accumulo rates/sec 1m={} 5m={} 15m={} opLatMs={}", accumuloRate1, accumuloRate5, accumuloRate15, accumuloLat);
     }
-    
+
     public void queueAggregatedQueryStatsForTimely() {
         if (this.timelyProperties.isEnabled()) {
             long now = System.currentTimeMillis();
@@ -349,7 +349,7 @@ public class QueryMetricOperationsStats {
             }
         }
     }
-    
+
     private void addTimerStats(String baseName, Timer timer, Map<String,Double> stats) {
         Snapshot snapshot = timer.getSnapshot();
         stats.put(baseName + Latency_Mean, snapshot.getMean() / 1000000);
@@ -365,7 +365,7 @@ public class QueryMetricOperationsStats {
         stats.put(baseName + RatePerSec_15_Min_Avg, timer.getFifteenMinuteRate());
         stats.put(baseName + Count, Double.valueOf(timer.getCount()));
     }
-    
+
     private void addMeterStats(String baseName, Metered meter, Map<String,Double> stats) {
         stats.put(baseName + RatePerSec_1_Min_Avg, meter.getOneMinuteRate());
         stats.put(baseName + RatePerSec_5_Min_Avg, meter.getFiveMinuteRate());

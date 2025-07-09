@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +71,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
@@ -356,6 +356,21 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected Collection<String> getExpectedKeyResponse(final String query) {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         return getExpectedKeyResponse(query, startEndDate[0], startEndDate[1]);
+    }
+
+    protected List<Map<String,String>> getExpectedEvents(final String query, final Collection<String> fields) {
+        List<Map<String,String>> events = new ArrayList<>();
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        QueryJexl jexl = new QueryJexl(query, this.dataManager, startEndDate[0], startEndDate[1]);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        for (Map<String,String> data : allData) {
+            Map<String,String> requestedData = new LinkedHashMap<>();
+            for (String field : fields) {
+                requestedData.put(field, data.get(field.toLowerCase()));
+            }
+            events.add(requestedData);
+        }
+        return events;
     }
 
     /**
@@ -712,10 +727,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return;
         }
 
-        ASTJexlScript expectedTree = JexlASTHelper.parseJexlQuery(expected);
-        expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
-        queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
+        ASTJexlScript expectedTree = JexlASTHelper.parseAndFlattenJexlQuery(expected);
+        ASTJexlScript queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
         if (!comparison.isEqual()) {
             throw new ComparisonFailure(comparison.getReason(), expected, query);

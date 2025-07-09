@@ -18,11 +18,11 @@ import org.springframework.context.annotation.Primary;
 @Conditional(CacheCondition.class)
 public class GenericCacheConfiguration {
     private final CacheManagerCustomizers customizers;
-    
+
     GenericCacheConfiguration(CacheManagerCustomizers customizers) {
         this.customizers = customizers;
     }
-    
+
     @Bean
     @Primary
     public SimpleCacheManager cacheManager(Collection<Cache> caches) {

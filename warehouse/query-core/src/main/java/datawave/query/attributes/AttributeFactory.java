@@ -1,6 +1,5 @@
 package datawave.query.attributes;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -56,17 +55,15 @@ public class AttributeFactory {
     }
 
     private String extractIngestDataTypeFromKey(Key key) {
-        Text cf = new Text();
-        key.getColumnFamily(cf);
-        ByteBuffer b = ByteBuffer.wrap(cf.getBytes(), 0, cf.getLength());
-        int endPos = 0;
-        while (b.hasRemaining()) {
-            if (b.get() == 0)
+        ByteSequence bytes = key.getColumnFamilyData();
+        int index = 0;
+        for (int i = 0; i < bytes.length(); i++) {
+            if (bytes.byteAt(i) == 0x00) {
+                index = i;
                 break;
-            endPos++;
+            }
         }
-        cf.set(cf.getBytes(), 0, endPos);
-        return cf.toString();
+        return bytes.subSequence(0, index).toString();
     }
 
     public Attribute<?> create(String fieldName, String data, Key key, boolean toKeep) {

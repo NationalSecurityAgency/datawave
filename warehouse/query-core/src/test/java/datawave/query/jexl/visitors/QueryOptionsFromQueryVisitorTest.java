@@ -50,8 +50,33 @@ public class QueryOptionsFromQueryVisitorTest {
         assertResult("f:groupby()", "");
         assertOption(QueryParameters.GROUP_FIELDS, "");
 
+        // Verify that fields of no specified granularity are added with the default ALL granularity.
         assertResult("f:groupby('field1','field2','field3')", "");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2,field3");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL],FIELD2[ALL],FIELD3[ALL])");
+
+        // Verify that fields with DAY granularity are added as such.
+        assertResult("f:groupby('field1[DAY]','field2[DAY]','field3[DAY]')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[DAY],FIELD2[DAY],FIELD3[DAY])");
+
+        // Verify that fields with HOUR granularity are added as such.
+        assertResult("f:groupby('field1[HOUR]','field2[HOUR]','field3[HOUR]')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[HOUR],FIELD2[HOUR],FIELD3[HOUR])");
+
+        // Verify that fields with MINUTE granularity are added as such.
+        assertResult("f:groupby('field1[MINUTE]','field2[MINUTE]','field3[MINUTE]')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[MINUTE],FIELD2[MINUTE],FIELD3[MINUTE])");
+
+        // Verify that fields from multiple groupby functions are merged together.
+        assertResult("f:groupby('field1','field2') AND f:groupby('field2[DAY]','field3[DAY]') AND f:groupby('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL],FIELD2[ALL,DAY],FIELD3[DAY],FIELD4[ALL])");
+
+        // Verify more complex fields with multiple granularity levels are merged together.
+        assertResult("f:groupby('field1[DAY]','field2[DAY,HOUR]','field3[HOUR,MINUTE]','field4[ALL,MINUTE]','field5')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[DAY],FIELD2[DAY,HOUR],FIELD3[HOUR,MINUTE],FIELD4[ALL,MINUTE],FIELD5[ALL])");
+
+        // Lucene will parse comma-delimited granularity levels into separate strings. Ensure it still parses correctly.
+        assertResult("f:groupby('field1[DAY]','field2[DAY','HOUR]','field3[HOUR','MINUTE]','field4[ALL','MINUTE]','field5')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[DAY],FIELD2[DAY,HOUR],FIELD3[HOUR,MINUTE],FIELD4[ALL,MINUTE],FIELD5[ALL])");
     }
 
     @Test
@@ -360,11 +385,131 @@ public class QueryOptionsFromQueryVisitorTest {
 
         // Verify that AND nodes are cleaned up.
         assertResult("(FOO == 'bar' OR (BAR == 'foo' AND f:groupby('field1','field2')))", "(FOO == 'bar' OR (BAR == 'foo'))");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL],FIELD2[ALL])");
 
         // Verify that OR nodes are cleaned up.
         assertResult("(FOO == 'bar' AND (BAR == 'foo' OR f:groupby('field1','field2')))", "(FOO == 'bar' AND (BAR == 'foo'))");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL],FIELD2[ALL])");
+    }
+
+    @Test
+    public void testGroupByDay() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_day()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the DAY granularity.
+        assertResult("f:groupby_day('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[DAY],FIELD2[DAY],FIELD3[DAY])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[HOUR]') AND f:groupby_day('field1','field2','field3') AND f:groupby_day('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,DAY],FIELD2[DAY,HOUR],FIELD3[DAY],FIELD4[DAY])");
+    }
+
+    @Test
+    public void testGroupByHour() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_hour()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the HOUR granularity.
+        assertResult("f:groupby_hour('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[HOUR],FIELD2[HOUR],FIELD3[HOUR])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[DAY]') AND f:groupby_hour('field1','field2','field3') AND f:groupby_hour('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,HOUR],FIELD2[DAY,HOUR],FIELD3[HOUR],FIELD4[HOUR])");
+    }
+
+    @Test
+    public void testGroupByMonth() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_month()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the HOUR granularity.
+        assertResult("f:groupby_month('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[MONTH],FIELD2[MONTH],FIELD3[MONTH])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[DAY]') AND f:groupby_month('field1','field2','field3') AND f:groupby_month('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,MONTH],FIELD2[DAY,MONTH],FIELD3[MONTH],FIELD4[MONTH])");
+    }
+
+    @Test
+    public void testGroupBySecond() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_second()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the HOUR granularity.
+        assertResult("f:groupby_second('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[SECOND],FIELD2[SECOND],FIELD3[SECOND])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[DAY]') AND f:groupby_second('field1','field2','field3') AND f:groupby_second('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,SECOND],FIELD2[DAY,SECOND],FIELD3[SECOND],FIELD4[SECOND])");
+    }
+
+    @Test
+    public void testGroupByMillisecond() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_millisecond()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the HOUR granularity.
+        assertResult("f:groupby_millisecond('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[MILLISECOND],FIELD2[MILLISECOND],FIELD3[MILLISECOND])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[DAY]') AND f:groupby_millisecond('field1','field2','field3') AND f:groupby_millisecond('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,MILLISECOND],FIELD2[DAY,MILLISECOND],FIELD3[MILLISECOND],FIELD4[MILLISECOND])");
+    }
+
+    @Test
+    public void testGroupByYear() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_year()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the MINUTE granularity.
+        assertResult("f:groupby_year('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[YEAR],FIELD2[YEAR],FIELD3[YEAR])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[DAY]') AND f:groupby_year('field1','field2','field3') AND f:groupby_year('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,YEAR],FIELD2[DAY,YEAR],FIELD3[YEAR],FIELD4[YEAR])");
+    }
+
+    @Test
+    public void testGroupByMinute() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_minute()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the MINUTE granularity.
+        assertResult("f:groupby_minute('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[MINUTE],FIELD2[MINUTE],FIELD3[MINUTE])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[DAY]') AND f:groupby_minute('field1','field2','field3') AND f:groupby_minute('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,MINUTE],FIELD2[DAY,MINUTE],FIELD3[MINUTE],FIELD4[MINUTE])");
+    }
+
+    @Test
+    public void testGroupByTenth() throws ParseException {
+        // Verify an empty function results in an empty groupby parameter.
+        assertResult("f:groupby_tenth_of_hour()", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "");
+
+        // Verify fields are added with the MINUTE granularity.
+        assertResult("f:groupby_tenth_of_hour('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[TENTH_OF_HOUR],FIELD2[TENTH_OF_HOUR],FIELD3[TENTH_OF_HOUR])");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:groupby('field1','field2[DAY]') AND f:groupby_tenth_of_hour('field1','field2','field3') AND f:groupby_tenth_of_hour('field4')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "GROUP(FIELD1[ALL,TENTH_OF_HOUR],FIELD2[DAY,TENTH_OF_HOUR],FIELD3[TENTH_OF_HOUR],FIELD4[TENTH_OF_HOUR])");
     }
 
     private void assertOption(String option, String value) {

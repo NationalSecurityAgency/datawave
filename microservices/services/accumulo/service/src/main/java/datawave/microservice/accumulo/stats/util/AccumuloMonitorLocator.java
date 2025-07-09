@@ -20,22 +20,22 @@ import org.slf4j.LoggerFactory;
  */
 public class AccumuloMonitorLocator {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccumuloMonitorLocator.class);
-    
+
     private static final Charset ENCODING = StandardCharsets.UTF_8;
     private static final String MONITOR_HTTP_ADDR = "/accumulo/%s/monitor/http_addr";
     private static final int DEFAULT_NUM_RETRIES = 5;
     private static final int DEFAULT_RETRY_WAIT = 500;
-    
+
     private RetryPolicy retryPolicy;
-    
+
     public AccumuloMonitorLocator() {
         this(DEFAULT_NUM_RETRIES, DEFAULT_RETRY_WAIT);
     }
-    
+
     public AccumuloMonitorLocator(int numRetries, int retryWaitMillis) {
         retryPolicy = new RetryNTimes(numRetries, retryWaitMillis);
     }
-    
+
     /**
      * Fetches the 'host:port' for the Accumulo monitor from the zookeeper used by the given instance.
      *

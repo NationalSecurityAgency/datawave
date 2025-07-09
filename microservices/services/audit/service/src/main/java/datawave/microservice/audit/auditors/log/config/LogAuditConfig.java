@@ -19,15 +19,15 @@ import datawave.webservice.common.audit.Auditor;
 @Configuration
 @ConditionalOnProperty(name = "audit.auditors.log.enabled", havingValue = "true")
 public class LogAuditConfig {
-    
+
     @Resource(name = "msgHandlerAuditParams")
     private AuditParameters msgHandlerAuditParams;
-    
+
     @Bean
     public AuditMessageConsumer logAuditSink(Auditor logAuditor) {
         return new AuditMessageConsumer(msgHandlerAuditParams, logAuditor);
     }
-    
+
     @Bean
     public Auditor logAuditor() {
         return new LogAuditor();

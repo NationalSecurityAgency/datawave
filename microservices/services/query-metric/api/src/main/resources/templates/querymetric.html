@@ -19,6 +19,10 @@
     <div th:utext="${header}"></div>
     <h1>Query Metrics</h1>
 
+    <div id ="system-name">
+        <p>Cluster: <span th:text ="${@environment.getProperty('datawave.query.metric.system-name')}"></span></p>
+    </div>
+
     <script type="text/javascript">
 
         function toggleVisibility(field, metricNum) {

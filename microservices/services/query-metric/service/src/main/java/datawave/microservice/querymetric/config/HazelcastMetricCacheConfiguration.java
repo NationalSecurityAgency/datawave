@@ -47,18 +47,18 @@ import datawave.microservice.querymetric.persistence.MetricMapListener;
 @ConditionalOnProperty(name = "hazelcast.server.enabled", havingValue = "true")
 @EnableConfigurationProperties({HazelcastMetricCacheProperties.class})
 public class HazelcastMetricCacheConfiguration {
-    
+
     private Logger log = LoggerFactory.getLogger(HazelcastMetricCacheConfiguration.class);
     public static final String INCOMING_METRICS = "incomingQueryMetrics";
-    
+
     @Value("${hazelcast.clusterName:${spring.application.name}}")
     private String clusterName;
-    
+
     @Bean(name = "queryMetricCacheManager")
     public HazelcastCacheManager queryMetricCacheManager(@Qualifier("metrics") HazelcastInstance instance) throws IOException {
         return new HazelcastCacheManager(instance);
     }
-    
+
     @Bean
     @Qualifier("metrics")
     HazelcastInstance hazelcastInstance(Config config, @Qualifier("store") AccumuloMapStore mapStore, @Qualifier("loader") AccumuloMapLoader mapLoader,
@@ -67,13 +67,13 @@ public class HazelcastMetricCacheConfiguration {
         // Ensure that the lastWrittenQueryMetricCache is set into the MapStore before the instance is active and the writeLock is released
         lifecycleListener.writeLockRunnable.lock(LifecycleEvent.LifecycleState.STARTING);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        
+
         try {
             HazelcastCacheManager cacheManager = new HazelcastCacheManager(instance);
-            
+
             HazelcastCache incomingMetricsCache = (HazelcastCache) cacheManager.getCache(INCOMING_METRICS);
             incomingMetricsCache.getNativeCache().addEntryListener(new MetricMapListener(INCOMING_METRICS), true);
-            
+
             mapStore.setLastWrittenQueryMetricCache(lastWrittenCache);
             System.setProperty("hzAddress", instance.getCluster().getLocalMember().getAddress().toString());
             System.setProperty("hzUuid", instance.getCluster().getLocalMember().getUuid().toString());
@@ -84,19 +84,19 @@ public class HazelcastMetricCacheConfiguration {
         }
         return instance;
     }
-    
+
     @Bean
     @Profile("consul")
     public Config consulConfig(HazelcastMetricCacheProperties serverProperties, DiscoveryServiceProvider discoveryServiceProvider,
                     ConsulDiscoveryProperties consulDiscoveryProperties, MergeLockLifecycleListener lifecycleListener) {
         consulDiscoveryProperties.getMetadata().put("hzHost", System.getProperty("hazelcast.cluster.host"));
         consulDiscoveryProperties.getMetadata().put("hzPort", System.getProperty("hazelcast.cluster.port"));
-        
+
         consulDiscoveryProperties.getTags().add("hzHost=" + System.getProperty("hazelcast.cluster.host"));
         consulDiscoveryProperties.getTags().add("hzPort=" + System.getProperty("hazelcast.cluster.port"));
-        
+
         Config config = generateDefaultConfig(serverProperties, lifecycleListener);
-        
+
         // Set up some default configuration. Do this after we read the XML configuration (which is really intended just to be cache configurations).
         if (!serverProperties.isSkipDiscoveryConfiguration()) {
             // Enable Consul-based discovery of cluster members
@@ -107,13 +107,13 @@ public class HazelcastMetricCacheConfiguration {
         }
         return config;
     }
-    
+
     @Bean
     @Profile("k8s")
     public Config k8sConfig(HazelcastMetricCacheProperties serverProperties, MergeLockLifecycleListener lifecycleListener) {
-        
+
         Config config = generateDefaultConfig(serverProperties, lifecycleListener);
-        
+
         if (!serverProperties.isSkipDiscoveryConfiguration()) {
             // Enable Kubernetes discovery
             config.setProperty("hazelcast.discovery.enabled", Boolean.TRUE.toString());
@@ -126,10 +126,10 @@ public class HazelcastMetricCacheConfiguration {
                             Integer.toString(serverProperties.getK8s().getServiceDnsTimeout()));
             joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         }
-        
+
         return config;
     }
-    
+
     @Bean
     @Profile("!consul & !k8s")
     public Config ipConfig(HazelcastMetricCacheProperties serverProperties, MergeLockLifecycleListener lifecycleListener) {
@@ -153,23 +153,23 @@ public class HazelcastMetricCacheConfiguration {
         }
         return config;
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(Config.class)
     public Config defaultConfig(HazelcastMetricCacheProperties serverProperties, MergeLockLifecycleListener lifecycleListener) {
         return generateDefaultConfig(serverProperties, lifecycleListener);
     }
-    
+
     private Config generateDefaultConfig(HazelcastMetricCacheProperties cacheProperties, MergeLockLifecycleListener lifecycleListener) {
         Config config;
-        
+
         if (cacheProperties.getXmlConfig() == null) {
             config = new Config();
         } else {
             XmlConfigBuilder configBuilder = new XmlConfigBuilder(new ByteArrayInputStream(cacheProperties.getXmlConfig().getBytes(UTF_8)));
             config = configBuilder.build();
         }
-        
+
         // Set up some default configuration. Do this after we read the XML configuration (which is really intended just to be cache configurations).
         if (!cacheProperties.isSkipDefaultConfiguration()) {
             config.setClusterName(clusterName); // Set the cluster name
@@ -183,11 +183,11 @@ public class HazelcastMetricCacheConfiguration {
         ListenerConfig lifecycleListenerConfig = new ListenerConfig();
         lifecycleListenerConfig.setImplementation(lifecycleListener);
         config.addListenerConfig(lifecycleListenerConfig);
-        
+
         ListenerConfig membershipListenerConfig = new ListenerConfig();
         membershipListenerConfig.setImplementation(new ClusterMembershipListener());
         config.addListenerConfig(membershipListenerConfig);
-        
+
         Map<String,MapConfig> mapConfigs = config.getMapConfigs();
         for (Map.Entry<String,MapConfig> e : mapConfigs.entrySet()) {
             InMemoryFormat inMemoryFormat = e.getValue().getInMemoryFormat();

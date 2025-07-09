@@ -20,8 +20,8 @@ public class QuerySpanTest {
 
         Assert.assertEquals(7, qs1.getSeekCount());
         Assert.assertEquals(16, qs1.getNextCount());
-        Assert.assertTrue(qs1.getYield());
         Assert.assertEquals(4, qs1.getSourceCount());
+        Assert.assertTrue(qs1.getYield());
     }
 
     @Test
@@ -32,59 +32,61 @@ public class QuerySpanTest {
 
         Assert.assertEquals(1, qs1.getSeekCount());
         Assert.assertEquals(3, qs1.getNextCount());
-        Assert.assertFalse(qs1.getYield());
         Assert.assertEquals(1, qs1.getSourceCount());
+        Assert.assertFalse(qs1.getYield());
     }
 
     @Test
     public void testMultiThreadedQuerySpanAggregation() {
 
-        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null);
+        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null, null);
         advanceIterators(qs1);
 
+        // this works because we are in the same thread as when advanceIterators was called
         Assert.assertEquals(7, qs1.getSeekCount());
         Assert.assertEquals(16, qs1.getNextCount());
-        Assert.assertTrue(qs1.getYield());
         Assert.assertEquals(4, qs1.getSourceCount());
+        Assert.assertTrue(qs1.getYield());
     }
 
     @Test
     public void testMultiThreadedQuerySpanCollection() {
 
-        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null);
+        QuerySpanCollector qsc = new QuerySpanCollector();
+        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(qsc, null);
         advanceIterators(qs1);
-        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan(null);
+        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan(qsc, null);
         advanceIterators(qs2);
-        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan(null);
+        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan(qsc, null);
         advanceIterators(qs3);
 
-        QuerySpanCollector qsc = new QuerySpanCollector();
-        qsc.addQuerySpan(qs1);
-        qsc.addQuerySpan(qs2);
-        qsc.addQuerySpan(qs3);
-        QuerySpan qs4 = qsc.getCombinedQuerySpan(null);
+        // this works because we are in the same thread as when advanceIterators was called
+        QuerySpan qs4 = qsc.getCombinedQuerySpan(null, true);
 
         Assert.assertEquals(21, qs4.getSeekCount());
         Assert.assertEquals(48, qs4.getNextCount());
-        Assert.assertTrue(qs4.getYield());
         Assert.assertEquals(12, qs4.getSourceCount());
+        Assert.assertTrue(qs4.getYield());
     }
 
     @Test
     public void testMultiThreadedQuerySpanAcrossThreads() {
 
-        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null);
+        QuerySpanCollector qsc = new QuerySpanCollector();
+        // call advanceIterators for each MultiThreadedQuerySpan in the main thread
+        // counts are collected in the QuerySpanCollector
+        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(qsc, null);
         advanceIterators(qs1);
-        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan(null);
+        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan(qsc, null);
         advanceIterators(qs2);
-        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan(null);
+        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan(qsc, null);
         advanceIterators(qs3);
 
-        QuerySpanCollector qsc = new QuerySpanCollector();
-
-        Runnable r1 = new QSRunnable(qsc, qs1);
-        Runnable r2 = new QSRunnable(qsc, qs2);
-        Runnable r3 = new QSRunnable(qsc, qs3);
+        // call advanceIterators for each MultiThreadedQuerySpan in separate threads
+        // counts are collected in the QuerySpanCollector
+        Runnable r1 = new QSRunnable(qs1);
+        Runnable r2 = new QSRunnable(qs2);
+        Runnable r3 = new QSRunnable(qs3);
         ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat("QSExecutor-%d").build();
         ExecutorService executorService = Executors.newFixedThreadPool(10, tf);
 
@@ -98,21 +100,24 @@ public class QuerySpanTest {
             e.printStackTrace();
         }
 
-        QuerySpan qs4 = qsc.getCombinedQuerySpan(null);
+        // the QuerySpanCollector should have counts for calling advanceIterators
+        // 3 times on the main thread plus one time each in 3 separate threads
+        // seeks = 7 * 6 = 42
+        // next = 16 * 6 = 96
+        // sources = 4 * 6 = 24
+        QuerySpan qs4 = qsc.getCombinedQuerySpan(null, true);
 
-        Assert.assertEquals(21, qs4.getSeekCount());
-        Assert.assertEquals(48, qs4.getNextCount());
+        Assert.assertEquals(42, qs4.getSeekCount());
+        Assert.assertEquals(96, qs4.getNextCount());
+        Assert.assertEquals(24, qs4.getSourceCount());
         Assert.assertTrue(qs4.getYield());
-        Assert.assertEquals(12, qs4.getSourceCount());
     }
 
     private class QSRunnable implements Runnable {
 
-        private QuerySpan querySpan = null;
-        private QuerySpanCollector querySpanCollector = null;
+        private QuerySpan querySpan;
 
-        public QSRunnable(QuerySpanCollector querySpanCollector, QuerySpan querySpan) {
-            this.querySpanCollector = querySpanCollector;
+        public QSRunnable(QuerySpan querySpan) {
             this.querySpan = querySpan;
         }
 
@@ -124,7 +129,6 @@ public class QuerySpanTest {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            this.querySpanCollector.addQuerySpan(this.querySpan);
         }
     }
 
@@ -166,5 +170,4 @@ public class QuerySpanTest {
         qs4.next();
         qs4.yield();
     }
-
 }

@@ -38,7 +38,7 @@ public class InMemoryTabletLocator extends TabletLocator {
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public <T extends Mutation> void binMutations(ClientContext context, List<T> mutations, Map<String,TabletServerMutations<T>> binnedMutations,
                     List<T> failures) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -47,23 +47,23 @@ public class InMemoryTabletLocator extends TabletLocator {
             tsm.addMutation(new KeyExtent(TableId.of(""), new Text(), new Text()), m);
         binnedMutations.put("", tsm);
     }
-    
+
     @Override
     public List<Range> binRanges(ClientContext context, List<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
         return Collections.emptyList();
     }
-    
+
     @Override
     public void invalidateCache(KeyExtent failedExtent) {}
-    
+
     @Override
     public void invalidateCache(Collection<KeyExtent> keySet) {}
-    
+
     @Override
     public void invalidateCache() {}
-    
+
     @Override
     public void invalidateCache(ClientContext context, String server) {}
 }

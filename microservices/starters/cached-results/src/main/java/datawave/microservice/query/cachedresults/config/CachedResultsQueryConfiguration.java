@@ -35,13 +35,13 @@ import datawave.microservice.query.cachedresults.status.cache.DefinedQueryIdByVi
 @EnableConfigurationProperties(CachedResultsQueryProperties.class)
 @ConditionalOnProperty(name = "datawave.query.cached-results.enabled", havingValue = "true", matchIfMissing = true)
 public class CachedResultsQueryConfiguration {
-    
+
     @Bean
     @ConfigurationProperties("spring.datasource.cached-results")
     public DataSourceProperties cachedResultsDataSourceProperties() {
         return new DataSourceProperties();
     }
-    
+
     @Bean
     @ConfigurationProperties("spring.datasource.cached-results.hikari")
     public DataSource cachedResultsDataSource() {
@@ -51,12 +51,12 @@ public class CachedResultsQueryConfiguration {
                 .build();
         // @formatter:on
     }
-    
+
     @Bean
     public JdbcTemplate cachedResultsJdbcTemplate() {
         return new JdbcTemplate(cachedResultsDataSource());
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     @RequestScope
@@ -65,7 +65,7 @@ public class CachedResultsQueryConfiguration {
         cachedResultsQueryParameters.clear();
         return cachedResultsQueryParameters;
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     @RequestScope
@@ -74,7 +74,7 @@ public class CachedResultsQueryConfiguration {
         securityMarking.clear();
         return securityMarking;
     }
-    
+
     @Bean
     public DefinedQueryIdByCachedQueryIdCache cachedResultsQueryIdByCachedQueryIdCache(
                     @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory, CacheManager cacheManager) {
@@ -85,7 +85,7 @@ public class CachedResultsQueryConfiguration {
             lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspectorFactory.apply(cacheManager));
         return new DefinedQueryIdByCachedQueryIdCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public DefinedQueryIdByAliasCache cachedResultsQueryIdByAliasCache(
                     @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory, CacheManager cacheManager) {
@@ -96,7 +96,7 @@ public class CachedResultsQueryConfiguration {
             lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspectorFactory.apply(cacheManager));
         return new DefinedQueryIdByAliasCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public DefinedQueryIdByViewCache cachedResultsQueryIdByViewCache(
                     @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory, CacheManager cacheManager) {
@@ -107,7 +107,7 @@ public class CachedResultsQueryConfiguration {
             lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspectorFactory.apply(cacheManager));
         return new DefinedQueryIdByViewCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public CachedResultsQueryStatusCache cachedResultsStatusCache(
                     @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory, CacheManager cacheManager) {
@@ -118,7 +118,7 @@ public class CachedResultsQueryConfiguration {
             lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspectorFactory.apply(cacheManager));
         return new CachedResultsQueryStatusCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public CachedResultsQueryCache cachedResultsQueryCache(CachedResultsQueryProperties cachedResultsQueryProperties,
                     DefinedQueryIdByCachedQueryIdCache definedQueryIdByCachedQueryIdCache, DefinedQueryIdByAliasCache definedQueryIdByAliasCache,

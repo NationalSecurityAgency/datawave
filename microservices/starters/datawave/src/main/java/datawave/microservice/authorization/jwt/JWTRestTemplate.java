@@ -17,15 +17,15 @@ import datawave.security.authorization.JWTTokenHandler;
  */
 public class JWTRestTemplate extends RestTemplate {
     private JWTTokenHandler jwtTokenHandler;
-    
+
     public void setJwtTokenHandler(JWTTokenHandler jwtTokenHandler) {
         this.jwtTokenHandler = jwtTokenHandler;
     }
-    
+
     public <T> RequestEntity<T> createRequestEntity(DatawaveUserDetails currentUser, HttpMethod method, UriComponents uri) {
         return createRequestEntity(currentUser, null, null, method, uri);
     }
-    
+
     public <T> RequestEntity<T> createRequestEntity(DatawaveUserDetails currentUser, T body, MultiValueMap<String,String> additionalHeaders, HttpMethod method,
                     UriComponents uri) {
         String token = jwtTokenHandler.createTokenFromUsers(currentUser.getUsername(), currentUser.getProxiedUsers());
@@ -36,7 +36,7 @@ public class JWTRestTemplate extends RestTemplate {
         }
         return new RequestEntity<>(body, headers, method, uri.toUri());
     }
-    
+
     public <T> ResponseEntity<T> exchange(DatawaveUserDetails currentUser, HttpMethod method, UriComponents uri, Class<T> responseType)
                     throws RestClientException {
         RequestEntity<T> requestEntity = createRequestEntity(currentUser, method, uri);

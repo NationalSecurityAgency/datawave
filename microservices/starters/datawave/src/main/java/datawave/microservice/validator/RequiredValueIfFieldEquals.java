@@ -24,19 +24,19 @@ import javax.validation.constraints.NotNull;
 @NotNull
 public @interface RequiredValueIfFieldEquals {
     String fieldName();
-    
+
     String fieldValue();
-    
+
     String requiredValueFieldName();
-    
+
     String requiredValueFieldValue();
-    
+
     String message() default "{RequiredValueIfFieldEquals.message}";
-    
+
     Class<?>[] groups() default {};
-    
+
     Class<? extends Payload>[] payload() default {};
-    
+
     @Target({TYPE, ANNOTATION_TYPE})
     @Retention(RUNTIME)
     @Documented

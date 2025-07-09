@@ -25,121 +25,121 @@ import datawave.data.normalizer.regex.ZeroOrMoreNode;
  * A basic {@link Visitor} implementation that will pass itself to the children of any node that accepts it.
  */
 public class BaseVisitor implements Visitor {
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitAlternation(AlternationNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitGroup(GroupNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitDigitChar(DigitCharClassNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitCharClass(CharClassNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitCharRange(CharRangeNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitSingleChar(SingleCharNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitEscapedSingleChar(EscapedSingleCharNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitRepetition(RepetitionNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitQuestionMark(QuestionMarkNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitAnyChar(AnyCharNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitZeroToMany(ZeroOrMoreNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitOneToMany(OneOrMoreNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitInteger(IntegerNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitIntegerRange(IntegerRangeNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitEmpty(EmptyNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitStartAnchor(StartAnchorNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitEndAnchor(EndAnchorNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitEncodedNumber(EncodedNumberNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visitEncodedPattern(EncodedPatternNode node, Object data) {
         node.childrenAccept(this, data);

@@ -38,40 +38,40 @@ import datawave.microservice.audit.replay.status.StatusCache;
  * The replay task is responsible for reading the audit messages from disk, parsing them from JSON, and processing them through the audit controller.
  */
 public abstract class ReplayTask implements Runnable {
-    
+
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(ReplayTask.class);
-    
+
     private final Status status;
     private final StatusCache statusCache;
     private final ReplayProperties replayProperties;
-    
+
     private FileSystem filesystem;
-    
+
     public ReplayTask(Configuration config, Status status, StatusCache statusCache, ReplayProperties replayProperties) throws Exception {
         this.status = status;
         this.statusCache = statusCache;
         this.replayProperties = replayProperties;
         this.filesystem = FileSystem.get(new URI(status.getPathUri()), config);
     }
-    
+
     @Override
     public void run() {
-        
+
         if (status.getState() != ReplayState.RUNNING)
             return;
-        
+
         // if we need to, get a list of files
         if (status.getFiles().isEmpty())
             status.setFiles(listFiles(status.isReplayUnfinishedFiles()));
-        
+
         // sort the files to process. 'RUNNING' first, followed by 'QUEUED'
         List<Status.FileStatus> filesToProcess = status.getFiles().stream()
                         .filter(fileStatus -> fileStatus.getState() == FileState.RUNNING || fileStatus.getState() == FileState.QUEUED)
                         .sorted((o1, o2) -> (o1.getState() == o2.getState()) ? o1.getPathUri().compareTo(o2.getPathUri())
                                         : o2.getState().ordinal() - o1.getState().ordinal())
                         .collect(Collectors.toList());
-        
+
         // then, process any unmarked/remaining files
         for (Status.FileStatus fileStatus : filesToProcess) {
             if (!processFile(fileStatus)) {
@@ -79,34 +79,34 @@ public abstract class ReplayTask implements Runnable {
             } else if (status.getState() != ReplayState.RUNNING) {
                 break;
             }
-            
+
             statusCache.update(status);
         }
-        
+
         // if we're still running, finish the replay
         if (status.getState() == ReplayState.RUNNING) {
             // finally, update our status as FINISHED
             if (status.getState() != ReplayState.FAILED)
                 status.setState(ReplayState.FINISHED);
         }
-        
+
         // status cache is updated here in the event that we stop gracefully
         statusCache.update(status);
     }
-    
+
     private List<Status.FileStatus> listFiles(boolean replayUnfinished) {
         List<Status.FileStatus> fileStatuses = new ArrayList<>();
-        
+
         // get the files/directories which match the pattern
         List<FileStatus> files = checkedGlobStatus(new Path(status.getPathUri()));
-        
+
         // add the contents of any folders which matched the pattern
         files = files.stream().flatMap(x -> x.isDirectory() ? checkedGlobStatus(new Path(x.getPath(), "*")).stream().filter(FileStatus::isFile) : Stream.of(x))
                         .collect(Collectors.toList());
-        
+
         for (FileStatus file : files) {
             String fileName = file.getPath().getName();
-            
+
             if (replayUnfinished && fileName.startsWith("_" + FileState.RUNNING)) {
                 fileStatuses.add(new Status.FileStatus(file.getPath().toString(), FileState.RUNNING));
             } else if (replayUnfinished && fileName.startsWith("_" + FileState.QUEUED)) {
@@ -120,10 +120,10 @@ public abstract class ReplayTask implements Runnable {
                 }
             }
         }
-        
+
         return fileStatuses;
     }
-    
+
     private List<FileStatus> checkedGlobStatus(Path path) {
         List<FileStatus> fileStatuses = Collections.emptyList();
         try {
@@ -133,16 +133,16 @@ public abstract class ReplayTask implements Runnable {
         }
         return fileStatuses;
     }
-    
+
     private boolean processFile(Status.FileStatus fileStatus) {
         Path file = new Path(fileStatus.getPathUri());
-        
+
         long numToSkip = 0;
         if (fileStatus.getState() == FileState.RUNNING) {
-            
+
             numToSkip = fileStatus.getLinesRead();
         } else {
-            
+
             Path runningFile = renameFile(FileState.RUNNING, file);
             if (runningFile != null) {
                 file = runningFile;
@@ -152,23 +152,23 @@ public abstract class ReplayTask implements Runnable {
                 return false;
             }
         }
-        
+
         fileStatus.setPathUri(file.toString());
         fileStatus.setState(FileState.RUNNING);
         statusCache.update(status);
-        
+
         boolean encounteredError = false;
         long linesRead = fileStatus.getLinesRead();
         long auditsSent = fileStatus.getAuditsSent();
         long auditsFailed = fileStatus.getAuditsFailed();
         long parseFailures = fileStatus.getParseFailures();
-        
+
         BufferedReader reader = null;
         try {
             // read each audit message, and process via the audit service
             reader = new BufferedReader(new InputStreamReader(filesystem.open(file), UTF_8));
             TypeReference<HashMap<String,String>> typeRef = new TypeReference<HashMap<String,String>>() {};
-            
+
             String line;
             while (null != (line = reader.readLine()) && status.getState() == ReplayState.RUNNING) {
                 if (++linesRead > numToSkip) {
@@ -183,19 +183,19 @@ public abstract class ReplayTask implements Runnable {
                             }
                             sendRate = status.getSendRate();
                         }
-                        
+
                         HashMap<String,String> auditParamsMap = mapper.readValue(line, typeRef);
-                        
+
                         // add the audit replay id for tracking purposes
                         auditParamsMap.put("replayId", status.getId());
-                        
+
                         if (!auditInternal(auditParamsMap)) {
                             log.warn("Failed to audit: {}", auditParamsMap.get(AUDIT_ID));
                             encounteredError = true;
                             auditsFailed++;
                         }
                         auditsSent++;
-                        
+
                         try {
                             Thread.sleep((long) (1000.0 / sendRate));
                         } catch (InterruptedException e) {
@@ -207,7 +207,7 @@ public abstract class ReplayTask implements Runnable {
                         parseFailures++;
                     }
                 }
-                
+
                 // update the cached status per the status update interval
                 if ((System.currentTimeMillis() - status.getLastUpdated().getTime()) > replayProperties.getStatusUpdateIntervalMillis()) {
                     fileStatus.setLinesRead(linesRead);
@@ -221,12 +221,12 @@ public abstract class ReplayTask implements Runnable {
             encounteredError = true;
             log.error("Unable to read from file [{}]", file);
         }
-        
+
         fileStatus.setLinesRead(linesRead);
         fileStatus.setAuditsSent(auditsSent);
         fileStatus.setAuditsFailed(auditsFailed);
         fileStatus.setParseFailures(parseFailures);
-        
+
         if (reader != null) {
             try {
                 reader.close();
@@ -234,12 +234,12 @@ public abstract class ReplayTask implements Runnable {
                 log.error("Unable to close file [{}]", file);
             }
         }
-        
+
         if (status.getState() == ReplayState.RUNNING) {
-            
+
             FileState fileState = (encounteredError) ? FileState.FAILED : FileState.FINISHED;
             Path finalPath = renameFile(fileState, file);
-            
+
             if (finalPath != null) {
                 fileStatus.setState(fileState);
                 fileStatus.setPathUri(finalPath.toString());
@@ -249,10 +249,10 @@ public abstract class ReplayTask implements Runnable {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     private Path renameFile(FileState newState, Path file) {
         String prefix = "_" + newState + ".";
         String fileName = file.getName();
@@ -266,7 +266,7 @@ public abstract class ReplayTask implements Runnable {
         }
         return null;
     }
-    
+
     private boolean auditInternal(Map<String,String> auditParamsMap) {
         boolean success = false;
         try {
@@ -276,6 +276,6 @@ public abstract class ReplayTask implements Runnable {
         }
         return success;
     }
-    
+
     abstract protected boolean audit(Map<String,String> auditParamsMap);
 }

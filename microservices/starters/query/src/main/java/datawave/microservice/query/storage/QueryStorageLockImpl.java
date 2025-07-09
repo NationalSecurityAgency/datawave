@@ -11,13 +11,13 @@ public class QueryStorageLockImpl implements QueryStorageLock {
     private final String cacheName;
     private final String storageKey;
     private final LockableCacheInspector cacheInspector;
-    
+
     public QueryStorageLockImpl(String cacheName, String storageKey, LockableCacheInspector cacheInspector) {
         this.cacheName = cacheName;
         this.storageKey = storageKey;
         this.cacheInspector = cacheInspector;
     }
-    
+
     /**
      * Acquires the lock.
      */
@@ -25,7 +25,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
     public void lock() {
         cacheInspector.lock(cacheName, storageKey);
     }
-    
+
     /**
      * Acquires the lock for the specified lease time.
      *
@@ -36,7 +36,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
     public void lock(long leaseTimeMillis) {
         cacheInspector.lock(cacheName, storageKey, leaseTimeMillis, TimeUnit.MILLISECONDS);
     }
-    
+
     /**
      * Acquires the lock for the specified query status.
      *
@@ -47,7 +47,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
         boolean locked = cacheInspector.tryLock(cacheName, storageKey);
         return locked;
     }
-    
+
     /**
      * Determine if the lock is already acquired
      *
@@ -58,7 +58,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
         boolean locked = cacheInspector.isLocked(cacheName, storageKey);
         return locked;
     }
-    
+
     /**
      * Acquires the lock within a specified amount of time.
      *
@@ -71,7 +71,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
         boolean locked = cacheInspector.tryLock(cacheName, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS);
         return locked;
     }
-    
+
     /**
      * Acquires the lock for the specified lease time.
      *
@@ -86,7 +86,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
         boolean locked = cacheInspector.tryLock(cacheName, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS, leaseTimeMillis, TimeUnit.MILLISECONDS);
         return locked;
     }
-    
+
     /**
      * Releases the lock for the specified query status
      */
@@ -96,7 +96,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
             cacheInspector.unlock(cacheName, storageKey);
         }
     }
-    
+
     /**
      * Releases the lock for the specified query status regardless of the lock owner. It always successfully unlocks the key, never blocks, and returns
      * immediately.

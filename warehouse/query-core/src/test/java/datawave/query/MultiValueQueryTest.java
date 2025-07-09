@@ -18,6 +18,7 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -38,6 +39,7 @@ public class MultiValueQueryTest extends AbstractFunctionalQuery {
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig multi = new MultiValueCityFields();
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.multivalue, multi));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
