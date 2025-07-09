@@ -49,17 +49,17 @@ import org.apache.hadoop.io.Text;
  *
  */
 public class InMemoryInstance implements Instance {
-    
+
     static final String genericAddress = "localhost:1234";
     static final Map<String,InMemoryAccumulo> instances = new HashMap<>();
     InMemoryAccumulo acu;
     String instanceName;
-    
+
     public InMemoryInstance() {
         acu = new InMemoryAccumulo(getDefaultFileSystem());
         instanceName = "mock-instance";
     }
-    
+
     static FileSystem getDefaultFileSystem() {
         try {
             Configuration conf = CachedConfiguration.getInstance();
@@ -70,11 +70,11 @@ public class InMemoryInstance implements Instance {
             throw new RuntimeException(ex);
         }
     }
-    
+
     public InMemoryInstance(String instanceName) {
         this(instanceName, getDefaultFileSystem());
     }
-    
+
     public InMemoryInstance(String instanceName, FileSystem fs) {
         synchronized (instances) {
             if (instances.containsKey(instanceName))
@@ -84,52 +84,52 @@ public class InMemoryInstance implements Instance {
         }
         this.instanceName = instanceName;
     }
-    
+
     @Override
     public String getRootTabletLocation() {
         return genericAddress;
     }
-    
+
     @Override
     public List<String> getMasterLocations() {
         return Collections.singletonList(genericAddress);
     }
-    
+
     @Override
     public String getInstanceID() {
         return "mock-instance-id";
     }
-    
+
     @Override
     public String getInstanceName() {
         return instanceName;
     }
-    
+
     @Override
     public String getZooKeepers() {
         return "localhost";
     }
-    
+
     @Override
     public int getZooKeepersSessionTimeOut() {
         return 30 * 1000;
     }
-    
+
     @Override
     public Connector getConnector(String user, byte[] pass) throws AccumuloException, AccumuloSecurityException {
         return getConnector(user, new PasswordToken(pass));
     }
-    
+
     @Override
     public Connector getConnector(String user, ByteBuffer pass) throws AccumuloException, AccumuloSecurityException {
         return getConnector(user, ByteBufferUtil.toBytes(pass));
     }
-    
+
     @Override
     public Connector getConnector(String user, CharSequence pass) throws AccumuloException, AccumuloSecurityException {
         return getConnector(user, TextUtil.getBytes(new Text(pass.toString())));
     }
-    
+
     @Override
     public Connector getConnector(String principal, AuthenticationToken token) throws AccumuloException, AccumuloSecurityException {
         Connector conn = new InMemoryConnector(new Credentials(principal, token), acu, this);
@@ -139,21 +139,21 @@ public class InMemoryInstance implements Instance {
             throw new AccumuloSecurityException(principal, SecurityErrorCode.BAD_CREDENTIALS);
         return conn;
     }
-    
+
     public static class CachedConfiguration {
         private static Configuration configuration = null;
-        
+
         public static synchronized Configuration getInstance() {
             if (configuration == null)
                 setInstance(new Configuration());
             return configuration;
         }
-        
+
         public static synchronized Configuration setInstance(Configuration update) {
             Configuration result = configuration;
             configuration = update;
             return result;
         }
     }
-    
+
 }

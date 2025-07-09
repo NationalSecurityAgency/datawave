@@ -11,9 +11,9 @@ import com.google.common.io.BaseEncoding;
  * This class can be used to parse a geometry object from Base64 encoded well-known binary (WKB).
  */
 public class WKBParser extends GeometryParser {
-    
+
     private static final Logger log = LoggerFactory.getLogger(WKBParser.class);
-    
+
     @Override
     public Geometry parseGeometry(String geoString) {
         Geometry geom = null;
@@ -26,7 +26,7 @@ public class WKBParser extends GeometryParser {
         }
         return geom;
     }
-    
+
     @Override
     protected int getPriority() {
         return DEFAULT_PRIORITY + 1;

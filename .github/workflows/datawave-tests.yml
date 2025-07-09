@@ -1,0 +1,67 @@
+name: Main Repo Tests
+
+on:
+  push:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+    branches:
+    - 'integration'
+    - 'release/version*'
+  pull_request:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+  
+env:
+  JAVA_VERSION: '11'
+  JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
+  REGISTRY: ghcr.io
+  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+
+jobs:
+  # Runs the pom sorter and code formatter to ensure that the code
+  # is formatted and poms are sorted according to project rules. If changes are found,
+  # they are committed back to the branch
+
+  # Build the code and run the unit/integration tests.
+  build-and-test-microservices:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Passing build
+      run: echo "This build executes solely so we can set branch protections on integration to look for build-and-test-microservices"
+  build-and-test-main:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        cache: 'maven'
+    # Clean up free space
+    - uses: ./.github/actions/free-space
+      with:
+        tool-cache: false
+    - name: Build and Run Unit Tests
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      run: |
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -DskipITs -DskipFormat
+    - name: Run Integration Tests
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      run: |
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples -Dmaven.build.cache.enabled=false -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
+
+
+
+

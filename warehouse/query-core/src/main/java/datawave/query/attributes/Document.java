@@ -14,11 +14,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
@@ -27,6 +30,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
@@ -40,6 +46,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.cache.ClassCache;
 import datawave.util.time.DateHelper;
 
 public class Document implements Serializable, AttributeBagMetadata.AttributesGetter, Comparable<Document>, WritableComparable<Document>, KryoSerializable {
@@ -48,6 +55,20 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
     private static final Logger log = Logger.getLogger(Document.class);
 
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
+
+    private static final ClassCache classCache = new ClassCache();
+
+    //  @formatter:off
+    private static final LoadingCache<Text, Long> timestampCache = CacheBuilder.newBuilder()
+            .maximumSize(128)
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .build(new CacheLoader<>() {
+                @Override
+                public Long load(Text row) {
+                    return DateHelper.parseWithGMT(row.toString()).getTime();
+                }
+            });
+    //  @formatter:on
 
     private int _count = 0;
     private long _bytes = 0;
@@ -204,8 +225,8 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
         metadata.invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
-            metadata.setShardTimestamp(DateHelper.parseWithGMT(docKey.getRow().toString()).getTime());
-        } catch (DateTimeParseException e) {
+            metadata.setShardTimestamp(timestampCache.get(docKey.getRow()));
+        } catch (DateTimeParseException | ExecutionException e) {
             log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
             metadata.setShardTimestamp(Long.MAX_VALUE);
@@ -818,7 +839,13 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
             output.writeString(entry.getKey());
 
             Attribute<?> attribute = entry.getValue();
-            output.writeString(attribute.getClass().getName());
+            int index = DatawaveAttributeIndex.getAttributeIndex(attribute.getClass().getTypeName());
+            output.writeInt(index, true);
+
+            if (index == 0) {
+                output.writeString(attribute.getClass().getName());
+            }
+
             attribute.write(kryo, output);
         }
 
@@ -844,30 +871,16 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
             // Get the fieldName
             String fieldName = input.readString();
 
-            // Get the class name for the concrete Attribute
-            String attrClassName = input.readString();
-            Class<?> clz;
-
-            // Get the Class for the name of the class of the concrete Attribute
-            try {
-                clz = Class.forName(attrClassName);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-
-            Attribute<?> attr;
-            if (Attribute.class.isAssignableFrom(clz)) {
-                // Get an instance of the concrete Attribute
-                try {
-                    attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                    throw new RuntimeException(e);
-                }
-
+            String clazzName;
+            int index = input.readInt(true);
+            if (index == 0) {
+                clazzName = input.readString();
             } else {
-                throw new ClassCastException("Found class that was not an instance of Attribute");
+                clazzName = DatawaveAttributeIndex.getAttributeClassName(index);
             }
-            // Reload the attribute
+
+            // create the attribute and populate from the input
+            Attribute<?> attr = createAttributeFromClassName(clazzName);
             attr.read(kryo, input);
 
             // Add the attribute back to the Map
@@ -882,6 +895,36 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
             this.timingMetadata = new TimingMetadata();
             this.timingMetadata.read(kryo, input);
         }
+    }
+
+    /**
+     * Create the attribute from the provided class name, using the class cache as appropriate
+     *
+     * @param clazzName
+     *            the class name
+     * @return the attribute
+     */
+    private Attribute<?> createAttributeFromClassName(String clazzName) {
+        Class<?> clz;
+        try {
+            // Get the Class for the name of the class of the concrete Attribute
+            clz = classCache.get(clazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        Attribute<?> attr;
+        if (Attribute.class.isAssignableFrom(clz)) {
+            // Get an instance of the concrete Attribute
+            try {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new ClassCastException("Found class that was not an instance of Attribute");
+        }
+        return attr;
     }
 
     public void setIntermediateResult(boolean intermediateResult) {

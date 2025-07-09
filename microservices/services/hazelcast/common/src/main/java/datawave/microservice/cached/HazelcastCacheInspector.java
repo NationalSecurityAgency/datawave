@@ -18,17 +18,17 @@ import com.hazelcast.map.IMap;
 public class HazelcastCacheInspector implements CacheInspector {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     protected final CacheManager cacheManager;
-    
+
     public HazelcastCacheInspector(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
     }
-    
+
     @Override
     public <T> T list(String cacheName, Class<T> cacheObjectType, String key) {
         Cache cache = cacheManager.getCache(cacheName);
         return cache.get(key, cacheObjectType);
     }
-    
+
     @Override
     public <T> List<? extends T> listAll(String cacheName, Class<T> cacheObjectType) {
         Cache cache = cacheManager.getCache(cacheName);
@@ -45,7 +45,7 @@ public class HazelcastCacheInspector implements CacheInspector {
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public <T> List<? extends T> listMatching(String cacheName, Class<T> cacheObjectType, String substring) {
         Cache cache = cacheManager.getCache(cacheName);
@@ -62,7 +62,7 @@ public class HazelcastCacheInspector implements CacheInspector {
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public <T> int evictMatching(String cacheName, Class<T> cacheObjectType, String substring) {
         Cache cache = cacheManager.getCache(cacheName);

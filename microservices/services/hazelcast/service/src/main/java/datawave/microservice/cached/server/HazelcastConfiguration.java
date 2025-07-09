@@ -26,22 +26,22 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 @Configuration
 @EnableConfigurationProperties(HazelcastServerProperties.class)
 public class HazelcastConfiguration {
-    
+
     @Value("${spring.application.name}")
     private String clusterName;
-    
+
     @Bean
     @Profile("consul")
     public Config consulConfig(HazelcastServerProperties serverProperties, DiscoveryServiceProvider discoveryServiceProvider,
                     ConsulDiscoveryProperties consulDiscoveryProperties) {
         consulDiscoveryProperties.getMetadata().put("hzHost", System.getProperty("hazelcast.cluster.host"));
         consulDiscoveryProperties.getMetadata().put("hzPort", System.getProperty("hazelcast.cluster.port"));
-        
+
         consulDiscoveryProperties.getTags().add("hzHost=" + System.getProperty("hazelcast.cluster.host"));
         consulDiscoveryProperties.getTags().add("hzPort=" + System.getProperty("hazelcast.cluster.port"));
-        
+
         Config config = generateDefaultConfig(serverProperties);
-        
+
         // Set up some default configuration. Do this after we read the XML configuration (which is really intended just to be cache configurations).
         if (!serverProperties.isSkipDiscoveryConfiguration()) {
             // Enable Consul-based discovery of cluster members
@@ -50,16 +50,16 @@ public class HazelcastConfiguration {
             joinConfig.getMulticastConfig().setEnabled(false);
             joinConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
         }
-        
+
         return config;
     }
-    
+
     @Bean
     @Profile("k8s")
     public Config k8sConfig(HazelcastServerProperties serverProperties) {
-        
+
         Config config = generateDefaultConfig(serverProperties);
-        
+
         if (!serverProperties.isSkipDiscoveryConfiguration()) {
             // Enable Kubernetes discovery
             config.setProperty("hazelcast.discovery.enabled", Boolean.TRUE.toString());
@@ -72,26 +72,26 @@ public class HazelcastConfiguration {
                             Integer.toString(serverProperties.getK8s().getServiceDnsTimeout()));
             joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         }
-        
+
         return config;
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(Config.class)
     public Config defaultConfig(HazelcastServerProperties serverProperties) {
         return generateDefaultConfig(serverProperties);
     }
-    
+
     private Config generateDefaultConfig(HazelcastServerProperties serverProperties) {
         Config config;
-        
+
         if (serverProperties.getXmlConfig() == null) {
             config = new Config();
         } else {
             XmlConfigBuilder configBuilder = new XmlConfigBuilder(new ByteArrayInputStream(serverProperties.getXmlConfig().getBytes(UTF_8)));
             config = configBuilder.build();
         }
-        
+
         // Set up some default configuration. Do this after we read the XML configuration (which is really intended just to be cache configurations).
         if (!serverProperties.isSkipDefaultConfiguration()) {
             config.setClusterName(clusterName); // Set the cluster name
@@ -100,7 +100,7 @@ public class HazelcastConfiguration {
             config.setProperty("hazelcast.phone.home.enabled", Boolean.FALSE.toString()); // Don't try to send stats back to Hazelcast
             config.setProperty("hazelcast.merge.first.run.delay.seconds", String.valueOf(serverProperties.getInitialMergeDelaySeconds()));
             config.getNetworkConfig().setReuseAddress(true); // Reuse addresses (so we can try to keep our port on a restart)
-            
+
         }
         return config;
     }

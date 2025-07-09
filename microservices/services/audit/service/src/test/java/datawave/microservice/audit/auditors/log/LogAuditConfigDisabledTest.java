@@ -19,20 +19,20 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ContextConfiguration(classes = LogAuditConfigDisabledTest.LogAuditConfigTestConfiguration.class)
 @ActiveProfiles({"LogAuditConfigDisabledTest", "log-disabled"})
 public class LogAuditConfigDisabledTest {
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     @Test
     public void testBeansMissing() {
         assertFalse(context.containsBean("logAuditMessageHandler"));
         assertFalse(context.containsBean("logAuditor"));
     }
-    
+
     @Configuration
     @Profile("LogAuditConfigDisabledTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class LogAuditConfigTestConfiguration {
-        
+
     }
 }

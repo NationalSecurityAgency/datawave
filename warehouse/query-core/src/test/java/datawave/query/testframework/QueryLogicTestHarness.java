@@ -32,6 +32,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.webservice.query.exception.QueryException;
 
 public class QueryLogicTestHarness {
@@ -173,6 +174,10 @@ public class QueryLogicTestHarness {
         }
 
         final Document document = this.deserializer.apply(entry).getValue();
+
+        if (document.containsKey(WaitWindowObserver.WAIT_WINDOW_OVERRUN)) {
+            return actualResults;
+        }
 
         // check all of the types to ensure that all are keepers as defined in the
         // AttributeFactory class

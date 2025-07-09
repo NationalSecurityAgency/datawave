@@ -19,7 +19,7 @@ import datawave.microservice.query.messaging.rabbitmq.RabbitMQQueryResultsManage
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.messaging.backend", havingValue = RABBITMQ)
 public class RabbitMQMessagingConfiguration {
-    
+
     @Bean
     public QueryResultsManager rabbitMQQueryResultsManager(MessagingProperties messagingProperties,
                     RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry, @Autowired(required = false) CachingConnectionFactory connectionFactory,
@@ -32,40 +32,40 @@ public class RabbitMQMessagingConfiguration {
                 claimCheck);
         // @formatter:on
     }
-    
+
     public CachingConnectionFactory createCachingConnectionFactory(MessagingProperties messagingProperties, CachingConnectionFactory connectionFactory) {
         CachingConnectionFactory finalConnectionFactory = connectionFactory;
-        
+
         if (messagingProperties.getRabbitmq().isUseDedicatedInstance()) {
             MessagingProperties.RabbitMQInstanceSettings rabbitMqProperties = messagingProperties.getRabbitmq().getInstanceSettings();
-            
+
             ConnectionFactory dedicatedConnectionFactory = new ConnectionFactory();
-            
+
             if (rabbitMqProperties.getHost() != null) {
                 dedicatedConnectionFactory.setHost(rabbitMqProperties.getHost());
             }
-            
+
             if (rabbitMqProperties.getPassword() != null) {
                 dedicatedConnectionFactory.setPort(rabbitMqProperties.getPort());
             }
-            
+
             if (rabbitMqProperties.getUsername() != null) {
                 dedicatedConnectionFactory.setUsername(rabbitMqProperties.getUsername());
             }
-            
+
             if (rabbitMqProperties.getPassword() != null) {
                 dedicatedConnectionFactory.setPassword(rabbitMqProperties.getPassword());
             }
-            
+
             if (rabbitMqProperties.getVirtualHost() != null) {
                 dedicatedConnectionFactory.setVirtualHost(rabbitMqProperties.getVirtualHost());
             }
-            
+
             finalConnectionFactory = new CachingConnectionFactory(dedicatedConnectionFactory);
             if (rabbitMqProperties.getPublisherConfirmType() != null) {
                 finalConnectionFactory.setPublisherConfirmType(rabbitMqProperties.getPublisherConfirmType());
             }
-            
+
             finalConnectionFactory.setPublisherConfirms(CachingConnectionFactory.ConfirmType.SIMPLE != rabbitMqProperties.getPublisherConfirmType()
                             && rabbitMqProperties.isPublisherConfirms());
             finalConnectionFactory.setPublisherReturns(rabbitMqProperties.isPublisherReturns());

@@ -21,10 +21,10 @@ import datawave.microservice.query.federation.config.FederatedQueryProperties;
  * This class is used to dynamically create and register FederatedQueryService beans via properties.
  */
 public class DynamicFederatedQueryServiceBeanDefinitionRegistrar implements BeanDefinitionRegistryPostProcessor {
-    
+
     public static final String FEDERATED_QUERY_SERVICE_PREFIX = "datawave.query.federation.services";
     private final Map<String,FederatedQueryProperties> federatedQueryProperties;
-    
+
     public DynamicFederatedQueryServiceBeanDefinitionRegistrar(Environment environment) {
         // @formatter:off
         federatedQueryProperties = Binder.get(environment)

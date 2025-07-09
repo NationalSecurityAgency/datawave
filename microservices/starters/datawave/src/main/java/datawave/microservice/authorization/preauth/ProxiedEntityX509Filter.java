@@ -42,12 +42,12 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
     public static final String ISSUER_DN_HEADER = "X-SSL-clientcert-issuer";
     public static final String ENTITIES_HEADER = "X-ProxiedEntitiesChain";
     public static final String ISSUERS_HEADER = "X-ProxiedIssuersChain";
-    
+
     private final boolean useTrustedSubjectHeaders;
     private final boolean requireProxiedEntities;
     private final boolean requireIssuers;
     private final AuthenticationEntryPoint authenticationEntryPoint;
-    
+
     public ProxiedEntityX509Filter(boolean useTrustedSubjectHeaders, boolean requireProxiedEntities, boolean requireIssuers,
                     AuthenticationEntryPoint authenticationEntryPoint) {
         this.useTrustedSubjectHeaders = useTrustedSubjectHeaders;
@@ -58,7 +58,7 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
         // use that Authentication instead of checking for Principal changes
         setCheckForPrincipalChanges(false);
     }
-    
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         try {
@@ -73,17 +73,17 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
             }
         }
     }
-    
+
     @Override
     protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         SubjectIssuerDNPair caller = (SubjectIssuerDNPair) getPreAuthenticatedCredentials(request);
         // If there is no certificate or trusted headers specified, then we can't return a pre-authenticated principal
         if (caller == null)
             return null;
-        
+
         String proxiedSubjects = request.getHeader(ENTITIES_HEADER);
         String proxiedIssuers = request.getHeader(ISSUERS_HEADER);
-        
+
         if (requireProxiedEntities) {
             if (proxiedSubjects == null) {
                 throw new BadCredentialsException(ENTITIES_HEADER + " header is missing!");
@@ -97,7 +97,7 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
         }
         return new ProxiedEntityPreauthPrincipal(caller, proxiedEntities);
     }
-    
+
     @Override
     protected Object getPreAuthenticatedCredentials(HttpServletRequest request) {
         String subjectDN = null;
@@ -116,7 +116,7 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
             return SubjectIssuerDNPair.of(subjectDN, issuerDN);
         }
     }
-    
+
     @Override
     protected boolean principalChanged(HttpServletRequest request, Authentication currentAuthentication) {
         // this would only get called if checkForPrincipalChanges=true (constructor sets it to false) and there is an
@@ -125,7 +125,7 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
         // accept that Authentication and not check for a changed principal
         return false;
     }
-    
+
     protected List<SubjectIssuerDNPair> getSubjectIssuerDNPairs(String proxiedSubjects, String proxiedIssuers) {
         if (StringUtils.isEmpty(proxiedSubjects)) {
             return null;
@@ -147,40 +147,40 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
             return proxiedEntities;
         }
     }
-    
+
     private X509Certificate extractClientCertificate(HttpServletRequest request) {
         X509Certificate[] certs = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
-        
+
         if (certs != null && certs.length > 0) {
             if (logger.isDebugEnabled()) {
                 logger.debug("X.509 client authorization certificate: [Subject DN: " + certs[0].getSubjectDN().getName() + ", Issuer DN: "
                                 + certs[0].getIssuerDN().getName() + "]");
             }
-            
+
             return certs[0];
         }
-        
+
         if (logger.isDebugEnabled()) {
             logger.debug("No client certificate found in request.");
         }
-        
+
         return null;
     }
-    
+
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, Authentication authResult)
                     throws IOException, ServletException {
         super.successfulAuthentication(request, response, authResult);
         setLoginTimeHeader(request);
     }
-    
+
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed)
                     throws IOException, ServletException {
         super.unsuccessfulAuthentication(request, response, failed);
         setLoginTimeHeader(request);
     }
-    
+
     private void setLoginTimeHeader(HttpServletRequest request) {
         if (request.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE) != null) {
             long loginTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - (long) request.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE));

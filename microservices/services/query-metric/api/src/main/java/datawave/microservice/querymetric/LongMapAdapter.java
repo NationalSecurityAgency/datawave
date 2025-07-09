@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
  * "default" one, which when triggered will then assume the "" prefix and push all of our own elements into the "ns2" prefix.
  */
 public class LongMapAdapter extends XmlAdapter<LongMapAdapter.LongMap,Map<String,Long>> {
-    
+
     @Override
     public Map<String,Long> unmarshal(LongMapAdapter.LongMap v) throws Exception {
         HashMap<String,Long> map = new HashMap<>();
@@ -24,7 +24,7 @@ public class LongMapAdapter extends XmlAdapter<LongMapAdapter.LongMap,Map<String
         }
         return map;
     }
-    
+
     @Override
     public LongMap marshal(Map<String,Long> v) throws Exception {
         LongMapAdapter.LongMap map = new LongMapAdapter.LongMap();
@@ -33,20 +33,20 @@ public class LongMapAdapter extends XmlAdapter<LongMapAdapter.LongMap,Map<String
         }
         return map;
     }
-    
+
     public static class LongMap {
         @XmlElement(name = "entry")
         private List<LongMapAdapter.LongMapEntry> entries = new ArrayList<>();
     }
-    
+
     public static class LongMapEntry {
         @XmlAttribute(name = "name")
         private String key;
         @XmlValue
         private Long value;
-        
+
         public LongMapEntry() {}
-        
+
         public LongMapEntry(String key, Long value) {
             this.key = key;
             this.value = value;

@@ -13,7 +13,7 @@ import datawave.security.authorization.UserOperations;
 @EnableConfigurationProperties(FederatedAuthorizationProperties.class)
 @Configuration
 public class FederatedAuthorizationConfiguration {
-    
+
     @Bean
     public Set<UserOperations> registeredFederatedUserOperations(FederatedAuthorizationProperties federatedAuthorizationProperties,
                     Map<String,UserOperations> userOperationsMap) {

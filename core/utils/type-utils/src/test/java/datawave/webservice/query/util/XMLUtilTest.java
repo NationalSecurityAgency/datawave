@@ -15,12 +15,12 @@ public class XMLUtilTest {
             assertEquals(expectedResult, XMLUtil.isValidXMLChar(i), "Mismatch for 0x" + Integer.toHexString(i));
         }
     }
-    
+
     @Test
     public void testValidXMLString() {
         assertTrue(XMLUtil.isValidXML("This is valid XML \u0009\r\n \u0021 \uD1FF"));
     }
-    
+
     @Test
     public void testInvalidXMLString() {
         assertFalse(XMLUtil.isValidXML("This \u0002 is not valid"));

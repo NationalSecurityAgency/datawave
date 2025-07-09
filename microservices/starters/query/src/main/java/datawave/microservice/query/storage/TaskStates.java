@@ -24,7 +24,7 @@ import datawave.util.StringUtils;
 
 public class TaskStates implements Serializable {
     private static final long serialVersionUID = 1361359960334155427L;
-    
+
     /**
      * The possible task states: <br>
      * READY: ready to run <br>
@@ -35,60 +35,60 @@ public class TaskStates implements Serializable {
     public enum TASK_STATE {
         READY, RUNNING, COMPLETED, FAILED
     }
-    
+
     private QueryKey queryKey;
     private int maxRunning = 1;
     private int nextTaskId = 1;
-    
+
     @JsonIgnore
     private Map<TASK_STATE,SortedSet<Integer>> taskStates = new HashMap<>();
-    
+
     public TaskStates() {}
-    
+
     public TaskStates(QueryKey queryKey, int maxRunning) {
         setQueryKey(queryKey);
         setMaxRunning(maxRunning);
     }
-    
+
     public void setQueryKey(QueryKey key) {
         this.queryKey = key;
     }
-    
+
     public QueryKey getQueryKey() {
         return queryKey;
     }
-    
+
     public int getNextTaskId() {
         return nextTaskId;
     }
-    
+
     @JsonIgnore
     public int getAndIncrementNextTaskId() {
         int taskId = nextTaskId;
         nextTaskId++;
         return taskId;
     }
-    
+
     /**
      * Get task states in a form that is JSON serializable
-     * 
+     *
      * @return taskStates
      */
     @JsonProperty("taskStates")
     public Map<TASK_STATE,String> getTaskStatesAsStrings() {
         return taskStates.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> taskIdsToString(e.getValue())));
     }
-    
+
     /**
      * Set task states in a form that was JSON serializable
-     * 
+     *
      * @param taskStatesStrings
      */
     @JsonProperty("taskStates")
     public void setTaskStatesAsStrings(Map<TASK_STATE,String> taskStatesStrings) {
         taskStates = taskStatesStrings.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> stringToTaskIds(e.getValue())));
     }
-    
+
     private String taskIdsToString(Set<Integer> taskIds) {
         StringBuilder builder = new StringBuilder();
         if (!taskIds.isEmpty()) {
@@ -101,7 +101,7 @@ public class TaskStates implements Serializable {
         }
         return builder.toString();
     }
-    
+
     private SortedSet<Integer> stringToTaskIds(String bitSetStr) {
         SortedSet<Integer> ids = new TreeSet<>();
         for (String taskId : StringUtils.splitIterable(bitSetStr, ',')) {
@@ -109,19 +109,19 @@ public class TaskStates implements Serializable {
         }
         return ids;
     }
-    
+
     public void setNextTaskId(int nextTaskId) {
         this.nextTaskId = nextTaskId;
     }
-    
+
     public int getMaxRunning() {
         return maxRunning;
     }
-    
+
     public void setMaxRunning(int maxRunning) {
         this.maxRunning = maxRunning;
     }
-    
+
     /**
      * This will get the number of tasks we can start running now (concurrently) by subtracting the number of runnning tasks from the max concurrent running
      */
@@ -129,26 +129,26 @@ public class TaskStates implements Serializable {
     public int getAvailableRunningSlots() {
         return getMaxRunning() - getRunningTaskCount();
     }
-    
+
     /**
      * This will get the number of tasks we can start running now (@see getAvailableRunningSlots) out of the tasks that are currently in a READY state. This
      * would be a minimum of the ready tasks and the available running slots
-     * 
+     *
      * @return
      */
     @JsonIgnore
     public int getAvailableReadyTasksToRun() {
         return Math.min(getAvailableRunningSlots(), getReadyTaskCount());
     }
-    
+
     public Map<TASK_STATE,SortedSet<Integer>> getTaskStates() {
         return taskStates;
     }
-    
+
     public void setTaskStates(Map<TASK_STATE,SortedSet<Integer>> taskStates) {
         this.taskStates = taskStates;
     }
-    
+
     public TASK_STATE getState(int taskId) {
         for (TASK_STATE state : TASK_STATE.values()) {
             if (taskStates.containsKey(state) && taskStates.get(state).contains(taskId)) {
@@ -157,7 +157,7 @@ public class TaskStates implements Serializable {
         }
         return null;
     }
-    
+
     public boolean setState(int taskId, TASK_STATE taskState) {
         TASK_STATE currentState = getState(taskId);
         if (currentState == taskState) {
@@ -180,63 +180,63 @@ public class TaskStates implements Serializable {
         }
         return true;
     }
-    
+
     public int getTaskCountForState(TASK_STATE state) {
         return taskStates.containsKey(state) ? taskStates.get(state).size() : 0;
     }
-    
+
     @JsonIgnore
     public int getReadyTaskCount() {
         return getTaskCountForState(TASK_STATE.READY);
     }
-    
+
     @JsonIgnore
     public int getRunningTaskCount() {
         return getTaskCountForState(TASK_STATE.RUNNING);
     }
-    
+
     @JsonIgnore
     public int getFailedTaskCount() {
         return getTaskCountForState(TASK_STATE.FAILED);
     }
-    
+
     @JsonIgnore
     public int getCompletedTaskCount() {
         return getTaskCountForState(TASK_STATE.COMPLETED);
     }
-    
+
     public boolean hasTasksForState(TASK_STATE state) {
         return taskStates.containsKey(state) && !taskStates.get(state).isEmpty();
     }
-    
+
     @JsonIgnore
     public boolean hasReadyTasks() {
         return hasTasksForState(TASK_STATE.READY);
     }
-    
+
     @JsonIgnore
     public boolean hasRunningTasks() {
         return hasTasksForState(TASK_STATE.RUNNING);
     }
-    
+
     @JsonIgnore
     public boolean hasUnfinishedTasks() {
         return hasReadyTasks() || hasRunningTasks();
     }
-    
+
     @JsonIgnore
     public boolean hasCompletedTasks() {
         return hasTasksForState(TASK_STATE.COMPLETED);
     }
-    
+
     @JsonIgnore
     public boolean hasFailedTasks() {
         return hasTasksForState(TASK_STATE.FAILED);
     }
-    
+
     public Iterable<TaskKey> getTasksForState(TASK_STATE state, int maxTasks) {
         return new Iterable<TaskKey>() {
-            
+
             @Override
             public Iterator<TaskKey> iterator() {
                 // creating a copy to avoid concurrent modification exceptions while using this task iterator
@@ -247,7 +247,7 @@ public class TaskStates implements Serializable {
                     public boolean hasNext() {
                         return statesIterator.hasNext();
                     }
-                    
+
                     @Override
                     public TaskKey next() {
                         if (hasNext()) {
@@ -259,12 +259,12 @@ public class TaskStates implements Serializable {
             }
         };
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(queryKey).append(maxRunning).append(taskStates).build();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof TaskStates) {
@@ -273,12 +273,12 @@ public class TaskStates implements Serializable {
         }
         return false;
     }
-    
+
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("queryKey", queryKey).append("maxRunning", maxRunning).append("taskStates", taskStatesString()).build();
     }
-    
+
     public String taskStatesString() {
         StringBuilder str = new StringBuilder();
         String sep = "";

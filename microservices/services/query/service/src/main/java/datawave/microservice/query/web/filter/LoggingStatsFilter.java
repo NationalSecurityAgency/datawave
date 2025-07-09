@@ -10,7 +10,7 @@ import org.springframework.util.MultiValueMap;
 @Component
 public class LoggingStatsFilter extends BaseMethodStatsFilter {
     private final Logger log = Logger.getLogger(this.getClass());
-    
+
     @Override
     public void preProcess(RequestMethodStats requestStats) {
         if (!log.isTraceEnabled() && requestStats != null) {
@@ -54,7 +54,7 @@ public class LoggingStatsFilter extends BaseMethodStatsFilter {
             log.trace(message.toString());
         }
     }
-    
+
     @Override
     public void postProcess(ResponseMethodStats responseStats) {
         if (!log.isTraceEnabled() && responseStats != null) {
@@ -73,7 +73,7 @@ public class LoggingStatsFilter extends BaseMethodStatsFilter {
             message.append(" Bytes written: ").append(responseStats.getBytesWritten());
             message.append(" Login Time: ").append(responseStats.getLoginTime()).append("ms");
             message.append(" Call Time: ").append(responseStats.getCallTime()).append("ms");
-            
+
             log.trace(message);
         }
     }

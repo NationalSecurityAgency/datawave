@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>7.20.0-SNAPSHOT</version>
+        <version>7.27.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-cached-results</artifactId>
     <packaging>ejb</packaging>
@@ -128,11 +128,6 @@
             <groupId>org.jboss.spec.javax.jms</groupId>
             <artifactId>jboss-jms-api_2.0_spec</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.javassist</groupId>

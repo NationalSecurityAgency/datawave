@@ -10,8 +10,8 @@ public class LcNoDiacriticsNormalizerTest {
         LcNoDiacriticsNormalizer norm = new LcNoDiacriticsNormalizer();
         String b = null;
         String n1 = norm.normalize(b);
-        
+
         assertNull(n1);
-        
+
     }
 }

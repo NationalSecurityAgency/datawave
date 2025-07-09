@@ -26,11 +26,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TableCacheController {
     private final Logger log = Logger.getLogger(TableCacheController.class);
     private final TableCacheReloadService service;
-    
+
     public TableCacheController(TableCacheReloadService service) {
         this.service = service;
     }
-    
+
     /**
      * Force a reload the table cache for the specified table.
      *
@@ -52,7 +52,7 @@ public class TableCacheController {
         response.addMessage(tableName + " reloaded and message sent to all other executor services");
         return response;
     }
-    
+
     /**
      * Get the status of the table caches
      *
@@ -62,7 +62,7 @@ public class TableCacheController {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *                
+     *
      * @HTTP 200 success
      */
     @Operation(summary = "Get the status of the table caches.")

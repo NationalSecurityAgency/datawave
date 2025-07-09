@@ -17,16 +17,16 @@ import org.springframework.core.env.ConfigurableEnvironment;
 public class DatawaveConfigServerConfiguration {
     @Autowired
     private ConfigurableEnvironment environment;
-    
+
     @Autowired
     private MultipleJGitEnvironmentProperties properties;
-    
+
     @Autowired
     private ConfigServerProperties server;
-    
+
     @Autowired(required = false)
     private TransportConfigCallback transportConfigCallback;
-    
+
     @Bean
     public EnvironmentRepository environmentRepository() {
         MultipleJGitEnvironmentRepository repository = new DatawaveJGitEnvironmentRepository(environment, properties);

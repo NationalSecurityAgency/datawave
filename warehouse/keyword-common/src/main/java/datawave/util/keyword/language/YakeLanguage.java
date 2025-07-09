@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -77,13 +78,13 @@ public interface YakeLanguage {
          */
         public static YakeLanguage find(String rawLanguage) {
             if (rawLanguage == null || rawLanguage.isEmpty()) {
-                logger.debug("No language name or code provided, returning default language, English");
+                logger.debug("No language name or code provided, returning default language, English.");
                 return BaseYakeLanguage.ENGLISH;
             }
             String language = rawLanguage.toLowerCase(Locale.US);
             final YakeLanguage yakeLanguage = languageRegistry.get(language);
             if (yakeLanguage == null) {
-                logger.warn("Unable for find language for language name or code '{}', defaulting to English", language);
+                logger.warn("Unable for find language for language name or code '{}', defaulting to English.", language);
                 return BaseYakeLanguage.ENGLISH;
             }
             return yakeLanguage;
@@ -96,8 +97,12 @@ public interface YakeLanguage {
      */
     class Stopwords {
 
+        static final Map<String,Set<String>> stopwordCache = new HashMap<>();
+
+        static Set<String> FAIL_MARKER = Collections.emptySet();
+
         /**
-         * Load stopwords for the specified language.
+         * Load stopwords for the specified language, return an entry from the statu cache if possible.
          *
          * @param language
          *            the language for the desired stopword list.
@@ -106,16 +111,26 @@ public interface YakeLanguage {
          *             wraps an io exception encountered when loading the stop list as a resource from the classpath.
          */
         public static Set<String> loadDefaultStopWords(String language) {
-            try (BufferedReader r = getReaderForStopwordResource(language)) {
-                Set<String> stopwords = new HashSet<>();
-                String line;
-                while ((line = r.readLine()) != null) {
-                    stopwords.add(line.trim());
+            Set<String> stopwords = stopwordCache.get(language);
+            if (stopwords == FAIL_MARKER) {
+                throw new IllegalStateException("Error loading stopwords for '" + language + "', with cached failure.");
+            } else if (stopwords == null) {
+                synchronized (stopwordCache) {
+                    try (BufferedReader r = getReaderForStopwordResource(language)) {
+                        stopwords = new HashSet<>();
+                        String line;
+                        while ((line = r.readLine()) != null) {
+                            stopwords.add(line.trim());
+                        }
+                        stopwords = Collections.unmodifiableSet(stopwords);
+                        stopwordCache.put(language, stopwords);
+                    } catch (IOException e) {
+                        stopwordCache.put(language, FAIL_MARKER);
+                        throw new IllegalStateException("Error loading stopwords for '" + language + "'", e);
+                    }
                 }
-                return stopwords;
-            } catch (IOException e) {
-                throw new IllegalStateException("Error loading stopwords for '" + language + "'", e);
             }
+            return stopwords;
         }
 
         /**

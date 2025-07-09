@@ -15,7 +15,7 @@ import datawave.microservice.querymetric.persistence.AccumuloMapStore;
 
 @Configuration
 public class StatsConfiguration {
-    
+
     @Bean
     @ConditionalOnMissingBean
     QueryMetricOperationsStats queryMetricOperationsStats(TimelyProperties timelyProperties, ShardTableQueryMetricHandler handler,

@@ -32,7 +32,7 @@ public class HazelcastK8sClientAutoConfiguration extends HazelcastBaseClientConf
     @Bean
     public ClientConfig clientConfig(HazelcastClientProperties clientProperties) {
         ClientConfig clientConfig = createClientConfig(clientProperties);
-        
+
         if (!clientProperties.isSkipDiscoveryConfiguration()) {
             // Set up Kubernetes discovery of cluster members.
             clientConfig.setProperty("hazelcast.discovery.enabled", Boolean.TRUE.toString());
@@ -42,10 +42,10 @@ public class HazelcastK8sClientAutoConfiguration extends HazelcastBaseClientConf
                             Integer.toString(clientProperties.getK8s().getServiceDnsTimeout()));
             clientConfig.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         }
-        
+
         return clientConfig;
     }
-    
+
     /**
      * Normally, just producing a Hazelcast Config object would be enough for Spring Boot to use it and create a {@link HazelcastInstance}. However, that code
      * doesn't handle a {@link ClientConfig}, so we must produce our own instance with the client configuration we produce.

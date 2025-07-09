@@ -24,16 +24,16 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "datawave.query.messaging.backend", havingValue = TEST, matchIfMissing = true)
 public class TestQueryResultsManager implements QueryResultsManager {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String TEST = "test";
-    
+
     private final Map<String,Queue<Result>> queues = Collections.synchronizedMap(new HashMap<>());
     private final Map<String,String> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
     private final List<QueryResultsListener> listeners = new ArrayList<>();
-    
+
     /**
      * Create a listener
-     * 
+     *
      * @param listenerId
      *            The listener ID
      * @param queueName
@@ -48,7 +48,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
         listeners.add(listener);
         return listener;
     }
-    
+
     @Override
     public QueryResultsPublisher createPublisher(String queryId) {
         return new QueryResultsPublisher() {
@@ -57,18 +57,18 @@ public class TestQueryResultsManager implements QueryResultsManager {
                 sendMessage(queryId, result);
                 return true;
             }
-            
+
             @Override
             public void close() throws IOException {
                 // do nothing
             }
         };
     }
-    
+
     public boolean queueExists(String name) {
         return queues.containsKey(name);
     }
-    
+
     @Override
     public void deleteQuery(String name) {
         synchronized (listenerToQueue) {
@@ -84,7 +84,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
         }
         queues.remove(name);
     }
-    
+
     @Override
     public void emptyQuery(String name) {
         synchronized (queues) {
@@ -94,7 +94,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
             }
         }
     }
-    
+
     @Override
     public int getNumResultsRemaining(String name) {
         synchronized (queues) {
@@ -105,7 +105,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
         }
         return 0;
     }
-    
+
     /**
      * This will send a result message. This will call ensureQueueCreated before sending the message.
      * <p>
@@ -125,7 +125,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
             queue.add(result);
         }
     }
-    
+
     /**
      * A listener for test queues
      */
@@ -135,18 +135,18 @@ public class TestQueryResultsManager implements QueryResultsManager {
         private Thread thread;
         private CountDownLatch stoppedLatch = new CountDownLatch(1);
         private CountDownLatch closedLatch = new CountDownLatch(1);
-        
+
         public TestListenerQuery(String listenerId) {
             this.listenerId = listenerId;
             this.thread = new Thread(this);
             this.thread.start();
         }
-        
+
         @Override
         public String getListenerId() {
             return listenerId;
         }
-        
+
         @Override
         public void close() {
             if (this.thread != null) {
@@ -160,13 +160,13 @@ public class TestQueryResultsManager implements QueryResultsManager {
                         break;
                     }
                 }
-                
+
                 try {
                     stoppedLatch.await();
                 } catch (Exception e) {
                     log.error("Interrupted while waiting for latch");
                 }
-                
+
                 String queueId = listenerToQueue.get(listenerId);
                 if (queueId != null) {
                     Queue<Result> queue = queues.get(queueId);
@@ -178,7 +178,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
                 closedLatch.countDown();
             }
         }
-        
+
         public void run() {
             while (thread != null) {
                 if (listenerToQueue.containsKey(listenerId)) {
@@ -201,7 +201,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
                 log.error("Interrupted while waiting for latch");
             }
         }
-        
+
         public boolean message(Result result) {
             boolean success = false;
             if (this.thread != null) {
@@ -217,7 +217,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
             }
             return success;
         }
-        
+
         @Override
         public boolean hasResults() {
             if (this.thread != null) {
@@ -226,12 +226,12 @@ public class TestQueryResultsManager implements QueryResultsManager {
                 return false;
             }
         }
-        
+
         @Override
         public Result receive() {
             return receive(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         }
-        
+
         @Override
         public Result receive(long interval, TimeUnit timeUnit) {
             Result result = null;
@@ -247,7 +247,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
             return result;
         }
     }
-    
+
     public void clear() throws IOException {
         queues.clear();
         listenerToQueue.clear();

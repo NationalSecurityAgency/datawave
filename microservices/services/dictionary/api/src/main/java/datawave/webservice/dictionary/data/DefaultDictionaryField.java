@@ -24,103 +24,103 @@ import io.protostuff.Schema;
 public class DefaultDictionaryField extends DictionaryFieldBase<DefaultDictionaryField,DefaultDescription> implements Message<DefaultDictionaryField> {
     @XmlElement(name = "fieldName")
     private String fieldName;
-    
+
     @XmlElement(name = "datatype")
     private String datatype;
-    
+
     @XmlElement(name = "descriptions")
     private Set<DefaultDescription> descriptions;
-    
+
     public DefaultDictionaryField() {}
-    
+
     public DefaultDictionaryField(String fieldName, String datatype, DefaultDescription desc) {
         this(fieldName, datatype, Collections.singleton(desc));
     }
-    
+
     public DefaultDictionaryField(String fieldName, String datatype, Collection<DefaultDescription> descs) {
         this.fieldName = fieldName;
         this.datatype = datatype;
         this.descriptions = Sets.newHashSet(descs);
     }
-    
+
     public String getFieldName() {
         return fieldName;
     }
-    
+
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
     }
-    
+
     public String getDatatype() {
         return datatype;
     }
-    
+
     public void setDatatype(String datatype) {
         this.datatype = datatype;
     }
-    
+
     public Set<DefaultDescription> getDescriptions() {
         return descriptions;
     }
-    
+
     public void addDescription(DefaultDescription description) {
         this.descriptions.add(description);
     }
-    
+
     public void setDescriptions(Set<DefaultDescription> descriptions) {
         this.descriptions = descriptions;
     }
-    
+
     public static Schema<DefaultDictionaryField> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public String toString() {
         return getFieldName() + ", " + getDatatype() + ", " + getDescriptions();
     }
-    
+
     @Override
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see io.protostuff.Message#cachedSchema()
      */
     public Schema<DefaultDictionaryField> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<DefaultDictionaryField> SCHEMA = new Schema<DefaultDictionaryField>() {
         public DefaultDictionaryField newMessage() {
             return new DefaultDictionaryField();
         }
-        
+
         public Class<DefaultDictionaryField> typeClass() {
             return DefaultDictionaryField.class;
         }
-        
+
         public String messageName() {
             return DefaultDictionaryField.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return DefaultDictionaryField.class.getName();
         }
-        
+
         public boolean isInitialized(DefaultDictionaryField message) {
             return true;
         }
-        
+
         public void writeTo(Output output, DefaultDictionaryField message) throws IOException {
             if (message.fieldName != null) {
                 output.writeString(1, message.fieldName, false);
             }
-            
+
             if (message.datatype != null) {
                 output.writeString(2, message.datatype, false);
             }
-            
+
             if (message.descriptions != null && !message.descriptions.isEmpty()) {
                 output.writeInt32(3, message.descriptions.size(), false);
                 for (DescriptionBase desc : message.descriptions) {
@@ -128,7 +128,7 @@ public class DefaultDictionaryField extends DictionaryFieldBase<DefaultDictionar
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, DefaultDictionaryField message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -152,7 +152,7 @@ public class DefaultDictionaryField extends DictionaryFieldBase<DefaultDictionar
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -165,12 +165,12 @@ public class DefaultDictionaryField extends DictionaryFieldBase<DefaultDictionar
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number;
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<>();
         {
             fieldMap.put("fieldName", 1);

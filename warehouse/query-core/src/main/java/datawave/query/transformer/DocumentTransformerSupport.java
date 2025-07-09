@@ -44,6 +44,7 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.util.CompositeTimestamp;
 import datawave.util.StringUtils;
@@ -252,9 +253,9 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                     log.info(sb.toString());
                 }
             }
-
-            if (document.isEmpty()) {
-                // this document contained only timing metadata
+            boolean waitWindowOverrun = document.containsKey(WaitWindowObserver.WAIT_WINDOW_OVERRUN);
+            if (document.isEmpty() || waitWindowOverrun) {
+                // this document contained only timing metadata or contains the WAIT_WINDOW_OVERRUN marker
                 throw new EmptyObjectException();
             }
         }

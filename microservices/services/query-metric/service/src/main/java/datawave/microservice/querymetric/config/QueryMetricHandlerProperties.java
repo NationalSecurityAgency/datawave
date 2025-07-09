@@ -29,7 +29,7 @@ import datawave.microservice.querymetric.handler.ContentQueryMetricsIngestHelper
 @Validated
 @ConfigurationProperties(prefix = "datawave.query.metric.handler")
 public class QueryMetricHandlerProperties {
-    
+
     @NotBlank
     protected String defaultMetricVisibility;
     @NotBlank
@@ -73,16 +73,16 @@ public class QueryMetricHandlerProperties {
     protected String queryPool = "";
     @NotEmpty
     protected String queryMetricsLogic = "InternalQueryMetricsQuery";
-    
+
     protected boolean useRemoteQuery = true;
     protected long remoteAuthTimeout = 1L;
     protected TimeUnit remoteAuthTimeoutUnit = TimeUnit.MINUTES;
     protected long remoteQueryTimeout = 1L;
     protected TimeUnit remoteQueryTimeoutUnit = TimeUnit.MINUTES;
-    
+
     protected String npeOuEntries;
     protected String subjectDnPattern;
-    
+
     //@formatter:off
     protected List<String> indexFields = Arrays.asList(
             "AUTHORIZATIONS",
@@ -157,9 +157,9 @@ public class QueryMetricHandlerProperties {
 
     protected List<String> additionalNumericFields = Collections.EMPTY_LIST;
     //@formatter:on
-    
+
     public Map<String,String> getProperties() {
-        
+
         Map<String,String> p = new HashMap<>();
         p.put("ingest.data.types", "querymetrics");
         // p.put("AccumuloRecordWriter.reader.class", "");
@@ -211,363 +211,363 @@ public class QueryMetricHandlerProperties {
         p.put("AccumuloRecordWriter.writethreads", Integer.toString(recordWriterNumThreads));
         return p;
     }
-    
+
     public void setDefaultMetricVisibility(String defaultMetricVisibility) {
         this.defaultMetricVisibility = defaultMetricVisibility;
     }
-    
+
     public String getDefaultMetricVisibility() {
         return defaultMetricVisibility;
     }
-    
+
     public void setQueryVisibility(String queryVisibility) {
         this.queryVisibility = queryVisibility;
     }
-    
+
     public String getQueryVisibility() {
         return queryVisibility;
     }
-    
+
     public String getZookeepers() {
         return zookeepers;
     }
-    
+
     public void setZookeepers(String zookeepers) {
         this.zookeepers = zookeepers;
     }
-    
+
     public String getInstanceName() {
         return instanceName;
     }
-    
+
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
     }
-    
+
     public String getUsername() {
         return username;
     }
-    
+
     public void setUsername(String username) {
         this.username = username;
     }
-    
+
     public String getPassword() {
         return password;
     }
-    
+
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
     public int getAccumuloClientPoolSize() {
         return accumuloClientPoolSize;
     }
-    
+
     public void setAccumuloClientPoolSize(int accumuloClientPoolSize) {
         this.accumuloClientPoolSize = accumuloClientPoolSize;
     }
-    
+
     public int getNumShards() {
         return numShards;
     }
-    
+
     public void setNumShards(int numShards) {
         this.numShards = numShards;
     }
-    
+
     public String getShardTableName() {
         return shardTableName;
     }
-    
+
     public void setShardTableName(String shardTableName) {
         this.shardTableName = shardTableName;
     }
-    
+
     public String getIndexTableName() {
         return indexTableName;
     }
-    
+
     public void setIndexTableName(String indexTableName) {
         this.indexTableName = indexTableName;
     }
-    
+
     public String getReverseIndexTableName() {
         return reverseIndexTableName;
     }
-    
+
     public void setReverseIndexTableName(String reverseIndexTableName) {
         this.reverseIndexTableName = reverseIndexTableName;
     }
-    
+
     public String getMetadataTableName() {
         return metadataTableName;
     }
-    
+
     public void setMetadataTableName(String metadataTableName) {
         this.metadataTableName = metadataTableName;
     }
-    
+
     public String getMetadataDefaultAuths() {
         return metadataDefaultAuths;
     }
-    
+
     public void setMetadataDefaultAuths(String metadataDefaultAuths) {
         this.metadataDefaultAuths = metadataDefaultAuths;
     }
-    
+
     public boolean isMetadataTableFrequencyEnabled() {
         return metadataTableFrequencyEnabled;
     }
-    
+
     public void setMetadataTableFrequencyEnabled(boolean metadataTableFrequencyEnabled) {
         this.metadataTableFrequencyEnabled = metadataTableFrequencyEnabled;
     }
-    
+
     public boolean isCreateTables() {
         return createTables;
     }
-    
+
     public void setCreateTables(boolean createTables) {
         this.createTables = createTables;
     }
-    
+
     public long getMaxReadMilliseconds() {
         return maxReadMilliseconds;
     }
-    
+
     public void setMaxReadMilliseconds(long maxReadMilliseconds) {
         this.maxReadMilliseconds = maxReadMilliseconds;
     }
-    
+
     public long getMaxWriteMilliseconds() {
         return maxWriteMilliseconds;
     }
-    
+
     public void setMaxWriteMilliseconds(long maxWriteMilliseconds) {
         this.maxWriteMilliseconds = maxWriteMilliseconds;
     }
-    
+
     public List<String> getFatalErrors() {
         return fatalErrors;
     }
-    
+
     public void setFatalErrors(List<String> fatalErrors) {
         this.fatalErrors = fatalErrors;
     }
-    
+
     public String getDateField() {
         return dateField;
     }
-    
+
     public void setDateField(String dateField) {
         this.dateField = dateField;
     }
-    
+
     public String getDateFormat() {
         return dateFormat;
     }
-    
+
     public void setDateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
     }
-    
+
     public int getFieldLengthThreshold() {
         return fieldLengthThreshold;
     }
-    
+
     public void setFieldLengthThreshold(int fieldLengthThreshold) {
         this.fieldLengthThreshold = fieldLengthThreshold;
     }
-    
+
     public List<String> getIndexFields() {
         return indexFields;
     }
-    
+
     public void setIndexFields(List<String> indexFields) {
         this.indexFields = indexFields;
     }
-    
+
     public List<String> getAdditionalIndexFields() {
         return additionalIndexFields;
     }
-    
+
     public void setAdditionalIndexFields(List<String> additionalIndexFields) {
         this.additionalIndexFields = additionalIndexFields;
     }
-    
+
     public List<String> getReverseIndexFields() {
         return reverseIndexFields;
     }
-    
+
     public void setReverseIndexFields(List<String> reverseIndexFields) {
         this.reverseIndexFields = reverseIndexFields;
     }
-    
+
     public List<String> getAdditionalReverseIndexFields() {
         return additionalReverseIndexFields;
     }
-    
+
     public void setAdditionalReverseIndexFields(List<String> additionalReverseIndexFields) {
         this.additionalReverseIndexFields = additionalReverseIndexFields;
     }
-    
+
     public List<String> getNumericFields() {
         return numericFields;
     }
-    
+
     public void setNumericFields(List<String> numericFields) {
         this.numericFields = numericFields;
     }
-    
+
     public List<String> getAdditionalNumericFields() {
         return additionalNumericFields;
     }
-    
+
     public void setAdditionalNumericFields(List<String> additionalNumericFields) {
         this.additionalNumericFields = additionalNumericFields;
     }
-    
+
     public boolean isEnableBloomFilter() {
         return enableBloomFilter;
     }
-    
+
     public void setEnableBloomFilter(boolean enableBloomFilter) {
         this.enableBloomFilter = enableBloomFilter;
     }
-    
+
     public int getRecordWriterMaxMemory() {
         return recordWriterMaxMemory;
     }
-    
+
     public void setRecordWriterMaxMemory(int recordWriterMaxMemory) {
         this.recordWriterMaxMemory = recordWriterMaxMemory;
     }
-    
+
     public int getRecordWriterMaxLatency() {
         return recordWriterMaxLatency;
     }
-    
+
     public void setRecordWriterMaxLatency(int recordWriterMaxLatency) {
         this.recordWriterMaxLatency = recordWriterMaxLatency;
     }
-    
+
     public int getRecordWriterNumThreads() {
         return recordWriterNumThreads;
     }
-    
+
     public void setRecordWriterNumThreads(int recordWriterNumThreads) {
         this.recordWriterNumThreads = recordWriterNumThreads;
     }
-    
+
     public String getPolicyEnforcerClass() {
         return policyEnforcerClass;
     }
-    
+
     public void setPolicyEnforcerClass(String policyEnforcerClass) {
         this.policyEnforcerClass = policyEnforcerClass;
     }
-    
+
     public String getBaseMaps() {
         return baseMaps;
     }
-    
+
     public void setBaseMaps(String baseMaps) {
         this.baseMaps = baseMaps;
     }
-    
+
     public String getAuthServiceUri() {
         return authServiceUri;
     }
-    
+
     public void setAuthServiceUri(String authServiceUri) {
         this.authServiceUri = authServiceUri;
     }
-    
+
     public String getQueryServiceUri() {
         return queryServiceUri;
     }
-    
+
     public void setQueryServiceUri(String queryServiceUri) {
         this.queryServiceUri = queryServiceUri;
     }
-    
+
     public String getQueryPool() {
         return queryPool;
     }
-    
+
     public void setQueryPool(String queryPool) {
         this.queryPool = queryPool;
     }
-    
+
     public String getQueryMetricsLogic() {
         return queryMetricsLogic;
     }
-    
+
     public void setQueryMetricsLogic(String queryMetricsLogic) {
         this.queryMetricsLogic = queryMetricsLogic;
     }
-    
+
     public boolean isUseRemoteQuery() {
         return useRemoteQuery;
     }
-    
+
     public void setUseRemoteQuery(boolean useRemoteQuery) {
         this.useRemoteQuery = useRemoteQuery;
     }
-    
+
     public long getRemoteAuthTimeout() {
         return remoteAuthTimeout;
     }
-    
+
     public long getRemoteAuthTimeoutMillis() {
         return remoteAuthTimeoutUnit.toMillis(remoteAuthTimeout);
     }
-    
+
     public void setRemoteAuthTimeout(long remoteAuthTimeout) {
         this.remoteAuthTimeout = remoteAuthTimeout;
     }
-    
+
     public TimeUnit getRemoteAuthTimeoutUnit() {
         return remoteAuthTimeoutUnit;
     }
-    
+
     public void setRemoteAuthTimeoutUnit(TimeUnit remoteAuthTimeoutUnit) {
         this.remoteAuthTimeoutUnit = remoteAuthTimeoutUnit;
     }
-    
+
     public long getRemoteQueryTimeout() {
         return remoteQueryTimeout;
     }
-    
+
     public long getRemoteQueryTimeoutMillis() {
         return remoteQueryTimeoutUnit.toMillis(remoteQueryTimeout);
     }
-    
+
     public void setRemoteQueryTimeout(long remoteQueryTimeout) {
         this.remoteQueryTimeout = remoteQueryTimeout;
     }
-    
+
     public TimeUnit getRemoteQueryTimeoutUnit() {
         return remoteQueryTimeoutUnit;
     }
-    
+
     public void setRemoteQueryTimeoutUnit(TimeUnit remoteQueryTimeoutUnit) {
         this.remoteQueryTimeoutUnit = remoteQueryTimeoutUnit;
     }
-    
+
     public String getNpeOuEntries() {
         return npeOuEntries;
     }
-    
+
     public void setNpeOuEntries(String npeOuEntries) {
         this.npeOuEntries = npeOuEntries;
     }
-    
+
     public String getSubjectDnPattern() {
         return subjectDnPattern;
     }
-    
+
     public void setSubjectDnPattern(String subjectDnPattern) {
         this.subjectDnPattern = subjectDnPattern;
     }

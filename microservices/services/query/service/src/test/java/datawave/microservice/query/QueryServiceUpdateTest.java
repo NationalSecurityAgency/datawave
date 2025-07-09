@@ -41,21 +41,21 @@ import datawave.webservice.result.VoidResponse;
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 @ContextConfiguration(classes = {QueryService.class})
 public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
-    
+
     @Test
     public void testUpdateSuccess_updateOnDefined() throws Exception {
         DatawaveUserDetails authUser = createUserDetails(null, Arrays.asList("ALL", "NONE"));
-        
+
         // define a valid query
         String queryId = defineQuery(authUser, createParams());
-        
+
         String newQuery = "SOME_OTHER_FIELD:SOME_OTHER_VALUE";
         String newAuths = "ALL,NONE";
         String newBegin = "20100101 000000.000";
         String newEnd = "20600101 000000.000";
         String newLogic = "AltEventQuery";
         int newPageSize = 100;
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(QUERY, newQuery);
         updateParams.set(QUERY_AUTHORIZATIONS, newAuths);
@@ -63,17 +63,17 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         updateParams.set(END_DATE, newEnd);
         updateParams.set(QUERY_LOGIC_NAME, newLogic);
         updateParams.set(PAGESIZE, Integer.toString(newPageSize));
-        
+
         // update the query
         Future<ResponseEntity<GenericResponse>> updateFuture = updateQuery(authUser, queryId, updateParams);
-        
+
         // the response should come back right away
         ResponseEntity<GenericResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
+
         // make sure the query was updated
         Assertions.assertEquals(newQuery, queryStatus.getQuery().getQuery());
         Assertions.assertEquals(newAuths, queryStatus.getQuery().getQueryAuthorizations());
@@ -81,36 +81,36 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         Assertions.assertEquals(newEnd, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
         Assertions.assertEquals(newLogic, queryStatus.getQuery().getQueryLogicName());
         Assertions.assertEquals(newPageSize, queryStatus.getQuery().getPagesize());
-        
+
         // verify that no events were published
         Assertions.assertEquals(0, queryRequestEvents.size());
     }
-    
+
     @Test
     public void testUpdateSuccess_updateOnCreated() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         // create a valid query
         String queryId = createQuery(authUser, createParams());
-        
+
         int newPageSize = 100;
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(PAGESIZE, Integer.toString(newPageSize));
-        
+
         // update the query
         Future<ResponseEntity<GenericResponse>> updateFuture = updateQuery(authUser, queryId, updateParams);
-        
+
         // the response should come back right away
         ResponseEntity<GenericResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
+
         // make sure the query was updated
         Assertions.assertEquals(newPageSize, queryStatus.getQuery().getPagesize());
-        
+
         // verify that events were published
         Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
@@ -121,38 +121,38 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testUpdateFailure_unsafeParamUpdateQuery() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         // create a valid query
         String queryId = createQuery(authUser, createParams());
-        
+
         String newQuery = "SOME_OTHER_FIELD:SOME_OTHER_VALUE";
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(QUERY, newQuery);
-        
+
         // update the query
         UriComponents uri = createUri(queryId + "/update");
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, updateParams, null, HttpMethod.PUT, uri);
-        
+
         // make the update call asynchronously
         Future<ResponseEntity<VoidResponse>> updateFuture = Executors.newSingleThreadExecutor()
                         .submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
-        
+
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
+
         // make sure the query was not updated
         Assertions.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
-        
+
         // @formatter:off
         assertQueryException(
                 "Cannot update the following parameters for a running query: query",
@@ -160,7 +160,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 "400-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
-        
+
         // verify that events were published
         Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
@@ -171,41 +171,41 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testUpdateFailure_unsafeParamUpdateDate() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         // create a valid query
         String queryId = createQuery(authUser, createParams());
-        
+
         String newBegin = "20100101 000000.000";
         String newEnd = "20600101 000000.000";
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(BEGIN_DATE, newBegin);
         updateParams.set(END_DATE, newEnd);
-        
+
         // update the query
         UriComponents uri = createUri(queryId + "/update");
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, updateParams, null, HttpMethod.PUT, uri);
-        
+
         // make the update call asynchronously
         Future<ResponseEntity<VoidResponse>> updateFuture = Executors.newSingleThreadExecutor()
                         .submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
-        
+
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
+
         // make sure the query was not updated
         Assertions.assertEquals(TEST_QUERY_BEGIN, DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()));
         Assertions.assertEquals(TEST_QUERY_END, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
-        
+
         // @formatter:off
         assertQueryException(
                 "Cannot update the following parameters for a running query: begin, end",
@@ -213,7 +213,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 "400-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
-        
+
         // verify that events were published
         Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
@@ -224,38 +224,38 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testUpdateFailure_unsafeParamUpdateLogic() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         // create a valid query
         String queryId = createQuery(authUser, createParams());
-        
+
         String newLogic = "AltEventQuery";
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(QUERY_LOGIC_NAME, newLogic);
-        
+
         // update the query
         UriComponents uri = createUri(queryId + "/update");
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, updateParams, null, HttpMethod.PUT, uri);
-        
+
         // make the update call asynchronously
         Future<ResponseEntity<VoidResponse>> updateFuture = Executors.newSingleThreadExecutor()
                         .submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
-        
+
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
+
         // make sure the query was not updated
         Assertions.assertEquals("EventQuery", queryStatus.getQuery().getQueryLogicName());
-        
+
         // @formatter:off
         assertQueryException(
                 "Cannot update the following parameters for a running query: logicName",
@@ -263,7 +263,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 "400-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
-        
+
         // verify that events were published
         Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
@@ -274,38 +274,38 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testUpdateFailure_unsafeParamUpdateAuths() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         // create a valid query
         String queryId = createQuery(authUser, createParams());
-        
+
         String newAuths = "ALL,NONE";
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(QUERY_AUTHORIZATIONS, newAuths);
-        
+
         // update the query
         UriComponents uri = createUri(queryId + "/update");
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, updateParams, null, HttpMethod.PUT, uri);
-        
+
         // make the update call asynchronously
         Future<ResponseEntity<VoidResponse>> updateFuture = Executors.newSingleThreadExecutor()
                         .submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
-        
+
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
+
         // make sure the query was not updated
         Assertions.assertEquals(TEST_QUERY_AUTHORIZATIONS, queryStatus.getQuery().getQueryAuthorizations());
-        
+
         // @formatter:off
         assertQueryException(
                 "Cannot update the following parameters for a running query: auths",
@@ -313,7 +313,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 "400-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
-        
+
         // verify that events were published
         Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
@@ -324,30 +324,30 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testUpdateFailure_nullParams() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         // create a valid query
         String queryId = createQuery(authUser, createParams());
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
-        
+
         // update the query
         UriComponents uri = createUri(queryId + "/update");
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, updateParams, null, HttpMethod.PUT, uri);
-        
+
         // make the update call asynchronously
         Future<ResponseEntity<VoidResponse>> updateFuture = Executors.newSingleThreadExecutor()
                         .submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
-        
+
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "No parameters specified for update.",
@@ -355,7 +355,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 "400-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
-        
+
         // verify that events were published
         Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
@@ -366,30 +366,30 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testUpdateFailure_queryNotFound() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         String queryId = UUID.randomUUID().toString();
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(QUERY_STRING, TEST_QUERY_STRING);
-        
+
         // update the query
         UriComponents uri = createUri(queryId + "/update");
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, updateParams, null, HttpMethod.PUT, uri);
-        
+
         // make the update call asynchronously
         Future<ResponseEntity<VoidResponse>> updateFuture = Executors.newSingleThreadExecutor()
                         .submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
-        
+
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(404, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "No query object matches this id. " + queryId,
@@ -397,38 +397,38 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 "404-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
-        
+
         // verify that no events were published
         Assertions.assertEquals(0, queryRequestEvents.size());
     }
-    
+
     @Test
     public void testUpdateFailure_ownershipFailure() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
         DatawaveUserDetails altAuthUser = createAltUserDetails();
-        
+
         // define a valid query
         String queryId = defineQuery(authUser, createParams());
-        
+
         String newQuery = "SOME_OTHER_FIELD:SOME_OTHER_VALUE";
-        
+
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         updateParams.set(QUERY, newQuery);
-        
+
         // update the query
         UriComponents uri = createUri(queryId + "/update");
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(altAuthUser, updateParams, null, HttpMethod.PUT, uri);
-        
+
         // make the update call asynchronously
         Future<ResponseEntity<VoidResponse>> updateFuture = Executors.newSingleThreadExecutor()
                         .submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
-        
+
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
-        
+
         Assertions.assertEquals(401, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "Current user does not match user that defined query. altuserdn != userdn",
@@ -436,12 +436,12 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
                 "401-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
-        
+
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
+
         // make sure the query was not updated
         Assertions.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
-        
+
         // verify that no events were published
         Assertions.assertEquals(0, queryRequestEvents.size());
     }

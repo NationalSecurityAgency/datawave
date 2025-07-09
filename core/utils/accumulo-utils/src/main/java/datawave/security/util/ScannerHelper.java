@@ -21,33 +21,33 @@ import datawave.webservice.common.connection.ScannerBaseDelegate;
 
 public class ScannerHelper {
     private static final Logger logger = LoggerFactory.getLogger(ScannerHelper.class);
-    
+
     public static Scanner createScanner(AccumuloClient connector, String tableName, Collection<Authorizations> authorizations) throws TableNotFoundException {
         if (authorizations == null || authorizations.isEmpty())
             throw new IllegalArgumentException("Authorizations must not be empty.");
-        
+
         Iterator<Authorizations> iter = AuthorizationsMinimizer.minimize(authorizations).iterator();
         Scanner scanner = connector.createScanner(tableName, iter.next());
         addVisibilityFilters(iter, scanner);
         return scanner;
     }
-    
+
     public static BatchScanner createBatchScanner(AccumuloClient connector, String tableName, Collection<Authorizations> authorizations, int numQueryThreads)
                     throws TableNotFoundException {
         if (authorizations == null || authorizations.isEmpty())
             throw new IllegalArgumentException("Authorizations must not be empty.");
-        
+
         Iterator<Authorizations> iter = AuthorizationsMinimizer.minimize(authorizations).iterator();
         BatchScanner batchScanner = connector.createBatchScanner(tableName, iter.next(), numQueryThreads);
         addVisibilityFilters(iter, batchScanner);
         return batchScanner;
     }
-    
+
     public static BatchDeleter createBatchDeleter(AccumuloClient connector, String tableName, Collection<Authorizations> authorizations, int numQueryThreads,
                     long maxMemory, long maxLatency, int maxWriteThreads) throws TableNotFoundException {
         if (authorizations == null || authorizations.isEmpty())
             throw new IllegalArgumentException("Authorizations must not be empty.");
-        
+
         Iterator<Authorizations> iter = AuthorizationsMinimizer.minimize(authorizations).iterator();
         BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(maxLatency, TimeUnit.MILLISECONDS).setMaxMemory(maxMemory)
                         .setMaxWriteThreads(maxWriteThreads);
@@ -55,7 +55,7 @@ public class ScannerHelper {
         addVisibilityFilters(iter, batchDeleter);
         return batchDeleter;
     }
-    
+
     protected static void addVisibilityFilters(Iterator<Authorizations> iter, ScannerBase scanner) {
         for (int priority = 10; iter.hasNext(); priority++) {
             IteratorSetting cfg = new IteratorSetting(priority, ConfigurableVisibilityFilter.class);
