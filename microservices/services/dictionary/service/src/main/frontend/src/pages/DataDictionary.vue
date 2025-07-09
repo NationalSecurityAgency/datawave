@@ -186,7 +186,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
@@ -200,7 +201,9 @@ const $q = useQuasar();
 const table = ref();
 const loading = ref(true);
 const filter = ref('');
-const changeFilter = ref('');
+const route = useRoute();
+const router = useRouter();
+const changeFilter = ref<string>('');
 const banner = ref<Banner>();
 const system = ref<System>();
 let rows: QTableProps['rows'] = [];
@@ -264,7 +267,63 @@ onMounted(() => {
   .catch((reason) => {
     console.log('Error fetching and formatting rows: ' + reason);
   });
+
+  // This block is similar to watch() methods below, but handles the search when initially set not added.
+  const q = route.query.search;
+
+  // Converts to valid string and ten queries if filter is changed.
+  if (Array.isArray(q)) {
+    changeFilter.value = q[0] || '';
+  } else if (q !== null && q !== undefined) {
+    changeFilter.value = q;
+  }
+
+  if (changeFilter.value) {
+    queryTable();
+  }
 });
+
+// This watch() handles initial changes (if a search query was added to loaded page).
+// Logic: Input -> URL (UI -> URL)
+watch(changeFilter, (val) => {
+  router.replace({
+    query: {
+      ...route.query,
+      search: val || undefined,
+    },
+  });
+});
+
+// This watch() handles a URL Change from a previous query.
+// Logic: Input + Table (reactive URL -> UI + Filters)
+watch(
+  () => route.query.search,
+  (val) => {
+    let newVal = '';
+
+    // Converts the input into a valid string to be queried.
+    if (Array.isArray(val)) {
+      newVal = val[0] || '';
+    } else if (val !== null && val !== undefined) {
+      newVal = val;
+    }
+
+    if (newVal !== changeFilter.value) {
+      changeFilter.value = newVal;
+      if (newVal) {
+
+        // Triggers a re-query if the user has changed to a new value.
+        queryTable();
+      } else {
+
+        // This retriggers back to the original state if user clears.
+        filter.value = '';
+        const originalRows = rows;
+        rows = Formatters.setVisibility(originalRows);
+      }
+    }
+  }
+);
 
 // Export - Attempts to Wrap the CSV and Download.
 function exportTable(this: any) {
