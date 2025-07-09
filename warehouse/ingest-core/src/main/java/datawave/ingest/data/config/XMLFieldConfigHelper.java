@@ -204,7 +204,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         return isNoMatchReverseTokenized();
     }
 
-    /**
+    /*
      * TODO: Complete these once you get the OK on keeping these in the FieldConfigHelper. Keeps the compiler nice and quiet :)
      */
     @Override
@@ -212,7 +212,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         return false;
     }
 
-    /**
+    /*
      * TODO: Complete these once you get the OK on keeping these in the FieldConfigHelper. Keeps the compiler nice and quiet :)
      */
     @Override

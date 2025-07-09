@@ -28,9 +28,8 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     protected MaskedFieldHelper mfHelper = null;
     protected Set<String> shardExclusions = new HashSet<>();
 
-    /**
+    /*
      * SETH NOTE I'm wondering if I'll have to make a version of the following for the error indexing or not. Worth to keep it noted in the meantime.
-     *
      * UPDATE 1: Yup! Looks like it.
      */
     protected boolean hasIndexDisallowlist = false;
@@ -151,8 +150,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
 
     /**
      * Setter for {@code hasErrorIndexDisallowList}.
-     *
-     * @param hasErrorIndexDisallowlist
      */
     protected void setHasErrorIndexDisallowlist(boolean hasErrorIndexDisallowlist) {
         this.hasErrorIndexDisallowlist = hasErrorIndexDisallowlist;
@@ -160,8 +157,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
 
     /**
      * Setter for {@code hasErrorIndexDisallowList}.
-     *
-     * @param hasErrorReverseIndexDisallowlist
      */
     protected void setHasErrorReverseIndexDisallowlist(boolean hasErrorReverseIndexDisallowlist) {
         this.hasErrorReverseIndexDisallowlist = hasErrorReverseIndexDisallowlist;
