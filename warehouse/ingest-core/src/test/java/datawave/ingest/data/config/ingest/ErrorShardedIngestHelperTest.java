@@ -4,11 +4,11 @@ import org.junit.Test;
 
 public class ErrorShardedIngestHelperTest {
 
-    /**
+    /*
      * SETH NOTE What kind of test coverage will be needed for this outside of basic method tests? Are there any examples to reference?
      */
 
-    /**
+    /*
      * private boolean hasErrorIndexConfig(){ return !super.errorIndexedFields.isEmpty(); }
      *
      * private boolean hasErrorReverseIndexConfig(){ return !super.errorReverseIndexedFields.isEmpty();
@@ -22,7 +22,7 @@ public class ErrorShardedIngestHelperTest {
      *           } else { return super.isIndexedField(fieldName); } }
      */
 
-    /**
+    /*
      * Test that
      */
     @Test

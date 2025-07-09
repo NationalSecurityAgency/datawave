@@ -169,10 +169,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected Map<String,Pattern> reverseIndexedPatterns = Maps.newHashMap();
     protected Set<String> reverseUnindexedFields = Sets.newHashSet();
 
-    /**
+    /*
      * SETH NOTE Pulled these from the 2 chunks above. Only grabbed the first var, but you may need to grab the other 2 for each. Not sure if this will be
      * necessary though.
-     *
      * UPDATE 1: Seems like I will have to add them.
      */
 
@@ -295,8 +294,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // --- INDEX_FIELDS ---
 
-        /**
-         * SETH NOTE This is most likely the start of the chunk that needs to be cloned for the error index stuff.
+        /*
+         * SETH NOTE
+         * This is most likely the start of the chunk that needs to be cloned for the error index stuff.
          */
 
         // Process the indexed fields
