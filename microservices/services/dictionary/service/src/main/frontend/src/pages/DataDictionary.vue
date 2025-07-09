@@ -271,7 +271,7 @@ onMounted(() => {
   // This block is similar to watch() methods below, but handles the search when initially set not added.
   const q = route.query.search;
 
-  // Converts to valid string and ten queries if filter is changed.
+  // Converts to valid string and then queries if filter is changed.
   if (Array.isArray(q)) {
     changeFilter.value = q[0] || '';
   } else if (q !== null && q !== undefined) {
