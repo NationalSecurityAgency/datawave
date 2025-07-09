@@ -334,7 +334,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // --- REVERSE INDEX FIELDS ---
 
-        /**
+        /*
          * SETH NOTE This is what Laura was talking about-- the Allow/Disallow is mutually exclusive. I haven't seen this same block above for the non-reverse
          * index fields. Maybe I need to take another look.
          */
@@ -390,7 +390,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // --- ERROR INDEX_FIELDS ---
 
-        /**
+        /*
          * SETH NOTE This is most likely the start of the chunk that needs to be cloned for the error index stuff.
          */
 
@@ -429,7 +429,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // --- ERROR REVERSE INDEX FIELDS ---
 
-        /**
+        /*
          * SETH NOTE This is what Laura was talking about-- the Allow/Disallow is mutually exclusive. I haven't seen this same block above for the non-reverse
          * index fields. Maybe I need to take another look.
          */
@@ -483,7 +483,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         }
 
-        /**
+        /*
          * SETH NOTE Not sure if I'll need what's after this. I'll start with the above block and add to it as needed.
          */
 
