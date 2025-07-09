@@ -970,10 +970,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // groom the query so that any nodes with the literal on the left and the identifier on
         // the right will be re-ordered to simplify subsequent processing
 
-        {
-
-            config.setQueryTree(timedInvertSwappedNodes(timers, config.getQueryTree()));
-        }
+        config.setQueryTree(timedInvertSwappedNodes(timers, config.getQueryTree()));
 
         config.setQueryTree(timedFixNotNullIntent(timers, config.getQueryTree()));
 
