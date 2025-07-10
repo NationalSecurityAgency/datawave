@@ -240,7 +240,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         }
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testRangeSizeFourToTen() throws Exception {
         // range with text normalizer is not valid and thus finds zero hits
         withQuery("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
@@ -263,7 +263,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         assertPlannedQuery("(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1')");
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testRangeSizeFourToTen_rangeExpansionDisabled() throws Exception {
         try {
             // simulate a bounded range expansion failure
@@ -295,7 +295,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         }
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testRangeSizeFourToTenWithAnchor() throws Exception {
         // range with text normalizer will not find any hits
         withQuery("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
@@ -320,7 +320,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
                         "COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1')");
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testRangeSizeFourToTenWithAnchor_rangeExpansionDisabled() throws Exception {
         try {
             // simulate a bounded range expansion failure
