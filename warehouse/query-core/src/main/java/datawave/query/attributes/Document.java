@@ -14,16 +14,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
@@ -48,6 +54,18 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
 
     private static final ClassCache classCache = new ClassCache();
+
+    //  @formatter:off
+    private static final LoadingCache<Text, Long> timestampCache = CacheBuilder.newBuilder()
+            .maximumSize(128)
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .build(new CacheLoader<>() {
+                @Override
+                public Long load(Text row) {
+                    return DateHelper.parseWithGMT(row.toString()).getTime();
+                }
+            });
+    //  @formatter:on
 
     private int _count = 0;
     long _bytes = 0;
@@ -163,8 +181,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
-            this.shardTimestamp = DateHelper.parseWithGMT(docKey.getRow().toString()).getTime();
-        } catch (DateTimeParseException e) {
+            this.shardTimestamp = timestampCache.get(docKey.getRow());
+        } catch (DateTimeParseException | ExecutionException e) {
             log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
             this.shardTimestamp = Long.MAX_VALUE;
