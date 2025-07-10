@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
+import datawave.util.StringUtils;
 
 public class ContentKeyValueFactory {
 
@@ -30,7 +31,7 @@ public class ContentKeyValueFactory {
 
         c.setShardId(key.getRow().toString());
 
-        String[] field = key.getColumnQualifier().toString().split(Constants.NULL_BYTE_STRING);
+        String[] field = StringUtils.split(key.getColumnQualifier().toString(), Constants.NULL_BYTE_STRING);
         if (field.length > 0)
             c.setDatatype(field[0]);
         if (field.length > 1)

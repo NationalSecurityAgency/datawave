@@ -10,6 +10,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.StringUtils;
 
 /**
  * Directs each locality group to its own partition. Puts anything else in another bin (assumes that every column family is named and evenly distributed)
@@ -54,7 +55,7 @@ public class LocalityGroupPartitioner extends Partitioner<BulkIngestKey,Value> i
         // build the colFams set
         String columnFamiliesCsv = conf.get(propertyName, "");
         if (!columnFamiliesCsv.isEmpty()) {
-            String[] cfs = columnFamiliesCsv.split(",");
+            String[] cfs = StringUtils.split(columnFamiliesCsv, ',');
             colFams = new ArrayList<>();
             for (String cf : cfs) {
                 colFams.add(new Text(cf));

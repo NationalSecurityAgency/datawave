@@ -20,6 +20,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
+import datawave.util.StringUtils;
 
 /**
  * Jexl Masking rule will provide a rule based upon JEXL 'queries'
@@ -135,8 +136,8 @@ public class JexlRule extends AppliedRule {
      * @return if this is a document
      */
     private static boolean isDocument(Key topKey) {
-        String[] cfSplit = topKey.getColumnFamily().toString().split("\0");
-        String[] cqSplit = topKey.getColumnQualifier().toString().split("\0");
+        String[] cfSplit = StringUtils.split(topKey.getColumnFamily().toString(), "\0");
+        String[] cqSplit = StringUtils.split(topKey.getColumnQualifier().toString(), "\0");
         if (cfSplit.length == 2 && cqSplit.length == 2)
             return true;
         else {
