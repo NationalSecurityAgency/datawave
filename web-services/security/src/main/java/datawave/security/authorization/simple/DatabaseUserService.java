@@ -27,6 +27,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.util.StringUtils;
 
 /**
  * A {@link DatawaveUserService} that retrieves {@link DatawaveUser} objects from a SQL database. This login module expects the supplied {@link DataSource} to
@@ -98,7 +99,6 @@ public class DatabaseUserService implements DatawaveUserService {
 
     private final String usersTableName;
     private final String mappingTableName;
-    private final String regPattern = "\\s*,\\s*";
 
     /**
      * Constructs a new DatabaseUserService.
@@ -151,8 +151,8 @@ public class DatabaseUserService implements DatawaveUserService {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     UserType userType = UserType.valueOf(rs.getString("userType"));
-                    Collection<String> roles = Arrays.asList(rs.getString("roles").split(regPattern));
-                    Collection<String> auths = Arrays.asList(rs.getString("auths").split(regPattern));
+                    Collection<String> roles = Arrays.asList(StringUtils.split(rs.getString("roles"), "\\s*,\\s*"));
+                    Collection<String> auths = Arrays.asList(StringUtils.split(rs.getString("auths"), "\\s*,\\s*"));
                     HashMultimap<String,String> map = HashMultimap.create();
                     roles.forEach(r -> map.putAll(r, roleToAuthorizationMap.get(r)));
                     return new DatawaveUser(dn, userType, auths, roles, map, System.currentTimeMillis());

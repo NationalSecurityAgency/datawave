@@ -29,6 +29,8 @@ public class TestLookupTask<T extends QueryIterator> {
     private Class<T> iteratorClass;
     private QueryIterator iterator;
 
+    private boolean includeGroupingContext = false;
+
     public TestLookupTask(Class<T> iteratorClass) {
         this.iteratorClass = iteratorClass;
     }
@@ -52,6 +54,14 @@ public class TestLookupTask<T extends QueryIterator> {
 
     public List<Map.Entry<Key,Document>> lookup(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env,
                     List<Range> ranges) throws IOException {
+
+        if (options.containsKey(QueryOptions.INCLUDE_GROUPING_CONTEXT)) {
+            String option = options.get(QueryOptions.INCLUDE_GROUPING_CONTEXT);
+            includeGroupingContext = Boolean.parseBoolean(option);
+        } else {
+            includeGroupingContext = false;
+        }
+
         List<Map.Entry<Key,Document>> results = new ArrayList<>();
         YieldCallback<Key> yield = new YieldCallback();
         this.iterator = init(source, options, env, yield);
@@ -100,7 +110,7 @@ public class TestLookupTask<T extends QueryIterator> {
         Document filteredDocument = new Document();
         d.getDictionary().entrySet().stream().forEach(e -> {
             if (!e.getKey().equals(TIMING_METADATA) && !e.getKey().equals(WAIT_WINDOW_OVERRUN)) {
-                filteredDocument.put(e.getKey(), e.getValue());
+                filteredDocument.put(e.getKey(), e.getValue(), includeGroupingContext);
             }
         });
         return filteredDocument;

@@ -15,6 +15,7 @@ import com.google.common.collect.Multimap;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.PhraseIndexes;
+import datawave.util.StringUtils;
 
 /**
  * Represents a set of fields that have been specified within an #EXCERPT_FIELDS function, as well as their corresponding target offsets that should be used to
@@ -59,7 +60,7 @@ public class ExcerptFields implements Serializable {
 
         String[] fieldParts = string.split(Constants.COMMA);
         for (String fieldPart : fieldParts) {
-            String[] parts = fieldPart.split(Constants.FORWARD_SLASH);
+            String[] parts = StringUtils.split(fieldPart, Constants.FORWARD_SLASH);
             String direction = parts.length == 3 ? parts[2] : BOTH;
             excerptFields.put(parts[0], Integer.valueOf(parts[1]), direction);
         }

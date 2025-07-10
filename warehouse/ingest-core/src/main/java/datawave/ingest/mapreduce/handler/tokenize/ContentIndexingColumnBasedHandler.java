@@ -692,7 +692,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String indexedFieldName = nci.getIndexedFieldName();
         String content = nci.getIndexedFieldValue();
 
-        String[] tokens = content.split(listDelimiter);
+        String[] tokens = StringUtils.split(content, listDelimiter);
         int position = 0;
         for (String token : tokens) {
             String trimmedToken = StringUtils.trim(token);

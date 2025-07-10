@@ -18,6 +18,7 @@ import javax.enterprise.inject.Specializes;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.interceptor.Interceptor;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.impl.config.DefaultConfigPropertyProducer;
 
@@ -91,7 +92,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<String> produceStringListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = propertyValue.split(",");
+        String[] values = StringUtils.split(propertyValue, ",");
         return values == null ? Collections.emptyList() : Arrays.asList(values);
     }
 
@@ -101,7 +102,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public Set<String> produceStringSetConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = propertyValue.split(",");
+        String[] values = StringUtils.split(propertyValue, ",");
         return values == null ? Collections.emptySet() : new HashSet<>(Arrays.asList(values));
     }
 
@@ -111,7 +112,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<Integer> produceIntegerListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = propertyValue.split(",");
+        String[] values = StringUtils.split(propertyValue, ",");
 
         ArrayList<Integer> list = new ArrayList<>();
         if (values != null) {
@@ -135,7 +136,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<Long> produceLongListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = propertyValue.split(",");
+        String[] values = StringUtils.split(propertyValue, ",");
 
         ArrayList<Long> list = new ArrayList<>();
         if (values != null) {
@@ -159,7 +160,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<Float> produceFloatListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = propertyValue.split(",");
+        String[] values = StringUtils.split(propertyValue, ",");
 
         ArrayList<Float> list = new ArrayList<>();
         if (values != null) {
@@ -183,7 +184,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<Double> produceDoubleListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = propertyValue.split(",");
+        String[] values = StringUtils.split(propertyValue, ",");
 
         ArrayList<Double> list = new ArrayList<>();
         if (values != null) {
@@ -207,12 +208,12 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public Map<String,String> produceStringStringMapConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] pairs = propertyValue.split("\\|");
+        String[] pairs = StringUtils.split(propertyValue, "|");
 
         Map<String,String> map = new LinkedHashMap<>();
         if (pairs != null) {
             for (String pair : pairs) {
-                String[] keyValue = pair.split(";");
+                String[] keyValue = StringUtils.split(pair, ";");
                 if (keyValue != null && (keyValue.length == 1 || keyValue.length == 2)) {
                     map.put(keyValue[0], keyValue.length == 1 ? "" : keyValue[1]);
                 } else {

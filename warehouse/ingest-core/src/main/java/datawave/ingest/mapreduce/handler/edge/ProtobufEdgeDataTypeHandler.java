@@ -76,6 +76,7 @@ import datawave.ingest.time.Now;
 import datawave.marking.MarkingFunctions;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
+import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 
 public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
@@ -1297,9 +1298,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         for (Entry<String,String> confEntry : conf) {
             Matcher m = p.matcher(confEntry.getKey());
             if (m.matches()) {
-                String parts[] = confEntry.getValue().split(",");
+                String parts[] = StringUtils.split(confEntry.getValue(), ',', false);
                 for (String s : parts) {
-                    String colfams[] = s.split(":");
+                    String colfams[] = StringUtils.split(s, ':', false);
                     if (colfams.length > 1) {
                         if (!locs.containsKey(colfams[0])) {
                             locs.put(colfams[0], new HashSet<>());
