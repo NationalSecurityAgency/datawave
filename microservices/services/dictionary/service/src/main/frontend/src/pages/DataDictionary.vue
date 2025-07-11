@@ -104,9 +104,9 @@
         <template v-slot:body="props">
           <q-tr
             :props="props"
-            v-if="Formatters.isVisible(props.row)"
+            v-if="Formatters.buttonParse(props.cols, props.row)"
           >
-            <q-td style="width: 60px; min-width: 60px">
+            <q-td class="cell-spacing">
               <q-btn
                 size="9px"
                 color="cyan-8"
@@ -119,8 +119,33 @@
                   }
                 "
                 :icon="props.row.isVisible.value ? 'remove' : 'add'"
-                v-if="Formatters.buttonParse(props.cols, props.row)"
               />
+            </q-td>
+            <q-td
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              :class="{ 'text-bold': col.name === 'dataType'}"
+              style="font-size: 13px;"
+              @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+              >
+                <label style="cursor: pointer;">
+                  {{
+                    Formatters.maxSubstring(
+                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                    )
+                  }}
+                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                  </q-tooltip>
+                </label>
+              </q-td>
+          </q-tr>
+          <q-tr
+            :props="props"
+            v-if="Formatters.isVisible(props.row)"
+          >
+            <q-td class="cell-spacing">
               <q-icon
                   style="margin-left: 4px;"
                   size="1rem"
@@ -134,7 +159,7 @@
               :key="col.name"
               :props="props"
               style="font-size: 13px;"
-              @click="Feature.copyLabel(col.name, col.value)"
+              @click="Feature.copyLabel(col.name, col.value, null)"
             >
               <label style="cursor: pointer;">
                 {{
