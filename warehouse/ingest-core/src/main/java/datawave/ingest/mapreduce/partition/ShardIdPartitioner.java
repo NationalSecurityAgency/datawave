@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.Date;
 
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
@@ -73,7 +74,7 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
      * @return the shard id number
      */
     protected long generateNumberForShardId(String shardId, long baseTime) throws ParseException {
-        String[] shardPieces = shardId.split("_");
+        String[] shardPieces = StringUtils.split(shardId, '_');
 
         if (shardPieces.length != 2) {
             throw new ParseException("Shard id is not in expected format: yyyyMMdd_n: " + shardId, SHARD_ID_SPLIT);
