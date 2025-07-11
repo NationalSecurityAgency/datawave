@@ -43,8 +43,11 @@ public class Content extends Attribute<Content> implements Serializable {
 
     @Override
     public long sizeInBytes() {
-        return sizeInBytes(content) + super.sizeInBytes(4);
-        // 4 for string reference
+        if (sizeInBytes == Long.MIN_VALUE) {
+            // 4 for string reference
+            sizeInBytes = sizeInBytes(content) + super.sizeInBytes(4) + 4;
+        }
+        return sizeInBytes;
     }
 
     public String getContent() {
@@ -119,10 +122,15 @@ public class Content extends Attribute<Content> implements Serializable {
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.append(content).append(super.hashCode());
-
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(2099, 2129)
+                    .append(content)
+                    .append(super.hashCode())
+                    .toHashCode();
+            //  @formatter:off
+        }
+        return hashcode;
     }
 
     @Override
