@@ -365,6 +365,7 @@
         <property name="numRangesToBuffer" value="15" />
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
+        <property name="maxLinesToPrint" value="-1"/>
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
         <!--   variables that control when a seek is issued     -->
         <property name="fiFieldSeek" value="-1" />

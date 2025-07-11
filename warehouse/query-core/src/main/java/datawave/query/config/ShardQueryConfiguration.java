@@ -549,6 +549,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private DocumentScannerConfig documentScannerConfig;
 
     /**
+     * The maximum number of lines to print when streaming the query from the global index. Useful for limiting the logging footprint of large queries when
+     * debug logging is enabled.
+     */
+    private int maxLinesToPrint = -1;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -800,6 +806,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
+        this.setMaxLinesToPrint(other.getMaxLinesToPrint());
     }
 
     /**
@@ -3384,5 +3391,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setUseDocumentScheduler(boolean useDocumentScheduler) {
         this.useDocumentScheduler = useDocumentScheduler;
+    }
+
+    public int getMaxLinesToPrint() {
+        return maxLinesToPrint;
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        this.maxLinesToPrint = maxLinesToPrint;
     }
 }
