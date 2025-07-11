@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -50,6 +51,7 @@ import com.google.common.collect.Maps;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 
@@ -147,7 +149,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if (tableListString == null) {
             return Collections.emptySet();
         } else {
-            String[] tables = tableListString.split(",");
+            String[] tables = StringUtils.split(tableListString, ',');
             return new HashSet<>(Arrays.asList(tables));
         }
     }
@@ -379,7 +381,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if (log.isInfoEnabled())
             log.info("Configured table names are " + configNames);
 
-        String[] configuredTableNames = configNames.split(",");
+        String[] configuredTableNames = StringUtils.split(configNames, ',', false);
 
         if (configuredTableNames.length > 0)
             tableList.addAll(Arrays.asList(configuredTableNames));
@@ -593,7 +595,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 if (generateMapFileRowKeys && !shardMapFileRowKeys.isEmpty()) {
                     log.info("Writing mapFileRowKeys");
                     Path shardMapFilePath = new Path(workDir, getUniqueFile(context, "mapFileRowKeys", ".lst"));
-                    try (SequenceFile.Writer output = SequenceFile.createWriter(fs, conf, shardMapFilePath, Text.class, Text.class)) {
+                    try (Writer output = SequenceFile.createWriter(conf, Writer.file(shardMapFilePath), Writer.keyClass(Text.class),
+                                    Writer.valueClass(Text.class))) {
                         for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
                             Path path = shardMapFiles.get(entry.getKey());
                             Text pathText = new Text(path.getParent().getName() + "/" + path.getName());

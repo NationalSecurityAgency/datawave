@@ -37,6 +37,7 @@ import datawave.data.normalizer.DateNormalizer;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.StringUtils;
 
 /*
  The edge table may contain different versions of the edge key structure. In order to be able to generate the new keys
@@ -117,7 +118,7 @@ public class EdgeKeyVersioningCache {
                 for (Map.Entry<Key,Value> entry : scanner) {
                     String cq = entry.getKey().getColumnQualifier().toString();
 
-                    String parts[] = cq.split("/");
+                    String parts[] = StringUtils.split(cq, '/');
 
                     Integer versionNum = NumericalEncoder.decode(parts[0]).intValue();
 
@@ -202,7 +203,7 @@ public class EdgeKeyVersioningCache {
         String line;
         Map<Integer,String> tmpVersions = new TreeMap<>();
         while ((line = in.readLine()) != null) {
-            String parts[] = line.split("\t");
+            String parts[] = StringUtils.split(line, '\t');
             tmpVersions.put(Integer.parseInt(parts[0]), parts[1]);
         }
         in.close();

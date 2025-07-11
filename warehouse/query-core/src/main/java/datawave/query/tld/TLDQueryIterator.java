@@ -35,6 +35,7 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
@@ -236,7 +237,9 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // when we are torn down and rebuilt, ensure the range is for the next top level document
-        if (!range.isStartKeyInclusive()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!range.isStartKeyInclusive() && !WaitWindowObserver.hasBeginMarker(range.getStartKey())) {
             Key startKey = TLD.getNextParentKey(range.getStartKey());
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
