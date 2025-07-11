@@ -3194,7 +3194,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
                             scannerFactory, metadataHelper);
 
-            return stream.setUidIntersector(uidIntersector).setLimitScanners(limitScanners).setCreateUidsIteratorClass(createUidsIteratorClass);
+            //  @formatter:off
+            return stream.setUidIntersector(uidIntersector)
+                            .setLimitScanners(limitScanners)
+                            .setCreateUidsIteratorClass(createUidsIteratorClass)
+                            .setMaxLinesToPrint(config.getMaxLinesToPrint());
+            //  @formatter:on
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                         | NoSuchMethodException | SecurityException e) {
