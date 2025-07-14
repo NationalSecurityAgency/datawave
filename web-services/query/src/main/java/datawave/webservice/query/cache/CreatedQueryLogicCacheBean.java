@@ -17,8 +17,8 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 
@@ -40,6 +40,7 @@ import datawave.core.query.logic.QueryLogic;
 public class CreatedQueryLogicCacheBean {
 
     public static class Triple {
+
         final String userID;
         final QueryLogic<?> logic;
         final AccumuloClient client;
@@ -71,7 +72,7 @@ public class CreatedQueryLogicCacheBean {
         if (null == from) {
             return null;
         }
-        return new Pair<>(from.logic, from.client);
+        return Pair.of(from.logic, from.client);
     };
 
     // returns the logic and connection fields in a triple as a pair
@@ -79,7 +80,7 @@ public class CreatedQueryLogicCacheBean {
         if (from == null) {
             return null;
         } else {
-            return Maps.immutableEntry(from.getKey().getFirst(), tripToPair.apply(from.getValue()));
+            return Maps.immutableEntry(from.getKey().getLeft(), tripToPair.apply(from.getValue()));
         }
     };
 
@@ -105,7 +106,7 @@ public class CreatedQueryLogicCacheBean {
     public boolean add(String queryId, String userId, QueryLogic<?> logic, AccumuloClient client) {
         Triple value = new Triple(userId, logic, client);
         long updateTime = System.currentTimeMillis();
-        return cache.putIfAbsent(new Pair<>(queryId, updateTime), value) == null;
+        return cache.putIfAbsent(Pair.of(queryId, updateTime), value) == null;
     }
 
     public Pair<QueryLogic<?>,AccumuloClient> poll(String id) {
@@ -125,7 +126,7 @@ public class CreatedQueryLogicCacheBean {
 
     public Map<String,Pair<QueryLogic<?>,AccumuloClient>> entriesOlderThan(final Long now, final Long expiration) {
         Iterable<Entry<Pair<String,Long>,Triple>> iter = Iterables.filter(cache.entrySet(), input -> {
-            Long timeInserted = input.getKey().getSecond();
+            Long timeInserted = input.getKey().getRight();
 
             // If this entry was inserted more than the TTL 'time' ago, do not return it
             if ((now - expiration) > timeInserted) {
@@ -137,7 +138,7 @@ public class CreatedQueryLogicCacheBean {
 
         Map<String,Pair<QueryLogic<?>,AccumuloClient>> result = Maps.newHashMapWithExpectedSize(32);
         for (Entry<Pair<String,Long>,Triple> entry : iter) {
-            result.put(entry.getKey().getFirst(), tripToPair.apply(entry.getValue()));
+            result.put(entry.getKey().getLeft(), tripToPair.apply(entry.getValue()));
         }
 
         return result;
@@ -174,13 +175,13 @@ public class CreatedQueryLogicCacheBean {
             }
 
             try {
-                activePair.getFirst().close();
+                activePair.getLeft().close();
             } catch (Exception ex) {
                 log.error("Exception caught while closing an uninitialized query logic.", ex);
             }
 
             try {
-                connectionFactory.returnClient(activePair.getSecond());
+                connectionFactory.returnClient(activePair.getRight());
             } catch (Exception ex) {
                 log.error("Could not return connection from: " + entry.getKey() + " - " + activePair, ex);
             }
@@ -208,7 +209,7 @@ public class CreatedQueryLogicCacheBean {
      */
     private Entry<Pair<String,Long>,Triple> get(String queryId) {
         for (Pair<String,Long> key : cache.keySet()) {
-            if (key.getFirst().equals(queryId)) {
+            if (key.getLeft().equals(queryId)) {
                 return Maps.immutableEntry(key, cache.remove(key));
             }
         }
