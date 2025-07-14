@@ -42,7 +42,7 @@ public class SSDeepScoringFunction implements Function<Map.Entry<NGramTuple,SSDe
         this.minScoreThreshold = readOptionalMinScoreThreshold(config.getQuery());
 
         this.editDistanceScorer = new SSDeepHashEditDistanceScorer(maxRepeatedCharacters);
-        this.ngramOverlapScorer = new SSDeepNGramOverlapScorer(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
+        this.ngramOverlapScorer = new SSDeepNGramOverlapScorer(config.getNGramSize());
     }
 
     /**
