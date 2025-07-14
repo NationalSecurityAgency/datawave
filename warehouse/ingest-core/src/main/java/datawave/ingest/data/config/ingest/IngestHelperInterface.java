@@ -90,9 +90,21 @@ public interface IngestHelperInterface extends DataTypeHelper {
 
     DataTypeHelperImpl getEmbeddedHelper();
 
+    default boolean isDataTypeRequiredForIndexedCheck() {
+        return false;
+    }
+
     boolean isIndexedField(String fieldName);
 
+    default boolean isIndexedField(datawave.ingest.data.Type dataType, String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
     boolean isReverseIndexedField(String fieldName);
+
+    default boolean isReverseIndexedField(datawave.ingest.data.Type dataType, String fieldName) {
+        throw new UnsupportedOperationException();
+    }
 
     boolean isIndexOnlyField(String fieldName);
 
