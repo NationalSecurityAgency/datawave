@@ -1,5 +1,6 @@
 package datawave.query.tld;
 
+import static datawave.query.iterator.QueryOptions.INCLUDE_GROUPING_CONTEXT;
 import static datawave.query.iterator.QueryOptions.INDEXED_FIELDS;
 import static datawave.query.iterator.QueryOptions.NON_INDEXED_DATATYPES;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
@@ -70,7 +71,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("z");
         expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
 
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
 
     @Test
@@ -85,7 +86,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("z");
         expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
 
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
 
     /**
@@ -108,7 +109,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
 
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
 
     @Test
@@ -124,7 +125,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add(",,q ,r, ,s,");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
 
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
 
     /**
@@ -146,7 +147,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
 
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
 
     @Test
@@ -154,7 +155,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.emptyList());
     }
 
     @Test
@@ -162,7 +163,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.emptyList());
     }
 
     @Test
@@ -176,7 +177,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
 
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
 
     @Test
@@ -190,7 +191,73 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
 
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.emptyList());
+    }
+
+    @Test
+    public void index_grouping_tld_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
+
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        expectedDocument.getValue().put("EVENT_FIELD1.1", new ArrayList<>(List.of("a1", "a2")));
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+        groupingNotation_test(seekRange, query, false, configureTLDTestData(11), Collections.singletonList(expectedDocument));
+    }
+
+    @Test
+    public void index_grouping_tld_documentRange_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
+
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        expectedDocument.getValue().put("EVENT_FIELD1.1", new ArrayList<>(List.of("a1", "a2")));
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+        groupingNotation_test(seekRange, query, false, configureTLDTestData(11), Collections.singletonList(expectedDocument));
+    }
+
+    @Test
+    public void index_grouping_tld_childHit_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'b1',EVENT_FIELD1,'b2')";
+
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        expectedDocument.getValue().put("EVENT_FIELD1.1", new ArrayList<>(List.of("a1", "a2")));
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+        groupingNotation_test(seekRange, query, false, configureTLDTestData(11), Collections.singletonList(expectedDocument));
+    }
+
+    @Test
+    public void index_grouping_tld_childHit_documentRange_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'b1',EVENT_FIELD1,'b2')";
+
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        expectedDocument.getValue().put("EVENT_FIELD1.1", new ArrayList<>(List.of("a1", "a2")));
+
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+        groupingNotation_test(seekRange, query, false, configureTLDTestData(11), Collections.singletonList(expectedDocument));
+    }
+
+    @Test
+    public void index_grouping_tld_childMiss_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'b1',EVENT_FIELD1,'c2')";
+        // cannot match across child documents
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+        groupingNotation_test(seekRange, query, true, configureTLDTestData(11), Collections.emptyList());
+    }
+
+    @Test
+    public void index_grouping_tld_childMiss_documentRange_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "grouping:matchesInGroup(EVENT_FIELD1,'b1',EVENT_FIELD1,'c2')";
+        // cannot match across child documents
+        options.put(INCLUDE_GROUPING_CONTEXT, "true");
+        groupingNotation_test(seekRange, query, true, configureTLDTestData(11), Collections.emptyList());
     }
 
     @Override
@@ -234,6 +301,17 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         // add some non-event data that is unique for children
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD3", "z", "123.345.456.2"), EMPTY_VALUE));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD3", "z", "123.345.456.2"), EMPTY_VALUE));
+
+        // add some grouping data
+        // parent is a1, a2
+        // first child is b1, b2
+        // second child is c1, c2
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456", "EVENT_FIELD1.1", "a1"));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456", "EVENT_FIELD1.1", "a2"));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.1", "EVENT_FIELD1.1.1", "b1"));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.1", "EVENT_FIELD1.1.1", "b2"));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.2", "EVENT_FIELD1.2.1", "c1"));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.2", "EVENT_FIELD1.2.1", "c2"));
 
         return listSource;
     }
