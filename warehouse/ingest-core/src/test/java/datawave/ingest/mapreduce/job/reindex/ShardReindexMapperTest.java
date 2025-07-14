@@ -75,7 +75,9 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.protobuf.TermWeight;
+import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.model.DateFrequencyMap;
 
 public class ShardReindexMapperTest extends EasyMockSupport {
     private Configuration conf;
@@ -1129,21 +1131,10 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Key event = expectIndexed(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
         context.progress();
 
-        Key fKey = new Key("FIELDA", "f", "samplecsv" + '\u0000' + "20240216", event.getTimestamp());
-        BulkIngestKey fBik = new BulkIngestKey(new Text("DatawaveMetadata"), fKey);
-        mockContextWriter.write(eq(fBik), EasyMock.isA(Value.class), eq(context));
-
-        Key iKey = new Key("FIELDA", "i", "samplecsv" + '\u0000' + "20240216", event.getTimestamp());
-        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
-        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
-
-        Key eKey = new Key("FIELDA", "e", "samplecsv", event.getTimestamp());
-        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
-        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
-
-        Key tKey = new Key("FIELDA", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), event.getTimestamp());
-        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
-        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+        expectMetadata("FIELDA", "f", "samplecsv", "20240216", 1L, event.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1L, event.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv", null, event.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), event.getTimestamp());
 
         mockContextWriter.cleanup(context);
 
@@ -1177,6 +1168,15 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         }
         BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
         mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+    }
+
+    private void expectMetadata(String field, String type, String dataType, String date, long count, long timestamp) throws IOException, InterruptedException {
+        Key iKey;
+        iKey = new Key(field, type, dataType + '\u0000' + FrequencyMetadataAggregator.AGGREGATED, timestamp);
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        DateFrequencyMap map = new DateFrequencyMap();
+        map.put(date, count);
+        mockContextWriter.write(eq(iBik), eq(new Value(map.toBytes())), eq(context));
     }
 
     private Key createFiKey(String row, String field, String value, String dataType, String uid, String date) throws ParseException {
@@ -1271,7 +1271,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         // TODO this might be a bug in EventMetadata, but the frequency key comes with the event key, so is excluded here
         // expectMetadata("FIELDA", "f", "samplecsv", "20240216", fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
@@ -1296,7 +1296,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
@@ -1320,9 +1320,9 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
-        expectMetadata("FIELDA", "f", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "f", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         replayAll();
@@ -1351,7 +1351,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(3);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 2L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         Key eventLookupKey = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '\u0000');
@@ -1359,7 +1359,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Range expectedLookupRange = new Range(eventLookupKey, true, eventLookupKeyEnd, true);
         expectScanner("shard", expectedLookupRange, Collections.emptyIterator());
 
-        expectMetadata("FIELDA", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv2", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         eventLookupKey = new Key("row", "samplecsv2" + '\u0000' + "1.2.3", "FIELDA" + '\u0000');
@@ -1393,9 +1393,9 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
-        expectMetadata("FIELDA", "f", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "f", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         Key eventLookupKey = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '\u0000');
@@ -1424,7 +1424,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         replayAll();
@@ -1465,28 +1465,28 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(6);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", 2, fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
 
-        expectMetadata("FIELDE", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDE", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         expectMetadata("FIELDF_TOKEN", "e", "samplecsv", null, fiKey.getTimestamp());
-        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", 2, fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
 
         expectMetadata("FIELDF", "e", "samplecsv", null, fiKey.getTimestamp());
-        expectMetadata("FIELDF", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDF", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         expectMetadata("FIELDA", "e", "undesignatedTokens", null, fiKey.getTimestamp());
-        expectMetadata("FIELDA", "i", "undesignatedTokens", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "undesignatedTokens", "20240216", 2, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "undesignatedTokens", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
         expectMetadata("FIELDA", "tf", "undesignatedTokens", null, fiKey.getTimestamp());
 
-        expectMetadata("FIELDB", "i", "undesignatedTokens", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "undesignatedTokens", "20240216", 2, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "undesignatedTokens", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
         expectMetadata("FIELDB", "tf", "undesignatedTokens", null, fiKey.getTimestamp());
 
@@ -1553,7 +1553,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Capture<IteratorSetting> fieldECapture = Capture.newInstance();
         mockScanner.addScanIterator(capture(fieldECapture));
 
-        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", 2L, fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
@@ -1582,7 +1582,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         Key start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
@@ -1624,10 +1624,10 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(3);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", 2, fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "e", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
@@ -1677,8 +1677,8 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
-        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         replayAll();
@@ -1702,8 +1702,8 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mockContextWriter.cleanup(context);
 
         expectMetadata("FIELDB", "e", "samplecsv", null, fiKey.getTimestamp());
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
-        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         replayAll();
@@ -1726,7 +1726,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         replayAll();
@@ -1750,7 +1750,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mockContextWriter.cleanup(context);
 
         expectMetadata("FIELDB", "e", "samplecsv", null, fiKey.getTimestamp());
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         replayAll();
@@ -1774,7 +1774,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.progress();
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
@@ -1806,8 +1806,8 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(2);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
-        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", 1, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
@@ -1842,11 +1842,11 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(3);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
-        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
@@ -1881,11 +1881,11 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(2);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
-        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
@@ -1920,19 +1920,19 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(5);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDA", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "samplecsv2", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDA", "e", "samplecsv2", null, fiKey.getTimestamp());
         expectMetadata("FIELDA", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "e", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         replayAll();
@@ -1966,16 +1966,16 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         expectLastCall().times(4);
         mockContextWriter.cleanup(context);
 
-        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", 2L, fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", 2L, fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "e", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDF_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
-        expectMetadata("FIELDF", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF", "i", "samplecsv", "20240216", 1L, fiKey.getTimestamp());
         expectMetadata("FIELDF", "e", "samplecsv", null, fiKey.getTimestamp());
         expectMetadata("FIELDF", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
