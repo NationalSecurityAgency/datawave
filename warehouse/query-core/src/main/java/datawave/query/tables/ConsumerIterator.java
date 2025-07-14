@@ -39,38 +39,4 @@ public class ConsumerIterator<T> implements Iterator<T> {
         next = null;
         return toReturn;
     }
-
-    public static void main(String[] args) {
-        ProducerConsumerBuffer<Integer> queue = new ProducerConsumerBuffer<>(25);
-
-        Thread producer = new Thread(() -> {
-            try {
-                for (int i = 0; i < 1000; i++) {
-                    queue.put(i);
-                }
-                System.out.println("done producing");
-                queue.close();
-                System.out.println("done");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                e.printStackTrace();
-            }
-        });
-
-        Thread consumer = new Thread(() -> {
-            ConsumerIterator<Integer> iterator = new ConsumerIterator<>(queue);
-            while (iterator.hasNext()) {
-                Integer i = iterator.next();
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                System.out.println(i);
-            }
-        });
-
-        producer.start();
-        consumer.start();
-    }
 }

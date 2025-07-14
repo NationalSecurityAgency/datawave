@@ -31,10 +31,10 @@ import datawave.query.util.count.CountMapSerDe;
 /**
  * This class creates a decoupled producer/consumer of QueryData where the producer and/or consumer may be slow. The only bundling going on is the async
  * fetching of QueryPlan from the producer
- *
+ * <p>
  * The producer will begin producing immediately on construction by creating a new Thread running a RangeConsumer. The RangeConsumer will continually put to the
  * queue, blocking if the queue is currently full (maxRanges)
- *
+ * <p>
  * The consumer will be lazy initialized when hasNext() is called.
  */
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
