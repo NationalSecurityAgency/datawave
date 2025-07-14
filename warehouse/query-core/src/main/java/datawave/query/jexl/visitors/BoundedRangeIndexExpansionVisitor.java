@@ -90,7 +90,6 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
 
                 if (range.isLowerBoundGreaterThanUpperBound()) {
                     log.error("lower bound is greater than the upper bound: {}", range);
-                    throw new IllegalStateException("lower bound is greater than upper bound");
                 }
 
                 try {

@@ -625,6 +625,9 @@ public class ShardQueryConfigurationTest {
         DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
         defaultValues.put("documentScannerConfig", null);
         updatedValues.put("documentScannerConfig", documentScannerConfig);
+
+        defaultValues.put("maxLinesToPrint", -1);
+        updatedValues.put("maxLinesToPrint", 150);
     }
 
     private Query createQuery(String query) {

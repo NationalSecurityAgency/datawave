@@ -40,6 +40,7 @@ import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.XMLFieldConfigHelper;
+import datawave.util.StringUtils;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
@@ -416,7 +417,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         shardExclusions.clear();
         String exclusionsList = config.get(this.getType().typeName() + SHARD_FIELD_EXCLUSIONS);
         if (exclusionsList != null) {
-            String[] exclusions = exclusionsList.split(",");
+            String[] exclusions = StringUtils.split(exclusionsList, ',');
             if (exclusions != null && exclusions.length > 0) {
                 for (String exclusionFieldName : exclusions) {
 

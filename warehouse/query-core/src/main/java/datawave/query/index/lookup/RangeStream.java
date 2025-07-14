@@ -89,8 +89,6 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.EvaluationRendering;
-import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
-import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
@@ -102,7 +100,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import datawave.query.util.TypeMetadata;
+import datawave.util.StringUtils;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -153,6 +151,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected Set<String> indexOnlyFields = Sets.newHashSet();
 
     protected NumShardFinder numShardFinder;
+
+    private int maxLinesToPrint = -1;
+    private int linesPrinted = 0;
 
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
@@ -219,8 +220,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isDebugEnabled()) {
             log.debug("Query returned a stream with a context of " + this.context);
             if (queryStream != null) {
-                for (String line : queryStream.getContextDebug().split("\n")) {
+                int count = 0;
+                for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
                     log.debug(line);
+                    if (maxLinesToPrint > 0 && ++count > maxLinesToPrint) {
+                        break;
+                    }
                 }
             }
         }
@@ -287,8 +292,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
-                    for (String line : queryStream.getContextDebug().split("\n")) {
+                    int count = 0;
+                    for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
                         log.debug(line);
+                        if (maxLinesToPrint > 0 && ++count > maxLinesToPrint) {
+                            break;
+                        }
                     }
                 }
 
@@ -307,68 +316,36 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     }
 
     public EmptyPlanPruner getEmptyPlanPruner() {
-        if (config.getPruneQueryByIngestTypes()) {
-            try {
-                return new EmptyPlanPruner(config, metadataHelper, metadataHelper.getTypeMetadata());
-            } catch (TableNotFoundException e) {
-                throw new DatawaveFatalQueryException("Failed to get TypeMetadata", e);
-            }
-        }
-
         return new EmptyPlanPruner();
     }
 
     /**
-     * This class will prune a QueryPlan if either A) the ranges are empty or B) optionally, if no document can satisfy the query
+     * Get the maximum number of lines to print. Useful when debug logging is enabled for very large queries. This property is disabled when set to -1 or 0.
+     *
+     * @return the maximum number of lines to print
+     */
+    public int getMaxLinesToPrint() {
+        return maxLinesToPrint;
+    }
+
+    /**
+     * Set the maximum number of lines to print. Number must be a positive integer to have an effect.
+     *
+     * @param maxLinesToPrint
+     *            the maximum number of lines to print
+     */
+    public RangeStream setMaxLinesToPrint(int maxLinesToPrint) {
+        this.maxLinesToPrint = maxLinesToPrint;
+        return this;
+    }
+
+    /**
+     * This class will prune a QueryPlan if the ranges are empty
      */
     public static class EmptyPlanPruner implements Predicate<QueryPlan> {
 
-        private ShardQueryConfiguration config;
-        private MetadataHelper metadataHelper;
-        private TypeMetadata typeMetadata;
-        private Set<String> ingestTypes = null;
-
-        public EmptyPlanPruner() {
-            // no-op
-        }
-
-        public EmptyPlanPruner(ShardQueryConfiguration config, MetadataHelper metadataHelper, TypeMetadata typeMetadata) {
-            this.config = config;
-            this.metadataHelper = metadataHelper;
-            this.typeMetadata = typeMetadata;
-            this.ingestTypes = config.getDatatypeFilter();
-        }
-
         public boolean apply(QueryPlan plan) {
-
-            if (!plan.getRanges().iterator().hasNext()) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Query plan had no ranges: " + JexlStringBuildingVisitor.buildQueryWithoutParse(plan.getQueryTree()));
-                }
-                return false;
-            }
-
-            if (typeMetadata != null) {
-                JexlNode node = plan.getQueryTree();
-                JexlNode result;
-                if (ingestTypes.isEmpty()) {
-                    // datatype filter was empty signifying a search across all ingest types
-                    result = IngestTypePruningVisitor.prune(node, typeMetadata);
-                } else {
-                    // datatype filter can be used to prune the resulting query tree
-                    result = IngestTypePruningVisitor.prune(node, typeMetadata, ingestTypes);
-                }
-
-                if (!ExecutableDeterminationVisitor.isExecutable(result, config, metadataHelper)) {
-                    return false;
-                }
-
-                // update the query tree with the (potentially) pruned
-                plan.setQueryTree(result);
-                plan.setQueryTreeString(JexlStringBuildingVisitor.buildQueryWithoutParse(result));
-            }
-
-            return true;
+            return plan.getRanges().iterator().hasNext();
         }
     }
 
@@ -571,22 +548,31 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (!isIndexed(fieldName, config.getIndexedFields())) {
             try {
                 if (this.getAllFieldsFromHelper().contains(fieldName)) {
-                    log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not indexed.");
+                    if (maxLinesToPrint > 0 && linesPrinted < maxLinesToPrint) {
+                        linesPrinted++;
+                        log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not indexed.");
+                    }
                     return ScannerStream.delayed(node);
                 }
             } catch (TableNotFoundException e) {
                 log.error(e);
                 throw new RuntimeException(e);
             }
-            log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
-
+            if (maxLinesToPrint > 0 && ++linesPrinted < maxLinesToPrint) {
+                linesPrinted++;
+                log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
+            }
             // even though the field is not indexed it may still be valuable when evaluating an event. mark this scanner stream as delayed, so it is correctly
             // propagated
             return ScannerStream.delayed(node);
         }
 
         // Final case, field is indexed
-        log.debug("\"" + fieldName + "\" is indexed. for " + literal);
+        if (maxLinesToPrint > 0 && linesPrinted < maxLinesToPrint) {
+            linesPrinted++;
+            log.debug("\"" + fieldName + "\" is indexed. for " + literal);
+        }
+
         try {
 
             int stackStart = config.getBaseIteratorPriority();
@@ -842,7 +828,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         String identifier = JexlASTHelper.getIdentifier(node);
         if (Constants.SHARD_DAY_HINT.equals(identifier)) {
             JexlNode myNode = JexlNodeFactory.createExpression(node);
-            String[] shardsAndDays = JexlASTHelper.getLiteralValue(node).toString().split(",");
+            String[] shardsAndDays = StringUtils.split(JexlASTHelper.getLiteralValue(node).toString(), ',');
 
             if (shardsAndDays.length == 0) {
                 return ScannerStream.noData(myNode);

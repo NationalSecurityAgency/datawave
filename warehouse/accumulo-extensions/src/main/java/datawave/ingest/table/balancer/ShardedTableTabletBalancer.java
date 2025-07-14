@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.TableId;
@@ -82,9 +83,13 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
 
     @Override
     protected int getMaxMigrations() {
+        return getMaxMigrations(this::getTableConfiguration);
+    }
+
+    static int getMaxMigrations(Supplier<Configuration> tableConfig) {
         int maxMigrations = MAX_MIGRATIONS_DEFAULT;
         try {
-            String maxMigrationsProp = getTableConfiguration().get(SHARDED_MAX_MIGRATIONS);
+            String maxMigrationsProp = tableConfig.get().get(SHARDED_MAX_MIGRATIONS);
             if (maxMigrationsProp != null && !maxMigrationsProp.isEmpty()) {
                 try {
                     maxMigrations = Integer.parseInt(maxMigrationsProp);
@@ -116,7 +121,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
      * Partitions extents into groups according to the "day" portion of the end row. That is, the end row is expected to be in the form yyyymmdd_x, and the
      * partitioner returns yyyymmdd.
      */
-    protected static class ShardDayPartitioner implements Function<TabletId,String> {
+    static class ShardDayPartitioner implements Function<TabletId,String> {
         @Override
         public String apply(TabletId t) {
             String date = "null"; // Don't return null
