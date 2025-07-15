@@ -944,7 +944,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * @param fields
      *            A map of the original field name to the original value
      */
-    public Multimap<String,NormalizedContentInterface> ormalize(Multimap<String,String> fields) {
+    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
         Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
 
         for (Entry<String,String> e : fields.entries()) {

@@ -28,16 +28,8 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     protected MaskedFieldHelper mfHelper = null;
     protected Set<String> shardExclusions = new HashSet<>();
 
-    /*
-     * SETH NOTE I'm wondering if I'll have to make a version of the following for the error indexing or not. Worth to keep it noted in the meantime.
-     * UPDATE 1: Yup! Looks like it.
-     */
     protected boolean hasIndexDisallowlist = false;
     protected boolean hasReverseIndexDisallowlist = false;
-
-    // Same usage as the variables above, but for the error variants.
-    protected boolean hasErrorIndexDisallowlist = false;
-    protected boolean hasErrorReverseIndexDisallowlist = false;
 
     public boolean getReplaceMalformedUTF8() {
         return replaceMalformedUTF8;
@@ -146,34 +138,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
 
     protected void setHasReverseIndexDisallowlist(boolean hasReverseIndexDisallowlist) {
         this.hasReverseIndexDisallowlist = hasReverseIndexDisallowlist;
-    }
-
-    /**
-     * Setter for {@code hasErrorIndexDisallowList}.
-     */
-    protected void setHasErrorIndexDisallowlist(boolean hasErrorIndexDisallowlist) {
-        this.hasErrorIndexDisallowlist = hasErrorIndexDisallowlist;
-    }
-
-    /**
-     * Setter for {@code hasErrorIndexDisallowList}.
-     */
-    protected void setHasErrorReverseIndexDisallowlist(boolean hasErrorReverseIndexDisallowlist) {
-        this.hasErrorReverseIndexDisallowlist = hasErrorReverseIndexDisallowlist;
-    }
-
-    /**
-     * Getter for {@code hasErrorIndexDisallowList}.
-     */
-    protected boolean hasErrorIndexDisallowlist() {
-        return this.hasErrorIndexDisallowlist;
-    }
-
-    /**
-     * Getter for {@code hasErrorReverseIndexDisallowList}.
-     */
-    protected boolean hasErrorReverseIndexDisallowlist() {
-        return this.hasErrorReverseIndexDisallowlist;
     }
 
     public void upperCaseSetEntries(Set<String> input, String warnMessage) {
