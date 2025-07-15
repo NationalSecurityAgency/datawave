@@ -606,11 +606,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {
@@ -734,11 +730,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {
