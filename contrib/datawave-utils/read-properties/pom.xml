@@ -71,7 +71,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
-            <version>4.3.25.RELEASE</version>
+            <version>5.3.39</version>
         </dependency>
         <dependency>
             <groupId>commons-logging</groupId>

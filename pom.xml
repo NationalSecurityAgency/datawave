@@ -124,8 +124,8 @@
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>5.3.0</version.spring>
-        <version.spring-security-core>${version.spring}.RELEASE</version.spring-security-core>
+        <version.spring>5.3.39</version.spring>
+        <version.spring-security-core>5.8.16</version.spring-security-core>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.5.2</version.surefire.plugin>

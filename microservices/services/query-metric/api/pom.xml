@@ -32,6 +32,7 @@
         <version.protobuf-java>3.7.1</version.protobuf-java>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.36</version.slf4j>
+        <version.springframework>5.3.39</version.springframework>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -208,7 +209,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
-            <version>5.3.21</version>
+            <version>${version.springframework}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

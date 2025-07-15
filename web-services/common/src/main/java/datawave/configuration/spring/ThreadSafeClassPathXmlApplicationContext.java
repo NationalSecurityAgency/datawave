@@ -508,6 +508,17 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType, boolean allowFactoryBeanInit)
+                    throws NoSuchBeanDefinitionException {
+        lock.readLock().lock();
+        try {
+            return configurableApplicationContext.findAnnotationOnBean(beanName, annotationType, allowFactoryBeanInit);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
     public BeanFactory getParentBeanFactory() {
         lock.readLock().lock();
         try {
