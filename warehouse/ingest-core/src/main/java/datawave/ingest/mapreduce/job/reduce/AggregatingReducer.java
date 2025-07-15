@@ -27,6 +27,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
