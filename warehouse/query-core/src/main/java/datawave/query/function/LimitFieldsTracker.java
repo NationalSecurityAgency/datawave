@@ -4,14 +4,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.accumulo.core.util.Pair;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.query.attributes.Attribute;
+import datawave.query.util.Tuple2;
 
 /**
  * Provides useful tracking of a number of different properties for use with {@link LimitFields}.
@@ -47,9 +46,9 @@ public class LimitFieldsTracker {
      * @return the commonality and grouping context
      */
     private static String getGroup(String fieldWithGrouping) {
-        Pair<String,String> fieldTokens = LimitFields.getCommonalityAndGroupingContext(fieldWithGrouping);
+        Tuple2<String,String> fieldTokens = LimitFields.getCommonalityAndGroupingContext(fieldWithGrouping);
         if (fieldTokens != null) {
-            return JOINER.join(fieldTokens.getFirst(), fieldTokens.getSecond());
+            return JOINER.join(fieldTokens.first(), fieldTokens.second());
         }
         return null;
     }

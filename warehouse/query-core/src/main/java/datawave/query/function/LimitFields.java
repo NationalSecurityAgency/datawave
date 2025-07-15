@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -19,6 +18,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
+import datawave.query.util.Tuple2;
 import datawave.util.StringUtils;
 
 /**
@@ -71,11 +71,11 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *            the key
      * @return the commonality and grouping context
      */
-    static Pair<String,String> getCommonalityAndGroupingContext(String key) {
+    static Tuple2<String,String> getCommonalityAndGroupingContext(String key) {
         String[] splits = StringUtils.split(key, '.');
         if (splits.length >= 3) {
             // return the first group and last group (a.k.a the instance in the first group)
-            return new Pair<>(splits[1], splits[splits.length - 1]);
+            return new Tuple2<>(splits[1], splits[splits.length - 1]);
         }
         return null;
     }
@@ -272,17 +272,17 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         // If not already returned as a value match, then lets include those that are
         // part of the same group and instance as some other hit.
         if (!hitTermMap.isEmpty()) {
-            Pair<String,String> keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
+            Tuple2<String,String> keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
             if (keyTokens != null) {
-                String keyWithGroupingCommonality = keyTokens.getFirst();
-                String keyWithGroupingSuffix = keyTokens.getSecond();
+                String keyWithGroupingCommonality = keyTokens.first();
+                String keyWithGroupingSuffix = keyTokens.second();
 
                 for (String key : hitTermMap.keySet()) {
                     // Get the commonality from the hit term key.
-                    Pair<String,String> commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
+                    Tuple2<String,String> commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
                     if (commonalityAndGroupingContext != null) {
-                        String hitTermKeyCommonality = commonalityAndGroupingContext.getFirst();
-                        String hitTermGroup = commonalityAndGroupingContext.getSecond();
+                        String hitTermKeyCommonality = commonalityAndGroupingContext.first();
+                        String hitTermGroup = commonalityAndGroupingContext.second();
                         if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && keyWithGroupingSuffix.equals(hitTermGroup)) {
                             return true;
                         }
