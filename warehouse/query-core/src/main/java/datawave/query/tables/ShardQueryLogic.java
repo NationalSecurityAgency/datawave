@@ -126,6 +126,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -1492,10 +1493,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         }
 
-        // Delegate to the super class if no validation rules were configured.
+        // If no validation rules were configured, return no results.
         if (validationRules == null || validationRules.isEmpty()) {
-            log.trace("No validation rules configured");
-            return super.validateQuery(client, settings, auths);
+            throw new BadRequestQueryException(DatawaveErrorCode.NO_QUERY_VALIDATION_RULES_CONFIGURED);
         }
 
         // Set the connector and authorizations for the config object.
