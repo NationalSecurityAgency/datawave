@@ -59,7 +59,7 @@ public class DataTypeHelperImpl implements DataTypeHelper {
         aliaser.setup(getType(), config);
     }
 
-    private void initType(final Configuration config) {
+    protected void initType(final Configuration config) {
         if (type != null && TypeRegistry.hasInstance())
             return;
 

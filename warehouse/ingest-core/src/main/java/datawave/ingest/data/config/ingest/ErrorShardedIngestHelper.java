@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -40,22 +41,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      * </p>
      */
     private static final String DATATYPE_ERROR = ".error";
-
-    /*
-     * SETH NOTE Pulled these from the 2 chunks above. Only grabbed the first var, but you may need to grab the other 2 for each. Not sure if this will be
-     * necessary though.
-     * UPDATE 1: Seems like I will have to add them.
-     */
-
-//    // Same usage as the variables above, but for the error variants.
-//    protected Set<String> errorIndexedFields = Sets.newHashSet();
-//    protected Map<String, Pattern> errorIndexedPatterns = Maps.newHashMap();
-//    protected Set<String> errorUnindexedFields = Sets.newHashSet();
-//
-//    // Same usage as the variables above, but for the error reverse variants.
-//    protected Set<String> errorReverseIndexedFields.get(configProperty) = Sets.newHashSet();
-//    protected Map<String,Pattern> errorReverseIndexedPatterns = Maps.newHashMap();
-//    protected Set<String> errorReverseUnindexedFields = Sets.newHashSet();
+    private IngestHelperInterface delegate = null;
 
     /*\
 
@@ -64,10 +50,11 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         type = TypeRegistry.getType(t);
 
      */
-    private Map<Type, IndexedFields> errorIndexedFields;
-    private Map<Type, IndexedFields> errorReverseIndexedFields;
+    private Map<Type, IndexedFields> errorIndexedFields = new HashMap<>();
+    private Map<Type, IndexedFields> errorReverseIndexedFields = new HashMap<>();
 
-
+    protected boolean hasErrorIndexDisallowlist = false;
+    protected boolean hasErrorReverseIndexDisallowlist = false;
     /*\
 
     citrus.data.category.index=ORANGE,LEMON
@@ -87,9 +74,9 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
 
     private static class IndexedFields {
-        private Set<String> indexedFields;
-        private Map<String, Pattern> patterns;
-        private Set<String> unindexedFields;
+        private Set<String> indexedFields = new HashSet<>();
+        private Map<String, Pattern> patterns = new HashMap<>();
+        private Set<String> unindexedFields = new HashSet<>();
     }
 
     /* SETH NOTE
@@ -105,28 +92,25 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     @Override
     public void setup(Configuration config) {
         // we are error
-        config.set(Properties.DATA_NAME, "error");
-        String configProperty = null;
+        super.setup(config);
 
-        // === BEGIN SETH'S ERROR FIELDS ===
+        config.set(Properties.DATA_NAME, DATATYPE_ERROR);
+
+        Type configProperty = null;
 
         // --- ERROR INDEX_FIELDS ---
-
-        /*
-         * SETH NOTE This is most likely the start of the chunk that needs to be cloned for the error index stuff.
-         */
 
         // Process the error indexed fields in the same way as the normal index fields, but with DATATYPE_ERROR appended to the datatype.
         if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
                 log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
             }
-            super.setHasErrorIndexDisallowlist(true);
-            configProperty = DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS;
+            setHasErrorIndexDisallowlist(true);
+            configProperty = TypeRegistry.getType(DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
         } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + INDEX_FIELDS) != null) {
             log.debug("ErrorIndexedFields specified.");
-            super.setHasErrorIndexDisallowlist(false);
-            configProperty = DATATYPE_ERROR + INDEX_FIELDS;
+            setHasErrorIndexDisallowlist(false);
+            configProperty = TypeRegistry.getType(DATATYPE_ERROR + INDEX_FIELDS);
         }
 
         // Load the proper list of fields to (not) index
@@ -135,8 +119,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         } else if (configProperty == null && log.isWarnEnabled()) {
             log.warn("No error index fields or error disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
         } else {
-            this.errorIndexedFields.get(configProperty).indexedFields = Sets.newHashSet();
-            Collection<String> errorIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty);
+            this.errorIndexedFields.putIfAbsent(configProperty, new IndexedFields());
+            Collection<String> errorIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty); // todo: this needs to be updated based on inclusive or exclusive dtErrors
             if (null != errorIndexedStrings && !errorIndexedStrings.isEmpty()) {
                 for (String errorIndexedString : errorIndexedStrings) {
                     this.errorIndexedFields.get(configProperty).indexedFields.add(errorIndexedString.trim());
@@ -150,11 +134,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         }
 
         // --- ERROR REVERSE INDEX FIELDS ---
-
-        /*
-         * SETH NOTE This is what Laura was talking about-- the Allow/Disallow is mutually exclusive. I haven't seen this same block above for the non-reverse
-         * index fields. Maybe I need to take another look.
-         */
 
         // Ensure that we have only an allowlist or a disallowlist of fields to
         // error-reverse-index
@@ -176,13 +155,13 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
             this.setHasErrorReverseIndexDisallowlist(true);
 
-            configProperty = DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS;
+            configProperty = TypeRegistry.getType(DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS);
         } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
                 log.debug("Reverse Index specified for: {}", this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
             }
             this.setHasErrorReverseIndexDisallowlist(false);
-            configProperty = DATATYPE_ERROR + REVERSE_INDEX_FIELDS;
+            configProperty = TypeRegistry.getType(DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
         }
 
         // Load the proper list of fields to (not) error-reverse-index
@@ -220,10 +199,9 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                 }
             }
         }
-        super.setup(config);
+
     }
 
-    private IngestHelperInterface delegate = null;
 
     public void setDelegateHelper(IngestHelperInterface delegate) {
         this.delegate = delegate;
@@ -277,7 +255,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      * @return FALSE if errorReverseIndexedFields.get(configProperty) is empty, TRUE if it's not.
      */
     private boolean hasErrorReverseIndexConfig() {
-        return !errorReverseIndexedFields.get(configProperty).isEmpty();
+        return !errorReverseIndexedFields.isEmpty();
 
     }
 
@@ -302,9 +280,10 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
 
     public boolean isIndexedField(Type dataType, String fieldName) {
-        IndexedFields indexedFields = errorIndexedFields.get(dataType);
-        if (indexedFields != null) {
-            // Determine if indexed based on IndexedFields.
+        IndexedFields dataTypeIndexFields = errorIndexedFields.get(dataType);
+        if (dataTypeIndexFields != null) {
+            // Must either be explicitly indexed, or not explicitly unindexed.
+            return dataTypeIndexFields.indexedFields.contains(fieldName) || !dataTypeIndexFields.unindexedFields.contains(fieldName);
         } else {
             return super.isIndexedField(fieldName);
         }
@@ -322,96 +301,44 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      */
     @Override
     public boolean isReverseIndexedField(String fieldName) {
-        if (hasErrorReverseIndexConfig()) {
-            return isErrorReverseIndexedField(fieldName);
+        throw new UnsupportedOperationException("Use isReverseIndexedFields(Type dataType, String field) instead");
+    }
+
+    public boolean IsReverseIndexedField(Type dataType, String fieldName) {
+        IndexedFields dataTypeIndexFields = errorReverseIndexedFields.get(dataType);
+        if (dataTypeIndexFields != null) {
+            // Must either be explicitly indexed, or not explicitly unindexed.
+            return dataTypeIndexFields.indexedFields.contains(fieldName) || !dataTypeIndexFields.unindexedFields.contains(fieldName);
         } else {
             return super.isIndexedField(fieldName);
         }
     }
 
-
     /**
-     * Checks if the fieldName is an error-reverse-index field. Fields are marked in the {@code setup()} method.
-     *
-     * @param fieldName
-     *            the fieldName to test
-     * @return TRUE if the fieldName provided has been identified as an error-reverse-index field, FALSE if not.
+     * Setter for {@code hasErrorIndexDisallowList}.
      */
-    public boolean isErrorReverseIndexedField(String fieldName) {
-        if (fieldConfigHelper != null) {
-            return fieldConfigHelper.isErrorReverseIndexedField(fieldName);
-        }
-        return this.hasErrorReverseIndexDisallowlist() ? !isErrorReverseIndexed(fieldName) : isErrorReverseIndexed(fieldName);
+    protected void setHasErrorIndexDisallowlist(boolean hasErrorIndexDisallowlist) {
+        this.hasErrorIndexDisallowlist = hasErrorIndexDisallowlist;
     }
 
     /**
-     * Helper method for {@link this.isErrorReverseIndexedField()}.
-     *
-     * @param fieldName
-     *            the fieldName to test
-     * @return TRUE if the fieldName provided has been identified as an error-reverse-index field, FALSE if not.
+     * Setter for {@code hasErrorIndexDisallowList}.
      */
-    private boolean isErrorReverseIndexed(String fieldName) {
-        if (fieldConfigHelper != null && fieldConfigHelper.isErrorReverseIndexedField(fieldName)) {
-            return true;
-        } else if (this.errorReverseIndexedFields.contains(fieldName)) {
-            return true;
-        } else if (this.errorReverseUnindexedFields.contains(fieldName)) {
-            return false;
-        } else if (this.errorReverseIndexedPatterns.isEmpty()) { // avoids filling errorReverseUnindexedFields if not necessary
-            return false;
-        } else {
-            for (Pattern pattern : this.errorReverseIndexedPatterns.values()) {
-                if (pattern.matcher(fieldName).matches()) {
-                    this.errorReverseIndexedFields.get(configProperty).add(fieldName); // update so we don't need to match the next time we see it
-                    return true;
-                }
-            }
-            this.errorReverseUnindexedFields.add(fieldName);
-            return false;
-        }
+    protected void setHasErrorReverseIndexDisallowlist(boolean hasErrorReverseIndexDisallowlist) {
+        this.hasErrorReverseIndexDisallowlist = hasErrorReverseIndexDisallowlist;
     }
 
     /**
-     * Checks if the fieldName is an error-index field. Fields are marked in the {@code setup()} method.
-     *
-     * @param fieldName
-     *            the fieldName to test
-     * @return TRUE if the fieldName provided has been identified as an error-index field, FALSE if not.
+     * Getter for {@code hasErrorIndexDisallowList}.
      */
-    public boolean isErrorIndexedField(String fieldName) {
-        if (fieldConfigHelper != null) {
-            return fieldConfigHelper.isErrorIndexedField(fieldName);
-        }
-        return this.hasErrorIndexDisallowlist() ? !isErrorIndexed(fieldName) : isErrorIndexed(fieldName);
+    protected boolean hasErrorIndexDisallowlist() {
+        return this.hasErrorIndexDisallowlist;
     }
 
     /**
-     * Helper method for {@link this.isErrorIndexedField()}.
-     *
-     * @param fieldName
-     *            the fieldName to test
-     * @return TRUE if the fieldName provided has been identified as an error-index field, FALSE if not.
+     * Getter for {@code hasErrorReverseIndexDisallowList}.
      */
-    private boolean isErrorIndexed(String fieldName) {
-        if (fieldConfigHelper != null && fieldConfigHelper.isErrorIndexedField(fieldName)) {
-            return true;
-        } else if (this.errorIndexedFields.contains(fieldName)) {
-            return true;
-        } else if (this.errorUnindexedFields.contains(fieldName)) {
-            return false;
-        } else if (this.errorIndexedPatterns.isEmpty()) { // avoids filling unindexedFields if not necessary
-            return false;
-        } else {
-            for (Pattern pattern : this.errorIndexedPatterns.values()) {
-                if (pattern.matcher(fieldName).matches()) {
-                    this.errorIndexedFields.add(fieldName); // update so we don't need to match the next time we see it
-                    return true;
-                }
-            }
-            this.errorUnindexedFields.add(fieldName);
-            return false;
-        }
+    protected boolean hasErrorReverseIndexDisallowlist() {
+        return this.hasErrorReverseIndexDisallowlist;
     }
-
 }
