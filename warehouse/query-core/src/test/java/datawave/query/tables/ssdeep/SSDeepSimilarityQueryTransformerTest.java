@@ -70,8 +70,7 @@ public class SSDeepSimilarityQueryTransformerTest {
     @Test
     public void transformTest() {
 
-        final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer = new SSDeepNGramOverlapScorer(NGramGenerator.DEFAULT_NGRAM_SIZE,
-                        SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS, NGramGenerator.DEFAULT_MIN_HASH_SIZE);
+        final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer = new SSDeepNGramOverlapScorer(NGramGenerator.DEFAULT_NGRAM_SIZE);
         final SSDeepHashScorer<Integer> editDistanceScorer = new SSDeepHashEditDistanceScorer(SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS);
 
         final SSDeepHash query = SSDeepHash.parse(TEST_SSDEEPS[2]);
