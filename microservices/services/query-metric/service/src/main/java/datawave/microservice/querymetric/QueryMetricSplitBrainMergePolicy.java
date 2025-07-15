@@ -13,18 +13,18 @@ import datawave.microservice.querymetric.handler.QueryMetricCombiner;
 
 public class QueryMetricSplitBrainMergePolicy<V extends QueryMetricUpdateHolder,T extends MergingValue<V> & MergingLastUpdateTime,R extends QueryMetricUpdateHolder>
                 implements SplitBrainMergePolicy<V,T,R> {
-    
+
     private final Logger log = LoggerFactory.getLogger(getClass());
     protected QueryMetricCombiner queryMetricCombiner;
-    
+
     public QueryMetricSplitBrainMergePolicy() {
         this.queryMetricCombiner = getQueryMetricCombiner();
     }
-    
+
     protected QueryMetricCombiner getQueryMetricCombiner() {
         return new QueryMetricCombiner();
     }
-    
+
     @Override
     public R merge(T mergingValue, T existingValue) {
         QueryMetricUpdateHolder mergedValue;
@@ -36,10 +36,10 @@ public class QueryMetricSplitBrainMergePolicy<V extends QueryMetricUpdateHolder,
                 log.debug("Merged metric: " + mergedValue.getMetric().getQueryId());
             }
         } else {
-            
+
             QueryMetricUpdateHolder merging = mergingValue.getValue();
             QueryMetricUpdateHolder existing = existingValue.getValue();
-            
+
             try {
                 BaseQueryMetric metric = this.queryMetricCombiner.combineMetrics(merging.getMetric(), existing.getMetric(), existing.getMetricType());
                 mergedValue = new QueryMetricUpdateHolder(metric, existing.getMetricType());
@@ -56,17 +56,17 @@ public class QueryMetricSplitBrainMergePolicy<V extends QueryMetricUpdateHolder,
                 log.debug("Merged metric: " + mergedValue.getMetric().getQueryId());
             }
         }
-        
+
         return (R) mergedValue;
     }
-    
+
     @Override
     public void readData(ObjectDataInput in) {
-        
+
     }
-    
+
     @Override
     public void writeData(ObjectDataOutput out) {
-        
+
     }
 }

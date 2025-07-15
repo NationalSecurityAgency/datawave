@@ -38,28 +38,28 @@ import datawave.security.authorization.JWTTokenHandler;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"AuthorizeHttpsAllowedCallerTest", "httpsallowedcaller"})
 public class AuthorizeHttpsAllowedCallerTest {
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     private CacheManager cacheManager;
-    
+
     @Autowired
     private JWTTokenHandler jwtTokenHandler;
-    
+
     private AuthorizationTestUtils testUtils;
-    
+
     @BeforeEach
     public void setup() {
         cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
         RestTemplate restTemplate = restTemplateBuilder.build(RestTemplate.class);
         testUtils = new AuthorizationTestUtils(jwtTokenHandler, restTemplate, "https", webServicePort);
     }
-    
+
     @Test
     public void testAuthorizeMethodSecurityWithAllowedCaller() throws Exception {
         // X509 certificate used for identity
@@ -68,7 +68,7 @@ public class AuthorizeHttpsAllowedCallerTest {
         testUtils.testAuthorizeMethodSuccess(null, "/authorization/v1/authorize", false, false);
         testUtils.testAuthorizeMethodSuccess(null, "/authorization/v2/authorize", false, false);
     }
-    
+
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})
     @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
     @ComponentScan(basePackages = "datawave.microservice")
@@ -80,7 +80,7 @@ public class AuthorizeHttpsAllowedCallerTest {
                         @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory) {
             return new AuthorizationTestUserService(Collections.EMPTY_MAP, true);
         }
-        
+
         @Bean
         public HazelcastInstance testHazelcastInstance() {
             Config config = new Config();
@@ -88,7 +88,7 @@ public class AuthorizeHttpsAllowedCallerTest {
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);
         }
-        
+
         @Bean
         public BusProperties busProperties() {
             return new BusProperties();

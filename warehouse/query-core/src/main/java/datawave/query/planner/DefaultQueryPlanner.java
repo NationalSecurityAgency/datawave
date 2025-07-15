@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -61,12 +62,15 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.DateType;
+import datawave.data.type.RawDateType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
@@ -74,6 +78,9 @@ import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ScanHintRule;
@@ -88,6 +95,7 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
+import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -153,6 +161,7 @@ import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
+import datawave.query.jexl.visitors.validate.ValidateBoundedRangeVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.async.AbstractQueryPlannerCallable;
@@ -1013,6 +1022,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
 
+        // Verify that any fields specified for unique with temporal granularities such as unique_by_hour are date-time fields.
+        validateUniqueFields(config.getUniqueFields());
+
+        // Verify that any fields specified for grouping with temporal granularities such as #GROUP(FIELD[HOUR]) are date-time fields.
+        validateGroupFields(config.getGroupFields());
+
         Set<String> indexOnlyFields = getIndexOnlyFields();
 
         if (!indexOnlyFields.isEmpty()) {
@@ -1079,6 +1094,75 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         timeScanHintRules(timers, "Apply scan hint rules", config);
 
         return config.getQueryTree();
+    }
+
+    // The set of date time field types.
+    protected static final Set<String> dateTypes = Set.of(DateType.class.getName(), RawDateType.class.getName());
+
+    /**
+     * Verify that the given unique fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param uniqueFields
+     *            the unique fields to validate
+     */
+    protected void validateUniqueFields(UniqueFields uniqueFields) {
+        if (uniqueFields != null && !uniqueFields.isEmpty()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(uniqueFields.getFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException(
+                                "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: " + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Verify that the given grouping fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param groupFields
+     *            the grouping fields
+     */
+    protected void validateGroupFields(GroupFields groupFields) {
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(groupFields.getGroupByFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException("The following group-by fields are not date fields and cannot be used with temporal truncation: "
+                                + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Return the set of non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param fields
+     *            the fields to check
+     * @return the set of non-datetime fields
+     */
+    protected Set<String> getNonTemporalFields(TreeMultimap<String,TemporalGranularity> fields) {
+        // Get the set of all fields mapped to a temporal granularity other than ALL.
+        Set<String> fieldsToCheck = new HashSet<>();
+        for (String field : fields.keySet()) {
+            NavigableSet<TemporalGranularity> granularities = fields.get(field);
+            if (!granularities.isEmpty() && !(granularities.size() == 1 && granularities.contains(TemporalGranularity.ALL))) {
+                fieldsToCheck.add(field);
+            }
+        }
+
+        Set<String> invalidFields = new HashSet<>();
+
+        // Check the field types.
+        if (!fieldsToCheck.isEmpty()) {
+            TypeMetadata typeMetadata = getTypeMetadata();
+            for (String field : fieldsToCheck) {
+                Set<String> fieldTypes = typeMetadata.getNormalizerNamesForField(field);
+                // If field types were returned, verify that they contain one of the date time types. Otherwise, add it as an invalid field.
+                if (!fieldTypes.isEmpty() && Sets.intersection(fieldTypes, dateTypes).isEmpty()) {
+                    invalidFields.add(field);
+                }
+            }
+        }
+
+        return invalidFields;
     }
 
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
@@ -1250,6 +1334,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.debug("Bounded range and regex conversion has been disabled");
             }
         }
+
+        // whether bounded ranges were expanded or not, validate all ranges
+        timedValidateBoundedRanges(timers, config.getQueryTree());
 
         // fields may have been added or removed from the query, need to update the field to type map
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
@@ -1627,6 +1714,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Validate Filter Functions",
                         () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
+    }
+
+    protected ASTJexlScript timedValidateBoundedRanges(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Validate Bounded Ranges", () -> ValidateBoundedRangeVisitor.validate(queryTree));
     }
 
     protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
@@ -3022,27 +3113,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("query stream is " + stream.context());
             }
 
-            switch (stream.context()) {
-                case EXCEEDED_TERM_THRESHOLD:
-                    // throw an unsupported exception if the planner cannot handle term threshold exceeded
-                    if (!config.canHandleExceededTermThreshold()) {
-                        throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
-                    }
-                    break;
-                case UNINDEXED:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Full table scan required because of unindexed fields");
-                    }
-                    needsFullTable = true;
-                    break;
-                case DELAYED_FIELD:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Full table scan required because query consists of only delayed expressions");
-                    }
-                    needsFullTable = true;
-                    break;
-                default:
-                    // the context is good and does not prevent a query from executing
+            // the context here doesn't actually matter because the range stream was initialized but the underlying scanners
+            // have not been started via the concurrent scanner initializer. This is just a quick check for known bad states
+            if (stream.context().equals(StreamContext.DELAYED)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Full table scan required because query consists of only delayed expressions");
+                }
+                needsFullTable = true;
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
@@ -3117,7 +3194,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
                             scannerFactory, metadataHelper);
 
-            return stream.setUidIntersector(uidIntersector).setLimitScanners(limitScanners).setCreateUidsIteratorClass(createUidsIteratorClass);
+            //  @formatter:off
+            return stream.setUidIntersector(uidIntersector)
+                            .setLimitScanners(limitScanners)
+                            .setCreateUidsIteratorClass(createUidsIteratorClass)
+                            .setMaxLinesToPrint(config.getMaxLinesToPrint());
+            //  @formatter:on
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                         | NoSuchMethodException | SecurityException e) {
@@ -3479,6 +3561,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return compositeMetadata;
     }
 
+    protected void setTypeMetadata(TypeMetadata typeMetadata) {
+        this.typeMetadata = typeMetadata;
+    }
+
     protected TypeMetadata getTypeMetadata() {
         if (typeMetadata == null && typeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(typeMetadataCallable.stageName());
@@ -3530,7 +3616,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return serializedIvaratorDirs;
     }
 
-    protected Set<String> getIndexedFields() {
+    public Set<String> getIndexedFields() {
         if (indexedFields == null && indexedFieldsCallable != null) {
             indexedFields = getFieldSet(indexedFieldsCallable.stageName(), indexedFieldsFuture);
         }
@@ -3538,7 +3624,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return Objects.requireNonNullElse(indexedFields, Collections.emptySet());
     }
 
-    protected Set<String> getIndexOnlyFields() {
+    public Set<String> getIndexOnlyFields() {
         if (indexOnlyFields == null && indexOnlyFieldsCallable != null) {
             indexOnlyFields = getFieldSet(indexOnlyFieldsCallable.stageName(), indexOnlyFieldsFuture);
         }
@@ -3546,7 +3632,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return Objects.requireNonNullElse(indexOnlyFields, Collections.emptySet());
     }
 
-    protected Set<String> getNonEventFields() {
+    public Set<String> getNonEventFields() {
         if (nonEventFields == null && nonEventFieldsCallable != null) {
             nonEventFields = getFieldSet(nonEventFieldsCallable.stageName(), nonEventFieldsFuture);
         }

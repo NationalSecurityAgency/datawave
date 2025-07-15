@@ -34,30 +34,30 @@ import io.protostuff.ProtostuffIOUtil;
 @AutoConfigureMockMvc
 @ActiveProfiles({"converterTest", "permitAllWebTest"})
 public class ProtostuffHttpMessageConverterTest {
-    
+
     @Autowired
     private MockMvc mvc;
-    
+
     @Test
     public void testProtostuffResponse() throws Exception {
         MvcResult mvcResult = mvc.perform(get("/vr").accept("application/x-protostuff")).andExpect(status().isOk()).andReturn();
-        
+
         VoidResponse actual = new VoidResponse();
         ProtostuffIOUtil.mergeFrom(mvcResult.getResponse().getContentAsByteArray(), actual, actual.cachedSchema());
-        
+
         QueryException qe = new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, "This is a test QueryException");
         ArrayList<String> expectedMessages = Lists.newArrayList("This is a test message", "This is another test message");
         ArrayList<QueryExceptionType> expectedExceptions = Lists.newArrayList(
                         new QueryExceptionType(qe.getMessage(), "Exception with no cause caught", qe.getErrorCode()),
                         new QueryExceptionType("This is the cause exception", "java.lang.Exception: This is the cause exception", null),
                         new QueryExceptionType("this is a test exception", "Exception with no cause caught", null));
-        
+
         assertTrue(actual.getHasResults());
         assertTrue(actual.getOperationTimeMS() >= 0);
         assertEquals(expectedMessages, actual.getMessages());
         assertEquals(expectedExceptions, actual.getExceptions());
     }
-    
+
     @RestController
     @RequestMapping(path = "/", produces = {"application/x-protostuff", "application/json"})
     public static class TestController {
@@ -74,7 +74,7 @@ public class ProtostuffHttpMessageConverterTest {
             return voidResponse;
         }
     }
-    
+
     @Profile("converterTest")
     @Configuration
     @ComponentScan(basePackages = "datawave.microservice")

@@ -18,30 +18,30 @@ import datawave.core.query.configuration.QueryData;
 public class TaskDescription {
     private final TaskKey taskKey;
     private final Collection<QueryData> queries;
-    
+
     @JsonCreator
     public TaskDescription(@JsonProperty("taskKey") TaskKey taskKey, @JsonProperty("queries") Collection<QueryData> queries) {
         this.taskKey = taskKey;
         this.queries = queries;
     }
-    
+
     public TaskKey getTaskKey() {
         return taskKey;
     }
-    
+
     public Collection<QueryData> getQueries() {
         return queries;
     }
-    
+
     @Override
     public String toString() {
         return getTaskKey() + " on " + getQueries();
     }
-    
+
     public String toDebug() {
         return getTaskKey().toString();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -51,7 +51,7 @@ public class TaskDescription {
         TaskDescription that = (TaskDescription) o;
         return Objects.equals(taskKey, that.taskKey) && Objects.equals(Sets.newHashSet(queries), Sets.newHashSet(that.queries));
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(taskKey, queries);

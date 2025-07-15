@@ -20,44 +20,44 @@ public class StreamingProperties {
     private long callTimeout = 1;
     @NotNull
     private TimeUnit callTimeoutUnit = TimeUnit.DAYS;
-    
+
     @NotEmpty
     private String defaultContentType = MediaType.APPLICATION_JSON_VALUE;
-    
+
     private ThreadPoolTaskExecutorProperties executor = new ThreadPoolTaskExecutorProperties(10, 100, 100, "streamingCall-");
-    
+
     public long getCallTimeout() {
         return callTimeout;
     }
-    
+
     public long getCallTimeoutMillis() {
         return callTimeoutUnit.toMillis(callTimeout);
     }
-    
+
     public void setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
     }
-    
+
     public TimeUnit getCallTimeoutUnit() {
         return callTimeoutUnit;
     }
-    
+
     public void setCallTimeoutUnit(TimeUnit callTimeoutUnit) {
         this.callTimeoutUnit = callTimeoutUnit;
     }
-    
+
     public String getDefaultContentType() {
         return defaultContentType;
     }
-    
+
     public void setDefaultContentType(String defaultContentType) {
         this.defaultContentType = defaultContentType;
     }
-    
+
     public ThreadPoolTaskExecutorProperties getExecutor() {
         return executor;
     }
-    
+
     public void setExecutor(ThreadPoolTaskExecutorProperties executor) {
         this.executor = executor;
     }

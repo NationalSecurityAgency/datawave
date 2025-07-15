@@ -108,7 +108,10 @@ public class GeoWaveFunctionsDescriptorTest {
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
 
         JexlNode indexQuery = desc.getIndexQuery(config, metadataHelper, null, null);
-        return JexlStringBuildingVisitor.buildQuery(indexQuery);
+        String result = JexlStringBuildingVisitor.buildQuery(indexQuery);
+        // a union is wrapped with reference expressions when building the query. Because the index query is merged
+        // into a union the reference expressions need to be removed to ensure a flattened tree
+        return result.substring(1, result.length() - 1);
     }
 
     /**

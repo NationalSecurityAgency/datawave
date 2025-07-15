@@ -25,7 +25,7 @@ import datawave.microservice.config.web.RestClientProperties;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "spring.main.allow-bean-definition-overriding=true")
 @ActiveProfiles({"OAuthServiceTest", "http"})
 public class OAuthOperationsV2HttpTest extends OAuthOperationsV2TestCommon {
-    
+
     @BeforeEach
     public void setup() {
         // dwUser is not on the allowedCaller list
@@ -37,67 +37,67 @@ public class OAuthOperationsV2HttpTest extends OAuthOperationsV2TestCommon {
         restTemplate = restTemplateBuilder.build(RestTemplate.class);
         testUtils = new AuthorizationTestUtils(jwtTokenHandler, restTemplate, "http", webServicePort);
     }
-    
+
     @Test
     public void TestCodeFlowValid() throws Exception {
         super.TestCodeFlowValid(dwUser, AUTH_TYPE.TRUSTED_HEADER);
     }
-    
+
     @Test
     public void TestCodeFlowInvalidClientId() {
         super.TestCodeFlowInvalidClientId(dwUser, AUTH_TYPE.TRUSTED_HEADER);
     }
-    
+
     @Test
     public void TestCodeFlowMissingResponseType() {
         super.TestCodeFlowMissingResponseType(dwUser, AUTH_TYPE.TRUSTED_HEADER);
     }
-    
+
     @Test
     public void TestCodeFlowMissingRedirectUri() {
         super.TestCodeFlowMissingRedirectUri(dwUser, AUTH_TYPE.TRUSTED_HEADER);
     }
-    
+
     @Test
     public void TestCodeFlowWrongCode() {
         super.TestCodeFlowWrongCode();
     }
-    
+
     @Test
     public void TestCodeFlowRightCodeWrongOtherParameters() throws Exception {
         super.TestCodeFlowRightCodeWrongOtherParameters(dwUser, AUTH_TYPE.TRUSTED_HEADER);
     }
-    
+
     @Test
     public void TestCodeFlowUseCodeTwice() throws Exception {
         super.TestCodeFlowUseCodeTwice(dwUser, AUTH_TYPE.TRUSTED_HEADER);
     }
-    
+
     /*
      * Only used for the OAuth tests so that we can ignore redirect responses and check the response values at each step of the OAuth process
      */
     public class OAuthRestTemplateCustomizer implements RestTemplateCustomizer {
-        
+
         private final SSLContext sslContext;
         private final int maxConnectionsTotal;
         private final int maxConnectionsPerRoute;
-        
+
         public OAuthRestTemplateCustomizer(SSLContext sslContext, RestClientProperties restClientProperties) {
             this.sslContext = sslContext;
             this.maxConnectionsTotal = restClientProperties.getMaxConnectionsTotal();
             this.maxConnectionsPerRoute = restClientProperties.getMaxConnectionsPerRoute();
         }
-        
+
         @Override
         public void customize(RestTemplate restTemplate) {
             restTemplate.setRequestFactory(clientHttpRequestFactory());
         }
-        
+
         protected ClientHttpRequestFactory clientHttpRequestFactory() {
             HttpClient httpClient = customizeHttpClient(HttpClients.custom(), sslContext).build();
             return new HttpComponentsClientHttpRequestFactory(httpClient);
         }
-        
+
         protected HttpClientBuilder customizeHttpClient(HttpClientBuilder httpClientBuilder, SSLContext sslContext) {
             if (sslContext != null) {
                 httpClientBuilder.setSSLContext(sslContext);

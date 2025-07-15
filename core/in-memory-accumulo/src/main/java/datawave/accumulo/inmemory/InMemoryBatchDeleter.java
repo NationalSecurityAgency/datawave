@@ -40,10 +40,10 @@ import org.apache.accumulo.core.security.ColumnVisibility;
  *
  */
 public class InMemoryBatchDeleter extends InMemoryBatchScanner implements BatchDeleter {
-    
+
     private final InMemoryAccumulo acc;
     private final String tableName;
-    
+
     /**
      * Create a {@link BatchDeleter} for the specified instance on the specified table where the writer uses the specified {@link Authorizations}.
      */
@@ -52,10 +52,10 @@ public class InMemoryBatchDeleter extends InMemoryBatchScanner implements BatchD
         this.acc = acc;
         this.tableName = tableName;
     }
-    
+
     @Override
     public void delete() throws MutationsRejectedException, TableNotFoundException {
-        
+
         BatchWriter writer = new InMemoryBatchWriter(acc, tableName);
         try {
             Iterator<Entry<Key,Value>> iter = super.iterator();
@@ -70,5 +70,5 @@ public class InMemoryBatchDeleter extends InMemoryBatchScanner implements BatchD
             writer.close();
         }
     }
-    
+
 }

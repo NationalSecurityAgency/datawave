@@ -16,26 +16,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class QueryState {
     private QueryStatus queryStatus;
     private TaskStates taskStates;
-    
+
     @JsonCreator
     public QueryState(@JsonProperty("queryStatus") QueryStatus queryStatus, @JsonProperty("taskStates") TaskStates taskStates) {
         this.queryStatus = queryStatus;
         this.taskStates = taskStates;
     }
-    
+
     public QueryStatus getQueryStatus() {
         return queryStatus;
     }
-    
+
     public TaskStates getTaskStates() {
         return taskStates;
     }
-    
+
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("queryProperties", getQueryStatus()).append("taskStates", getTaskStates()).build();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryState) {
@@ -44,7 +44,7 @@ public class QueryState {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(getQueryStatus()).append(getTaskStates()).toHashCode();

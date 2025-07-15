@@ -85,6 +85,7 @@ warehouse:
     ivaratorMaxOpenFiles: 100
     ivaratorCacheScanPersistThreshold: 100000
     ivaratorCacheScanTimeoutMinutes: 60
+    yieldThresholdMs: 188400
     modelName: 'DATAWAVE'
     edgeModelName: 'DATAWAVE_EDGE'
 
@@ -212,6 +213,7 @@ datawave:
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
           ivaratorCacheScanPersistThreshold: ${warehouse.defaults.ivaratorCacheScanPersistThreshold}
           ivaratorCacheScanTimeoutMinutes: ${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}
+          yieldThresholdMs: ${warehouse.defaults.yieldThresholdMs}
           eventQueryDataDecoratorTransformer:
             requestedDecorators:
               - "CSV"
@@ -233,6 +235,7 @@ datawave:
             TOKENIZED-LUCENE: "TokenizedLuceneToJexlQueryParser"
           sendTimingToStatsd: false
           collectQueryMetrics: true
+          collectTimingDetails: true
           logTimingDetails: false
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}

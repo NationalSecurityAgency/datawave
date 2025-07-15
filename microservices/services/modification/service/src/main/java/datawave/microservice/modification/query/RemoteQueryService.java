@@ -26,31 +26,31 @@ import datawave.webservice.result.VoidResponse;
 
 public class RemoteQueryService implements ModificationQueryService {
     private static final Logger log = LoggerFactory.getLogger(RemoteQueryService.class);
-    
+
     private final ModificationQueryProperties modificationProperties;
     private final WebClient webClient;
     private final JWTTokenHandler jwtTokenHandler;
-    
+
     private final ProxiedUserDetails userDetails;
-    
+
     public static class RemoteQueryServiceFactory implements ModificationQueryServiceFactory {
         private final ModificationQueryProperties modificationProperties;
         private final WebClient.Builder webClientBuilder;
         private final JWTTokenHandler jwtTokenHandler;
-        
+
         public RemoteQueryServiceFactory(ModificationQueryProperties modificationProperties, WebClient.Builder webClientBuilder,
                         JWTTokenHandler jwtTokenHandler) {
             this.modificationProperties = modificationProperties;
             this.webClientBuilder = webClientBuilder;
             this.jwtTokenHandler = jwtTokenHandler;
         }
-        
+
         @Override
         public ModificationQueryService createService(ProxiedUserDetails userDetails) {
             return new RemoteQueryService(modificationProperties, webClientBuilder, jwtTokenHandler, userDetails);
         }
     }
-    
+
     public RemoteQueryService(ModificationQueryProperties modificationProperties, WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler,
                     ProxiedUserDetails user) {
         this.modificationProperties = modificationProperties;
@@ -62,25 +62,25 @@ public class RemoteQueryService implements ModificationQueryService {
         this.jwtTokenHandler = jwtTokenHandler;
         this.userDetails = user;
     }
-    
+
     protected String createBearerHeader() {
         return "Bearer " + jwtTokenHandler.createTokenFromUsers(userDetails.getPrimaryUser().getName(), userDetails.getProxiedUsers());
     }
-    
+
     @Override
     public GenericResponse<String> createQuery(String logicName, Map<String,List<String>> paramsToMap) throws DatawaveQueryException {
         String bearerHeader = createBearerHeader();
-        
+
         Collection<String> userAuths = new ArrayList<>(userDetails.getPrimaryUser().getAuths());
-        
+
         try {
             DefaultQueryParameters params = new DefaultQueryParameters();
             params.validate(paramsToMap);
-            
+
             String beginDate = DefaultQueryParameters.formatDate(params.getBeginDate());
             String endDate = DefaultQueryParameters.formatDate(params.getEndDate());
             String expirationDate = DefaultQueryParameters.formatDate(params.getExpirationDate());
-            
+
             return webClient.post().uri(uriBuilder -> uriBuilder.path(logicName + "/create")
                             .queryParam(QueryParameters.QUERY_POOL, modificationProperties.getQueryPool()).queryParam(QueryParameters.QUERY_BEGIN, beginDate)
                             .queryParam(QueryParameters.QUERY_END, endDate).queryParam(QueryParameters.QUERY_LOGIC_NAME, logicName)
@@ -102,7 +102,7 @@ public class RemoteQueryService implements ModificationQueryService {
             throw new IllegalStateException("Timed out waiting for remote query createAndNext response", e);
         }
     }
-    
+
     public BaseQueryResponse next(String queryId) {
         String bearerHeader = createBearerHeader();
         try {
@@ -122,7 +122,7 @@ public class RemoteQueryService implements ModificationQueryService {
             throw new IllegalStateException("Timed out waiting for remote query next response", e);
         }
     }
-    
+
     @Override
     public void close(String queryId) {
         String bearerHeader = createBearerHeader();

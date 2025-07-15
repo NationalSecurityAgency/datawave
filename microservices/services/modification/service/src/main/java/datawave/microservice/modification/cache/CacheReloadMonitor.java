@@ -12,13 +12,13 @@ import datawave.modification.cache.ModificationCache;
 @ConditionalOnProperty(name = "datawave.modification.cache.monitor.enabled", havingValue = "true", matchIfMissing = true)
 public class CacheReloadMonitor {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final ModificationCache modificationCache;
-    
+
     public CacheReloadMonitor(ModificationCache modificationCache) {
         this.modificationCache = modificationCache;
     }
-    
+
     // this runs in a separate thread every 30 seconds (by default)
     @Scheduled(cron = "${datawave.modification.cache.monitor.scheduler-crontab:*/30 * * * * ?}")
     public void monitorTaskScheduler() {

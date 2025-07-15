@@ -13,13 +13,13 @@ import datawave.query.cardinality.CardinalityConfiguration;
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 public class EventQueryConfiguration {
-    
+
     @Bean
     @ConfigurationProperties(prefix = "datawave.query.logic.logics.event-query")
     public ShardQueryLogicProperties eventQueryProperties() {
         return new ShardQueryLogicProperties();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public CardinalityConfiguration eventQueryCardinalityConfiguration() {

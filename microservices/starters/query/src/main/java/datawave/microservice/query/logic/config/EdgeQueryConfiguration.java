@@ -18,16 +18,16 @@ import datawave.query.language.parser.QueryParser;
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 public class EdgeQueryConfiguration {
-    
+
     @Autowired
     private ApplicationContext appContext;
-    
+
     @Bean
     @ConfigurationProperties("datawave.query.logic.logics.edge-query")
     public EdgeQueryLogicProperties edgeQueryProperties() {
         return new EdgeQueryLogicProperties();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,QueryParser> edgeQuerySyntaxParsers() {

@@ -2,26 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>gov.nsa.datawave.microservice</groupId>
-        <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
-        <relativePath>../../../microservices/microservice-parent/pom.xml</relativePath>
+        <groupId>gov.nsa.datawave.core</groupId>
+        <artifactId>datawave-utils-parent</artifactId>
+        <version>7.27.0-SNAPSHOT</version>
     </parent>
     <artifactId>common-utils</artifactId>
-    <version>3.0.1-SNAPSHOT</version>
-    <url>https://code.nsa.gov/datawave-common-utils</url>
-    <licenses>
-        <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
-    <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-common-utils.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-common-utils.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-common-utils</url>
-    </scm>
+    <name>${project.artifactId}</name>
     <properties>
         <spotbugs.excludes.file>${project.basedir}/src/main/spotbugs/excludes.xml</spotbugs.excludes.file>
         <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
@@ -30,16 +16,6 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${version.guava}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave.accumulo-utils}</version>
-            </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-core</artifactId>
@@ -53,17 +29,12 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
     <repositories>

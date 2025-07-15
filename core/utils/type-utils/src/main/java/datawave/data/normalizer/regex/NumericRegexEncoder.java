@@ -92,43 +92,43 @@ import datawave.data.type.util.NumericalEncoder;
  * nature of how numbers are encoded, particularly when it comes to numbers that are very similar other than the location of a decimal point, if present, in
  * them. If you find that the resulting encoded regex is not matching the desired encoding numbers, try to simplify it into a higher number of alternations with
  * simpler regexes if possible.
- * 
+ *
  * @see NumericalEncoder
  */
 public class NumericRegexEncoder {
-    
+
     private static final Logger log = Logger.getLogger(NumericRegexEncoder.class);
-    
+
     /**
      * Matches against any unescaped d characters, and any other letters. If \d is present, that indicates a digit and is allowed.
      */
     private static final Pattern RESTRICTED_LETTERS_PATTERN = Pattern.compile(".*[a-ce-zA-Z].*");
-    
+
     /**
      * Matches any escaped character that is not \. \- or \d.
      */
     private static final Pattern RESTRICTED_ESCAPED_CHARS_PATTERN = Pattern.compile(".*\\\\[^.d\\-].*");
-    
+
     /**
      * Matches any regex that consists only of anchors, hyphens (escaped or not), escaped periods, repetitions, the quantifier *, the quantifier +, optionals,
      * alternations, and groups in any order with no alphanumeric characters that give any meaningful numeric information.
      */
     private static final Pattern NONSENSE_PATTERN = Pattern.compile("^\\^?(\\(*(\\\\\\.)*\\)*|(\\(*\\\\?[\\-*+?|])*\\)*|(\\{.*}))*\\$?$");
-    
+
     /**
      * Matches any decimal points with ? + * or a repetition quantifier directly following them.
      */
     private static final Pattern INVALID_DECIMAL_POINTS_PATTERN = Pattern.compile(".*\\\\\\.[?+*{].*");
-    
+
     /**
      * Matches against any variation of {@code .*}, {@code .+}, {@code .*?}, {@code .+?} that may or may not repeat, and that may or may not contain start
      * and/or end anchors.
      */
     private static final Pattern NORMALIZATION_NOT_REQUIRED_PATTERN = Pattern.compile("^\\^?(\\.[*+]\\??)+\\$?$");
-    
+
     /**
      * Encode the given numeric regex pattern such that it will match against encoded numbers.
-     * 
+     *
      * @param regex
      *            the regex pattern
      * @return the encoded regex pattern
@@ -136,23 +136,23 @@ public class NumericRegexEncoder {
     public static String encode(String regex) {
         return new NumericRegexEncoder(regex).encode();
     }
-    
+
     private final String pattern;
     private Node patternTree;
-    
+
     private NumericRegexEncoder(String pattern) {
         this.pattern = pattern;
     }
-    
+
     public static ZeroRegexStatus getZeroRegexStatus(String regex) {
         return ZeroTrimmer.getStatus(RegexParser.parse(regex).getChildren());
     }
-    
+
     private String encode() {
         if (log.isDebugEnabled()) {
             log.debug("Encoding pattern " + pattern);
         }
-        
+
         // Check the pattern for any quick failures.
         checkPatternForQuickFailures();
         // Encode the pattern only if it requires it.
@@ -160,11 +160,11 @@ public class NumericRegexEncoder {
             parsePatternTree();
             normalizePatternTree();
             encodePatternTree();
-            
+
             if (log.isDebugEnabled()) {
                 log.debug("Encoded pattern '" + pattern + "' to '" + StringVisitor.toString(this.patternTree) + "'");
             }
-            
+
             return StringVisitor.toString(this.patternTree);
         } else {
             if (log.isDebugEnabled()) {
@@ -173,7 +173,7 @@ public class NumericRegexEncoder {
             return this.pattern;
         }
     }
-    
+
     /**
      * Pre-validate the regex to quickly identify any indications that the regex is not valid for numerical expansion.
      */
@@ -187,7 +187,7 @@ public class NumericRegexEncoder {
         checkForGroups();
         checkForQuantifiedDecimalPoints();
     }
-    
+
     /**
      * Throws an exception if the regex pattern is blank.
      */
@@ -196,7 +196,7 @@ public class NumericRegexEncoder {
             throw new IllegalArgumentException("Regex pattern may not be blank.");
         }
     }
-    
+
     /**
      * Throws an exception if the regex contains any whitespace.
      */
@@ -205,7 +205,7 @@ public class NumericRegexEncoder {
             throw new IllegalArgumentException("Regex pattern may not contain any whitespace.");
         }
     }
-    
+
     /**
      * Throws an exception if the regex cannot be compiled.
      */
@@ -216,13 +216,13 @@ public class NumericRegexEncoder {
             throw new IllegalArgumentException("Regex pattern will not compile.", e);
         }
     }
-    
+
     private void checkForNonsense() {
         if (NONSENSE_PATTERN.matcher(this.pattern).matches()) {
             throw new IllegalArgumentException("A nonsense pattern has been given that cannot be normalized.");
         }
     }
-    
+
     /**
      * Throws an exception if the regex contains any letter other than an escaped lowercase d.
      */
@@ -232,7 +232,7 @@ public class NumericRegexEncoder {
                             "Regex pattern may not contain any letters other than \\d to indicate a member of the digit character class 0-9.");
         }
     }
-    
+
     /**
      * Return whether the regex contains an unescaped d.
      */
@@ -246,7 +246,7 @@ public class NumericRegexEncoder {
         }
         return false;
     }
-    
+
     /**
      * Throws an exception if the regex contains any escaped characters other than {@code \.}, {@code \-} or {@code \d}.
      */
@@ -255,7 +255,7 @@ public class NumericRegexEncoder {
             throw new IllegalArgumentException("Regex pattern may not contain any escaped characters other than \\. \\- or \\d.");
         }
     }
-    
+
     /**
      * Throws an exception if the regex contains any occurrences of '(' indicating the start of a group.
      */
@@ -264,7 +264,7 @@ public class NumericRegexEncoder {
             throw new IllegalArgumentException("Regex pattern may not contain any groups.");
         }
     }
-    
+
     /**
      * Throws an exception if the regex contains any decimal points directly followed by * + or {}.
      */
@@ -273,7 +273,7 @@ public class NumericRegexEncoder {
             throw new IllegalArgumentException("Regex pattern may not contain any decimal points that are directly followed by * ? or {}.");
         }
     }
-    
+
     /**
      * Returns whether the regex requires normalization.
      *
@@ -282,7 +282,7 @@ public class NumericRegexEncoder {
     private boolean isEncodingRequired() {
         return !NORMALIZATION_NOT_REQUIRED_PATTERN.matcher(this.pattern).matches();
     }
-    
+
     /**
      * Parse the regex to a node tree.
      */
@@ -291,7 +291,7 @@ public class NumericRegexEncoder {
         validateCharClasses();
         validateDecimalPoints();
     }
-    
+
     /**
      * Normalize the pattern tree.
      */
@@ -303,7 +303,7 @@ public class NumericRegexEncoder {
         expandNegativeVariants();
         expandZeroValues();
     }
-    
+
     /**
      * Encode the pattern tree.
      */
@@ -320,141 +320,141 @@ public class NumericRegexEncoder {
         addDecimalPoints();
         dedupe();
     }
-    
+
     /**
      * Parse the pattern to a node tree.
      */
     private void parsePatternToTree() {
         this.patternTree = RegexParser.parse(this.pattern);
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Parsed pattern to tree structure:\n" + PrintVisitor.printToString(this.patternTree));
         }
     }
-    
+
     /**
      * Verify that the regex pattern does not contain any character classes with characters other than digits or a period.
      */
     private void validateCharClasses() {
         NumericCharClassValidator.validate(this.patternTree);
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Validated character classes in regex");
         }
     }
-    
+
     /**
      * Verify that the regex pattern does not contain any alternated expressions that have more than one required decimal point.
      */
     private void validateDecimalPoints() {
         DecimalPointValidator.validate(this.patternTree);
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Validated decimal points classes in regex");
         }
     }
-    
+
     /**
      * Trim all anchors.
      */
     private void trimAnchors() {
         updatePatternTree(AnchorTrimmer::trim, "trimming anchors");
     }
-    
+
     /**
      * Trim all elements that occur exactly zero times.
      */
     private void trimZeroLengthRepetitions() {
         updatePatternTree(ZeroLengthRepetitionTrimmer::trim, "trimming zero-length repetition characters");
-        
+
         // If the pattern is empty afterwards, throw an exception.
         if (this.patternTree == null) {
             throw new IllegalArgumentException("Regex pattern is empty after trimming all characters followed by {0} or {0,0}.");
         }
     }
-    
+
     /**
      * Trim the tree of any empty nodes and empty alternations, and verify if we still have a pattern to encode.
      */
     private void trimEmptyLeafs() {
         updatePatternTree(EmptyLeafTrimmer::trim, "trimming empty leafs");
     }
-    
+
     /**
      * Expand optional variants.
      */
     private void expandOptionalVariants() {
         updatePatternTree(OptionalVariantExpander::expand, "expanding optional variants");
     }
-    
+
     /**
      * Expand any patterns beginning with {@code .} to include a version with a minus sign in front of it.
      */
     private void expandNegativeVariants() {
         updatePatternTree(NegativeVariantExpander::expand, "expanding negative variants");
     }
-    
+
     /**
      * If any patterns can match the number '0', add an alternation with '0'.
      */
     private void expandZeroValues() {
         updatePatternTree(ZeroValueNormalizer::expand, "normalizing zero-value characters");
     }
-    
+
     /**
      * Remove any duplicate alternations.
      */
     private void dedupe() {
         updatePatternTree(AlternationDeduper::dedupe, "de-duping");
     }
-    
+
     /**
      * Encode any and all simple numbers present in the pattern.
      */
     private void encodeSimpleNumbers() {
         updatePatternTree(SimpleNumberEncoder::encode, "encoding simple numbers");
     }
-    
+
     /**
      * Return whether there are unencoded sub-patterns in the tree after encoding simple numbers.
-     * 
+     *
      * @return true if there are more patterns to encode, or false otherwise
      */
     private boolean moreToEncode() {
         return NonEncodedNumbersChecker.check(this.patternTree);
     }
-    
+
     /**
      * Add exponential bin range information, e.g. \+[a-z], ![A-Z], etc.
      */
     private void addExponentialBins() {
         updatePatternTree(ExponentialBinAdder::addBins, "adding exponential bin information");
     }
-    
+
     /**
      * Trim/consolidate any leading zeros in partially-encoded patterns.
      */
     private void trimZeros() {
         updatePatternTree(ZeroTrimmer::trim, "trimming leading/trailing zeros");
     }
-    
+
     /**
      * Invert any patterns that are meant to match negative numbers.
      */
     private void invertNegativePatterns() {
         updatePatternTree(NegativeNumberPatternInverter::invert, "inverting patterns for negative numbers");
     }
-    
+
     /**
      * Add decimal points where required.
      */
     private void addDecimalPoints() {
         updatePatternTree(DecimalPointPlacer::addDecimalPoints, "adding decimal points");
     }
-    
+
     private void updatePatternTree(Function<Node,Node> function, String operationDescription) {
         this.patternTree = function.apply(this.patternTree);
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Regex after " + operationDescription + ": " + StringVisitor.toString(this.patternTree));
         }

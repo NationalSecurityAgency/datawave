@@ -15,7 +15,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
@@ -25,7 +26,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -140,8 +140,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
 
     private static final String PROPERTY_MALFORMED = " property malformed: ";
-
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
     private Multimap<String,datawave.data.type.Type<?>> typePatternMap = null;
@@ -258,7 +257,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         final String fieldConfigFile = config.get(this.getType().typeName() + FIELD_CONFIG_FILE);
         if (fieldConfigFile != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
+                log.debug("Field config file {} specified for: {}", fieldConfigFile, this.getType().typeName() + FIELD_CONFIG_FILE);
             }
             this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
         }
@@ -266,7 +265,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // Process the indexed fields
         if (config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Disallowlist specified for: " + this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: {}", this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS);
             }
             super.setHasIndexDisallowlist(true);
             configProperty = DISALLOWLIST_INDEX_FIELDS;
@@ -277,10 +276,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
 
         // Load the proper list of fields to (not) index
-        if (fieldConfigHelper != null) {
-            log.info("Using field config helper for " + this.getType().typeName());
-        } else if (configProperty == null) {
-            log.warn("No index fields or disallowlist fields specified, not generating index fields for " + this.getType().typeName());
+        if (fieldConfigHelper != null && log.isInfoEnabled()) {
+            log.info("Using field config helper for {}", this.getType().typeName());
+        } else if (configProperty == null && log.isWarnEnabled()) {
+            log.warn("No index fields or disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
         } else {
             this.indexedFields = Sets.newHashSet();
             Collection<String> indexedStrings = config.getStringCollection(this.getType().typeName() + configProperty);
@@ -290,7 +289,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 }
                 this.moveToPatternMap(this.indexedFields, this.indexedPatterns);
             } else {
-                log.warn(this.getType().typeName() + configProperty + " not specified.");
+                if (log.isWarnEnabled()) {
+                    log.warn("{} not specified.", this.getType().typeName() + configProperty);
+                }
             }
         }
 
@@ -308,7 +309,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // Process the reverse index fields
         if (config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Disallowlist specified for: " + this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: {}", this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS);
             }
 
             this.setHasReverseIndexDisallowlist(true);
@@ -316,16 +317,16 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             configProperty = DISALLOWLIST_REVERSE_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Reverse Index specified.for: " + this.getType().typeName() + REVERSE_INDEX_FIELDS);
+                log.debug("Reverse Index specified for: {}", this.getType().typeName() + REVERSE_INDEX_FIELDS);
             }
             this.setHasReverseIndexDisallowlist(false);
             configProperty = REVERSE_INDEX_FIELDS;
         }
 
         // Load the proper list of fields to (not) reverse index
-        if (configProperty == null) {
-            log.warn("No reverse index fields or disallowlist reverse index fields specified, not generating reverse index fields for "
-                            + this.getType().typeName());
+        if (configProperty == null && log.isWarnEnabled()) {
+            log.warn("No reverse index fields or disallowlist reverse index fields specified, not generating reverse index fields for {}",
+                            this.getType().typeName());
         } else {
             reverseIndexedFields = Sets.newHashSet();
             Collection<String> reverseIndexedStrings = config.getStringCollection(this.getType().typeName() + configProperty);
@@ -335,7 +336,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 }
                 this.moveToPatternMap(this.reverseIndexedFields, this.reverseIndexedPatterns);
             } else {
-                log.warn(this.getType().typeName() + configProperty + " not specified");
+                if (log.isWarnEnabled()) {
+                    log.warn("{} not specified", this.getType().typeName() + configProperty);
+                }
             }
 
         }
@@ -391,7 +394,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 try {
                     policy = FailurePolicy.valueOf(property.getValue());
                 } catch (Exception e) {
-                    log.error("Unable to parse field normalization failure policy: " + property.getValue(), e);
+                    log.error("Unable to parse field normalization failure policy: {}", property.getValue(), e);
                     throw new IllegalArgumentException("Unable to parse field normalization failure policy: " + property.getValue(), e);
                 }
                 if (fieldName.indexOf('*') >= 0) {
@@ -670,8 +673,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
             if (patternMatcher.reset(fieldName).matches()) {
                 if (bestMatch != null) {
-                    log.warn("Multiple regular expression patterns with the same length exist for matching field " + fieldName
-                                    + ". The pattern that sorts lexicographically last will be used. Please verify your configurations.");
+                    log.warn("Multiple regular expression patterns with the same length exist for matching field {}. "
+                                    + "The pattern that sorts lexicographically last will be used. Please verify your configurations.", fieldName);
                     break;
                 } else {
                     bestMatch = patternMatcher;
@@ -774,20 +777,13 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      */
     protected Set<NormalizedContentInterface> normalize(NormalizedContentInterface normalizedContent) {
         String eventFieldName = normalizedContent.getEventFieldName();
-        if (log.isDebugEnabled()) {
-            log.debug("event field name is " + eventFieldName + " in " + normalizedContent);
-        }
+        log.debug("event field name is {} in {}", eventFieldName, normalizedContent);
         String indexedFieldName = normalizedContent.getIndexedFieldName();
-        if (log.isDebugEnabled()) {
-            log.debug("indexed field name is " + indexedFieldName + " in " + normalizedContent);
-        }
+        log.debug("indexed field name is {} in {}", indexedFieldName, normalizedContent);
 
         // if it is indexed, set the index part,
         if (this.isIndexedField(eventFieldName) || this.isIndexedField(indexedFieldName)) {
-            if (log.isDebugEnabled()) {
-                log.debug("eventFieldName=" + eventFieldName + ", indexedFieldName =" + indexedFieldName + " we have an indexed field here "
-                                + normalizedContent);
-            }
+            log.debug("eventFieldName={}, indexedFieldName={} we have an indexed field here {}", eventFieldName, indexedFieldName, normalizedContent);
             Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(normalizedContent.getIndexedFieldName());
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
@@ -803,10 +799,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // if it is normalized, set the field value part and the (unused)
         // indexed field value part
         if (this.isNormalizedField(eventFieldName) || this.isNormalizedField(indexedFieldName)) {
-            if (log.isDebugEnabled()) {
-                log.debug("eventFieldName=" + eventFieldName + ", indexedFieldName =" + indexedFieldName + " we have a normalized field here "
-                                + normalizedContent);
-            }
+            log.debug("eventFieldName={}, indexedFieldName={} we have a normalized field here {}", eventFieldName, indexedFieldName, normalizedContent);
             Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(normalizedContent.getIndexedFieldName());
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
@@ -816,9 +809,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             return values;
         } else {
             // gets the default normalizer, if present
-            if (log.isDebugEnabled()) {
-                log.debug("not a normalized field: " + indexedFieldName + " nor " + eventFieldName);
-            }
+            log.debug("not a normalized field: {} nor {}", indexedFieldName, eventFieldName);
             Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(normalizedContent.getIndexedFieldName());
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
@@ -934,8 +925,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         for (Entry<String,String> e : fields.entries()) {
             if (e.getValue() != null) {
                 applyNormalizationAndAddToResults(results, new NormalizedFieldAndValue(e.getKey(), e.getValue()));
-            } else
-                log.warn(this.getType().typeName() + " has key " + e.getKey() + " with a null value.");
+            } else if (log.isWarnEnabled()) {
+                log.warn("{} has key {} with a null value.", this.getType().typeName(), e.getKey());
+            }
         }
         return results;
     }
@@ -952,8 +944,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
             if (e.getValue() != null) {
                 applyNormalizationAndAddToResults(results, e.getValue());
-            } else
-                log.warn(this.getType().typeName() + " has key " + e.getKey() + " with a null value.");
+            } else if (log.isWarnEnabled()) {
+                log.warn("{} has key {} with a null value.", this.getType().typeName(), e.getKey());
+            }
         }
         return results;
     }
@@ -1020,7 +1013,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             ns = normalize(aliaser.normalizeAndAlias(nArg));
         } catch (Exception e) {
             if (log.isTraceEnabled()) {
-                log.trace(this.getType().typeName() + ": Field failed normalization: " + nArg, e);
+                log.trace("{}: Field failed normalization: {}", this.getType().typeName(), nArg, e);
             }
             nArg.setError(e);
             return Collections.singleton(nArg);
@@ -1120,10 +1113,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // first verify the index fields
         if (this.indexedFields == null) {
             retVal = false;
-            log.error(this.getType().typeName() + ": index set has been set to null.");
+            if (log.isErrorEnabled()) {
+                log.error("{}: index set has been set to null.", this.getType().typeName());
+            }
         } else if (this.indexedFields.isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug(this.getType().typeName() + ": no fields have been set to index.");
+                log.debug("{}: no fields have been set to index.", this.getType().typeName());
             }
         } else {
             upperCaseSetEntries(this.indexedFields, this.getType().typeName() + ": index fields");
@@ -1131,10 +1126,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // next verify the index fields
         if (this.reverseIndexedFields == null) {
             retVal = false;
-            log.error(this.getType().typeName() + ": reverse index set has been set to null.");
+            if (log.isErrorEnabled()) {
+                log.error("{}: reverse index set has been set to null.", this.getType().typeName());
+            }
         } else if (this.reverseIndexedFields.isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug(this.getType().typeName() + ": no fields have been set to reverse index.");
+                log.debug("{}: no fields have been set to reverse index.", this.getType().typeName());
             }
         } else {
             upperCaseSetEntries(this.reverseIndexedFields, this.getType().typeName() + ": reverse index fields");
@@ -1208,9 +1205,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public void updateDatawaveTypes(String fieldName, String typeClasses) {
 
         // updates multimap typeFieldMap
-        if (log.isDebugEnabled()) {
-            log.debug("[" + fieldName + "] Type classes: " + typeClasses);
-        }
+        log.debug("[{}] Type classes: {}", fieldName, typeClasses);
 
         for (String typeClass : Splitter.on(',').split(typeClasses)) {
 
@@ -1218,9 +1213,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             // Add the type to the map, the null key is the default key
             if (fieldName == null) {
                 typeFieldMap.removeAll(null);
-                if (log.isDebugEnabled()) {
-                    log.debug("Setting " + datawaveType + " as default type.");
-                }
+                log.debug("Setting {} as default type.", datawaveType);
                 typeFieldMap.put(null, datawaveType);
             } else if (fieldName.indexOf('*') >= 0 || fieldName.indexOf('+') >= 0) { // We need a more conclusive test for regex
                 typePatternMap.put(fieldName, datawaveType);
@@ -1228,7 +1221,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 typeFieldMap.put(fieldName, datawaveType);
             }
             if (log.isDebugEnabled()) {
-                log.debug("Registered a " + typeClass + " for type[" + this.getType().typeName() + "], field[" + fieldName + "]");
+                log.debug("Registered a {} for type[{}], field[{}]", typeClass, this.getType().typeName(), fieldName);
             }
         }
     }

@@ -14,23 +14,23 @@ public class CloseableLoginContext extends LoginContext implements AutoCloseable
     public CloseableLoginContext(String name) throws LoginException {
         super(name);
     }
-    
+
     public CloseableLoginContext(String name, Subject subject) throws LoginException {
         super(name, subject);
     }
-    
+
     public CloseableLoginContext(String name, CallbackHandler callbackHandler) throws LoginException {
         super(name, callbackHandler);
     }
-    
+
     public CloseableLoginContext(String name, Subject subject, CallbackHandler callbackHandler) throws LoginException {
         super(name, subject, callbackHandler);
     }
-    
+
     public CloseableLoginContext(String name, Subject subject, CallbackHandler callbackHandler, Configuration config) throws LoginException {
         super(name, subject, callbackHandler, config);
     }
-    
+
     @Override
     public void close() throws LoginException {
         logout();

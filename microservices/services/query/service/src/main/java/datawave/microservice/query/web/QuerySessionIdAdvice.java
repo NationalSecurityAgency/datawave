@@ -30,33 +30,33 @@ import datawave.microservice.query.web.filter.QueryMetricsEnrichmentFilterAdvice
 @ControllerAdvice
 public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
     private final Logger log = Logger.getLogger(QuerySessionIdAdvice.class);
-    
+
     // Note: QuerySessionIdContext needs to be request scoped
     private final QuerySessionIdContext querySessionIdContext;
-    
+
     public QuerySessionIdAdvice(QuerySessionIdContext querySessionIdContext) {
         this.querySessionIdContext = querySessionIdContext;
     }
-    
+
     @Override
     public boolean supports(@NonNull MethodParameter returnType, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
         return Arrays.stream(returnType.getMethodAnnotations())
                         .anyMatch(obj -> GenerateQuerySessionId.class.isInstance(obj) || ClearQuerySessionId.class.isInstance(obj));
     }
-    
+
     @Override
     public Object beforeBodyWrite(Object body, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
                     @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType, @NonNull ServerHttpRequest request,
                     @NonNull ServerHttpResponse response) {
         GenerateQuerySessionId generateSessionIdAnnotation = (GenerateQuerySessionId) Arrays.stream(returnType.getMethodAnnotations())
                         .filter(GenerateQuerySessionId.class::isInstance).findAny().orElse(null);
-        
+
         ClearQuerySessionId clearSessionIdAnnotation = (ClearQuerySessionId) Arrays.stream(returnType.getMethodAnnotations())
                         .filter(ClearQuerySessionId.class::isInstance).findAny().orElse(null);
-        
+
         if (generateSessionIdAnnotation != null || clearSessionIdAnnotation != null) {
             ServletServerHttpResponse httpServletResponse = (ServletServerHttpResponse) response;
-            
+
             String id = "";
             boolean setCookie = true;
             switch (HttpStatus.Series.valueOf(httpServletResponse.getServletResponse().getStatus())) {
@@ -66,7 +66,7 @@ public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
                     // there's no query "session" to stick to this server.
                     setCookie = false;
                     break;
-                
+
                 default:
                     if (StringUtils.isEmpty(querySessionIdContext.getQueryId())) {
                         log.error("queryId was not set.");
@@ -75,7 +75,7 @@ public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
                     }
                     break;
             }
-            
+
             if (setCookie) {
                 Cookie cookie = null;
                 if (generateSessionIdAnnotation != null) {
@@ -92,27 +92,27 @@ public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
                 }
             }
         }
-        
+
         return body;
     }
-    
+
     private static String generateCookieValue() {
         return Integer.toString(UUID.randomUUID().hashCode() & Integer.MAX_VALUE);
     }
-    
+
     public static class QuerySessionIdContext {
-        
+
         private String queryId;
-        
+
         public String getQueryId() {
             return queryId;
         }
-        
+
         public void setQueryId(String queryId) {
             this.queryId = queryId;
         }
     }
-    
+
     @Configuration
     public static class QuerySessionIdAdviceConfig {
         @Bean

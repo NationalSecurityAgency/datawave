@@ -26,66 +26,66 @@ public class HazelcastClientProperties {
      * A Hazelcast XML configuration. This can be used to configure, say, a NearCache.
      */
     private String xmlConfig;
-    
+
     @NestedConfigurationProperty
     private KubernetesProperties k8s = new KubernetesProperties();
-    
+
     public String getClusterName() {
         return clusterName;
     }
-    
+
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
     }
-    
+
     public boolean isSkipDefaultConfiguration() {
         return skipDefaultConfiguration;
     }
-    
+
     public void setSkipDefaultConfiguration(boolean skipDefaultConfiguration) {
         this.skipDefaultConfiguration = skipDefaultConfiguration;
     }
-    
+
     public boolean isSkipDiscoveryConfiguration() {
         return skipDiscoveryConfiguration;
     }
-    
+
     public void setSkipDiscoveryConfiguration(boolean skipDiscoveryConfiguration) {
         this.skipDiscoveryConfiguration = skipDiscoveryConfiguration;
     }
-    
+
     public String getXmlConfig() {
         return xmlConfig;
     }
-    
+
     public void setXmlConfig(String xmlConfig) {
         this.xmlConfig = xmlConfig;
     }
-    
+
     public KubernetesProperties getK8s() {
         return k8s;
     }
-    
+
     public void setK8s(KubernetesProperties k8s) {
         this.k8s = k8s;
     }
-    
+
     public static class KubernetesProperties {
         private String serviceDnsName = "cache.datawave";
         private int serviceDnsTimeout = 10;
-        
+
         public String getServiceDnsName() {
             return serviceDnsName;
         }
-        
+
         public void setServiceDnsName(String serviceDnsName) {
             this.serviceDnsName = serviceDnsName;
         }
-        
+
         public int getServiceDnsTimeout() {
             return serviceDnsTimeout;
         }
-        
+
         public void setServiceDnsTimeout(int serviceDnsTimeout) {
             this.serviceDnsTimeout = serviceDnsTimeout;
         }

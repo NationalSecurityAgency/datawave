@@ -3,6 +3,7 @@ package datawave.query.language.functions.jexl;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -23,8 +24,18 @@ public class GroupBy extends JexlQueryFunction {
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.isEmpty()) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                            MessageFormat.format("{0} requires at least one argument", this.name));
             throw new IllegalArgumentException(qe);
+        } else {
+            String parameters = String.join(",", parameterList);
+            try {
+                GroupFields.from(parameters);
+            } catch (Exception e) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, e,
+                                MessageFormat.format("Unable to parse fields from arguments for function {0}", this.name));
+                throw new IllegalArgumentException(qe);
+            }
         }
     }
 
@@ -43,7 +54,6 @@ public class GroupBy extends JexlQueryFunction {
             }
             sb.append(')');
         }
-
         return sb.toString();
     }
 

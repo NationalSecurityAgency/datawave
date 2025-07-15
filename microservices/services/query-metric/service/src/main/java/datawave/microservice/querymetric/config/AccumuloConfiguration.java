@@ -17,12 +17,12 @@ import datawave.microservice.querymetric.factory.WrappedAccumuloClientPoolFactor
 @Configuration
 @EnableConfigurationProperties({AccumuloConfiguration.WarehouseClusterProperties.class})
 public class AccumuloConfiguration {
-    
+
     @ConfigurationProperties(prefix = "warehouse-cluster")
     public static class WarehouseClusterProperties extends ClusterProperties {
-        
+
     }
-    
+
     @Bean
     @Lazy
     @Qualifier("warehouse")
@@ -30,7 +30,7 @@ public class AccumuloConfiguration {
     public AccumuloProperties warehouseAccumuloProperties(WarehouseClusterProperties warehouseProperties) {
         return warehouseProperties.getAccumulo();
     }
-    
+
     @Bean
     @Lazy
     @Qualifier("warehouse")
@@ -41,14 +41,14 @@ public class AccumuloConfiguration {
         pool.setMaxTotal(queryMetricHandlerProperties.getAccumuloClientPoolSize());
         return pool;
     }
-    
+
     @Bean
     @Lazy
     @Qualifier("warehouse-wrapped")
     public AccumuloClientPool accumuloClientPoolWrapped(@Qualifier("warehouse") AccumuloClientPoolFactory accumuloClientPoolFactory) throws Exception {
         return new AccumuloClientPool(new WrappedAccumuloClientPoolFactory(accumuloClientPoolFactory));
     }
-    
+
     @Bean
     @Lazy
     @Qualifier("warehouse")

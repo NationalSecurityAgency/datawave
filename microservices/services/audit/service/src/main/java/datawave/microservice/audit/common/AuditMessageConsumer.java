@@ -10,16 +10,16 @@ import datawave.webservice.common.audit.Auditor;
 
 public class AuditMessageConsumer implements Consumer<AuditMessage> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private AuditParameters msgHandlerAuditParams;
-    
+
     private Auditor auditor;
-    
+
     public AuditMessageConsumer(AuditParameters auditParameters, Auditor auditor) {
         this.msgHandlerAuditParams = auditParameters;
         this.auditor = auditor;
     }
-    
+
     @Override
     public void accept(AuditMessage auditMessage) {
         try {
