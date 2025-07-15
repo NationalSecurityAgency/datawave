@@ -94,7 +94,7 @@ function verifyChecksum() {
           error "------------------------------------------------------------------------"
           error "$(printRed "CHECKSUM MISMATCH") - Could not verify integrity of: ${tarballName}"
           error "------------------------------------------------------------------------"
-          kill -INT $$
+          fatal "Checksum verification failed!"
       fi
   fi
 }
@@ -108,15 +108,15 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
-          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
+          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || echo "File copy failed for ${uri:7}" && return 1
       elif [[ ${uri} == http://* ]] ; then
           if ! askYesNo "Are you sure you want to download ${tarball} using HTTP? $( printRed "This can potentially be insecure." )" ; then
             kill -INT $$
           else
-            $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
+            $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" ) || echo "wget failed for ${uri:7}" && return 1
           fi
       elif [[ ${uri} == https://* ]] ; then
-          $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
+          $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" ) || echo "wget failed for ${uri:7}" && return 1
       else
         return 1
       fi
@@ -444,6 +444,5 @@ function jdkIsConfigured() {
       fi
    fi
 
-   error "'${requiredVersion}' not found. Please install/configure a compatible JDK"
-   return 1
+   fatal "'${requiredVersion}' not found. Please install/configure a compatible JDK"
 }

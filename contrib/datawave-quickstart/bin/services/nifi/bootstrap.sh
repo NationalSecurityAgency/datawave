@@ -25,7 +25,7 @@ function bootstrapNifi() {
     if [ ! -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ]; then
         info "Nifi distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" || \
-          return 1
+          fatal "failed to obtain Nifi distribution"
         DW_NIFI_DIST="${tarball}"
     else
       info "Nifi distribution detected. Using local file ${DW_NIFI_DIST}"

@@ -117,7 +117,7 @@ function bootstrapHadoop() {
         info "Hadoop distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "hadoop" "${DW_HADOOP_VERSION}" "${DW_HADOOP_SERVICE_DIR}" || \
-          return 1
+          fatal "failed to obtain Hadoop distribution"
         DW_HADOOP_DIST="${tarball}"
     else
       info "Hadoop distribution detected. Using local file ${DW_HADOOP_DIST}"

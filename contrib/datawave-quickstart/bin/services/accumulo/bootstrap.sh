@@ -133,7 +133,7 @@ function bootstrapAccumulo() {
         info "Accumulo distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
-          return 1
+          fatal "failed to obtain Accumulo distribution"
         DW_ACCUMULO_DIST="${tarball}"
     else
       info "Accumulo distribution detected. Using local file ${DW_ACCUMULO_DIST}"

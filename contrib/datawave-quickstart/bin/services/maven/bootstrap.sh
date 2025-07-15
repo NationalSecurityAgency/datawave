@@ -13,7 +13,7 @@ function bootstrapMaven() {
         info "Maven distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}" || \
-          return 1
+          fatal "failed to obtain Maven distribution"
         DW_MAVEN_DIST="${tarball}"
     else
       info "Maven distribution detected. Using local file ${DW_MAVEN_DIST}"

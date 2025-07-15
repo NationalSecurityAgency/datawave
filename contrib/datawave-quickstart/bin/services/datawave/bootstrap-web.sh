@@ -31,7 +31,7 @@ function bootstrapWeb() {
         info "Wildfly distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "wildfly" "${DW_WILDFLY_VERSION}" "${DW_DATAWAVE_SERVICE_DIR}" || \
-          return 1
+          fatal "failed to obtain Wildfly distribution"
         DW_WILDFLY_DIST="${tarball}"
     else
       info "Wildfly distribution detected. Using local file ${DW_WILDFLY_DIST}"
