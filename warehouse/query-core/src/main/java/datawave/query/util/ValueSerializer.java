@@ -106,7 +106,7 @@ public interface ValueSerializer<T> {
      * @param typeName
      *            type of serializer (mapped to {@link ValueSerializerType})
      * @param defaultType
-     *            default type if {@param typeName} is null.
+     *            default type if {@code typeName} is null.
      * @return a new serializer
      * @param <V>
      */
