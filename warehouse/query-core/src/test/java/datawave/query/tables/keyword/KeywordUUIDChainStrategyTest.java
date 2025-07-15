@@ -40,7 +40,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
     private AccumuloClient mockAccumulo;
     private KeywordQueryLogic mockLogic;
     private KeywordQueryConfiguration mockConfig;
-    private KeywordQueryState mockState;
+    // private KeywordQueryState mockState;
 
     private Query settings;
 
@@ -49,7 +49,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         mockAccumulo = createMock(AccumuloClient.class);
         mockLogic = createMock(KeywordQueryLogic.class);
         mockConfig = createMock(KeywordQueryConfiguration.class);
-        mockState = createMock(KeywordQueryState.class);
+        // mockState = createMock(KeywordQueryState.class);
 
         expect(mockLogic.getLogicName()).andReturn("secondLogic").anyTimes();
 
@@ -71,12 +71,12 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         return serializer.apply(entry);
     }
 
-    public Entry<Key,Value> createKeywordResults(String shard, String dt, String uid, String language, String identifier, String view,
+    public Entry<Key,Value> createKeywordResults(String shard, String dt, String uid, String language, String identifier, String view, String visibility,
                     LinkedHashMap<String,Double> results) throws IOException {
         String colf = "d";
         String colq = dt + "\0" + uid + "\0CONTENT";
         Key documentKey = new Key(shard, colf, colq);
-        Value v = new Value(KeywordResults.serialize(new KeywordResults(identifier, view, language, results)));
+        Value v = new Value(KeywordResults.serialize(new KeywordResults(identifier, view, language, visibility, results)));
         return Map.entry(documentKey, v);
     }
 
@@ -109,7 +109,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         results.put("dog", 0.4);
 
         List<Entry<Key,Value>> intermediateInput = List
-                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", results));
+                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
         Capture<Query> intermediateSettings = Capture.newInstance();
@@ -135,6 +135,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         assertEquals("PAGE_ID:12345", keywordResults.getSource());
         assertEquals("CONTENT", keywordResults.getView());
         assertEquals("ENGLISH", keywordResults.getLanguage());
+        assertEquals("PUBLIC", keywordResults.getVisibility());
+
         assertNotNull(keywordResults.getKeywords().get("cat"));
 
         assertFalse(result.hasNext());
@@ -156,8 +158,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         resultsTwo.put("dog", 0.4);
 
         List<Entry<Key,Value>> intermediateInput = List.of(
-                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", resultsOne),
-                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzub", "ENGLISH", "PAGE_ID:12346", "INDEXABLE_TEXT", resultsTwo)
+                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", resultsOne),
+                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzub", "ENGLISH", "PAGE_ID:12346", "INDEXABLE_TEXT", "PUBLIC", resultsTwo)
 
         );
 
@@ -187,6 +189,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
             assertEquals("PAGE_ID:12345", keywordResults.getSource());
             assertEquals("CONTENT", keywordResults.getView());
             assertEquals("ENGLISH", keywordResults.getLanguage());
+            assertEquals("PUBLIC", keywordResults.getVisibility());
+
             assertNotNull(keywordResults.getKeywords().get("cat"));
         }
 
@@ -198,6 +202,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
             assertEquals("PAGE_ID:12346", keywordResults.getSource());
             assertEquals("INDEXABLE_TEXT", keywordResults.getView());
             assertEquals("ENGLISH", keywordResults.getLanguage());
+            assertEquals("PUBLIC", keywordResults.getVisibility());
             assertNotNull(keywordResults.getKeywords().get("bird"));
         }
     }
@@ -218,8 +223,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         resultsTwo.put("dog", 0.4);
 
         List<Entry<Key,Value>> intermediateInput = List.of(
-                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", resultsOne),
-                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzub", "ENGLISH", "PAGE_ID:12346", "INDEXABLE_TEXT", resultsTwo)
+                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", resultsOne),
+                        createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzub", "ENGLISH", "PAGE_ID:12346", "INDEXABLE_TEXT", "PUBLIC", resultsTwo)
 
         );
 

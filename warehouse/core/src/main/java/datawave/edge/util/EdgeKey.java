@@ -12,7 +12,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is an abstraction of the keys found in the protobuf edge table.
@@ -42,7 +43,7 @@ public class EdgeKey {
     private final long timestamp;
     private final boolean deleted;
 
-    private static final Logger log = Logger.getLogger(EdgeKey.class);
+    private static final Logger log = LoggerFactory.getLogger(EdgeKey.class);
 
     private static final String UNKNOWN_EDGE_KEY_FORMAT_MSG = "Can't encode unknown edge key format.";
 
@@ -155,18 +156,14 @@ public class EdgeKey {
             String tempSourceData = this.sourceData;
             String tempSinkData = this.sinkData;
             try {
-                if (log.isTraceEnabled()) {
-                    log.trace("Attempting escape sequencing isEscape? " + escape + " isUnescape? " + unescape);
-                    log.trace("Values before attempt source data " + tempSourceData + ", sink data " + tempSinkData);
-                }
+                log.trace("Attempting escape sequencing isEscape? {}  isUnescape? {}", escape, unescape);
+                log.trace("Values before attempt source data {}, sink data {}", tempSourceData, tempSinkData);
                 if (escape && !unescape) {
                     tempSourceData = StringEscapeUtils.escapeJava(sourceData);
                     tempSinkData = StringEscapeUtils.escapeJava(sinkData);
                 } else if (unescape && !escape) {
-
                     tempSourceData = StringEscapeUtils.unescapeJava(sourceData);
                     tempSinkData = StringEscapeUtils.unescapeJava(sinkData);
-
                 }
 
                 // moving the assignment here since we want to rely on the original data
@@ -176,7 +173,7 @@ public class EdgeKey {
 
             } catch (Exception e) {
 
-                log.error("Avoiding escape sequencing, due to : " + e);
+                log.error("Avoiding escape sequencing, due to : {}", e);
 
             }
 
@@ -1195,11 +1192,11 @@ public class EdgeKey {
      * @param k
      *            edge key
      * @return True if this is edge date (YYYYMMDD) is based on event date.
-     * @note An edge can be both an event and and activity edge. Hence, do not test for event edge by doing !isActivityEdge(k).
+     * @note An edge can be both an event and activity edge. Hence, do not test for event edge by doing !isActivityEdge(k).
      */
 
     /**
-     * Determine as fast as possible the date type of an edge key without having to decode into and EdgeKey
+     * Determine as fast as possible the date type of the edge key without having to decode into and EdgeKey
      *
      * @param key
      *            edge key

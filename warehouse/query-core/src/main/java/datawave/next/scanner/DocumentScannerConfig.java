@@ -39,6 +39,7 @@ public class DocumentScannerConfig implements Serializable {
 
     // batch ids to minimize new scanner connections
     private int candidateBatchSize = 1;
+    private boolean allowPartialIntersections = false;
 
     // the number of document ids/result documents to buffer
     private int candidateQueueCapacity = 1;
@@ -405,5 +406,13 @@ public class DocumentScannerConfig implements Serializable {
 
     public void setRetrievalConsistencyLevel(String retrievalConsistencyLevel) {
         this.retrievalConsistencyLevel = retrievalConsistencyLevel;
+    }
+
+    public boolean isAllowPartialIntersections() {
+        return allowPartialIntersections;
+    }
+
+    public void setAllowPartialIntersections(boolean allowPartialIntersections) {
+        this.allowPartialIntersections = allowPartialIntersections;
     }
 }

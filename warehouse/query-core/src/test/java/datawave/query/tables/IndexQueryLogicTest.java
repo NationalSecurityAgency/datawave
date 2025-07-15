@@ -31,6 +31,7 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.QueryLogicTestHarness;
+import datawave.query.testframework.cardata.CarDataManager;
 import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.testframework.cardata.CarsDataType.CarField;
 import datawave.query.testframework.cardata.GenericCarFields;
@@ -60,6 +61,8 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
     public static void setupClass() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCarFields();
+
+        CarDataManager.newInstance(); // Can I do this dynamically?
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.tesla, generic));
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.ford, generic));
 

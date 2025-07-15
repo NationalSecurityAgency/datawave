@@ -1,5 +1,7 @@
 package datawave.util;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
@@ -11,12 +13,12 @@ public class TextUtilTest {
     @Test
     public void testAppend_multiByteChars() throws UnsupportedEncodingException {
         String prefix = "prefix\u6C34";
-        int prefixLength = prefix.getBytes("UTF-8").length;
-        Text text = new Text(prefix.getBytes("UTF-8"));
+        int prefixLength = prefix.getBytes(UTF_8).length;
+        Text text = new Text(prefix.getBytes(UTF_8));
         // A random multi-byte char string I found. Don't know what it means.
         String multiByteCharString = "\u007A\u6C34\uD834\uDD1E";
         TextUtil.textAppend(text, multiByteCharString);
-        byte[] stringBytes = multiByteCharString.getBytes("UTF-8");
+        byte[] stringBytes = multiByteCharString.getBytes(UTF_8);
         Assert.assertEquals("Length was wrong", 1 + stringBytes.length, text.getLength() - prefixLength);
         byte[] textBytes = text.getBytes();
         Assert.assertEquals("First byte was wrong", (byte) 0, textBytes[prefixLength]);
@@ -28,8 +30,8 @@ public class TextUtilTest {
     @Test
     public void testAppend_long() throws IOException {
         String prefix = "prefix\u6C34";
-        int prefixLength = prefix.getBytes("UTF-8").length;
-        Text text = new Text(prefix.getBytes("UTF-8"));
+        int prefixLength = prefix.getBytes(UTF_8).length;
+        Text text = new Text(prefix.getBytes(UTF_8));
         long appendedLong = 0x0123456789ABCDEFl;
         TextUtil.textAppend(text, appendedLong);
         Assert.assertEquals("Length was wrong", 1 + 8, text.getLength() - prefixLength);
@@ -53,6 +55,6 @@ public class TextUtilTest {
     public void testToUtf8() throws UnsupportedEncodingException {
         String multiByteCharString = "\u007A\u6C34\uD834\uDD1E";
         byte[] utf8 = TextUtil.toUtf8(multiByteCharString);
-        Assert.assertArrayEquals(multiByteCharString.getBytes("UTF-8"), utf8);
+        Assert.assertArrayEquals(multiByteCharString.getBytes(UTF_8), utf8);
     }
 }
