@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # Resolve env.sh
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -11,20 +12,24 @@ source "${THIS_DIR}/bootstrap.sh"
 # if JDK is not installed exit early
 jdkIsConfigured
 
-# If NiFi is not installed, bootstrap and verify that the two checksums match before installing.
-nifiIsInstalled || bootstrapNifi && verifyChecksum "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" "${DW_NIFI_DIST_SHA512_CHECKSUM}"
+# it might not be installed and we do not want to fail so we check with a traditional if statement
+if nifiIsInstalled ; then
+    info "NiFi is already installed"
+    exit 0
+fi
 
-nifiIsInstalled && info "NiFi is already installed" && exit 1
+# bootstrap and verify that the two checksums match before installing.
+bootstrapNifi
+verifyChecksum "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" "${DW_NIFI_DIST_SHA512_CHECKSUM}" || exit 1
 
-[ ! -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ] && fatal "NiFi zip file not found"
+info "Installing NiFi..."
+[ -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ] || ( fatal "NiFi zip file not found" && exit 1 )
 
-mkdir "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_BASEDIR}" || fatal "Failed to create NiFi base directory"
-
-unzip "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" -d "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_BASEDIR}" || fatal "Failed to extract NiFi tarball"
-$( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/nifi/${DW_NIFI_BASEDIR}" "${DW_NIFI_SYMLINK}" ) || fatal "Failed to create NiFi symlink"
-
-nifiIsInstalled || fatal "NiFi was not installed"
-
+# Extract, set symlink, and verify...
+mkdir "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_BASEDIR}" || ( fatal "Failed to create NiFi base directory" && exit 1 )
+unzip "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" -d "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_BASEDIR}" || ( fatal "Failed to extract NiFi tarball" && exit 1 )
+( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/nifi/${DW_NIFI_BASEDIR}" "${DW_NIFI_SYMLINK}" ) || ( fatal "Failed to create NiFi symlink" && exit 1 )
+nifiIsInstalled || ( fatal "NiFi was not installed" && exit 1 )
 info "NiFi installed"
 
 echo

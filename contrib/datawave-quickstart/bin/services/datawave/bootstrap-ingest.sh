@@ -92,10 +92,10 @@ function datawaveIngestIsRunning() {
 }
 
 function datawaveIngestStart() {
-    ! hadoopIsRunning && hadoopStart
-    ! accumuloIsRunning && accumuloStart
+    hadoopIsRunning || hadoopStart || return 1
+    accumuloIsRunning || accumuloStart || return 1
 
-    datawaveIngestIsRunning && echo "DataWave Ingest is already running" || eval "${DW_DATAWAVE_INGEST_CMD_START}"
+    datawaveIngestIsRunning && echo "DataWave Ingest is already running" || eval "${DW_DATAWAVE_INGEST_CMD_START}" || return 1
 }
 
 function datawaveIngestStop() {
@@ -146,8 +146,16 @@ function datawaveIngestUninstall() {
 
 function datawaveIngestInstall() {
     export DW_SKIP_INGEST_EXAMPLES=${DW_SKIP_INGEST_EXAMPLES:-false}
-
     "${DW_DATAWAVE_SERVICE_DIR}"/install-ingest.sh
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "datawave install-ingest.sh executed successfully."
+          return 0
+      else
+          echo "datawave install-ingest.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function datawaveIngestLoadJobCache() {

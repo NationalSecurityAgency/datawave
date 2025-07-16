@@ -19,8 +19,7 @@ function error() {
 
 function fatal() {
    echo "[$( printRed "DW-FATAL" )] - $1"
-   echo "[$( printRed "Aborting" )] - $( basename "$0" )"
-   kill -INT $$
+   echo "[$( printRed "Aborting..." )] - $( basename "$0" )"
 }
 
 function printRed() {

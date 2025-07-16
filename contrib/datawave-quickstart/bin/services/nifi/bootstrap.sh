@@ -25,7 +25,7 @@ function bootstrapNifi() {
     if [ ! -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ]; then
         info "Nifi distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" || \
-          fatal "failed to obtain Nifi distribution"
+          ( fatal "failed to obtain Nifi distribution" && return 1 )
         DW_NIFI_DIST="${tarball}"
     else
       info "Nifi distribution detected. Using local file ${DW_NIFI_DIST}"
@@ -38,7 +38,7 @@ function nifiIsRunning() {
 }
 
 function nifiStart() {
-    nifiIsRunning && echo "NiFi is already running" || eval "${DW_NIFI_CMD_START}"
+    nifiIsRunning && echo "NiFi is already running" || eval "${DW_NIFI_CMD_START}" || return 1
     info "To get to the UI, visit 'http://localhost:8080/nifi/' in your browser"
     info "Be patient, it may take a while for the NiFi web service to start"
 }
@@ -77,6 +77,15 @@ function nifiUninstall() {
 
 function nifiInstall() {
    ${DW_NIFI_SERVICE_DIR}/install.sh
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "nifi install.sh executed successfully."
+          return 0
+      else
+          echo "nifi install.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function nifiPidList() {

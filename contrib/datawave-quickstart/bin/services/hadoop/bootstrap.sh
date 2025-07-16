@@ -117,7 +117,7 @@ function bootstrapHadoop() {
         info "Hadoop distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "hadoop" "${DW_HADOOP_VERSION}" "${DW_HADOOP_SERVICE_DIR}" || \
-          fatal "failed to obtain Hadoop distribution"
+          ( fatal "failed to obtain Hadoop distribution" && return 1 )
         DW_HADOOP_DIST="${tarball}"
     else
       info "Hadoop distribution detected. Using local file ${DW_HADOOP_DIST}"
@@ -130,7 +130,7 @@ function hadoopIsRunning() {
 }
 
 function hadoopStart() {
-    hadoopIsRunning && echo "Hadoop is already running" || eval "${DW_HADOOP_CMD_START}"
+    hadoopIsRunning && echo "Hadoop is already running" || eval "${DW_HADOOP_CMD_START}" || return 1
     echo
     info "For detailed status visit 'http://localhost:9870/dfshealth.html#tab-overview' in your browser"
     # Wait for Hadoop to come out of safemode
@@ -219,6 +219,15 @@ function hadoopUninstall() {
 
 function hadoopInstall() {
   "${DW_HADOOP_SERVICE_DIR}"/install.sh
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "hadoop install.sh executed successfully."
+          return 0
+      else
+          echo "hadoop install.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function hadoopPrintenv() {

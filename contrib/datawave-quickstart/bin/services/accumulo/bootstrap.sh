@@ -133,7 +133,7 @@ function bootstrapAccumulo() {
         info "Accumulo distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
-          fatal "failed to obtain Accumulo distribution"
+          ( fatal "failed to obtain Accumulo distribution" && return 1 )
         DW_ACCUMULO_DIST="${tarball}"
     else
       info "Accumulo distribution detected. Using local file ${DW_ACCUMULO_DIST}"
@@ -152,14 +152,14 @@ function accumuloStart() {
     accumuloIsRunning && echo "Accumulo is already running" && return 1
 
     if ! zookeeperIsRunning ; then
-       zookeeperStart
+       zookeeperStart || return 1
        echo
     fi
     if ! hadoopIsRunning ; then
-       hadoopStart
+       hadoopStart || return 1
        echo
     fi
-    eval "${DW_ACCUMULO_CMD_START}"
+    eval "${DW_ACCUMULO_CMD_START}" || return 1
     echo
     info "For detailed status visit 'http://${DW_ACCUMULO_BIND_HOST}:9995' in your browser"
 }
@@ -264,6 +264,15 @@ function accumuloUninstall() {
 
 function accumuloInstall() {
   "${DW_ACCUMULO_SERVICE_DIR}/install.sh"
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "accumulo install.sh executed successfully."
+          return 0
+      else
+          echo "accumulo install.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function bootstrapZookeeper() {
@@ -271,7 +280,7 @@ function bootstrapZookeeper() {
         info "Zookeeper distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "zookeeper" "${DW_ZOOKEEPER_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
-          return 1
+          ( fatal "failed to obtain Zookeeper distribution" && return 1 )
         DW_ZOOKEEPER_DIST="${tarball}"
     else
       info "Zookeeper distribution detected. Using local file ${DW_ZOOKEEPER_DIST}"
@@ -297,7 +306,7 @@ function zookeeperIsRunning() {
 
 function zookeeperStart() {
     # shellcheck disable=SC2015
-    zookeeperIsRunning && echo "ZooKeeper is already running" || eval "${DW_ZOOKEEPER_CMD_START}"
+    zookeeperIsRunning && echo "ZooKeeper is already running" || eval "${DW_ZOOKEEPER_CMD_START}" || return 1
 }
 
 function zookeeperStop() {

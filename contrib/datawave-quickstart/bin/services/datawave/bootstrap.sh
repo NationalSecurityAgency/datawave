@@ -337,6 +337,7 @@ function datawaveIsRunning() {
 }
 
 function datawaveStart() {
+    info "Starting Datawave"
     datawaveIngestStart
     datawaveWebStart
 }
@@ -365,8 +366,8 @@ function datawaveUninstall() {
 }
 
 function datawaveInstall() {
-   datawaveIngestInstall
-   datawaveWebInstall
+   datawaveIngestInstall || return 1
+   datawaveWebInstall || return 1
 }
 
 function datawavePrintenv() {

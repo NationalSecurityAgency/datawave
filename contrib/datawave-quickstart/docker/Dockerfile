@@ -96,7 +96,8 @@ RUN git init && \
 # stopped gracefully, and any cruft is purged.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall && [[ ${DW_DATAWAVE_WEB_TEST_SKIP} == true ]] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
+    /bin/bash -c "source ~/.bashrc && allInstall" && \
+    /bin/bash -c "source ~/.bashrc && [[ ${DW_DATAWAVE_WEB_TEST_SKIP} == true ]] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \

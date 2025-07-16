@@ -26,12 +26,12 @@ DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
 # uncomment to enable environment passwords in the quickstart
 # export DW_ACCUMULO_PASSWORD="secret"
 
-function bootstrapWeb() {
+function bootstrapWildfly() {
     if [ ! -f "${DW_DATAWAVE_SERVICE_DIR}/${DW_WILDFLY_DIST}" ]; then
         info "Wildfly distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" || \
           downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "wildfly" "${DW_WILDFLY_VERSION}" "${DW_DATAWAVE_SERVICE_DIR}" || \
-          fatal "failed to obtain Wildfly distribution"
+          ( fatal "failed to obtain Wildfly distribution" && return 1 )
         DW_WILDFLY_DIST="${tarball}"
     else
       info "Wildfly distribution detected. Using local file ${DW_WILDFLY_DIST}"
@@ -64,10 +64,15 @@ function datawaveWebStatus() {
 }
 
 function datawaveWebIsInstalled() {
-    [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" ] && return 0
-    [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}" ] && return 0
+    [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" ] && \
+    [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}" ] && \
+    wildflyIsInstalled && return 0
 
-    [ -L "${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}" ] && return 0
+    return 1
+}
+
+function wildflyIsInstalled() {
+    [ -L "${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}" ] && \
     [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_WILDFLY_BASEDIR}" ] && return 0
 
     return 1
@@ -110,6 +115,15 @@ function datawaveWebUninstall() {
 
 function datawaveWebInstall() {
    "${DW_DATAWAVE_SERVICE_DIR}"/install-web.sh
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "datawave install-web.sh executed successfully."
+          return 0
+      else
+          echo "datawave install-web.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function datawaveWebIsDeployed() {
@@ -134,18 +148,18 @@ function datawaveWebStart() {
     [[ "${1}" == "--debug" || "${1}" == "-d" ]] && debug=true
     [[ -n "${1}" && "${debug}" == false ]] && error "Unrecognized option: ${1}" && return
 
-    ! hadoopIsRunning && hadoopStart
-    ! accumuloIsRunning && accumuloStart
+    hadoopIsRunning || hadoopStart || return 1
+    accumuloIsRunning || accumuloStart || return 1
 
     if datawaveWebIsRunning ; then
        info "Wildfly is already running"
     else
        if [ "${debug}" == true ] ; then
            info "Starting Wildfly in debug mode"
-           eval "${DW_DATAWAVE_WEB_CMD_START_DEBUG}" > /dev/null 2>&1
+           eval "${DW_DATAWAVE_WEB_CMD_START_DEBUG}" > /dev/null 2>&1 || return 1
        else
            info "Starting Wildfly"
-           eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1
+           eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1 || return 1
        fi
     fi
 
