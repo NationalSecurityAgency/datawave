@@ -2,6 +2,7 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Set;
 
+import datawave.ingest.data.config.ConfigurationHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,8 @@ import datawave.TestBaseIngestHelper;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.policy.IngestPolicyEnforcer;
+
+import static datawave.ingest.data.config.ingest.BaseIngestHelper.DISALLOWLIST_INDEX_FIELDS;
 
 class ErrorShardedIngestHelperTest {
 
@@ -23,7 +26,7 @@ class ErrorShardedIngestHelperTest {
     4. Verify that if both allow list and disallow list given for datatype specific, error is thrown.
  */
 
-    private static final String DATA_TYPE_NAME = "error";
+    private static final String DATA_TYPE = "error";
 
     /**
      * Verify that when indexed and reversed indexed fields are provided, that they are correctly parsed and are not treated as disallowed fields.
@@ -31,16 +34,25 @@ class ErrorShardedIngestHelperTest {
     @Test
     void testSetupGivenIndexedFieldLists() {
         Configuration config = getBaseConfig();
-        config.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, "FOO,BAR,HAT");
-        config.set(DATA_TYPE_NAME + BaseIngestHelper.REVERSE_INDEX_FIELDS, "APPLE,BANANA,KIWI");
 
+        String errorFunnyDataType = DATA_TYPE + ".funny" + BaseIngestHelper.INDEX_FIELDS;
+        String errorFruitDataType = DATA_TYPE + ".fruit" + BaseIngestHelper.INDEX_FIELDS;
+
+        config.set(errorFunnyDataType, "FOO,BAR,HAT"); //need to include dt
+        config.set(errorFruitDataType, "APPLE,BANANA,KIWI");
+        config.set(DATA_TYPE + ".funny" + DISALLOWLIST_INDEX_FIELDS, "FOO");
+        config.set(DATA_TYPE + ".fruit" + DISALLOWLIST_INDEX_FIELDS, "KIWI");
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
+        ConfigurationHelper.isNull(config, errorFunnyDataType, String.class);
+        ConfigurationHelper.isNull(config, errorFruitDataType, String.class);
+        TypeRegistry.getInstance(config);
+
+        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType(errorFunnyDataType))); // need to include dt
         Assertions.assertFalse(helper.hasIndexDisallowlist());
 
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
+        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields(TypeRegistry.getType(errorFruitDataType)));
         Assertions.assertFalse(helper.hasReverseIndexDisallowlist());
     }
 
@@ -50,8 +62,8 @@ class ErrorShardedIngestHelperTest {
     @Test
     void testSetupGivenDisallowedIndexedFieldLists() {
         Configuration config = getBaseConfig();
-        config.set(DATA_TYPE_NAME + BaseIngestHelper.DISALLOWLIST_INDEX_FIELDS, "FOO,BAR,HAT");
-        config.set(DATA_TYPE_NAME + BaseIngestHelper.DISALLOWLIST_REVERSE_INDEX_FIELDS, "APPLE,BANANA,KIWI");
+        config.set(DATA_TYPE + DISALLOWLIST_INDEX_FIELDS, "FOO,BAR,HAT");
+        config.set(DATA_TYPE + BaseIngestHelper.DISALLOWLIST_REVERSE_INDEX_FIELDS, "APPLE,BANANA,KIWI");
 
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
@@ -65,10 +77,10 @@ class ErrorShardedIngestHelperTest {
 
     private Configuration getBaseConfig() {
         Configuration config = new Configuration();
-        config.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
-        config.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        config.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
-        config.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, TestBaseIngestHelper.class.getName());
+        config.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE);
+        config.set(DATA_TYPE + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE);
+        config.set(DATA_TYPE + TypeRegistry.INGEST_HELPER, TestBaseIngestHelper.class.getName());
         return config;
     }
 }
