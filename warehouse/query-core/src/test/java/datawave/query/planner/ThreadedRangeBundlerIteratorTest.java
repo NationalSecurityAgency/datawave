@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -55,15 +54,6 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         builder.setOriginal(queryData);
         // total buffer size
         builder.setMaxRanges(1000);
-        // time to wait for a value to be available off the queue
-        builder.setMaxWaitValue(10);
-        // time to wait before applying wait time for numRangesToBuffer before sleeping
-        builder.setRangeBufferTimeoutMillis(1);
-        // sleep time when waiting for numRangesToBuffer
-        builder.setRangeBufferPollMillis(10000);
-        builder.setMaxWaitUnit(TimeUnit.MILLISECONDS);
-        // ranges to buffer before processing
-        builder.setNumRangesToBuffer(2);
     }
 
     @Test
@@ -72,9 +62,6 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
         // buffer size is 2
         builder.setMaxRanges(2);
-
-        // do not buffer ranges ever
-        builder.setNumRangesToBuffer(0);
 
         Iterator<QueryPlan> producerItr = plans.iterator();
         // do not limit speed off this iterator
@@ -99,9 +86,6 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         // buffer size to 1000 so all ranges will fit
         builder.setMaxRanges(1000);
 
-        // do not buffer ranges ever
-        builder.setNumRangesToBuffer(0);
-
         Iterator<QueryPlan> producerItr = plans.iterator();
         // do not limit speed off this iterator
         expect(mockPlans.iterator()).andReturn(producerItr);
@@ -123,8 +107,6 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
     @Test
     public void disableBundlingSlowProducerTest() {
         builder.setMaxRanges(1);
-        builder.setNumRangesToBuffer(0);
-        builder.setMaxWaitValue(100);
 
         Iterator<QueryPlan> producerItr = plans.iterator();
         producerItr = delayIterator(producerItr, 1000);
@@ -145,14 +127,13 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
     @Test
     public void disableBundlingMinWaitTimeTest() throws IOException {
-        int maxWaitValue = 50;
+        long delay = 25;
+
         builder.setMaxRanges(1);
-        builder.setNumRangesToBuffer(0);
-        builder.setMaxWaitValue(maxWaitValue);
 
         // add a tiny delay to ensure that there is time to get inside the while loop before the rangeConsumer finishes
         // this is necessary to prevent the test from intermittently failing on some hardware and jvms
-        expect(mockPlans.iterator()).andReturn(delayIterator(Collections.emptyIterator(), 25));
+        expect(mockPlans.iterator()).andReturn(delayIterator(Collections.emptyIterator(), delay));
 
         mockPlans.close();
         expectLastCall().times(0, 1);
@@ -163,10 +144,9 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         long start = System.currentTimeMillis();
         assertFalse(itr.hasNext());
         long end = System.currentTimeMillis();
-        assertTrue(end - start >= maxWaitValue);
+        assertTrue(end - start >= delay);
         // really this should be maxWaitValue+1, but cpu speeds and scheduling may cause intermittent failures then
-        assertTrue(end - start < 2 * maxWaitValue);
-
+        assertTrue(end - start < 2 * delay);
         verifyAll();
     }
 
@@ -174,8 +154,6 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
     public void disableBundlingFastProducerTest() throws IOException {
         int maxWaitValue = 50;
         builder.setMaxRanges(1);
-        builder.setNumRangesToBuffer(0);
-        builder.setMaxWaitValue(maxWaitValue);
 
         QueryPlan plan = new QueryPlan();
         plan.ranges = Collections.emptyList();
@@ -199,16 +177,12 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
     @Test
     public void blockForNumRangesToBufferTest() {
-        int maxPollTime = 1000;
-        // sleep time when waiting for numRangesToBuffer
-        builder.setRangeBufferPollMillis(maxPollTime);
-        // amount of time to consider sleeping
-        builder.setRangeBufferTimeoutMillis(750);
-        builder.setNumRangesToBuffer(2);
+        int delay = 200;
 
         Iterator<QueryPlan> itr = plans.iterator();
+
         // simulate a delay on producing each range
-        Iterator<QueryPlan> wrapped = delayIterator(itr, 200);
+        Iterator<QueryPlan> wrapped = delayIterator(itr, delay);
 
         expect(mockPlans.iterator()).andReturn(wrapped);
 
@@ -219,13 +193,34 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         // because the ranges take 200ms and numRangesToBuffer = 2 it will sleep the poll time
         assertTrue(trbi.hasNext());
         long end = System.currentTimeMillis();
-        assertTrue(end - start >= maxPollTime);
+        assertTrue(end - start >= delay);
         trbi.next();
-        start = System.currentTimeMillis();
+        long start2 = System.currentTimeMillis();
         assertTrue(trbi.hasNext());
-        end = System.currentTimeMillis();
-        // the second time will not block because the initial bundling time has already been exceeded
-        assertTrue(end - start < maxPollTime);
+        long end2 = System.currentTimeMillis();
+        // this happened async, so should be faster, but not more than the delay
+        assertTrue((end2 - start2) <= delay);
+
+        long total = (System.currentTimeMillis() - start);
+        // total time will be the sum of the delay + overhead
+        assertTrue(total >= delay * 2);
+
+        verifyAll();
+    }
+
+    @Test
+    public void failFastOnExhaustedTest() throws IOException {
+        expect(mockPlans.iterator()).andReturn(Collections.emptyIterator());
+        mockPlans.close();
+
+        replayAll();
+
+        ThreadedRangeBundlerIterator trbi = builder.build();
+        long start = System.currentTimeMillis();
+        assertFalse(trbi.hasNext());
+        long end = System.currentTimeMillis();
+        // arbitrary fast time less than any previous poll time, actual time probably 1 but to keep this unit test predictable
+        assertTrue(end - start < 5);
 
         verifyAll();
     }

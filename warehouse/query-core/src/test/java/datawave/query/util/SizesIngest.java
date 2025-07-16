@@ -35,7 +35,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.PointType;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.SizesTest.RangeType;
+import datawave.query.util.AbstractQueryTest.RangeType;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 
