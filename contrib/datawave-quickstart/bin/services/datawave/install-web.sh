@@ -10,6 +10,9 @@ source "${THIS_DIR}/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 source "${SERVICES_DIR}/accumulo/bootstrap.sh"
 
+# if JDK is not installed exit early
+jdkIsConfigured
+
 # If Wildfly is not installed, bootstrap and verify that the two checksums match before installing.
 datawaveWebIsInstalled || bootstrapWeb && verifyChecksum "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" "${DW_WILDFLY_DIST_SHA512_CHECKSUM}"
 

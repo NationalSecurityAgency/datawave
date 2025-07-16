@@ -12,6 +12,9 @@ source "${THIS_DIR}/bootstrap.sh"
 # shellcheck source=../hadoop/bootstrap.sh
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 
+# if JDK is not installed exit early
+jdkIsConfigured
+
 hadoopIsInstalled || fatal "Accumulo requires that Hadoop be installed"
 
 # If Accumulo is not installed, bootstrap and verify that the two checksums match before installing.

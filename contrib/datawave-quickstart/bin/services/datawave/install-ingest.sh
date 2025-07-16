@@ -10,6 +10,9 @@ source "${THIS_DIR}/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 source "${SERVICES_DIR}/accumulo/bootstrap.sh"
 
+# if JDK is not installed exit early
+jdkIsConfigured
+
 [ -z "$( which bc )" ] && fatal "DataWave Ingest install cannot proceed because 'bc' was not found. Please install 'bc' and then resume via 'allInstall' or 'datawaveIngestInstall"
 
 hadoopIsInstalled || fatal "DataWave Ingest requires that Hadoop be installed"
