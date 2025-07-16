@@ -39,7 +39,7 @@ class ErrorShardedIngestHelperTest {
         String errorFunnyDataType =  "funny" + DATA_TYPE_ERROR + BaseIngestHelper.INDEX_FIELDS;
         String errorFruitDataType = "fruit" + DATA_TYPE_ERROR + BaseIngestHelper.INDEX_FIELDS;
 
-        config.set(errorFunnyDataType, "FOO,BAR,HAT");
+        config.set(errorFunnyDataType, "FOO,BAR,HATT");
         config.set(errorFruitDataType, "APPLE,BANANA,KIWI");
         config.set("funny" + DATA_TYPE_ERROR + DISALLOWLIST_INDEX_FIELDS, "FOO");
         config.set("fruit" + DATA_TYPE_ERROR + DISALLOWLIST_INDEX_FIELDS, "KIWI");
