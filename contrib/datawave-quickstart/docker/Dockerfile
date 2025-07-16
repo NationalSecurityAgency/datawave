@@ -1,4 +1,9 @@
+FROM maven:3-amazoncorretto-11 AS builder
 FROM rockylinux/rockylinux:8
+
+ENV MAVEN_HOME=/usr/share/maven
+COPY --from=builder ${MAVEN_HOME} ${MAVEN_HOME}
+RUN ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
@@ -48,14 +53,16 @@ ENV DW_ACCUMULO_BIND_HOST=localhost
 
 COPY . /opt/datawave
 
-RUN yum install -y findutils
+RUN dnf -y update
+RUN dnf -y install findutils
 RUN find /opt/datawave -type d -exec chmod 0750 {} \;
 RUN find /opt/datawave -type f -exec chmod 0640 {} \;
 RUN find /opt/datawave -name "*.sh" -type f -exec chmod 0750 {} \;
 
 # Install dependencies, configure password-less/zero-prompt SSH...
-
-RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel maven iproute  && \
+RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-11-openjdk-devel which bc wget git iproute && \
+    /bin/bash -c "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh && jdkIsConfigured" && \
+    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
     dnf clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
@@ -68,6 +75,10 @@ RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-client
     echo "UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
     echo "LogLevel QUIET" >> /etc/ssh/ssh_config
 
+
+RUN which java && which javac && java -version && javac -version && \
+    which mvn && echo $(mvn --version)
+
 WORKDIR /opt/datawave
 
 # Create new Git repo and configure environment...
@@ -77,8 +88,6 @@ RUN git init && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
-
-RUN echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
 
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping

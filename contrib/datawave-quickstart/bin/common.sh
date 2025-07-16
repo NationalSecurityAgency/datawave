@@ -428,6 +428,7 @@ function jdkIsConfigured() {
          # Ensure that PATH and JAVA_HOME are in agreement
          if [[ "$(readlink -f "${JAVA_HOME}"/bin/javac)" != "$(readlink -f "${javacBinary}")" ]] ; then
             export PATH="${JAVA_HOME}/bin:${PATH}"
+            echo export PATH="${JAVA_HOME}/bin:${PATH}" >> ~/.bashrc
          fi
          return 0
       fi
@@ -439,6 +440,7 @@ function jdkIsConfigured() {
       if [[ -n "${foundIt}" ]] ; then
          # Ensure that JAVA_HOME is in agreement with javac path
          export JAVA_HOME="$(dirname $(dirname $(readlink -f "${javacBinary}")))"
+         echo export JAVA_HOME="$(dirname $(dirname $(readlink -f "${javacBinary}")))" >> ~/.bashrc
          info "Found '${requiredVersion}', setting JAVA_HOME to '${JAVA_HOME}'"
          return 0
       fi
