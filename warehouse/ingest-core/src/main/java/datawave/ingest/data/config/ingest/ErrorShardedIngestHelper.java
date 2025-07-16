@@ -94,7 +94,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         // we are error
         super.setup(config);
 
-        config.set(Properties.DATA_NAME, DATATYPE_ERROR);
+        config.set(Properties.DATA_NAME, "error");
 
         Type configProperty = null;
 

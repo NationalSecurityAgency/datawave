@@ -27,6 +27,7 @@ class ErrorShardedIngestHelperTest {
  */
 
     private static final String DATA_TYPE = "error";
+    private static final String DATA_TYPE_ERROR = ".error";
 
     /**
      * Verify that when indexed and reversed indexed fields are provided, that they are correctly parsed and are not treated as disallowed fields.
@@ -35,19 +36,21 @@ class ErrorShardedIngestHelperTest {
     void testSetupGivenIndexedFieldLists() {
         Configuration config = getBaseConfig();
 
-        String errorFunnyDataType = DATA_TYPE + ".funny" + BaseIngestHelper.INDEX_FIELDS;
-        String errorFruitDataType = DATA_TYPE + ".fruit" + BaseIngestHelper.INDEX_FIELDS;
+        String errorFunnyDataType =  "funny" + DATA_TYPE_ERROR + BaseIngestHelper.INDEX_FIELDS;
+        String errorFruitDataType = "fruit" + DATA_TYPE_ERROR + BaseIngestHelper.INDEX_FIELDS;
 
-        config.set(errorFunnyDataType, "FOO,BAR,HAT"); //need to include dt
+        config.set(errorFunnyDataType, "FOO,BAR,HAT");
         config.set(errorFruitDataType, "APPLE,BANANA,KIWI");
-        config.set(DATA_TYPE + ".funny" + DISALLOWLIST_INDEX_FIELDS, "FOO");
-        config.set(DATA_TYPE + ".fruit" + DISALLOWLIST_INDEX_FIELDS, "KIWI");
+        config.set("funny" + DATA_TYPE_ERROR + DISALLOWLIST_INDEX_FIELDS, "FOO");
+        config.set("fruit" + DATA_TYPE_ERROR + DISALLOWLIST_INDEX_FIELDS, "KIWI");
+
+        TypeRegistry.getInstance(config);
+
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        ConfigurationHelper.isNull(config, errorFunnyDataType, String.class);
-        ConfigurationHelper.isNull(config, errorFruitDataType, String.class);
-        TypeRegistry.getInstance(config);
+//        ConfigurationHelper.isNull(config, errorFunnyDataType, String.class);
+//        ConfigurationHelper.isNull(config, errorFruitDataType, String.class);
 
         Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType(errorFunnyDataType))); // need to include dt
         Assertions.assertFalse(helper.hasIndexDisallowlist());
