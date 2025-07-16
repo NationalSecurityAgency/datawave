@@ -141,8 +141,6 @@ function prepareBuildContext() {
     # Temporarily copy .dockerignore to DATAWAVE_SOURCE_DIR (i.e., root context for docker build)...
 
     cp "${THIS_DIR}/.dockerignore" "${DATAWAVE_SOURCE_DIR}/.dockerignore" || fatal "Failed to copy .dockerignore into place"
-
-    sanityCheckTarball "${QUICKSTART_DIR}/bin/services/maven" "apache-maven*.tar.gz" "${DW_MAVEN_DIST_URI}"
 }
 
 function sanityCheckTarball() {
