@@ -50,7 +50,6 @@ source "${DW_CLOUD_BIN}/common.sh"
 # {servicename}Printenv    - Display current state of the service config
 # {servicename}PidList     - Display all service PIDs on a single line, space-delimited
 
-register maven    # $DW_CLOUD_PLUGINS/maven/bootstrap.sh
 register hadoop   # $DW_CLOUD_PLUGINS/hadoop/bootstrap.sh
 register accumulo # $DW_CLOUD_PLUGINS/accumulo/bootstrap.sh
 register datawave # $DW_CLOUD_PLUGINS/datawave/bootstrap.sh

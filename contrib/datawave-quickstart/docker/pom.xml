@@ -15,19 +15,16 @@
         <datawave.quickstart.web.tests.skip>true</datawave.quickstart.web.tests.skip>
         <dist.accumulo>accumulo-${version.accumulo.tar.gz}.tar.gz</dist.accumulo>
         <dist.hadoop>hadoop-${version.hadoop.tar.gz}.tar.gz</dist.hadoop>
-        <dist.maven>maven-${version.maven.tar.gz}.tar.gz</dist.maven>
         <dist.wildfly>wildfly-${version.wildfly.tar.gz}.tar.gz</dist.wildfly>
         <dist.zookeeper>zookeeper-${version.zookeeper.tar.gz}.tar.gz</dist.zookeeper>
         <skipIngest>false</skipIngest>
         <url.accumulo>file://${DW_CLOUD_PLUGINS}/accumulo/${dist.accumulo}</url.accumulo>
         <url.hadoop>file://${DW_CLOUD_PLUGINS}/hadoop/${dist.hadoop}</url.hadoop>
-        <url.maven>file://${DW_CLOUD_PLUGINS}/maven/${dist.maven}</url.maven>
         <url.wildfly>file://${DW_CLOUD_PLUGINS}/datawave/${dist.wildfly}</url.wildfly>
         <url.zookeeper>file://${DW_CLOUD_PLUGINS}/accumulo/${dist.zookeeper}</url.zookeeper>
         <!-- These distributions and URLs should match what is listed in each service's bootstrap.sh script -->
         <version.accumulo.tar.gz>2.1.3</version.accumulo.tar.gz>
         <version.hadoop.tar.gz>3.3.6</version.hadoop.tar.gz>
-        <version.maven.tar.gz>3.9.11</version.maven.tar.gz>
         <version.wildfly.tar.gz>17.0.1</version.wildfly.tar.gz>
         <version.zookeeper.tar.gz>3.8.4</version.zookeeper.tar.gz>
     </properties>
@@ -92,13 +89,6 @@
                             <directory>../bin/services/hadoop</directory>
                             <includes>
                                 <include>**/hadoop-*.tar.gz</include>
-                            </includes>
-                        </fileset>
-                        <fileset>
-                            <directory>../bin/services/maven</directory>
-                            <includes>
-                                <include>**/apache-maven-*-bin.tar.gz</include>
-                                <include>**/maven-*.tar.gz</include>
                             </includes>
                         </fileset>
                     </filesets>
@@ -215,7 +205,6 @@
                                             <DATAWAVE_WEB_TEST_SKIP>${datawave.quickstart.web.tests.skip}</DATAWAVE_WEB_TEST_SKIP>
                                             <ACCUMULO_URL>${url.accumulo}</ACCUMULO_URL>
                                             <HADOOP_URL>${url.hadoop}</HADOOP_URL>
-                                            <MAVEN_URL>${url.maven}</MAVEN_URL>
                                             <WILDFLY_URL>${url.wildfly}</WILDFLY_URL>
                                             <ZOOKEEPER_URL>${url.zookeeper}</ZOOKEEPER_URL>
                                         </args>
@@ -268,12 +257,6 @@
                 </dependency>
                 <dependency>
                     <groupId>gov.nsa.datawave.quickstart</groupId>
-                    <artifactId>maven</artifactId>
-                    <version>${version.maven.tar.gz}</version>
-                    <type>tar.gz</type>
-                </dependency>
-                <dependency>
-                    <groupId>gov.nsa.datawave.quickstart</groupId>
                     <artifactId>wildfly</artifactId>
                     <version>${version.wildfly.tar.gz}</version>
                     <type>tar.gz</type>
@@ -310,17 +293,6 @@
                                 <configuration>
                                     <artifact>gov.nsa.datawave.quickstart:hadoop:${version.hadoop.tar.gz}:tar.gz</artifact>
                                     <outputDirectory>${project.basedir}/../bin/services/hadoop</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-maven-tarball</id>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <artifact>gov.nsa.datawave.quickstart:maven:${version.maven.tar.gz}:tar.gz</artifact>
-                                    <outputDirectory>${project.basedir}/../bin/services/maven</outputDirectory>
                                 </configuration>
                             </execution>
                             <execution>
