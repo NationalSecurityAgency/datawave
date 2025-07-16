@@ -273,14 +273,15 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      *
      * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
      */
+
+
     @Override
     public boolean isIndexedField(String fieldName) {
-        throw new UnsupportedOperationException("Use isIndexedFields(Type dataType, String field) instead");
-    }
-
-
-    public boolean isIndexedField(Type dataType, String fieldName) {
-        IndexedFields dataTypeIndexFields = errorIndexedFields.get(dataType);
+        if (getActiveDataType() == null) {
+            log.error("activeDataType has not been set. Call setActiveDatatype(Type) at least once before running this.");
+            return false;
+        }
+        IndexedFields dataTypeIndexFields = errorIndexedFields.get(getActiveDataType());
         if (dataTypeIndexFields != null) {
             // Must either be explicitly indexed, or not explicitly unindexed.
             return dataTypeIndexFields.indexedFields.contains(fieldName) || !dataTypeIndexFields.unindexedFields.contains(fieldName);
@@ -289,8 +290,15 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         }
     }
 
+
+
+
     public Set<String> getIndexedFields(Type dataType) {
         return errorIndexedFields.containsKey(dataType) ? errorIndexedFields.get(dataType).indexedFields : Set.of();
+    }
+
+    public Set<String> getReverseIndexedFields(Type dataType) {
+        return errorReverseIndexedFields.containsKey(dataType) ? errorReverseIndexedFields.get(dataType).indexedFields : Set.of();
     }
 
 
@@ -299,13 +307,14 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      *
      * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
      */
+
     @Override
     public boolean isReverseIndexedField(String fieldName) {
-        throw new UnsupportedOperationException("Use isReverseIndexedFields(Type dataType, String field) instead");
-    }
-
-    public boolean IsReverseIndexedField(Type dataType, String fieldName) {
-        IndexedFields dataTypeIndexFields = errorReverseIndexedFields.get(dataType);
+        if (getActiveDataType() == null) {
+            log.error("activeDataType has not been set. Call setActiveDatatype(Type) at least once before running this.");
+            return false;
+        }
+        IndexedFields dataTypeIndexFields = errorReverseIndexedFields.get(getActiveDataType());
         if (dataTypeIndexFields != null) {
             // Must either be explicitly indexed, or not explicitly unindexed.
             return dataTypeIndexFields.indexedFields.contains(fieldName) || !dataTypeIndexFields.unindexedFields.contains(fieldName);

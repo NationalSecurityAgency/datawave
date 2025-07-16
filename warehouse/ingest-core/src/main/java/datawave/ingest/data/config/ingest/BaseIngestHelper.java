@@ -190,6 +190,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     protected FieldConfigHelper fieldConfigHelper = null;
 
+    private Type activeDataType;
+
+
     /**
      * This matcher is used to create a deterministic ordering of regular expressions
      */
@@ -1249,5 +1252,13 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 log.debug("Registered a {} for type[{}], field[{}]", typeClass, this.getType().typeName(), fieldName);
             }
         }
+    }
+
+    public void setActiveDataType(Type dataType){
+        activeDataType = dataType;
+    }
+
+    public Type getActiveDataType(){
+        return activeDataType;
     }
 }

@@ -143,4 +143,8 @@ public interface IngestHelperInterface extends DataTypeHelper {
 
     // if a field is known to be reverse indexed by some datasource other than our own
     boolean shouldHaveBeenReverseIndexed(String fieldName);
+
+    void setActiveDataType(datawave.ingest.data.Type dataType);
+
+    datawave.ingest.data.Type getActiveDataType();
 }
