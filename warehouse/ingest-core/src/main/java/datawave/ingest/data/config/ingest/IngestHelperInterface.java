@@ -90,21 +90,9 @@ public interface IngestHelperInterface extends DataTypeHelper {
 
     DataTypeHelperImpl getEmbeddedHelper();
 
-    default boolean isDataTypeRequiredForIndexedCheck() {
-        return false;
-    }
-
     boolean isIndexedField(String fieldName);
 
-    default boolean isIndexedField(datawave.ingest.data.Type dataType, String fieldName) {
-        throw new UnsupportedOperationException();
-    }
-
     boolean isReverseIndexedField(String fieldName);
-
-    default boolean isReverseIndexedField(datawave.ingest.data.Type dataType, String fieldName) {
-        throw new UnsupportedOperationException();
-    }
 
     boolean isIndexOnlyField(String fieldName);
 
@@ -144,7 +132,4 @@ public interface IngestHelperInterface extends DataTypeHelper {
     // if a field is known to be reverse indexed by some datasource other than our own
     boolean shouldHaveBeenReverseIndexed(String fieldName);
 
-    void setActiveDataType(datawave.ingest.data.Type dataType);
-
-    datawave.ingest.data.Type getActiveDataType();
 }

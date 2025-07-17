@@ -190,9 +190,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     protected FieldConfigHelper fieldConfigHelper = null;
 
-    private Type activeDataType;
-
-
     /**
      * This matcher is used to create a deterministic ordering of regular expressions
      */
@@ -269,8 +266,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // --- INDEX_FIELDS ---
 
         /*
-         * SETH NOTE
-         * This is most likely the start of the chunk that needs to be cloned for the error index stuff.
+         * SETH NOTE This is most likely the start of the chunk that needs to be cloned for the error index stuff.
          */
 
         // Process the indexed fields
@@ -360,14 +356,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         }
 
-
-
-
         /*
          * SETH NOTE Not sure if I'll need what's after this. I'll start with the above block and add to it as needed.
          */
-
-
 
         // gather the list of all indexed fields across all types
         // this list is only used for generating warnings if we are not indexing
@@ -939,8 +930,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
-
-
     /**
      * This is a helper routine that will create the normalized forms of a value given a set of fields
      *
@@ -1254,11 +1243,4 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
-    public void setActiveDataType(Type dataType){
-        activeDataType = dataType;
-    }
-
-    public Type getActiveDataType(){
-        return activeDataType;
-    }
 }
