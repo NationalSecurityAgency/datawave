@@ -2,10 +2,12 @@ package datawave.query.ancestor;
 
 import java.io.IOException;
 
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.junit.Before;
 
 import datawave.query.iterator.QueryIteratorIT;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.TestWaitWindowObserver;
 
 /**
  * AncestorQueryIterator integration tests. Ancestor Query should find any hits event query finds plus its own unique cases
@@ -20,7 +22,7 @@ public class AncestorQueryIteratorIT extends QueryIteratorIT {
     }
 
     protected Class getIteratorClass() {
-        return AncestorQueryIterator.class;
+        return TestAncestorQueryIterator.class;
     }
 
     /**
@@ -32,5 +34,18 @@ public class AncestorQueryIteratorIT extends QueryIteratorIT {
     @Override
     protected boolean isExpectHitTerm() {
         return true;
+    }
+
+    public static class TestAncestorQueryIterator extends AncestorQueryIterator {
+
+        public TestAncestorQueryIterator() {
+            super();
+            this.waitWindowObserver = new TestWaitWindowObserver(5, 2);
+        }
+
+        public TestAncestorQueryIterator(TestAncestorQueryIterator other, IteratorEnvironment env) {
+            super(other, env);
+            this.waitWindowObserver = new TestWaitWindowObserver((TestWaitWindowObserver) other.waitWindowObserver);
+        }
     }
 }
