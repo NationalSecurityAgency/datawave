@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -24,11 +22,19 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.junit.Before;
 import org.junit.Test;
 
 import datawave.ingest.protobuf.Uid;
+import datawave.query.util.ValueSerializer;
 
 public class CreateUidsIteratorTest {
+    private ValueSerializer<IndexInfo> valueSerializer;
+
+    @Before
+    public void setUp() {
+        valueSerializer = ValueSerializer.newSerializer(IndexInfo.class, CreateUidsIterator.DEFAULT_VALUE_ENCODING_TYPE);
+    }
 
     @Test
     public void testShardEquals() {
@@ -89,8 +95,7 @@ public class CreateUidsIteratorTest {
         iterator.seek(range, Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
 
-        IndexInfo indexInfo = new IndexInfo();
-        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        IndexInfo indexInfo = infoFromValue(iterator.getTopValue());
         assertTrue(iterator.getTopKey().getColumnQualifier().toString().startsWith("date_1"));
 
         Key topKey = iterator.getTopKey();
@@ -147,8 +152,8 @@ public class CreateUidsIteratorTest {
         assertTrue(iterator.hasTop());
         assertEquals(new Key("row", "cf", "date_1"), iterator.getTopKey());
 
-        IndexInfo indexInfo = new IndexInfo();
-        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        IndexInfo indexInfo = infoFromValue(iterator.getTopValue());
+
         // One hundred uids from builder plus four documents per key for three keys
         assertEquals(100 + (4 * 3), indexInfo.count());
         assertTrue(indexInfo.uids().isEmpty());
@@ -187,8 +192,8 @@ public class CreateUidsIteratorTest {
         assertTrue(iterator.hasTop());
         assertEquals(new Key("row", "cf", "date_1"), iterator.getTopKey());
 
-        IndexInfo indexInfo = new IndexInfo();
-        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        IndexInfo indexInfo = infoFromValue(iterator.getTopValue());
+
         // Four documents per key for three keys makes 12
         assertEquals(12, indexInfo.count());
 
@@ -240,8 +245,8 @@ public class CreateUidsIteratorTest {
         assertTrue(iterator.hasTop());
         assertEquals(new Key("row", "cf", "date_1"), iterator.getTopKey());
 
-        IndexInfo indexInfo = new IndexInfo();
-        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        IndexInfo indexInfo = infoFromValue(iterator.getTopValue());
+
         // Five uids from builder plus four documents per key for three keys
         assertEquals(5 + (4 * 3), indexInfo.count());
         assertTrue(indexInfo.uids().isEmpty());
@@ -276,8 +281,8 @@ public class CreateUidsIteratorTest {
         assertTrue(iterator.hasTop());
         assertEquals(new Key("bar", "FOO", "20190314_1"), iterator.getTopKey());
 
-        IndexInfo indexInfo = new IndexInfo();
-        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        IndexInfo indexInfo = infoFromValue(iterator.getTopValue());
+
         // 3 uids
         assertEquals(3, indexInfo.count());
         assertFalse(indexInfo.uids().isEmpty());
@@ -299,8 +304,8 @@ public class CreateUidsIteratorTest {
         assertTrue(iterator.hasTop());
         assertEquals(new Key("bar", "FOO", "20190314_1"), iterator.getTopKey());
 
-        indexInfo = new IndexInfo();
-        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        indexInfo = infoFromValue(iterator.getTopValue());
+
         // The three uids all share the same root uid, only 1 uid was returned.
         assertEquals(1, indexInfo.count());
         assertFalse(indexInfo.uids().isEmpty());
@@ -347,9 +352,7 @@ public class CreateUidsIteratorTest {
     }
 
     private IndexInfo infoFromValue(Value value) throws IOException {
-        IndexInfo indexInfo = new IndexInfo();
-        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(value.get())));
-        return indexInfo;
+        return valueSerializer.deserialize(value, IndexInfo::new);
     }
 
     private CreateUidsIterator iteratorFromOptions(Map<String,String> options, TreeMap<Key,Value> data) throws IOException {
