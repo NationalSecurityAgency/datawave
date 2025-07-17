@@ -57,10 +57,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonManager;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -406,12 +406,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         ArgumentChecker.notNull(columnFamilyColumnQualifierPairs);
         ArrayList<String> columnStrings = new ArrayList<>(columnFamilyColumnQualifierPairs.size());
         for (Pair<Text,Text> column : columnFamilyColumnQualifierPairs) {
-            if (column.getFirst() == null)
+            if (column.getLeft() == null)
                 throw new IllegalArgumentException("Column family can not be null");
 
-            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getFirst())));
-            if (column.getSecond() != null)
-                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getSecond())));
+            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getLeft())));
+            if (column.getRight() != null)
+                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getRight())));
             columnStrings.add(col);
         }
         conf.setStrings(COLUMNS, columnStrings.toArray(new String[columnStrings.size()]));
@@ -576,7 +576,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             int idx = col.indexOf(':');
             Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
             Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
-            columns.add(new Pair<>(cf, cq));
+            columns.add(Pair.of(cf, cq));
         }
         return columns;
     }
@@ -882,12 +882,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
             // setup a scanner within the bounds of this split
             for (Pair<Text,Text> c : getFetchedColumns(conf)) {
-                if (c.getSecond() != null) {
-                    log.debug("Fetching column {}:{}", c.getFirst(), c.getSecond());
-                    scanner.fetchColumn(c.getFirst(), c.getSecond());
+                if (c.getRight() != null) {
+                    log.debug("Fetching column {}:{}", c.getLeft(), c.getRight());
+                    scanner.fetchColumn(c.getLeft(), c.getRight());
                 } else {
-                    log.debug("Fetching column family {}", c.getFirst());
-                    scanner.fetchColumnFamily(c.getFirst());
+                    log.debug("Fetching column family {}", c.getLeft());
+                    scanner.fetchColumnFamily(c.getLeft());
                 }
             }
 
