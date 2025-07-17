@@ -216,8 +216,10 @@ public class GenerateShardSplits {
 
             startDate = DateUtils.addDays(startDate, 1);
         }
+        List<Text> results = new ArrayList(splits.size());
+        calculateMidpoints(splits, results);
 
-        calculateMidpoints(splits, new ArrayList(splits.size()));
+        splits = results;
 
         if (username != null) {
             // Connect to accumulo
@@ -323,6 +325,8 @@ public class GenerateShardSplits {
                 calculateMidpoints(splits.subList(0, n / 2), midpoints);
                 calculateMidpoints(splits.subList((n / 2) + 1, n), midpoints);
             }
+        } else {
+            midpoints.addAll(splits);
         }
     }
 }

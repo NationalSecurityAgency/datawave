@@ -18,10 +18,10 @@ class GenerateShardSplitsTest {
 
         List<Text> expected = List.of(new Text("20230102_2"), new Text("20230102_3"), new Text("20230101_2"), new Text("20230101_3"), new Text("20230101_1"),
                         new Text("20230102_1"), new Text("20230103_2"), new Text("20230103_3"), new Text("20230103_1"), new Text("20230103_10"));
+        List<Text> results = new ArrayList<>(files.size());
+        GenerateShardSplits.calculateMidpoints(files, results);
 
-        GenerateShardSplits.calculateMidpoints(files, new ArrayList<>(files.size()));
-
-        assertEquals(expected, files, "Sort order was incorrect");
+        assertEquals(expected, results, "Sort order was incorrect");
 
         for (Text element : files) {
             Assert.assertTrue(expected.contains(element));
