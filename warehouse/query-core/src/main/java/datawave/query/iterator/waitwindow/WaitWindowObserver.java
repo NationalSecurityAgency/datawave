@@ -444,6 +444,17 @@ public class WaitWindowObserver {
         return !hasEndMarker(key);
     }
 
+    static public Key removeMarkers(Key key) {
+        Key fixedKey = key;
+        if (hasMarker(key)) {
+            Text row = removeMarkers(key.getRow());
+            Text colFam = removeMarkers(key.getColumnFamily());
+            Text colQual = removeMarkers(key.getColumnQualifier());
+            fixedKey = new Key(row, colFam, colQual, key.getTimestamp());
+        }
+        return fixedKey;
+    }
+
     static public Text removeMarkers(Text text) {
         String str = text.toString();
         if (hasBeginMarker(text)) {
