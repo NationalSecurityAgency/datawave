@@ -1,19 +1,5 @@
 package datawave.ingest.data.config.ingest;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import org.apache.hadoop.conf.Configuration;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,13 +7,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
+
 /**
  *
  */
 public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
     private static final Logger log = LoggerFactory.getLogger(ErrorShardedIngestHelper.class);
-
 
     /**
      * <p>
@@ -43,50 +41,50 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     private static final String DATATYPE_ERROR = ".error";
     private IngestHelperInterface delegate = null;
 
-    /*\
-
-        final String t = ConfigurationHelper.isNull(config, <Properties.DATA_NAME>, String.class);
-        TypeRegistry.getInstance(config);
-        type = TypeRegistry.getType(t);
-
+    /*
+     * \
+     *
+     * final String t = ConfigurationHelper.isNull(config, <Properties.DATA_NAME>, String.class); TypeRegistry.getInstance(config); type =
+     * TypeRegistry.getType(t);
+     *
      */
-    private Map<Type, IndexedFields> errorIndexedFields = new HashMap<>();
-    private Map<Type, IndexedFields> errorReverseIndexedFields = new HashMap<>();
+    private Map<Type,IndexedFields> errorIndexedFields = new HashMap<>();
+    private Map<Type,IndexedFields> errorReverseIndexedFields = new HashMap<>();
 
     protected boolean hasErrorIndexDisallowlist = false;
     protected boolean hasErrorReverseIndexDisallowlist = false;
-    /*\
-
-    citrus.data.category.index=ORANGE,LEMON
-
-    error.apple.data.category.index=FUJI,HONEYCRISP,GRANNY_SMITH
-    error.cherry.data.category.index=SWEET,SOUR
-
-    we see fields for the datatypes apple, cherry, and citrus
-
-
-
-    - apple fields given isIndexed/isReversedIndexed should reference error indexed fields configured for apple (Meaning it'll use isErrorIndexed/isErrorReversedIndexed)
-    - cherry fields given isIndexed/isReversedIndexed should reference error indexed fields configured for cherry
-    - citrus fields given to isIndexed/isReversedIndexed should reference super.isIndexed/super.isReversedIndexed because no datatype specific error fields were specified for citrus
-
+    /*
+     * \
+     *
+     * citrus.data.category.index=ORANGE,LEMON
+     *
+     * error.apple.data.category.index=FUJI,HONEYCRISP,GRANNY_SMITH error.cherry.data.category.index=SWEET,SOUR
+     *
+     * we see fields for the datatypes apple, cherry, and citrus
+     *
+     *
+     *
+     * - apple fields given isIndexed/isReversedIndexed should reference error indexed fields configured for apple (Meaning it'll use
+     * isErrorIndexed/isErrorReversedIndexed) - cherry fields given isIndexed/isReversedIndexed should reference error indexed fields configured for cherry -
+     * citrus fields given to isIndexed/isReversedIndexed should reference super.isIndexed/super.isReversedIndexed because no datatype specific error fields
+     * were specified for citrus
+     *
      */
-
 
     private static class IndexedFields {
         private Set<String> indexedFields = new HashSet<>();
-        private Map<String, Pattern> patterns = new HashMap<>();
+        private Map<String,Pattern> patterns = new HashMap<>();
         private Set<String> unindexedFields = new HashSet<>();
     }
 
-    /* SETH NOTE
-
-        tests for the setup method
-        https://github.com/NationalSecurityAgency/datawave/pull/2864/files#diff-86d9d0c6cfcff5b686be27e01ab927c38f6c347f59faeebdedd2ccbf96834d70
-        1. Verify if no global or datatype specific i/ri configs given, setup does not throw exception.
-        2. Verify if global i/ri given, setup does not throw exception. Verify datatype specific is still parsed.
-        3. Verify if global i/ri given, but not datatype specific, setup does not throw exception.
-        4. Verify that if both allow list and disallow list given for datatype specific, error is thrown.
+    /*
+     * SETH NOTE
+     *
+     * tests for the setup method
+     * https://github.com/NationalSecurityAgency/datawave/pull/2864/files#diff-86d9d0c6cfcff5b686be27e01ab927c38f6c347f59faeebdedd2ccbf96834d70 1. Verify if no
+     * global or datatype specific i/ri configs given, setup does not throw exception. 2. Verify if global i/ri given, setup does not throw exception. Verify
+     * datatype specific is still parsed. 3. Verify if global i/ri given, but not datatype specific, setup does not throw exception. 4. Verify that if both
+     * allow list and disallow list given for datatype specific, error is thrown.
      */
 
     @Override
@@ -96,7 +94,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
         config.set(Properties.DATA_NAME, "error");
 
-        Type configProperty = null;
+        String configProperty = null;
 
         // --- ERROR INDEX_FIELDS ---
 
@@ -106,11 +104,11 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                 log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
             }
             setHasErrorIndexDisallowlist(true);
-            configProperty = TypeRegistry.getType(DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
+            configProperty = DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + INDEX_FIELDS) != null) {
             log.debug("ErrorIndexedFields specified.");
             setHasErrorIndexDisallowlist(false);
-            configProperty = TypeRegistry.getType(DATATYPE_ERROR + INDEX_FIELDS);
+            configProperty = DATATYPE_ERROR + INDEX_FIELDS;
         }
 
         // Load the proper list of fields to (not) index
@@ -119,8 +117,13 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         } else if (configProperty == null && log.isWarnEnabled()) {
             log.warn("No error index fields or error disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
         } else {
-            this.errorIndexedFields.putIfAbsent(configProperty, new IndexedFields());
-            Collection<String> errorIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty); // todo: this needs to be updated based on inclusive or exclusive dtErrors
+            this.errorIndexedFields.putIfAbsent(TypeRegistry.getType(configProperty), new IndexedFields());
+            Collection<String> errorIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty); // todo: this
+                                                                                                                                              // needs to be
+                                                                                                                                              // updated based
+                                                                                                                                              // on inclusive or
+                                                                                                                                              // exclusive
+                                                                                                                                              // dtErrors
             if (null != errorIndexedStrings && !errorIndexedStrings.isEmpty()) {
                 for (String errorIndexedString : errorIndexedStrings) {
                     this.errorIndexedFields.get(configProperty).indexedFields.add(errorIndexedString.trim());
@@ -138,11 +141,11 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         // Ensure that we have only an allowlist or a disallowlist of fields to
         // error-reverse-index
         if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
-                && config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
+                        && config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
             throw new RuntimeException(
-                    "Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both.  Type: " + this.getType().typeName()
-                            + ", parameters: " + config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS)
-                            + "  " + config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS));
+                            "Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both.  Type: " + this.getType().typeName()
+                                            + ", parameters: " + config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS)
+                                            + "  " + config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS));
         }
 
         configProperty = null;
@@ -155,19 +158,19 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
             this.setHasErrorReverseIndexDisallowlist(true);
 
-            configProperty = TypeRegistry.getType(DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS);
+            configProperty = DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
                 log.debug("Reverse Index specified for: {}", this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
             }
             this.setHasErrorReverseIndexDisallowlist(false);
-            configProperty = TypeRegistry.getType(DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
+            configProperty = DATATYPE_ERROR + REVERSE_INDEX_FIELDS;
         }
 
         // Load the proper list of fields to (not) error-reverse-index
         if (configProperty == null && log.isWarnEnabled()) {
             log.warn("No error reverse index fields or error disallowlist reverse index fields specified, not generating reverse index fields for {}",
-                    this.getType().typeName());
+                            this.getType().typeName());
         } else {
             errorReverseIndexedFields.get(configProperty).indexedFields = Sets.newHashSet();
             Collection<String> errorReverseIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty);
@@ -175,7 +178,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                 for (String errorReverseIndexedString : errorReverseIndexedStrings) {
                     errorReverseIndexedFields.get(configProperty).indexedFields.add(errorReverseIndexedString.trim());
                 }
-                this.moveToPatternMap(this.errorReverseIndexedFields.get(configProperty).indexedFields, this.errorReverseIndexedFields.get(configProperty).patterns);
+                this.moveToPatternMap(this.errorReverseIndexedFields.get(configProperty).indexedFields,
+                                this.errorReverseIndexedFields.get(configProperty).patterns);
             } else {
                 if (log.isWarnEnabled()) {
                     log.warn("{} not specified", this.getType().typeName() + DATATYPE_ERROR + configProperty);
@@ -201,7 +205,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         }
 
     }
-
 
     public void setDelegateHelper(IngestHelperInterface delegate) {
         this.delegate = delegate;
@@ -231,14 +234,13 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     }
 
     @Override
-    public Multimap<String, NormalizedContentInterface> normalize(Multimap<String, String> fields) {
+    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
         return null;
     }
-
-    @Override
-    public boolean isDataTypeRequiredForIndexedCheck() {
-        return true;
-    }
+    //
+    // public boolean isDataTypeRequiredForIndexedCheck() {
+    // return true;
+    // }
 
     /**
      * Checks if error-index-fields have been initialized yet.
@@ -259,13 +261,12 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
     }
 
-    /* SETH NOTE
-    test cases for these,
-    1. original isIndexedField /reverse returns unsupported,
-    the new ones should not return unsupported. they should instead make sure that the dt passed references the super indexedFields configs from property:
-     2. if datatype given that does not have datatype specific error index/ri config, then should call super and use configuration passed to error.data.category.index, etc. <-- global error index/ri configurations
-     3. if datatype given that has datatype specific error i/ri config, then should determine based on fields in error.<datatype>.data.category.index and related properties
-     4. For sanity check, add test to make sure isDataTypeRequiredForIndexCheck returns true.
+    /*
+     * SETH NOTE test cases for these, 1. original isIndexedField /reverse returns unsupported, the new ones should not return unsupported. they should instead
+     * make sure that the dt passed references the super indexedFields configs from property: 2. if datatype given that does not have datatype specific error
+     * index/ri config, then should call super and use configuration passed to error.data.category.index, etc. <-- global error index/ri configurations 3. if
+     * datatype given that has datatype specific error i/ri config, then should determine based on fields in error.<datatype>.data.category.index and related
+     * properties 4. For sanity check, add test to make sure isDataTypeRequiredForIndexCheck returns true.
      */
 
     /**
@@ -274,6 +275,15 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
      */
 
+    private Type activeDataType;
+
+    public void setActiveDataType(Type dataType) {
+        activeDataType = dataType;
+    }
+
+    public Type getActiveDataType() {
+        return activeDataType;
+    }
 
     @Override
     public boolean isIndexedField(String fieldName) {
@@ -290,9 +300,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         }
     }
 
-
-
-
     public Set<String> getIndexedFields(Type dataType) {
         return errorIndexedFields.containsKey(dataType) ? errorIndexedFields.get(dataType).indexedFields : Set.of();
     }
@@ -300,7 +307,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     public Set<String> getReverseIndexedFields(Type dataType) {
         return errorReverseIndexedFields.containsKey(dataType) ? errorReverseIndexedFields.get(dataType).indexedFields : Set.of();
     }
-
 
     /**
      * Checks if the {@code fieldName} has been indexed in either the reverse-index-field map or the error-reverse-index-field map.

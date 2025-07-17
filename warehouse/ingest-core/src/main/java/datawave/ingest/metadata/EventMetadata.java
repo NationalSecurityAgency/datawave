@@ -173,12 +173,8 @@ public class EventMetadata implements RawRecordMetadata {
             boolean shouldWriteDataType = false;
 
             boolean isIndexed = false;
-            if (helper.isDataTypeRequiredForIndexedCheck()) {
-                helper.setActiveDataType(event.getDataType());
-                isIndexed = helper.isIndexedField(fieldName);
-            } else {
-                isIndexed = helper.isIndexedField(fieldName);
-            }
+
+            isIndexed = helper.isIndexedField(fieldName);
 
             if (isIndexed) {
                 shouldWriteDataType = true;
@@ -186,12 +182,8 @@ public class EventMetadata implements RawRecordMetadata {
             }
 
             boolean isReverseIndexed = false;
-            if (helper.isDataTypeRequiredForIndexedCheck()) {
-                helper.setActiveDataType(event.getDataType());
-                isReverseIndexed = helper.isReverseIndexedField(fieldName);
-            } else {
-                isReverseIndexed = helper.isReverseIndexedField(fieldName);
-            }
+
+            isReverseIndexed = helper.isReverseIndexedField(fieldName);
 
             if (isReverseIndexed) {
                 shouldWriteDataType = true;

@@ -119,8 +119,9 @@ public class EventMetadataTest {
         assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
     }
 
-    /* SETH NOTE
-    could use this as test and the above, update helper to be errorShardedIngestHelper(?) at leasts override the datatypeRequired method. make a new class just for this in this tests
+    /*
+     * SETH NOTE could use this as test and the above, update helper to be errorShardedIngestHelper(?) at leasts override the datatypeRequired method. make a
+     * new class just for this in this tests
      */
 
     /**
