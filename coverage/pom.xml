@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.23.5</version>
+        <version>7.23.6-SNAPSHOT</version>
     </parent>
     <artifactId>coverage</artifactId>
     <name>Datawave Code Coverage Aggregate Report</name>
