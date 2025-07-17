@@ -24,6 +24,8 @@
     </div>
     <div class="row" style="width: 100%; height: 80%">
       <p class="information">
+        <br />
+        Cluster: {{ system?.systemName }} <br />
         When a value is present in the forward index types, this means that a
         field is indexed and informs you how your query terms will be treated
         (e.g. text, number, IPv4 address, etc). The same applies for the reverse
@@ -102,9 +104,9 @@
         <template v-slot:body="props">
           <q-tr
             :props="props"
-            v-if="Formatters.isVisible(props.row)"
+            v-if="Formatters.buttonParse(props.cols, props.row)"
           >
-            <q-td style="width: 60px; min-width: 60px">
+            <q-td class="cell-spacing">
               <q-btn
                 size="9px"
                 color="cyan-8"
@@ -117,8 +119,33 @@
                   }
                 "
                 :icon="props.row.isVisible.value ? 'remove' : 'add'"
-                v-if="Formatters.buttonParse(props.cols, props.row)"
               />
+            </q-td>
+            <q-td
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              :class="{ 'text-bold': col.name === 'dataType'}"
+              style="font-size: 13px;"
+              @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+              >
+                <label style="cursor: pointer;">
+                  {{
+                    Formatters.maxSubstring(
+                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                    )
+                  }}
+                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                  </q-tooltip>
+                </label>
+              </q-td>
+          </q-tr>
+          <q-tr
+            :props="props"
+            v-if="Formatters.isVisible(props.row)"
+          >
+            <q-td class="cell-spacing">
               <q-icon
                   style="margin-left: 4px;"
                   size="1rem"
@@ -132,7 +159,7 @@
               :key="col.name"
               :props="props"
               style="font-size: 13px;"
-              @click="Feature.copyLabel(col.value)"
+              @click="Feature.copyLabel(col.name, col.value, null)"
             >
               <label style="cursor: pointer;">
                 {{
@@ -163,7 +190,7 @@ import { onMounted, ref } from 'vue';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
-import { Banner, columns } from '../functions/components';
+import { Banner, columns, System } from '../functions/components';
 import * as Formatters from '../functions/formatters';
 import * as Wrapper from '../functions/csvWrapper';
 import * as Feature from '../functions/features';
@@ -175,6 +202,7 @@ const loading = ref(true);
 const filter = ref('');
 const changeFilter = ref('');
 const banner = ref<Banner>();
+const system = ref<System>();
 let rows: QTableProps['rows'] = [];
 const paginationFront = ref({
   rowsPerPage: 200,
@@ -186,9 +214,11 @@ const paginationFront = ref({
 onMounted(() => {
   let endpointData = '';
   let bannerData = 'banner';
+  let systemData = 'system';
   if (process.env.DEV) {
     endpointData = 'data/v2/'
     bannerData = 'data/v2/banner/'
+    systemData = 'data/v2/system/'
   }
 
   api
@@ -198,6 +228,15 @@ onMounted(() => {
   })
   .catch((reason) => {
     console.error('Could not fetch banner: ' + reason);
+  });
+
+  api
+  .get(systemData)
+  .then((response) => {
+    system.value = response.data as System;
+  })
+  .catch((reason) => {
+    console.error('Could not fetch system name: ' + reason);
   });
 
   api

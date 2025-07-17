@@ -14,6 +14,7 @@ import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
+import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -29,6 +30,7 @@ public class VisibilityWiseGuysIngest {
 
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
     private static final Type<?> numberType = new NumberType();
+    private static final Type<?> dateType = new DateType();
 
     protected static final String datatype = "test";
     protected static final String date = "20130101";
@@ -82,7 +84,17 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.FOO.3" + "\u0000" + "4", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.FOO.4" + "\u0000" + "5", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.FOO.5" + "\u0000" + "22", columnVisibilityItalian, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "UUID.FOO.0" + "\u0000" + "CORLEONE", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "BIRTH_DATE.FOO.0" + "\u0000" + "1910-12-01T00:00:05.000Z", columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "BIRTH_DATE.FOO.1" + "\u0000" + "1910-12-12T00:00:05.000Z", columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "BIRTH_DATE.FOO.2" + "\u0000" + "1910-12-15T00:00:05.000Z", columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "BIRTH_DATE.FOO.3" + "\u0000" + "1925-12-01T00:00:05.000Z", columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "BIRTH_DATE.FOO.4" + "\u0000" + "1925-12-12T00:00:05.000Z", columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "UUID.FOO.FOO.0" + "\u0000" + "CORLEONE", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GROUP" + "\u0000" + "MAFIA", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
@@ -400,6 +412,14 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + numberType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("BIRTH_DATE");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("GROUP");

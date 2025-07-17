@@ -11,19 +11,19 @@ import datawave.data.normalizer.regex.visitor.PrintVisitor;
 import datawave.data.normalizer.regex.visitor.StringVisitor;
 
 public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends Node> extends AbstractAssert<SELF,ACTUAL> {
-    
+
     public static NodeAssert<?,?> assertThat(Node node) {
         return new NodeAssert<>(node);
     }
-    
+
     protected NodeAssert(ACTUAL actual) {
         super(actual, NodeAssert.class);
     }
-    
+
     protected NodeAssert(ACTUAL actual, Class<?> selfType) {
         super(actual, selfType);
     }
-    
+
     public NodeAssert<SELF,ACTUAL> hasNullParent() {
         isNotNull();
         Node parent = actual.getParent();
@@ -32,7 +32,7 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
         }
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> hasNonNullParent() {
         isNotNull();
         if (actual.getParent() == null) {
@@ -40,7 +40,7 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
         }
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> hasChildCount(int count) {
         isNotNull();
         int actualCount = actual.getChildCount();
@@ -49,11 +49,11 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
         }
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> hasNoChildren() {
         return hasChildCount(0);
     }
-    
+
     public NodeAssert<?,?> assertChild(int childIndex) {
         isNotNull();
         int childCount = actual.getChildCount();
@@ -63,17 +63,17 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
         Node child = actual.getChildAt(childIndex);
         return assertThat(child);
     }
-    
+
     public NodeAssert<?,?> assertParent() {
         isNotNull();
         return assertThat(actual.getParent());
     }
-    
+
     public NodeAssert<?,?> assertGrandparent() {
         isNotNull();
         return assertParent().assertParent();
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isEqualTreeTo(Node expected) {
         if (!EqualityVisitor.isEqual(actual, expected)) {
             String actualString = StringVisitor.toString(actual);
@@ -85,125 +85,125 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
         }
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isNotEqualTreeTo(Node node) {
         if (EqualityVisitor.isEqual(actual, node)) {
             failWithMessage("Expected %s to not be equal to %s, but were identical trees");
         }
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isExpressionNode() {
         isInstanceOf(ExpressionNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isAlternationNode() {
         isInstanceOf(AlternationNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isGroupNode() {
         isInstanceOf(GroupNode.class);
         return this;
     }
-    
+
     public CharClassNodeAssert isCharClassNode() {
         isInstanceOf(CharClassNode.class);
         return new CharClassNodeAssert((CharClassNode) actual);
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isDigitCharClassNode() {
         isInstanceOf(DigitCharClassNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isRepetitionNode() {
         isInstanceOf(RepetitionNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isAnyCharNode() {
         isInstanceOf(AnyCharNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isZeroToManyNode() {
         isInstanceOf(ZeroOrMoreNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isOneToManyNode() {
         isInstanceOf(OneOrMoreNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isOptionalNode() {
         isInstanceOf(QuestionMarkNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isEmptyNode() {
         isInstanceOf(EmptyNode.class);
         return this;
     }
-    
+
     public SingleCharNodeAssert isSingleCharNode() {
         isInstanceOf(SingleCharNode.class);
         return new SingleCharNodeAssert((SingleCharNode) actual);
     }
-    
+
     public CharRangeNodeAssert isCharRangeNode() {
         isInstanceOf(CharRangeNode.class);
         return new CharRangeNodeAssert((CharRangeNode) actual);
     }
-    
+
     public IntegerNodeAssert isIntegerNode() {
         isInstanceOf(IntegerNode.class);
         return new IntegerNodeAssert((IntegerNode) actual);
     }
-    
+
     public IntegerRangeNodeAssert isIntegerRangeNode() {
         isInstanceOf(IntegerRangeNode.class);
         return new IntegerRangeNodeAssert((IntegerRangeNode) actual);
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isStartAnchorNode() {
         isInstanceOf(StartAnchorNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isEndAnchorNode() {
         isInstanceOf(EndAnchorNode.class);
         return this;
     }
-    
+
     public EscapedSingleCharNodeAssert isEscapedSingleCharNode() {
         isInstanceOf(EscapedSingleCharNode.class);
         return new EscapedSingleCharNodeAssert((EscapedSingleCharNode) actual);
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isEncodedNumberNode() {
         isInstanceOf(EncodedNumberNode.class);
         return this;
     }
-    
+
     public NodeAssert<SELF,ACTUAL> isEncodedPatternNode() {
         isInstanceOf(EncodedPatternNode.class);
         return this;
     }
-    
+
     public AbstractStringAssert<?> asTreeString() {
         isNotNull();
         return Assertions.assertThat(StringVisitor.toString(actual));
     }
-    
+
     public static class SingleCharNodeAssert extends NodeAssert<SingleCharNodeAssert,SingleCharNode> {
-        
+
         protected SingleCharNodeAssert(SingleCharNode node) {
             super(node, SingleCharNodeAssert.class);
         }
-        
+
         public SingleCharNodeAssert hasCharacter(char expected) {
             isNotNull();
             char actualChar = actual.getCharacter();
@@ -213,13 +213,13 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             return this;
         }
     }
-    
+
     public static class EscapedSingleCharNodeAssert extends NodeAssert<EscapedSingleCharNodeAssert,EscapedSingleCharNode> {
-        
+
         protected EscapedSingleCharNodeAssert(EscapedSingleCharNode node) {
             super(node, EscapedSingleCharNodeAssert.class);
         }
-        
+
         public EscapedSingleCharNodeAssert hasCharacter(char expected) {
             isNotNull();
             char actualChar = actual.getCharacter();
@@ -229,13 +229,13 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             return this;
         }
     }
-    
+
     public static class CharRangeNodeAssert extends NodeAssert<CharRangeNodeAssert,CharRangeNode> {
-        
+
         protected CharRangeNodeAssert(CharRangeNode node) {
             super(node, CharRangeNodeAssert.class);
         }
-        
+
         public CharRangeNodeAssert hasStart(char expected) {
             isNotNull();
             char actualStart = actual.getStart();
@@ -244,7 +244,7 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             }
             return this;
         }
-        
+
         public CharRangeNodeAssert hasEnd(char expected) {
             isNotNull();
             char actualEnd = actual.getEnd();
@@ -254,13 +254,13 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             return this;
         }
     }
-    
+
     public static class CharClassNodeAssert extends NodeAssert<CharClassNodeAssert,CharClassNode> {
-        
+
         protected CharClassNodeAssert(CharClassNode node) {
             super(node, CharClassNodeAssert.class);
         }
-        
+
         public CharClassNodeAssert isNegated() {
             isNotNull();
             if (!actual.isNegated()) {
@@ -268,7 +268,7 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             }
             return this;
         }
-        
+
         public CharClassNodeAssert isNotNegated() {
             isNotNull();
             if (actual.isNegated()) {
@@ -277,13 +277,13 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             return this;
         }
     }
-    
+
     public static class IntegerNodeAssert extends NodeAssert<IntegerNodeAssert,IntegerNode> {
-        
+
         protected IntegerNodeAssert(IntegerNode node) {
             super(node, IntegerNodeAssert.class);
         }
-        
+
         public IntegerNodeAssert hasValue(int expected) {
             isNotNull();
             int actualValue = actual.getValue();
@@ -293,13 +293,13 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             return this;
         }
     }
-    
+
     public static class IntegerRangeNodeAssert extends NodeAssert<IntegerRangeNodeAssert,IntegerRangeNode> {
-        
+
         protected IntegerRangeNodeAssert(IntegerRangeNode node) {
             super(node, IntegerRangeNodeAssert.class);
         }
-        
+
         public IntegerRangeNodeAssert hasStart(Integer expected) {
             isNotNull();
             Integer actualStart = actual.getStart();
@@ -308,7 +308,7 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             }
             return this;
         }
-        
+
         public IntegerRangeNodeAssert hasEnd(Integer expected) {
             isNotNull();
             Integer actualEnd = actual.getEnd();
@@ -317,7 +317,7 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             }
             return this;
         }
-        
+
         public IntegerRangeNodeAssert hasBoundedEnd() {
             isNotNull();
             if (!actual.isEndBounded()) {
@@ -325,7 +325,7 @@ public class NodeAssert<SELF extends AbstractAssert<SELF,ACTUAL>,ACTUAL extends 
             }
             return this;
         }
-        
+
         public IntegerRangeNodeAssert hasUnboundedEnd() {
             isNotNull();
             if (actual.isEndBounded()) {

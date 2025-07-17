@@ -11,11 +11,11 @@ import datawave.security.authorization.JWTTokenHandler;
 @ConditionalOnWebApplication
 public class JWTRestTemplateCustomizer implements RestTemplateCustomizer {
     private final JWTTokenHandler jwtTokenHandler;
-    
+
     public JWTRestTemplateCustomizer(JWTTokenHandler jwtTokenHandler) {
         this.jwtTokenHandler = jwtTokenHandler;
     }
-    
+
     @Override
     public void customize(RestTemplate restTemplate) {
         if (restTemplate instanceof JWTRestTemplate) {

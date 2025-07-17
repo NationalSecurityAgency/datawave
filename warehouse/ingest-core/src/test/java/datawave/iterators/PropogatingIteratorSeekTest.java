@@ -63,13 +63,13 @@ public class PropogatingIteratorSeekTest {
     @Test
     public void testReseeksOverFullRange() throws IOException {
         // reseek after each key
-        verifyAllDataFound(expected, new TestData(iterator, new Range(), true).data);
+        verifyAllDataFound(expected, new TestData(iterator, new Range(new Key("row"), null), true).data);
     }
 
     @Test
     public void testNextCallsOverFullRange() throws IOException {
         // seek once, then call next through all the data
-        verifyAllDataFound(expected, new TestData(iterator, new Range(), false).data);
+        verifyAllDataFound(expected, new TestData(iterator, new Range(new Key("row"), null), false).data);
     }
 
     @Test

@@ -35,8 +35,7 @@ public class JsonIngestFlattenerTest {
     public void testFlattenGROUPED() throws Exception {
         JsonObjectFlattener flattener = new JsonIngestFlattener.Builder().flattenMode(FlattenMode.GROUPED).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -55,8 +54,7 @@ public class JsonIngestFlattenerTest {
     public void testFlattenGROUPED_AND_NORMAL() throws Exception {
         JsonObjectFlattener flattener = new JsonIngestFlattener.Builder().flattenMode(FlattenMode.GROUPED_AND_NORMAL).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);

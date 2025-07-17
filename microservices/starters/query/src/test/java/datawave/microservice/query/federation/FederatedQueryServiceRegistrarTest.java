@@ -12,17 +12,17 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles({"federatedQueryServiceTest", "QueryStarterDefaults"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class FederatedQueryServiceRegistrarTest {
-    
+
     @Autowired
     private ApplicationContext applicationContext;
-    
+
     @Test
     public void federatedAuthorizationServiceTest() {
         FederatedQueryService federatedQueryService = (FederatedQueryService) applicationContext.getBean("FederatedQueryService");
-        
+
         assertNotNull(federatedQueryService);
     }
-    
+
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestConfiguration {}
 }

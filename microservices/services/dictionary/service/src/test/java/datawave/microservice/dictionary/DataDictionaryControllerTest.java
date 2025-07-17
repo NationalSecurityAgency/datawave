@@ -41,10 +41,10 @@ import datawave.webservice.dictionary.data.DefaultFields;
 import datawave.webservice.result.VoidResponse;
 
 public class DataDictionaryControllerTest extends ControllerIT {
-    
+
     @Autowired
     private DataDictionaryProperties dataDictionaryProperties;
-    
+
     @ComponentScan(basePackages = "datawave.microservice")
     @Configuration
     public static class DataDictionaryImplTestConfiguration {
@@ -54,7 +54,7 @@ public class DataDictionaryControllerTest extends ControllerIT {
             return new InMemoryAccumuloClient("root", new InMemoryInstance());
         }
     }
-    
+
     @BeforeAll
     public void setUp() throws Exception {
         try {
@@ -63,7 +63,7 @@ public class DataDictionaryControllerTest extends ControllerIT {
             // ignore
         }
     }
-    
+
     @Test
     public void testGet() {
         // @formatter:off
@@ -72,11 +72,11 @@ public class DataDictionaryControllerTest extends ControllerIT {
                 .path("/dictionary/data/v1/")
                 .build();
         // @formatter:on
-        
+
         ResponseEntity<DefaultDataDictionary> response = jwtRestTemplate.exchange(adminUser, HttpMethod.GET, uri, DefaultDataDictionary.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
-    
+
     @Test
     public void testRestrictedMethods() {
         // @formatter:off
@@ -86,17 +86,17 @@ public class DataDictionaryControllerTest extends ControllerIT {
                 .query("columnVisibility=PUBLIC")
                 .buildAndExpand("dataType", "fieldName", "desc");
         // @formatter:on
-        
+
         ResponseEntity<String> response = jwtRestTemplate.exchange(regularUser, HttpMethod.PUT, uri, String.class);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        
+
         // @formatter:off
         uri = UriComponentsBuilder.newInstance()
                 .scheme("https").host("localhost").port(webServicePort)
                 .path("/dictionary/data/v1/Descriptions")
                 .build();
         // @formatter:on
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         MultiValueMap<String,String> body = new LinkedMultiValueMap<>();
@@ -107,7 +107,7 @@ public class DataDictionaryControllerTest extends ControllerIT {
         RequestEntity<MultiValueMap<String,String>> entity = jwtRestTemplate.createRequestEntity(regularUser, body, headers, HttpMethod.POST, uri);
         response = jwtRestTemplate.exchange(entity, String.class);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        
+
         // @formatter:off
         uri = UriComponentsBuilder.newInstance()
                 .scheme("https").host("localhost").port(webServicePort)
@@ -115,11 +115,11 @@ public class DataDictionaryControllerTest extends ControllerIT {
                 .query("columnVisibility=PUBLIC")
                 .buildAndExpand("dataType", "fieldName");
         // @formatter:on
-        
+
         response = jwtRestTemplate.exchange(regularUser, HttpMethod.DELETE, uri, String.class);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
-    
+
     @Test
     public void testPostDescriptions() {
         // @formatter:off
@@ -128,7 +128,7 @@ public class DataDictionaryControllerTest extends ControllerIT {
                 .path("/dictionary/data/v1/Descriptions")
                 .build();
         // @formatter:on
-        
+
         HashMap<String,String> markings = new HashMap<>();
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "USER|ADMIN");
         Multimap<Map.Entry<String,String>,DefaultDescription> descriptions = HashMultimap.create();
@@ -141,5 +141,5 @@ public class DataDictionaryControllerTest extends ControllerIT {
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(postEntity, VoidResponse.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
-    
+
 }

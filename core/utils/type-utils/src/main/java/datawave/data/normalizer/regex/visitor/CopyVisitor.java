@@ -28,10 +28,10 @@ import datawave.data.normalizer.regex.ZeroOrMoreNode;
  * A {@link Visitor} implementation that returns a copy of a given {@link Node} tree.
  */
 public class CopyVisitor implements Visitor {
-    
+
     /**
      * Return a copy of the given node tree, or null if the node is null. Any null children will be filtered out.
-     * 
+     *
      * @param node
      *            the tree to copy
      * @return the copy
@@ -43,10 +43,10 @@ public class CopyVisitor implements Visitor {
         CopyVisitor visitor = new CopyVisitor();
         return (Node) node.accept(visitor, null);
     }
-    
+
     /**
      * Return a copy of the given node.
-     * 
+     *
      * @param node
      *            the node to copy
      * @param data
@@ -58,102 +58,102 @@ public class CopyVisitor implements Visitor {
         node.getChildren().stream().map((child) -> (Node) child.accept(this, data)).filter(Objects::nonNull).forEach(copy::addChild);
         return copy;
     }
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitAlternation(AlternationNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitGroup(GroupNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitDigitChar(DigitCharClassNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitCharClass(CharClassNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitCharRange(CharRangeNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitSingleChar(SingleCharNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitEscapedSingleChar(EscapedSingleCharNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitRepetition(RepetitionNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitQuestionMark(QuestionMarkNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitAnyChar(AnyCharNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitZeroToMany(ZeroOrMoreNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitOneToMany(OneOrMoreNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitInteger(IntegerNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitIntegerRange(IntegerRangeNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitEmpty(EmptyNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitStartAnchor(StartAnchorNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitEndAnchor(EndAnchorNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitEncodedNumber(EncodedNumberNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visitEncodedPattern(EncodedPatternNode node, Object data) {
         return copy(node, data);

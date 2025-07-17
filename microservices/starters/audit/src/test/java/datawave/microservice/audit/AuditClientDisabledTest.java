@@ -22,10 +22,10 @@ import datawave.microservice.audit.replay.ReplayClient;
 @SpringBootTest
 @ActiveProfiles({"audit-disabled"})
 public class AuditClientDisabledTest {
-    
+
     @Autowired
     ApplicationContext context;
-    
+
     @Test
     public void verifyAutoConfig() {
         assertEquals(0, context.getBeanNamesForType(AuditClient.class).length, "No AuditClient beans should have been found");
@@ -33,7 +33,7 @@ public class AuditClientDisabledTest {
         assertEquals(0, context.getBeanNamesForType(AuditServiceConfiguration.class).length, "No AuditServiceConfiguration beans should have been found");
         assertEquals(0, context.getBeanNamesForType(AuditServiceProvider.class).length, "No AuditServiceProvider beans should have been found");
     }
-    
+
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestApplication {
         public static void main(String[] args) {

@@ -63,6 +63,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withMaxResults(maxIvaratorResults)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withTermNumber(termNumber)
                         .withNumRetries(ivaratorNumRetries)
                         .withPersistOptions(ivaratorPersistOptions)
                         .withQueryLock(queryLock)
@@ -74,6 +75,9 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withTypeMetadata(typeMetadata)
                         .withIteratorEnv(env)
                         .withIvaratorSourcePool(ivaratorSourcePool)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver)
                         .build();
                 // @formatter:on
                 if (collectTimingDetails) {

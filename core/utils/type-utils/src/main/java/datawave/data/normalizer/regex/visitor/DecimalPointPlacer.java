@@ -30,7 +30,7 @@ import datawave.data.normalizer.regex.ZeroOrMoreNode;
  * correctly. Multiple optional decimal points may be added to a single regex pattern.
  */
 public class DecimalPointPlacer extends CopyVisitor {
-    
+
     public static Node addDecimalPoints(Node node) {
         if (node == null) {
             return null;
@@ -38,12 +38,12 @@ public class DecimalPointPlacer extends CopyVisitor {
         DecimalPointPlacer visitor = new DecimalPointPlacer();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     public Object visitEncodedPattern(EncodedPatternNode node, Object data) {
         // Operate on a copy of the node.
         Node copy = copy(node);
-        
+
         // Create an initial encoded pattern node with all the leading bin info.
         EncodedPatternNode encodedPattern = new EncodedPatternNode();
         NodeListIterator iter = copy.getChildrenIterator();
@@ -54,63 +54,63 @@ public class DecimalPointPlacer extends CopyVisitor {
                 break;
             }
         }
-        
+
         // Determine what character is equivalent to the zero character. For patterns matching positive numbers, this is '0'. For patterns matching negative
         // numbers, this is '9'.
         boolean positiveNumber = RegexUtils.isChar(node.getFirstChild(), RegexConstants.PLUS);
         char zeroChar = positiveNumber ? RegexConstants.ZERO : RegexConstants.NINE;
-        
+
         // Get a list of nodes with decimal points added and add them to the pattern node.
         DecimalPointAdder adder = new DecimalPointAdder(iter, zeroChar);
         List<Node> nodes = adder.addDecimalPoints();
         encodedPattern.addChildren(nodes);
-        
+
         // Add the remaining children to the pattern node.
         while (iter.hasNext()) {
             encodedPattern.addChild(iter.next());
         }
         return encodedPattern;
     }
-    
+
     private static class DecimalPointAdder {
-        
+
         // The node iterator.
         private final NodeListIterator iter;
-        
+
         // The character that is the equivalent to zero. For patterns matching positive numbers: '0'. For patterns matching negative numbers: '9'.
         private final char zeroChar;
-        
+
         // The nodes enriched with decimal points.
         private final List<Node> nodes = new ArrayList<>();
-        
+
         // The most recent element.
         private Node currentElement;
-        
+
         // The most recent quantifier.
         private Node currentQuantifier;
-        
+
         // The most recent question mark.
         private Node currentQuestionMark;
-        
+
         // Whether any decimal points have been added.
         boolean addedAnyDecimalPoints;
-        
+
         // Whether additional optional decimal points should be added.
         boolean addMoreDecimalPoints = true;
-        
+
         // Whether a non-leading zero has been seen.
         boolean nonLeadingZeroSeen = false;
-        
+
         public DecimalPointAdder(NodeListIterator iter, char zeroChar) {
             this(iter, zeroChar, false);
         }
-        
+
         private DecimalPointAdder(NodeListIterator iter, char zeroChar, boolean addedAnyDecimalPoints) {
             this.iter = iter;
             this.zeroChar = zeroChar;
             this.addedAnyDecimalPoints = addedAnyDecimalPoints;
         }
-        
+
         /**
          * Return a list of nodes enriched with decimal points. This list is not guaranteed to contain all nodes found within the iterator supplied to
          * {@link #DecimalPointAdder(NodeListIterator, char)}, so subsequent calls to {@link NodeListIterator#next()} should be made to the iterator after the
@@ -121,12 +121,12 @@ public class DecimalPointPlacer extends CopyVisitor {
             if (skipAddingDecimalPoints()) {
                 return nodes;
             }
-            
+
             // Add decimal points until either there are no more elements or if we have created a final decimal point.
             while (iter.hasNext() && addMoreDecimalPoints) {
                 // Capture the current element, quantifier, and optional.
                 captureNext();
-                
+
                 switch (currentElement.getType()) {
                     case GROUP:
                         addGroup();
@@ -149,17 +149,17 @@ public class DecimalPointPlacer extends CopyVisitor {
                     default:
                         throw new IllegalArgumentException("Unhandled element type: " + currentElement.getType());
                 }
-                
+
                 // Mark whether we've added any decimal points only after processing the first decimal point.
                 addedAnyDecimalPoints = true;
             }
-            
+
             return nodes;
         }
-        
+
         /**
          * Return whether the entire pattern after the bin information consists of .*, .+, or a non-quantified element.
-         * 
+         *
          * @return true if decimal points do not need to be added to this pattern, or false otherwise
          */
         private boolean skipAddingDecimalPoints() {
@@ -168,7 +168,7 @@ public class DecimalPointPlacer extends CopyVisitor {
                 Node element = iter.next();
                 Node quantifier = iter.isNextQuantifier() ? iter.next() : null;
                 iter.seekPastQuestionMarks();
-                
+
                 // If there is a second element, we cannot skip adding decimal points.
                 if (iter.hasNext()) {
                     return false;
@@ -184,12 +184,12 @@ public class DecimalPointPlacer extends CopyVisitor {
                         return quantifier == null;
                     }
                 }
-                
+
             } finally {
                 iter.setIndex(originalIndex);
             }
         }
-        
+
         /**
          * Capture the next element, quantifier, and optional.
          */
@@ -198,7 +198,7 @@ public class DecimalPointPlacer extends CopyVisitor {
             currentQuantifier = iter.isNextQuantifier() ? iter.next() : null;
             currentQuestionMark = iter.isNextQuestionMark() ? iter.next() : null;
         }
-        
+
         /**
          * The current element is either an optional group of leading zeros with a defined range that must occur more than once, or a group of ending
          * alternations.
@@ -210,12 +210,12 @@ public class DecimalPointPlacer extends CopyVisitor {
                 addLeadingZeroGroup();
             }
         }
-        
+
         private void addLeadingZeroGroup() {
             Node innerElement = currentElement.getFirstChild();
             Node innerQuantifier = currentElement.getChildAt(1);
             Node innerQuestionMark = currentElement.getChildCount() == 3 ? currentElement.getChildAt(2) : null;
-            
+
             // If the inner element can only match zero, we do not need to insert any decimal points. Add them as is.
             if (matchesZeroOnly(innerElement)) {
                 addAllCurrentToNodes();
@@ -228,7 +228,7 @@ public class DecimalPointPlacer extends CopyVisitor {
                 this.nodes.add(new QuestionMarkNode());
             }
         }
-        
+
         private void addEndingAlternationsGroup() {
             // The current element is a group with an alternation child that has expressions that we may need to add decimal points to.
             AlternationNode alternation = new AlternationNode();
@@ -244,7 +244,7 @@ public class DecimalPointPlacer extends CopyVisitor {
             }
             this.nodes.add(new GroupNode(alternation));
         }
-        
+
         /**
          * Add a decimal point based on a current element that is not quantified.
          */
@@ -252,15 +252,15 @@ public class DecimalPointPlacer extends CopyVisitor {
             // Add the current nodes.
             addCurrentElementToNodes();
             addCurrentQuestionMarkToNodes();
-            
+
             // If this is the last element in the regex expression, do not add any decimal points.
             if (!iter.hasNext()) {
                 return;
             }
-            
+
             // Add a decimal point.
             addDecimalPointToNodes();
-            
+
             if (currentQuestionMark != null) {
                 // If the current element is optional, make the decimal point optional.
                 addQuestionMarkToNodes();
@@ -274,7 +274,7 @@ public class DecimalPointPlacer extends CopyVisitor {
                 addMoreDecimalPoints = false;
             }
         }
-        
+
         /**
          * Add decimal points based on a current element that is quantified.
          */
@@ -294,7 +294,7 @@ public class DecimalPointPlacer extends CopyVisitor {
                     break;
             }
         }
-        
+
         /**
          * Add a decimal point for a current element that is followed by *.
          */
@@ -313,7 +313,7 @@ public class DecimalPointPlacer extends CopyVisitor {
                 addAllCurrentToNodes();
             }
         }
-        
+
         /**
          * Add a decimal point for a current element that is followed by +.
          */
@@ -330,16 +330,16 @@ public class DecimalPointPlacer extends CopyVisitor {
             // Do not add any more decimal points after this.
             addMoreDecimalPoints = false;
         }
-        
+
         /**
          * Add decimal points for a current element that is followed by a repetition.
          */
         private List<Node> getRepetitionQuantifiedElements(Node element, Node quantifier, Node questionMark, boolean makeDecimalOptional) {
             List<Node> nodes = new ArrayList<>();
-            
+
             // Add an initial copy of the current element.
             nodes.add(copy(element));
-            
+
             // Get the repetition range from the quantifier node.
             Pair<Integer,Integer> repetitionRange = getRepetitionAsRange((RepetitionNode) quantifier);
             boolean elementMarkedOptional = false;
@@ -348,11 +348,11 @@ public class DecimalPointPlacer extends CopyVisitor {
                 nodes.add(new QuestionMarkNode());
                 elementMarkedOptional = true;
             }
-            
+
             // Subtract one from both endpoints of the repetition since we have added an initial single copy of the element to the nodes already. What we do
             // next will depend on what the updated repetition range now covers.
             repetitionRange = subtractOneFrom(repetitionRange);
-            
+
             // The new repetition range is {0,}, which is equivalent to *.
             if (repetitionRange.getLeft() == 0 && repetitionRange.getRight() == null) {
                 nodes.add(createDecimalPoint());
@@ -435,14 +435,14 @@ public class DecimalPointPlacer extends CopyVisitor {
             }
             return nodes;
         }
-        
+
         /**
          * Add a copy of {@link #currentElement} to the node list.
          */
         private void addCurrentElementToNodes() {
             nodes.add(copy(currentElement));
         }
-        
+
         /**
          * Add a copy of {@link #currentQuantifier} to the node list if it is not null.
          */
@@ -451,7 +451,7 @@ public class DecimalPointPlacer extends CopyVisitor {
                 nodes.add(copy(currentQuantifier));
             }
         }
-        
+
         /**
          * Add a copy of {@link #currentQuestionMark} to the node list if it is not null.
          */
@@ -460,7 +460,7 @@ public class DecimalPointPlacer extends CopyVisitor {
                 nodes.add(copy(currentQuestionMark));
             }
         }
-        
+
         /**
          * Add the current element, quantifier, and question mark to the node list.
          */
@@ -469,40 +469,40 @@ public class DecimalPointPlacer extends CopyVisitor {
             addCurrentQuantifierToNodes();
             addCurrentQuestionMarkToNodes();
         }
-        
+
         /**
          * Add a new {@code "\."} to the node list.
          */
         private void addDecimalPointToNodes() {
             nodes.add(createDecimalPoint());
         }
-        
+
         /**
          * Return a new escaped decimal point as a node.
          */
         private Node createDecimalPoint() {
             return new EscapedSingleCharNode(RegexConstants.PERIOD);
         }
-        
+
         /**
          * Add a new {@code "?"} to the node list.
          */
         private void addQuestionMarkToNodes() {
             nodes.add(new QuestionMarkNode());
         }
-        
+
         /**
          * Return whether all remaining elements in the iterator can either occur zero times or match a zero.
-         * 
+         *
          * @return true if the remaining pattern can be zero-length, or false otherwise.
          */
         private boolean remainingPatternCanBeZeroLength() {
             // Mark the original index so that we can reset the iterator before exiting this method.
             int originalIndex = iter.index();
-            
+
             // Seek past all zero-matching elements.
             iter.seekPastZeroMatchingElements();
-            
+
             boolean canBeZeroLength = true;
             while (iter.hasNext()) {
                 Node next = iter.next();
@@ -536,7 +536,7 @@ public class DecimalPointPlacer extends CopyVisitor {
             iter.setIndex(originalIndex);
             return canBeZeroLength;
         }
-        
+
         /**
          * Return whether only one more element (possibly quantified and/or optional) remains in the iterator.
          */
@@ -549,11 +549,11 @@ public class DecimalPointPlacer extends CopyVisitor {
             iter.setIndex(originalIndex);
             return hasOnlyOneMore;
         }
-        
+
         private boolean matchesZero(Node node) {
             return RegexUtils.matchesChar(node, zeroChar);
         }
-        
+
         private boolean matchesZeroOnly(Node node) {
             return RegexUtils.matchesCharOnly(node, zeroChar);
         }

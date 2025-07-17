@@ -20,20 +20,20 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class AccumuloMonitorLocatorTest {
-    
+
     private static final int ZK_PORT = 22181;
     private static final String MONITOR_LOC = "localhost:9995";
-    
+
     private static TestingServer server;
-    
+
     @BeforeAll
     public static void setupZk() throws Exception {
         server = new TestingServer(ZK_PORT, true);
     }
-    
+
     private AccumuloClient accumuloClient;
     private AccumuloMonitorLocator locator = new AccumuloMonitorLocator();
-    
+
     @BeforeEach
     public void setup() throws Exception {
         Properties testProperties = new Properties();
@@ -44,19 +44,19 @@ public class AccumuloMonitorLocatorTest {
                 return testProperties;
             }
         };
-        
+
         try (CuratorFramework curator = CuratorFrameworkFactory.newClient(String.format("localhost:%d", ZK_PORT), new RetryOneTime(500))) {
             curator.start();
             curator.create().creatingParentContainersIfNeeded()
                             .forPath("/accumulo/" + accumuloClient.instanceOperations().getInstanceId() + "/monitor/http_addr", MONITOR_LOC.getBytes());
         }
     }
-    
+
     @Test
     public void shouldFetchMonitorFromZookeeper() {
         assertThat(locator.getHostPort(accumuloClient), is(MONITOR_LOC));
     }
-    
+
     @AfterAll
     public static void tearDownZk() throws Exception {
         server.stop();

@@ -17,17 +17,17 @@ import com.github.benmanes.caffeine.cache.Cache;
 public class CaffeineCacheInspector implements CacheInspector {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final CacheManager cacheManager;
-    
+
     public CaffeineCacheInspector(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
     }
-    
+
     @Override
     public <T> T list(String cacheName, Class<T> cacheObjectType, String key) {
         org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
         return cache.get(key, cacheObjectType);
     }
-    
+
     @Override
     public <T> List<? extends T> listAll(String cacheName, Class<T> cacheObjectType) {
         org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
@@ -44,7 +44,7 @@ public class CaffeineCacheInspector implements CacheInspector {
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public <T> List<? extends T> listMatching(String cacheName, Class<T> cacheObjectType, String substring) {
         org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
@@ -63,7 +63,7 @@ public class CaffeineCacheInspector implements CacheInspector {
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public <T> int evictMatching(String cacheName, Class<T> cacheObjectType, String substring) {
         org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);

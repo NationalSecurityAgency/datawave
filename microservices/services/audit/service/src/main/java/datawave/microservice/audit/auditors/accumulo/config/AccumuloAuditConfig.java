@@ -28,28 +28,28 @@ import datawave.webservice.common.audit.Auditor;
 @EnableConfigurationProperties(AccumuloAuditProperties.class)
 @ConditionalOnProperty(name = "audit.auditors.accumulo.enabled", havingValue = "true")
 public class AccumuloAuditConfig {
-    
+
     private Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     @Resource(name = "msgHandlerAuditParams")
     private AuditParameters msgHandlerAuditParams;
-    
+
     @Bean
     public AuditMessageConsumer accumuloAuditSink(Auditor accumuloAuditor) {
         return new AuditMessageConsumer(msgHandlerAuditParams, accumuloAuditor);
     }
-    
+
     @Bean
     public AccumuloAuditor accumuloAuditor(AccumuloAuditProperties accumuloAuditProperties, AccumuloClient client) {
         return new AccumuloAuditor(accumuloAuditProperties.getTableName(), client);
     }
-    
+
     @Bean
     @ConditionalOnProperty(name = "audit.auditors.accumulo.health.enabled", havingValue = "true")
     public AccumuloHealthChecker accumuloHealthChecker(AccumuloAuditProperties accumuloAuditProperties, AccumuloAuditor accumuloAuditor) {
         return new AccumuloHealthChecker(accumuloAuditProperties, accumuloAuditor);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public AccumuloClient accumuloClient(AccumuloAuditProperties accumuloAuditProperties) {

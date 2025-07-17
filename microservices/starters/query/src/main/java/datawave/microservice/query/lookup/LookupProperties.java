@@ -24,51 +24,51 @@ public class LookupProperties {
     protected String columnVisibility;
     @NotEmpty
     protected String contentQueryLogicName = "ContentQuery";
-    
+
     public String getPool() {
         return pool;
     }
-    
+
     public void setPool(String pool) {
         this.pool = pool;
     }
-    
+
     public Map<String,UUIDType> getTypes() {
         return types;
     }
-    
+
     public void setTypes(Map<String,UUIDType> types) {
         this.types = types;
     }
-    
+
     public int getBatchLookupLimit() {
         return batchLookupLimit;
     }
-    
+
     public void setBatchLookupLimit(int batchLookupLimit) {
         this.batchLookupLimit = batchLookupLimit;
     }
-    
+
     public String getBeginDate() {
         return beginDate;
     }
-    
+
     public void setBeginDate(String beginDate) {
         this.beginDate = beginDate;
     }
-    
+
     public String getColumnVisibility() {
         return columnVisibility;
     }
-    
+
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
-    
+
     public String getContentQueryLogicName() {
         return contentQueryLogicName;
     }
-    
+
     public void setContentQueryLogicName(String contentQueryLogicName) {
         this.contentQueryLogicName = contentQueryLogicName;
     }

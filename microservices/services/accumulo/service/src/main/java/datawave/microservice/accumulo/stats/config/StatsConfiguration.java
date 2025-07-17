@@ -11,7 +11,7 @@ import datawave.microservice.accumulo.stats.config.StatsConfiguration.JaxbProper
 @EnableConfigurationProperties({JaxbProperties.class, StatsProperties.class})
 @ConditionalOnProperty(name = "accumulo.stats.enabled", havingValue = "true", matchIfMissing = true)
 public class StatsConfiguration {
-    
+
     /**
      * This will allow {@link datawave.microservice.accumulo.stats.StatsService} to inject a datawave-specific namespace URI into XML originating from the
      * Accumulo monitor's servlet response, so that it can then be de/serialized as needed for DataWave clients
@@ -24,13 +24,13 @@ public class StatsConfiguration {
      */
     @ConfigurationProperties(prefix = "datawave.webservice")
     public static class JaxbProperties {
-        
+
         private String namespace = null;
-        
+
         public String getNamespace() {
             return namespace;
         }
-        
+
         public void setNamespace(String namespace) {
             this.namespace = namespace;
         }
