@@ -62,8 +62,9 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     protected static final char STRING_QUOTE = '\'';
 
     // allowed methods for composition. Nothing that mutates the collection is allowed, thus we have:
-    private Set<String> allowedMethods = Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size", "equals", "hashCode", "getValueForGroup",
-                    "getGroupsForValue", "getValuesForGroups", "toString", "values", "min", "max", "lessThan", "greaterThan", "compareWith");
+    private static final Set<String> ALLOWED_METHODS = Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size", "equals", "hashCode",
+                    "getValueForGroup", "getGroupsForValue", "getValuesForGroups", "toString", "values", "min", "max", "lessThan", "greaterThan",
+                    "compareWith");
 
     protected boolean sortDedupeChildren;
 
@@ -360,7 +361,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     public Object visit(ASTMethodNode node, Object data) {
         if (node.jjtGetNumChildren() > 0 && node.jjtGetChild(0) instanceof ASTIdentifierAccess) {
             ASTIdentifierAccess methodNameNode = (ASTIdentifierAccess) node.jjtGetChild(0);
-            if (!allowedMethods.contains(methodNameNode.getName())) {
+            if (!ALLOWED_METHODS.contains(methodNameNode.getName())) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METHOD_COMPOSITION_ERROR, MessageFormat.format("{0}", methodNameNode.getName()));
                 throw new DatawaveFatalQueryException(qe);
             }
