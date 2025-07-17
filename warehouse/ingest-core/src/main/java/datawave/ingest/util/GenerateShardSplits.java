@@ -48,6 +48,7 @@ public class GenerateShardSplits {
         System.exit(-1);
     }
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
 
         if (args.length < 3) {
@@ -110,6 +111,10 @@ public class GenerateShardSplits {
                         System.out.println("Balancer delay cannot be less than 0");
                         System.exit(-2);
                     }
+                } catch (NumberFormatException e) {
+                    System.out.println("Balancer delay argument is not an integer:" + e.getMessage());
+                    System.exit(-2);
+                }
             } else if ("-balancerDelay".equalsIgnoreCase(args[i])) {
                 if (i + 2 > args.length) {
                     System.err.println("-balancerDelay must be followed a number of millisecond to wait for balance between batches");
@@ -184,8 +189,8 @@ public class GenerateShardSplits {
         for (int x = 0; x < DAYS_TO_GENERATE; x++) {
 
             // Generate configured shards per day
-            for (int i = 0; i < SHARDS; i += splitStep) {
-                Text split = new Text(DateHelper.format(startDate) + "_" + i);
+            for (int y = 0; y < SHARDS; y += splitStep) {
+                Text split = new Text(DateHelper.format(startDate) + "_" + y);
                 splits.add(split);
 
                 // add markers as required
@@ -212,7 +217,7 @@ public class GenerateShardSplits {
             startDate = DateUtils.addDays(startDate, 1);
         }
 
-        splits = calculateMidpoints(splits);
+        calculateMidpoints(splits, new ArrayList(splits.size()));
 
         if (username != null) {
             // Connect to accumulo
@@ -300,30 +305,24 @@ public class GenerateShardSplits {
         return tabletLocations;
     }
 
-    protected static List<Text> calculateMidpoints(List<Text> splits) {
-        if (splits.size() < 2) {
-            return splits;
+    protected static void calculateMidpoints(List<Text> splits, List<Text> midpoints) {
+        if (splits.size() > 2) {
+            int n = splits.size();
+
+            if (n % 2 == 0) {
+                // Even case: Add the two middle elements
+                midpoints.add(splits.get(n / 2 - 1));
+                midpoints.add(splits.get(n / 2));
+
+                calculateMidpoints(splits.subList(0, (n / 2) - 1), midpoints);
+                calculateMidpoints(splits.subList(((n / 2) + 1), n), midpoints);
+            } else {
+                // odd case: Add the single middle element
+                midpoints.add(splits.get(n / 2));
+
+                calculateMidpoints(splits.subList(0, n / 2), midpoints);
+                calculateMidpoints(splits.subList((n / 2) + 1, n), midpoints);
+            }
         }
-
-        List<Text> midpoints = new ArrayList<>();
-        int n = splits.size();
-
-        if (n % 2 == 0) {
-            // Even case: Add the two middle elements
-            midpoints.add(splits.get(n / 2 - 1));
-            midpoints.add(splits.get(n / 2));
-
-            midpoints.addAll(calculateMidpoints(splits.subList(0, (n / 2) - 1)));
-            midpoints.addAll(calculateMidpoints(splits.subList(((n / 2) + 1), n)));
-        } else {
-            // odd case: Add the single middle element
-            midpoints.add(splits.get(n / 2));
-
-            midpoints.addAll(calculateMidpoints(splits.subList(0, n / 2)));
-            midpoints.addAll(calculateMidpoints(splits.subList((n / 2) + 1, n)));
-        }
-
-        return midpoints;
     }
-
 }

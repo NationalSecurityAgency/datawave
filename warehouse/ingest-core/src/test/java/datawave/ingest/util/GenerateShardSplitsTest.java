@@ -2,6 +2,7 @@ package datawave.ingest.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.io.Text;
@@ -18,11 +19,11 @@ class GenerateShardSplitsTest {
         List<Text> expected = List.of(new Text("20230102_2"), new Text("20230102_3"), new Text("20230101_2"), new Text("20230101_3"), new Text("20230101_1"),
                         new Text("20230102_1"), new Text("20230103_2"), new Text("20230103_3"), new Text("20230103_1"), new Text("20230103_10"));
 
-        List<Text> sorted = GenerateShardSplits.calculateMidpoints(files);
+        GenerateShardSplits.calculateMidpoints(files, new ArrayList<>(files.size()));
 
-        assertEquals(expected, sorted, "Sort order was incorrect");
+        assertEquals(expected, files, "Sort order was incorrect");
 
-        for (Text element : sorted) {
+        for (Text element : files) {
             Assert.assertTrue(expected.contains(element));
         }
 
