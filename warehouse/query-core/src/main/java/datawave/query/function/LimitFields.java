@@ -1,16 +1,18 @@
 package datawave.query.function;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
@@ -20,8 +22,6 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
-import datawave.query.util.Tuple2;
-import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -56,9 +56,12 @@ import datawave.util.StringUtils;
  */
 public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Document>> {
 
-    private static final Logger log = Logger.getLogger(LimitFields.class);
+    private static final Logger log = LoggerFactory.getLogger(LimitFields.class);
 
     public static final String ORIGINAL_COUNT_SUFFIX = "_ORIGINAL_COUNT";
+
+    private static final CommonalityAndGroupParser FIELD_PARSER = new CommonalityAndGroupParser();
+    private static final String COLON = ":";
 
     // A map of fields and the number of values to limit the fields by.
     private final Map<String,Integer> limitFieldsMap;
@@ -66,27 +69,20 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     // A collection of field sets where if the values match then those values should not be dropped.
     private final Set<Set<String>> matchingFieldSets;
 
-    /**
-     * Return the commonality (instance) and grouping context of the given key.
-     *
-     * @param key
-     *            the key
-     * @return the commonality and grouping context
-     */
-    static Tuple2<String,String> getCommonalityAndGroupingContext(String key) {
-        String[] splits = StringUtils.split(key, '.');
-        if (splits.length >= 3) {
-            // return the first group and last group (a.k.a the instance in the first group)
-            return new Tuple2<>(splits[1], splits[splits.length - 1]);
-        }
-        return null;
-    }
+    // _ANYFIELD_ is present in the limit fields map
+    private boolean anyFieldLimitExists;
+
+    // _ANYFIELD_ value as the limit field
+    private int anyFieldLimitValue;
 
     public LimitFields(Map<String,Integer> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
         this.limitFieldsMap = limitFieldsMap;
         this.matchingFieldSets = matchingFieldSets;
-        if (log.isTraceEnabled())
-            log.trace("limitFieldsMap set to:" + limitFieldsMap);
+        if (limitFieldsMap.containsKey(Constants.ANY_FIELD)) {
+            this.anyFieldLimitExists = true;
+            this.anyFieldLimitValue = limitFieldsMap.get(Constants.ANY_FIELD);
+        }
+        log.trace("limitFieldsMap set to:{}", limitFieldsMap);
     }
 
     @Override
@@ -111,8 +107,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *            the tracker
      */
     private void findHits(Document document, LimitFieldsTracker tracker) {
-        Multimap<String,String> hitTermMap = getHitTermMap(document);
-        Set<Attribute<?>> hitTermAttributes = getHitTermAttributes(document);
+        HitTermContext hitTermContext = getHitTermContext(document);
 
         // first pass is to set all of the hits to be kept, the misses to drop, and count em all
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
@@ -121,25 +116,25 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
             // if there is an _ANYFIELD_ entry in the limitFieldsMap, then insert every key that is not yet in the map, using the
             // limit value for _ANYFIELD_
-            if (isLimited(Constants.ANY_FIELD) && !isLimited(keyNoGrouping)) {
-                limitField(keyNoGrouping, getLimit(Constants.ANY_FIELD));
-                log.trace("added " + keyNoGrouping + " - " + getLimit(keyNoGrouping) + " to the limitFieldsMap because of the _ANYFIELD_ entry");
+            if (anyFieldLimitExists && !isLimited(keyNoGrouping)) {
+                limitField(keyNoGrouping, anyFieldLimitValue);
+                if (log.isTraceEnabled()) {
+                    log.trace("added {} - {} to the limitFieldsMap because of the _ANYFIELD_ entry", keyNoGrouping, getLimit(keyNoGrouping));
+                }
             }
 
             if (isLimited(keyNoGrouping)) { // look for the key without the grouping context
-                if (log.isTraceEnabled()) {
-                    log.trace("limitFieldsMap contains " + keyNoGrouping);
-                }
+                log.trace("limitFieldsMap contains {}", keyNoGrouping);
 
                 Attribute<?> attr = de.getValue();
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
-                        evaluateForHit(tracker, hitTermMap, hitTermAttributes, keyWithGrouping, keyNoGrouping, value);
+                        evaluateForHit(tracker, hitTermContext, keyWithGrouping, keyNoGrouping, value);
                     }
                 } else {
-                    evaluateForHit(tracker, hitTermMap, hitTermAttributes, keyWithGrouping, keyNoGrouping, attr);
+                    evaluateForHit(tracker, hitTermContext, keyWithGrouping, keyNoGrouping, attr);
                 }
             }
         }
@@ -152,10 +147,10 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *            the document
      * @return the hit term map
      */
-    private Multimap<String,String> getHitTermMap(Document document) {
-        Multimap<String,String> attrMap = HashMultimap.create();
-        fillHitTermMap(document.get(JexlEvaluation.HIT_TERM_FIELD), attrMap);
-        return attrMap;
+    private HitTermContext getHitTermContext(Document document) {
+        HitTermContext.Builder builder = new HitTermContext.Builder(FIELD_PARSER);
+        fillHitTermBuilder(document.get(JexlEvaluation.HIT_TERM_FIELD), builder);
+        return builder.build();
     }
 
     /**
@@ -163,60 +158,20 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *
      * @param attr
      *            the attribute
-     * @param attrMap
-     *            the map
      */
-    private void fillHitTermMap(Attribute<?> attr, Multimap<String,String> attrMap) {
+    private void fillHitTermBuilder(Attribute<?> attr, HitTermContext.Builder builder) {
         if (attr != null) {
             if (attr instanceof Attributes) {
                 Attributes attrs = (Attributes) attr;
                 for (Attribute<?> at : attrs.getAttributes()) {
-                    fillHitTermMap(at, attrMap);
+                    fillHitTermBuilder(at, builder);
                 }
             } else if (attr instanceof Content) {
                 Content content = (Content) attr;
                 // split the content into its fieldname:value
                 String contentString = content.getContent();
-                int colonPos = contentString.indexOf(Constants.COLON);
-                attrMap.put(contentString.substring(0, colonPos), contentString.substring(colonPos + 1));
-            }
-        }
-    }
-
-    /**
-     * Return the sets of singular attributes in the given document from the {@link JexlEvaluation#HIT_TERM_FIELD} entry.
-     *
-     * @param document
-     *            the document
-     * @return the set of individual attributes
-     */
-    private Set<Attribute<?>> getHitTermAttributes(Document document) {
-        Set<Attribute<?>> attributesSet = new HashSet<>();
-        Attribute<?> attributes = document.get(JexlEvaluation.HIT_TERM_FIELD);
-        fillHitTermSet(attributes, attributesSet);
-        return attributesSet;
-    }
-
-    /**
-     * Adds singular attributes to the given set, recursively so if the attribute is an {@link Attributes}.
-     *
-     * @param attr
-     *            the attribute
-     * @param attributesSet
-     *            the set
-     */
-    private void fillHitTermSet(Attribute<?> attr, Set<Attribute<?>> attributesSet) {
-        if (attr != null) {
-            if (attr instanceof Attributes) {
-                Attributes attrs = (Attributes) attr;
-                for (Attribute<?> at : attrs.getAttributes()) {
-                    fillHitTermSet(at, attributesSet);
-                }
-            } else if (attr instanceof Content) {
-                Content content = (Content) attr;
-                if (content.getSource() != null) {
-                    attributesSet.add(content.getSource());
-                }
+                String fieldName = contentString.substring(0, contentString.indexOf(COLON));
+                builder.putHitField(fieldName, content.getSource());
             }
         }
     }
@@ -227,10 +182,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *
      * @param tracker
      *            the tracker
-     * @param hitTermMap
-     *            the hit term map
-     * @param hitTermAttributes
-     *            the hit term attributes
+     * @param hitTermContext
+     *            the hit term context
      * @param keyWithGrouping
      *            the key with the grouping context
      * @param keyNoGrouping
@@ -238,9 +191,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @param value
      *            the attribute
      */
-    private void evaluateForHit(LimitFieldsTracker tracker, Multimap<String,String> hitTermMap, Set<Attribute<?>> hitTermAttributes, String keyWithGrouping,
-                    String keyNoGrouping, Attribute<? extends Comparable<?>> value) {
-        if (isHit(keyWithGrouping, value, hitTermMap, hitTermAttributes)) {
+    private void evaluateForHit(LimitFieldsTracker tracker, HitTermContext hitTermContext, String keyWithGrouping, String keyNoGrouping,
+                    Attribute<? extends Comparable<?>> value) {
+        if (isHit(keyWithGrouping, value, hitTermContext)) {
             tracker.incrementHit(keyNoGrouping);
             tracker.addHit(keyNoGrouping, value);
         } else {
@@ -260,73 +213,26 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *            the string key
      * @param attr
      *            the attribute
-     * @param hitTermMap
-     *            the hit term map
-     * @param hitTermAttributes
-     *            hit term attributes from the document
+     * @param hitTermContext
+     *            the hit term context
      * @return true if a hit
      */
-    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap, Set<Attribute<?>> hitTermAttributes) {
-        if (hitTermMap.containsKey(keyWithGrouping) && isAttributeHitTerm(hitTermAttributes, attr)) {
+    private boolean isHit(String keyWithGrouping, Attribute<?> attr, HitTermContext hitTermContext) {
+        if (hitTermContext.isEmpty()) {
+            return false;
+        } else if (hitTermContext.containsFieldWithGrouping(keyWithGrouping) && hitTermContext.isAttributeHitTerm(attr)) {
             return true;
         }
 
+        CommonalityAndGroup fieldToken = FIELD_PARSER.parse(keyWithGrouping);
+
         // If not already returned as a value match, then lets include those that are
         // part of the same group and instance as some other hit.
-        if (!hitTermMap.isEmpty()) {
-            Tuple2<String,String> keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
-            if (keyTokens != null) {
-                String keyWithGroupingCommonality = keyTokens.first();
-                String keyWithGroupingSuffix = keyTokens.second();
-
-                for (String key : hitTermMap.keySet()) {
-                    // Get the commonality from the hit term key.
-                    Tuple2<String,String> commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
-                    if (commonalityAndGroupingContext != null) {
-                        String hitTermKeyCommonality = commonalityAndGroupingContext.first();
-                        String hitTermGroup = commonalityAndGroupingContext.second();
-                        if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && keyWithGroupingSuffix.equals(hitTermGroup)) {
-                            return true;
-                        }
-                    }
-                }
-            }
+        if (fieldToken != null && hitTermContext.hasCommonalityAndGrouping(fieldToken)) {
+            return true;
         }
 
         return false;
-    }
-
-    /**
-     * This method is preferred over a simple <code>set.contains()</code> call because the attribute being compared may not be a TypeAttribute.
-     *
-     * @param hitTermAttributes
-     *            a set of hit term source attributes
-     * @param attr
-     *            the attribute being compared
-     * @return true if the attribute is also a hit term
-     */
-    private boolean isAttributeHitTerm(Set<Attribute<?>> hitTermAttributes, Attribute<?> attr) {
-        String data = getBackingData(attr);
-        for (Attribute<?> attribute : hitTermAttributes) {
-            // compare metadata just to be safe
-            if (attribute.getMetadata().equals(attr.getMetadata())) {
-                String hitData = getBackingData(attribute);
-                if (hitData.equals(data)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private String getBackingData(Attribute<?> attr) {
-        if (attr instanceof PreNormalizedAttribute) {
-            return ((PreNormalizedAttribute) attr).getValue();
-        }
-        if (attr instanceof TypeAttribute) {
-            return ((TypeAttribute<?>) attr).getType().getDelegateAsString();
-        }
-        return String.valueOf(attr.getData());
     }
 
     /**
@@ -488,7 +394,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     int limit = getLimit(keyNoGrouping);
                     int missesToSet = Math.min(limit - keepers, missesRemaining);
                     if (missesToSet > 0) {
-                        log.error("Failed to limit fields correctly, " + missesToSet + " attributes failed to be included");
+                        log.error("Failed to limit fields correctly, {} attributes failed to be included", missesToSet);
                         throw new RuntimeException(
                                         "Failed to limit fields correctly, " + missesToSet + ' ' + keyNoGrouping + " attributes failed to be included");
                     }
@@ -529,5 +435,160 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      */
     private void limitField(String field, int limit) {
         this.limitFieldsMap.put(field, limit);
+    }
+
+    static class HitTermContext {
+        private final Set<String> termNames;
+        private final Set<CommonalityAndGroup> groupingSet;
+        private final Set<Attribute<?>> termAttributes;
+        private final Map<String,BackingData> termDataMap;
+
+        HitTermContext(Set<String> fieldNames, Set<CommonalityAndGroup> groupingSet, Set<Attribute<?>> attributes) {
+            this.termNames = fieldNames;
+            this.groupingSet = groupingSet;
+            this.termAttributes = attributes;
+            this.termDataMap = attributes.stream().map(HitTermContext::getBackingData).collect(Collectors.toMap(BackingData::getData, x -> x));
+        }
+
+        /**
+         * Checks if the commonality/group is present in the context
+         *
+         * @param token
+         *            the commonality/group to test
+         * @return true if the commonality/group is present, otherwise false
+         */
+        boolean hasCommonalityAndGrouping(CommonalityAndGroup token) {
+            return groupingSet.contains(token);
+        }
+
+        /**
+         * Checks if the context is empty
+         *
+         * @return true if the context is empty, otherwise false
+         */
+        boolean isEmpty() {
+            return termNames.isEmpty();
+        }
+
+        /**
+         * Check if the context contains the field as a hit-term
+         *
+         * @param keyWithGrouping
+         *            the key to check
+         * @return true if the context contains the key, otherwise false
+         */
+        boolean containsFieldWithGrouping(String keyWithGrouping) {
+            return termNames.contains(keyWithGrouping);
+        }
+
+        /**
+         * This method is preferred over a simple <code>set.contains()</code> call because the attribute being compared may not be a TypeAttribute.
+         *
+         * @param attr
+         *            the attribute being compared
+         * @return true if the attribute is also a hit term
+         */
+        boolean isAttributeHitTerm(Attribute<?> attr) {
+            // Get the backing data for the attribute
+            BackingData attrData = getBackingData(attr);
+
+            // Check if the attribute source value matches one of the hit-term source values
+            BackingData hitTermAttrData = termDataMap.get(attrData.getData());
+
+            // Check if the get was successful (meaning a match) and then double-check the keys match between
+            // the attribute and the hit-term attribute
+            return hitTermAttrData != null && hitTermAttrData.getKey().equals(attrData.getKey());
+        }
+
+        /**
+         * Gets the hit term attributes in context
+         *
+         * @return the hit term attributes
+         */
+        Collection<Attribute<?>> getHitTermAttributes() {
+            return termAttributes;
+        }
+
+        /**
+         * Get the grouping set for hit-term fields
+         *
+         * @return the commonality/grouping set
+         */
+        Set<CommonalityAndGroup> getGroupingSet() {
+            return groupingSet;
+        }
+
+        private static BackingData getBackingData(Attribute<?> attr) {
+            if (attr instanceof PreNormalizedAttribute) {
+                return new BackingData(attr.getMetadata(), ((PreNormalizedAttribute) attr).getValue());
+            }
+            if (attr instanceof TypeAttribute) {
+                return new BackingData(attr.getMetadata(), ((TypeAttribute<?>) attr).getType().getDelegateAsString());
+            }
+            return new BackingData(attr.getMetadata(), String.valueOf(attr.getData()));
+        }
+
+        static class BackingData {
+            private final Key key;
+            private final String data;
+
+            BackingData(Key key, String data) {
+                this.key = key;
+                this.data = data;
+            }
+
+            public Key getKey() {
+                return key;
+            }
+
+            public String getData() {
+                return data;
+            }
+
+            @Override
+            public final boolean equals(Object o) {
+                if (!(o instanceof BackingData))
+                    return false;
+
+                BackingData that = (BackingData) o;
+                return Objects.equals(data, that.data) && Objects.equals(key, that.key);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = Objects.hashCode(key);
+                result = 31 * result + Objects.hashCode(data);
+                return result;
+            }
+        }
+
+        static class Builder {
+            private final CommonalityAndGroupParser fieldParser;
+            private final Set<String> hitTermFields;
+            private final HashSet<Attribute<?>> hitTermSourceAttributes;
+
+            Builder(CommonalityAndGroupParser fieldParser) {
+                this.fieldParser = fieldParser;
+                this.hitTermFields = new HashSet<>();
+                this.hitTermSourceAttributes = new HashSet<>();
+            }
+
+            HitTermContext.Builder putHitField(String fieldName, Attribute<?> sourceAttribute) {
+                hitTermFields.add(fieldName);
+                hitTermSourceAttributes.add(sourceAttribute);
+                return this;
+            }
+
+            HitTermContext build() {
+                Set<CommonalityAndGroup> groupSet = new HashSet<>(hitTermFields.size());
+                for (String fieldName : hitTermFields) {
+                    CommonalityAndGroup token = fieldParser.parse(fieldName);
+                    if (token != null) {
+                        groupSet.add(token);
+                    }
+                }
+                return new HitTermContext(hitTermFields, groupSet, hitTermSourceAttributes);
+            }
+        }
     }
 }

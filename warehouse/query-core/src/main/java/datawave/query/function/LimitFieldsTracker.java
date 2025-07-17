@@ -10,7 +10,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.query.attributes.Attribute;
-import datawave.query.util.Tuple2;
 
 /**
  * Provides useful tracking of a number of different properties for use with {@link LimitFields}.
@@ -18,6 +17,7 @@ import datawave.query.util.Tuple2;
 public class LimitFieldsTracker {
 
     private static final Joiner JOINER = Joiner.on(".");
+    private static final CommonalityAndGroupParser FIELD_PARSER = new CommonalityAndGroupParser();
 
     private final Multimap<String,MatchingFieldHits> matchingFieldGroups;
     private final Set<String> matchingGroups;
@@ -46,9 +46,9 @@ public class LimitFieldsTracker {
      * @return the commonality and grouping context
      */
     private static String getGroup(String fieldWithGrouping) {
-        Tuple2<String,String> fieldTokens = LimitFields.getCommonalityAndGroupingContext(fieldWithGrouping);
+        CommonalityAndGroup fieldTokens = FIELD_PARSER.parse(fieldWithGrouping);
         if (fieldTokens != null) {
-            return JOINER.join(fieldTokens.first(), fieldTokens.second());
+            return JOINER.join(fieldTokens.getKeyCommonality(), fieldTokens.getGroup());
         }
         return null;
     }
