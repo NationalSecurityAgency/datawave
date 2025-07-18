@@ -333,7 +333,7 @@ public class IngestFieldFilter {
             if (StringUtils.isNotBlank(fieldsStr)) {
                 for (String pair : fieldsStr.split(PAIR_DELIM)) {
                     if (!StringUtils.isBlank(pair)) {
-                        String[] tokens = pair.split(":");
+                        String[] tokens = pair.split(VALUE_DELIM);
                         if (tokens.length == 2) {
                             List<String> left = parseFields(tokens[0]);
                             List<String> right = parseFields(tokens[1]);
