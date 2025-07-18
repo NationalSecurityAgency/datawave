@@ -22,16 +22,16 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 @EnableCaching
 @CacheConfig(cacheNames = "datawaveUsers-IT")
 public class AuthorizationTestUserService implements CachedDatawaveUserService {
-    
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private Map<SubjectIssuerDNPair,DatawaveUser> userMap;
     private boolean createUser;
-    
+
     public AuthorizationTestUserService(Map<SubjectIssuerDNPair,DatawaveUser> userMap, boolean createUser) {
         this.userMap = userMap;
         this.createUser = createUser;
     }
-    
+
     @Override
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         logger.debug("AuthorizationTestUserService.lookup called");
@@ -41,15 +41,15 @@ public class AuthorizationTestUserService implements CachedDatawaveUserService {
                 user = new DatawaveUser(dn, USER, null, null, null, null, -1L);
             }
             return user;
-            
+
         }).collect(toList());
     }
-    
+
     @Override
     public Collection<DatawaveUser> reload(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         return null;
     }
-    
+
     @Override
     public DatawaveUser list(String name) {
         try {
@@ -58,27 +58,27 @@ public class AuthorizationTestUserService implements CachedDatawaveUserService {
             return null;
         }
     }
-    
+
     @Override
     public Collection<? extends DatawaveUserInfo> listAll() {
         return null;
     }
-    
+
     @Override
     public Collection<? extends DatawaveUserInfo> listMatching(String substring) {
         return null;
     }
-    
+
     @Override
     public String evict(String name) {
         return null;
     }
-    
+
     @Override
     public String evictMatching(String substring) {
         return null;
     }
-    
+
     @Override
     public String evictAll() {
         return null;

@@ -58,6 +58,21 @@ public class GroupingAttribute<T extends Comparable<T>> extends TypeAttribute<T>
      */
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(2099, 2129).append(getType().getDelegateAsString()).toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(2099, 2129)
+                    .append(getType().getDelegateAsString())
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
+    }
+
+    @Override
+    public long sizeInBytes() {
+        if (sizeInBytes == Long.MIN_VALUE) {
+            sizeInBytes = super.sizeInBytes();
+        }
+        return sizeInBytes;
     }
 }

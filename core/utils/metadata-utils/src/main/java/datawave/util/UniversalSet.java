@@ -11,27 +11,27 @@ import java.util.function.Predicate;
  * The UniversalSet contains all objects, including itself. It can be used as a 'whitelist' that is completely permissive. Note that isEmpty() returns true,
  * size() is zero, and iterator() will never haveNext().
  *
- * 
+ *
  * @param <T>
  */
 @SuppressWarnings("rawtypes")
 public class UniversalSet<T> implements Set<T>, Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private static final Object[] EMPTY_ARRAY = new Object[0];
-    
+
     private static UniversalSet inst = new UniversalSet();
-    
+
     public static <T> UniversalSet<T> instance() {
         return inst;
     }
-    
+
     private UniversalSet() {}
-    
+
     /**
      * The UniversalSet contains all possible objects
-     * 
+     *
      * @param o
      *            any Object
      * @return true
@@ -40,7 +40,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean contains(Object o) {
         return true;
     }
-    
+
     /**
      * @return an empty iterator
      */
@@ -48,7 +48,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public Iterator<T> iterator() {
         return Collections.emptyIterator();
     }
-    
+
     /**
      *
      * @return an empty array
@@ -57,7 +57,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public Object[] toArray() {
         return EMPTY_ARRAY;
     }
-    
+
     /**
      *
      * @param a
@@ -70,7 +70,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public <T1> T1[] toArray(T1[] a) {
         return (T1[]) EMPTY_ARRAY;
     }
-    
+
     /**
      *
      * @param e
@@ -81,7 +81,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean add(T e) {
         return false;
     }
-    
+
     /**
      *
      * @return zero
@@ -90,17 +90,17 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public int size() {
         return 0;
     }
-    
+
     /**
      * Must return true to prevent attempts to iterate over the 'infinite but non-existent' members
-     * 
+     *
      * @return true
      */
     @Override
     public boolean isEmpty() {
         return true;
     }
-    
+
     /**
      *
      * @param o
@@ -111,7 +111,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean remove(Object o) {
         return false;
     }
-    
+
     /**
      * @param o
      *            another object
@@ -121,17 +121,17 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean equals(Object o) {
         return o instanceof UniversalSet;
     }
-    
+
     /**
      * Need a hash code for cache key purposes
-     * 
+     *
      * @return
      */
     @Override
     public int hashCode() {
         return UniversalSet.class.hashCode();
     }
-    
+
     /**
      *
      * @param c
@@ -142,13 +142,13 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean removeAll(Collection<?> c) {
         return false;
     }
-    
+
     /**
      * noop
      */
     @Override
     public void clear() {}
-    
+
     /**
      *
      * @param c
@@ -159,7 +159,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean containsAll(Collection<?> c) {
         return true;
     }
-    
+
     /**
      *
      * @param c
@@ -170,7 +170,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean addAll(Collection<? extends T> c) {
         return false;
     }
-    
+
     /**
      *
      * @param c
@@ -181,7 +181,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean retainAll(Collection<?> c) {
         return false;
     }
-    
+
     /**
      *
      * @param filter
@@ -192,7 +192,7 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean removeIf(Predicate<? super T> filter) {
         return false;
     }
-    
+
     @Override
     public String toString() {
         return "UniversalSet{}";

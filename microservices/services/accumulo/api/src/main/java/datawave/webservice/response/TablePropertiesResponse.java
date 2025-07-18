@@ -17,17 +17,17 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class TablePropertiesResponse extends BaseResponse {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "Properties")
     @XmlElement(name = "Property")
     private List<TableProperty> properties = null;
-    
+
     public List<TableProperty> getProperties() {
         return properties;
     }
-    
+
     public void setProperties(List<TableProperty> properties) {
         this.properties = properties;
     }

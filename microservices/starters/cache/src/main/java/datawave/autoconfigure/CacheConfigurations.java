@@ -14,9 +14,9 @@ import org.springframework.boot.autoconfigure.cache.CacheType;
  * {@link org.springframework.context.annotation.Primary} bean. We need this since we create other cache manager instances.
  */
 final class CacheConfigurations {
-    
+
     private static final Map<CacheType,Class<?>> MAPPINGS;
-    
+
     static {
         Map<CacheType,Class<?>> mappings = new EnumMap<>(CacheType.class);
         mappings.put(CacheType.GENERIC, GenericCacheConfiguration.class);
@@ -28,15 +28,15 @@ final class CacheConfigurations {
         mappings.put(CacheType.NONE, NoOpCacheConfiguration.class);
         MAPPINGS = Collections.unmodifiableMap(mappings);
     }
-    
+
     private CacheConfigurations() {}
-    
+
     public static String getConfigurationClass(CacheType cacheType) {
         Class<?> configurationClass = MAPPINGS.get(cacheType);
         state(configurationClass != null, () -> "Unknown cache type " + cacheType);
         return configurationClass.getName();
     }
-    
+
     public static CacheType getType(String configurationClassName) {
         for (Map.Entry<CacheType,Class<?>> entry : MAPPINGS.entrySet()) {
             if (entry.getValue().getName().equals(configurationClassName)) {

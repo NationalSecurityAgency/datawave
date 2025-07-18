@@ -250,6 +250,12 @@ public class LimitFieldsTestingIngest {
                 bw.close();
             }
         }
+
+        try (BatchWriter batchWriter = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20130101_1", new Value());
+            batchWriter.addMutation(m);
+        }
     }
 
     private static Value getValueForBuilderFor(String... in) {

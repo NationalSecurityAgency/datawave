@@ -31,14 +31,14 @@ import datawave.microservice.querymetric.QueryMetricUpdate;
 
 public class MetricMapListener implements EntryAddedListener, EntryUpdatedListener, EntryLoadedListener, MapEvictedListener, EntryEvictedListener,
                 EntryRemovedListener, EntryMergedListener {
-    
+
     private Logger log = LoggerFactory.getLogger(MetricMapListener.class);
     private String mapName;
-    
+
     public MetricMapListener(String mapName) {
         this.mapName = mapName;
     }
-    
+
     private String printEvent(EntryEvent event) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
         Object value = event.getValue();
@@ -57,47 +57,47 @@ public class MetricMapListener implements EntryAddedListener, EntryUpdatedListen
         }
         return sb.toString();
     }
-    
+
     @Override
     public void entryAdded(EntryEvent event) {
         if (event.getMember().localMember()) {
             log.debug(mapName + " " + printEvent(event));
         }
     }
-    
+
     @Override
     public void entryUpdated(EntryEvent event) {
         if (event.getMember().localMember()) {
             log.debug(mapName + " " + printEvent(event));
         }
     }
-    
+
     @Override
     public void entryLoaded(EntryEvent event) {
         log.debug(mapName + " " + printEvent(event));
     }
-    
+
     @Override
     public void entryEvicted(EntryEvent event) {
         if (event.getMember().localMember()) {
             log.debug(mapName + " " + printEvent(event));
         }
     }
-    
+
     @Override
     public void entryMerged(EntryEvent event) {
         if (event.getMember().localMember()) {
             log.debug(mapName + " " + printEvent(event));
         }
     }
-    
+
     @Override
     public void entryRemoved(EntryEvent event) {
         if (event.getMember().localMember()) {
             log.debug(mapName + " " + printEvent(event));
         }
     }
-    
+
     @Override
     public void mapEvicted(MapEvent event) {
         log.debug(mapName + " : " + event.toString());

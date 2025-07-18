@@ -16,17 +16,17 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ListUserAuthorizationsResponse extends BaseResponse {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "UserAuthorizations")
     @XmlElement(name = "UserAuthorization")
     private List<String> userAuthorizations = null;
-    
+
     public List<String> getUserAuthorizations() {
         return userAuthorizations;
     }
-    
+
     public void setUserAuthorizations(List<String> userAuthorizations) {
         this.userAuthorizations = userAuthorizations;
     }

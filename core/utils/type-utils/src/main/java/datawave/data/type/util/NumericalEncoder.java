@@ -40,7 +40,7 @@ import java.util.stream.IntStream;
  * </ul>
  */
 public class NumericalEncoder {
-    
+
     private static Map<String,String> positiveNumsEncodeToIntExponentsMap;
     private static Map<String,String> positiveNumsIntToEncodeExponentsMap;
     private static Map<String,String> negativeNumEncodeToIntExponentsMap;
@@ -52,15 +52,15 @@ public class NumericalEncoder {
     private static final List<String> lowercaseLetters = createLetterList('a', 'z');
     private static final String encodedRegex = "(\\!|\\+)[a-zA-Z][E|e][0-9].?[0-9]*";
     private static final Pattern encodedPattern = Pattern.compile(encodedRegex);
-    
+
     static {
         initNegativeExponents();
         initPositiveExponents();
     }
-    
+
     /**
      * Return an unmodifiable list of letters in order from the given starting letter to the given ending letter.
-     * 
+     *
      * @param start
      *            the starting letter
      * @param end
@@ -75,7 +75,7 @@ public class NumericalEncoder {
                                         .collect(Collectors.toList()));
         // @formatter:on
     }
-    
+
     public static String encode(String input) {
         try {
             BigDecimal decimal = new BigDecimal(input);
@@ -100,23 +100,23 @@ public class NumericalEncoder {
                 BigDecimal bigDecMantissa = new BigDecimal(mantissa);
                 bigDecMantissa = BigDecimal.TEN.add(bigDecMantissa);
                 mantissa = plainFormatter.format(bigDecMantissa);
-                
+
             }
-            
+
             if (encodedExponent == null) {
                 throw new NumberFormatException("Exponent exceeded allowed range.");
             }
-            
+
             return encodedExponent + "E" + mantissa;
         } catch (Exception ex) {
             throw new IllegalArgumentException("Error formatting input: " + input + " . Error: " + ex, ex);
         }
     }
-    
+
     /**
      * This provides a quick test that will determine whether this value is possibly encoded. Provides a mechanism that is significantly faster than waiting for
      * the decode method to throw an exception.
-     * 
+     *
      * @param input
      *            the value to test for encoding
      * @return true if possibly encoded, false if definitely not encoded
@@ -124,10 +124,10 @@ public class NumericalEncoder {
     public static boolean isPossiblyEncoded(String input) {
         if (null == input || input.isEmpty())
             return false;
-        
+
         return encodedPattern.matcher(input).matches();
     }
-    
+
     public static BigDecimal decode(String input) {
         BigDecimal output;
         if (input.equals(zero)) {
@@ -147,22 +147,22 @@ public class NumericalEncoder {
                 } else {
                     throw new NumberFormatException("Unknown encoded exponent");
                 }
-                
+
             } catch (Exception ex) {
                 throw new IllegalArgumentException("Error decoding output: " + input + " . Error: " + ex, ex);
             }
         }
         return output;
     }
-    
+
     public static char getPositiveBin(int index) {
         return positiveNumsIntToEncodeExponentsMap.get(String.valueOf(index)).charAt(1);
     }
-    
+
     public static char getNegativeBin(int index) {
         return negativeNumIntToEncodeExponentsMap.get(String.valueOf(index)).charAt(1);
     }
-    
+
     private static void initPositiveExponents() {
         // The order of the encoded characters here maps directly to how their corresponding exponent value is calculated, and must not be changed.
         List<String> exponents = new ArrayList<>();
@@ -172,7 +172,7 @@ public class NumericalEncoder {
         positiveNumsEncodeToIntExponentsMap = Collections.unmodifiableMap(map);
         positiveNumsIntToEncodeExponentsMap = Collections.unmodifiableMap(invertMap(map));
     }
-    
+
     private static void initNegativeExponents() {
         // The order of the encoded characters here maps directly to how their corresponding exponent value is calculated, and must not be changed.
         List<String> exponents = new ArrayList<>();
@@ -190,7 +190,7 @@ public class NumericalEncoder {
         negativeNumEncodeToIntExponentsMap = Collections.unmodifiableMap(map);
         negativeNumIntToEncodeExponentsMap = Collections.unmodifiableMap(invertMap(map));
     }
-    
+
     private static Map<String,String> createExponentMap(List<String> exponents) {
         Map<String,String> map = new HashMap<>();
         for (int pos = 0; pos < exponents.size(); pos++) {
@@ -199,7 +199,7 @@ public class NumericalEncoder {
         }
         return map;
     }
-    
+
     private static Map<String,String> invertMap(Map<String,String> map) {
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
     }

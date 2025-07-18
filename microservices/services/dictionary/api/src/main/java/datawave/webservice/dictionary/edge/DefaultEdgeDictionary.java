@@ -30,20 +30,20 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDictionary,DefaultMetadata>
                 implements TotalResultsAware, Message<DefaultEdgeDictionary>, HtmlProvider {
-    
+
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Edge Dictionary", SEP = ", ";
     private String edgeDictionarySystem = null;
-    
+
     @XmlElementWrapper(name = "EdgeMetadata")
     @XmlElement(name = "Metadata")
     private List<DefaultMetadata> metadataList = null;
-    
+
     @XmlElement(name = "TotalResults")
     private Long totalResults = null;
-    
+
     public DefaultEdgeDictionary() {}
-    
+
     public DefaultEdgeDictionary(Collection<DefaultMetadata> fields) {
         if (fields == null) {
             this.metadataList = null;
@@ -54,73 +54,73 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
             this.setHasResults(true);
         }
     }
-    
+
     @Override
     public List<? extends MetadataBase<DefaultMetadata>> getMetadataList() {
         return metadataList == null ? null : Collections.unmodifiableList(metadataList);
     }
-    
+
     public String getEdgeDictionarySystem() {
         return edgeDictionarySystem == null ? null : edgeDictionarySystem;
     }
-    
+
     public void setEdgeDictionarySystem(String edgeDictionarySystem) {
         this.edgeDictionarySystem = edgeDictionarySystem;
     }
-    
+
     public static Schema<DefaultEdgeDictionary> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<DefaultEdgeDictionary> cachedSchema() {
         return SCHEMA;
     }
-    
+
     private enum DICT_BASE implements FieldAccessor {
         METADATA(1, "metadataField"), TOTAL(2, "totalResults"), UNKNOWN(0, "UNKNOWN");
-        
+
         final int fn;
         final String name;
-        
+
         DICT_BASE(int fn, String name) {
             this.fn = fn;
             this.name = name;
         }
-        
+
         public int getFieldNumber() {
             return fn;
         }
-        
+
         public String getFieldName() {
             return name;
         }
     }
-    
+
     private static final ProtostuffField<DICT_BASE> PFIELD = new ProtostuffField<>(DICT_BASE.class);
-    
+
     @XmlTransient
     private static final Schema<DefaultEdgeDictionary> SCHEMA = new Schema<DefaultEdgeDictionary>() {
         public DefaultEdgeDictionary newMessage() {
             return new DefaultEdgeDictionary();
         }
-        
+
         public Class<DefaultEdgeDictionary> typeClass() {
             return DefaultEdgeDictionary.class;
         }
-        
+
         public String messageName() {
             return DefaultEdgeDictionary.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return DefaultEdgeDictionary.class.getName();
         }
-        
+
         public boolean isInitialized(DefaultEdgeDictionary message) {
             return true;
         }
-        
+
         public void writeTo(Output output, DefaultEdgeDictionary message) throws IOException {
             if (message.metadataList != null) {
                 for (DefaultMetadata metadata : message.metadataList) {
@@ -131,7 +131,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
                 output.writeUInt64(DICT_BASE.TOTAL.getFieldNumber(), message.totalResults, false);
             }
         }
-        
+
         public void mergeFrom(Input input, DefaultEdgeDictionary message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -151,7 +151,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             DICT_BASE field = PFIELD.parseFieldNumber(number);
@@ -160,39 +160,39 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
             }
             return field.getFieldName();
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             DICT_BASE field = PFIELD.parseFieldName(name);
             return field.getFieldNumber();
         }
-        
+
     };
-    
+
     @Override
     public void setTotalResults(long totalResults) {
         this.totalResults = totalResults;
     }
-    
+
     @Override
     public long getTotalResults() {
         return this.totalResults;
     }
-    
+
     @Override
     public String getTitle() {
         return TITLE;
     }
-    
+
     @Override
     public String getHeadContent() {
         return "";
     }
-    
+
     public String getPageHeader() {
         return getTitle();
     }
-    
+
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder(2048);
@@ -203,11 +203,11 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
                         .append("<li class=\"left\">Fields: List of Field Name pairs used to generate this edge type.</li>")
                         .append("<li class=\"left\">Fields Format:<pre>[Source Field, Target Field | Enrichment Field=Enrichment Field Value]</pre></li>")
                         .append("<li class=\"left\">Date: start date of edge type creation, format: yyyyMMdd</li>").append("</ul></div>");
-        
+
         builder.append("<table id=\"myTable\" class=\"creds\">\n")
                         .append("<thead><tr><th>Edge Type</th><th>Edge Relationship</th><th>Edge Attribute1 Source</th>")
                         .append("<th>Fields</th><th>Date</th></tr></thead>");
-        
+
         builder.append("<tbody>");
         int x = 0;
         for (MetadataBase<DefaultMetadata> metadata : this.getMetadataList()) {
@@ -218,7 +218,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
                 builder.append("<tr>");
             }
             x++;
-            
+
             String type = metadata.getEdgeType();
             String relationship = metadata.getEdgeRelationship();
             String collect = metadata.getEdgeAttribute1Source();
@@ -226,22 +226,22 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
             for (EventField field : metadata.getEventFields()) {
                 fieldBuilder.append(field).append(SEP);
             }
-            
+
             String fieldNames = fieldBuilder.toString().substring(0, fieldBuilder.length() - 2);
             String date = metadata.getStartDate();
-            
+
             builder.append("<td>").append(type).append("</td>");
             builder.append("<td>").append(relationship).append("</td>");
             builder.append("<td>").append(collect).append("</td>");
             builder.append("<td>").append(fieldNames).append("</td>");
             builder.append("<td>").append(date).append("</td>");
-            
+
             builder.append("</td>").append("</tr>");
         }
         builder.append("</tbody>");
-        
+
         builder.append("</table>\n");
-        
+
         return builder.toString();
     }
 }

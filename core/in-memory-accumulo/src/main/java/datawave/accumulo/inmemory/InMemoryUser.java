@@ -27,7 +27,7 @@ public class InMemoryUser {
     final String name;
     AuthenticationToken token;
     Authorizations authorizations;
-    
+
     InMemoryUser(String principal, AuthenticationToken token, Authorizations auths) {
         this.name = principal;
         this.token = token.clone();

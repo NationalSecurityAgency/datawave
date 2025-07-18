@@ -1,0 +1,3 @@
+Sources tell us that Google is acquiring Kaggle a platform that hosts data science and machine learning competitions.
+Details about the transaction remain somewhat vague but given that Google is hosting its Cloud Next conference in San
+Francisco this week the official announcement could come as early as tomorrow.

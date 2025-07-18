@@ -19,13 +19,13 @@ import datawave.microservice.authorization.config.DatawaveSecurityProperties;
 
 public class DeniedAccessRoleFilter extends OncePerRequestFilter {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     private DatawaveSecurityProperties securityProperties;
-    
+
     public DeniedAccessRoleFilter(DatawaveSecurityProperties securityProperties) {
         this.securityProperties = securityProperties;
     }
-    
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         if (securityProperties.getDeniedAccessRole() != null) {
@@ -37,7 +37,7 @@ public class DeniedAccessRoleFilter extends OncePerRequestFilter {
                 throw new BadCredentialsException(authentication.getName() + " is not authorized");
             }
         }
-        
+
         // Continue the chain to handle any other filters
         filterChain.doFilter(request, response);
     }

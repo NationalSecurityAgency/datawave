@@ -34,13 +34,13 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
     private final ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory;
     private final AccumuloConnectionService accumuloConnectionService;
     private final DictionaryServiceProperties dictionaryServiceConfiguration;
-    
+
     private final Consumer<META> TRANSFORM_EMPTY_INTERNAL_FIELD_NAMES = meta -> {
         if (meta.getInternalFieldName() == null || meta.getInternalFieldName().isEmpty()) {
             meta.setInternalFieldName(meta.getFieldName());
         }
     };
-    
+
     public DataDictionaryControllerLogic(DataDictionaryProperties dataDictionaryConfiguration, DataDictionary<META,DESC,FIELD> dataDictionary,
                     ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService,
                     DictionaryServiceProperties dictionaryServiceProperties) {
@@ -51,7 +51,7 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         this.dictionaryServiceConfiguration = dictionaryServiceProperties;
         dataDictionary.setNormalizationMap(dataDictionaryConfiguration.getNormalizerMap());
     }
-    
+
     /**
      * Returns the DataDictionary for the given parameters.
      *
@@ -76,19 +76,19 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         Connection connection = accumuloConnectionService.getConnection(metadataTableName, modelTableName, modelName, currentUser);
         // If the user provides authorizations, intersect it with their actual authorizations
         connection.setAuths(accumuloConnectionService.getDowngradedAuthorizations(queryAuthorizations, currentUser));
-        
+
         Collection<String> dataTypes = (StringUtils.isBlank(dataTypeFilters) ? Collections.emptyList() : Arrays.asList(dataTypeFilters.split(",")));
-        
+
         Collection<META> fields = dataDictionary.getFields(connection, dataTypes, dataDictionaryConfiguration.getNumThreads());
         DICT dataDictionary = responseObjectFactory.getDataDictionary();
         dataDictionary.setFields(fields);
         dataDictionary.setDataDictionarySystem(dictionaryServiceConfiguration.getSystem().systemName);
         // Ensure that empty internal field names will be set to the field name instead.
         dataDictionary.transformFields(TRANSFORM_EMPTY_INTERNAL_FIELD_NAMES);
-        
+
         return dataDictionary;
     }
-    
+
     /**
      * Upload a collection of descriptions to load into the database. Apply a query model to the provided FieldDescriptions before storing.
      *
@@ -110,13 +110,13 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         for (FIELD desc : list) {
             dataDictionary.setDescription(connection, desc);
         }
-        
+
         // TODO: reload model table cache?
         // cache.reloadCache(modelTable);
-        
+
         return new VoidResponse();
     }
-    
+
     /**
      * Set a description for a field in a datatype, optionally applying a model to the field name.
      *
@@ -142,7 +142,7 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
                     DatawaveUserDetails currentUser) throws Exception {
         return setDescriptionPost(fieldName, datatype, description, modelName, modelTable, columnVisibility, currentUser);
     }
-    
+
     /**
      * Set a description for a field in a datatype, optionally applying a model to the field name.
      *
@@ -171,16 +171,16 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         markings.put("columnVisibility", columnVisibility);
         desc.setMarkings(markings);
         desc.setDescription(description);
-        
+
         Connection connection = accumuloConnectionService.getConnection(modelTable, modelName, currentUser);
         dataDictionary.setDescription(connection, fieldName, datatype, desc);
-        
+
         // TODO: reload model table cache?
         // cache.reloadCache(modelTable);
-        
+
         return new VoidResponse();
     }
-    
+
     /**
      * Fetch all descriptions stored in the database, optionally applying a model.
      *
@@ -199,10 +199,10 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         Multimap<Map.Entry<String,String>,DESC> descriptions = dataDictionary.getDescriptions(connection);
         FIELDS response = this.responseObjectFactory.getFields();
         response.setDescriptions(descriptions);
-        
+
         return response;
     }
-    
+
     /**
      * Fetch all descriptions for a datatype, optionally applying a model to the field names.
      *
@@ -223,10 +223,10 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         Multimap<Map.Entry<String,String>,DESC> descriptions = dataDictionary.getDescriptions(connection, datatype);
         FIELDS response = this.responseObjectFactory.getFields();
         response.setDescriptions(descriptions);
-        
+
         return response;
     }
-    
+
     /**
      * Fetch the description for a field in a datatype, optionally applying a model.
      *
@@ -256,10 +256,10 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
             }
             response.setDescriptions(mmap);
         }
-        
+
         return response;
     }
-    
+
     /**
      * Delete a description for a field in a datatype, optionally applying a model to the field name.
      *
@@ -286,25 +286,25 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         DESC desc = this.responseObjectFactory.getDescription();
         desc.setDescription("");
         desc.setMarkings(markings);
-        
+
         Connection connection = accumuloConnectionService.getConnection(modelTable, modelName, currentUser);
         dataDictionary.deleteDescription(connection, fieldName, datatype, desc);
-        
+
         // TODO: reload model table cache?
         // cache.reloadCache(modelTable);
-        
+
         return new VoidResponse();
     }
-    
+
     /**
      * Sets the Banner for the Data Dictionary.
-     * 
+     *
      * @return the default banner for Data Dictionary
      */
     public DataDictionaryProperties.Banner retrieveBanner() {
         return dataDictionaryConfiguration.getBanner();
     }
-    
+
     public DictionaryServiceProperties.System retrieveSystem() {
         return dictionaryServiceConfiguration.getSystem();
     }

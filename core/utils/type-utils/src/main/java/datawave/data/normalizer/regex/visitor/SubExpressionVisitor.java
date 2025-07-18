@@ -18,9 +18,9 @@ import datawave.data.normalizer.regex.Node;
  * expression of a regex with alternations, or the entire expression if no alternations are present.
  */
 public class SubExpressionVisitor extends CopyVisitor {
-    
+
     private static final Set<Class<? extends Node>> VALID_TOP_LEVEL_TYPES = ImmutableSet.of(GroupNode.class, EncodedNumberNode.class, EncodedPatternNode.class);
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         if (node.getFirstChild() instanceof AlternationNode) {
@@ -29,10 +29,10 @@ public class SubExpressionVisitor extends CopyVisitor {
             return visitSubExpression(node);
         }
     }
-    
+
     /**
      * By default, return a copy of the sub-expression. This method should be overridden by any subclasses that need to manipulate sub-expressions.
-     * 
+     *
      * @param node
      *            the sub-expression
      * @return the visited sub-expression
@@ -40,10 +40,10 @@ public class SubExpressionVisitor extends CopyVisitor {
     protected Object visitSubExpression(Node node) {
         return copy(node);
     }
-    
+
     /**
      * Visit each sub-expression of the alternation with this visitor.
-     * 
+     *
      * @param node
      *            the alternation node
      * @param data
@@ -81,7 +81,7 @@ public class SubExpressionVisitor extends CopyVisitor {
                 }
             }
         }
-        
+
         // If there are no children, return null.
         if (children.isEmpty()) {
             return null;

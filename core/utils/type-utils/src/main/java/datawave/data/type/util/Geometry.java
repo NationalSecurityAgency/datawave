@@ -9,7 +9,7 @@ public class Geometry extends AbstractGeometry<org.locationtech.jts.geom.Geometr
     public Geometry(org.locationtech.jts.geom.Geometry jtsGeom) {
         super(jtsGeom);
     }
-    
+
     @Override
     public int compareTo(Geometry o) {
         if (jtsGeom == o.jtsGeom) {

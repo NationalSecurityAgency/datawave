@@ -18,7 +18,7 @@ import lombok.Setter;
 @ConfigurationProperties(prefix = "datawave.dictionary.data")
 @Validated
 public class DataDictionaryProperties {
-    
+
     @NotBlank
     private String modelName;
     @NotBlank
@@ -29,7 +29,7 @@ public class DataDictionaryProperties {
     @Positive
     private int numThreads;
     private Map<String,String> normalizerMap;
-    
+
     @Getter
     @Setter
     @JsonInclude(JsonInclude.Include.NON_NULL)

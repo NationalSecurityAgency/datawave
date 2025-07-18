@@ -17,13 +17,13 @@ import io.swagger.v3.oas.models.info.License;
 @EnableConfigurationProperties(SwaggerProperties.class)
 @Configuration
 public class SwaggerConfig {
-    
+
     @Autowired
     private SwaggerProperties swaggerProperties;
-    
+
     @Autowired(required = false)
     private BuildProperties buildProperties;
-    
+
     @Bean
     public OpenAPI springDocsOpenAPI() {
         String version = (buildProperties != null) ? buildProperties.getVersion() : "";

@@ -15,47 +15,47 @@ import datawave.microservice.authorization.user.DatawaveUserDetails;
  */
 public class JWTAuthentication implements Authentication {
     private static final long serialVersionUID = 1L;
-    
+
     private final DatawaveUserDetails userDetails;
     private final List<GrantedAuthority> authorities;
     private boolean authenticated;
-    
+
     public JWTAuthentication(DatawaveUserDetails userDetails) {
         this.userDetails = userDetails;
         authorities = userDetails.getPrimaryUser().getRoles().stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
         authenticated = true;
     }
-    
+
     @Override
     public String getName() {
         return userDetails.getUsername();
     }
-    
+
     @Override
     public Object getPrincipal() {
         return userDetails;
     }
-    
+
     @Override
     public Object getCredentials() {
         return userDetails.getPassword();
     }
-    
+
     @Override
     public Object getDetails() {
         return null;
     }
-    
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
     }
-    
+
     @Override
     public boolean isAuthenticated() {
         return authenticated;
     }
-    
+
     @Override
     public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
         authenticated = isAuthenticated;
