@@ -47,23 +47,10 @@ class ErrorShardedIngestHelperTest {
     void testSetupGivenIndexedFieldLists() {
         Configuration config = getBaseConfig();
 
-//        String errorFunnyDataTypeIndexedFields = TypeRegistry.ERROR_PREFIX + ".funny" + ".index";
-//        String errorFruitDataTypeIndexedFields = TypeRegistry.ERROR_PREFIX + ".fruit" + ".index";
-
-            config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
-
-//        conf.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-//        conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
-//        conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
-//        conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
-
-        config.set("error.csv" + INDEX_FIELDS, "FOO,BAR,HATT");
-
-//        TypeRegistry.getInstance(config);
+        config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
 
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
-
 
         Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType("csv"))); // need to include dt
         Assertions.assertFalse(helper.hasIndexDisallowlist());
