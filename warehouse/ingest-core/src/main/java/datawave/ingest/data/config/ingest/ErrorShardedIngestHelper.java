@@ -187,6 +187,9 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             }
 
         }
+        //use below
+        //config.getPropsWithPrefix("error.")
+
         for (Type type : TypeRegistry.getTypes()) {
             Collection<String> indexedStrings = config.getStringCollection(type.typeName() + DATATYPE_ERROR + INDEX_FIELDS);
             if (null != indexedStrings && !indexedStrings.isEmpty()) {
