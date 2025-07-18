@@ -1,6 +1,7 @@
 package datawave.ingest.data.config.ingest;
 
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.DISALLOWLIST_INDEX_FIELDS;
+import static datawave.ingest.data.config.ingest.BaseIngestHelper.INDEX_FIELDS;
 
 import java.util.Set;
 
@@ -38,7 +39,6 @@ class ErrorShardedIngestHelperTest {
      */
 
     private static final String DATA_TYPE = "error";
-    private static final String DATA_TYPE_ERROR = ".error";
 
     /**
      * Verify that when indexed and reversed indexed fields are provided, that they are correctly parsed and are not treated as disallowed fields.
@@ -47,31 +47,28 @@ class ErrorShardedIngestHelperTest {
     void testSetupGivenIndexedFieldLists() {
         Configuration config = getBaseConfig();
 
-        String errorFunnyDataType = "funny" + DATA_TYPE_ERROR + BaseIngestHelper.INDEX_FIELDS;
-        String errorFruitDataType = "fruit" + DATA_TYPE_ERROR + BaseIngestHelper.INDEX_FIELDS;
+//        String errorFunnyDataTypeIndexedFields = TypeRegistry.ERROR_PREFIX + ".funny" + ".index";
+//        String errorFruitDataTypeIndexedFields = TypeRegistry.ERROR_PREFIX + ".fruit" + ".index";
 
-        config.set(TypeRegistry.INGEST_DATA_TYPES, "fruit");
-        config.set(TypeRegistry.INGEST_DATA_TYPES, "funny");
-        config.set(TypeRegistry.INGEST_DATA_TYPES, "error.fruit");
-        config.set(TypeRegistry.INGEST_DATA_TYPES, "error.funny");
+//            config.set(DataTypeHelper.Properties.DATA_NAME, "error");
+            config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
 
-        config.set(errorFunnyDataType, "FOO,BAR,HATT");
-        config.set(errorFruitDataType, "APPLE,BANANA,KIWI");
-        config.set("funny" + DATA_TYPE_ERROR + DISALLOWLIST_INDEX_FIELDS, "FOO");
-        config.set("fruit" + DATA_TYPE_ERROR + DISALLOWLIST_INDEX_FIELDS, "KIWI");
+//        conf.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+//        conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
+//        conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
+//        conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
 
-        TypeRegistry.getInstance(config);
+        config.set("error.csv" + INDEX_FIELDS, "FOO,BAR,HATT");
+
+//        TypeRegistry.getInstance(config);
 
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        // ConfigurationHelper.isNull(config, errorFunnyDataType, String.class);
-        // ConfigurationHelper.isNull(config, errorFruitDataType, String.class);
-
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType(errorFunnyDataType))); // need to include dt
+        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType("error"))); // need to include dt
         Assertions.assertFalse(helper.hasIndexDisallowlist());
 
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields(TypeRegistry.getType(errorFruitDataType)));
+        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields(TypeRegistry.getType("error.fruit")));
         Assertions.assertFalse(helper.hasReverseIndexDisallowlist());
     }
 
