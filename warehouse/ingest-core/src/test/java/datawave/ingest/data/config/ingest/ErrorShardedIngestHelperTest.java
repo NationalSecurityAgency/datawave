@@ -50,7 +50,6 @@ class ErrorShardedIngestHelperTest {
 //        String errorFunnyDataTypeIndexedFields = TypeRegistry.ERROR_PREFIX + ".funny" + ".index";
 //        String errorFruitDataTypeIndexedFields = TypeRegistry.ERROR_PREFIX + ".fruit" + ".index";
 
-//            config.set(DataTypeHelper.Properties.DATA_NAME, "error");
             config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
 
 //        conf.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
@@ -65,7 +64,8 @@ class ErrorShardedIngestHelperTest {
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType("error"))); // need to include dt
+
+        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType("csv"))); // need to include dt
         Assertions.assertFalse(helper.hasIndexDisallowlist());
 
         Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields(TypeRegistry.getType("error.fruit")));
