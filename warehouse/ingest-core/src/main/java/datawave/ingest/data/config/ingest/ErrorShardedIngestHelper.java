@@ -38,7 +38,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      * {@code String target = <some-datatype> + DATATYPE_ERROR + INDEX_FIELDS;}
      * </p>
      */
-    private static final String DATATYPE_ERROR = ".error";
+    private static final String DATATYPE_ERROR = "error";
     private IngestHelperInterface delegate = null;
 
     /*
@@ -99,13 +99,13 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         // --- ERROR INDEX_FIELDS ---
 
         // Process the error indexed fields in the same way as the normal index fields, but with DATATYPE_ERROR appended to the datatype.
-        if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS) != null) {
+        if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: {}", DATATYPE_ERROR + "." +this.getType().typeName() +  DISALLOWLIST_INDEX_FIELDS);
             }
             setHasErrorIndexDisallowlist(true);
             configProperty = DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS;
-        } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + INDEX_FIELDS) != null) {
+        } else if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + INDEX_FIELDS) != null) {
             log.debug("ErrorIndexedFields specified.");
             setHasErrorIndexDisallowlist(false);
             configProperty = DATATYPE_ERROR + INDEX_FIELDS;
@@ -118,7 +118,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             log.warn("No error index fields or error disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
         } else {
             this.errorIndexedFields.putIfAbsent(TypeRegistry.getType(configProperty), new IndexedFields());
-            Collection<String> errorIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty); // todo: this
+            Collection<String> errorIndexedStrings = config.getStringCollection(DATATYPE_ERROR + "." +this.getType().typeName() + configProperty); // todo: this
                                                                                                                                               // needs to be
                                                                                                                                               // updated based
                                                                                                                                               // on inclusive or
@@ -131,7 +131,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                 this.moveToPatternMap(this.errorIndexedFields.get(configProperty).indexedFields, this.errorIndexedFields.get(configProperty).patterns);
             } else {
                 if (log.isWarnEnabled()) {
-                    log.warn("{} not specified.", this.getType().typeName() + DATATYPE_ERROR + configProperty);
+                    log.warn("{} not specified.", DATATYPE_ERROR + "." +this.getType().typeName() + configProperty);
                 }
             }
         }
@@ -140,28 +140,28 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
         // Ensure that we have only an allowlist or a disallowlist of fields to
         // error-reverse-index
-        if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
-                        && config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
+        if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() +  DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
+                        && config.get(DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
             throw new RuntimeException(
                             "Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both.  Type: " + this.getType().typeName()
-                                            + ", parameters: " + config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS)
-                                            + "  " + config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS));
+                                            + ", parameters: " + config.get(DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS)
+                                            + "  " + config.get(DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS));
         }
 
         configProperty = null;
 
         // Process the error reverse index fields
-        if (config.get(this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null) {
+        if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Disallowlist specified for: {}", this.getType().typeName() + DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: {}", DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS);
             }
 
             this.setHasErrorReverseIndexDisallowlist(true);
 
             configProperty = DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS;
-        } else if (config.get(this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS) != null) {
+        } else if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Reverse Index specified for: {}", this.getType().typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
+                log.debug("Reverse Index specified for: {}", DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS);
             }
             this.setHasErrorReverseIndexDisallowlist(false);
             configProperty = DATATYPE_ERROR + REVERSE_INDEX_FIELDS;
@@ -173,7 +173,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                             this.getType().typeName());
         } else {
             errorReverseIndexedFields.get(configProperty).indexedFields = Sets.newHashSet();
-            Collection<String> errorReverseIndexedStrings = config.getStringCollection(this.getType().typeName() + DATATYPE_ERROR + configProperty);
+            Collection<String> errorReverseIndexedStrings = config.getStringCollection(DATATYPE_ERROR + "." +this.getType().typeName() +  configProperty);
             if (null != errorReverseIndexedStrings && !errorReverseIndexedStrings.isEmpty()) {
                 for (String errorReverseIndexedString : errorReverseIndexedStrings) {
                     errorReverseIndexedFields.get(configProperty).indexedFields.add(errorReverseIndexedString.trim());
@@ -182,7 +182,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                                 this.errorReverseIndexedFields.get(configProperty).patterns);
             } else {
                 if (log.isWarnEnabled()) {
-                    log.warn("{} not specified", this.getType().typeName() + DATATYPE_ERROR + configProperty);
+                    log.warn("{} not specified", DATATYPE_ERROR + "." +this.getType().typeName() + configProperty);
                 }
             }
 
@@ -191,14 +191,14 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         //config.getPropsWithPrefix("error.")
 
         for (Type type : TypeRegistry.getTypes()) {
-            Collection<String> indexedStrings = config.getStringCollection(type.typeName() + DATATYPE_ERROR + INDEX_FIELDS);
+            Collection<String> indexedStrings = config.getStringCollection(DATATYPE_ERROR + type.typeName() + INDEX_FIELDS);
             if (null != indexedStrings && !indexedStrings.isEmpty()) {
                 for (String indexedString : indexedStrings) {
                     String indexedTrimmedString = indexedString.trim();
                     allIndexFields.add(indexedTrimmedString);
                 }
             }
-            Collection<String> reverseIndexedStrings = config.getStringCollection(type.typeName() + DATATYPE_ERROR + REVERSE_INDEX_FIELDS);
+            Collection<String> reverseIndexedStrings = config.getStringCollection(DATATYPE_ERROR + type.typeName() + REVERSE_INDEX_FIELDS);
             if (null != reverseIndexedStrings && !reverseIndexedStrings.isEmpty()) {
                 for (String reverseIndexedString : reverseIndexedStrings) {
                     String reverseIndexedTrimmedString = reverseIndexedString.trim();
