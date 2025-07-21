@@ -21,7 +21,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 // how to check.. see if fields are the same?
 // prevField = field1, if prevField = field2 then boolean sameField true
 // sameField true = sent back to Rule to send message
-public class AmbiguousGroupedTermsVisitor extends BaseVisitor {
+public class GroupedInterpretationVisitor extends BaseVisitor {
 
     public enum JUNCTION {
         AND(QueryNodeType.AND, AndQueryNode::new), OR(QueryNodeType.OR, OrQueryNode::new);
@@ -53,14 +53,14 @@ public class AmbiguousGroupedTermsVisitor extends BaseVisitor {
      * @return the list of ambiguous nodes
      */
     public static List<QueryNode> check(QueryNode node, JUNCTION junction) {
-        AmbiguousGroupedTermsVisitor visitor = new AmbiguousGroupedTermsVisitor(junction);
+        GroupedInterpretationVisitor visitor = new GroupedInterpretationVisitor(junction);
         // noinspection unchecked
         return (List<QueryNode>) visitor.visit(node, new ArrayList<QueryNode>());
     }
 
     private final JUNCTION junction;
 
-    private AmbiguousGroupedTermsVisitor(JUNCTION junction) {
+    private GroupedInterpretationVisitor(JUNCTION junction) {
         this.junction = junction;
     }
 
