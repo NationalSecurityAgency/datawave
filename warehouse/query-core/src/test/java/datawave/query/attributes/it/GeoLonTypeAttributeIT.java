@@ -67,8 +67,9 @@ public class GeoLonTypeAttributeIT extends TypeAttributeIT {
         // serializing full type name: 46, 42
         // serializing type name index: 18, 14
         // kryo optimization: 24, 18
-        verifyKryoPreservesValue(createNormalizedAttribute(), 24);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 18);
+        // serialize hash code: 29, 23
+        verifyKryoPreservesValue(createNormalizedAttribute(), 29);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 23);
     }
 
     @Test

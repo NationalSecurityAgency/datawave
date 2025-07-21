@@ -37,6 +37,9 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     private Type<T> datawaveType;
 
+    private int hashCode = Integer.MIN_VALUE;
+    private String delegateString = null;
+
     protected TypeAttribute() {
         super(null, true);
     }
@@ -48,8 +51,11 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public long sizeInBytes() {
-        return ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4);
-        // 4 for datawaveType reference
+        if (sizeInBytes == Long.MAX_VALUE) {
+            // 4 for datawaveType reference
+            sizeInBytes = ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4);
+        }
+        return sizeInBytes;
     }
 
     public Type<T> getType() {
@@ -128,9 +134,15 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.append(datawaveType.getDelegateAsString()).append(super.hashCode());
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(2099, 2129)
+                    .append(datawaveType.getDelegateAsString())
+                    .append(super.hashCode())
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
     }
 
     @Override
@@ -156,6 +168,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         super.writeMetadata(kryo, output);
         this.datawaveType.write(kryo, output);
         output.writeBoolean(this.toKeep);
+        output.writeInt(hashCode(), true);
     }
 
     @Override
@@ -180,6 +193,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
         this.datawaveType.read(kryo, input);
         this.toKeep = input.readBoolean();
+        this.hashCode = input.readInt(true);
     }
 
     private void setDatawaveType(String datawaveTypeString)
@@ -202,7 +216,10 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     @Override
     public String toString() {
         if (datawaveType.getDelegate() != null) {
-            return datawaveType.getDelegateAsString();
+            if (delegateString == null) {
+                delegateString = datawaveType.getDelegateAsString();
+            }
+            return delegateString;
         } else {
             return this.getClass() + " with null delegate";
         }

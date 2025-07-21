@@ -37,6 +37,10 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
     protected boolean fromIndex = true; // Assume attributes are from the index unless specified otherwise.
 
+    // cache computation to avoid repeated calculation
+    protected int hashcode = Integer.MIN_VALUE;
+    protected long sizeInBytes = Long.MIN_VALUE;
+
     public Attribute() {}
 
     public Attribute(Key metadata, boolean toKeep) {
@@ -244,6 +248,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
 
     @Override
     public int hashCode() {
+        // Note: implementations of Attribute should cache the result of this operation
         HashCodeBuilder hcb = new HashCodeBuilder(145, 11);
         hcb.append(this.isMetadataSet());
         if (isMetadataSet()) {
@@ -285,15 +290,17 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         // 8 for the object overhead
         // 4 for the key reference
         // 1 for the keep boolean
-        // all rounded up to the nearest multiple of 8 to make 16 out of 13 bytes
+        // 4 for the hashcode reference
+        // 8 for the sizeInBytes references
+        // all rounded up to the nearest multiple of 8 to make 32 out of 25 bytes
         size += getMetadataSizeInBytes();
         return size;
     }
 
     // for use by subclasses to estimate size
     protected long sizeInBytes(long extra) {
-        return roundUp(extra + 13) + getMetadataSizeInBytes();
-        // 13 is the base size in bytes (see sizeInBytes(), unrounded and without metadata)
+        return roundUp(extra + 25) + getMetadataSizeInBytes();
+        // 25 is the base size in bytes (see sizeInBytes(), unrounded and without metadata)
     }
 
     // a helper method to return the size of a string

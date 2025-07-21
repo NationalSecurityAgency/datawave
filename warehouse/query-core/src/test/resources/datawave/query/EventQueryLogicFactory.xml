@@ -127,6 +127,7 @@
             </map>
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
+        <property name="maxLinesToPrint" value="100"/>
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
         <!--   reduce type metadata     -->
@@ -217,7 +218,7 @@
         <property name="resultQueuePollTimeMillis" value="5"/>
         <property name="scanTimeoutMillis" value="10000"/>
         <property name="allowPartialIntersections" value="true" />
-        <property name="useQueryIterator" value="true" />
+        <property name="useQueryIterator" value="false" />
         <!-- execution hints and consistency levels -->
         <property name="searchScanHintTable" value="shard"/>
         <property name="searchScanHintPool" value="shardTablePool"/>

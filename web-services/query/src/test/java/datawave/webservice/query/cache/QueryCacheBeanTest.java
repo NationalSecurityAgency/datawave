@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -58,7 +58,7 @@ public class QueryCacheBeanTest {
         Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot = new HashMap<>();
         snapshot.put("key", this.pair);
         expect(this.remoteCache.snapshot()).andReturn(snapshot);
-        expect(this.pair.getFirst()).andReturn((QueryLogic) this.logic);
+        expect(this.pair.getLeft()).andReturn((QueryLogic) this.logic);
 
         // Run the test
         PowerMock.replayAll();
