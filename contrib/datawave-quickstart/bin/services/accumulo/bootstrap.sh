@@ -13,15 +13,7 @@
 DW_ACCUMULO_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
 # Zookeeper config
-
-# You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-# DW_ZOOKEEPER_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ZOOKEEPER_VERSION="3.8.4"
 DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-${DW_ZOOKEEPER_VERSION}/apache-zookeeper-${DW_ZOOKEEPER_VERSION}-bin.tar.gz}"
-# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-4d85d6f7644d5f36d9c4d65e78bd662ab35ebe1380d762c24c12b98af029027eee453437c9245dbdf2b9beb77cd6b690b69e26f91cf9d11b0a183a979c73fa43}"
-# shellcheck disable=SC2154
-# shellcheck disable=SC2034
 DW_ZOOKEEPER_DIST="$( basename "${DW_ZOOKEEPER_DIST_URI}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
@@ -49,13 +41,7 @@ admin.enableServer=false"
 
 # Accumulo config
 
-# You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-# DW_ACCUMULO_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ACCUMULO_VERSION="2.1.3"
 DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/${DW_ACCUMULO_VERSION}/accumulo-${DW_ACCUMULO_VERSION}-bin.tar.gz}"
-# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-1a27a144dc31f55ccc8e081b6c1bc6cc0362a8391838c53c166cb45291ff8f35867fd8e4729aa7b2c540f8b721f8c6953281bf589fc7fe320e4dc4d20b87abc4}"
-# shellcheck disable=SC2034
 DW_ACCUMULO_DIST="$( basename "${DW_ACCUMULO_DIST_URI}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
@@ -132,7 +118,6 @@ function bootstrapAccumulo() {
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ]; then
         info "Accumulo distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
-          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
           ( fatal "failed to obtain Accumulo distribution" && return 1 )
         DW_ACCUMULO_DIST="${tarball}"
     else
@@ -279,7 +264,6 @@ function bootstrapZookeeper() {
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" ]; then
         info "Zookeeper distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
-          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "zookeeper" "${DW_ZOOKEEPER_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
           ( fatal "failed to obtain Zookeeper distribution" && return 1 )
         DW_ZOOKEEPER_DIST="${tarball}"
     else

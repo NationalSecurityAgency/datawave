@@ -40,6 +40,7 @@ services:
       - hadoop_conf:/opt/datawave/contrib/datawave-quickstart/hadoop/client/conf
       - quickstart_data:/opt/datawave/contrib/datawave-quickstart/data
       - ./logs:/logs
+      - ~/.m2:/root/.m2
     networks:
       - demo
     healthcheck:

@@ -14,9 +14,18 @@ ARG DATAWAVE_MAVEN_REPO="https://maven.pkg.github.com/NationalSecurityAgency/dat
 
 ARG ACCUMULO_URL
 ARG HADOOP_URL
-ARG MAVEN_URL
 ARG WILDFLY_URL
 ARG ZOOKEEPER_URL
+
+ARG ACCUMULO_VERSION
+ARG HADOOP_VERSION
+ARG WILDFLY_VERSION
+ARG ZOOKEEPER_VERSION
+
+ARG ACCUMULO_DIST_SHA512_CHECKSUM
+ARG HADOOP_DIST_SHA512_CHECKSUM
+ARG WILDFLY_DIST_SHA512_CHECKSUM
+ARG ZOOKEEPER_DIST_SHA512_CHECKSUM
 
 USER root
 
@@ -30,9 +39,19 @@ ENV YARN_NODEMANAGER_USER=root
 
 ENV DW_ACCUMULO_DIST_URI=$ACCUMULO_URL
 ENV DW_HADOOP_DIST_URI=$HADOOP_URL
-ENV DW_MAVEN_DIST_URI=$MAVEN_URL
 ENV DW_WILDFLY_DIST_URI=$WILDFLY_URL
 ENV DW_ZOOKEEPER_DIST_URI=$ZOOKEEPER_URL
+
+ENV DW_ACCUMULO_VERSION=$ACCUMULO_VERSION
+ENV DW_HADOOP_VERSION=$HADOOP_VERSION
+ENV DW_WILDFLY_VERSION=$WILDFLY_VERSION
+ENV DW_ZOOKEEPER_VERSION=$ZOOKEEPER_VERSION
+
+ENV DW_ACCUMULO_DIST_SHA512_CHECKSUM=$ACCUMULO_DIST_SHA512_CHECKSUM
+ENV DW_HADOOP_DIST_SHA512_CHECKSUM=$HADOOP_DIST_SHA512_CHECKSUM
+ENV DW_WILDFLY_DIST_SHA512_CHECKSUM=$WILDFLY_DIST_SHA512_CHECKSUM
+ENV DW_ZOOKEEPER_DIST_SHA512_CHECKSUM=$ZOOKEEPER_DIST_SHA512_CHECKSUM
+
 ENV DW_DATAWAVE_BUILD_PROFILE=$DATAWAVE_BUILD_PROFILE
 ENV DW_DATAWAVE_INGEST_TEST_DATA_SKIP=$DATAWAVE_INGEST_TEST_DATA_SKIP
 ENV DW_MAVEN_REPOSITORY=$DATAWAVE_MAVEN_REPO
@@ -90,8 +109,7 @@ RUN git init && \
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
 # the quickstart environment. Likewise, 'allInstall' and 'datawaveStart' wrapper functions are
-# used to initialize services and their log dirs. Finally, web services are tested, services are
-# stopped gracefully, and any cruft is purged.
+# used to initialize services and their log dirs. Log dirs are cleaned up after the install.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
     /bin/bash -c "source ~/.bashrc && allInstall" && \

@@ -124,37 +124,6 @@ function downloadTarball() {
    fi
 }
 
-function downloadMavenTarball() {
-   local pomFile="${DW_DATAWAVE_SOURCE_DIR:-$( cd "${DW_CLOUD_HOME}/../.." && pwd )}/pom.xml"
-   local rootProject=":$1"
-   local group="$2"
-   local artifact="$3"
-   local version="$4"
-   local tarballdir="$5"
-   tarball="${artifact}-${version}.tar.gz"
-   if [ ! -f "${tarballdir}/${tarball}" ] ; then
-      # download from maven repo
-      output=$( mvn --show-version --batch-mode --errors --no-transfer-progress --file "${pomFile}" --projects "${rootProject}" -DremoteRepositories="remote-repo::default::${DW_MAVEN_REPOSITORY}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
-      retVal=$?
-      if [ $retVal -ne 0 ]; then
-         error "Failed to download ${tarball} via maven"
-         error "$output"
-         return $retVal
-      else
-         info "Downloaded ${artifact} via maven"
-      fi
-
-      # copy to specified directory
-      output=$( mvn --show-version --batch-mode --errors --no-transfer-progress --file "${pomFile}" --projects "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
-      retVal=$?
-      if [ $retVal -ne 0 ]; then
-         error "Failed to copy ${tarball} to ${tarballdir} via maven"
-         error "$output"
-         return $retVal
-      fi
-   fi
-}
-
 function writeSiteXml() {
    # Writes *-site.xml files, such as hdfs-site.xml, accumulo-site.xml, etc...
 
