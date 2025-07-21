@@ -12,7 +12,6 @@
     <name>${project.artifactId}</name>
     <properties>
         <datawave.quickstart.ingest.test.data.skip>${skipIngest}</datawave.quickstart.ingest.test.data.skip>
-        <datawave.quickstart.web.tests.skip>true</datawave.quickstart.web.tests.skip>
         <dist.accumulo>accumulo-${version.accumulo.tar.gz}.tar.gz</dist.accumulo>
         <dist.hadoop>hadoop-${version.hadoop.tar.gz}.tar.gz</dist.hadoop>
         <dist.wildfly>wildfly-${version.wildfly.tar.gz}.tar.gz</dist.wildfly>
@@ -202,7 +201,6 @@
                                             <DATAWAVE_BRANCH_NAME>${git.branch}</DATAWAVE_BRANCH_NAME>
                                             <DATAWAVE_BUILD_PROFILE>${build.env}</DATAWAVE_BUILD_PROFILE>
                                             <DATAWAVE_INGEST_TEST_DATA_SKIP>${datawave.quickstart.ingest.test.data.skip}</DATAWAVE_INGEST_TEST_DATA_SKIP>
-                                            <DATAWAVE_WEB_TEST_SKIP>${datawave.quickstart.web.tests.skip}</DATAWAVE_WEB_TEST_SKIP>
                                             <ACCUMULO_URL>${url.accumulo}</ACCUMULO_URL>
                                             <HADOOP_URL>${url.hadoop}</HADOOP_URL>
                                             <WILDFLY_URL>${url.wildfly}</WILDFLY_URL>

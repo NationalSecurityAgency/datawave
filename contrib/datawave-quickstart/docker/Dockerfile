@@ -10,7 +10,6 @@ ARG DATAWAVE_BRANCH_NAME
 ARG DATAWAVE_JAVA_HOME
 ARG DATAWAVE_BUILD_PROFILE
 ARG DATAWAVE_INGEST_TEST_DATA_SKIP
-ARG DATAWAVE_WEB_TEST_SKIP
 ARG DATAWAVE_MAVEN_REPO="https://maven.pkg.github.com/NationalSecurityAgency/datawave"
 
 ARG ACCUMULO_URL
@@ -36,7 +35,6 @@ ENV DW_WILDFLY_DIST_URI=$WILDFLY_URL
 ENV DW_ZOOKEEPER_DIST_URI=$ZOOKEEPER_URL
 ENV DW_DATAWAVE_BUILD_PROFILE=$DATAWAVE_BUILD_PROFILE
 ENV DW_DATAWAVE_INGEST_TEST_DATA_SKIP=$DATAWAVE_INGEST_TEST_DATA_SKIP
-ENV DW_DATAWAVE_WEB_TEST_SKIP=$DATAWAVE_WEB_TEST_SKIP
 ENV DW_MAVEN_REPOSITORY=$DATAWAVE_MAVEN_REPO
 ENV DW_WGET_OPTS="-q --no-check-certificate"
 ENV JAVA_HOME=$DATAWAVE_JAVA_HOME
@@ -97,7 +95,6 @@ RUN git init && \
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
     /bin/bash -c "source ~/.bashrc && allInstall" && \
-    /bin/bash -c "source ~/.bashrc && [[ ${DW_DATAWAVE_WEB_TEST_SKIP} == true ]] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \

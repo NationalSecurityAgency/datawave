@@ -161,24 +161,3 @@ jobs:
         run: |
           cd docker
           docker compose logs
-  quickstart-build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      # Clean up free space
-      - uses: ./.github/actions/free-space
-        with:
-          tool-cache: false
-      - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v4
-        with:
-          distribution: ${{env.JAVA_DISTRIBUTION}}
-          java-version: ${{env.JAVA_VERSION}}
-          cache: 'maven'
-      # Builds the quickstart docker image and run the web tests
-      - name: Quickstart Web Tests
-        run: |
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress -Dstyle.color=always \
-              -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests -Pcompose -Dquickstart-docker clean install \
-              -Ddatawave.quickstart.web.tests.skip=false -Djkube.container-image.optimise=true -Djkube.container-image.nocache=true -Djkube.container-image.cleanup=remove

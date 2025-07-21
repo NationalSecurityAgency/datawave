@@ -103,7 +103,7 @@ function configure() {
 
     # Process args...
 
-    VERBOSE=true
+    VERBOSE=false
     CLEANUP=true
     CREATE_EXPECTED=false
     TEST_WHITELIST=""
@@ -280,7 +280,7 @@ function runTest() {
 
     TEST_COUNTER=$((TEST_COUNTER + 1))
 
-    TEST_COMMAND="${CURL} ${CURL_ADDITIONAL_OPTS} \
+    TEST_COMMAND="${CURL} ${CURL_ADDITIONAL_OPTS} --silent \
 --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
 --insecure --cert '${DW_CURL_CERT}' --keepalive-time 180 --key '${DW_CURL_KEY_RSA}' --cacert '${DW_CURL_CA}' ${TEST_URL_OPTS}"
 
