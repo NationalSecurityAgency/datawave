@@ -89,8 +89,8 @@
         <version.google-guava-failure>1.0.1</version.google-guava-failure>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.3.5</version.hadoop>
-        <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
+        <version.hadoop>3.4.1</version.hadoop>
+        <version.hadoop-shaded>1.3.0</version.hadoop-shaded>
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -1017,7 +1017,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop.thirdparty</groupId>
-                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <artifactId>hadoop-shaded-protobuf_3_25</artifactId>
                 <version>${version.hadoop-shaded}</version>
             </dependency>
             <dependency>
