@@ -1,5 +1,7 @@
 package datawave.ingest.data.config.ingest;
 
+import static datawave.ingest.data.config.CSVHelper.DATA_HEADER;
+import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.DISALLOWLIST_INDEX_FIELDS;
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.INDEX_FIELDS;
 
@@ -38,52 +40,50 @@ class ErrorShardedIngestHelperTest {
      * then build your maps of datatypes to IndexFields from there.
      */
 
-    private static final String DATA_TYPE = "error";
-
     /**
      * Verify that when indexed and reversed indexed fields are provided, that they are correctly parsed and are not treated as disallowed fields.
      */
     @Test
     void testSetupGivenIndexedFieldLists() {
-        Configuration config = getBaseConfig();
 
-        config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
+        Configuration csvConfig = new Configuration();
 
-        ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
-        helper.setup(config);
+        csvConfig.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
+        csvConfig.set(DataTypeHelper.Properties.DATA_NAME, "csv");
+        csvConfig.set("csv" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
+        csvConfig.set("csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        csvConfig.set("csv" + INDEX_FIELDS, "FOO,BAR,HAT");
+        csvConfig.set("csv.data.header", "okay");
+        csvConfig.set("csv.data.separator", ",");
 
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields(TypeRegistry.getType("csv"))); // need to include dt
-        Assertions.assertFalse(helper.hasIndexDisallowlist());
+        CSVIngestHelper csvHelper = new CSVIngestHelper();
+        csvHelper.setup(csvConfig);
 
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields(TypeRegistry.getType("error.fruit")));
-        Assertions.assertFalse(helper.hasReverseIndexDisallowlist());
+        // --- ERROR CONFIG ---
+
+        Configuration errorConfig = new Configuration();
+
+        errorConfig.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
+        errorConfig.set(DataTypeHelper.Properties.DATA_NAME, "csv");
+        errorConfig.set("csv" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
+        errorConfig.set("csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        errorConfig.set("csv" + INDEX_FIELDS, "FOO,BAR");
+
+        errorConfig.set("error" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
+        errorConfig.set("error" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        errorConfig.set("error" + INDEX_FIELDS, "FOO");
+
+        ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
+        errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
+        errorHelper.setup(errorConfig);
+
+        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), csvHelper.getIndexedFields());
+        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), errorHelper.getIndexedFields(TypeRegistry.getType("csv"))); // need to include dt
+        Assertions.assertFalse(errorHelper.hasIndexDisallowlist());
+
+        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), errorHelper.getReverseIndexedFields(TypeRegistry.getType("error.fruit")));
+        Assertions.assertFalse(errorHelper.hasReverseIndexDisallowlist());
     }
 
-    /**
-     * Verify that when disallowed indexed and reversed indexed fields are provided, that they are correctly parsed and are treated as disallowed fields.
-     */
-    @Test
-    void testSetupGivenDisallowedIndexedFieldLists() {
-        Configuration config = getBaseConfig();
-        config.set(DATA_TYPE + DISALLOWLIST_INDEX_FIELDS, "FOO,BAR,HAT");
-        config.set(DATA_TYPE + BaseIngestHelper.DISALLOWLIST_REVERSE_INDEX_FIELDS, "APPLE,BANANA,KIWI");
 
-        ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
-        helper.setup(config);
-
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
-        Assertions.assertTrue(helper.hasIndexDisallowlist());
-
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
-        Assertions.assertTrue(helper.hasReverseIndexDisallowlist());
-    }
-
-    private Configuration getBaseConfig() {
-        Configuration config = new Configuration();
-        config.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE);
-        config.set(DATA_TYPE + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        config.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE);
-        config.set(DATA_TYPE + TypeRegistry.INGEST_HELPER, TestBaseIngestHelper.class.getName());
-        return config;
-    }
 }

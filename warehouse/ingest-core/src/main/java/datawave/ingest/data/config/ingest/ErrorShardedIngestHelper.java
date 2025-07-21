@@ -53,6 +53,9 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
     protected boolean hasErrorIndexDisallowlist = false;
     protected boolean hasErrorReverseIndexDisallowlist = false;
+
+    private Type activeDataType;
+
     /*
      * \
      *
@@ -89,6 +92,10 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
     @Override
     public void setup(Configuration config) {
+
+        if(activeDataType == null){
+            log.error("activeDataType has not been set.");
+        }
         // we are error
         super.setup(config);
 
@@ -99,16 +106,16 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         // --- ERROR INDEX_FIELDS ---
 
         // Process the error indexed fields in the same way as the normal index fields, but with DATATYPE_ERROR appended to the datatype.
-        if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null) {
+        if (config.get(DATATYPE_ERROR + "." + activeDataType.typeName() + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Disallowlist specified for: {}", DATATYPE_ERROR + "." +this.getType().typeName() +  DISALLOWLIST_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: {}", DATATYPE_ERROR + "." + activeDataType.typeName() +  DISALLOWLIST_INDEX_FIELDS);
             }
             setHasErrorIndexDisallowlist(true);
-            configProperty = DATATYPE_ERROR + DISALLOWLIST_INDEX_FIELDS;
-        } else if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + INDEX_FIELDS) != null) {
+            configProperty = DISALLOWLIST_INDEX_FIELDS;
+        } else if (config.get(DATATYPE_ERROR + "." + activeDataType.typeName() + INDEX_FIELDS) != null) {
             log.debug("ErrorIndexedFields specified.");
             setHasErrorIndexDisallowlist(false);
-            configProperty = DATATYPE_ERROR + INDEX_FIELDS;
+            configProperty = INDEX_FIELDS;
         }
 
         // Load the proper list of fields to (not) index
@@ -118,7 +125,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             log.warn("No error index fields or error disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
         } else {
             this.errorIndexedFields.putIfAbsent(TypeRegistry.getType(configProperty), new IndexedFields());
-            Collection<String> errorIndexedStrings = config.getStringCollection(DATATYPE_ERROR + "." +this.getType().typeName() + configProperty); // todo: this
+            Collection<String> errorIndexedStrings = config.getStringCollection(DATATYPE_ERROR + "." + activeDataType.typeName() + "." + configProperty); // todo: this
                                                                                                                                               // needs to be
                                                                                                                                               // updated based
                                                                                                                                               // on inclusive or
@@ -131,7 +138,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                 this.moveToPatternMap(this.errorIndexedFields.get(configProperty).indexedFields, this.errorIndexedFields.get(configProperty).patterns);
             } else {
                 if (log.isWarnEnabled()) {
-                    log.warn("{} not specified.", DATATYPE_ERROR + "." +this.getType().typeName() + configProperty);
+                    log.warn("{} not specified.", DATATYPE_ERROR + "." +activeDataType.typeName() + "." + configProperty);
                 }
             }
         }
@@ -140,28 +147,28 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
         // Ensure that we have only an allowlist or a disallowlist of fields to
         // error-reverse-index
-        if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() +  DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
-                        && config.get(DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
+        if (config.get(DATATYPE_ERROR + "." +activeDataType.typeName() + "." +  DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
+                        && config.get(DATATYPE_ERROR + "." +activeDataType.typeName() + "." + REVERSE_INDEX_FIELDS) != null) {
             throw new RuntimeException(
-                            "Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both.  Type: " + this.getType().typeName()
-                                            + ", parameters: " + config.get(DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS)
-                                            + "  " + config.get(DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS));
+                            "Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both.  Type: " + activeDataType
+                                            + ", parameters: " + config.get(DATATYPE_ERROR + "." +activeDataType.typeName() + "." + DISALLOWLIST_REVERSE_INDEX_FIELDS)
+                                            + "  " + config.get(DATATYPE_ERROR + "." +activeDataType.typeName() + "." + REVERSE_INDEX_FIELDS));
         }
 
         configProperty = null;
 
         // Process the error reverse index fields
-        if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null) {
+        if (config.get(DATATYPE_ERROR + "." +activeDataType.typeName() + "." + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Disallowlist specified for: {}", DATATYPE_ERROR + "." +this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: {}", DATATYPE_ERROR + "." +activeDataType.typeName() + "." + DISALLOWLIST_REVERSE_INDEX_FIELDS);
             }
 
             this.setHasErrorReverseIndexDisallowlist(true);
 
             configProperty = DATATYPE_ERROR + DISALLOWLIST_REVERSE_INDEX_FIELDS;
-        } else if (config.get(DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
+        } else if (config.get(DATATYPE_ERROR + "." +activeDataType.typeName() + "." + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Reverse Index specified for: {}", DATATYPE_ERROR + "." +this.getType().typeName() + REVERSE_INDEX_FIELDS);
+                log.debug("Reverse Index specified for: {}", DATATYPE_ERROR + "." +activeDataType.typeName() + "." + REVERSE_INDEX_FIELDS);
             }
             this.setHasErrorReverseIndexDisallowlist(false);
             configProperty = DATATYPE_ERROR + REVERSE_INDEX_FIELDS;
@@ -170,10 +177,10 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         // Load the proper list of fields to (not) error-reverse-index
         if (configProperty == null && log.isWarnEnabled()) {
             log.warn("No error reverse index fields or error disallowlist reverse index fields specified, not generating reverse index fields for {}",
-                            this.getType().typeName());
+                            activeDataType);
         } else {
             errorReverseIndexedFields.get(configProperty).indexedFields = Sets.newHashSet();
-            Collection<String> errorReverseIndexedStrings = config.getStringCollection(DATATYPE_ERROR + "." +this.getType().typeName() +  configProperty);
+            Collection<String> errorReverseIndexedStrings = config.getStringCollection(DATATYPE_ERROR + "." +activeDataType.typeName() + "." +  configProperty);
             if (null != errorReverseIndexedStrings && !errorReverseIndexedStrings.isEmpty()) {
                 for (String errorReverseIndexedString : errorReverseIndexedStrings) {
                     errorReverseIndexedFields.get(configProperty).indexedFields.add(errorReverseIndexedString.trim());
@@ -182,7 +189,7 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                                 this.errorReverseIndexedFields.get(configProperty).patterns);
             } else {
                 if (log.isWarnEnabled()) {
-                    log.warn("{} not specified", DATATYPE_ERROR + "." +this.getType().typeName() + configProperty);
+                    log.warn("{} not specified", DATATYPE_ERROR + "." +activeDataType.typeName() + "." + configProperty);
                 }
             }
 
@@ -191,14 +198,14 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         //config.getPropsWithPrefix("error.")
 
         for (Type type : TypeRegistry.getTypes()) {
-            Collection<String> indexedStrings = config.getStringCollection(DATATYPE_ERROR + type.typeName() + INDEX_FIELDS);
+            Collection<String> indexedStrings = config.getStringCollection(DATATYPE_ERROR + "." + type.typeName() + INDEX_FIELDS);
             if (null != indexedStrings && !indexedStrings.isEmpty()) {
                 for (String indexedString : indexedStrings) {
                     String indexedTrimmedString = indexedString.trim();
                     allIndexFields.add(indexedTrimmedString);
                 }
             }
-            Collection<String> reverseIndexedStrings = config.getStringCollection(DATATYPE_ERROR + type.typeName() + REVERSE_INDEX_FIELDS);
+            Collection<String> reverseIndexedStrings = config.getStringCollection(DATATYPE_ERROR + "." + type.typeName() + REVERSE_INDEX_FIELDS);
             if (null != reverseIndexedStrings && !reverseIndexedStrings.isEmpty()) {
                 for (String reverseIndexedString : reverseIndexedStrings) {
                     String reverseIndexedTrimmedString = reverseIndexedString.trim();
@@ -278,7 +285,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
      * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
      */
 
-    private Type activeDataType;
 
     public void setActiveDataType(Type dataType) {
         activeDataType = dataType;
