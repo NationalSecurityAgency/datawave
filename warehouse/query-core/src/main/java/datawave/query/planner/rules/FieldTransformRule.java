@@ -30,7 +30,7 @@ public class FieldTransformRule implements NodeTransformRule {
             Class<? extends FieldRule> ruleClass = Class.forName(config.getFieldRuleClassName()).asSubclass(FieldRule.class);
             rule = ruleClass.getDeclaredConstructor(GenericQueryConfiguration.class).newInstance(config);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
-            throw new RuntimeException("Unable to load pruning rules for " + config.getFieldRuleClassName());
+            throw new RuntimeException("Unable to load pruning rules for " + config.getFieldRuleClassName() + " " + e.getMessage());
         }
 
     }

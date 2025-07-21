@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -225,13 +226,19 @@ public abstract class FieldRuleTest {
     }
 
     public static class NoSoupForYouRule extends FieldRule {
+        Set<String> pruneFields;
+        Map<String,Set<String>> pruneFVPairs;
 
         public NoSoupForYouRule(GenericQueryConfiguration config) {
             super(config);
+
         }
 
         @Override
         public void parseRules(GenericQueryConfiguration config) {
+            this.pruneFields = new HashSet<>();
+            this.pruneFVPairs = new HashMap<>();
+
             pruneFields.add("SOUP");
             // Note: real implementations should use Normalizers
             pruneFVPairs.put("FOOD", Collections.singleton("soup"));
