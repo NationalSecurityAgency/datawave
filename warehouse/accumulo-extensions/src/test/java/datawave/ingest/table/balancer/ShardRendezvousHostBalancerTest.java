@@ -511,6 +511,28 @@ public class ShardRendezvousHostBalancerTest {
     }
 
     @Test
+    public void testNoTserversForRegex() throws Exception {
+        tablets.addAll(createShards(tableId, "20010101", 30, 31));
+        today.set(parseDay("20010130"));
+
+        tableProps.put("table.custom.volume.tier.names", "t1,t2");
+        tableProps.put("table.custom.volume.tiered.t1.days.back", "0");
+        tableProps.put("table.custom.volume.tiered.t1.tservers", "host0000.*");
+        tableProps.put("table.custom.volume.tiered.t2.days.back", "30");
+        tableProps.put("table.custom.volume.tiered.t2.tservers", "willNotMatch[12].*");
+
+        generateTabletServers(0, 29, 3).forEach(testTServers::addTServer);
+
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        testTServers.applyAssignments(aout);
+
+        assertEquals(1000, balancer.getMaxMigrations());
+
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        assertTrue(migrations.isEmpty());
+    }
+
+    @Test
     public void testLast() throws Exception {
         tablets.addAll(createShards(tableId, "20010101", 30, 31));
         today.set(parseDay("20010130"));
@@ -828,7 +850,7 @@ public class ShardRendezvousHostBalancerTest {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
         var date = fmt.parse(startDate);
         GregorianCalendar cal = new GregorianCalendar();
-        cal.set(date.getYear() + 1900, date.getMonth(), date.getDate());
+        cal.setTime(date);
 
         var shards = new ArrayList<TabletId>(days * shardsPerDay);
 

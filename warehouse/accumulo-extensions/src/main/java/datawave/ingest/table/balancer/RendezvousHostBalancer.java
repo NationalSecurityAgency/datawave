@@ -147,7 +147,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
                 }
             }
 
-            Preconditions.checkState(tabletsLeft == 0);
+            Preconditions.checkState(tabletsLeft == 0, tabletsLeft + " tablets are unassigned. Ensure the tserver regex patterns are correct");
 
             return counts;
         }

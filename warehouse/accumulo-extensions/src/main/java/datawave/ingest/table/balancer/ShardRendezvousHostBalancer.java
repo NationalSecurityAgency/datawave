@@ -8,6 +8,7 @@ import java.time.format.DateTimeParseException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.TableId;
@@ -68,6 +70,7 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
     private static final String SHARDED_PROPERTY_PREFIX = Property.TABLE_ARBITRARY_PROP_PREFIX.getKey() + "sharded.balancer.";
     public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
     public static final int MAX_MIGRATIONS_DEFAULT = 10000;
+    private static final HashSet<Pattern> UnMatchedPatterns = new HashSet<>();
 
     private Configuration tableConfig;
 
@@ -128,6 +131,9 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
             matcher.reset(tabletServerId.getHost() + ":" + tabletServerId.getPort());
             if (matcher.matches()) {
                 db.add(daysBack);
+                if (!UnMatchedPatterns.isEmpty()) {
+                    UnMatchedPatterns.remove(matcher.pattern());
+                }
             }
         }
         return db;
@@ -158,6 +164,7 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
         if (configuredTiers.isEmpty()) {
             throw new IllegalStateException("Tier configuration is not set");
         }
+        UnMatchedPatterns.addAll(configuredTiers.stream().map(Map.Entry::getValue).map(Matcher::pattern).collect(Collectors.toSet()));
 
         TreeMap<Long,List<TabletServerId>> serverPartitioningMap = new TreeMap<>();
 
@@ -172,6 +179,11 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
                 log.warn("Tserver {} did not match any tiers", tabletServerId);
             }
         });
+
+        UnMatchedPatterns.forEach(regex -> {
+            log.warn("Regex: {} did not match against any tservers", regex);
+        });
+        UnMatchedPatterns.clear();
 
         // grab this once outside the lambda so the lambda always makes consistent decisions.
         var today = today();
