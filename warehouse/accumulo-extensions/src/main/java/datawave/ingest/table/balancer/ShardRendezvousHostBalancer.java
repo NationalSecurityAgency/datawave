@@ -169,6 +169,8 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
 
         TreeMap<Long,List<TabletServerId>> serverPartitioningMap = new TreeMap<>();
 
+        // Ensure each tier has a list of tservers. This will ensure that when a tiers regex matches nothing that the tier has an empty list. This will cause
+        // its tablets to not be assigned anywhere.
         configuredTiers.forEach(e -> serverPartitioningMap.put(e.getKey(), new ArrayList<>()));
 
         allTservers.forEach(tabletServerId -> {
