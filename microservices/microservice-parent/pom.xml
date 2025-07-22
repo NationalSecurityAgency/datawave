@@ -30,7 +30,7 @@
         </repository>
     </distributionManagement>
     <properties>
-        <docker.image.prefix>datawave/</docker.image.prefix>
+        <docker.image.prefix />
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -468,19 +468,16 @@
                     <version>1.18.1</version>
                     <configuration>
                         <verbose>true</verbose>
+                        <pushRegistry>${docker.image.prefix}</pushRegistry>
                         <images>
                             <image>
-                                <name>${docker.image.prefix}${project.artifactId}</name>
+                                <name>${project.artifactId}:${project.version}</name>
                                 <build>
                                     <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                     <contextDir>.</contextDir>
                                     <buildOptions>
                                         <memory>8589934592</memory>
                                     </buildOptions>
-                                    <tags>
-                                        <tag>latest</tag>
-                                        <tag>${project.version}</tag>
-                                    </tags>
                                     <assembly>
                                         <name>/</name>
                                         <excludeFinalOutputArtifact>true</excludeFinalOutputArtifact>
