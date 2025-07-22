@@ -10,6 +10,18 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
     private String originalPhoneNumber = "";
     private String normalizedPhoneNumber = "";
 
+    private static final String DIGIT_STRING = "^\\d+$";
+
+    private static final String ISBN_REGEX = "^\\d\\d\\d([ \\-])\\d\\d\\1\\d\\d\\d\\d$";
+
+    private static final String SSN_REGEX = "^[12]\\d\\d\\d ?- ?[12]\\d\\d\\d$";
+
+    private static final String YEAR_RANGE_REGEX = "^(19|20)\\d\\d([\\-\\. ])[01]\\d\\2[0-3]\\d$";
+
+    private static final String YYYY_MM_DD_REGEX = "^(19|20)\\d\\d[01]\\d[0-3]\\d$";
+
+    private static final String YYYYMMDD_REGEX = "^(19|20)\\d\\d([\\-\\. ])?[0-3]\\d\\2[01]\\d$";
+
     /**
      * A valid phone number must contain at least 7 digits.
      */
@@ -210,15 +222,15 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
 
         if (data[start] != '+' && isISBN(s) && (spaceCount > 0 || dashCount > 0 || dotCount > 0) && (openCount + closCount) == 0) {
             throw new IllegalArgumentException("Looks like an ISBN");
-        } else if (number.matches("^\\d\\d\\d([ \\-])\\d\\d\\1\\d\\d\\d\\d$")) {
+        } else if (number.matches(ISBN_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a SSN");
-        } else if (number.matches("^[12]\\d\\d\\d ?- ?[12]\\d\\d\\d$")) {
+        } else if (number.matches(SSN_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a year range");
-        } else if (number.matches("^(19|20)\\d\\d([\\-\\. ])[01]\\d\\2[0-3]\\d$")) {
+        } else if (number.matches(YEAR_RANGE_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a yyyy mm dd date");
-        } else if (number.matches("^(19|20)\\d\\d[01]\\d[0-3]\\d$")) {
+        } else if (number.matches(YYYY_MM_DD_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a yyyymmdd date");
-        } else if (number.matches("^(19|20)\\d\\d([\\-\\. ])?[0-3]\\d\\2[01]\\d$")) {
+        } else if (number.matches(YYYYMMDD_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a yyyy dd mm date");
         } else if (number.matches("^(19|20)\\d\\d[0-3]\\d[01]\\d$")) {
             throw new IllegalArgumentException(number + " looks like a yyyyddmm date");
@@ -247,7 +259,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
          * This normalizer is just worrying about stripping punctuation from phone numbers, so if this is a string of digits, just return instead of doing the
          * other checks.
          */
-        if (number.matches("^\\d+$")) {
+        if (number.matches(DIGIT_STRING)) {
             return number;
         }
 

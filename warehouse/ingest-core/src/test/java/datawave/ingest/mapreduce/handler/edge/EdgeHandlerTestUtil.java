@@ -34,6 +34,7 @@ public class EdgeHandlerTestUtil {
 
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
+    public static final String SHARD_KEY = "\\d{8}_\\d+";
 
     public static ListMultimap<String,String[]> edgeKeyResults = ArrayListMultimap.create();
     public static ListMultimap<String,String> edgeValueResults = ArrayListMultimap.create();
@@ -45,7 +46,7 @@ public class EdgeHandlerTestUtil {
     }
 
     public static boolean isShardKey(Key k) {
-        return k.getRow().toString().matches("\\d{8}_\\d+");
+        return k.getRow().toString().matches(SHARD_KEY);
     }
 
     public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
