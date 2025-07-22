@@ -61,6 +61,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
@@ -121,7 +122,6 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.UniversalSet;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -140,7 +140,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected SourceManager source;
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
-    protected Collection<String> includeReferences = UniversalSet.instance();
+    protected TypeFilter includeReferences = new TypeFilter();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;
@@ -194,7 +194,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected Class<? extends IteratorBuilder> iteratorBuilderClass = IndexIteratorBuilder.class;
 
-    private Collection<String> unindexedFields = Lists.newArrayList();
+    private final Collection<String> unindexedFields = Lists.newArrayList();
 
     protected boolean disableFiEval = false;
 
@@ -1872,7 +1872,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     public IteratorBuildingVisitor setIncludes(Collection<String> includes) {
-        this.includeReferences = Sets.newHashSet(includes);
+        this.includeReferences.addAll(includes);
         this.includeReferences.add(Constants.ANY_FIELD);
         return this;
     }

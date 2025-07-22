@@ -1273,7 +1273,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 this.allowListedFields.addAll(getMatchingFieldList());
             }
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
-                            new Projection(this.allowListedFields, Projection.ProjectionType.INCLUDES));
+                            new Projection(this.allowListedFields.getElements(), Projection.ProjectionType.INCLUDES));
         } else if (this.useDisallowListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {

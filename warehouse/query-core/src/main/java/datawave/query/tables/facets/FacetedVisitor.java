@@ -25,6 +25,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SourceManager;
@@ -36,7 +37,6 @@ import datawave.query.predicate.NegationPredicate;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.SortedKeyValueIteratorToIterator;
 import datawave.query.util.TypeMetadata;
-import datawave.util.UniversalSet;
 
 /**
  * A visitor that builds a tree of iterators. The main points are at ASTAndNodes and ASTOrNodes, where the code will build AndIterators and OrIterators,
@@ -55,7 +55,7 @@ public class FacetedVisitor extends BaseVisitor {
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
     protected IteratorEnvironment env;
-    protected Collection<String> includeReferences = UniversalSet.instance();
+    protected TypeFilter includeReferences = new TypeFilter();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;
