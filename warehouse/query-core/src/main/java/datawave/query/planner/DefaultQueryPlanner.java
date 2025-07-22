@@ -177,6 +177,8 @@ import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
+import datawave.query.planner.rules.FieldTransformRule;
+import datawave.query.planner.rules.FieldTransformRuleVisitor;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -1195,6 +1197,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // left as a regex
         if (!disableAnyFieldLookup) {
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
+        }
+
+        if (null != config.getFieldRuleClassName()) {
+            FieldTransformRule rule = new FieldTransformRule();
+            rule.setupRules(config);
+            config.setQueryTree(FieldTransformRuleVisitor.transform(config.getQueryTree(), Collections.singletonList(rule), config, metadataHelper));
         }
 
         if (reduceQuery) {
