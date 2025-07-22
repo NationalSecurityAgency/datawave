@@ -70,7 +70,6 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
     private static final String SHARDED_PROPERTY_PREFIX = Property.TABLE_ARBITRARY_PROP_PREFIX.getKey() + "sharded.balancer.";
     public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
     public static final int MAX_MIGRATIONS_DEFAULT = 10000;
-    private static final HashSet<Pattern> UnMatchedPatterns = new HashSet<>();
 
     private Configuration tableConfig;
 
@@ -123,7 +122,7 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
         return configuredTiers;
     }
 
-    protected List<Long> getDaysBack(List<Map.Entry<Long,Matcher>> configuredTiers, TabletServerId tabletServerId) {
+    private List<Long> getDaysBack(List<Map.Entry<Long,Matcher>> configuredTiers, TabletServerId tabletServerId, HashSet<Pattern> unMatchedPatterns) {
         ArrayList<Long> db = new ArrayList<>();
         for (var entry : configuredTiers) {
             long daysBack = entry.getKey();
@@ -131,8 +130,8 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
             matcher.reset(tabletServerId.getHost() + ":" + tabletServerId.getPort());
             if (matcher.matches()) {
                 db.add(daysBack);
-                if (!UnMatchedPatterns.isEmpty()) {
-                    UnMatchedPatterns.remove(matcher.pattern());
+                if (!unMatchedPatterns.isEmpty()) {
+                    unMatchedPatterns.remove(matcher.pattern());
                 }
             }
         }
@@ -164,12 +163,16 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
         if (configuredTiers.isEmpty()) {
             throw new IllegalStateException("Tier configuration is not set");
         }
-        UnMatchedPatterns.addAll(configuredTiers.stream().map(Map.Entry::getValue).map(Matcher::pattern).collect(Collectors.toSet()));
+
+        final HashSet<Pattern> unMatchedPatterns = new HashSet<>();
+        unMatchedPatterns.addAll(configuredTiers.stream().map(Map.Entry::getValue).map(Matcher::pattern).collect(Collectors.toSet()));
 
         TreeMap<Long,List<TabletServerId>> serverPartitioningMap = new TreeMap<>();
 
+        configuredTiers.forEach(e -> serverPartitioningMap.put(e.getKey(), new ArrayList<>()));
+
         allTservers.forEach(tabletServerId -> {
-            var daysBack = getDaysBack(configuredTiers, tabletServerId);
+            var daysBack = getDaysBack(configuredTiers, tabletServerId, unMatchedPatterns);
             if (!daysBack.isEmpty()) {
                 for (var db : daysBack) {
                     log.trace(" daysBack:{} tserver:{}", db, tabletServerId);
@@ -180,10 +183,10 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
             }
         });
 
-        UnMatchedPatterns.forEach(regex -> {
+        unMatchedPatterns.forEach(regex -> {
             log.warn("Regex: {} did not match against any tservers", regex);
         });
-        UnMatchedPatterns.clear();
+        unMatchedPatterns.clear();
 
         // grab this once outside the lambda so the lambda always makes consistent decisions.
         var today = today();
