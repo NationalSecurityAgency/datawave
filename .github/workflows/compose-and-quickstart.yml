@@ -127,7 +127,7 @@ jobs:
       - name: Docker Compose Query Tests
         run: |
           mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
-              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -DskipIngest -Dmaven.build.cache.enabled=false \
               -Djkube.container-image.tags.1=latest \
               clean install
           # free up some space so that we don't run out
@@ -163,7 +163,7 @@ jobs:
           docker compose logs
       - name: Docker Compose Web Tests
         run: |
-          cat .env
+          cd docker
           docker compose down
           sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--test"\]/g' docker-compose.yml
           while [ $attempt -lt $max_attempts ]; do
