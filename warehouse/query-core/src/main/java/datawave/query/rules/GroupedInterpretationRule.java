@@ -9,7 +9,10 @@ import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 import datawave.query.lucene.visitors.GroupedInterpretationVisitor;
 
 /**
- * An implementation of {@link QueryRule} that checks a LUCENE query for any grouped phrases
+ * An implementation of {@link QueryRule} that checks a LUCENE query for any grouped phrases with the same fields,
+ * e.g. {@code FOO:(aaa bbb ccc)}, {@code (FOO:aaa bbb ccc)}
+ *  and will return a LUCENE string warning message to let the user know how the query will be interpreted
+ * e.g. "{@code FOO:(aaa bbb ccc)} will be interpreted as {@code (FOO:aaa AND FOO:bbb AND FOO:ccc)}"
  */
 public class GroupedInterpretationRule extends ShardQueryRule {
 
@@ -20,6 +23,8 @@ public class GroupedInterpretationRule extends ShardQueryRule {
     public GroupedInterpretationRule(String name) {
         super(name);
     }
+
+    public String query;
 
     @Override
     protected Syntax getSupportedSyntax() {
@@ -35,6 +40,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
 
         QueryRuleResult result = new QueryRuleResult(getName());
         try {
+            query = config.getQueryString();
             QueryNode luceneQuery = (QueryNode) config.getParsedQuery();
             List<QueryNode> interpretNodes = GroupedInterpretationVisitor.check(luceneQuery, GroupedInterpretationVisitor.JUNCTION.AND);
             interpretNodes.stream().map(this::formatMessage).forEach(result::addMessage);
@@ -47,15 +53,16 @@ public class GroupedInterpretationRule extends ShardQueryRule {
 
     @Override
     public QueryRule copy() {
-        return new AmbiguousUnquotedPhrasesRule(name);
+        return new GroupedInterpretationRule(name);
     }
 
     // Return a message about the given nodes.
     private String formatMessage(QueryNode node) {
         // @formatter:off
         return new StringBuilder()
-                //.append(query)
-                .append("Portion will be interpreted as: ")
+                //.append(node.getOriginalQuery())
+                .append(query)
+                .append(" will be interpreted as: ")
                 .append(LuceneQueryStringBuildingVisitor.build(node))
                 .toString();
         // @formatter:on
