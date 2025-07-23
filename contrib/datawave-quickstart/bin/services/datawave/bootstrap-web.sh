@@ -1,4 +1,8 @@
 
+# Get these vars from the pom so users not building the container image can stay up to date
+DW_WILDFLY_VERSION="${DW_WILDFLY_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.wildfly | tail -1)}"
+DW_WILDFLY_DIST_SHA512_CHECKSUM="${DW_WILDFLY_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.wildfly | tail -1)}"
+
 DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/${DW_WILDFLY_VERSION}.Final/wildfly-${DW_WILDFLY_VERSION}.Final.tar.gz}"
 DW_WILDFLY_DIST="$( basename "${DW_WILDFLY_DIST_URI}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
@@ -25,6 +29,7 @@ function bootstrapWildfly() {
     if [ ! -f "${DW_DATAWAVE_SERVICE_DIR}/${DW_WILDFLY_DIST}" ]; then
         info "Wildfly distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "wildfly" "${DW_WILDFLY_VERSION}" "${DW_DATAWAVE_SERVICE_DIR}" || \
           ( fatal "failed to obtain Wildfly distribution" && return 1 )
         DW_WILDFLY_DIST="${tarball}"
     else

@@ -12,6 +12,12 @@
 
 DW_ACCUMULO_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
+# Get these vars from the pom so users not building the container image can stay up to date
+DW_ZOOKEEPER_VERSION="${DW_ZOOKEEPER_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.zookeeper | tail -1)}"
+DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.zookeeper | tail -1)}"
+DW_ACCUMULO_VERSION="${DW_ACCUMULO_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.accumulo | tail -1)}"
+DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.accumulo | tail -1)}"
+
 # Zookeeper config
 DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-${DW_ZOOKEEPER_VERSION}/apache-zookeeper-${DW_ZOOKEEPER_VERSION}-bin.tar.gz}"
 DW_ZOOKEEPER_DIST="$( basename "${DW_ZOOKEEPER_DIST_URI}" )"
@@ -118,6 +124,7 @@ function bootstrapAccumulo() {
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ]; then
         info "Accumulo distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
           ( fatal "failed to obtain Accumulo distribution" && return 1 )
         DW_ACCUMULO_DIST="${tarball}"
     else
@@ -264,6 +271,7 @@ function bootstrapZookeeper() {
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" ]; then
         info "Zookeeper distribution not detected. Attempting to bootstrap a dedicated install..."
         downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "zookeeper" "${DW_ZOOKEEPER_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
           ( fatal "failed to obtain Zookeeper distribution" && return 1 )
         DW_ZOOKEEPER_DIST="${tarball}"
     else
