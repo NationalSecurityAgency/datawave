@@ -38,8 +38,6 @@ tar xf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_DIST}" -C "${TARBALL_BAS
 datawaveIngestIsInstalled || ( fatal "DataWave Ingest was not installed" && exit 1 )
 info "DataWave Ingest tarball extracted and symlinked"
 
-source "${THIS_DIR}/fix-hadoop-classpath.sh"
-
 if ! hadoopIsRunning ; then
    info "Starting Hadoop, so that we can initialize Accumulo"
    hadoopStart
