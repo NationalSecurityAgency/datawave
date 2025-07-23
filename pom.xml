@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.26.0-SNAPSHOT</version>
+    <version>7.27.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -82,15 +82,15 @@
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
-        <version.geoserver>2.25.2</version.geoserver>
+        <version.geoserver>2.26.2</version.geoserver>
         <version.geotools>28.1</version.geotools>
         <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
         <version.google-guava-failure>1.0.1</version.google-guava-failure>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.3.5</version.hadoop>
-        <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
+        <version.hadoop>3.4.1</version.hadoop>
+        <version.hadoop-shaded>1.3.0</version.hadoop-shaded>
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -1017,7 +1017,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop.thirdparty</groupId>
-                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <artifactId>hadoop-shaded-protobuf_3_25</artifactId>
                 <version>${version.hadoop-shaded}</version>
             </dependency>
             <dependency>

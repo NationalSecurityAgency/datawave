@@ -113,7 +113,7 @@ public class NodeTransformVisitor extends RebuildingVisitor {
         return applyTransforms(super.visit(node, data));
     }
 
-    private Object applyTransforms(Object node) {
+    protected Object applyTransforms(Object node) {
         for (NodeTransformRule rule : rules) {
             node = rule.apply((JexlNode) node, config, helper);
         }

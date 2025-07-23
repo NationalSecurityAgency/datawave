@@ -1,5 +1,6 @@
 package datawave.ingest.data.config;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
 
@@ -173,4 +175,73 @@ public class ConfigurationHelper extends Configuration {
         return ret;
     }
 
+    /**
+     * Returns a list of {@code <E>} instances instantiated from each incremental instance of the base property name in the given configuration, beginning with
+     * the provided starting instance. For example, given:
+     * <ol>
+     * <li>A class {@code datawave.user.Person.class} that has the attributes {@code name} and {@code title}</li>
+     * <li>A base property name of {@code "devops.team"}</li>
+     * <li>A starting index of 1</li>
+     * </ol>
+     * it is expected that a list of 3 {@code Person} elements would be returned from a configuration with the following properties:
+     *
+     * <pre>
+     * devops.team.1=datawave.user.Person.class
+     * devops.team.1.name=Hank Bower
+     * devops.team.1.title=Engineer
+     * devops.team.2=datawave.user.Person.class
+     * devops.team.2.name=Ann Banks
+     * devops.team.2.title=Tester
+     * devops.team.3=datawave.user.Person.class
+     * devops.team.3.name=Elizabeth Smith
+     * devops.team.3.title=Tester
+     * </pre>
+     *
+     * It is important to note that class types defined in the configuration for these incremental lists must have a constructor that accepts two parameters: a
+     * {@link Configuration} and a {@link String}.
+     *
+     * @param conf
+     *            the configuration
+     * @param propertyPrefix
+     *            the portion of the property name that precedes the index
+     * @param listElementType
+     *            the element type to return a list of
+     * @param indexStart
+     *            the starting instance index
+     * @return a list of {@code <E>} instances instantiated from the given configuration
+     * @param <E>
+     *            the element type of the list
+     */
+    public static <E> List<E> getIndexedInstances(Configuration conf, String propertyPrefix, Class<E> listElementType, int indexStart) {
+        List<E> instances = new ArrayList<>();
+
+        // Attempt to find a match for the starting instance.
+        int currentIndex = indexStart;
+        String currentProperty = propertyPrefix + "." + currentIndex;
+        Class<?> currentClass = conf.getClass(currentProperty, null);
+
+        while (currentClass != null) {
+            // Ensure the class is assignable to the base type.
+            if (!listElementType.isAssignableFrom(currentClass)) {
+                throw new RuntimeException(currentClass + " cannot be cast to " + listElementType);
+            }
+
+            // It is required that the class has a constructor that accepts the configuration and the name with the instance so that the class can initialize
+            // itself.
+            try {
+                // noinspection unchecked
+                instances.add((E) ConstructorUtils.invokeConstructor(currentClass, conf, currentProperty));
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                throw new RuntimeException(
+                                "Failed to invoke constructor " + currentClass.getSimpleName() + "(" + Configuration.class + ", " + String.class + ")", e);
+            }
+
+            // Attempt to fetch the class for the next incremented property.
+            currentIndex++;
+            currentProperty = propertyPrefix + "." + currentIndex;
+            currentClass = conf.getClass(currentProperty, null);
+        }
+
+        return instances;
+    }
 }
