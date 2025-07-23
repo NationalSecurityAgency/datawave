@@ -156,9 +156,31 @@ jobs:
             fi
           done
           cd scripts
-          ./testAll.sh
+#          ./testAll.sh
       - name: Dump Logs
         if: failure()
         run: |
           cd docker
           docker compose logs
+      - name: Docker Compose Web Tests
+        run: |
+          cat .env
+          docker compose down
+          sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--test"\]/g' docker-compose.yml
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+          docker compose logs -f quickstart
