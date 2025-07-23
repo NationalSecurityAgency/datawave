@@ -121,6 +121,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
                 );
             }
 
+            // --- INDEX HANDLING ---
+
             // check if the property relates to index fields
             // if they do, they will always end with either INDEX_FIELDS (inclusive) or DISALLOWLIST_INDEX_FIELDS (exclusive)
             // "error.<datatype>.<possible-index-information>"
