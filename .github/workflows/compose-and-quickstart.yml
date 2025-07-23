@@ -165,7 +165,7 @@ jobs:
         run: |
           cd docker
           docker compose down
-          sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--test"\]/g' docker-compose.yml
+          sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--ingest", "--web", "--test"\]/g' docker-compose.yml
           while [ $attempt -lt $max_attempts ]; do
             attempt=$((attempt+1))
             echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
