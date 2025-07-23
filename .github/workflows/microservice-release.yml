@@ -93,7 +93,8 @@ jobs:
       id: version
       run: |
         cd "${{ github.event.inputs.projectToRelease }}"
-        RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) || mvn help:evaluate -Dexpression=project.version -DforceStdout
+        RAW_VERSION=$(mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -q -DforceStdout) || \
+                      mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -DforceStdout
         BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
 
         if [ "${{ github.event.inputs.finalRelease }}" = "true" ]; then
@@ -118,7 +119,7 @@ jobs:
         git config user.name "${{ env.GITHUB_USER_NAME }}"
         mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml \
         --batch-mode release:prepare release:perform \
-        -Dmaven.release.arguments="-Ddocker.image.prefix=ghcr.io/nationalsecurityagency/datawave -DpushChanges=true \
+        -Dmaven.release.arguments="--settings $GITHUB_WORKSPACE/.github/workflows/settings.xml -Ddocker.image.prefix=ghcr.io/nationalsecurityagency/datawave -DpushChanges=true \
         -DskipTests -DskipFormat -DskipSpotbugs \
         -Denforcer.skip=true -Dcheckstyle.skip=true \
         -Ddocker-release -Dmicroservice-docker" \
