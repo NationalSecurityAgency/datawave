@@ -55,19 +55,17 @@ jobs:
             echo "Nothing to do since this is a release branch."
           else
             # update datawave dependencies to use the latest snapshots
-            cp $GITHUB_WORKSPACE/.github/workflows/settings.xml ~/.m2/settings.xml
-            mvn --show-version --batch-mode --errors -Dutils -Dservices \
+            mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
                 -Dstarters versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
-            mvn --show-version --batch-mode --errors -Dutils -Dservices \
+            mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
                 -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests \
                 -Djkube.container-image.tags.1=latest \
                 clean install
           
             # free up some space so that we don't run out
             docker system prune -f
-            cp $GITHUB_WORKSPACE/.github/workflows/settings.xml ~/.m2/settings.xml
-            mvn --show-version --batch-mode --errors -Dutils -Dservices \
+            mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
                 -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
           
             cd docker
@@ -129,14 +127,13 @@ jobs:
       # Builds the quickstart and microservice docker images and runs a query test
       - name: Docker Compose Query Tests
         run: |
-          cp $GITHUB_WORKSPACE/.github/workflows/settings.xml ~/.m2/settings.xml
-          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
               -Djkube.container-image.tags.1=latest \
               clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh

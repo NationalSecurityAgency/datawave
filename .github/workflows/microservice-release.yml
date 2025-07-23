@@ -116,8 +116,7 @@ jobs:
         #Github actions bot user id + user.login. See https://api.github.com/users/github-actions%5Bbot%5D
         git config user.email "datawave@github.com"
         git config user.name "${{ env.GITHUB_USER_NAME }}"
-        cp $GITHUB_WORKSPACE/.github/workflows/settings.xml ~/.m2/settings.xml
-        mvn \
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml \
         --batch-mode release:prepare release:perform \
         -Dmaven.release.arguments="-Ddocker.image.prefix=ghcr.io/nationalsecurityagency/datawave -DpushChanges=true \
         -DskipTests -DskipFormat -DskipSpotbugs \

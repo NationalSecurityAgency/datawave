@@ -89,13 +89,11 @@ jobs:
 
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        cp $GITHUB_WORKSPACE/.github/workflows/settings.xml ~/.m2/settings.xml
-        mvn versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        cp $GITHUB_WORKSPACE/.github/workflows/settings.xml ~/.m2/settings.xml
-        mvn clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  
