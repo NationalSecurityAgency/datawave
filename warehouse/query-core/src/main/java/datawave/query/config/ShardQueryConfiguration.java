@@ -53,6 +53,7 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
+import datawave.query.index.day.DayIndexStream;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.ContentSummaryIterator;
@@ -204,6 +205,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String metadataTableName = TableName.METADATA;
     private String dateIndexTableName = TableName.DATE_INDEX;
     private String indexStatsTableName = TableName.INDEX_STATS;
+    private String dayIndexTableName = TableName.SHARD_DAY_INDEX;
+    private String yearIndexTableName = TableName.SHARD_YEAR_INDEX;
     private String defaultDateTypeName = "EVENT";
     // should we cleanup the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
@@ -559,6 +562,17 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxLinesToPrint = -1;
 
     /**
+     * Flag that controls usage of the sharded index tables. Enables usage of the {@link DayIndexStream} which scans the {@link TableName#SHARD_DAY_INDEX} and
+     * {@link TableName#SHARD_YEAR_INDEX}.
+     */
+    private boolean useShardedIndex = false;
+
+    /**
+     * If the days in the query date range exceed this threshold, the year index is scanned first in an effort to reduce useless scans against the day index
+     */
+    private int dayIndexThreshold = -1;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -640,6 +654,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIgnoreNonExistentFields(other.getIgnoreNonExistentFields());
         this.setDateIndexTableName(other.getDateIndexTableName());
         this.setIndexStatsTableName(other.getIndexStatsTableName());
+        this.setDayIndexTableName(other.getDayIndexTableName());
+        this.setYearIndexTableName(other.getYearIndexTableName());
         this.setDefaultDateTypeName(other.getDefaultDateTypeName());
         this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
         this.setNumQueryThreads(other.getNumQueryThreads());
@@ -812,6 +828,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setUseShardedIndex(other.isUseShardedIndex());
+        this.setDayIndexThreshold(other.getDayIndexThreshold());
     }
 
     /**
@@ -3065,6 +3083,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getMetadataTableName(), that.getMetadataTableName()) &&
                 Objects.equals(getDateIndexTableName(), that.getDateIndexTableName()) &&
                 Objects.equals(getIndexStatsTableName(), that.getIndexStatsTableName()) &&
+                Objects.equals(getDayIndexTableName(), that.getDayIndexTableName()) &&
+                Objects.equals(getYearIndexTableName(), that.getYearIndexTableName()) &&
                 Objects.equals(getDefaultDateTypeName(), that.getDefaultDateTypeName()) &&
                 Objects.equals(getNumQueryThreads(), that.getNumQueryThreads()) &&
                 Objects.equals(numLookupThreads, that.numLookupThreads) &&
@@ -3146,8 +3166,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
-
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+                getDayIndexThreshold() == that.getDayIndexThreshold();
         // @formatter:on
     }
 
@@ -3207,6 +3227,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMetadataTableName(),
                 getDateIndexTableName(),
                 getIndexStatsTableName(),
+                getDayIndexTableName(),
+                getYearIndexTableName(),
                 getDefaultDateTypeName(),
                 isCleanupShardsAndDaysQueryHints(),
                 getNumQueryThreads(),
@@ -3357,8 +3379,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes()
-        );
+                getNoExpansionIfCurrentDateTypes(),
+                isUseShardedIndex(),
+                getDayIndexThreshold());
         // @formatter:on
     }
 
@@ -3423,5 +3446,37 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         this.maxLinesToPrint = maxLinesToPrint;
+    }
+
+    public String getDayIndexTableName() {
+        return dayIndexTableName;
+    }
+
+    public void setDayIndexTableName(String dayIndexTableName) {
+        this.dayIndexTableName = dayIndexTableName;
+    }
+
+    public String getYearIndexTableName() {
+        return yearIndexTableName;
+    }
+
+    public void setYearIndexTableName(String yearIndexTableName) {
+        this.yearIndexTableName = yearIndexTableName;
+    }
+
+    public boolean isUseShardedIndex() {
+        return useShardedIndex;
+    }
+
+    public void setUseShardedIndex(boolean useShardedIndex) {
+        this.useShardedIndex = useShardedIndex;
+    }
+
+    public int getDayIndexThreshold() {
+        return dayIndexThreshold;
+    }
+
+    public void setDayIndexThreshold(int dayIndexThreshold) {
+        this.dayIndexThreshold = dayIndexThreshold;
     }
 }

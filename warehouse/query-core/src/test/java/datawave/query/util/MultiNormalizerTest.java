@@ -61,6 +61,13 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
             ingest.write(RangeType.SHARD);
 
             Authorizations auths = new Authorizations("ALL");
+
+            DayIndexIngest dayIndexIngest = new DayIndexIngest();
+            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+            YearIndexIngest yearIndexIngest = new YearIndexIngest();
+            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, TableName.METADATA);
@@ -87,6 +94,13 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
             ingest.write(RangeType.DOCUMENT);
 
             Authorizations auths = new Authorizations("ALL");
+
+            DayIndexIngest dayIndexIngest = new DayIndexIngest();
+            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+            YearIndexIngest yearIndexIngest = new YearIndexIngest();
+            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, TableName.METADATA);

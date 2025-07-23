@@ -1,10 +1,10 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Value;
@@ -82,11 +82,7 @@ public class ShardedDataTypeHandlerTest {
 
         @Override
         public boolean contains(String key) {
-            if (key.equals("TEST_COL")) {
-                return true;
-            } else {
-                return false;
-            }
+            return key.equals("TEST_COL");
 
         }
 
@@ -151,7 +147,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
                         handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
 
-        assertTrue(termIndex.size() == 1);
+        assertEquals(1, termIndex.size());
     }
 
     @Test
@@ -173,7 +169,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
-        assertTrue(termIndex.size() == 2);
+        assertEquals(2, termIndex.size());
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
             Text row = k.getKey().getRow();
@@ -203,7 +199,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
 
-        assertTrue(termIndex.size() == 2);
+        assertEquals(2, termIndex.size());
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
             Text row = k.getKey().getRow();
@@ -232,7 +228,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
                         handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
-        assertTrue(termIndex.size() == 1);
+        assertEquals(1, termIndex.size());
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
             Text row = k.getKey().getRow();
@@ -262,10 +258,14 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "OTHER_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
-        assertTrue(termIndex.size() == 1);
+        assertEquals(1, termIndex.size());
         for (BulkIngestKey k : termIndex.keySet()) {
             byte[] keyBytes = k.getKey().getColumnVisibility().getBytes();
-            assertTrue(Arrays.equals(keyBytes, maskVisibility));
+            assertArrayEquals(keyBytes, maskVisibility);
+        }
+
+        for (Value value : termIndex.values()) {
+            System.out.println(value.get().length);
         }
     }
 

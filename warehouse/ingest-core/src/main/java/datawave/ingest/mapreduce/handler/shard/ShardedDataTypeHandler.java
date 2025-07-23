@@ -2,9 +2,12 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
@@ -48,7 +51,9 @@ import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.Direction;
 import datawave.util.CompositeTimestamp;
+import datawave.util.TableName;
 import datawave.util.TextUtil;
+import datawave.util.time.DateHelper;
 
 /**
  * <p>
@@ -138,13 +143,20 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public static final String SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE = "shard.table.index.bloom.optimum.max.filter.size"; // Bytes
     public static final String SHARD_STATS_TNAME = "shard.stats.table.name";
     public static final String SHARD_GIDX_TNAME = "shard.global.index.table.name";
+    public static final String SHARD_DAY_INDEX_TABLE_NAME = "shard.global.day.index.table.name";
+    public static final String SHARD_YEAR_INDEX_TABLE_NAME = "shard.global.year.index.table.name";
     public static final String SHARD_GRIDX_TNAME = "shard.global.rindex.table.name";
     public static final String SHARD_LPRIORITY = "shard.table.loader.priority";
     public static final String SHARD_GIDX_LPRIORITY = "shard.global.index.table.loader.priority";
     public static final String SHARD_GRIDX_LPRIORITY = "shard.global.rindex.table.loader.priority";
+    public static final String SHARD_DAY_INDEX_LPRIORITY = "shard.global.shard.day.index.table.loader.priority";
+    public static final String SHARD_YEAR_INDEX_LPRIORITY = "shard.global.shard.year.index.table.loader.priority";
 
     public static final String IS_REINDEX_ENABLED = "ingest.reindex.enabled";
     public static final String FIELDS_TO_REINDEX = "ingest.reindex.fields";
+
+    public static final String DAY_INDEX_ENABLED = "year.index.enabled";
+    public static final String YEAR_INDEX_ENABLED = "day.index.enabled";
 
     /**
      * name of ACCUMULO table to store DATAWAVE metadata
@@ -192,6 +204,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private float bloomFilteringTimeoutThreshold;
     private Text shardTableName = null;
     private Text shardIndexTableName = null;
+    private Text shardDayIndexTableName = null;
+    private Text shardYearIndexTableName = null;
     private Text indexStatsTableName = null;
     private Text shardReverseIndexTableName = null;
     private Text metadataTableName = null;
@@ -205,6 +219,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     private boolean shardIndexCreateUids = true;
     private boolean suppressEventKeys = false;
+    boolean dayIndexEnabled = false;
+    boolean yearIndexEnabled = false;
 
     /**
      * Determines whether or not we produce cardinality estimates for data
@@ -244,6 +260,28 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             log.warn(SHARD_GIDX_TNAME + " not specified, no global index mutations will be created.");
         else
             setShardIndexTableName(new Text(tableName));
+
+        dayIndexEnabled = conf.getBoolean(DAY_INDEX_ENABLED, false);
+        if (dayIndexEnabled) {
+            tableName = conf.get(SHARD_DAY_INDEX_TABLE_NAME, null);
+            if (tableName == null) {
+                log.warn(SHARD_DAY_INDEX_TABLE_NAME + " not specified, setting to default value");
+                setShardDayIndexTableName(new Text(TableName.SHARD_DAY_INDEX));
+            } else {
+                setShardDayIndexTableName(new Text(tableName));
+            }
+        }
+
+        yearIndexEnabled = conf.getBoolean(YEAR_INDEX_ENABLED, false);
+        if (yearIndexEnabled) {
+            tableName = conf.get(SHARD_YEAR_INDEX_TABLE_NAME, null);
+            if (tableName == null) {
+                log.warn(SHARD_YEAR_INDEX_TABLE_NAME + " not specified, setting to default value");
+                setShardDayIndexTableName(new Text(TableName.SHARD_YEAR_INDEX));
+            } else {
+                setShardDayIndexTableName(new Text(tableName));
+            }
+        }
 
         tableName = conf.get(SHARD_GRIDX_TNAME, null);
         if (null == tableName)
@@ -332,6 +370,16 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (null != tableName)
             tableNames.add(tableName);
 
+        tableName = conf.get(SHARD_DAY_INDEX_TABLE_NAME, null);
+        if (null != tableName) {
+            tableNames.add(tableName);
+        }
+
+        tableName = conf.get(SHARD_YEAR_INDEX_TABLE_NAME, null);
+        if (null != tableName) {
+            tableNames.add(tableName);
+        }
+
         tableName = conf.get(METADATA_TABLE_NAME, null);
         if (null != tableName)
             tableNames.add(tableName);
@@ -362,6 +410,16 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         tableName = conf.get(SHARD_GRIDX_TNAME, null);
         if (null != tableName)
             priorities[index++] = conf.getInt(SHARD_GRIDX_LPRIORITY, 40);
+
+        tableName = conf.get(SHARD_DAY_INDEX_TABLE_NAME, null);
+        if (null != tableName) {
+            priorities[index++] = conf.getInt(SHARD_DAY_INDEX_LPRIORITY, 30);
+        }
+
+        tableName = conf.get(SHARD_DAY_INDEX_TABLE_NAME, null);
+        if (null != tableName) {
+            priorities[index++] = conf.getInt(SHARD_YEAR_INDEX_LPRIORITY, 30);
+        }
 
         tableName = conf.get(METADATA_TABLE_NAME, null);
         if (null != tableName)
@@ -759,7 +817,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
 
-            /**
+            /*
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
              * lower visibility
              */
@@ -775,7 +833,95 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         }
 
+        if (dayIndexEnabled) {
+            writeShardDayIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+        }
+
+        if (yearIndexEnabled) {
+            writeShardYearIndexKeyBitSet(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+        }
+
         return values;
+    }
+
+    public void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String column, String fieldValue, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
+        if (shardId != null && fieldValue != null && column != null && visibility != null) {
+            String row = new String(shardId);
+            String cf = fieldValue;
+            String cq = column + '\u0000' + event.getDataType().outputName();
+            String viz = new String(visibility);
+
+            Key key = new Key(row, cf, cq, viz);
+            BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
+            Value value = getValueForDayIndex(row);
+            values.put(bulkIngestKey, value);
+            log.info("wrote key for shard day index");
+        }
+    }
+
+    public Value getValueForDayIndex(String shardId) {
+        // get the shard number
+        int shardNumber = getOffsetForDayIndex(shardId);
+        BitSet bits = new BitSet();
+        bits.set(shardNumber);
+        return new Value(bits.toByteArray());
+    }
+
+    /**
+     * Get the shard number used as the offset for the day index
+     *
+     * @param shard
+     *            the shard
+     * @return the day index offset
+     */
+    public int getOffsetForDayIndex(String shard) {
+        int index = shard.indexOf('_');
+        String bucket = shard.substring(index + 1);
+        return Integer.parseInt(bucket);
+    }
+
+    public void writeShardYearIndexKeyBitSet(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String column, String fieldValue,
+                    byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
+
+        if (shardId != null && fieldValue != null && column != null && visibility != null) {
+            String row = new String(shardId);
+            String cf = fieldValue;
+            String cq = column + '\u0000' + event.getDataType().outputName();
+            String viz = new String(visibility);
+
+            Key key = new Key(row, cf, cq, viz);
+            BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
+            Value value = getValueForYearIndex(row);
+            values.put(bulkIngestKey, value);
+            log.info("wrote bitset key for shard day index");
+        }
+    }
+
+    public Value getValueForYearIndex(String shard) {
+        // get the shard number
+        int shardNumber = getOffsetForYearIndex(shard);
+        BitSet bits = new BitSet();
+        bits.set(shardNumber);
+        return new Value(bits.toByteArray());
+    }
+
+    /**
+     * Calculate the day of the year used as the offset for the year index
+     *
+     * @param shard
+     *            the shard
+     * @return the year index offset
+     */
+    public int getOffsetForYearIndex(String shard) {
+        int index = shard.indexOf('_');
+        String date = shard.substring(0, index);
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        calendar.setTime(DateHelper.parse(date));
+
+        int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
+        log.trace("day of year: " + dayOfYear);
+        return dayOfYear;
     }
 
     /**
@@ -1477,6 +1623,14 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         this.shardIndexTableName = shardIndexTableName;
     }
 
+    public Text getShardDayIndexTableName() {
+        return shardDayIndexTableName;
+    }
+
+    public void setShardDayIndexTableName(Text shardDayIndexTableName) {
+        this.shardDayIndexTableName = shardDayIndexTableName;
+    }
+
     public void setProduceStats(boolean produceStats) {
         this.produceStats = produceStats;
     }
@@ -1599,6 +1753,22 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         return shardIndexCreateUids;
     }
 
+    public boolean getDayIndexEnabled() {
+        return dayIndexEnabled;
+    }
+
+    public void setDayIndexEnabled(boolean dayIndexEnabled) {
+        this.dayIndexEnabled = dayIndexEnabled;
+    }
+
+    public boolean getYearIndexEnabled() {
+        return yearIndexEnabled;
+    }
+
+    public void setYearIndexEnabled(boolean yearIndexEnabled) {
+        this.yearIndexEnabled = yearIndexEnabled;
+    }
+
     /**
      * helper object
      *
@@ -1610,4 +1780,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     @Override
     public void close(TaskAttemptContext context) {}
 
+    public Text getShardYearIndexTableName() {
+        return shardYearIndexTableName;
+    }
+
+    public void setShardYearIndexTableName(Text shardYearIndexTableName) {
+        this.shardYearIndexTableName = shardYearIndexTableName;
+    }
 }

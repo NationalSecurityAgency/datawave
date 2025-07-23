@@ -87,6 +87,8 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.DayIndexIngest;
+import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -259,6 +261,12 @@ public class MultiValueCompositeIndexTest {
 
         writeKeyValues(client, keyValues);
 
+        DayIndexIngest dayIndexIngest = new DayIndexIngest();
+        dayIndexIngest.convertToDayIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+        YearIndexIngest yearIndexIngest = new YearIndexIngest();
+        yearIndexIngest.convertToYearIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+
         ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
 
@@ -374,7 +382,12 @@ public class MultiValueCompositeIndexTest {
             // immediately from the ThreadedRangeBundler. The test framework also begins pulling ranges and the
             // final count is obviously incorrect
             List<QueryData> queries = getQueryRanges(query, true);
-            Assert.assertEquals(2196, queries.size());
+
+            if (logic.isUseShardedIndex()) {
+                Assert.assertEquals(2, queries.size());
+            } else {
+                Assert.assertEquals(2196, queries.size());
+            }
         }
 
         List<DefaultEvent> events = getQueryResults(query, true);

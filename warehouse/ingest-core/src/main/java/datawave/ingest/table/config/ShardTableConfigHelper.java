@@ -56,13 +56,14 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected Logger log;
 
     public enum ShardTableType {
-        SHARD, GIDX, GRIDX, DINDX
+        SHARD, GIDX, GRIDX, GLOBAL_DAY_INDEX, DINDX
     }
 
     protected Configuration conf;
     protected String tableName;
     protected String shardTableName; // shard table
     protected String shardGidxTableName; // global index
+    protected String shardDayIndexTableName; // global index
     protected String shardGridxTableName; // global reverse index
     protected String shardDictionaryTableName;
     protected ShardTableType tableType;
@@ -75,12 +76,14 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         shardTableName = conf.get(ShardedDataTypeHandler.SHARD_TNAME, null);
         shardGidxTableName = conf.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, null);
+        shardDayIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
         shardGridxTableName = conf.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, null);
         shardDictionaryTableName = conf.get(ShardedDataTypeHandler.SHARD_DINDX_NAME, null);
         markingsSetupIteratorEnabled = conf.getBoolean(MARKINGS_SETUP_ITERATOR_ENABLED, markingsSetupIteratorEnabled);
         markingsSetupIteratorConfig = conf.get(MARKINGS_SETUP_ITERATOR_CONFIG, markingsSetupIteratorConfig);
 
-        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardDictionaryTableName == null) {
+        if (shardTableName == null && shardGidxTableName == null && shardDayIndexTableName == null && shardGridxTableName == null
+                        && shardDictionaryTableName == null) {
             throw new IllegalArgumentException("No Shard Tables Defined");
         }
 
@@ -125,13 +128,15 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         }
 
-        if (shardTableName != null && tableName.equals(shardTableName)) {
+        if (tableName.equals(shardTableName)) {
             this.tableType = ShardTableType.SHARD;
-        } else if (shardGidxTableName != null && tableName.equals(shardGidxTableName)) {
+        } else if (tableName.equals(shardGidxTableName)) {
             this.tableType = ShardTableType.GIDX;
-        } else if (shardGridxTableName != null && tableName.equals(shardGridxTableName)) {
+        } else if (tableName.equals(shardGridxTableName)) {
             this.tableType = ShardTableType.GRIDX;
-        } else if (shardDictionaryTableName != null && tableName.equals(shardDictionaryTableName)) {
+        } else if (tableName.equals(shardDayIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_DAY_INDEX;
+        } else if (tableName.equals(shardDictionaryTableName)) {
             this.tableType = ShardTableType.DINDX;
         } else {
             throw new IllegalArgumentException("Invalid Shard Table Definition For: " + tableName);
@@ -152,7 +157,9 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             case GRIDX:
                 configureGridxTable(tops);
                 break;
-
+            case GLOBAL_DAY_INDEX:
+                // do nothing for this table
+                break;
             case DINDX:
                 configureDictionaryTable(tops);
 
