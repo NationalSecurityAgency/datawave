@@ -94,6 +94,6 @@ jobs:
       run: |
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Dversion.accumulo=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  
