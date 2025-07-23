@@ -69,6 +69,63 @@
           />
         </template>
         <template v-slot:top-right>
+          <div>
+            <q-btn
+              size="10px"
+              color="cyan-8"
+              icon="bi-funnel-fill"
+              style="margin-right: 10px; padding: 2px;"
+              dense
+              ref="buttonRef"
+            >
+              <q-menu
+                anchor="bottom right"
+                self="top right"
+                :offset="[0, 5]"
+              >
+                <q-card style="max-width: 205px; padding: 5px; box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);" class="q-pa-sm">
+                  <q-card-section class="text-center text-subtitle1" style="font-weight: 550;">
+                    FILTER DAYS
+                  </q-card-section>
+                  <q-separator />
+                  <q-card-section class="q-gutter-sm">
+                    <div class="row items-center q-col-gutter-sm">
+                      <q-input
+                        dense
+                        color="cyan-8"
+                        v-model="search"
+                        placeholder="30"
+                        @keyup.enter="applyFilter"
+                        style="width: 50px; margin-left: 15px;"
+                        input-class="text-center"
+                      />
+                      <q-item-label style="font-weight: 450;"> DAY(S) PRIOR</q-item-label>
+                    </div>
+                  </q-card-section>
+                  <q-separator />
+                  <q-card-section class="q-pt-none">
+                    <div class="row items-center q-gutter-sm" style="margin-top: 15px;">
+                      <q-btn
+                        dense
+                        style="padding: 5px;"
+                        size="12px"
+                        label="Apply"
+                        color="cyan-8"
+                        @click="applyFilter"
+                      />
+                      <q-btn
+                        dense
+                        style="padding: 5px;"
+                        size="12px"
+                        label="Show All Rows"
+                        color="cyan-8"
+                      />
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </q-menu>
+            </q-btn>
+          </div>
           <q-input
             borderless
             dense
@@ -83,7 +140,6 @@
                 size="12px"
                 color="cyan-8"
                 icon="search"
-                round
                 dense
                 @click="queryTable"
               />
@@ -206,6 +262,7 @@ const router = useRouter();
 const changeFilter = ref<string>('');
 const banner = ref<Banner>();
 const system = ref<System>();
+const search = ref('');
 let rows: QTableProps['rows'] = [];
 const paginationFront = ref({
   rowsPerPage: 200,
@@ -262,6 +319,7 @@ onMounted(() => {
       }
     });
     rows = Formatters.setVisibility(rows);
+    // new formatter here
     loading.value = false;
   })
   .catch((reason) => {
@@ -276,28 +334,11 @@ onMounted(() => {
   }
 });
 
-// This watch() handles a URL Change from a previous query.
-// Logic: Input + Table (reactive URL -> UI + Filters)
-watch(
-  () => route.query.search,
-  (searchVal) => {
-    // Converts the input into a valid string to be queried.
-    let searchValNew = Formatters.filterSearch(searchVal, '');
-
-    if (searchValNew !== changeFilter.value) {
-      changeFilter.value = searchValNew;
-      if (searchValNew) {
-        // Triggers a re-query if the user has changed to a new value.
-        queryTable();
-      } else {
-        // This retriggers back to the original state if user clears.
-        filter.value = '';
-        const originalRows = rows;
-        rows = Formatters.setVisibility(originalRows);
-      }
-    }
+function applyFilter(): void {
+  if (Number.isInteger(+search.value) && +search.value >= 0) {
+    console.log('Applied filter:', search.value)
   }
-);
+}
 
 // Export - Attempts to Wrap the CSV and Download.
 function exportTable(this: any) {
