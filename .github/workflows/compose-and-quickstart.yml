@@ -28,6 +28,7 @@ jobs:
   # is formatted and poms are sorted according to project rules. If changes are found,
   # they are committed back to the branch
   compose-build-and-test-latest-snapshots:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Extract branch name

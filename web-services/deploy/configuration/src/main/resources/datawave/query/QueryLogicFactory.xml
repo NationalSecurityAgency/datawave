@@ -256,6 +256,7 @@
                 ${event.query.filters.classnames}
             </list>
         </property>
+        <property name="fieldRuleClassName" value="${event.query.field.rule.class.name}" />
         <property name="filterOptions" ref="BaseEventQueryFilterOptions" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
