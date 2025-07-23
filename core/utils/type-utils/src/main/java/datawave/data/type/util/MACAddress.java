@@ -9,6 +9,11 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
 
     private static final long serialVersionUID = 4366259028581959024L;
 
+    private static final String DOT_REGEX = "\\.";
+
+    private static final String MAC_REGEX_1 = "^[0-9a-fA-F]+$";
+    private static final String MAC_REGEX_2 = "^([0-9a-fA-F]+[^0-9a-fA-F])+[0-9a-fA-F]+$";
+
     /**
      * String representation of the MAC address
      */
@@ -74,7 +79,7 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
 
         if (!this.separator.equals("")) {
             String sepRegex = new String(this.separator);
-            if (this.separator.matches("\\.")) {
+            if (this.separator.matches(DOT_REGEX)) {
                 sepRegex = "\\" + sepRegex;
             }
             returnAddress = returnAddress.replaceAll(this.separator, "");
@@ -92,7 +97,7 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
         int totalStringLength = MAC_ADDRESS_LENGTH + groups - 1;
         int digitCount = 1;
         String sepRegex = new String(sep);
-        if (sepRegex.matches("\\.")) {
+        if (sepRegex.matches(DOT_REGEX)) {
             sepRegex = "\\" + sepRegex;
         }
         // populate replacement as a regex to properly format / separate the hex digits
@@ -223,10 +228,10 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
      *             if unable to parse a MAC address
      */
     public static MACAddress parse(String addr) {
-        if (addr.matches("^[0-9a-fA-F]+$")) {
+        if (addr.matches(MAC_REGEX_1)) {
             return parse(addr, "", MAC_ADDRESS_LENGTH, true);
-        } else if (addr.matches("^([0-9a-fA-F]+[^0-9a-fA-F])+[0-9a-fA-F]+$")) {
-            String[] pieces = addr.split("[^0-9a-fA-F]");
+        } else if (addr.matches(MAC_REGEX_2)) {
+            String[] pieces = addr.split(MAC_REGEX_1);
             int groupingSize = MAC_ADDRESS_LENGTH / pieces.length;
             String sep = String.valueOf(addr.charAt(groupingSize));
             return parse(addr, sep, groupingSize, true);
