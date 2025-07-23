@@ -22,6 +22,14 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
 
     private static final String YYYYMMDD_REGEX = "^(19|20)\\d\\d([\\-\\. ])?[0-3]\\d\\2[01]\\d$";
 
+    private static final String YYYYDDMM_REGEX = "^(19|20)\\d\\d[0-3]\\d[01]\\d$";
+
+    private static final String DD_MM_YYYY_REGEX = "^[0-3]\\d([\\-\\.])[01]\\d\\1(19|20)\\d\\d ([0-1]\\d|2[0-4])$";
+
+    private static final String HHMM_REGEX_1 = "^[0-3]\\d([\\-\\.])[1-9]\\1(19|20)\\d\\d ([0-1]\\d|2[0-4])$";
+
+    private static final String YYYY_JJJ_REGEX = "^(19|20)\\d\\d([\\-\\. ])([0-2]\\d\\d|3[0-5]\\d|36[0-6])$";
+
     /**
      * A valid phone number must contain at least 7 digits.
      */
@@ -232,13 +240,13 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
             throw new IllegalArgumentException(number + " looks like a yyyymmdd date");
         } else if (number.matches(YYYYMMDD_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a yyyy dd mm date");
-        } else if (number.matches("^(19|20)\\d\\d[0-3]\\d[01]\\d$")) {
+        } else if (number.matches(YYYYDDMM_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a yyyyddmm date");
-        } else if (number.matches("^[0-3]\\d([\\-\\.])[01]\\d\\1(19|20)\\d\\d ([0-1]\\d|2[0-4])$")) {
+        } else if (number.matches(DD_MM_YYYY_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a dd-mm-yyyy hh:mm date");
-        } else if (number.matches("^[0-3]\\d([\\-\\.])[1-9]\\1(19|20)\\d\\d ([0-1]\\d|2[0-4])$")) {
+        } else if (number.matches(HHMM_REGEX_1)) {
             throw new IllegalArgumentException(number + " looks like a dd-mm-yyyy hh:mm date");
-        } else if (number.matches("^(19|20)\\d\\d([\\-\\. ])([0-2]\\d\\d|3[0-5]\\d|36[0-6])$")) {
+        } else if (number.matches(YYYY_JJJ_REGEX)) {
             throw new IllegalArgumentException(number + " looks like a yyyy jjj date");
         }
 
