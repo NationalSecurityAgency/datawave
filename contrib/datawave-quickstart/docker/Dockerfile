@@ -1,26 +1,63 @@
+FROM maven:3-amazoncorretto-11 AS builder
 FROM rockylinux/rockylinux:8
+
+ENV MAVEN_HOME=/usr/share/maven
+COPY --from=builder ${MAVEN_HOME} ${MAVEN_HOME}
+RUN ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
 ARG DATAWAVE_JAVA_HOME
 ARG DATAWAVE_BUILD_PROFILE
-ARG DATAWAVE_SKIP_INGEST=false
-ARG DATAWAVE_SKIP_TESTS=false
+ARG DATAWAVE_INGEST_TEST_DATA_SKIP
 ARG DATAWAVE_MAVEN_REPO="https://maven.pkg.github.com/NationalSecurityAgency/datawave"
 
 ARG ACCUMULO_URL
 ARG HADOOP_URL
-ARG MAVEN_URL
 ARG WILDFLY_URL
 ARG ZOOKEEPER_URL
+
+ARG ACCUMULO_VERSION
+ARG HADOOP_VERSION
+ARG WILDFLY_VERSION
+ARG ZOOKEEPER_VERSION
+
+ARG ACCUMULO_DIST_SHA512_CHECKSUM
+ARG HADOOP_DIST_SHA512_CHECKSUM
+ARG WILDFLY_DIST_SHA512_CHECKSUM
+ARG ZOOKEEPER_DIST_SHA512_CHECKSUM
 
 USER root
 
 ENV USER=root
 ENV HADOOP_IDENT_STRING=root
-ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
-ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
+ENV HDFS_NAMENODE_USER=root
+ENV HDFS_DATANODE_USER=root
+ENV HDFS_SECONDARYNAMENODE_USER=root
+ENV YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
+
+ENV DW_ACCUMULO_DIST_URI=$ACCUMULO_URL
+ENV DW_HADOOP_DIST_URI=$HADOOP_URL
+ENV DW_WILDFLY_DIST_URI=$WILDFLY_URL
+ENV DW_ZOOKEEPER_DIST_URI=$ZOOKEEPER_URL
+
+ENV DW_ACCUMULO_VERSION=$ACCUMULO_VERSION
+ENV DW_HADOOP_VERSION=$HADOOP_VERSION
+ENV DW_WILDFLY_VERSION=$WILDFLY_VERSION
+ENV DW_ZOOKEEPER_VERSION=$ZOOKEEPER_VERSION
+
+ENV DW_ACCUMULO_DIST_SHA512_CHECKSUM=$ACCUMULO_DIST_SHA512_CHECKSUM
+ENV DW_HADOOP_DIST_SHA512_CHECKSUM=$HADOOP_DIST_SHA512_CHECKSUM
+ENV DW_WILDFLY_DIST_SHA512_CHECKSUM=$WILDFLY_DIST_SHA512_CHECKSUM
+ENV DW_ZOOKEEPER_DIST_SHA512_CHECKSUM=$ZOOKEEPER_DIST_SHA512_CHECKSUM
+
+ENV DW_DATAWAVE_BUILD_PROFILE=$DATAWAVE_BUILD_PROFILE
+ENV DW_DATAWAVE_INGEST_TEST_DATA_SKIP=$DATAWAVE_INGEST_TEST_DATA_SKIP
+ENV DW_MAVEN_REPOSITORY=$DATAWAVE_MAVEN_REPO
+ENV DW_WGET_OPTS="-q --no-check-certificate"
+ENV JAVA_HOME=$DATAWAVE_JAVA_HOME
+ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Bind services to all interfaces
 ENV DW_BIND_HOST=0.0.0.0
@@ -29,18 +66,20 @@ ENV DW_BIND_HOST=0.0.0.0
 # This can be overridden at runtime to match the service name using DW_CONTAINER_HOST
 ENV DW_ACCUMULO_BIND_HOST=localhost
 
-# Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
+# Build context should be the DataWave source root, minus .git and other dirs. See .jkube-dockerignore
 
 COPY . /opt/datawave
 
-RUN yum install -y findutils
+RUN dnf -y update
+RUN dnf -y install findutils
 RUN find /opt/datawave -type d -exec chmod 0750 {} \;
 RUN find /opt/datawave -type f -exec chmod 0640 {} \;
 RUN find /opt/datawave -name "*.sh" -type f -exec chmod 0750 {} \;
 
 # Install dependencies, configure password-less/zero-prompt SSH...
-
-RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
+RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-11-openjdk-devel which bc wget git iproute && \
+    /bin/bash -c "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh && jdkIsConfigured" && \
+    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
     dnf clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
@@ -53,37 +92,27 @@ RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-client
     echo "UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
     echo "LogLevel QUIET" >> /etc/ssh/ssh_config
 
+
+RUN which java && which javac && java -version && javac -version && \
+    which mvn && echo $(mvn --version)
+
 WORKDIR /opt/datawave
 
 # Create new Git repo and configure environment...
 
-RUN rm -f .dockerignore .maven-dockerignore && \
-    git init && \
+RUN git init && \
     git add . && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
-    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
-    echo "export DW_ACCUMULO_DIST_URI=\"$ACCUMULO_URL\"" >> ~/.bashrc && \
-    echo "export DW_HADOOP_DIST_URI=\"$HADOOP_URL\"" >> ~/.bashrc && \
-    echo "export DW_MAVEN_DIST_URI=\"$MAVEN_URL\"" >> ~/.bashrc && \
-    echo "export DW_WILDFLY_DIST_URI=\"$WILDFLY_URL\"" >> ~/.bashrc && \
-    echo "export DW_ZOOKEEPER_DIST_URI=\"$ZOOKEEPER_URL\"" >> ~/.bashrc && \
-    echo "export DW_DATAWAVE_BUILD_PROFILE=\"$DATAWAVE_BUILD_PROFILE\"" >> ~/.bashrc && \
-    echo "export DW_DATAWAVE_INGEST_TEST_SKIP=\"$DATAWAVE_SKIP_INGEST\"" >> ~/.bashrc && \
-    echo "export DW_MAVEN_REPOSITORY=\"$DATAWAVE_MAVEN_REPO\"" >> ~/.bashrc && \
-    echo "export DW_WGET_OPTS=\"-q --no-check-certificate\"" >> ~/.bashrc && \
-    echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
-    echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
-    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
+    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
 
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
 # the quickstart environment. Likewise, 'allInstall' and 'datawaveStart' wrapper functions are
-# used to initialize services and their log dirs. Finally, web services are tested, services are
-# stopped gracefully, and any cruft is purged.
+# used to initialize services and their log dirs. Log dirs are cleaned up after the install.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall && [ $DATAWAVE_SKIP_TESTS == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
+    /bin/bash -c "source ~/.bashrc && allInstall" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \

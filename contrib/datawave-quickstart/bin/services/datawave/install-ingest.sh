@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # Resolve env.sh
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -10,24 +11,31 @@ source "${THIS_DIR}/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 source "${SERVICES_DIR}/accumulo/bootstrap.sh"
 
-[ -z "$( which bc )" ] && fatal "DataWave Ingest install cannot proceed because 'bc' was not found. Please install 'bc' and then resume via 'allInstall' or 'datawaveIngestInstall"
+# if JDK is not installed exit early
+jdkIsConfigured
 
-hadoopIsInstalled || fatal "DataWave Ingest requires that Hadoop be installed"
-accumuloIsInstalled || fatal "DataWave Ingest requires that Accumulo be installed"
+[ -z "$( which bc )" ] && fatal "DataWave Ingest install cannot proceed because 'bc' was not found. Please install 'bc' and then resume via 'allInstall' or 'datawaveIngestInstall" && exit 1
 
-datawaveIngestIsInstalled && info "DataWave Ingest is already installed" && exit 1
+hadoopIsInstalled || ( fatal "DataWave Ingest requires that Hadoop be installed" && exit 1 )
+accumuloIsInstalled || ( fatal "DataWave Ingest requires that Accumulo be installed" && exit 1 )
 
-[ -f "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_DIST}" ] || fatal "DataWave Ingest tarball not found"
+if datawaveIngestIsInstalled ; then
+    info "DataWave Ingest is already installed"
+    exit 0
+fi
+
+info "Installing DataWave Ingest..."
+getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
+DW_DATAWAVE_INGEST_DIST="${tarball}"
+[ -f "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_DIST}" ] || ( fatal "DataWave Ingest tarball not found" && exit 1 )
 
 TARBALL_BASE_DIR="${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_BASEDIR}"
 
 # Extract, set symlink, and verify...
-mkdir "${TARBALL_BASE_DIR}" || fatal "Failed to create DataWave Ingest base directory"
-tar xf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_DIST}" -C "${TARBALL_BASE_DIR}" --strip-components=1 || fatal "Failed to extract DataWave Ingest tarball"
-( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/datawave/${DW_DATAWAVE_INGEST_BASEDIR}" "${DW_DATAWAVE_INGEST_SYMLINK}" ) || fatal "Failed to set DataWave Ingest symlink"
-
-! datawaveIngestIsInstalled && fatal "DataWave Ingest was not installed"
-
+mkdir "${TARBALL_BASE_DIR}" || ( fatal "Failed to create DataWave Ingest base directory" && exit 1 )
+tar xf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_DIST}" -C "${TARBALL_BASE_DIR}" --strip-components=1 || ( fatal "Failed to extract DataWave Ingest tarball" && exit 1 )
+( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/datawave/${DW_DATAWAVE_INGEST_BASEDIR}" "${DW_DATAWAVE_INGEST_SYMLINK}" ) || ( fatal "Failed to set DataWave Ingest symlink" && exit 1 )
+datawaveIngestIsInstalled || ( fatal "DataWave Ingest was not installed" && exit 1 )
 info "DataWave Ingest tarball extracted and symlinked"
 
 if ! hadoopIsRunning ; then
@@ -44,7 +52,7 @@ if [[ -n "${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" ]] ; then
    IFS="${OLD_IFS}"
 
    for dir in "${HDFS_RAW_INPUT_DIRS[@]}" ; do
-      hdfs dfs -mkdir -p "${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/${dir}" || fatal "Failed to create HDFS directory: ${dir}"
+      hdfs dfs -mkdir -p "${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/${dir}" || ( fatal "Failed to create HDFS directory: ${dir}" && exit 1 )
    done
 fi
 
@@ -61,7 +69,7 @@ fi
 
 if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
    if ${HADOOP_HOME}/bin/hdfs dfs -test -f ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/*.jar > /dev/null 2>&1 ; then
-      ${HADOOP_HOME}/bin/hdfs dfs -rm -R ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/* || fatal "HDFS delete failed for ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/*"
+      ${HADOOP_HOME}/bin/hdfs dfs -rm -R ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/* || ( fatal "HDFS delete failed for ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/*" && exit 1 )
    fi
    info "Copying DataWave jars into HDFS dir: ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib ]; then
@@ -72,7 +80,7 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
    fi
 else
    mkdir "${ACCUMULO_HOME}/lib/ext"
-   [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!"
+   [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!" && exit 1
    info "Removing any existing jars from ${ACCUMULO_HOME}/lib/ext"
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar
    info "Copying DataWave jars into ${ACCUMULO_HOME}/lib and ${ACCUMULO_HOME}/lib/ext"
@@ -106,7 +114,7 @@ if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
 fi
 
 if [ "${OK_TO_EXEC_INIT_SCRIPT}" == true ] ; then
-    ${ACCUMULO_HOME}/bin/accumulo shell -u root -p "${DW_ACCUMULO_PASSWORD}" -f "${ACCUMULO_TMP_SCRIPT}" || fatal "Failed to execute $ACCUMULO_TMP_SCRIPT on Accumulo!"
+    ${ACCUMULO_HOME}/bin/accumulo shell -u root -p "${DW_ACCUMULO_PASSWORD}" -f "${ACCUMULO_TMP_SCRIPT}" || ( fatal "Failed to execute $ACCUMULO_TMP_SCRIPT on Accumulo!" && exit 1 )
 fi
 
 # ----------------------
@@ -121,9 +129,9 @@ else
    error "Unable to write ingest-passwd.sh, missing ${DW_DATAWAVE_INGEST_CONFIG_HOME} directory"
 fi
 
-[ ! -d "${DW_DATAWAVE_INGEST_LOG_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOG_DIR}"
-[ ! -d "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}"
-[ ! -d "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}"
+[ ! -d "${DW_DATAWAVE_INGEST_LOG_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOG_DIR}" || exit 1
+[ ! -d "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" || exit 1
+[ ! -d "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" || exit 1
 
 OK_TO_LOAD_JOB_CACHE=true
 if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
@@ -133,7 +141,7 @@ if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
 fi
 
 if [ "${OK_TO_LOAD_JOB_CACHE}" == true ] ; then
-   ! datawaveIngestLoadJobCache && fatal "DataWave Ingest initialization failed"
+   datawaveIngestLoadJobCache || ( fatal "DataWave Ingest initialization failed" && exit 1 )
 fi
 
 #==============================================================================
@@ -143,7 +151,7 @@ function initializeDatawaveTables() {
     # create tables
     if [[ ${DW_DATAWAVE_SKIP_CREATE_TABLES} != true ]]; then
         info "creating datawave tables, splits, and caches ..."
-        ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-all-tables.sh || fatal "error creating tables"
+        ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-all-tables.sh || ( fatal "error creating tables" && exit 1 )
         # create splits for shard table for today
         local _today=$(date "+%Y%m%d")
         ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-shards-since.sh ${_today}
@@ -178,5 +186,4 @@ echo
 info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-ingest.sh to view/edit commands as needed"
 
 # Ingest raw data examples, if appropriate...
-
-[ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_DATAWAVE_INGEST_TEST_SKIP}" == false ] && datawaveIngestExamples
+( [ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_DATAWAVE_INGEST_TEST_DATA_SKIP}" == false ] && datawaveIngestExamples ) || ( info "sample data not ingested" && exit 0 )
