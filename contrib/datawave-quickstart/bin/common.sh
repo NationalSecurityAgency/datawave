@@ -94,7 +94,8 @@ function verifyChecksum() {
           error "------------------------------------------------------------------------"
           error "$(printRed "CHECKSUM MISMATCH") - Could not verify integrity of: ${tarballName}"
           error "------------------------------------------------------------------------"
-          kill -INT $$
+          fatal "Checksum verification failed!"
+          return 1
       fi
   fi
 }
@@ -108,21 +109,22 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
-          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
+          ( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || ( echo "File copy failed for ${uri:7}" && return 1 )
       elif [[ ${uri} == http://* ]] ; then
           if ! askYesNo "Are you sure you want to download ${tarball} using HTTP? $( printRed "This can potentially be insecure." )" ; then
-            kill -INT $$
+            return 1
           else
-            $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
+            ( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" ) || ( echo "wget failed for ${uri:7}" && return 1 )
           fi
       elif [[ ${uri} == https://* ]] ; then
-          $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
+          ( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" ) || ( echo "wget failed for ${uri:7}" && return 1 )
       else
         return 1
       fi
    fi
 }
 
+# Needed for users who run locally instead of containers
 function downloadMavenTarball() {
    local pomFile="${DW_DATAWAVE_SOURCE_DIR:-$( cd "${DW_CLOUD_HOME}/../.." && pwd )}/pom.xml"
    local rootProject=":$1"
@@ -133,7 +135,7 @@ function downloadMavenTarball() {
    tarball="${artifact}-${version}.tar.gz"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       # download from maven repo
-      output=$( mvn -f "${pomFile}" -pl "${rootProject}" -DremoteRepositories="remote-repo::default::${DW_MAVEN_REPOSITORY}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
+      output=$( mvn --show-version --batch-mode --errors --no-transfer-progress --file "${pomFile}" --projects "${rootProject}" -DremoteRepositories="remote-repo::default::${DW_MAVEN_REPOSITORY}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
          error "Failed to download ${tarball} via maven"
@@ -144,7 +146,7 @@ function downloadMavenTarball() {
       fi
 
       # copy to specified directory
-      output=$( mvn -f "${pomFile}" -pl "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
+      output=$( mvn --show-version --batch-mode --errors --no-transfer-progress --file "${pomFile}" --projects "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
          error "Failed to copy ${tarball} to ${tarballdir} via maven"
@@ -295,7 +297,7 @@ If that's not what you want, please use $(printGreen "[servicename|all]Uninstall
 Continue with installation?" || return 1
    fi
    for servicename in "${services[@]}" ; do
-      ${servicename}Install
+      ${servicename}Install || return 1
    done
 }
 
@@ -393,10 +395,11 @@ function allPrintenv() {
 }
 
 function assertCreateDir() {
-   [[ $# -eq 0 || -z "$1" ]] && fatal "[${FUNCNAME[0]}] Directory parameter cannot be empty"
+   [[ $# -eq 0 || -z "$1" ]] && fatal "[${FUNCNAME[0]}] Directory parameter cannot be empty" && return 1
    [ -d $1 ] && warn "[${FUNCNAME[0]}] already exists!" && return
    mkdir -p "$1" && info "Created directory: $1"
-   [ ! -d "$1" ] && fatal "[${FUNCNAME[0]}] configured base directory $1 does not exist"
+   [ ! -d "$1" ] && fatal "[${FUNCNAME[0]}] configured base directory $1 does not exist" && return 1
+   return 0
 }
 
 function sshIsInstalled() {
@@ -428,6 +431,7 @@ function jdkIsConfigured() {
          # Ensure that PATH and JAVA_HOME are in agreement
          if [[ "$(readlink -f "${JAVA_HOME}"/bin/javac)" != "$(readlink -f "${javacBinary}")" ]] ; then
             export PATH="${JAVA_HOME}/bin:${PATH}"
+            echo export PATH="${JAVA_HOME}/bin:${PATH}" >> ~/.bashrc
          fi
          return 0
       fi
@@ -439,11 +443,12 @@ function jdkIsConfigured() {
       if [[ -n "${foundIt}" ]] ; then
          # Ensure that JAVA_HOME is in agreement with javac path
          export JAVA_HOME="$(dirname $(dirname $(readlink -f "${javacBinary}")))"
+         echo export JAVA_HOME="$(dirname $(dirname $(readlink -f "${javacBinary}")))" >> ~/.bashrc
          info "Found '${requiredVersion}', setting JAVA_HOME to '${JAVA_HOME}'"
          return 0
       fi
    fi
 
-   error "'${requiredVersion}' not found. Please install/configure a compatible JDK"
+   fatal "'${requiredVersion}' not found. Please install/configure a compatible JDK"
    return 1
 }

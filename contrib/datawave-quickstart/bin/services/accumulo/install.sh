@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # Resolve env.sh
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -12,38 +13,62 @@ source "${THIS_DIR}/bootstrap.sh"
 # shellcheck source=../hadoop/bootstrap.sh
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 
-hadoopIsInstalled || fatal "Accumulo requires that Hadoop be installed"
+# if JDK is not installed exit early
+jdkIsConfigured
 
-# If Accumulo is not installed, verify that the two checksums match before installing.
-accumuloIsInstalled || verifyChecksum "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ACCUMULO_DIST_SHA512_CHECKSUM}"
-# If Zookeeper is not installed, verify that the two checksums match before installing.
-zookeeperIsInstalled || verifyChecksum "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM}"
+hadoopIsInstalled || ( fatal "Accumulo requires that Hadoop be installed" && exit 1 )
 
-if zookeeperIsInstalled ; then
-   info "ZooKeeper is already installed"
-else
-   [ -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" ] || fatal "ZooKeeper tarball not found"
-   mkdir "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}" || fatal "Failed to create ZooKeeper base directory"
-   # Extract ZooKeeper, set symlink, and verify...
-   tar xf "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" -C "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}" --strip-components=1 || fatal "Failed to extract ZooKeeper tarball"
-   #symlink the zookeeper jars if needed
-   ln -s ${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}/lib/* ${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}
-   ( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/accumulo/${DW_ZOOKEEPER_BASEDIR}" "${DW_ZOOKEEPER_SYMLINK}" ) || fatal "Failed to set ZooKeeper symlink"
-
-   zookeeperIsInstalled || fatal "ZooKeeper was not installed"
+# it might not be installed and we do not want to fail so we check with a traditional if statement
+if accumuloIsInstalled && zookeeperIsInstalled; then
+    info "Accumulo and Zookeeper are already installed"
+    exit 0
 fi
 
-accumuloIsInstalled && info "Accumulo is already installed" && exit 1
+# If Zookeeper is not installed, bootstrap and verify that the two checksums match before installing.
+if ! zookeeperIsInstalled ; then
+    bootstrapZookeeper
+    verifyChecksum "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM}" || exit 1
 
-[ -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ] || fatal "Accumulo tarball not found"
-mkdir "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}" || fatal "Failed to create Accumulo base directory"
-# Extract Accumulo, set symlink, and verify...
-tar xf "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" -C "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}" --strip-components=1 || fatal "Failed to extract Accumulo tarball"
-( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/accumulo/${DW_ACCUMULO_BASEDIR}" "${DW_ACCUMULO_SYMLINK}" ) || fatal "Failed to set Accumulo symlink"
+    info "Installing ZooKeeper..."
+    [ -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" ] || ( fatal "ZooKeeper tarball not found" && exit 1 )
+    mkdir "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}" || ( fatal "Failed to create ZooKeeper base directory" && exit 1 )
+    # Extract ZooKeeper, set symlink, and verify...
+    tar xf "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" -C "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}" --strip-components=1 || ( fatal "Failed to extract ZooKeeper tarball" && exit 1 )
+    #symlink the zookeeper jars if needed
+    ln -s ${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}/lib/* ${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}
+    ( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/accumulo/${DW_ZOOKEEPER_BASEDIR}" "${DW_ZOOKEEPER_SYMLINK}" ) || ( fatal "Failed to set ZooKeeper symlink" && exit 1 )
 
-accumuloIsInstalled || fatal "Accumulo was not installed"
+    if ! zookeeperIsInstalled ; then
+        fatal "ZooKeeper was not installed"
+        exit 1
+    else
+        info "ZooKeeper tarball extracted and symlinked"
+    fi
+else
+    info "ZooKeeper is already installed"
+fi
 
-info "Accumulo and ZooKeeper tarballs extracted and symlinked"
+# If Accumulo is not installed, bootstrap and verify that the two checksums match before installing.
+if ! accumuloIsInstalled ; then
+    bootstrapAccumulo
+    verifyChecksum "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ACCUMULO_DIST_SHA512_CHECKSUM}" || exit 1
+
+    info "Installing Accumulo..."
+    [ -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ] || ( fatal "Accumulo tarball not found" && exit 1 )
+    mkdir "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}" || ( fatal "Failed to create Accumulo base directory" && exit 1 )
+    # Extract Accumulo, set symlink, and verify...
+    tar xf "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" -C "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}" --strip-components=1 || ( fatal "Failed to extract Accumulo tarball" && exit 1 )
+    ( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/accumulo/${DW_ACCUMULO_BASEDIR}" "${DW_ACCUMULO_SYMLINK}" ) || ( fatal "Failed to set Accumulo symlink" && exit 1 )
+
+    if ! accumuloIsInstalled ; then
+        fatal "Accumulo was not installed"
+        exit 1
+    else
+        info "Accumulo tarball extracted and symlinked"
+    fi
+else
+    info "Accumulo is already installed"
+fi
 
 DW_ZOOKEEPER_CONF_DIR="${ZOOKEEPER_HOME}/conf"
 DW_ACCUMULO_CONF_DIR="${ACCUMULO_HOME}/conf"
@@ -66,7 +91,7 @@ else
    warn "No accumulo-client.properties content defined! :("
 fi
 
-assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}"
+assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}" || exit 1
 
 # Update tserver and other options in accumulo-env.sh
 sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
@@ -80,7 +105,7 @@ fi
 
 # Write zoo.cfg file using our settings in DW_ZOOKEEPER_CONF
 if [ -n "${DW_ZOOKEEPER_CONF}" ] ; then
-   echo "${DW_ZOOKEEPER_CONF}" > "${DW_ZOOKEEPER_CONF_DIR}/zoo.cfg" || fatal "Failed to write zoo.cfg"
+   echo "${DW_ZOOKEEPER_CONF}" > "${DW_ZOOKEEPER_CONF_DIR}/zoo.cfg" || ( fatal "Failed to write zoo.cfg" && exit 1 )
 else
    warn "No zoo.cfg content defined! :("
 fi
@@ -97,14 +122,14 @@ fi
 
 # Create VFS classpath directories
 if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ] && [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
-   "${HADOOP_HOME}/bin/hdfs" dfs -mkdir -p "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
+   "${HADOOP_HOME}/bin/hdfs" dfs -mkdir -p "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || ( fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}" && exit 1 )
 fi
 
 # Initialize Accumulo
 "${ACCUMULO_HOME}/bin/accumulo" init \
  --clear-instance-name \
  --instance-name "${DW_ACCUMULO_INSTANCE_NAME}" \
- --password "${DW_ACCUMULO_PASSWORD}" || fatal "Failed to initialize Accumulo"
+ --password "${DW_ACCUMULO_PASSWORD}" || ( fatal "Failed to initialize Accumulo" && exit 1 )
 
 echo
 info "Accumulo initialized and ready to start..."
