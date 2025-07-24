@@ -84,42 +84,42 @@ public class DocumentTest {
     public void testDocumentWithLcType() {
         Attribute<?> attr = createAttribute("LC", "value");
         d.put("LC", attr);
-        roundTrip(MAX_ITERATIONS, 39);
+        roundTrip(MAX_ITERATIONS, 32);
     }
 
     @Test
     public void testDocumentWithLcNoDiacriticsType() {
         Attribute<?> attr = createAttribute("LC_ND", "value");
         d.put("LC_ND", attr);
-        roundTrip(MAX_ITERATIONS, 42);
+        roundTrip(MAX_ITERATIONS, 35);
     }
 
     @Test
     public void testDocumentWithHexType() {
         Attribute<?> attr = createAttribute("HEX", "a1b2c3");
         d.put("HEX", attr);
-        roundTrip(MAX_ITERATIONS, 47);
+        roundTrip(MAX_ITERATIONS, 40);
     }
 
     @Test
     public void testDocumentWithNumberType() {
         Attribute<?> attr = createAttribute("NUM", "12");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 43);
+        roundTrip(MAX_ITERATIONS, 36);
     }
 
     @Test
     public void testDocumentWithNumberTypeNormalizedValue() {
         Attribute<?> attr = createAttribute("NUM", "+bE1.2");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 43);
+        roundTrip(MAX_ITERATIONS, 36);
     }
 
     @Test
     public void testDocumentWithNumberTypeLargeValue() {
         Attribute<?> attr = createAttribute("NUM", "12456789.987654321");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 74);
+        roundTrip(MAX_ITERATIONS, 67);
     }
 
     @Test
