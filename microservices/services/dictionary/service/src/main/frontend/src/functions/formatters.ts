@@ -80,8 +80,8 @@ export function maxSubstring(str: any, colName: any): any {
 }
 
 // Defines how the expandability is parsed on the table.
-export function buttonParse(col: any, row: any): boolean {
-  return row.button == 1;
+export function buttonParse(row: any): boolean {
+  return row.button && row.priorDays;
 }
 
 // Toggles how the row collapses based on the DOM. Filters visible rows.
@@ -90,7 +90,7 @@ export function toggleVisibility(row: any) {
 }
 
 // Set the Visibility in DOM, sorts and filters by lastUpdated, and the respective row to render button.
-export function setVisibility(rows: readonly any[]) {
+export function setVisibility(rows: readonly any[], priorDays?: number) {
   const fieldVisibility: Map<string, Ref<boolean>> = new Map<
     string,
     Ref<boolean>
@@ -152,11 +152,18 @@ export function setVisibility(rows: readonly any[]) {
     }
 
     const visibility = fieldVisibility.get(internalFieldName);
+    let priorDaysFilter = true;
+
+    if (priorDays !== undefined && priorDays >= 0) {
+      const priorDateCode = getDateCode(priorDays);
+      priorDaysFilter = Number(row.lastUpdated) >= Number(priorDateCode);
+    }
 
     row['toggleVisibility'] = () => {
       visibility!.value = !visibility?.value;
     };
     row['isVisible'] = visibility;
+    row['priorDays'] = priorDaysFilter;
   }
 
   return rows;
@@ -164,7 +171,16 @@ export function setVisibility(rows: readonly any[]) {
 
 // Lets the DOM know what is visible and what is not based on setVisibility filters.
 export function isVisible(row: any) {
-  return row.duplicate == 0 || row.isVisible.value;
+  return (row.duplicate == 0 || row.isVisible.value) && row.priorDays;
+}
+
+export function getDateCode(daysPrior = 0): number {
+  const date = new Date();
+  date.setDate(date.getDate() - daysPrior);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return Number(`${y}${m}${d}000000`);
 }
 
 // Filters the URL Search Bar to handle Edge Cases and only queries 1 item.

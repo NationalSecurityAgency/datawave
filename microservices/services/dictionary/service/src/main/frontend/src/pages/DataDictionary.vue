@@ -95,7 +95,7 @@
                         color="cyan-8"
                         v-model="search"
                         placeholder="30"
-                        @keyup.enter="applyFilter"
+                        @keyup.enter="queryTable(search)"
                         style="width: 50px; margin-left: 15px;"
                         input-class="text-center"
                       />
@@ -111,7 +111,7 @@
                         size="12px"
                         label="Apply"
                         color="cyan-8"
-                        @click="applyFilter"
+                        @click="queryTable(search)"
                       />
                       <q-btn
                         dense
@@ -160,7 +160,7 @@
         <template v-slot:body="props">
           <q-tr
             :props="props"
-            v-if="Formatters.buttonParse(props.cols, props.row)"
+            v-if="Formatters.buttonParse(props.row)"
           >
             <q-td class="cell-spacing">
               <q-btn
@@ -334,12 +334,6 @@ onMounted(() => {
   }
 });
 
-function applyFilter(): void {
-  if (Number.isInteger(+search.value) && +search.value >= 0) {
-    console.log('Applied filter:', search.value)
-  }
-}
-
 // Export - Attempts to Wrap the CSV and Download.
 function exportTable(this: any) {
   const rowsToExport = table.value?.filteredSortedRows.filter(
@@ -374,7 +368,7 @@ function exportTable(this: any) {
 }
 
 // Query - Runs through a Search Process as it waits for the user.
-async function queryTable(this: any) {
+async function queryTable(priorDays?: any) {
   // Wait Until User Enters...
   await waitUp();
 
@@ -395,7 +389,8 @@ async function queryTable(this: any) {
   const triggerRefresh = paginationFront.value.rowsPerPage;
 
   // 3 - Set the Current Rows to Filtered Value
-  rows = Formatters.setVisibility(rowsToExport);
+  rows = Formatters.setVisibility(rowsToExport, priorDays);
+  console.log(rows)
 
   // 4 - Trigger the Refresh
   paginationFront.value.rowsPerPage = 100;
