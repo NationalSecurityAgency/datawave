@@ -11,23 +11,30 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <properties>
-        <dist.accumulo>accumulo-${version.accumulo.tar.gz}-bin.tar.gz</dist.accumulo>
-        <dist.hadoop>hadoop-${version.hadoop.tar.gz}.tar.gz</dist.hadoop>
-        <dist.maven>apache-maven-${version.maven.tar.gz}-bin.tar.gz</dist.maven>
-        <dist.wildfly>wildfly-${version.wildfly.tar.gz}.Final.tar.gz</dist.wildfly>
-        <dist.zookeeper>apache-zookeeper-${version.zookeeper.tar.gz}-bin.tar.gz</dist.zookeeper>
+        <datawave.quickstart.ingest.test.data.skip>${skipIngest}</datawave.quickstart.ingest.test.data.skip>
+
+        <dist.accumulo>accumulo-${version.quickstart.accumulo}.tar.gz</dist.accumulo>
+        <dist.hadoop>hadoop-${version.quickstart.hadoop}.tar.gz</dist.hadoop>
+        <dist.wildfly>wildfly-${version.quickstart.wildfly}.tar.gz</dist.wildfly>
+        <dist.zookeeper>zookeeper-${version.quickstart.zookeeper}.tar.gz</dist.zookeeper>
+
+        <sha512.checksum.accumulo>1a27a144dc31f55ccc8e081b6c1bc6cc0362a8391838c53c166cb45291ff8f35867fd8e4729aa7b2c540f8b721f8c6953281bf589fc7fe320e4dc4d20b87abc4</sha512.checksum.accumulo>
+        <sha512.checksum.hadoop>de3eaca2e0517e4b569a88b63c89fae19cb8ac6c01ff990f1ff8f0cc0f3128c8e8a23db01577ca562a0e0bb1b4a3889f8c74384e609cd55e537aada3dcaa9f8a</sha512.checksum.hadoop>
+        <sha512.checksum.wildfly>fcbdff4bc275f478c3bf5f665a83e62468a920e58fcddeaa2710272dd0f1ce3154cdc371d5011763a6be24ae1a5e0bca0218cceea63543edb4b5cf22de60b485</sha512.checksum.wildfly>
+        <sha512.checksum.zookeeper>4d85d6f7644d5f36d9c4d65e78bd662ab35ebe1380d762c24c12b98af029027eee453437c9245dbdf2b9beb77cd6b690b69e26f91cf9d11b0a183a979c73fa43</sha512.checksum.zookeeper>
+
         <skipIngest>false</skipIngest>
-        <url.accumulo>https://dlcdn.apache.org/accumulo/${version.accumulo.tar.gz}/${dist.accumulo}</url.accumulo>
-        <url.hadoop>https://dlcdn.apache.org/hadoop/common/hadoop-${version.hadoop.tar.gz}/${dist.hadoop}</url.hadoop>
-        <url.maven>https://dlcdn.apache.org/maven/maven-3/${version.maven.tar.gz}/binaries/${dist.maven}</url.maven>
-        <url.wildfly>https://download.jboss.org/wildfly/${version.wildfly.tar.gz}.Final/${dist.wildfly}</url.wildfly>
-        <url.zookeeper>https://dlcdn.apache.org/zookeeper/zookeeper-${version.zookeeper.tar.gz}/${dist.zookeeper}</url.zookeeper>
-        <!-- These distributions and URLs should match what is listed in each service's bootstrap.sh script -->
-        <version.accumulo.tar.gz>2.1.3</version.accumulo.tar.gz>
-        <version.hadoop.tar.gz>3.3.6</version.hadoop.tar.gz>
-        <version.maven.tar.gz>3.9.11</version.maven.tar.gz>
-        <version.wildfly.tar.gz>17.0.1</version.wildfly.tar.gz>
-        <version.zookeeper.tar.gz>3.8.4</version.zookeeper.tar.gz>
+
+        <url.accumulo>file://${DW_CLOUD_PLUGINS}/accumulo/${dist.accumulo}</url.accumulo>
+        <url.hadoop>file://${DW_CLOUD_PLUGINS}/hadoop/${dist.hadoop}</url.hadoop>
+        <url.wildfly>file://${DW_CLOUD_PLUGINS}/datawave/${dist.wildfly}</url.wildfly>
+        <url.zookeeper>file://${DW_CLOUD_PLUGINS}/accumulo/${dist.zookeeper}</url.zookeeper>
+
+        <version.quickstart.accumulo>2.1.3</version.quickstart.accumulo>
+        <version.quickstart.hadoop>3.3.6</version.quickstart.hadoop>
+        <version.quickstart.wildfly>17.0.1</version.quickstart.wildfly>
+        <version.quickstart.zookeeper>3.8.4</version.quickstart.zookeeper>
+
     </properties>
     <dependencies>
         <dependency>
@@ -72,8 +79,8 @@
                         <fileset>
                             <directory>../bin/services/accumulo</directory>
                             <includes>
-                                <include>**/apache-zookeeper-*-bin.tar.gz</include>
-                                <include>**/accumulo-*-bin.tar.gz</include>
+                                <include>**/apache-zookeeper-*.tar.gz</include>
+                                <include>**/accumulo-*.tar.gz</include>
                                 <include>**/zookeeper-*.tar.gz</include>
                                 <include>**/accumulo-*.tar.gz</include>
                             </includes>
@@ -90,13 +97,6 @@
                             <directory>../bin/services/hadoop</directory>
                             <includes>
                                 <include>**/hadoop-*.tar.gz</include>
-                            </includes>
-                        </fileset>
-                        <fileset>
-                            <directory>../bin/services/maven</directory>
-                            <includes>
-                                <include>**/apache-maven-*-bin.tar.gz</include>
-                                <include>**/maven-*.tar.gz</include>
                             </includes>
                         </fileset>
                     </filesets>
@@ -195,30 +195,36 @@
                         <artifactId>kubernetes-maven-plugin</artifactId>
                         <configuration>
                             <verbose>true</verbose>
+                            <pushRegistry>${docker.image.prefix}</pushRegistry>
                             <images>
                                 <image>
-                                    <name>${docker.image.prefix}datawave/quickstart-${build.env}</name>
+                                    <name>quickstart-${build.env}:${project.version}</name>
                                     <build>
                                         <contextDir>${maven.multiModuleProjectDirectory}</contextDir>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <buildOptions>
                                             <memory>8589934592</memory>
                                         </buildOptions>
-                                        <tags>
-                                            <tag>latest</tag>
-                                            <tag>${project.version}</tag>
-                                        </tags>
                                         <args>
                                             <DATAWAVE_COMMIT_ID>${git.commit.id}</DATAWAVE_COMMIT_ID>
                                             <DATAWAVE_BRANCH_NAME>${git.branch}</DATAWAVE_BRANCH_NAME>
                                             <DATAWAVE_BUILD_PROFILE>${build.env}</DATAWAVE_BUILD_PROFILE>
-                                            <DATAWAVE_SKIP_INGEST>${skipIngest}</DATAWAVE_SKIP_INGEST>
-                                            <DATAWAVE_SKIP_TESTS>true</DATAWAVE_SKIP_TESTS>
+                                            <DATAWAVE_INGEST_TEST_DATA_SKIP>${datawave.quickstart.ingest.test.data.skip}</DATAWAVE_INGEST_TEST_DATA_SKIP>
+
                                             <ACCUMULO_URL>${url.accumulo}</ACCUMULO_URL>
                                             <HADOOP_URL>${url.hadoop}</HADOOP_URL>
-                                            <MAVEN_URL>${url.maven}</MAVEN_URL>
                                             <WILDFLY_URL>${url.wildfly}</WILDFLY_URL>
                                             <ZOOKEEPER_URL>${url.zookeeper}</ZOOKEEPER_URL>
+
+                                            <ACCUMULO_VERSION>${version.quickstart.accumulo}</ACCUMULO_VERSION>
+                                            <HADOOP_VERSION>${version.quickstart.hadoop}</HADOOP_VERSION>
+                                            <WILDFLY_VERSION>${version.quickstart.wildfly}</WILDFLY_VERSION>
+                                            <ZOOKEEPER_VERSION>${version.quickstart.zookeeper}</ZOOKEEPER_VERSION>
+
+                                            <ACCUMULO_DIST_SHA512_CHECKSUM>${sha512.checksum.accumulo}</ACCUMULO_DIST_SHA512_CHECKSUM>
+                                            <HADOOP_DIST_SHA512_CHECKSUM>${sha512.checksum.hadoop}</HADOOP_DIST_SHA512_CHECKSUM>
+                                            <WILDFLY_DIST_SHA512_CHECKSUM>${sha512.checksum.wildfly}</WILDFLY_DIST_SHA512_CHECKSUM>
+                                            <ZOOKEEPER_DIST_SHA512_CHECKSUM>${sha512.checksum.zookeeper}</ZOOKEEPER_DIST_SHA512_CHECKSUM>
                                         </args>
                                         <assembly>
                                             <name>/</name>
@@ -248,189 +254,35 @@
             </build>
         </profile>
         <profile>
-            <id>quickstart-default</id>
-            <activation>
-                <property>
-                    <name>!quickstart-maven</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <!-- the download plugin is beneficial because it caches the downloaded tarballs in the m2 repo -->
-                    <plugin>
-                        <groupId>com.googlecode.maven-download-plugin</groupId>
-                        <artifactId>download-maven-plugin</artifactId>
-                        <version>1.6.8</version>
-                        <executions>
-                            <execution>
-                                <id>download-zookeeper</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <url>${url.zookeeper}</url>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>download-accumulo</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <url>${url.accumulo}</url>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>download-hadoop</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <url>${url.hadoop}</url>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>download-maven</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <url>${url.maven}</url>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>download-wildfly</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <url>${url.wildfly}</url>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-accumulo-tarballs</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.basedir}/../bin/services/accumulo</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.outputDirectory}</directory>
-                                            <includes>
-                                                <include>${dist.zookeeper}</include>
-                                                <include>${dist.accumulo}</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-hadoop-tarballs</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.basedir}/../bin/services/hadoop</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.outputDirectory}</directory>
-                                            <includes>
-                                                <include>${dist.hadoop}</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-maven-tarballs</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.basedir}/../bin/services/maven</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.outputDirectory}</directory>
-                                            <includes>
-                                                <include>${dist.maven}</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-wildfly-tarball</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.basedir}/../bin/services/datawave</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.outputDirectory}</directory>
-                                            <includes>
-                                                <include>${dist.wildfly}</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>quickstart-maven</id>
             <activation>
                 <property>
-                    <name>quickstart-maven</name>
+                    <name>!skipDownload</name>
                 </property>
             </activation>
             <dependencies>
                 <dependency>
                     <groupId>gov.nsa.datawave.quickstart</groupId>
                     <artifactId>accumulo</artifactId>
-                    <version>${version.accumulo.tar.gz}</version>
+                    <version>${version.quickstart.accumulo}</version>
                     <type>tar.gz</type>
                 </dependency>
                 <dependency>
                     <groupId>gov.nsa.datawave.quickstart</groupId>
                     <artifactId>hadoop</artifactId>
-                    <version>${version.hadoop.tar.gz}</version>
-                    <type>tar.gz</type>
-                </dependency>
-                <dependency>
-                    <groupId>gov.nsa.datawave.quickstart</groupId>
-                    <artifactId>maven</artifactId>
-                    <version>${version.maven.tar.gz}</version>
+                    <version>${version.quickstart.hadoop}</version>
                     <type>tar.gz</type>
                 </dependency>
                 <dependency>
                     <groupId>gov.nsa.datawave.quickstart</groupId>
                     <artifactId>wildfly</artifactId>
-                    <version>${version.wildfly.tar.gz}</version>
+                    <version>${version.quickstart.wildfly}</version>
                     <type>tar.gz</type>
                 </dependency>
                 <dependency>
                     <groupId>gov.nsa.datawave.quickstart</groupId>
                     <artifactId>zookeeper</artifactId>
-                    <version>${version.zookeeper.tar.gz}</version>
+                    <version>${version.quickstart.zookeeper}</version>
                     <type>tar.gz</type>
                 </dependency>
             </dependencies>
@@ -446,7 +298,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <artifact>gov.nsa.datawave.quickstart:accumulo:${version.accumulo.tar.gz}:tar.gz</artifact>
+                                    <artifact>gov.nsa.datawave.quickstart:accumulo:${version.quickstart.accumulo}:tar.gz</artifact>
                                     <outputDirectory>${project.basedir}/../bin/services/accumulo</outputDirectory>
                                 </configuration>
                             </execution>
@@ -457,19 +309,8 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <artifact>gov.nsa.datawave.quickstart:hadoop:${version.hadoop.tar.gz}:tar.gz</artifact>
+                                    <artifact>gov.nsa.datawave.quickstart:hadoop:${version.quickstart.hadoop}:tar.gz</artifact>
                                     <outputDirectory>${project.basedir}/../bin/services/hadoop</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-maven-tarball</id>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <artifact>gov.nsa.datawave.quickstart:maven:${version.maven.tar.gz}:tar.gz</artifact>
-                                    <outputDirectory>${project.basedir}/../bin/services/maven</outputDirectory>
                                 </configuration>
                             </execution>
                             <execution>
@@ -479,7 +320,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <artifact>gov.nsa.datawave.quickstart:wildfly:${version.wildfly.tar.gz}:tar.gz</artifact>
+                                    <artifact>gov.nsa.datawave.quickstart:wildfly:${version.quickstart.wildfly}:tar.gz</artifact>
                                     <outputDirectory>${project.basedir}/../bin/services/datawave</outputDirectory>
                                 </configuration>
                             </execution>
@@ -490,7 +331,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <artifact>gov.nsa.datawave.quickstart:zookeeper:${version.zookeeper.tar.gz}:tar.gz</artifact>
+                                    <artifact>gov.nsa.datawave.quickstart:zookeeper:${version.quickstart.zookeeper}:tar.gz</artifact>
                                     <outputDirectory>${project.basedir}/../bin/services/accumulo</outputDirectory>
                                 </configuration>
                             </execution>

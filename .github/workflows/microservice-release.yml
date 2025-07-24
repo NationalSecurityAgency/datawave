@@ -58,9 +58,9 @@ env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
-  REGISTRY: ghcr.io
-  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
-  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+  GITHUB_REGISTRY: ghcr.io
+  GITHUB_USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  GITHUB_ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 
 jobs:
@@ -75,7 +75,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        token: ${{ env.ACCESS_TOKEN }}
+        token: ${{ env.GITHUB_ACCESS_TOKEN }}
         
     - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
       uses: actions/setup-java@v4
@@ -86,14 +86,15 @@ jobs:
     - name: Log in to the Container registry
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ env.USER_NAME }}
-        password: ${{ env.ACCESS_TOKEN }}
+        registry: ${{ env.GITHUB_REGISTRY }}
+        username: ${{ env.GITHUB_USER_NAME }}
+        password: ${{ env.GITHUB_ACCESS_TOKEN }}
     - name: Determine release version
       id: version
       run: |
         cd "${{ github.event.inputs.projectToRelease }}"
-        RAW_VERSION=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -q -DforceStdout) || mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -DforceStdout
+        RAW_VERSION=$(mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -q -DforceStdout) || \
+                      mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml help:evaluate -Dexpression=project.version -DforceStdout
         BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
 
         if [ "${{ github.event.inputs.finalRelease }}" = "true" ]; then
@@ -115,10 +116,10 @@ jobs:
         cd "${{ github.event.inputs.projectToRelease }}"
         #Github actions bot user id + user.login. See https://api.github.com/users/github-actions%5Bbot%5D
         git config user.email "datawave@github.com"
-        git config user.name "${{ env.USER_NAME }}"
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml \
+        git config user.name "${{ env.GITHUB_USER_NAME }}"
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml \
         --batch-mode release:prepare release:perform \
-        -Dmaven.release.arguments="-s $GITHUB_WORKSPACE/.github/workflows/settings.xml -Ddocker.image.prefix=ghcr.io/nationalsecurityagency/datawave/ -DpushChanges=true \
+        -Dmaven.release.arguments="--settings $GITHUB_WORKSPACE/.github/workflows/settings.xml -Ddocker.image.prefix=ghcr.io/nationalsecurityagency/datawave -DpushChanges=true \
         -DskipTests -DskipFormat -DskipSpotbugs \
         -Denforcer.skip=true -Dcheckstyle.skip=true \
         -Ddocker-release -Dmicroservice-docker" \

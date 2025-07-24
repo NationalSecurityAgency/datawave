@@ -1,6 +1,7 @@
-FROM ${docker.image.prefix}datawave-stack-hadoop:3.3.6 AS hadoop
-FROM bitnami/zookeeper:3.6.3 AS zookeeper
-FROM ${docker.image.prefix}datawave-stack-accumulo:${docker.image.accumulo.tag}
+# https://github.com/NationalSecurityAgency/datawave-stack-docker-images
+FROM ${docker.image.prefix}/datawave-stack-hadoop:${version.hadoop} AS hadoop
+FROM bitnami/zookeeper:${version.zookeeper} AS zookeeper
+FROM ${docker.image.prefix}/datawave-stack-accumulo:${version.accumulo}
 
 USER root
 
