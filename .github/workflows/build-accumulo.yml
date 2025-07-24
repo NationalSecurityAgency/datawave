@@ -20,7 +20,7 @@ on:
 env:
   IMAGE_NAME: ${{ github.repository.lowercase }}
   ACCUMULO_JAVA_VERSION: '17'
-  DATAWAVE_JAVA_VERSION: '11'
+  DATAWAVE_JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   GITHUB_REGISTRY: ghcr.io
   GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
