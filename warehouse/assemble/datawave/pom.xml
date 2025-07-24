@@ -464,10 +464,10 @@
                         <version>1.18.1</version>
                         <configuration>
                             <verbose>true</verbose>
-                            <pushRegistry>${docker.image.prefix}</pushRegistry>
+                            <pushRegistry>${docker.registry}</pushRegistry>
                             <images>
                                 <image>
-                                    <name>ingest-${build.env}:${project.version}</name>
+                                    <name>datawave/ingest-${build.env}:${project.version}</name>
                                     <build>
                                         <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                         <contextDir>.</contextDir>

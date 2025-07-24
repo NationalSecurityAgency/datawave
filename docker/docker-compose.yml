@@ -8,7 +8,7 @@ services:
       - quickstart
     # To run the wildfly webservice, change `--accumulo` to `--web`
     command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: quickstart-compose
+    image: datawave/quickstart-compose
     environment:
       - DW_CONTAINER_HOST=quickstart
       - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
@@ -123,7 +123,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: config-service
+    image: datawave/config-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -153,7 +153,7 @@ services:
         condition: service_started
 
   cache:
-    image: hazelcast-service
+    image: datawave/hazelcast-service
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -184,7 +184,7 @@ services:
       - querycache
       # To enable an additional Hazelcast cluster, enable the "querycache" profile
       # Set an environment variable: QUERY_CACHE=query-cache. This will force the query and executor service to use a separate "query-cache" Hazelcast cluster.
-    image: hazelcast-service
+    image: datawave/hazelcast-service
     scale: 1
     command:
       - --spring.application.name=query-cache
@@ -258,7 +258,7 @@ services:
 
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
-    image: authorization-service
+    image: datawave/authorization-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose,federation
@@ -287,7 +287,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: accumulo-service
+    image: datawave/accumulo-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -320,7 +320,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: audit-service
+    image: datawave/audit-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -354,7 +354,7 @@ services:
 
   metrics:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","-jar","app.jar"]
-    image: query-metric-service
+    image: datawave/query-metric-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -391,7 +391,7 @@ services:
     profiles:
       - dictionary
       - full
-    image: dictionary-service
+    image: datawave/dictionary-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -423,7 +423,7 @@ services:
     profiles:
       - file-provider
       - full
-    image: file-provider-service
+    image: datawave/file-provider-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -461,7 +461,7 @@ services:
   # If you want to test cached results, set the CACHED_RESULTS environment variable to 'true'
   query:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: query-service
+    image: datawave/query-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults,federation
@@ -505,7 +505,7 @@ services:
     profiles:
       - full
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: mapreduce-query-service
+    image: datawave/mapreduce-query-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query,mrquery,federation
@@ -541,7 +541,7 @@ services:
 
   executor-pool1:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006","-jar","app.jar"]
-    image: query-executor-service
+    image: datawave/query-executor-service
     command:
       - --spring.application.name=executor-pool1
       - --spring.cloud.config.name=executor
@@ -590,7 +590,7 @@ services:
     profiles:
       - pool2
       - full
-    image: query-executor-service
+    image: datawave/query-executor-service
     command:
       - --spring.application.name=executor-pool2
       - --spring.cloud.config.name=executor
@@ -639,7 +639,7 @@ services:
     profiles:
       - modification
       - full
-    image: modification-service
+    image: datawave/modification-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query
