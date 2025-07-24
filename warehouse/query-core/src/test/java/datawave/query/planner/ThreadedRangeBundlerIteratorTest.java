@@ -210,18 +210,20 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
     @Test
     public void failFastOnExhaustedTest() throws IOException {
-        expect(mockPlans.iterator()).andReturn(Collections.emptyIterator());
         mockPlans.close();
-
+        // need the following line otherwise you end up with weird things like this:
+        // Expectation failure on verify: CloseableIterable.close(): expected: 1, actual: 1
+        expect(mockPlans).andVoid().anyTimes();
+        expect(mockPlans.iterator()).andReturn(Collections.emptyIterator());
         replayAll();
 
         ThreadedRangeBundlerIterator trbi = builder.build();
+
         long start = System.currentTimeMillis();
         assertFalse(trbi.hasNext());
         long end = System.currentTimeMillis();
         // arbitrary fast time less than any previous poll time, actual time probably 1 but to keep this unit test predictable
         assertTrue(end - start < 5);
-
         verifyAll();
     }
 
