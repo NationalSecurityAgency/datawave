@@ -51,9 +51,9 @@ DW_DATAWAVE_INGEST_HDFS_BASEDIR=${DW_DATAWAVE_INGEST_HDFS_BASEDIR:-/datawave/ing
 
 # Set to any non-empty value other than 'false' to skip ingest of the raw data examples below
 
-DW_DATAWAVE_INGEST_TEST_SKIP=${DW_DATAWAVE_INGEST_TEST_SKIP:-false}
+DW_DATAWAVE_INGEST_TEST_DATA_SKIP=${DW_DATAWAVE_INGEST_TEST_DATA_SKIP:-false}
 
-# Example raw data files to be ingested (unless DW_DATAWAVE_INGEST_TEST_SKIP != 'false')
+# Example raw data files to be ingested (unless DW_DATAWAVE_INGEST_TEST_DATA_SKIP != 'false')
 
 DW_DATAWAVE_INGEST_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"}
 DW_DATAWAVE_INGEST_TEST_FILE_CSV=${DW_DATAWAVE_INGEST_TEST_FILE_CSV:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"}
@@ -80,9 +80,6 @@ DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-"shardS
 
 DW_DATAWAVE_MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS:-"-useInlineCombiner -ingestMetricsDisabled"}
 
-getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
-DW_DATAWAVE_INGEST_DIST="${tarball}"
-
 # Service helpers...
 
 DW_DATAWAVE_INGEST_CMD_START="( cd ${DW_DATAWAVE_INGEST_HOME}/bin/system && ./start-all.sh -allforce )"
@@ -95,10 +92,10 @@ function datawaveIngestIsRunning() {
 }
 
 function datawaveIngestStart() {
-    ! hadoopIsRunning && hadoopStart
-    ! accumuloIsRunning && accumuloStart
+    hadoopIsRunning || hadoopStart || return 1
+    accumuloIsRunning || accumuloStart || return 1
 
-    datawaveIngestIsRunning && echo "DataWave Ingest is already running" || eval "${DW_DATAWAVE_INGEST_CMD_START}"
+    datawaveIngestIsRunning && echo "DataWave Ingest is already running" || eval "${DW_DATAWAVE_INGEST_CMD_START}" || return 1
 }
 
 function datawaveIngestStop() {
@@ -148,10 +145,17 @@ function datawaveIngestUninstall() {
 }
 
 function datawaveIngestInstall() {
-
-   export DW_SKIP_INGEST_EXAMPLES=${DW_SKIP_INGEST_EXAMPLES:-false}
-
-   "${DW_DATAWAVE_SERVICE_DIR}"/install-ingest.sh
+    export DW_SKIP_INGEST_EXAMPLES=${DW_SKIP_INGEST_EXAMPLES:-false}
+    "${DW_DATAWAVE_SERVICE_DIR}"/install-ingest.sh
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "datawave install-ingest.sh executed successfully."
+          return 0
+      else
+          echo "datawave install-ingest.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function datawaveIngestLoadJobCache() {
