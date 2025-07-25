@@ -129,7 +129,6 @@
           <q-input
             borderless
             dense
-            debounce="300"
             v-model="changeFilter"
             placeholder="Search"
             @keydown.enter.prevent="queryTable"
@@ -383,14 +382,20 @@ async function queryTable(priorDays?: any) {
 
   // 1 - Filter the Rows
   const rowsToExport = table.value?.filteredSortedRows.filter(() => true);
+  const filteredSubset = rowsToExport.filter((row: { lastUpdated: any; }) => {
+    if (priorDays === undefined || priorDays < 0) return true;
+    const priorDateCode = Formatters.getDateCode(priorDays);
+    return Number(row.lastUpdated) >= priorDateCode;
+  });
 
   // 2 - Define Refresh Trigger (By Pagination) and Orginial Rows Stored
   const originalRows = rows;
   const triggerRefresh = paginationFront.value.rowsPerPage;
 
+  console.log('before', rows);
   // 3 - Set the Current Rows to Filtered Value
-  rows = Formatters.setVisibility(rowsToExport, priorDays);
-  console.log(rows)
+  rows = Formatters.setVisibility(filteredSubset, priorDays);
+  console.log('after', rows)
 
   // 4 - Trigger the Refresh
   paginationFront.value.rowsPerPage = 100;

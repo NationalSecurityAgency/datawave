@@ -91,6 +91,7 @@ export function toggleVisibility(row: any) {
 
 // Set the Visibility in DOM, sorts and filters by lastUpdated, and the respective row to render button.
 export function setVisibility(rows: readonly any[], priorDays?: number) {
+  //console.log(rows);
   const fieldVisibility: Map<string, Ref<boolean>> = new Map<
     string,
     Ref<boolean>
