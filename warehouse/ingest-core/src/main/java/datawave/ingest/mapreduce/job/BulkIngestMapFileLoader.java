@@ -102,8 +102,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
     private Path workDir;
     private String jobDirPattern;
-    private String instanceName;
-    private String zooKeepers;
     private AccumuloClient accumuloClient;
     private Map<String,Integer> tablePriorities;
     private Configuration conf;
@@ -160,8 +158,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
             System.exit(-1);
         }
 
-        int numBulkThreads = 8;
-        int numBulkAssignThreads = 4;
         List<Observer> jobObservers = new ArrayList<>();
         // default the number of HDFS threads to 1
         int numHdfsThreads = 1;
@@ -223,17 +219,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-maxDirectories must be followed a number of directories", e);
                         System.exit(-2);
                     }
-                } else if ("-numThreads".equalsIgnoreCase(args[i])) {
-                    if (i + 2 > args.length) {
-                        log.error("-numThreads must be followed by the number of bulk import threads");
-                        System.exit(-2);
-                    }
-                    try {
-                        numBulkThreads = Integer.parseInt(args[++i]);
-                    } catch (NumberFormatException e) {
-                        log.error("-numThreads must be followed by the number of bulk import threads", e);
-                        System.exit(-2);
-                    }
                 } else if ("-numHdfsThreads".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-numHdfsThreads must be followed by the number of threads to use for concurrent HDFS operations");
@@ -243,17 +228,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         numHdfsThreads = Integer.parseInt(args[++i]);
                     } catch (NumberFormatException e) {
                         log.error("-numHdfsThreads must be followed by the number of threads to use for concurrent HDFS operations", e);
-                        System.exit(-2);
-                    }
-                } else if ("-numAssignThreads".equalsIgnoreCase(args[i])) {
-                    if (i + 2 > args.length) {
-                        log.error("-numAssignThreads must be followed by the number of bulk import assignment threads");
-                        System.exit(-2);
-                    }
-                    try {
-                        numBulkAssignThreads = Integer.parseInt(args[++i]);
-                    } catch (NumberFormatException e) {
-                        log.error("-numAssignThreads must be followed by the number of bulk import assignment threads", e);
                         System.exit(-2);
                     }
                 } else if ("-seqFileHdfs".equalsIgnoreCase(args[i])) {
@@ -372,9 +346,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         log.info("Will not bring map files online unless at least " + MAJC_WAIT_TIMEOUT + "ms have passed since last time.");
         log.info("Will check the majcThreshold and majcDelay every " + MAJC_CHECK_INTERVAL + " bulk loads.");
         log.info("Processing a max of " + MAX_DIRECTORIES + " directories");
-        log.info("Using " + numBulkThreads + " bulk load threads");
         log.info("Using " + numHdfsThreads + " HDFS operation threads");
-        log.info("Using " + numBulkAssignThreads + " bulk assign threads");
         log.info("Using " + seqFileHdfs + " as the file system containing the original sequence files");
         log.info("Using " + srcHdfs + " as the source file system");
         log.info("Using " + destHdfs + " as the destination file system");
@@ -438,8 +410,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
         this.tablePriorities = tablePriorities;
         this.workDir = new Path(workDir);
         this.jobDirPattern = jobDirPattern;
-        this.instanceName = instanceName;
-        this.zooKeepers = zooKeepers;
         // this will keep an active connection open to Accumulo and must be closed during shutdown
         this.accumuloClient = Accumulo.newClient().to(instanceName, zooKeepers).as(user, passToken).build();
         this.seqFileHdfs = seqFileHdfs;
