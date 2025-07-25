@@ -316,6 +316,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             if (fieldName.equals(Constants.ANY_FIELD)) {
                 try {
                     dataTypes.addAll(helper.getAllDatatypes());
+                    dataTypes.remove(new datawave.data.type.NumberType());
                 } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
                     log.error("Could not fetch all DataTypes while expanding unfielded term");
                     throw new RuntimeException(e);

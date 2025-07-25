@@ -57,7 +57,10 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             this.expansionFields = new HashSet<>();
         }
 
-        this.allTypes = helper.getAllDatatypes();
+        this.allTypes = new HashSet<>();
+        this.allTypes.addAll(helper.getAllDatatypes());
+        this.allTypes.remove(new datawave.data.type.NumberType());
+
         this.stage = "field";
     }
 
