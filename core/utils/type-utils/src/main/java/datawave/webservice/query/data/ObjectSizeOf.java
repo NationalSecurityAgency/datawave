@@ -93,9 +93,10 @@ public interface ObjectSizeOf {
         /**
          * Get the size of an object. Note that we want something relatively fast that gives us an order of magnitude here. The java Instrumentation agent
          * mechanism is a little too costly for general use here. This will look for the ObjectSizeOf interface and if implemented on the object will use that.
-         * Otherwise it will do a simple navigation of the fields using reflection.
+         * Otherwise, it will do a simple navigation of the fields using reflection.
          *
          * @param o
+         *            the object to size
          * @return an approximation of the object size
          */
         public static long getObjectSize(Object o) {
@@ -125,7 +126,7 @@ public interface ObjectSizeOf {
                             } catch (NoSuchMethodException e) {
                                 noSuchMethodCache.add(o.getClass().getName());
                             } catch (Throwable t) {
-                                log.warn("Unexpected error invoking sizeInBytes on " + o.getClass().getName(), t);
+                                log.warn("Unexpected error invoking sizeInBytes on {}", o.getClass().getName(), t);
                             }
                         }
                         if (size == 0) {
@@ -143,9 +144,9 @@ public interface ObjectSizeOf {
                                     size = ARRAY_OVERHEAD;
                                     int length = Array.getLength(o);
                                     if (c.getComponentType().isPrimitive()) {
-                                        size += length * getPrimitiveObjectSize(c.getComponentType());
+                                        size += (long) length * getPrimitiveObjectSize(c.getComponentType());
                                     } else {
-                                        size += length * REFERENCE;
+                                        size += (long) length * REFERENCE;
                                         for (int i = 0; i < length; i++) {
                                             Object element = Array.get(o, i);
                                             if (element != null) {
@@ -164,7 +165,7 @@ public interface ObjectSizeOf {
                                                 size += getPrimitiveObjectSize(field.getType());
                                             } else {
                                                 size += REFERENCE;
-                                                boolean accessible = field.isAccessible();
+                                                boolean accessible = field.canAccess(o);
                                                 field.setAccessible(true);
                                                 try {
                                                     Object fieldObject = field.get(o);
@@ -173,7 +174,7 @@ public interface ObjectSizeOf {
                                                     }
                                                 } catch (Exception e) {
                                                     // cannot get to field, so ignore it in this size calculation
-                                                    e.printStackTrace();
+                                                    log.error("Cannot access field {}", field, e);
                                                 }
                                                 field.setAccessible(accessible);
                                             }
