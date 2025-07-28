@@ -71,7 +71,7 @@ ENV DW_ACCUMULO_BIND_HOST=localhost
 COPY . /opt/datawave
 
 RUN dnf -y update
-RUN dnf -y install findutils
+RUN dnf -y install sudo findutils
 RUN find /opt/datawave -type d -exec chmod 0750 {} \;
 RUN find /opt/datawave -type f -exec chmod 0640 {} \;
 RUN find /opt/datawave -name "*.sh" -type f -exec chmod 0750 {} \;
