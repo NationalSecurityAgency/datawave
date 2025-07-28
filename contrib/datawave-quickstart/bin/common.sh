@@ -398,7 +398,7 @@ function assertCreateDir() {
    [[ $# -eq 0 || -z "$1" ]] && fatal "Directory parameter cannot be empty" && return 1
    [ -d "$1" ] && warn "Directory already exists: $1" && return 0
    # shellcheck disable=SC2015
-   mkdir "$1" && info "Directory Created: $1" || ( fatal "Failed to create directory: $1 " && return 1 )
+   mkdir -p "$1" && info "Directory Created: $1" || ( fatal "Failed to create directory: $1 " && return 1 )
    return 0
 }
 
