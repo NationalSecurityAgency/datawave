@@ -171,10 +171,21 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         SessionOptions newOptions = new SessionOptions(options);
 
         for (IteratorSetting setting : options.getIterators()) {
+
             int documentRangeCount = 0;
             int shardRangeCount = 0;
 
-            IteratorSetting newIteratorSettings = apply(setting, input.getRanges());
+            for (Range range : newSettings.getRanges()) {
+                Key key = range.getStartKey();
+                String cf = key.getColumnFamily().toString();
+                if (cf.length() > 0) {
+                    documentRangeCount++;
+                } else {
+                    shardRangeCount++;
+                }
+            }
+
+            IteratorSetting newIteratorSettings = apply(setting, input.getRanges(), documentRangeCount, shardRangeCount);
 
             newOptions.removeScanIterator(setting.getName());
             newOptions.addScanIterator(newIteratorSettings);
@@ -188,7 +199,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         return newSettings;
     }
 
-    public IteratorSetting apply(IteratorSetting setting, Collection<Range> ranges) {
+    public IteratorSetting apply(IteratorSetting setting, Collection<Range> ranges, int documentRangeCount, int shardRangeCount) {
         final String query = setting.getOptions().get(QueryOptions.QUERY);
         if (query == null) {
             return setting;
@@ -388,15 +399,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             } else if (log.isDebugEnabled()) {
                 DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
                                 DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
-            }
-            for (Range range : newSettings.getRanges()) {
-                Key key = range.getStartKey();
-                String cf = key.getColumnFamily().toString();
-                if (cf.length() > 0) {
-                    documentRangeCount++;
-                } else {
-                    shardRangeCount++;
-                }
             }
             if (logic instanceof WritesQuerySubplanMetrics) {
                 RangeCounts ranges = new RangeCounts();

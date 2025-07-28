@@ -1385,7 +1385,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     protected VisitorFunction getVisitorFunction(MetadataHelper metadataHelper) {
         try {
-            return new VisitorFunction(getConfig(), metadataHelper);
+            return new VisitorFunction(getConfig(), metadataHelper, this);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
