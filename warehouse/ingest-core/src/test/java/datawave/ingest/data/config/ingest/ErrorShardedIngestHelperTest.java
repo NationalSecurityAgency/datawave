@@ -4,9 +4,11 @@ import static datawave.ingest.data.config.CSVHelper.DATA_HEADER;
 import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.DISALLOWLIST_INDEX_FIELDS;
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.INDEX_FIELDS;
+import static datawave.ingest.data.config.ingest.BaseIngestHelper.REVERSE_INDEX_FIELDS;
 
 import java.util.Set;
 
+import datawave.ingest.data.Type;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,90 @@ class ErrorShardedIngestHelperTest {
      * identify which keys match the format error.<datatype>.data.index.etc for the various properties that contain the various error index configurations, and
      * then build your maps of datatypes to IndexFields from there.
      */
+
+    @Test
+    public void testIsIndexedField(){
+
+        Configuration config = new Configuration();
+
+        config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
+        config.set(DataTypeHelper.Properties.DATA_NAME, "csv");
+        config.set("csv" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
+        config.set("csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("csv" + INDEX_FIELDS, "DT_A, DT_B, DT_C");
+
+        config.set("csv.data.header", "okay");
+        config.set("csv.data.separator", ",");
+
+        config.set("error" + "." + "csv" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
+        config.set("error" + "." + "csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("error" + "." + "csv" + INDEX_FIELDS, "DT_B");
+
+        ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
+
+        errorHelper.setup(config);
+
+        // NULL dt
+        errorHelper.setActiveDataType(null);
+        // dt HAS NOT been set, index DOES NOT exist
+        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+
+        // CSV dt
+        errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
+        // dt HAS been set, index DOES NOT exist
+        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        // dt HAS been set, dt index DOES exist
+        Assertions.assertTrue(errorHelper.isIndexedField("DT_B"));
+
+    }
+
+    @Test
+    public void testIsReverseIndexedField(){
+
+        Configuration config = new Configuration();
+
+        config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
+        config.set(DataTypeHelper.Properties.DATA_NAME, "csv");
+        config.set("csv" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
+        config.set("csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("csv" + REVERSE_INDEX_FIELDS, "DT_A, DT_B, DT_C");
+
+        config.set("csv.data.header", "okay");
+        config.set("csv.data.separator", ",");
+
+        config.set("error" + "." + "csv" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
+        config.set("error" + "." + "csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("error" + "." + "csv" + REVERSE_INDEX_FIELDS, "DT_B");
+
+        ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
+
+        errorHelper.setup(config);
+
+        // NULL dt
+        errorHelper.setActiveDataType(null);
+        // dt HAS NOT been set, index DOES NOT exist
+        Assertions.assertFalse(errorHelper.isReverseIndexedField("UNINDEXED_FIELD"));
+
+        // CSV dt
+        errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
+        // dt HAS been set, index DOES NOT exist
+        Assertions.assertFalse(errorHelper.isReverseIndexedField("UNINDEXED_FIELD"));
+        // dt HAS been set, dt index DOES exist
+        Assertions.assertTrue(errorHelper.isReverseIndexedField("DT_B"));
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Verify that when indexed and reversed indexed fields are provided, that they are correctly parsed and are not treated as disallowed fields.
@@ -84,6 +170,5 @@ class ErrorShardedIngestHelperTest {
         Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), errorHelper.getReverseIndexedFields(TypeRegistry.getType("error.fruit")));
         Assertions.assertFalse(errorHelper.hasReverseIndexDisallowlist());
     }
-
 
 }
