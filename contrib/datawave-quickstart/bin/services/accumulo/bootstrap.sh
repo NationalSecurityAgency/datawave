@@ -10,19 +10,17 @@
 #       1K which is too low in most cases
 #
 
-DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DW_ACCUMULO_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
+
+# Get these vars from the pom so users not building the container image can stay up to date
+DW_ZOOKEEPER_VERSION="${DW_ZOOKEEPER_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.zookeeper | tail -1)}"
+DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.zookeeper | tail -1)}"
+DW_ACCUMULO_VERSION="${DW_ACCUMULO_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.accumulo | tail -1)}"
+DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.accumulo | tail -1)}"
 
 # Zookeeper config
-
-# You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-# DW_ZOOKEEPER_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ZOOKEEPER_VERSION="3.8.4"
 DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-${DW_ZOOKEEPER_VERSION}/apache-zookeeper-${DW_ZOOKEEPER_VERSION}-bin.tar.gz}"
-# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-4d85d6f7644d5f36d9c4d65e78bd662ab35ebe1380d762c24c12b98af029027eee453437c9245dbdf2b9beb77cd6b690b69e26f91cf9d11b0a183a979c73fa43}"
-# shellcheck disable=SC2154
-# shellcheck disable=SC2034
-DW_ZOOKEEPER_DIST="$( { downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "zookeeper" "${DW_ZOOKEEPER_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
+DW_ZOOKEEPER_DIST="$( basename "${DW_ZOOKEEPER_DIST_URI}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
 
@@ -49,14 +47,8 @@ admin.enableServer=false"
 
 # Accumulo config
 
-# You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-# DW_ACCUMULO_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ACCUMULO_VERSION="2.1.3"
 DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/${DW_ACCUMULO_VERSION}/accumulo-${DW_ACCUMULO_VERSION}-bin.tar.gz}"
-# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-1a27a144dc31f55ccc8e081b6c1bc6cc0362a8391838c53c166cb45291ff8f35867fd8e4729aa7b2c540f8b721f8c6953281bf589fc7fe320e4dc4d20b87abc4}"
-# shellcheck disable=SC2034
-DW_ACCUMULO_DIST="$( { downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
+DW_ACCUMULO_DIST="$( basename "${DW_ACCUMULO_DIST_URI}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
@@ -128,6 +120,18 @@ DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
 DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
 
+function bootstrapAccumulo() {
+    if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ]; then
+        info "Accumulo distribution not detected. Attempting to bootstrap a dedicated install..."
+        downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
+          ( fatal "failed to obtain Accumulo distribution" && return 1 )
+        DW_ACCUMULO_DIST="${tarball}"
+    else
+      info "Accumulo distribution detected. Using local file ${DW_ACCUMULO_DIST}"
+    fi
+}
+
 function accumuloIsRunning() {
     DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
 
@@ -140,14 +144,14 @@ function accumuloStart() {
     accumuloIsRunning && echo "Accumulo is already running" && return 1
 
     if ! zookeeperIsRunning ; then
-       zookeeperStart
+       zookeeperStart || return 1
        echo
     fi
     if ! hadoopIsRunning ; then
-       hadoopStart
+       hadoopStart || return 1
        echo
     fi
-    eval "${DW_ACCUMULO_CMD_START}"
+    eval "${DW_ACCUMULO_CMD_START}" || return 1
     echo
     info "For detailed status visit 'http://${DW_ACCUMULO_BIND_HOST}:9995' in your browser"
 }
@@ -252,6 +256,27 @@ function accumuloUninstall() {
 
 function accumuloInstall() {
   "${DW_ACCUMULO_SERVICE_DIR}/install.sh"
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "accumulo install.sh executed successfully."
+          return 0
+      else
+          echo "accumulo install.sh failed with exit status: $return_code"
+          return $return_code
+      fi
+}
+
+function bootstrapZookeeper() {
+    if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" ]; then
+        info "Zookeeper distribution not detected. Attempting to bootstrap a dedicated install..."
+        downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "zookeeper" "${DW_ZOOKEEPER_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}" || \
+          ( fatal "failed to obtain Zookeeper distribution" && return 1 )
+        DW_ZOOKEEPER_DIST="${tarball}"
+    else
+      info "Zookeeper distribution detected. Using local file ${DW_ZOOKEEPER_DIST}"
+    fi
 }
 
 function zookeeperIsInstalled() {
@@ -273,7 +298,7 @@ function zookeeperIsRunning() {
 
 function zookeeperStart() {
     # shellcheck disable=SC2015
-    zookeeperIsRunning && echo "ZooKeeper is already running" || eval "${DW_ZOOKEEPER_CMD_START}"
+    zookeeperIsRunning && echo "ZooKeeper is already running" || eval "${DW_ZOOKEEPER_CMD_START}" || return 1
 }
 
 function zookeeperStop() {

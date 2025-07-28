@@ -51,7 +51,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public long sizeInBytes() {
-        if (sizeInBytes == Long.MAX_VALUE) {
+        if (sizeInBytes == Long.MIN_VALUE) {
             // 4 for datawaveType reference
             sizeInBytes = ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4);
         }
