@@ -98,7 +98,7 @@ public class ObjectSizeOfTest {
     }
 
     public static class PrimitiveObject {
-        private long value = 0;
+        private final long value = 0;
     }
 
     public static class SizedObject implements ObjectSizeOf {

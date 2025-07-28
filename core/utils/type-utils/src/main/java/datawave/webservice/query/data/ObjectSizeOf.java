@@ -185,7 +185,7 @@ public interface ObjectSizeOf {
                             }
                         }
                     } catch (Throwable t) {
-                        log.error("Unable to determine object size for " + o);
+                        log.error("Unable to determine object size for {}", o, t);
                     }
                 }
                 totalSize += size;
