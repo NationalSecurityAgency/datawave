@@ -226,14 +226,14 @@ public class DocumentTest {
      */
     protected void roundTrip(String field, int documentSize, int maxIterations, int serializedLength) {
         long readTime = 0;
-        long writeTime = 0;
         Document d = createDocumentForField(field, documentSize);
 
         Entry<Key,Value> entry = null;
-        writeTime = System.nanoTime();
+        long writeTime = System.nanoTime();
         for (int i = 0; i < maxIterations; i++) {
             entry = serialize(d);
         }
+        writeTime = System.nanoTime() - writeTime;
         assertNotNull(entry);
 
         if (serializedLength > 0) {
@@ -249,7 +249,6 @@ public class DocumentTest {
             Document d2 = result.getValue();
             assertEquals(d, d2);
         }
-
         log.info("{} read: {} write: {}", field, StatUtil.formatNanos(readTime), StatUtil.formatNanos(writeTime));
     }
 
