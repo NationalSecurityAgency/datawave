@@ -2,8 +2,8 @@ FROM maven:3-amazoncorretto-11 AS builder
 FROM rockylinux/rockylinux:8
 
 ENV MAVEN_HOME=/usr/share/maven
-COPY --from=builder ${MAVEN_HOME} ${MAVEN_HOME}
-RUN ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn
+COPY --from=builder /usr/share/maven /usr/share/maven
+RUN ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
