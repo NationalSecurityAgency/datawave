@@ -31,29 +31,29 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
     private final boolean headerRequired;
     private final AuthenticationManager authenticationManager;
     private AuthenticationEntryPoint authenticationEntryPoint;
-    
+
     public JWTAuthenticationFilter(AuthenticationManager authenticationManager, AuthenticationEntryPoint authenticationEntryPoint) {
         this(true, authenticationManager, authenticationEntryPoint);
     }
-    
+
     public JWTAuthenticationFilter(boolean headerRequired, AuthenticationManager authenticationManager, AuthenticationEntryPoint authenticationEntryPoint) {
         this.headerRequired = headerRequired;
         this.authenticationManager = authenticationManager;
         this.authenticationEntryPoint = authenticationEntryPoint;
     }
-    
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
-        
+
         try {
             // If there's an authorization exception left around from a prior filter first, abort.
             Object attribute = request.getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
             if (attribute instanceof AuthenticationException) {
                 throw (AuthenticationException) attribute;
             }
-            
+
             String stringToken = req.getHeader(HttpHeaders.AUTHORIZATION);
             if (stringToken == null) {
                 if (headerRequired) {
@@ -63,19 +63,19 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
                     return;
                 }
             }
-            
+
             String authorizationSchema = "Bearer";
             if (!stringToken.startsWith(authorizationSchema)) {
                 throw new InsufficientAuthenticationException("Authorization schema (" + authorizationSchema + ") not present in supplied token.");
             }
             stringToken = stringToken.substring(authorizationSchema.length()).trim();
-            
+
             JWTPreauthToken jwtToken = new JWTPreauthToken(stringToken);
             Authentication auth = authenticationManager.authenticate(jwtToken);
             SecurityContextHolder.getContext().setAuthentication(auth);
-            
+
             setLoginTimeHeader(request);
-            
+
             filterChain.doFilter(request, response);
         } catch (AuthenticationException e) {
             SecurityContextHolder.clearContext();
@@ -85,7 +85,7 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
             }
         }
     }
-    
+
     private void setLoginTimeHeader(ServletRequest request) {
         if (request.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE) != null) {
             long loginTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - (long) request.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE));

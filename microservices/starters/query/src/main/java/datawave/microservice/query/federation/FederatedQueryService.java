@@ -34,12 +34,12 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 
 public class FederatedQueryService implements RemoteQueryService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(FederatedQueryService.class);
-    
+
     private FederatedQueryProperties federatedQueryProperties;
     private final WebClient webClient;
-    
+
     public FederatedQueryService(FederatedQueryProperties federatedQueryProperties, WebClient.Builder webClientBuilder) {
         this.federatedQueryProperties = federatedQueryProperties;
         // @formatter:off
@@ -53,7 +53,7 @@ public class FederatedQueryService implements RemoteQueryService {
                 .build();
         // @formatter:on
     }
-    
+
     private String getProxiedEntities(ProxiedUserDetails currentUser) {
         StringBuilder builder = new StringBuilder();
         for (DatawaveUser user : currentUser.getProxiedUsers()) {
@@ -61,7 +61,7 @@ public class FederatedQueryService implements RemoteQueryService {
         }
         return builder.toString();
     }
-    
+
     private String getProxiedIssuers(ProxiedUserDetails currentUser) {
         StringBuilder builder = new StringBuilder();
         for (DatawaveUser user : currentUser.getProxiedUsers()) {
@@ -69,12 +69,12 @@ public class FederatedQueryService implements RemoteQueryService {
         }
         return builder.toString();
     }
-    
+
     @Override
     public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails currentUser)
                     throws QueryException {
         log.info("FederatedQueryService {}/create for {}", queryLogicName, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<GenericResponse> genericResponseEntity = webClient.post()
@@ -89,11 +89,11 @@ public class FederatedQueryService implements RemoteQueryService {
                     .toEntity(GenericResponse.class)
                     .block(Duration.ofMillis(federatedQueryProperties.getCreateTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (genericResponseEntity != null) {
                 GenericResponse<String> genericResponse = (GenericResponse<String>) genericResponseEntity.getBody();
-                
+
                 if (genericResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return genericResponse;
                 } else {
@@ -115,11 +115,11 @@ public class FederatedQueryService implements RemoteQueryService {
             throw new QueryException("Timed out waiting for remote query create response", e);
         }
     }
-    
+
     @Override
     public BaseQueryResponse next(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("FederatedQueryService next {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<BaseResponse> baseResponseEntity = webClient.get()
@@ -133,11 +133,11 @@ public class FederatedQueryService implements RemoteQueryService {
                     .toEntity(BaseResponse.class)
                     .block(Duration.ofMillis(federatedQueryProperties.getNextTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (baseResponseEntity != null) {
                 BaseResponse baseResponse = baseResponseEntity.getBody();
-                
+
                 // if we got what we were looking for, return it
                 if (baseResponse instanceof BaseQueryResponse) {
                     return (BaseQueryResponse) baseResponse;
@@ -161,16 +161,16 @@ public class FederatedQueryService implements RemoteQueryService {
             throw new QueryException("Timed out waiting for remote query next response", e);
         }
     }
-    
+
     // @Override
     public void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass) {
         // noop, required by interface.
     }
-    
+
     @Override
     public VoidResponse close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("FederatedQueryService close {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<VoidResponse> voidResponseEntity = webClient.put()
@@ -184,11 +184,11 @@ public class FederatedQueryService implements RemoteQueryService {
                     .toEntity(VoidResponse.class)
                     .block(Duration.ofMillis(federatedQueryProperties.getCloseTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (voidResponseEntity != null) {
                 VoidResponse voidResponse = voidResponseEntity.getBody();
-                
+
                 if (voidResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return voidResponse;
                 } else {
@@ -209,12 +209,12 @@ public class FederatedQueryService implements RemoteQueryService {
             throw new QueryException("Timed out waiting for remote query close response", e);
         }
     }
-    
+
     @Override
     public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails currentUser)
                     throws QueryException {
         log.info("FederatedQueryService {}/plan for {}", queryLogicName, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<GenericResponse> genericResponseEntity = webClient.post()
@@ -229,11 +229,11 @@ public class FederatedQueryService implements RemoteQueryService {
                     .toEntity(GenericResponse.class)
                     .block(Duration.ofMillis(federatedQueryProperties.getPlanTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (genericResponseEntity != null) {
                 GenericResponse<String> genericResponse = (GenericResponse<String>) genericResponseEntity.getBody();
-                
+
                 if (genericResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return genericResponse;
                 } else {
@@ -255,11 +255,11 @@ public class FederatedQueryService implements RemoteQueryService {
             throw new QueryException("Timed out waiting for remote query plan response", e);
         }
     }
-    
+
     @Override
     public GenericResponse<String> planQuery(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("FederatedQueryService plan {} for {}", queryId, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             ResponseEntity<GenericResponse> genericResponseEntity = webClient.get()
@@ -273,11 +273,11 @@ public class FederatedQueryService implements RemoteQueryService {
                     .toEntity(GenericResponse.class)
                     .block(Duration.ofMillis(federatedQueryProperties.getPlanTimeoutMillis()));
             // @formatter:on
-            
+
             QueryException queryException;
             if (genericResponseEntity != null) {
                 GenericResponse<String> genericResponse = (GenericResponse<String>) genericResponseEntity.getBody();
-                
+
                 if (genericResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return genericResponse;
                 } else {
@@ -298,7 +298,7 @@ public class FederatedQueryService implements RemoteQueryService {
             throw new QueryException("Timed out waiting for remote query plan response", e);
         }
     }
-    
+
     @Override
     public URI getQueryMetricsURI(String queryId) {
         return URI.create(String.join("/", federatedQueryProperties.getQueryMetricServiceUri(), "queryId"));

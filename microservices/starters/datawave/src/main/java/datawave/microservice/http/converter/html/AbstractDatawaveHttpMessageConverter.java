@@ -19,43 +19,43 @@ abstract public class AbstractDatawaveHttpMessageConverter<T> extends AbstractHt
     protected final DatawaveServerProperties datawaveServerProperties;
     @Nullable
     protected final BannerProvider bannerProvider;
-    
+
     public AbstractDatawaveHttpMessageConverter(DatawaveServerProperties datawaveServerProperties, @Nullable BannerProvider bannerProvider) {
         this.datawaveServerProperties = datawaveServerProperties;
         this.bannerProvider = bannerProvider;
         setSupportedMediaTypes(Collections.singletonList(MediaType.TEXT_HTML));
     }
-    
+
     @Override
     protected boolean canRead(@Nullable MediaType mediaType) {
         return false;
     }
-    
+
     @Override
     @Nullable
     @SuppressWarnings("ConstantConditions")
     protected T readInternal(Class<? extends T> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
         return null;
     }
-    
+
     @Override
     protected void writeInternal(T t, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
         outputMessage.getBody().write(createHtml(t));
     }
-    
+
     public abstract String getTitle(T t);
-    
+
     public abstract String getHeadContent(T t);
-    
+
     public abstract String getPageHeader(T t);
-    
+
     public abstract String getMainContent(T t);
-    
+
     protected byte[] createHtml(T t) {
-        
+
         String headBanner = (bannerProvider != null) ? bannerProvider.getHeadBanner() : "";
         String footBanner = (bannerProvider != null) ? bannerProvider.getFootBanner() : "";
-        
+
         //@formatter:off
         String builder = "<html>" +
                 "<head>" +

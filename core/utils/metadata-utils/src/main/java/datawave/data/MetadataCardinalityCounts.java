@@ -23,7 +23,7 @@ import com.esotericsoftware.kryo.io.Output;
 public class MetadataCardinalityCounts implements Serializable {
     public static String[] COUNT_HEADERS = new String[] {"fieldValueCount", "fieldAllValueCount", "uniqueFieldAllValueCount", "totalAllFieldAllValueCount",
             "totalUniqueAllFieldAllValueCount", "totalUniqueAllFieldCount"};
-    
+
     private final String field;
     private final String value;
     private long fieldValueCount;
@@ -32,7 +32,7 @@ public class MetadataCardinalityCounts implements Serializable {
     private long totalAllFieldAllValueCount;
     private long totalUniqueAllFieldAllValueCount;
     private long totalUniqueAllFieldCount;
-    
+
     public MetadataCardinalityCounts(String field, String value, long fieldValueCount, long fieldAllValueCount, long uniqueFieldAllValueCount,
                     long totalAllFieldAllValueCount, long totalUniqueAllFieldAllValueCount, long totalUniqueAllFieldCount) {
         this.field = field;
@@ -44,18 +44,18 @@ public class MetadataCardinalityCounts implements Serializable {
         this.totalUniqueAllFieldAllValueCount = totalUniqueAllFieldAllValueCount;
         this.totalUniqueAllFieldCount = totalUniqueAllFieldCount;
     }
-    
+
     public MetadataCardinalityCounts(String field, String value, long[] counts) {
         this(field, value, counts[0], counts[1], counts[2], counts[3], counts[4], counts[5]);
     }
-    
+
     public MetadataCardinalityCounts(Key key, Value value) {
         this(key.getRow().toString(), key.getColumnQualifier().toString(), getLongs(value, 6));
     }
-    
+
     /**
      * This method can be used to merge multiple cardinality counts.
-     * 
+     *
      * @param counts
      */
     public void merge(MetadataCardinalityCounts counts) {
@@ -63,34 +63,34 @@ public class MetadataCardinalityCounts implements Serializable {
         fieldValueCount = fieldValueCount / 2 + counts.fieldValueCount / 2;
         fieldAllValueCount = fieldAllValueCount / 2 + counts.fieldAllValueCount / 2;
         totalAllFieldAllValueCount = totalAllFieldAllValueCount / 2 + counts.totalAllFieldAllValueCount / 2;
-        
+
         // max the unique value/field counts
         uniqueFieldAllValueCount = Math.max(uniqueFieldAllValueCount, counts.uniqueFieldAllValueCount);
         totalUniqueAllFieldAllValueCount = Math.max(totalUniqueAllFieldAllValueCount, counts.totalUniqueAllFieldAllValueCount);
         totalUniqueAllFieldCount = Math.max(totalUniqueAllFieldCount, counts.totalUniqueAllFieldCount);
     }
-    
+
     public String[] getCountHeaders() {
         return COUNT_HEADERS;
     }
-    
+
     public long[] getCountArray() {
         return new long[] {fieldValueCount, fieldAllValueCount, uniqueFieldAllValueCount, totalAllFieldAllValueCount, totalUniqueAllFieldAllValueCount,
                 totalUniqueAllFieldCount};
     }
-    
+
     public Key getKey(ColumnVisibility vis, long timeStamp) {
         return new Key(field, ColumnFamilyConstants.COLF_COUNT.toString(), value, vis, timeStamp);
     }
-    
+
     public Value getValue() {
         return new Value(getBytes(getCountArray()));
     }
-    
+
     private static byte[] getBytes(long... values) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Kryo kryo = new Kryo();
-        
+
         baos.reset();
         Output output = new Output(baos);
         for (long value : values) {
@@ -99,7 +99,7 @@ public class MetadataCardinalityCounts implements Serializable {
         output.close();
         return baos.toByteArray();
     }
-    
+
     private static long[] getLongs(Value value, int expected) {
         long[] values = new long[expected];
         Kryo kryo = new Kryo();
@@ -110,46 +110,46 @@ public class MetadataCardinalityCounts implements Serializable {
         }
         return values;
     }
-    
+
     public String getField() {
         return field;
     }
-    
+
     public String getFieldValue() {
         return value;
     }
-    
+
     public long getFieldValueCount() {
         return fieldValueCount;
     }
-    
+
     public long getFieldAllValueCount() {
         return fieldAllValueCount;
     }
-    
+
     public long getUniqueFieldAllValueCount() {
         return uniqueFieldAllValueCount;
     }
-    
+
     public long getTotalAllFieldAllValueCount() {
         return totalAllFieldAllValueCount;
     }
-    
+
     public long getTotalUniqueAllFieldAllValueCount() {
         return totalUniqueAllFieldAllValueCount;
     }
-    
+
     public long getTotalUniqueAllFieldCount() {
         return totalUniqueAllFieldCount;
     }
-    
+
     @Override
     public int hashCode() {
         return field.hashCode() + value.hashCode() + new Long(fieldValueCount).hashCode() + new Long(fieldAllValueCount).hashCode()
                         + new Long(uniqueFieldAllValueCount).hashCode() + new Long(totalAllFieldAllValueCount).hashCode()
                         + new Long(totalUniqueAllFieldAllValueCount).hashCode() + new Long(totalUniqueAllFieldCount).hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof MetadataCardinalityCounts) {
@@ -161,7 +161,7 @@ public class MetadataCardinalityCounts implements Serializable {
         }
         return false;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

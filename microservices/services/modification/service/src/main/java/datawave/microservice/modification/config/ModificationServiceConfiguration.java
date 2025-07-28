@@ -23,32 +23,32 @@ import datawave.security.authorization.JWTTokenHandler;
 @EnableConfigurationProperties({ModificationQueryProperties.class, ModificationDataProperties.class, ModificationHandlerProperties.class})
 @ImportResource(locations = {"${datawave.modification.data.xmlBeansPath:classpath:ModificationServices.xml}"})
 public class ModificationServiceConfiguration {
-    
+
     @Bean
     @ConditionalOnMissingBean
     public ModificationService modificationServiceService(ModificationConfiguration modificationConfiguration, AccumuloConnectionFactory connectionFactory,
                     ModificationCache modificationCache, ModificationQueryService.ModificationQueryServiceFactory queryServiceFactory) {
         return new ModificationService(modificationConfiguration, modificationCache, connectionFactory, queryServiceFactory);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public ModificationQueryService.ModificationQueryServiceFactory modificationQueryServiceFactory(ModificationQueryProperties modificationProperties,
                     WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler) {
         return new RemoteQueryService.RemoteQueryServiceFactory(modificationProperties, webClientBuilder, jwtTokenHandler);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(ConnectionPoolsProperties.class)
     @ConfigurationProperties("datawave.connection.factory")
     public ConnectionPoolsProperties poolProperties() {
         return new ConnectionPoolsProperties();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(name = "accumuloConnectionFactory")
     public AccumuloConnectionFactory connectionFactory(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         return AccumuloConnectionFactoryImpl.getInstance(cache, config);
     }
-    
+
 }

@@ -15,23 +15,23 @@ public class DnUtilsProperties {
     private String subjectDnPattern;
     @NotEmpty
     private List<String> npeOuList;
-    
+
     public Pattern getCompiledSubjectDnPattern() {
         return Pattern.compile(subjectDnPattern, Pattern.CASE_INSENSITIVE);
     }
-    
+
     public String getSubjectDnPattern() {
         return subjectDnPattern;
     }
-    
+
     public void setSubjectDnPattern(String subjectDnPattern) {
         this.subjectDnPattern = subjectDnPattern;
     }
-    
+
     public List<String> getNpeOuList() {
         return npeOuList;
     }
-    
+
     public void setNpeOuList(List<String> npeOuList) {
         this.npeOuList = npeOuList;
     }

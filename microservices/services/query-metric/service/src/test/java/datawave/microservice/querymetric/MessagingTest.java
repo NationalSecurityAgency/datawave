@@ -23,17 +23,17 @@ import datawave.microservice.querymetric.config.QueryMetricTransportType;
 @ContextConfiguration(classes = MessagingTest.MessagingTestConfiguration.class)
 @ActiveProfiles({"MessagingTest", "QueryMetricTest", "MessageRouting", "hazelcast-writethrough"})
 public class MessagingTest extends QueryMetricTestBase {
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
     }
-    
+
     @Test
     public void sendMetricViaMessage() throws Exception {
         int port = webServicePort;
@@ -50,15 +50,15 @@ public class MessagingTest extends QueryMetricTestBase {
         UriComponents metricUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(port).path(String.format(getMetricsUrl, queryId))
                         .build();
         HttpEntity metricRequestEntity = createRequestEntity(null, adminUser, null);
-        
+
         ResponseEntity<BaseQueryMetricListResponse> metricResponse = restTemplate.exchange(metricUri.toUri(), HttpMethod.GET, metricRequestEntity,
                         BaseQueryMetricListResponse.class);
-        
+
         assertEquals(1, metricResponse.getBody().getNumResults());
         BaseQueryMetric returnedMetric = (BaseQueryMetric) metricResponse.getBody().getResult().get(0);
         metricAssertEquals(m, returnedMetric);
     }
-    
+
     @Test
     public void sendMultiplePagesViaMessage() throws Exception {
         int port = webServicePort;
@@ -67,22 +67,22 @@ public class MessagingTest extends QueryMetricTestBase {
         UriComponents metricUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(port).path(String.format(getMetricsUrl, queryId))
                         .build();
         HttpEntity metricRequestEntity = createRequestEntity(null, adminUser, null);
-        
+
         int numPages = 10;
         for (int i = 0; i < numPages; i++) {
             long now = System.currentTimeMillis();
             m.addPageTime("localhost", 1000, 1000, now - 1000, now);
-            
+
             // @formatter:off
             client.submit(new QueryMetricClient.Request.Builder()
                     .withMetric(m)
                     .withMetricType(QueryMetricType.COMPLETE)
                     .build(), QueryMetricTransportType.MESSAGE);
             // @formatter:on
-            
+
             ResponseEntity<BaseQueryMetricListResponse> metricResponse = restTemplate.exchange(metricUri.toUri(), HttpMethod.GET, metricRequestEntity,
                             BaseQueryMetricListResponse.class);
-            
+
             assertEquals(1, metricResponse.getBody().getNumResults());
             BaseQueryMetric returnedMetric = (BaseQueryMetric) metricResponse.getBody().getResult().get(0);
             assertEquals(i + 1, returnedMetric.getPageTimes().size());

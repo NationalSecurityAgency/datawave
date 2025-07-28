@@ -19,7 +19,7 @@ import lombok.Setter;
 @Validated
 public class ModificationHandlerProperties {
     List<String> authorizedRoles = new ArrayList<>();
-    
+
     @NotBlank
     String eventTableName;
     @NotBlank
@@ -28,7 +28,7 @@ public class ModificationHandlerProperties {
     String indexTableName;
     @NotBlank
     String reverseIndexTableName;
-    
+
     List<String> securityMarkingExemptFields = new ArrayList<>();
     boolean requiresAudit = false;
     Map<String,String> indexOnlyMap = new HashMap<>();

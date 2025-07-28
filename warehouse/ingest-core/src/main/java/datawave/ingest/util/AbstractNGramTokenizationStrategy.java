@@ -1,7 +1,8 @@
 package datawave.ingest.util;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.hash.BloomFilter;
 
@@ -20,7 +21,7 @@ public abstract class AbstractNGramTokenizationStrategy {
     protected static final int DEFAULT_MAX_NGRAM_LENGTH = 25;
 
     private BloomFilter<String> filter;
-    private final Logger log = Logger.getLogger(AbstractNGramTokenizationStrategy.class);
+    private final Logger log = LoggerFactory.getLogger(AbstractNGramTokenizationStrategy.class);
     private AbstractNGramTokenizationStrategy source;
 
     /**

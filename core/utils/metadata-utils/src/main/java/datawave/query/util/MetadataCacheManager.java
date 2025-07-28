@@ -18,11 +18,11 @@ import org.springframework.stereotype.Component;
 public class MetadataCacheManager {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final CacheManager cacheManager;
-    
+
     public MetadataCacheManager(@Qualifier("metadataHelperCacheManager") CacheManager cacheManager) {
         this.cacheManager = cacheManager;
     }
-    
+
     /**
      * Evicts all entries from all caches in the metadata helper {@link CacheManager}.
      */
@@ -35,10 +35,10 @@ public class MetadataCacheManager {
             }
         });
     }
-    
+
     /**
      * Dump all entries in the metadata helper {@link CacheManager}'s caches.
-     * 
+     *
      * @param log
      *            the logger to use when printing entries
      * @param prefix

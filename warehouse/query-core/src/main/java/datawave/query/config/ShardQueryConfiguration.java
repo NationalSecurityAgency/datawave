@@ -42,6 +42,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
@@ -286,6 +287,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String limitFieldsField = null;
     private boolean hitList = false;
     private boolean dateIndexTimeTravel = false;
+    private boolean dateIndexIterator = false;
     private boolean ignoreNonExistentFields = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
@@ -535,6 +537,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
+
+    private String fieldRuleClassName;
     private double indexFieldHoleMinThreshold = 1.0d;
 
     /**
@@ -542,6 +546,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * SHARDS_AND_DAYS hint.
      */
     private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
+
+    private boolean useDocumentScheduler = false;
+    private DocumentScannerConfig documentScannerConfig;
+
+    /**
+     * The maximum number of lines to print when streaming the query from the global index. Useful for limiting the logging footprint of large queries when
+     * debug logging is enabled.
+     */
+    private int maxLinesToPrint = -1;
 
     /**
      * Default constructor
@@ -644,6 +657,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseFilters(other.getUseFilters());
         this.setFilterClassNames(null == other.getFilterClassNames() ? null : Lists.newArrayList(other.getFilterClassNames()));
         this.setIndexFilteringClassNames(null == other.getIndexFilteringClassNames() ? null : Lists.newArrayList(other.getIndexFilteringClassNames()));
+        this.setFieldRuleClassName(null == other.getIndexFilteringClassNames() ? null : other.getFieldRuleClassName());
         this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
@@ -673,6 +687,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
+        this.setDateIndexIterator(other.isDateIndexIterator());
         this.setBeginDateCap(other.getBeginDateCap());
         this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
         this.setRawTypes(other.isRawTypes());
@@ -792,6 +807,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setUseDocumentScheduler(other.isUseDocumentScheduler());
+        this.setDocumentScannerConfig(other.getDocumentScannerConfig());
+        this.setMaxLinesToPrint(other.getMaxLinesToPrint());
     }
 
     /**
@@ -1296,6 +1314,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     @SuppressWarnings("unchecked")
     public void setFilterClassNames(List<String> filterClassNames) {
         this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
+    }
+
+    public String getFieldRuleClassName() {
+        return fieldRuleClassName;
+    }
+
+    public void setFieldRuleClassName(String fieldRuleClassName) {
+        this.fieldRuleClassName = (fieldRuleClassName != null && !fieldRuleClassName.isEmpty()) ? fieldRuleClassName : null;
     }
 
     /**
@@ -1885,6 +1911,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setDateIndexTimeTravel(boolean dateIndexTimeTravel) {
         this.dateIndexTimeTravel = dateIndexTimeTravel;
+    }
+
+    public boolean isDateIndexIterator() {
+        return dateIndexIterator;
+    }
+
+    public void setDateIndexIterator(boolean dateIndexIterator) {
+        this.dateIndexIterator = dateIndexIterator;
     }
 
     public boolean getIgnoreNonExistentFields() {
@@ -3033,6 +3067,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getEnricherClassNames(), that.getEnricherClassNames()) &&
                 Objects.equals(getUseFilters(), that.getUseFilters()) &&
                 Objects.equals(getFilterClassNames(), that.getFilterClassNames()) &&
+                Objects.equals(getFieldRuleClassName(), that.getFieldRuleClassName()) &&
                 Objects.equals(getIndexFilteringClassNames(), that.getIndexFilteringClassNames()) &&
                 Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes()) &&
                 Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) &&
@@ -3352,5 +3387,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
+    }
+
+    public DocumentScannerConfig getDocumentScannerConfig() {
+        return documentScannerConfig;
+    }
+
+    public void setDocumentScannerConfig(DocumentScannerConfig documentScannerConfig) {
+        this.documentScannerConfig = documentScannerConfig;
+    }
+
+    public boolean isUseDocumentScheduler() {
+        return useDocumentScheduler;
+    }
+
+    public void setUseDocumentScheduler(boolean useDocumentScheduler) {
+        this.useDocumentScheduler = useDocumentScheduler;
+    }
+
+    public int getMaxLinesToPrint() {
+        return maxLinesToPrint;
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        this.maxLinesToPrint = maxLinesToPrint;
     }
 }

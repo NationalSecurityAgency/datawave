@@ -58,7 +58,7 @@ import datawave.microservice.config.security.JWTSecurityConfigurer;
 public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
     private final DatawaveSecurityProperties securityProperties;
     private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;
-    
+
     public AuthorizationSecurityConfigurer(DatawaveSecurityProperties securityProperties,
                     AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService,
                     JWTAuthenticationProvider jwtAuthenticationProvider) {
@@ -66,12 +66,12 @@ public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
         this.securityProperties = securityProperties;
         this.authenticationUserDetailsService = authenticationUserDetailsService;
     }
-    
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        
+
         super.configure(http);
-        
+
         // The parent configures JWT-based security. Add an additional filter here to allow authentication based on the
         // X-ProxiedEntitiesChain/X-ProxiedIssuersChain headers that are supplied by trusted callers.
         AuthorizationProxiedEntityX509Filter proxiedX509Filter = new AuthorizationProxiedEntityX509Filter(securityProperties.isUseTrustedSubjectHeaders(),
@@ -80,16 +80,16 @@ public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
         proxiedX509Filter.setContinueFilterChainOnUnsuccessfulAuthentication(false);
         http.addFilterAfter(proxiedX509Filter, JWTAuthenticationFilter.class);
     }
-    
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         super.configure(auth);
-        
+
         PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
         provider.setPreAuthenticatedUserDetailsService(authenticationUserDetailsService);
         auth.authenticationProvider(provider);
     }
-    
+
     @Override
     protected AllowedCallersFilter getAllowedCallersFilter(DatawaveSecurityProperties securityProperties) {
         return new AuthorizationAllowedCallersFilter(securityProperties, getAuthenticationEntryPoint());

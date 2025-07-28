@@ -19,33 +19,33 @@ import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 @Configuration
 @EnableScheduling
 public class QueryExecutorConfig {
-    
+
     @Bean
     @ConditionalOnMissingBean(ExecutorProperties.class)
     @ConfigurationProperties("datawave.query.executor")
     public ExecutorProperties executorProperties() {
         return new ExecutorProperties();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(ConnectionPoolsProperties.class)
     @ConfigurationProperties("datawave.connection.factory")
     public ConnectionPoolsProperties poolProperties() {
         return new ConnectionPoolsProperties();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(name = "accumuloConnectionFactory")
     public AccumuloConnectionFactory accumuloConnectionFactory(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         return AccumuloConnectionFactoryImpl.getInstance(cache, config);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(type = "QueryMetricFactory")
     public QueryMetricFactory queryMetricFactory() {
         return new QueryMetricFactoryImpl();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean(QueryPredictor.class)
     public QueryPredictor queryPredictor() {

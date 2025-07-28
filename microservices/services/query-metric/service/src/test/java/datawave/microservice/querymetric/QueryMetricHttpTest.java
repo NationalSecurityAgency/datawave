@@ -30,18 +30,18 @@ import datawave.microservice.querymetric.function.QueryMetricSupplier;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryMetricHttpTest", "QueryMetricTest", "http", "hazelcast-writebehind"})
 public class QueryMetricHttpTest extends QueryMetricTestBase {
-    
+
     static {}
-    
+
     @Autowired
     public List<QueryMetricUpdate> storedMetricUpdates;
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
         storedMetricUpdates.clear();
     }
-    
+
     @Test
     public void RejectNonAdminUserForUpdateMetric() throws Exception {
         // @formatter:off
@@ -52,7 +52,7 @@ public class QueryMetricHttpTest extends QueryMetricTestBase {
                 .build(), QueryMetricTransportType.REST));
         // @formatter:on
     }
-    
+
     @Test
     public void RejectNonAdminUserForUpdateMetrics() throws Exception {
         List<BaseQueryMetric> metrics = new ArrayList<>();
@@ -66,7 +66,7 @@ public class QueryMetricHttpTest extends QueryMetricTestBase {
                 .build(), QueryMetricTransportType.REST));
         // @formatter:on
     }
-    
+
     @Test
     public void AcceptAdminUserForUpdateMetric() throws Exception {
         // @formatter:off
@@ -77,7 +77,7 @@ public class QueryMetricHttpTest extends QueryMetricTestBase {
                 .build(), QueryMetricTransportType.REST);
         // @formatter:on
     }
-    
+
     @Test
     public void AcceptAdminUserForUpdateMetrics() throws Exception {
         List<BaseQueryMetric> metrics = new ArrayList<>();
@@ -91,7 +91,7 @@ public class QueryMetricHttpTest extends QueryMetricTestBase {
                 .build(), QueryMetricTransportType.REST);
         // @formatter:on
     }
-    
+
     // Messages that arrive via http/https get placed on the message queue
     // to ensure a quick response and to maintain a single queue of work
     @Test
@@ -108,7 +108,7 @@ public class QueryMetricHttpTest extends QueryMetricTestBase {
         // @formatter:on
         assertEquals(2, storedMetricUpdates.size());
     }
-    
+
     @Configuration
     @Profile("QueryMetricHttpTest")
     @ComponentScan(basePackages = "datawave.microservice")
@@ -117,7 +117,7 @@ public class QueryMetricHttpTest extends QueryMetricTestBase {
         public List<QueryMetricUpdate> storedMetricUpdates() {
             return new ArrayList<>();
         }
-        
+
         @Primary
         @Bean
         public QueryMetricSupplier testQueryMetricSource(@Lazy QueryMetricOperations queryMetricOperations) {

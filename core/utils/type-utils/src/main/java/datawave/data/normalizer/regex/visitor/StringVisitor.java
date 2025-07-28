@@ -25,7 +25,7 @@ import datawave.data.normalizer.regex.StartAnchorNode;
 import datawave.data.normalizer.regex.ZeroOrMoreNode;
 
 public class StringVisitor implements Visitor {
-    
+
     public static String toString(Node node) {
         if (node == null) {
             return null;
@@ -35,13 +35,13 @@ public class StringVisitor implements Visitor {
         node.accept(visitor, sb);
         return sb.toString();
     }
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         node.childrenAccept(this, data);
         return null;
     }
-    
+
     @Override
     public Object visitAlternation(AlternationNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
@@ -54,7 +54,7 @@ public class StringVisitor implements Visitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visitGroup(GroupNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
@@ -63,14 +63,14 @@ public class StringVisitor implements Visitor {
         sb.append(")");
         return null;
     }
-    
+
     @Override
     public Object visitDigitChar(DigitCharClassNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("\\d");
         return null;
     }
-    
+
     @Override
     public Object visitCharClass(CharClassNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
@@ -82,28 +82,28 @@ public class StringVisitor implements Visitor {
         sb.append("]");
         return null;
     }
-    
+
     @Override
     public Object visitCharRange(CharRangeNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append(node.getStart()).append("-").append(node.getEnd());
         return null;
     }
-    
+
     @Override
     public Object visitSingleChar(SingleCharNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append(node.getCharacter());
         return null;
     }
-    
+
     @Override
     public Object visitEscapedSingleChar(EscapedSingleCharNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("\\").append(node.getCharacter());
         return null;
     }
-    
+
     @Override
     public Object visitRepetition(RepetitionNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
@@ -112,42 +112,42 @@ public class StringVisitor implements Visitor {
         sb.append("}");
         return null;
     }
-    
+
     @Override
     public Object visitQuestionMark(QuestionMarkNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("?");
         return null;
     }
-    
+
     @Override
     public Object visitAnyChar(AnyCharNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append(".");
         return null;
     }
-    
+
     @Override
     public Object visitZeroToMany(ZeroOrMoreNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("*");
         return null;
     }
-    
+
     @Override
     public Object visitOneToMany(OneOrMoreNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("+");
         return null;
     }
-    
+
     @Override
     public Object visitInteger(IntegerNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append(node.getValue());
         return null;
     }
-    
+
     @Override
     public Object visitIntegerRange(IntegerRangeNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
@@ -158,32 +158,32 @@ public class StringVisitor implements Visitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visitEmpty(EmptyNode node, Object data) {
         return null;
     }
-    
+
     @Override
     public Object visitStartAnchor(StartAnchorNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("^");
         return null;
     }
-    
+
     @Override
     public Object visitEndAnchor(EndAnchorNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("$");
         return null;
     }
-    
+
     @Override
     public Object visitEncodedNumber(EncodedNumberNode node, Object data) {
         node.childrenAccept(this, data);
         return null;
     }
-    
+
     @Override
     public Object visitEncodedPattern(EncodedPatternNode node, Object data) {
         node.childrenAccept(this, data);

@@ -17,7 +17,7 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
  */
 @Configuration
 public class CacheInspectorConfiguration {
-    
+
     @Bean
     @Qualifier("cacheInspectorFactory")
     public Function<CacheManager,CacheInspector> cacheInspectorFactory() {
@@ -32,23 +32,23 @@ public class CacheInspectorConfiguration {
                 return new UnsupportedOperationCacheInspector();
         };
     }
-    
+
     private static class UnsupportedOperationCacheInspector implements CacheInspector {
         @Override
         public <T> T list(String cacheName, Class<T> cacheObjectType, String key) {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public <T> List<? extends T> listAll(String cacheName, Class<T> cacheObjectType) {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public <T> List<? extends T> listMatching(String cacheName, Class<T> cacheObjectType, String substring) {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public <T> int evictMatching(String cacheName, Class<T> cacheObjectType, String substring) {
             throw new UnsupportedOperationException();

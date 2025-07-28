@@ -74,7 +74,7 @@ public class TruncatingTimestampIteratorTest {
         }
         SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(keys);
         SortedKeyValueIterator<Key,Value> iterator = new TruncatingTimestampIterator(source);
-        iterator.seek(new Range(), new ArrayList(), false);
+        iterator.seek(new Range(new Key("r"), null), new ArrayList(), false);
         while (iterator.hasTop()) {
             Key key = iterator.getTopKey();
             assertEquals(expected, key);
@@ -92,7 +92,7 @@ public class TruncatingTimestampIteratorTest {
         }
         source = new SortedListKeyValueIterator(keys);
         iterator = new TruncatingTimestampIterator(source);
-        iterator.seek(new Range(), new ArrayList(), false);
+        iterator.seek(new Range(new Key("r"), null), new ArrayList(), false);
         while (iterator.hasTop()) {
             Key key = iterator.getTopKey();
             assertEquals(expected, key);

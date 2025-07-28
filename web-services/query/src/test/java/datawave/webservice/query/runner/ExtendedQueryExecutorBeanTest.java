@@ -45,9 +45,8 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.tuple.Pair;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Before;
@@ -254,9 +253,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the create logic
         expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.tuple.getSecond()).andReturn(this.client);
+        expect(this.tuple.getRight()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
@@ -418,9 +417,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations
         expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.tuple.getSecond()).andReturn(this.client);
+        expect(this.tuple.getRight()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
@@ -487,9 +486,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<>(0)).anyTimes();
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(this.tuple);
         this.closedCache.remove(queryId.toString());
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.tuple.getSecond()).andReturn(this.client);
+        expect(this.tuple.getRight()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
@@ -663,10 +662,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<>(0)).anyTimes();
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(this.tuple);
         expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
         PowerMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
-        expect(this.tuple.getSecond()).andThrow(ILLEGAL_STATE_EXCEPTION);
+        expect(this.tuple.getRight()).andThrow(ILLEGAL_STATE_EXCEPTION);
 
         // Run the test
         PowerMock.replayAll();
@@ -2782,6 +2781,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.lookupUUIDConfiguration.getUuidTypes()).andReturn(null);
         expect(this.lookupUUIDConfiguration.getBeginDate()).andReturn("not a date");
         expect(this.lookupUUIDConfiguration.getBatchLookupUpperLimit()).andReturn(0);
+        expect(this.lookupUUIDConfiguration.getTagCloudLookupUpperLimit()).andReturn(0);
         expect(this.lookupUUIDConfiguration.getContentLookupTypes()).andReturn(Collections.emptyMap());
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         LookupUUIDConfiguration tmpCfg = new LookupUUIDConfiguration();
@@ -3866,7 +3866,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
         setInternalState(subject, ManagedExecutorService.class, executor);
-        setInternalState(subject, Logger.class, Logger.getLogger(QueryExecutorBean.class));
 
         subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
 

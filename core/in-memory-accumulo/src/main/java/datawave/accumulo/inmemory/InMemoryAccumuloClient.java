@@ -45,14 +45,14 @@ import org.apache.accumulo.core.security.SystemPermission;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 
 public class InMemoryAccumuloClient extends ClientContext implements AccumuloClient {
-    
+
     String username;
     private final InMemoryAccumulo acu;
-    
+
     public InMemoryAccumuloClient(String username, InMemoryInstance instance) throws AccumuloSecurityException {
         this(new Credentials(username, new PasswordToken(new byte[0])), instance.acu);
     }
-    
+
     public InMemoryAccumuloClient(Credentials credentials, InMemoryAccumulo acu) throws AccumuloSecurityException {
         super(SingletonReservation.noop(), new InMemoryClientInfo(credentials), DefaultConfiguration.getInstance(), null);
         if (credentials.getToken().isDestroyed())
@@ -65,59 +65,59 @@ public class InMemoryAccumuloClient extends ClientContext implements AccumuloCli
             acu.users.put(user.name, user);
         }
     }
-    
+
     @Override
     public BatchScanner createBatchScanner(String tableName, Authorizations authorizations, int numQueryThreads) throws TableNotFoundException {
         if (acu.tables.get(tableName) == null)
             throw new TableNotFoundException(tableName, tableName, "no such table");
         return acu.createBatchScanner(tableName, authorizations);
     }
-    
+
     @Override
     public BatchScanner createBatchScanner(String tableName, Authorizations authorizations) throws TableNotFoundException {
         return createBatchScanner(tableName, authorizations, 1);
     }
-    
+
     @Override
     public BatchScanner createBatchScanner(String tableName) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
         return createBatchScanner(tableName, securityOperations().getUserAuthorizations(username));
     }
-    
+
     @Override
     public BatchDeleter createBatchDeleter(String tableName, Authorizations authorizations, int numQueryThreads, BatchWriterConfig config)
                     throws TableNotFoundException {
         return createBatchDeleter(tableName, authorizations, numQueryThreads);
     }
-    
+
     @Override
     public BatchDeleter createBatchDeleter(String tableName, Authorizations authorizations, int numQueryThreads) throws TableNotFoundException {
         if (acu.tables.get(tableName) == null)
             throw new TableNotFoundException(tableName, tableName, "no such table");
         return new InMemoryBatchDeleter(acu, tableName, authorizations);
     }
-    
+
     @Override
     public BatchWriter createBatchWriter(String tableName) throws TableNotFoundException {
         if (acu.tables.get(tableName) == null)
             throw new TableNotFoundException(tableName, tableName, "no such table");
         return new InMemoryBatchWriter(acu, tableName);
     }
-    
+
     @Override
     public BatchWriter createBatchWriter(String tableName, BatchWriterConfig config) throws TableNotFoundException {
         return createBatchWriter(tableName);
     }
-    
+
     @Override
     public MultiTableBatchWriter createMultiTableBatchWriter(BatchWriterConfig config) {
         return createMultiTableBatchWriter();
     }
-    
+
     @Override
     public MultiTableBatchWriter createMultiTableBatchWriter() {
         return new InMemoryMultiTableBatchWriter(acu);
     }
-    
+
     @Override
     public Scanner createScanner(String tableName, Authorizations authorizations) throws TableNotFoundException {
         InMemoryTable table = acu.tables.get(tableName);
@@ -125,55 +125,55 @@ public class InMemoryAccumuloClient extends ClientContext implements AccumuloCli
             throw new TableNotFoundException(tableName, tableName, "no such table");
         return new InMemoryScanner(table, authorizations);
     }
-    
+
     @Override
     public Scanner createScanner(String tableName) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
         return createScanner(tableName, securityOperations().getUserAuthorizations(username));
     }
-    
+
     @Override
     public String whoami() {
         return username;
     }
-    
+
     @Override
     public TableOperations tableOperations() {
         return new InMemoryTableOperations(acu, username);
     }
-    
+
     @Override
     public SecurityOperations securityOperations() {
         return new InMemorySecurityOperations(acu);
     }
-    
+
     @Override
     public InstanceOperations instanceOperations() {
         return new InMemoryInstanceOperations(acu);
     }
-    
+
     @Override
     public NamespaceOperations namespaceOperations() {
         return new InMemoryNamespaceOperations(acu, username);
     }
-    
+
     @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
         // TODO add implementation
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public ReplicationOperations replicationOperations() {
         // TODO add implementation
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public Properties properties() {
         return new Properties();
     }
-    
+
     @Override
     public void close() {}
-    
+
 }

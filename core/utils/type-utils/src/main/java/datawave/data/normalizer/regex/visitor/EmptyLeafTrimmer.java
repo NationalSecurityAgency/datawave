@@ -23,11 +23,11 @@ import datawave.data.normalizer.regex.Node;
  * </ul>
  */
 public class EmptyLeafTrimmer extends CopyVisitor {
-    
+
     /**
      * Return a copy of the given tree trimmed of empty nodes. If the entire tree is trimmed, null will be returned, otherwise a {@link ExpressionNode} with the
      * trimmed tree will be returned.
-     * 
+     *
      * @param node
      *            the node to trim
      * @return the trimmed node
@@ -39,7 +39,7 @@ public class EmptyLeafTrimmer extends CopyVisitor {
         EmptyLeafTrimmer visitor = new EmptyLeafTrimmer();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         Node copy = (Node) super.visitExpression(node, data);
@@ -53,7 +53,7 @@ public class EmptyLeafTrimmer extends CopyVisitor {
         }
         return copy;
     }
-    
+
     @Override
     public Object visitAlternation(AlternationNode node, Object data) {
         Node copy = (Node) super.visitAlternation(node, data);
@@ -65,13 +65,13 @@ public class EmptyLeafTrimmer extends CopyVisitor {
             return copy;
         }
     }
-    
+
     @Override
     public Object visitGroup(GroupNode node, Object data) {
         Node copy = (Node) super.visitGroup(node, data);
         return copy.isLeaf() ? null : copy;
     }
-    
+
     @Override
     public Object visitEmpty(EmptyNode node, Object data) {
         return null;

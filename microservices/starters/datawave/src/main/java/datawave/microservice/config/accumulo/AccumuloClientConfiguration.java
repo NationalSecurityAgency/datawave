@@ -28,7 +28,7 @@ public class AccumuloClientConfiguration {
         return Accumulo.newClient().to(accumuloProperties.getInstanceName(), accumuloProperties.getZookeepers())
                         .as(accumuloProperties.getUsername(), new PasswordToken(accumuloProperties.getPassword())).build();
     }
-    
+
     @Bean
     @Lazy
     @Qualifier("metrics")
