@@ -37,6 +37,7 @@
         <argLine />
         <!-- build.env and env should get overridden if any other read-properties profile is specified (e.g. comnpose)compose -->
         <build.env>dev</build.env>
+        <docker.registry>ghcr.io/nationalsecurityagency</docker.registry>
         <env>dev</env>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
