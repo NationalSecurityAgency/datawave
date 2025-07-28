@@ -30,7 +30,7 @@
         </repository>
     </distributionManagement>
     <properties>
-        <docker.image.prefix />
+        <docker.registry>ghcr.io/nationalsecurityagency</docker.registry>
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -468,10 +468,10 @@
                     <version>1.18.1</version>
                     <configuration>
                         <verbose>true</verbose>
-                        <pushRegistry>${docker.image.prefix}</pushRegistry>
+                        <pushRegistry>${docker.registry}</pushRegistry>
                         <images>
                             <image>
-                                <name>${project.artifactId}:${project.version}</name>
+                                <name>datawave/${project.artifactId}:${project.version}</name>
                                 <build>
                                     <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                     <contextDir>.</contextDir>
