@@ -395,10 +395,10 @@ function allPrintenv() {
 }
 
 function assertCreateDir() {
-   [[ $# -eq 0 || -z "$1" ]] && fatal "[${FUNCNAME[0]}] Directory parameter cannot be empty" && return 1
-   [ -d $1 ] && warn "[${FUNCNAME[0]}] already exists!" && return
-   mkdir -p "$1" && info "Created directory: $1"
-   [ ! -d "$1" ] && fatal "[${FUNCNAME[0]}] configured base directory $1 does not exist" && return 1
+   [[ $# -eq 0 || -z "$1" ]] && fatal "Directory parameter cannot be empty" && return 1
+   [ -d "$1" ] && warn "Directory already exists: $1" && return 0
+   # shellcheck disable=SC2015
+   mkdir -p "$1" && info "Directory Created: $1" || ( fatal "Failed to create directory: $1 " && return 1 )
    return 0
 }
 
