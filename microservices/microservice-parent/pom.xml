@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.2-SNAPSHOT</version>
+    <version>4.0.6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -17,8 +17,8 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
@@ -30,15 +30,18 @@
         </repository>
     </distributionManagement>
     <properties>
-        <docker.image.prefix>datawave/</docker.image.prefix>
+        <docker.image.prefix />
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.release.arguments>-Ddist</maven.release.arguments>
+        <maven.release.profiles>dist</maven.release.profiles>
         <project.artifactId>${project.artifactId}</project.artifactId>
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.scm.id>github-datawave</project.scm.id>
         <project.version>${project.version}</project.version>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
@@ -413,8 +416,8 @@
                     <version>3.1.1</version>
                     <configuration>
                         <tagNameFormat>@{project.version}</tagNameFormat>
-                        <releaseProfiles>dist</releaseProfiles>
-                        <arguments>-Ddist</arguments>
+                        <releaseProfiles>${maven.release.profiles}</releaseProfiles>
+                        <arguments>${maven.release.arguments}</arguments>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -439,7 +442,7 @@
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
                     </configuration>
@@ -465,19 +468,16 @@
                     <version>1.18.1</version>
                     <configuration>
                         <verbose>true</verbose>
+                        <pushRegistry>${docker.image.prefix}</pushRegistry>
                         <images>
                             <image>
-                                <name>${docker.image.prefix}${project.artifactId}</name>
+                                <name>${project.artifactId}:${project.version}</name>
                                 <build>
                                     <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                     <contextDir>.</contextDir>
                                     <buildOptions>
                                         <memory>8589934592</memory>
                                     </buildOptions>
-                                    <tags>
-                                        <tag>latest</tag>
-                                        <tag>${project.version}</tag>
-                                    </tags>
                                     <assembly>
                                         <name>/</name>
                                         <excludeFinalOutputArtifact>true</excludeFinalOutputArtifact>

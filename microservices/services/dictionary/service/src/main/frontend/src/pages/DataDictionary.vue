@@ -104,9 +104,9 @@
         <template v-slot:body="props">
           <q-tr
             :props="props"
-            v-if="Formatters.isVisible(props.row)"
+            v-if="Formatters.buttonParse(props.cols, props.row)"
           >
-            <q-td style="width: 60px; min-width: 60px">
+            <q-td class="cell-spacing">
               <q-btn
                 size="9px"
                 color="cyan-8"
@@ -119,8 +119,33 @@
                   }
                 "
                 :icon="props.row.isVisible.value ? 'remove' : 'add'"
-                v-if="Formatters.buttonParse(props.cols, props.row)"
               />
+            </q-td>
+            <q-td
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              :class="{ 'text-bold': col.name === 'dataType'}"
+              style="font-size: 13px;"
+              @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+              >
+                <label style="cursor: pointer;">
+                  {{
+                    Formatters.maxSubstring(
+                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                    )
+                  }}
+                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                  </q-tooltip>
+                </label>
+              </q-td>
+          </q-tr>
+          <q-tr
+            :props="props"
+            v-if="Formatters.isVisible(props.row)"
+          >
+            <q-td class="cell-spacing">
               <q-icon
                   style="margin-left: 4px;"
                   size="1rem"
@@ -134,7 +159,7 @@
               :key="col.name"
               :props="props"
               style="font-size: 13px;"
-              @click="Feature.copyLabel(col.value)"
+              @click="Feature.copyLabel(col.name, col.value, null)"
             >
               <label style="cursor: pointer;">
                 {{
@@ -161,7 +186,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
@@ -175,7 +201,9 @@ const $q = useQuasar();
 const table = ref();
 const loading = ref(true);
 const filter = ref('');
-const changeFilter = ref('');
+const route = useRoute();
+const router = useRouter();
+const changeFilter = ref<string>('');
 const banner = ref<Banner>();
 const system = ref<System>();
 let rows: QTableProps['rows'] = [];
@@ -239,7 +267,37 @@ onMounted(() => {
   .catch((reason) => {
     console.log('Error fetching and formatting rows: ' + reason);
   });
+
+  // This line is similar to the one in the watch() method below, but handles the search when initially set via the URL.
+  changeFilter.value = Formatters.filterSearch(route.query.search, changeFilter.value);
+
+  if (changeFilter.value) {
+    queryTable();
+  }
 });
+
+// This watch() handles a URL Change from a previous query.
+// Logic: Input + Table (reactive URL -> UI + Filters)
+watch(
+  () => route.query.search,
+  (searchVal) => {
+    // Converts the input into a valid string to be queried.
+    let searchValNew = Formatters.filterSearch(searchVal, '');
+
+    if (searchValNew !== changeFilter.value) {
+      changeFilter.value = searchValNew;
+      if (searchValNew) {
+        // Triggers a re-query if the user has changed to a new value.
+        queryTable();
+      } else {
+        // This retriggers back to the original state if user clears.
+        filter.value = '';
+        const originalRows = rows;
+        rows = Formatters.setVisibility(originalRows);
+      }
+    }
+  }
+);
 
 // Export - Attempts to Wrap the CSV and Download.
 function exportTable(this: any) {
@@ -278,6 +336,15 @@ function exportTable(this: any) {
 async function queryTable(this: any) {
   // Wait Until User Enters...
   await waitUp();
+
+  // Handles the URL change to reflect when the user searches.
+  // Logic: Input -> URL (UI -> URL)
+  router.replace({
+    query: {
+      ...route.query,
+      search: changeFilter.value || undefined,
+    },
+  });
 
   // 1 - Filter the Rows
   const rowsToExport = table.value?.filteredSortedRows.filter(() => true);

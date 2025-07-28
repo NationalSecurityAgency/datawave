@@ -66,8 +66,10 @@ public class GeoLatTypeAttributeIT extends TypeAttributeIT {
     public void testKryoValuePreservation() {
         // serializing full type name: 44, 42
         // serializing type name index: 16, 14
-        verifyKryoPreservesValue(createNormalizedAttribute(), 16);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 14);
+        // kryo optimization: 20, 18
+        // serialize hash code: 25, 23
+        verifyKryoPreservesValue(createNormalizedAttribute(), 25);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 23);
     }
 
     @Test

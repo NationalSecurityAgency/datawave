@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -61,12 +62,15 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.DateType;
+import datawave.data.type.RawDateType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
@@ -74,6 +78,9 @@ import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ScanHintRule;
@@ -170,6 +177,8 @@ import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
+import datawave.query.planner.rules.FieldTransformRule;
+import datawave.query.planner.rules.FieldTransformRuleVisitor;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -599,11 +608,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {
@@ -727,11 +732,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {
@@ -1015,6 +1016,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
 
+        // Verify that any fields specified for unique with temporal granularities such as unique_by_hour are date-time fields.
+        validateUniqueFields(config.getUniqueFields());
+
+        // Verify that any fields specified for grouping with temporal granularities such as #GROUP(FIELD[HOUR]) are date-time fields.
+        validateGroupFields(config.getGroupFields());
+
         Set<String> indexOnlyFields = getIndexOnlyFields();
 
         if (!indexOnlyFields.isEmpty()) {
@@ -1083,6 +1090,75 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return config.getQueryTree();
     }
 
+    // The set of date time field types.
+    protected static final Set<String> dateTypes = Set.of(DateType.class.getName(), RawDateType.class.getName());
+
+    /**
+     * Verify that the given unique fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param uniqueFields
+     *            the unique fields to validate
+     */
+    protected void validateUniqueFields(UniqueFields uniqueFields) {
+        if (uniqueFields != null && !uniqueFields.isEmpty()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(uniqueFields.getFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException(
+                                "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: " + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Verify that the given grouping fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param groupFields
+     *            the grouping fields
+     */
+    protected void validateGroupFields(GroupFields groupFields) {
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(groupFields.getGroupByFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException("The following group-by fields are not date fields and cannot be used with temporal truncation: "
+                                + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Return the set of non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param fields
+     *            the fields to check
+     * @return the set of non-datetime fields
+     */
+    protected Set<String> getNonTemporalFields(TreeMultimap<String,TemporalGranularity> fields) {
+        // Get the set of all fields mapped to a temporal granularity other than ALL.
+        Set<String> fieldsToCheck = new HashSet<>();
+        for (String field : fields.keySet()) {
+            NavigableSet<TemporalGranularity> granularities = fields.get(field);
+            if (!granularities.isEmpty() && !(granularities.size() == 1 && granularities.contains(TemporalGranularity.ALL))) {
+                fieldsToCheck.add(field);
+            }
+        }
+
+        Set<String> invalidFields = new HashSet<>();
+
+        // Check the field types.
+        if (!fieldsToCheck.isEmpty()) {
+            TypeMetadata typeMetadata = getTypeMetadata();
+            for (String field : fieldsToCheck) {
+                Set<String> fieldTypes = typeMetadata.getNormalizerNamesForField(field);
+                // If field types were returned, verify that they contain one of the date time types. Otherwise, add it as an invalid field.
+                if (!fieldTypes.isEmpty() && Sets.intersection(fieldTypes, dateTypes).isEmpty()) {
+                    invalidFields.add(field);
+                }
+            }
+        }
+
+        return invalidFields;
+    }
+
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
                     ScannerFactory scannerFactory, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         config.setQueryTree(originalQueryTree);
@@ -1121,6 +1197,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // left as a regex
         if (!disableAnyFieldLookup) {
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
+        }
+
+        if (null != config.getFieldRuleClassName()) {
+            FieldTransformRule rule = new FieldTransformRule();
+            rule.setupRules(config);
+            config.setQueryTree(FieldTransformRuleVisitor.transform(config.getQueryTree(), Collections.singletonList(rule), config, metadataHelper));
         }
 
         if (reduceQuery) {
@@ -3112,7 +3194,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
                             scannerFactory, metadataHelper);
 
-            return stream.setUidIntersector(uidIntersector).setLimitScanners(limitScanners).setCreateUidsIteratorClass(createUidsIteratorClass);
+            //  @formatter:off
+            return stream.setUidIntersector(uidIntersector)
+                            .setLimitScanners(limitScanners)
+                            .setCreateUidsIteratorClass(createUidsIteratorClass)
+                            .setMaxLinesToPrint(config.getMaxLinesToPrint());
+            //  @formatter:on
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                         | NoSuchMethodException | SecurityException e) {
@@ -3472,6 +3559,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
         return compositeMetadata;
+    }
+
+    protected void setTypeMetadata(TypeMetadata typeMetadata) {
+        this.typeMetadata = typeMetadata;
     }
 
     protected TypeMetadata getTypeMetadata() {

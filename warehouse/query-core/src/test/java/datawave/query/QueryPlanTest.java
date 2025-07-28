@@ -26,6 +26,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -59,6 +60,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         generic.addIndexField(CitiesDataType.CityField.STATE.name());
         generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
         generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
+        CityDataManager.newInstance();
         DataTypeHadoopConfig dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
         accumuloSetup.setData(FileType.CSV, dataType);
 

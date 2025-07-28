@@ -116,7 +116,7 @@ public class TagCloudTest {
             String content = data[i];
             LinkedHashMap<String,Double> parsedContent = parseContent(content);
             String source = sources[i];
-            result[i] = new KeywordResults(source, "content", "english", parsedContent);
+            result[i] = new KeywordResults(source, "content", "english", "visibility", parsedContent);
         }
         return result;
     }

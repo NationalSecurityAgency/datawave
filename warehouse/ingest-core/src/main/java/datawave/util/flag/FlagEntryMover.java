@@ -7,7 +7,8 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 
@@ -18,7 +19,7 @@ import datawave.util.flag.InputFile.TrackedDir;
  */
 public class FlagEntryMover extends SimpleMover {
 
-    private static final Logger log = Logger.getLogger(FlagEntryMover.class);
+    private static final Logger log = LoggerFactory.getLogger(FlagEntryMover.class);
     private static final int CHKSUM_MAX = 10 * 1024 * 1000; // 10M
 
     public FlagEntryMover(Cache<Path,Path> directoryCache, FileSystem fs, InputFile entry) {
@@ -80,12 +81,16 @@ public class FlagEntryMover extends SimpleMover {
 
         if (resolved) {
             // rename tracked locations
-            log.warn("duplicate ingest file name with different payload(" + src.toUri().toString() + ") - appending timestamp to destination file name");
+            if (log.isWarnEnabled()) {
+                log.warn("duplicate ingest file name with different payload( {} ) - appending timestamp to destination file name", src.toUri().toString());
+            }
             this.entry.renameTrackedLocations();
         } else {
-            log.warn("discarding duplicate ingest file (" + src.toUri().toString() + ") duplicate (" + dest.toUri().toString() + ")");
+            if (log.isWarnEnabled()) {
+                log.warn("discarding duplicate ingest file ( {} ) duplicate ( {} )", src.toUri().toString(), dest.toUri().toString());
+            }
             if (!fs.delete(src, false)) {
-                log.error("unable to delete duplicate ingest file (" + src.toUri().toString() + ")");
+                log.error("unable to delete duplicate ingest file ( {} )", src.toUri().toString());
             }
         }
 
