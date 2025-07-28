@@ -14,9 +14,15 @@ public class StatUtil {
      */
     public static String formatNanos(long ns) {
         long millis = ns / 1_000_000;
-        if (millis > 0) {
+        long hours = (millis / 1000) / 60 / 60;
+        long minutes = (millis / 1000) / 60 % 60;
+        long seconds = (millis / 1000) % 60;
+        long remainingMillis = millis % 1000;
 
-        }
-        return "formatted string";
+        StringBuilder sb = new StringBuilder();
+        sb.append(hours > 0 ? hours + "h " : "").append(minutes > 0 || (hours > 0 && seconds > 0) ? minutes + "m " : "")
+                        .append(seconds > 0 ? seconds + "s " : "").append(remainingMillis > 0 && sb.length() > 0 ? remainingMillis + "ms" : "")
+                        .append(sb.length() == 0 ? millis + "ms" : "");
+        return sb.toString();
     }
 }

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -30,6 +29,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.NumberListType;
 import datawave.data.type.NumberType;
 import datawave.data.type.PointType;
+import datawave.next.stats.StatUtil;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.util.TypeMetadata;
@@ -234,7 +234,6 @@ public class DocumentTest {
         for (int i = 0; i < maxIterations; i++) {
             entry = serialize(d);
         }
-        writeTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - writeTime);
         assertNotNull(entry);
 
         if (serializedLength > 0) {
@@ -250,9 +249,8 @@ public class DocumentTest {
             Document d2 = result.getValue();
             assertEquals(d, d2);
         }
-        readTime = TimeUnit.NANOSECONDS.toMillis(readTime);
 
-        log.info("{} read: {} write: {}", field, readTime, writeTime);
+        log.info("{} read: {} write: {}", field, StatUtil.formatNanos(readTime), StatUtil.formatNanos(writeTime));
     }
 
     protected Document createDocumentForField(String field, int size) {
