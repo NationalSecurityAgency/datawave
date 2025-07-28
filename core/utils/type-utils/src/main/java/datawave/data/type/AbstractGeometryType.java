@@ -17,7 +17,7 @@ import datawave.data.type.util.AbstractGeometry;
  * @param <T>
  *            The underlying geometry type
  */
-public abstract class AbstractGeometryType<T extends AbstractGeometry & Comparable<T>> extends BaseType<T> implements DiscreteIndexType<T> {
+public abstract class AbstractGeometryType<T extends AbstractGeometry<?> & Comparable<T>> extends BaseType<T> implements DiscreteIndexType<T> {
 
     private static final long GEOMETRY_FACTORY_SIZE = 120;
     private static final long ENVELOPE_SIZE = 45;
@@ -30,12 +30,12 @@ public abstract class AbstractGeometryType<T extends AbstractGeometry & Comparab
 
     @Override
     public String incrementIndex(String index) {
-        return ((DiscreteIndexNormalizer) normalizer).incrementIndex(index);
+        return ((DiscreteIndexNormalizer<?>) normalizer).incrementIndex(index);
     }
 
     @Override
     public String decrementIndex(String index) {
-        return ((DiscreteIndexNormalizer) normalizer).decrementIndex(index);
+        return ((DiscreteIndexNormalizer<?>) normalizer).decrementIndex(index);
     }
 
     @Override

@@ -96,14 +96,14 @@ public class GeometryObjectSizeTest {
         assertTrue(Math.abs(actualSizeInBytes - estimatedSizeInBytes) / (double) actualSizeInBytes <= THRESHOLD);
     }
 
-    private static long sizeInBytes(BaseType baseType) {
+    private static long sizeInBytes(BaseType<?> baseType) {
         long size = 0;
         if (baseType instanceof OneToManyNormalizerType) {
             List<String> values = ((OneToManyNormalizerType<?>) baseType).getNormalizedValues();
             size += values.stream().map(String::length).map(length -> 2 * length + ObjectSizeOf.Sizer.REFERENCE).reduce(Integer::sum).orElse(0);
         }
         size += ObjectSizeOf.PrecomputedSizes.STRING_STATIC_REF + ObjectSizeOf.Sizer.REFERENCE + ObjectSizeOf.Sizer.REFERENCE
-                        + (2 * baseType.getNormalizedValue().length()) + ObjectSizeOf.Sizer.getObjectSize(baseType.getDelegate());
+                        + (2L * baseType.getNormalizedValue().length()) + ObjectSizeOf.Sizer.getObjectSize(baseType.getDelegate());
         return size;
     }
 }
