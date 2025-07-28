@@ -38,7 +38,6 @@ import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -223,7 +222,7 @@ public class PushdownScheduler extends Scheduler {
      */
     @Override
     public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
+        return scannerFactory.newScanner(config, qd);
     }
 
     @Override

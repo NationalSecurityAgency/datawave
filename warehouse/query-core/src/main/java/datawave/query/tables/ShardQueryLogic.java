@@ -23,8 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -275,31 +273,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
-    }
-
-    public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
-                        config.getQuery());
-
-        if (log.isTraceEnabled()) {
-            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
-        }
-
-        bs.setRanges(qd.getRanges());
-
-        for (IteratorSetting cfg : qd.getSettings()) {
-            bs.addScanIterator(cfg);
-        }
-
-        if (config.getTableConsistencyLevels().containsKey(config.getTableName())) {
-            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(config.getTableName()));
-        }
-
-        if (config.getTableHints().containsKey(config.getTableName())) {
-            bs.setExecutionHints(config.getTableHints().get(config.getTableName()));
-        }
-
-        return bs;
     }
 
     @Override
