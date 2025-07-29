@@ -1,7 +1,7 @@
 FROM azul/zulu-openjdk-alpine:11
 
 LABEL version=${project.version} \
-      run="docker run ${docker.image.prefix}${project.artifactId}:latest" \
+      run="docker run ${docker.image.prefix}/${project.artifactId}:latest" \
       description="${project.description}"
 
 ADD ${project.build.finalName}-exec.jar /app.jar

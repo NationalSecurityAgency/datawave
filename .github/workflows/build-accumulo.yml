@@ -18,13 +18,13 @@ on:
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
-  REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository.lowercase }}
   ACCUMULO_JAVA_VERSION: '17'
   DATAWAVE_JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
-  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
-  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+  GITHUB_REGISTRY: ghcr.io
+  GITHUB_USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  GITHUB_ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   build-and-deploy-accumulo:
@@ -80,20 +80,20 @@ jobs:
     - name: Log in to the Container registry
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ env.USER_NAME }}
-        password: ${{ env.ACCESS_TOKEN }}
+        registry: ${{ env.GITHUB_REGISTRY }}
+        username: ${{ env.GITHUB_USER_NAME }}
+        password: ${{ env.GITHUB_ACCESS_TOKEN }}
 
     - name: Update DataWave Dependency Version
       run: |
 
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        mvn -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml" versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        mvn -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml" clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Dversion.accumulo=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  
