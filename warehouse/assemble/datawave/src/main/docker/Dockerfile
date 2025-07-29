@@ -1,7 +1,7 @@
 # https://github.com/NationalSecurityAgency/datawave-stack-docker-images
-FROM ${docker.image.prefix}/datawave-stack-hadoop:${version.hadoop} AS hadoop
+FROM ghcr.io/nationalsecurityagency/datawave/datawave-stack-hadoop:${version.hadoop} AS hadoop
 FROM bitnami/zookeeper:${version.zookeeper} AS zookeeper
-FROM ${docker.image.prefix}/datawave-stack-accumulo:${version.accumulo}
+FROM ghcr.io/nationalsecurityagency/datawave/datawave-stack-accumulo:${version.accumulo}
 
 USER root
 
