@@ -15,7 +15,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import datawave.webservice.query.exception.BadRequestQueryException;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -65,6 +64,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 @RunWith(Arquillian.class)
