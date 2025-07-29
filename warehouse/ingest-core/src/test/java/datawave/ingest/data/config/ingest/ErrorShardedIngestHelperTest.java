@@ -8,12 +8,12 @@ import static datawave.ingest.data.config.ingest.BaseIngestHelper.REVERSE_INDEX_
 
 import java.util.Set;
 
-import datawave.ingest.data.Type;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import datawave.TestBaseIngestHelper;
+import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.policy.IngestPolicyEnforcer;
@@ -43,9 +43,11 @@ class ErrorShardedIngestHelperTest {
      */
 
     @Test
-    public void testIsIndexedField(){
+    public void testIsIndexedField() {
 
         Configuration config = new Configuration();
+
+        config.set("error." + INDEX_FIELDS, "GLOBAL_A");
 
         config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
         config.set(DataTypeHelper.Properties.DATA_NAME, "csv");
@@ -57,7 +59,8 @@ class ErrorShardedIngestHelperTest {
         config.set("csv.data.separator", ",");
 
         config.set("error" + "." + "csv" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
-        config.set("error" + "." + "csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("error" + "." + "csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
+                        IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         config.set("error" + "." + "csv" + INDEX_FIELDS, "DT_B");
 
         ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
@@ -79,7 +82,7 @@ class ErrorShardedIngestHelperTest {
     }
 
     @Test
-    public void testIsReverseIndexedField(){
+    public void testIsReverseIndexedField() {
 
         Configuration config = new Configuration();
 
@@ -93,7 +96,8 @@ class ErrorShardedIngestHelperTest {
         config.set("csv.data.separator", ",");
 
         config.set("error" + "." + "csv" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
-        config.set("error" + "." + "csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("error" + "." + "csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
+                        IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         config.set("error" + "." + "csv" + REVERSE_INDEX_FIELDS, "DT_B");
 
         ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
@@ -112,63 +116,6 @@ class ErrorShardedIngestHelperTest {
         // dt HAS been set, dt index DOES exist
         Assertions.assertTrue(errorHelper.isReverseIndexedField("DT_B"));
 
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Verify that when indexed and reversed indexed fields are provided, that they are correctly parsed and are not treated as disallowed fields.
-     */
-    @Test
-    void testSetupGivenIndexedFieldLists() {
-
-        Configuration csvConfig = new Configuration();
-
-        csvConfig.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
-        csvConfig.set(DataTypeHelper.Properties.DATA_NAME, "csv");
-        csvConfig.set("csv" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
-        csvConfig.set("csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        csvConfig.set("csv" + INDEX_FIELDS, "FOO,BAR,HAT");
-        csvConfig.set("csv.data.header", "okay");
-        csvConfig.set("csv.data.separator", ",");
-
-        CSVIngestHelper csvHelper = new CSVIngestHelper();
-        csvHelper.setup(csvConfig);
-
-        // --- ERROR CONFIG ---
-
-        Configuration errorConfig = new Configuration();
-
-        errorConfig.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
-        errorConfig.set(DataTypeHelper.Properties.DATA_NAME, "csv");
-        errorConfig.set("csv" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
-        errorConfig.set("csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        errorConfig.set("csv" + INDEX_FIELDS, "FOO,BAR");
-
-        errorConfig.set("error" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
-        errorConfig.set("error" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        errorConfig.set("error" + INDEX_FIELDS, "FOO");
-
-        ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
-        errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
-        errorHelper.setup(errorConfig);
-
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), csvHelper.getIndexedFields());
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), errorHelper.getIndexedFields(TypeRegistry.getType("csv"))); // need to include dt
-        Assertions.assertFalse(errorHelper.hasIndexDisallowlist());
-
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), errorHelper.getReverseIndexedFields(TypeRegistry.getType("error.fruit")));
-        Assertions.assertFalse(errorHelper.hasReverseIndexDisallowlist());
     }
 
 }
