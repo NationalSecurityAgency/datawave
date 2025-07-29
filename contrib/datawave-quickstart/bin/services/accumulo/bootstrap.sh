@@ -95,6 +95,8 @@ else
 general.vfs.context.classpath.extlib=file://${ACCUMULO_HOME}/lib/ext/.*.jar"
 fi
 
+export ACCUMULO_JAVA_OPTS="-Dcom.google.protobuf.use_unsafe_pre22_gencode ${ACCUMULO_JAVA_OPTS}"
+
 # shellcheck disable=SC2034
 DW_ACCUMULO_CLIENT_CONF="instance.name=${DW_ACCUMULO_INSTANCE_NAME}
 instance.zookeepers=localhost:2181
