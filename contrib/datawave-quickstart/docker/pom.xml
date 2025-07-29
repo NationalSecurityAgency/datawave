@@ -195,10 +195,10 @@
                         <artifactId>kubernetes-maven-plugin</artifactId>
                         <configuration>
                             <verbose>true</verbose>
-                            <pushRegistry>${docker.registry}</pushRegistry>
+                            <pushRegistry>${container.registry}</pushRegistry>
                             <images>
                                 <image>
-                                    <name>datawave/quickstart-${build.env}:${project.version}</name>
+                                    <name>${registry.namespace}${image.prefix}quickstart-${build.env}:${project.version}</name>
                                     <build>
                                         <contextDir>${maven.multiModuleProjectDirectory}</contextDir>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>

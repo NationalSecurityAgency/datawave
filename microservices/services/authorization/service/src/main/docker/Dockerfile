@@ -1,8 +1,8 @@
 FROM azul/zulu-openjdk-alpine:11
 
 LABEL version=${project.version} \
-      run="docker run datawave/${project.artifactId}:${project.version}" \
-      pull="docker pull datawave/${project.artifactId}:${project.version}" \
+      run="docker run ${registry.namespace}${image.prefix}${project.artifactId}:${project.version}" \
+      pull="docker pull ${registry.namespace}${image.prefix}${project.artifactId}:${project.version}" \
       description="${project.description}"
 
 ADD ${project.build.finalName}-exec.jar /app.jar

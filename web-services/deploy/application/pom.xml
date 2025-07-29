@@ -358,10 +358,10 @@
                         <version>1.18.1</version>
                         <configuration>
                             <verbose>true</verbose>
-                            <pushRegistry>${docker.registry}</pushRegistry>
+                            <pushRegistry>${container.registry}</pushRegistry>
                             <images>
                                 <image>
-                                    <name>datawave/webservice-${build.env}:${project.version}</name>
+                                    <name>${registry.namespace}${image.prefix}webservice-${build.env}:${project.version}</name>
                                     <build>
                                         <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                         <contextDir>.</contextDir>
