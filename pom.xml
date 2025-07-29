@@ -47,6 +47,7 @@
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
+        <extraTestArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.management/java.lang.management=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.util.stream=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.time=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED</extraTestArgs>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
@@ -1878,6 +1879,7 @@
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
                         <groups>datawave.common.test.integration.IntegrationTest</groups>
+                        <argLine>${extraTestArgs}</argLine>
                     </configuration>
                     <executions>
                         <execution>
@@ -1960,6 +1962,15 @@
                     <version>3.5.2</version>
                     <configuration>
                         <skipTests>${skipUTs}</skipTests>
+                        <reuseForks>false</reuseForks>
+                        <forkCount>${surefire.forkCount}</forkCount>
+                        <threadCount>1</threadCount>
+                        <threadCountClasses>1</threadCountClasses>
+                        <threadCountMethods>0</threadCountMethods>
+                        <threadCountSuites>0</threadCountSuites>
+                        <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= ${extraTestArgs}</argLine>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <runOrder>random</runOrder>
                     </configuration>
                 </plugin>
                 <plugin>
