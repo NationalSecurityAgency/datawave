@@ -180,13 +180,12 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             fields.put("NEXT_COUNT", Long.toString(updatedQueryMetric.getNextCount()));
             fields.put("SEEK_COUNT", Long.toString(updatedQueryMetric.getSeekCount()));
             fields.put("YIELD_COUNT", Long.toString(updatedQueryMetric.getYieldCount()));
+            fields.put("DOC_SIZE", Long.toString(updatedQueryMetric.getDocSize()));
             fields.put("DOC_RANGES", Long.toString(updatedQueryMetric.getDocRanges()));
             fields.put("FI_RANGES", Long.toString(updatedQueryMetric.getFiRanges()));
             Map<String,String> versionMap = updatedQueryMetric.getVersionMap();
             if (versionMap != null) {
-                versionMap.entrySet().stream().forEach(e -> {
-                    fields.put("VERSION." + e.getKey().toUpperCase(), e.getValue());
-                });
+                versionMap.forEach((key, value) -> fields.put("VERSION." + key.toUpperCase(), value));
             }
             Set<Prediction> predictions = updatedQueryMetric.getPredictions();
             if (predictions != null && !predictions.isEmpty()) {
@@ -288,6 +287,9 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             }
             if (updatedQueryMetric.getYieldCount() != storedQueryMetric.getYieldCount()) {
                 fields.put("YIELD_COUNT", Long.toString(storedQueryMetric.getYieldCount()));
+            }
+            if (updatedQueryMetric.getDocSize() != storedQueryMetric.getDocSize()) {
+                fields.put("DOC_SIZE", Long.toString(storedQueryMetric.getDocSize()));
             }
             if (updatedQueryMetric.getDocRanges() != storedQueryMetric.getDocRanges()) {
                 fields.put("DOC_RANGES", Long.toString(storedQueryMetric.getDocRanges()));
