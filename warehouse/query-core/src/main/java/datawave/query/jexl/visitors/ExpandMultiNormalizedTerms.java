@@ -304,6 +304,20 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             boolean lenient = config.getLenientFields().contains(fieldName)
                             || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LENIENT));
 
+            // Is this a regex node ?
+            boolean regexNode = (node instanceof ASTNRNode || node instanceof ASTERNode);
+
+            boolean indexOnly = false;
+            // For efficiency purposes, we only need to know if it is index only when dealing with regex nodes
+            if (regexNode) {
+                try {
+                    indexOnly = helper.getIndexOnlyFields(config.getDatatypeFilter()).contains(fieldName);
+                } catch (TableNotFoundException e) {
+                    log.error("Could not fetch index only fields while expanding unfielded term");
+                    throw new RuntimeException(e);
+                }
+            }
+
             if (strict && lenient) {
                 log.warn("Field " + fieldName + " marked both as strict and lenient.  Applying neither");
                 strict = false;
@@ -331,7 +345,6 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     Set<String> normalizedTerms = Sets.newHashSet();
                     List<JexlNode> normalizedNodes = Lists.newArrayList();
                     boolean failedNormalization = false;
-                    boolean regexNode = (node instanceof ASTNRNode || node instanceof ASTERNode);
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
@@ -343,7 +356,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     }
                                     normalizedTerms.add(normTerm);
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
-                                    if ((!term.equals(normTerm)) && normalizer.normalizedRegexIsLossy(term)) {
+                                    // if not index only, and we have a lossy normalized regex, then add the original regex as eval only
+                                    if (!indexOnly && (!term.equals(normTerm)) && normalizer.normalizedRegexIsLossy(term)) {
                                         JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
                                                         EVALUATION_ONLY);
                                         // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)

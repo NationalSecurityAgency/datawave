@@ -261,7 +261,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMixedIndexOnly");
         }
         String[] queryStrings = {"filter:isNull(LOCATION) || LOCATION == 'chicago'"};
         @SuppressWarnings("unchecked")
@@ -279,7 +279,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:isNull(MAGIC) || LOCATION == 'chicago')"};
         @SuppressWarnings("unchecked")
@@ -356,7 +356,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testNestedOrExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || (filter:isNull(MAGIC) || LOCATION == 'chicago'))"};
         @SuppressWarnings("unchecked")
@@ -373,7 +373,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMethodNoExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( AGE.size() > 1 || AGE == '18')"};
         @SuppressWarnings("unchecked")
@@ -388,10 +388,9 @@ public abstract class ExecutableExpansionVisitorTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        // extraParameters.put("query.syntax", "LUCENE");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testNumericExpansion");
         }
         String[] queryStrings = {"BAIL=~'12340.*?'"};
         @SuppressWarnings("unchecked")
@@ -408,14 +407,36 @@ public abstract class ExecutableExpansionVisitorTest {
     }
 
     @Test
+    public void testNumericExpansionIndexOnly() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testNumericExpansionIndexOnly");
+        }
+        String[] queryStrings = {"SENTENCE_DAYS=~'4015\\.0*'"};
+        @SuppressWarnings("unchecked")
+        // SOPRANO is the only one with a 0 after the 1234
+        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "SENTENCE_DAYS == '+dE4.015'";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
     public void testAnyfieldNumericExpansion() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        // extraParameters.put("query.syntax", "LUCENE");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testAnyfieldNumericExpansion");
         }
         String[] queryStrings = {"_ANYFIELD_ =~'12340.*?'"};
         @SuppressWarnings("unchecked")
@@ -436,10 +457,9 @@ public abstract class ExecutableExpansionVisitorTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        // extraParameters.put("query.syntax", "LUCENE");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testLeadingNumericExpansion");
         }
         String[] queryStrings = {"(UUID == 'capone' || UUID == 'soprano') && BAIL=~'.*?05'"};
         @SuppressWarnings("unchecked")
@@ -461,7 +481,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMethodExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( QUOTE.size() == 1 || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
@@ -478,7 +498,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testNonEventExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (QUOTE == 'kind'|| BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
@@ -495,7 +515,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testFilterExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
@@ -514,7 +534,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testDisableExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
@@ -531,7 +551,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testDelayedBridgeExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || !(filter:isNull(MAGIC) || LOCATION == 'chicago'))",
                 "UUID == 'capone' && ( LOCATION == 'newyork' || !filter:isNull(MAGIC) || LOCATION == 'chicago')"};
@@ -551,7 +571,7 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setIntermediateMaxTermThreshold(15);
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMultipleExpansionsRequired");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind') && (QUOTE == 'kind'|| BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
@@ -568,7 +588,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMinimumExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
