@@ -19,9 +19,9 @@ env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
-  REGISTRY: ghcr.io
-  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
-  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+  GITHUB_REGISTRY: ghcr.io
+  GITHUB_USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  GITHUB_ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
@@ -50,19 +50,13 @@ jobs:
       with:
         tool-cache: false
     - name: Build and Run Unit Tests
-      env:
-        USER_NAME: ${{ secrets.USER_NAME }}
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
         cd microservices
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipITs -DskipFormat
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipITs -DskipFormat
     - name: Run Integration Tests
-      env:
-        USER_NAME: ${{ secrets.USER_NAME }}
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
         cd microservices
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples -Dmaven.build.cache.enabled=false -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
+        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples -Dmaven.build.cache.enabled=false -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
 
 
 

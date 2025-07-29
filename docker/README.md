@@ -8,7 +8,6 @@ out the [prereqs](#prereqs) at a minimum):
 
 ```shell
 # build docker images for datawave and all of the microservices
-# optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the maven repository
 mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 
 # bootstrap the services, and bring them up using docker compose
@@ -195,8 +194,6 @@ Note that the quickstart-docker property is set.  This property is a shortcut wh
 
 For this command, the build profile is set to `compose`.  This profile contains all of the properties needed to make the quickstart work as part
 of the docker compose deployment.  The use of any other build profile with docker compose is unsupported.
-
-This command also prevents the microservice services from building with `-DskipServices`.  This is an optional setting which will skip the microservice builds entirely, saving you some time if you only want to build/rebuild the Datawave Quickstart.  
 
 If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
 your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
