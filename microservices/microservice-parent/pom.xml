@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.5-SNAPSHOT</version>
+    <version>4.0.7-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -30,7 +30,7 @@
         </repository>
     </distributionManagement>
     <properties>
-        <docker.image.prefix>datawave/</docker.image.prefix>
+        <docker.registry>ghcr.io/nationalsecurityagency</docker.registry>
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -468,19 +468,16 @@
                     <version>1.18.1</version>
                     <configuration>
                         <verbose>true</verbose>
+                        <pushRegistry>${docker.registry}</pushRegistry>
                         <images>
                             <image>
-                                <name>${docker.image.prefix}${project.artifactId}</name>
+                                <name>datawave/${project.artifactId}:${project.version}</name>
                                 <build>
                                     <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                     <contextDir>.</contextDir>
                                     <buildOptions>
                                         <memory>8589934592</memory>
                                     </buildOptions>
-                                    <tags>
-                                        <tag>latest</tag>
-                                        <tag>${project.version}</tag>
-                                    </tags>
                                     <assembly>
                                         <name>/</name>
                                         <excludeFinalOutputArtifact>true</excludeFinalOutputArtifact>
