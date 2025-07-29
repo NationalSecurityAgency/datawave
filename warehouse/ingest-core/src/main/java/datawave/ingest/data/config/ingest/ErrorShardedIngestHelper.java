@@ -94,8 +94,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             setActiveDataType(type);
 
             if (properties.containsKey(INDEX_FIELDS) && properties.containsKey(DISALLOWLIST_INDEX_FIELDS)) {
-                throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both." + " Type: " + type.typeName()
-                                + ", " + " Parameters: " + config.get(ERROR + "." + type.typeName() + INDEX_FIELDS) + " | "
+                throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both." + " Type: "
+                                + type.typeName() + ", " + " Parameters: " + config.get(ERROR + "." + type.typeName() + INDEX_FIELDS) + " | "
                                 + config.get(ERROR + "." + type.typeName() + DISALLOWLIST_INDEX_FIELDS));
             }
 
@@ -172,7 +172,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             String property = entry.getKey();
             // Check if the property is one that allows for configuring index/reverse index fields.
             if (isIndexProperty(property)) {
-                // If the third segment of the original property name is 'data', then the first segment contains a datatype. Offset to account for the stripping of "error."
+                // If the third segment of the original property name is 'data', then the first segment contains a datatype. Offset to account for the stripping
+                // of "error."
                 String[] parts = property.split("\\.");
                 if (parts[1].equals("data")) {
                     Type dataType = TypeRegistry.getType(parts[0]);
@@ -358,7 +359,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
     }
 
-
     /**
      * Checks if the {@code fieldName} has been indexed in either the index-field map or the error-index-field map.
      *
@@ -372,7 +372,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             return super.isIndexedField(fieldName);
         }
 
-        return dataTypeIndexFields.hasDisallowList ? !dataTypeIndexFields.unindexedFields.contains(fieldName) : dataTypeIndexFields.indexedFields.contains(fieldName);
+        return dataTypeIndexFields.hasDisallowList ? !dataTypeIndexFields.unindexedFields.contains(fieldName)
+                        : dataTypeIndexFields.indexedFields.contains(fieldName);
     }
 
     public Set<String> getIndexedFields(Type dataType) {
@@ -396,7 +397,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             return super.isReverseIndexedField(fieldName);
         }
 
-        return dataTypeIndexFields.hasDisallowList ? !dataTypeIndexFields.unindexedFields.contains(fieldName) : dataTypeIndexFields.indexedFields.contains(fieldName);
+        return dataTypeIndexFields.hasDisallowList ? !dataTypeIndexFields.unindexedFields.contains(fieldName)
+                        : dataTypeIndexFields.indexedFields.contains(fieldName);
     }
 
     public void setActiveDataType(Type dataType) {
