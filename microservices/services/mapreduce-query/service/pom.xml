@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.6</version>
+        <version>5.0.7</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>mapreduce-query-service</artifactId>
@@ -18,7 +18,9 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <docker.registry>ghcr.io/nationalsecurityagency</docker.registry>
+        <container.registry>ghcr.io</container.registry>
+        <image.prefix>datawave/</image.prefix>
+        <registry.namespace>nationalsecurityagency/</registry.namespace>
         <start-class>datawave.microservice.query.mapreduce.MapReduceQueryService</start-class>
         <version.datawave>7.1.3</version.datawave>
         <version.datawave.mapreduce-query-core-job>1.0.4</version.datawave.mapreduce-query-core-job>
@@ -229,10 +231,10 @@
                         <artifactId>kubernetes-maven-plugin</artifactId>
                         <configuration>
                             <verbose>true</verbose>
-                            <pushRegistry>${docker.registry}</pushRegistry>
+                            <pushRegistry>${container.registry}</pushRegistry>
                             <images>
                                 <image>
-                                    <name>datawave/${project.artifactId}:${project.version}</name>
+                                    <name>${registry.namespace}${image.prefix}${project.artifactId}:${project.version}</name>
                                     <build>
                                         <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                         <contextDir>.</contextDir>

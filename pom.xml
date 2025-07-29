@@ -37,11 +37,13 @@
         <argLine />
         <!-- build.env and env should get overridden if any other read-properties profile is specified (e.g. comnpose)compose -->
         <build.env>dev</build.env>
-        <docker.registry>ghcr.io/nationalsecurityagency</docker.registry>
+        <container.registry>ghcr.io</container.registry>
         <env>dev</env>
+        <image.prefix>datawave/</image.prefix>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
