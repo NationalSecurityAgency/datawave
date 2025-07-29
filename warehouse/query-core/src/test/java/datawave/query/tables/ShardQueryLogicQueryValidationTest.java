@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import datawave.webservice.query.exception.BadRequestQueryException;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -187,7 +188,8 @@ public class ShardQueryLogicQueryValidationTest {
     public void testNoRulesConfigured() {
         logic.setValidationRules(null);
 
-        Assert.assertThrows(UnsupportedOperationException.class, this::assertResult);
+        BadRequestQueryException exception = Assert.assertThrows(BadRequestQueryException.class, this::assertResult);
+        Assert.assertEquals("No query validation rules configured for the query logic.", exception.getMessage());
     }
 
     /**
