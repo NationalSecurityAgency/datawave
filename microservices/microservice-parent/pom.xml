@@ -30,7 +30,8 @@
         </repository>
     </distributionManagement>
     <properties>
-        <docker.registry>ghcr.io/nationalsecurityagency</docker.registry>
+        <container.registry>ghcr.io</container.registry>
+        <image.prefix>datawave/</image.prefix>
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -43,6 +44,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github-datawave</project.scm.id>
         <project.version>${project.version}</project.version>
+        <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
@@ -468,10 +470,10 @@
                     <version>1.18.1</version>
                     <configuration>
                         <verbose>true</verbose>
-                        <pushRegistry>${docker.registry}</pushRegistry>
+                        <pushRegistry>${container.registry}</pushRegistry>
                         <images>
                             <image>
-                                <name>datawave/${project.artifactId}:${project.version}</name>
+                                <name>${registry.namespace}${image.prefix}${project.artifactId}:${project.version}</name>
                                 <build>
                                     <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                     <contextDir>.</contextDir>
