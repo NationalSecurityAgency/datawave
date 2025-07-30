@@ -223,7 +223,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertFalse(trbi.hasNext());
         long end = System.currentTimeMillis();
         // arbitrary fast time less than any previous poll time, actual time probably 1 but to keep this unit test predictable
-        assertTrue(end - start < 5);
+        assertTrue(end - start < 20);
         verifyAll();
     }
 

@@ -2,6 +2,7 @@ package datawave.query.planner;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -321,6 +323,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             this.plannedScript = this.initialPlan;
         } else {
             DatePartitionedQueryIterable results = new DatePartitionedQueryIterable();
+            List<Exception> exceptions = new ArrayList<>();
 
             for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
                 String subBeginDate = dateFormat.format(dateRange.getKey().getLeft());
@@ -342,8 +345,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                     }
                 } catch (DatawaveQueryException e) {
                     log.warn("Exception occurred when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")", e);
-
-                    throw e;
+                    exceptions.add(e);
                 } finally {
                     // append the new timers for logging at the end
                     originalConfig.appendTimers(configCopy.getTimers());
@@ -354,6 +356,15 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                     // Update the planned script.
                     updatePlannedScript();
                 }
+            }
+
+            // if every plan failed, then pass an exception up
+            if (exceptions.size() == dateRanges.size()) {
+                DatawaveQueryException e = new DatawaveQueryException("Query failed creation");
+                for (Exception reason : exceptions) {
+                    e.addSuppressed(reason);
+                }
+                throw e;
             }
 
             // reset the iterator to be our federated iterator
