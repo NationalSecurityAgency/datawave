@@ -44,7 +44,7 @@ public class GenerateShardSplits {
 
     private static void printUsageAndExit() {
         System.out.println(
-                        "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> <numberOfSplitsPerBatch> <delayBetweenBatches> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
+                        "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> [-splitsPerBatch <number of splits to create per batch>] [-balancerDelay <milliseconds to wait between batches for balance>] [-maxBalancerDelay <timeout for waiting for balance>] [-pctBatchBalanceRequired <percentage of tablets that must be balanced off before continuation] [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
         System.exit(-1);
     }
 
@@ -106,13 +106,13 @@ public class GenerateShardSplits {
                     System.exit(-2);
                 }
                 try {
-                    balancerDelay = Integer.parseInt(args[i]);
-                    if (balancerDelay < 0) {
-                        System.out.println("Balancer delay cannot be less than 0");
+                    splitsPerBatch = Integer.parseInt(args[i]);
+                    if (splitsPerBatch < 0) {
+                        System.out.println("splitsPerBatch cannot be less than 0");
                         System.exit(-2);
                     }
                 } catch (NumberFormatException e) {
-                    System.out.println("Balancer delay argument is not an integer:" + e.getMessage());
+                    System.out.println("splitsPerBatch delay argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
             } else if ("-balancerDelay".equalsIgnoreCase(args[i])) {
