@@ -350,6 +350,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
 
+    /**
+     * Verify that a lower bound sorts before a range's upper bound
+     */
+    protected boolean validateBoundedRanges = false;
+
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
 
@@ -1253,8 +1258,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // whether bounded ranges were expanded or not, validate all ranges
-        timedValidateBoundedRanges(timers, config.getQueryTree());
+        if (validateBoundedRanges) {
+            // whether bounded ranges were expanded or not, validate all ranges
+            timedValidateBoundedRanges(timers, config.getQueryTree());
+        }
 
         // fields may have been added or removed from the query, need to update the field to type map
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
@@ -3658,5 +3665,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public void setConcurrentTimeoutMillis(int concurrentTimeoutMillis) {
         this.concurrentTimeoutMillis = concurrentTimeoutMillis;
+    }
+
+    public boolean isValidateBoundedRanges() {
+        return validateBoundedRanges;
+    }
+
+    public void setValidateBoundedRanges(boolean validateBoundedRanges) {
+        this.validateBoundedRanges = validateBoundedRanges;
     }
 }
