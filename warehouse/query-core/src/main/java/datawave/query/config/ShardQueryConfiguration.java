@@ -17,10 +17,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -64,7 +61,6 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
@@ -2822,30 +2818,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
-    }
-
-    public BatchScanner createBatchScanner(ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        final BatchScanner bs = scannerFactory.newScanner(this.getShardTableName(), this.getAuthorizations(), this.getNumQueryThreads(), this.getQuery());
-
-        if (log.isTraceEnabled()) {
-            log.trace("Running with " + this.getAuthorizations() + " and " + this.getNumQueryThreads() + " threads: " + qd);
-        }
-
-        bs.setRanges(qd.getRanges());
-
-        for (IteratorSetting cfg : qd.getSettings()) {
-            bs.addScanIterator(cfg);
-        }
-
-        if (this.getTableConsistencyLevels().containsKey(this.getTableName())) {
-            bs.setConsistencyLevel(this.getTableConsistencyLevels().get(this.getTableName()));
-        }
-
-        if (this.getTableHints().containsKey(this.getTableName())) {
-            bs.setExecutionHints(this.getTableHints().get(this.getTableName()));
-        }
-
-        return bs;
     }
 
     public GroupFields getGroupFields() {
