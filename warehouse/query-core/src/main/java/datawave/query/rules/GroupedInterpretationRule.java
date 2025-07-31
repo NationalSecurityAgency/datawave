@@ -63,6 +63,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
     private String formatMessage(QueryNode node) {
         // @formatter:off
         return new StringBuilder()
+                .append("Operator precedence is missing, ")
                 .append(printOriginalQueryInfo((GroupQueryNode)node, query))
                 .append(" will be interpreted as: ")
                 .append(LuceneQueryStringBuildingVisitor.build(node))
