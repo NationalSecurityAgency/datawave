@@ -265,6 +265,7 @@ public class GenerateShardSplits {
                         while ((tabletLocations.size() < reducedBatchSize * pctBatchBalanceRequired) || (currentBatchDelay < maxBalancerDelay)) {
                             tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
                             Thread.sleep(balancerDelay);
+                            currentBatchDelay = currentBatchDelay + balancerDelay;
                         }
                     }
                 }
