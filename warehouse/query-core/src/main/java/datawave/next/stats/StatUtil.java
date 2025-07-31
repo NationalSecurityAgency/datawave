@@ -1,5 +1,7 @@
 package datawave.next.stats;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Utility class that helps pretty print stats
  */
@@ -13,16 +15,34 @@ public class StatUtil {
      * @return the formatted time
      */
     public static String formatNanos(long ns) {
-        long millis = ns / 1_000_000;
-        long hours = (millis / 1000) / 60 / 60;
-        long minutes = (millis / 1000) / 60 % 60;
-        long seconds = (millis / 1000) % 60;
-        long remainingMillis = millis % 1000;
-
         StringBuilder sb = new StringBuilder();
-        sb.append(hours > 0 ? hours + "h " : "").append(minutes > 0 || (hours > 0 && seconds > 0) ? minutes + "m " : "")
-                        .append(seconds > 0 ? seconds + "s " : "").append(remainingMillis > 0 && sb.length() > 0 ? remainingMillis + "ms" : "")
-                        .append(sb.length() == 0 ? millis + "ms" : "");
-        return sb.toString();
+        return sb.append(format(TimeUnit.NANOSECONDS, TimeUnit.HOURS, ns, 0)).append(format(TimeUnit.NANOSECONDS, TimeUnit.MINUTES, ns, 60))
+                        .append(format(TimeUnit.NANOSECONDS, TimeUnit.SECONDS, ns, 60)).append(format(TimeUnit.NANOSECONDS, TimeUnit.MILLISECONDS, ns, 1000))
+                        .toString();
+    }
+
+    public static String format(TimeUnit source, TimeUnit target, long duration, int modulus) {
+        long time = target.convert(duration, source);
+        if (modulus != 0) {
+            time = time % modulus;
+        }
+        return time == 0 ? "" : time + getAbbreviation(target);
+    }
+
+    public static String getAbbreviation(TimeUnit unit) {
+        switch (unit) {
+            case NANOSECONDS:
+                return "ns";
+            case MILLISECONDS:
+                return "ms";
+            case SECONDS:
+                return "s";
+            case MINUTES:
+                return "m";
+            case HOURS:
+                return "h";
+            default:
+                return "unknown";
+        }
     }
 }
