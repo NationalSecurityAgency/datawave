@@ -13,7 +13,7 @@ import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 import datawave.query.lucene.visitors.QueryNodeType;
 
 /**
- * An implementation of {@link QueryRule} that checks a LUCENE query for any grouped phrases with the same fields, e.g. {@code FOO:(aaa bbb ccc)},
+ * An implementation of {@link QueryRule} that interprets a LUCENE query for any grouped phrases with fields, e.g. {@code FOO:(aaa bbb ccc)},
  * {@code (FOO:aaa bbb ccc)} and will return a LUCENE string warning message to let the user know how the query will be interpreted e.g.
  * "{@code FOO:(aaa bbb ccc)} will be interpreted as {@code (FOO:aaa AND FOO:bbb AND FOO:ccc)}"
  */
