@@ -23,7 +23,7 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
     }
 
     @Test
-    void testQueryWithGroupedAmbiguousPhrases() {
+    void testQueryWithGroupedPhrase() {
         givenQuery("FOO:(abc def ghi)");
 
         Assert.assertThrows(AssertionError.class, this::assertResult);
@@ -31,7 +31,7 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
     }
 
     @Test
-    void testQueryWithGroupedAmbiguousPhrases1() {
+    void testQueryWithGroupedAmbiguousPhrases() {
         givenQuery("(FOO:abc def ghi)");
 
         Assert.assertThrows(AssertionError.class, this::assertResult);
@@ -39,7 +39,7 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
     }
 
     @Test
-    void testQueryWithGroupedAmbiguousPhrases2() {
+    void testQueryWithGroupedFieldedPhrases() {
         givenQuery("(FOO:abc AND FOO:def AND FOO:ghi)");
 
         Assert.assertThrows(AssertionError.class, this::assertResult);
@@ -47,7 +47,7 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
     }
 
     @Test
-    void testQueryWithGroupedAmbiguousPhrases3() {
+    void testQueryWithNestedFieldedPhrasesAndTerms() {
         givenQuery("FOO:(abc (def ghi))");
 
         Assert.assertThrows(AssertionError.class, this::assertResult);
@@ -55,7 +55,7 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
     }
 
     @Test
-    void testQueryWithGroupedAmbiguousPhrases4() {
+    void testQueryWithGroupedPhraseAndAmbiguousPhrase() {
         givenQuery("FOO:(abc def ghi) FOO:jkl mno");
 
         Assert.assertThrows(AssertionError.class, this::assertResult);
