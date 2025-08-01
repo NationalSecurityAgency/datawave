@@ -17,7 +17,7 @@ public class StatUtil {
      *         [14413346ms] would be returned.
      */
     public static String formatNanos(long ns) {
-        long totalMilliseconds = TimeUnit.MILLISECONDS.convert(ns, TimeUnit.NANOSECONDS);
+        String totalMilliseconds = format(TimeUnit.MILLISECONDS, ns, 0);
         // @formatter:off
         StringBuilder formattedTime = new StringBuilder()
                 .append(format(TimeUnit.HOURS, ns, 0))
@@ -28,7 +28,7 @@ public class StatUtil {
         if (formattedTime.length() == 0) {
             formattedTime.append("0ns");
         }
-        return formattedTime.append(" [").append(totalMilliseconds).append("ms]").toString();
+        return formattedTime.append(" [").append(totalMilliseconds).append("]").toString();
     }
 
     private static String format(TimeUnit target, long duration, int modulus) {
