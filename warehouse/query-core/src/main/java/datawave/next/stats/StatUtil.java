@@ -12,27 +12,36 @@ public class StatUtil {
      *
      * @param ns
      *            the elapsed time in nanoseconds
-     * @return the formatted time
+     * @return The given nanoseconds formatted into 0h 0m 0s 0ms. Time units whose value is 0 will not be returned in the formatted time. For example, if given
+     *         14413346000000L 4h 13s 346ms would be returned.
      */
     public static String formatNanos(long ns) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(format(TimeUnit.NANOSECONDS, TimeUnit.HOURS, ns, 0)).append(format(TimeUnit.NANOSECONDS, TimeUnit.MINUTES, ns, 60))
-                        .append(format(TimeUnit.NANOSECONDS, TimeUnit.SECONDS, ns, 60)).append(format(TimeUnit.NANOSECONDS, TimeUnit.MILLISECONDS, ns, 1000))
-                        .toString();
+        // @formatter:off
+        StringBuilder formattedTime = new StringBuilder()
+                .append(format(TimeUnit.HOURS, ns, 0))
+                .append(format(TimeUnit.MINUTES, ns, 60))
+                .append(format(TimeUnit.SECONDS, ns, 60))
+                .append(format(TimeUnit.MILLISECONDS, ns, 1000));
+        // @formatter:on
+        return formattedTime.length() == 0 ? "0ns" : formattedTime.toString();
     }
 
-    public static String format(TimeUnit source, TimeUnit target, long duration, int modulus) {
-        long time = target.convert(duration, source);
+    private static String format(TimeUnit target, long duration, int modulus) {
+        long time = target.convert(duration, TimeUnit.NANOSECONDS);
         if (modulus != 0) {
             time = time % modulus;
         }
-        return time == 0 ? "" : time + getAbbreviation(target);
+        if (target != TimeUnit.MILLISECONDS && time != 0) {
+            return time + getAbbreviation(target) + " ";
+        } else if (target == TimeUnit.MILLISECONDS && time != 0) {
+            return time + getAbbreviation(target);
+        } else {
+            return "";
+        }
     }
 
-    public static String getAbbreviation(TimeUnit unit) {
+    private static String getAbbreviation(TimeUnit unit) {
         switch (unit) {
-            case NANOSECONDS:
-                return "ns";
             case MILLISECONDS:
                 return "ms";
             case SECONDS:
@@ -44,5 +53,9 @@ public class StatUtil {
             default:
                 return "unknown";
         }
+    }
+
+    private StatUtil() {
+        throw new UnsupportedOperationException();
     }
 }
