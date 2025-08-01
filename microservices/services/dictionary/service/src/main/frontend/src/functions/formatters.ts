@@ -1,4 +1,5 @@
-import { Ref, WritableComputedRef, computed, defineComponent, ref } from 'vue';
+import { Ref, ref } from 'vue';
+import { LocationQueryValue } from 'vue-router';
 
 const regexDataType = /^[1-9]\d*\s+types?$/;
 
@@ -164,4 +165,15 @@ export function setVisibility(rows: readonly any[]) {
 // Lets the DOM know what is visible and what is not based on setVisibility filters.
 export function isVisible(row: any) {
   return row.duplicate == 0 || row.isVisible.value;
+}
+
+// Filters the URL Search Bar to handle Edge Cases and only queries 1 item.
+export function filterSearch(searchVal: LocationQueryValue | LocationQueryValue[], searchValNew: string): string {
+  if (Array.isArray(searchVal)) {
+    searchValNew = searchVal[0] || '';
+  } else if (searchVal !== null && searchVal !== undefined) {
+    searchValNew = searchVal;
+  }
+
+  return searchValNew;
 }
