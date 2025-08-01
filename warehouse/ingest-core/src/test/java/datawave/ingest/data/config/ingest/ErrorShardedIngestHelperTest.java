@@ -47,7 +47,9 @@ class ErrorShardedIngestHelperTest {
 
         Configuration config = new Configuration();
 
-        config.set("error." + INDEX_FIELDS, "GLOBAL_A");
+        //config.set(".data.category.index", "G_A"); - false
+        //config.set(".data.category.index", "G_A"); - false
+        //config.set("datawave.data.category.index", "G_A");
 
         config.set(TypeRegistry.INGEST_DATA_TYPES, "csv");
         config.set(DataTypeHelper.Properties.DATA_NAME, "csv");
@@ -63,19 +65,24 @@ class ErrorShardedIngestHelperTest {
                         IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         config.set("error" + "." + "csv" + INDEX_FIELDS, "DT_B");
 
+
         ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
 
         errorHelper.setup(config);
 
         // NULL dt
         errorHelper.setActiveDataType(null);
-        // dt HAS NOT been set, index DOES NOT exist
+        // dt HAS NOT been set, global index DOES NOT exist
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        // dt HAS NOT been set, global index DOES exist
+        Assertions.assertTrue(errorHelper.isIndexedField("G_A"));
 
         // CSV dt
         errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
-        // dt HAS been set, index DOES NOT exist
+        // dt HAS been set, dt index DOES NOT exist
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        // dt HAS been set, global index DOES exist
+        Assertions.assertFalse(errorHelper.isIndexedField("GLOBAL_A"));
         // dt HAS been set, dt index DOES exist
         Assertions.assertTrue(errorHelper.isIndexedField("DT_B"));
 
