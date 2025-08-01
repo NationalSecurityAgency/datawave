@@ -2283,6 +2283,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setFilterClassNames(filterClassNames);
     }
 
+    public String getFieldRuleClassName() {
+        return getConfig().getFieldRuleClassName();
+    }
+
+    public void setFieldRuleClassName(String fieldRuleClassName) {
+        getConfig().setFieldRuleClassName(fieldRuleClassName);
+    }
+
     public List<String> getIndexFilteringClassNames() {
         return getConfig().getIndexFilteringClassNames();
     }
@@ -3476,5 +3484,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setDateIndexIterator(boolean dateIndexIterator) {
         getConfig().setDateIndexIterator(dateIndexIterator);
+    }
+
+    public int getMaxLinesToPrint() {
+        return getConfig().getMaxLinesToPrint();
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        getConfig().setMaxLinesToPrint(maxLinesToPrint);
     }
 }

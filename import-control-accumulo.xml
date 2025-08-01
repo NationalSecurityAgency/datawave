@@ -3,7 +3,7 @@
         "https://checkstyle.org/dtds/import_control_1_4.dtd">
 
 <!-- This checkstyle rule is configured to ensure only use of Accumulo API -->
-<import-control 
+<import-control
         pkg="(|
         |datawave.*|
         |datawave\.common\.test.*|
