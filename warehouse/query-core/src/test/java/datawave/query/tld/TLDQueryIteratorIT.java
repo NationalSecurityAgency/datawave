@@ -16,12 +16,14 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.junit.Before;
 import org.junit.Test;
 
 import datawave.query.Constants;
 import datawave.query.iterator.QueryIteratorIT;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.TestWaitWindowObserver;
 
 /**
  * Anything QueryIterator does TLDQueryIterator should do too... plus stuff
@@ -30,7 +32,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
 
     @Override
     protected Class getIteratorClass() {
-        return TLDQueryIterator.class;
+        return TestTLDQueryIterator.class;
     }
 
     @Before
@@ -314,5 +316,18 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.2", "EVENT_FIELD1.2.1", "c2"));
 
         return listSource;
+    }
+
+    public static class TestTLDQueryIterator extends TLDQueryIterator {
+
+        public TestTLDQueryIterator() {
+            super();
+            this.waitWindowObserver = new TestWaitWindowObserver(5, 2);
+        }
+
+        public TestTLDQueryIterator(TestTLDQueryIterator other, IteratorEnvironment env) {
+            super(other, env);
+            this.waitWindowObserver = new TestWaitWindowObserver((TestWaitWindowObserver) other.waitWindowObserver);
+        }
     }
 }

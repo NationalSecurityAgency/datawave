@@ -25,7 +25,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -384,9 +384,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
 
                 Pair<Text,Text> pcic;
                 if (ALL_CF_STR.equals(column)) {
-                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                    pcic = Pair.of(ALL_CF_KEY.getColumnFamily(), null);
                 } else {
-                    pcic = ColumnSet.decodeColumns(column);
+                    org.apache.accumulo.core.util.Pair<Text,Text> columnSetPair = ColumnSet.decodeColumns(column);
+                    pcic = Pair.of(columnSetPair.getFirst(), columnSetPair.getSecond());
                 }
 
                 Combiner agg = null;
@@ -401,10 +402,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     throw new RuntimeException(e);
                 }
 
-                if (pcic.getSecond() == null) {
-                    addObject(pcic.getFirst(), agg);
+                if (pcic.getRight() == null) {
+                    addObject(pcic.getLeft(), agg);
                 } else {
-                    addObject(pcic.getFirst(), pcic.getSecond(), agg);
+                    addObject(pcic.getLeft(), pcic.getRight(), agg);
                 }
             }
 
@@ -424,9 +425,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
 
                 Pair<Text,Text> pcic;
                 if (ALL_CF_STR.equals(column)) {
-                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                    pcic = Pair.of(ALL_CF_KEY.getColumnFamily(), null);
                 } else {
-                    pcic = ColumnSet.decodeColumns(column);
+                    org.apache.accumulo.core.util.Pair<Text,Text> columnSetPair = ColumnSet.decodeColumns(column);
+                    pcic = Pair.of(columnSetPair.getFirst(), columnSetPair.getSecond());
                 }
 
                 Combiner agg = null;
@@ -442,10 +444,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     throw new RuntimeException(e);
                 }
 
-                if (pcic.getSecond() == null) {
-                    addObject(pcic.getFirst(), agg);
+                if (pcic.getRight() == null) {
+                    addObject(pcic.getLeft(), agg);
                 } else {
-                    addObject(pcic.getFirst(), pcic.getSecond(), agg);
+                    addObject(pcic.getLeft(), pcic.getRight(), agg);
                 }
             }
 

@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +33,11 @@ public class AccumuloConnectionRequestMap {
             if (connectionRequestPairs != null) {
                 for (Pair<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
                     try {
-                        if (connectionRequestPair != null && connectionRequestPair.getFirst() != null) {
-                            String connectionRequestPrincipalName = connectionRequestPair.getFirst().get(AccumuloConnectionFactory.USER_DN);
+                        if (connectionRequestPair != null && connectionRequestPair.getLeft() != null) {
+                            String connectionRequestPrincipalName = connectionRequestPair.getLeft().get(AccumuloConnectionFactory.USER_DN);
                             String connectionCancelPrincipalName = userDn;
                             if (connectionRequestPrincipalName.equals(connectionCancelPrincipalName)) {
-                                connectionRequestPair.getSecond().interrupt();
+                                connectionRequestPair.getRight().interrupt();
                                 connectionRequestCanceled = true;
                             }
                         }
@@ -58,8 +58,8 @@ public class AccumuloConnectionRequestMap {
         if (connectionRequestPairs != null) {
             for (Pair<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
                 try {
-                    if (connectionRequestPair != null && connectionRequestPair.getFirst() != null) {
-                        connectionRequestPair.getSecond().interrupt();
+                    if (connectionRequestPair != null && connectionRequestPair.getLeft() != null) {
+                        connectionRequestPair.getRight().interrupt();
                         connectionRequestCanceled = true;
                     }
                 } catch (Exception e) {
@@ -78,7 +78,7 @@ public class AccumuloConnectionRequestMap {
                 connectionRequestPairs = new ArrayList<>();
                 connectionThreadMap.put(id, connectionRequestPairs);
             }
-            Pair<Map<String,String>,Thread> connectionRequestPair = new Pair<>(trackingMap, Thread.currentThread());
+            Pair<Map<String,String>,Thread> connectionRequestPair = Pair.of(trackingMap, Thread.currentThread());
             if (userDN != null && trackingMap != null)
                 trackingMap.put(AccumuloConnectionFactory.USER_DN, userDN);
             connectionRequestPairs.add(connectionRequestPair);
@@ -93,7 +93,7 @@ public class AccumuloConnectionRequestMap {
             boolean found = false;
             while (!found && it.hasNext()) {
                 Pair<Map<String,String>,Thread> connectionRequestPair = it.next();
-                if (connectionRequestPair.getSecond().equals(t)) {
+                if (connectionRequestPair.getRight().equals(t)) {
                     it.remove();
                     found = true;
                 }
