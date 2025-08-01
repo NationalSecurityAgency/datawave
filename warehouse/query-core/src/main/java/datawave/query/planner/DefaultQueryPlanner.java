@@ -3002,6 +3002,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new InvalidQueryException(qe);
             }
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
+            if (config.getQuery().getUncaughtExceptionHandler() != null) {
+                config.getQuery().getUncaughtExceptionHandler().addMessage(state.reason);
+                config.getQuery().getUncaughtExceptionHandler().addMessage(
+                                "After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
+            }
             needsFullTable = true;
             fullTableScanReason = state.reason;
         }

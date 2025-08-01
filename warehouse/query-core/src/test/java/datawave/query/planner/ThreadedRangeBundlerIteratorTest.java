@@ -177,7 +177,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
     @Test
     public void blockForNumRangesToBufferTest() {
-        int delay = 200;
+        int delay = 300;
 
         Iterator<QueryPlan> itr = plans.iterator();
 
