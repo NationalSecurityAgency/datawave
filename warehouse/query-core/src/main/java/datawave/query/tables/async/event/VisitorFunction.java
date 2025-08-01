@@ -64,7 +64,6 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
-import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -709,7 +708,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
         if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
-            String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
+            String[] choices = config.getIvaratorFstHdfsBaseURIs().split(",");
             int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());
             return path.toUri();
