@@ -19,16 +19,15 @@ env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
-  REGISTRY: ghcr.io
-  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
-  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+  GITHUB_REGISTRY: ghcr.io
+  GITHUB_USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  GITHUB_ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
   # is formatted and poms are sorted according to project rules. If changes are found,
   # they are committed back to the branch
   compose-build-and-test-latest-snapshots:
-    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Extract branch name
@@ -42,7 +41,6 @@ jobs:
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
-      
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
@@ -51,21 +49,23 @@ jobs:
           cache: 'maven'
       # Builds the quickstart and microservice docker images and runs a query test
       - name: Docker Compose Query Tests
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           if [[ ${{ steps.extract_branch.outputs.branch }} =~ ^release/version* ]] then
             echo "Nothing to do since this is a release branch."
           else
             # update datawave dependencies to use the latest snapshots
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+            mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
+                -Dstarters versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+            mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
+                -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests \
+                -Djkube.container-image.tags.1=latest \
+                clean install
           
             # free up some space so that we don't run out
             docker system prune -f
-            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+            mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices \
+                -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
           
             cd docker
             ./bootstrap.sh
@@ -125,21 +125,15 @@ jobs:
             ${{ runner.os }}-maven-
       # Builds the quickstart and microservice docker images and runs a query test
       - name: Docker Compose Query Tests
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          # set some bogus URLs to trigger dependency download via maven
-          DIST_URLS="-Durl.zookeeper=https://bogus.apache.org/zookeeper/zookeeper-3.8.4/apache-zookeeper-3.8.4-bin.tar.gz.tar.gz \
-                     -Durl.accumulo=https://bogus.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz \
-                     -Durl.wildfly=https://bogus.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz \
-                     -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
-                     -Durl.maven=https://bogus.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz"
-          
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
+          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
+              -Djkube.container-image.tags.1=latest \
+              clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh
           attempt=0
@@ -167,40 +161,25 @@ jobs:
         run: |
           cd docker
           docker compose logs
-  quickstart-build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-    - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v4
-      with:
-        distribution: ${{env.JAVA_DISTRIBUTION}}
-        java-version: ${{env.JAVA_VERSION}}
-        cache: 'maven'
-    # Allow us to use the "--squash" option below
-    - name: Turn on Docker experimental features and move Docker data root
-      run: |
-        if [[ -f /etc/docker/daemon.json ]]; then
-          sudo sed -ri 's|\s*}\s*$|, "experimental": true, "data-root": "/mnt/docker" }|' /etc/docker/daemon.json
-        else
-          echo $'{\n    "experimental": true, "data-root": "/mnt/docker"\n}' | sudo tee /etc/docker/daemon.json
-        fi
-        sudo systemctl restart docker
-        echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
-    # Clean up free space
-    - uses: ./.github/actions/free-space
-      with:
-        tool-cache: false
-    # Builds the quickstart docker image and run the query tests
-    - name: Quickstart Query Tests
-      env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress -Dstyle.color=always -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests clean package"
-        DOCKER_BUILD_OPTS: "--squash --force-rm"
-        USER_NAME: ${{ secrets.USER_NAME }}
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-      run: |
-        TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
-        contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
-
-
+      - name: Docker Compose Web Tests
+        run: |
+          cd docker
+          docker compose down
+          sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--ingest", "--web", "--test"\]/g' docker-compose.yml
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+          docker compose logs -f quickstart

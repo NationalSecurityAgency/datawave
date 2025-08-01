@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.27.0-SNAPSHOT</version>
+    <version>7.28.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -37,10 +37,13 @@
         <argLine />
         <!-- build.env and env should get overridden if any other read-properties profile is specified (e.g. comnpose)compose -->
         <build.env>dev</build.env>
+        <container.registry>ghcr.io</container.registry>
         <env>dev</env>
+        <image.prefix>datawave/</image.prefix>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
@@ -48,6 +51,7 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
+        <!-- Tests that use MiniAccumuloCluster hang when trying to bump version.accumulo to 2.1.3 -->
         <version.accumulo>2.1.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
@@ -1605,12 +1609,12 @@
                 <plugin>
                     <groupId>gov.nsa.datawave.plugins</groupId>
                     <artifactId>assert-properties</artifactId>
-                    <version>2.0.1</version>
+                    <version>2.0.2</version>
                 </plugin>
                 <plugin>
                     <groupId>gov.nsa.datawave.plugins</groupId>
                     <artifactId>read-properties</artifactId>
-                    <version>2.0.2</version>
+                    <version>2.0.3</version>
                     <configuration>
                         <quiet>true</quiet>
                         <directories combine.children="append">
@@ -1692,7 +1696,7 @@
                         <dependency>
                             <groupId>gov.nsa.datawave</groupId>
                             <artifactId>datawave-code-style</artifactId>
-                            <version>1.0</version>
+                            <version>1.0.1</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1989,7 +1993,6 @@
             <plugin>
                 <groupId>gov.nsa.datawave.plugins</groupId>
                 <artifactId>assert-properties</artifactId>
-                <version>2.0.1</version>
             </plugin>
             <plugin>
                 <groupId>gov.nsa.datawave.plugins</groupId>
