@@ -22,6 +22,7 @@ class NumericRegexEncoderTest {
     static void beforeAll() {
         letters.addAll(generateLetters('a', 'z'));
         letters.addAll(generateLetters('A', 'Z'));
+        letters.addAll(generateLetters('Ѐ', 'ӿ')); // cyrillic characters (i.e. non-ascii)
     }
 
     /**

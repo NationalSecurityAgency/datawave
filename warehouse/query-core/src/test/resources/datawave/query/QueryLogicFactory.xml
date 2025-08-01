@@ -494,9 +494,25 @@
         <value>[0-9a-zA-Z]{0,2}[.?*]+</value>
     </util:list>
 
+    <util:set id="evalOnlyFieldPatterns" value-type="datawave.query.planner.rules.FieldPattern">
+        <bean class="datawave.query.planner.rules.FieldPattern">
+            <property name="field" value="FIELD_A"/>
+            <property name="pattern" value="abc.*"/>
+        </bean>
+        <bean class="datawave.query.planner.rules.FieldPattern">
+            <property name="field" value="FIELD_B"/>
+            <property name="pattern" value="xyz.*"/>
+        </bean>
+    </util:set>
+
     <util:list id="transformRuleList" value-type="datawave.query.planner.rules.NodeTransformRule">
+        <bean scope="prototype" class="datawave.query.planner.rules.RegexSimplifierTransformRule"/>
+        <bean scope="prototype" class="datawave.query.planner.rules.RegexDotallTransformRule" />
         <bean scope="prototype" class="datawave.query.planner.rules.RegexPushdownTransformRule">
             <property name="regexPatterns" ref="pushdownRegexPatterns"/>
+        </bean>
+        <bean scope="prototype" class="datawave.query.planner.rules.EvaluationOnlyPushdownRule">
+            <property name="fieldPatterns" ref="evalOnlyFieldPatterns"/>
         </bean>
     </util:list>
 

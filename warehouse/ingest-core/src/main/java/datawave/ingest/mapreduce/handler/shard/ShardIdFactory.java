@@ -3,23 +3,29 @@ package datawave.ingest.mapreduce.handler.shard;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 
 import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.util.time.DateHelper;
 
 public class ShardIdFactory {
 
     public static final String NUM_SHARDS = "num.shards";
+    public static final String SHARD_ID_GENERATOR = "shardIdFactory.generator";
+
     private NumShards numShards = null;
+    private final List<ShardIdGenerator> generators;
 
     public ShardIdFactory(Configuration conf) {
         this.numShards = new NumShards(conf);
+        this.generators = ConfigurationHelper.getIndexedInstances(conf, SHARD_ID_GENERATOR, ShardIdGenerator.class, 1);
     }
 
     /**
-     * Calculates the shard id of the event
+     * Calculates the shard id of the event .getInstances()
      *
      * @param record
      *            the record container
@@ -52,13 +58,34 @@ public class ShardIdFactory {
     }
 
     /**
-     * Calculates the shard id of the event
+     * Calculates the shard id of the event. If this {@link ShardIdFactory} has been configured with a {@link ShardIdGenerator} that applies to the record, the
+     * shard id provided by the first applicable generator will be returned. Otherwise, the shard id provided by {@link #getBaseShardId(RawRecordContainer)}
+     * will be returned.
      *
      * @param record
      *            the event record
-     * @return Shard id
+     * @return the shard id
      */
     public String getShardId(RawRecordContainer record) {
+        String shardId = getBaseShardId(record);
+        for (ShardIdGenerator generator : generators) {
+            if (generator.isApplicable(record)) {
+                int numShards = getNumShards(record.getDate());
+                shardId = generator.getShardId(record, shardId, numShards);
+                break;
+            }
+        }
+        return shardId;
+    }
+
+    /**
+     * Calculates the shard id of the event.
+     *
+     * @param record
+     *            the event record
+     * @return the shard id
+     */
+    public String getBaseShardId(RawRecordContainer record) {
         StringBuilder buf = new StringBuilder();
         buf.append(DateHelper.format(record.getDate()));
         buf.append("_");

@@ -177,6 +177,8 @@ import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
+import datawave.query.planner.rules.FieldTransformRule;
+import datawave.query.planner.rules.FieldTransformRuleVisitor;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -356,6 +358,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * performance impact.
      */
     protected boolean showReducedQueryPrune = true;
+
+    /**
+     * Verify that a lower bound sorts before a range's upper bound
+     */
+    protected boolean validateBoundedRanges = false;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -606,11 +613,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {
@@ -734,11 +737,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {
@@ -1205,6 +1204,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
         }
 
+        if (null != config.getFieldRuleClassName()) {
+            FieldTransformRule rule = new FieldTransformRule();
+            rule.setupRules(config);
+            config.setQueryTree(FieldTransformRuleVisitor.transform(config.getQueryTree(), Collections.singletonList(rule), config, metadataHelper));
+        }
+
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query After ANYFIELD Expansions", config.getQueryTree()));
         }
@@ -1335,8 +1340,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // whether bounded ranges were expanded or not, validate all ranges
-        timedValidateBoundedRanges(timers, config.getQueryTree());
+        if (validateBoundedRanges) {
+            // whether bounded ranges were expanded or not, validate all ranges
+            timedValidateBoundedRanges(timers, config.getQueryTree());
+        }
 
         // fields may have been added or removed from the query, need to update the field to type map
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
@@ -3749,5 +3756,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public void setConcurrentTimeoutMillis(int concurrentTimeoutMillis) {
         this.concurrentTimeoutMillis = concurrentTimeoutMillis;
+    }
+
+    public boolean isValidateBoundedRanges() {
+        return validateBoundedRanges;
+    }
+
+    public void setValidateBoundedRanges(boolean validateBoundedRanges) {
+        this.validateBoundedRanges = validateBoundedRanges;
     }
 }
