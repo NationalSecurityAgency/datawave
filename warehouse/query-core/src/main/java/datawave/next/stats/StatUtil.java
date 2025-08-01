@@ -12,10 +12,12 @@ public class StatUtil {
      *
      * @param ns
      *            the elapsed time in nanoseconds
-     * @return The given nanoseconds formatted into 0h 0m 0s 0ms. Time units whose value is 0 will not be returned in the formatted time. For example, if given
-     *         14413346000000L 4h 13s 346ms would be returned.
+     * @return The given nanoseconds formatted into 0h 0m 0s 0ms [0000ms]. Time units whose value is 0 will not be returned in the formatted time. The original
+     *         elapsed time is also provided in milliseconds within brackets for future conversion purposes. For example, if given 14413346000000L, 4h 13s 346ms
+     *         [14413346ms] would be returned.
      */
     public static String formatNanos(long ns) {
+        long totalMilliseconds = TimeUnit.MILLISECONDS.convert(ns, TimeUnit.NANOSECONDS);
         // @formatter:off
         StringBuilder formattedTime = new StringBuilder()
                 .append(format(TimeUnit.HOURS, ns, 0))
@@ -23,7 +25,10 @@ public class StatUtil {
                 .append(format(TimeUnit.SECONDS, ns, 60))
                 .append(format(TimeUnit.MILLISECONDS, ns, 1000));
         // @formatter:on
-        return formattedTime.length() == 0 ? "0ns" : formattedTime.toString();
+        if (formattedTime.length() == 0) {
+            formattedTime.append("0ns");
+        }
+        return formattedTime.append(" [").append(totalMilliseconds).append("ms]").toString();
     }
 
     private static String format(TimeUnit target, long duration, int modulus) {
