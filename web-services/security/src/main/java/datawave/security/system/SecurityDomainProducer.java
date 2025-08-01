@@ -7,6 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.jboss.security.AuthenticationManager;
 import org.jboss.security.CacheableManager;
 import org.jboss.security.JSSESecurityDomain;
@@ -19,6 +20,9 @@ import org.jboss.security.JSSESecurityDomain;
  */
 @ApplicationScoped
 public class SecurityDomainProducer {
+    
+    private static final Logger log = Logger.getLogger(SecurityDomainProducer.class);
+    
     // Allow injection of JSSESecurityDomain without having to specify the JNDI name at each injection point.
     // Instead, users can simply do:
     // @Inject private JSSESecurityDomain jsseSecurityDomain
@@ -34,6 +38,10 @@ public class SecurityDomainProducer {
     @AuthorizationCache
     @SuppressWarnings("unchecked")
     public CacheableManager<Object,Principal> produceAuthManager() {
+        if(authenticationManager != null) {
+            log.trace("Providing AuthenticationManager instance " + authenticationManager.getClass().getName());
+            log.trace("AuthenticationManager instance of CacheableManager: " + (authenticationManager instanceof CacheableManager));
+        }
         return (authenticationManager instanceof CacheableManager) ? (CacheableManager<Object,Principal>) authenticationManager : null;
     }
 }
