@@ -26,6 +26,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.ExceededThresholdException;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.planner.pushdown.CostEstimator;
@@ -60,20 +61,24 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
     protected String stage = "default";
 
-    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
-                    throws TableNotFoundException {
-        this(config, scannerFactory, helper, null, threadName);
+    protected ExpandedFieldCache previouslyExpandedFieldCache;
+
+    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName,
+                    ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
+        this(config, scannerFactory, helper, null, threadName, previouslyExpandedFieldCache);
     }
 
     // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap,
-                    String threadName) throws TableNotFoundException {
+                    String threadName, ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
         this.expandFields = config.isExpandFields();
         this.expandValues = config.isExpandValues();
         this.threadName = threadName;
+
+        this.previouslyExpandedFieldCache = previouslyExpandedFieldCache;
 
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         this.allFields = helper.getAllFields(config.getDatatypeFilter());

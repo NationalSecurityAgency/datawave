@@ -19,6 +19,7 @@ import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
@@ -35,9 +36,9 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     private final JexlASTHelper.RangeFinder rangeFinder;
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
-    protected BoundedRangeIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
-                    throws TableNotFoundException {
-        super(config, scannerFactory, helper, "BoundedRangeIndexExpansion");
+    protected BoundedRangeIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    ExpandedFieldCache prevExpandedFieldCache) throws TableNotFoundException {
+        super(config, scannerFactory, helper, "BoundedRangeIndexExpansion", prevExpandedFieldCache);
 
         rangeFinder = JexlASTHelper.findRange().indexedOnly(this.config.getDatatypeFilter(), this.helper).notDelayed();
         this.stage = "range";
@@ -60,11 +61,11 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
      * @throws TableNotFoundException
      *             if we fail to retrieve fields from the metadata helper
      */
-    public static <T extends JexlNode> T expandBoundedRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-                    throws TableNotFoundException {
+    public static <T extends JexlNode> T expandBoundedRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script,
+                    ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues()) {
-            BoundedRangeIndexExpansionVisitor visitor = new BoundedRangeIndexExpansionVisitor(config, scannerFactory, helper);
+            BoundedRangeIndexExpansionVisitor visitor = new BoundedRangeIndexExpansionVisitor(config, scannerFactory, helper, previouslyExpandedFieldCache);
             return visitor.expand(script);
         } else {
             return script;
@@ -114,6 +115,9 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
 
+        if (config.isCachePreviouslyExpandedFields()) {
+            previouslyExpandedFieldCache.addExpansion(fieldsToTerms);
+        }
         if (log.isDebugEnabled()) {
             logResult(currentNode, fieldsToTerms);
         }

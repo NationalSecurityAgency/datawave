@@ -122,6 +122,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryByIngestTypes = false;
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
+    // should previously expanded fields be cached to prevent the re-normalizing of actual values
+    private boolean cachePreviouslyExpandedFields = true;
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
@@ -608,6 +610,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
+        this.setCachePreviouslyExpandedFields(other.isCachePreviouslyExpandedFields());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
@@ -2878,6 +2881,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
         this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
+    }
+
+    public boolean isCachePreviouslyExpandedFields() {
+        return cachePreviouslyExpandedFields;
+    }
+
+    public void setCachePreviouslyExpandedFields(boolean cachePreviouslyExpandedFields) {
+        this.cachePreviouslyExpandedFields = cachePreviouslyExpandedFields;
     }
 
     public boolean isSortQueryPreIndexWithImpliedCounts() {

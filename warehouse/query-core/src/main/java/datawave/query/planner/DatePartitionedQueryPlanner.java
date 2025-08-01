@@ -36,6 +36,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.UidIntersector;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.visitors.PushdownUnindexedFieldsVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.model.IndexFieldHole;
@@ -65,6 +66,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private DefaultQueryPlanner queryPlanner;
     private String initialPlan;
     private String plannedScript;
+    protected ExpandedFieldCache previouslyExpandedFieldCache;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private final TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -96,6 +98,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         this.queryPlanner = other.queryPlanner != null ? other.queryPlanner.clone() : null;
         this.initialPlan = other.initialPlan;
         this.plannedScript = other.plannedScript;
+        this.previouslyExpandedFieldCache = other.previouslyExpandedFieldCache;
     }
 
     /**
@@ -297,6 +300,10 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // Reset the planned script.
         this.plannedScript = null;
         this.plans.clear();
+
+        if (previouslyExpandedFieldCache == null) {
+            this.previouslyExpandedFieldCache = new ExpandedFieldCache();
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("Federated query: " + query);

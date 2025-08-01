@@ -66,6 +66,7 @@ import datawave.query.discovery.DiscoveryIterator;
 import datawave.query.discovery.DiscoveryTransformer;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
@@ -91,12 +92,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     protected ScannerFactory scannerFactory;
     private ShardIndexQueryConfiguration config;
     private MetadataHelperFactory metadataHelperFactory;
+    protected ExpandedFieldCache previouslyExpandedFieldCache;
 
     public ShardIndexQueryTable() {}
 
     public ShardIndexQueryTable(ShardIndexQueryTable other) {
         super(other);
         this.config = ShardIndexQueryConfiguration.create(other);
+        this.previouslyExpandedFieldCache = other.previouslyExpandedFieldCache;
     }
 
     @Override
@@ -188,6 +191,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         getConfig().setClient(client);
         this.scannerFactory = new ScannerFactory(getConfig());
 
+        if (this.previouslyExpandedFieldCache == null) {
+            this.previouslyExpandedFieldCache = new ExpandedFieldCache();
+        }
+
         MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
 
         if (StringUtils.isEmpty(settings.getQuery())) {
@@ -254,7 +261,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         ASTJexlScript origScript = JexlASTHelper.parseAndFlattenJexlQuery(getConfig().getQueryString());
         ASTJexlScript script;
         try {
-            script = UnfieldedIndexExpansionVisitor.expandUnfielded(getConfig(), this.scannerFactory, metadataHelper, origScript);
+            script = UnfieldedIndexExpansionVisitor.expandUnfielded(getConfig(), this.scannerFactory, metadataHelper, origScript, previouslyExpandedFieldCache);
         } catch (EmptyUnfieldedTermExpansionException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             getConfig().setNormalizedTerms(emptyMap);
@@ -289,7 +296,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             }
         }
 
-        script = ExpandMultiNormalizedTerms.expandTerms(getConfig(), metadataHelper, script);
+        script = ExpandMultiNormalizedTerms.expandTerms(getConfig(), metadataHelper, script, previouslyExpandedFieldCache);
 
         Multimap<String,String> literals = LiteralNodeVisitor.getLiterals(script);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
