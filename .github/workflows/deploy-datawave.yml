@@ -22,8 +22,6 @@ env:
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
   GITHUB_REGISTRY: ghcr.io
-  GITHUB_USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
-  GITHUB_ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   deploy-packages-and-images:
@@ -34,8 +32,8 @@ jobs:
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
         registry: ${{ env.GITHUB_REGISTRY }}
-        username: ${{ env.GITHUB_USER_NAME }}
-        password: ${{ env.GITHUB_ACCESS_TOKEN }}
+        username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+        password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
     - name: Checkout Code
       uses: actions/checkout@v4
     # Clean up free space

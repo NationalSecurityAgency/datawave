@@ -23,8 +23,6 @@ env:
   DATAWAVE_JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   GITHUB_REGISTRY: ghcr.io
-  GITHUB_USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
-  GITHUB_ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   build-and-deploy-accumulo:
@@ -81,8 +79,8 @@ jobs:
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
         registry: ${{ env.GITHUB_REGISTRY }}
-        username: ${{ env.GITHUB_USER_NAME }}
-        password: ${{ env.GITHUB_ACCESS_TOKEN }}
+        username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+        password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
     - name: Update DataWave Dependency Version
       run: |

@@ -1,0 +1,45 @@
+name: Compose Coordinator
+
+on:
+  push:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    branches:
+      - 'integration'
+      - 'release/version*'
+  pull_request:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  call-compose-tests:
+    uses: ./.github/workflows/compose-tests.yml
+    with:
+      allow-snapshots: false
+      JAVA_VERSION: '11'
+      JAVA_DISTRIBUTION: 'zulu'
+      MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
+    secrets: inherit
+  call-compose-tests-with-snapshots:
+    uses: ./.github/workflows/compose-tests.yml
+    with:
+      allow-snapshots: true
+      JAVA_VERSION: '11'
+      JAVA_DISTRIBUTION: 'zulu'
+      MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
+    secrets: inherit
+  compose-check-jobs:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [call-compose-tests, call-compose-tests-with-snapshots]
+    steps:
+      - name: Status message
+        run: |
+             echo "compose-tests: ${{ needs.call-compose-tests.result }}"
+             echo "compose-tests-with-snapshots: ${{ needs.call-compose-tests-with-snapshots.result }}"
+      - name: Check a condition and fail if not met
+        if: ${{ !contains(needs.*.result, 'success') }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setFailed('Neither compose jobs passed');
