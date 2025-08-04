@@ -67,8 +67,9 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     @Override
     public void setup(Configuration config) {
 
-        super.setup(config);
         config.set(Properties.DATA_NAME, "error");
+        super.setup(config);
+
 
         Map<Type,Map<String,String>> dataTypeSpecificProperties = getDataTypeSpecificProperties(config);
 
