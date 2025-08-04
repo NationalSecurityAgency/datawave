@@ -21,7 +21,6 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
@@ -45,7 +44,6 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static final Logger log = LoggerFactory.getLogger(UnfieldedIndexExpansionVisitor.class);
 
     protected Set<String> expansionFields;
-    protected Set<Type<?>> allTypes;
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
@@ -57,7 +55,6 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             this.expansionFields = new HashSet<>();
         }
 
-        this.allTypes = helper.getAllDatatypes();
         this.stage = "field";
     }
 
@@ -229,7 +226,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         try {
             // Using the datatype filter when expanding this term isn't really
             // necessary
-            return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
+            return ShardIndexQueryTableStaticMethods.expandQueryTerms(node, config, scannerFactory, expansionFields, helper, executor);
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
         }

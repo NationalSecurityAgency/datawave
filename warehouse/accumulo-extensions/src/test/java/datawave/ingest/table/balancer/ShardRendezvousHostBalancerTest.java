@@ -511,6 +511,34 @@ public class ShardRendezvousHostBalancerTest {
     }
 
     @Test
+    public void testNoTserversForRegex() throws Exception {
+        tablets.addAll(createShards(tableId, "20010101", 30, 31));
+        today.set(parseDay("20010130"));
+
+        tableProps.put("table.custom.volume.tier.names", "t1,t2");
+        tableProps.put("table.custom.volume.tiered.t1.days.back", "0");
+        tableProps.put("table.custom.volume.tiered.t1.tservers", "host0000.*");
+        tableProps.put("table.custom.volume.tiered.t2.days.back", "20");
+        tableProps.put("table.custom.volume.tiered.t2.tservers", "willNotMatch[12].*");
+
+        generateTabletServers(0, 29, 3).forEach(testTServers::addTServer);
+
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        testTServers.applyAssignments(aout);
+
+        var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
+        // should only assign 20 of the 30 days because tier t2 has no tservers
+        shardStats.check(20, 31, 10, 3);
+        // should only see the first 10 of 29 host used, no regex matches the other 19 host
+        assertTrue(testTServers.getLocationProvider().values().stream().map(TabletServerId::getHost).allMatch(h -> h.matches("host0000.*")));
+
+        assertEquals(1000, balancer.getMaxMigrations());
+
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        assertTrue(migrations.isEmpty());
+    }
+
+    @Test
     public void testLast() throws Exception {
         tablets.addAll(createShards(tableId, "20010101", 30, 31));
         today.set(parseDay("20010130"));
@@ -828,7 +856,7 @@ public class ShardRendezvousHostBalancerTest {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
         var date = fmt.parse(startDate);
         GregorianCalendar cal = new GregorianCalendar();
-        cal.set(date.getYear() + 1900, date.getMonth(), date.getDate());
+        cal.setTime(date);
 
         var shards = new ArrayList<TabletId>(days * shardsPerDay);
 

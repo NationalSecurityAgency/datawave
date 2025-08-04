@@ -100,9 +100,14 @@ public class NumericRegexEncoder {
     private static final Logger log = Logger.getLogger(NumericRegexEncoder.class);
 
     /**
-     * Matches against any unescaped d characters, and any other letters. If \d is present, that indicates a digit and is allowed.
+     * Matches against any letter except for the letter d
      */
-    private static final Pattern RESTRICTED_LETTERS_PATTERN = Pattern.compile(".*[a-ce-zA-Z].*");
+    private static final Pattern RESTRICTED_LETTERS_PATTERN = Pattern.compile(".*[\\p{Alpha}&&[^d]].*");
+
+    /**
+     * Matches against any non-ascii character
+     */
+    private static final Pattern RESTRICTED_NONASCII_PATTERN = Pattern.compile(".*[^\\p{ASCII}].*");
 
     /**
      * Matches any escaped character that is not \. \- or \d.
@@ -227,7 +232,7 @@ public class NumericRegexEncoder {
      * Throws an exception if the regex contains any letter other than an escaped lowercase d.
      */
     private void checkForRestrictedLetters() {
-        if (RESTRICTED_LETTERS_PATTERN.matcher(pattern).matches() || containsUnescapedLowercaseD()) {
+        if (RESTRICTED_LETTERS_PATTERN.matcher(pattern).matches() || RESTRICTED_NONASCII_PATTERN.matcher(pattern).matches() || containsUnescapedLowercaseD()) {
             throw new IllegalArgumentException(
                             "Regex pattern may not contain any letters other than \\d to indicate a member of the digit character class 0-9.");
         }

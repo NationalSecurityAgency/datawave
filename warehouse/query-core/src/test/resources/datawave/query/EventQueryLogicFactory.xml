@@ -127,6 +127,7 @@
             </map>
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
+        <property name="maxLinesToPrint" value="100"/>
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
         <!--   reduce type metadata     -->
