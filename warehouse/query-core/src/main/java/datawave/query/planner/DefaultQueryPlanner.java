@@ -1204,6 +1204,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
         }
 
+        // Enforce unique terms within an AND or OR expression. For some reason we get duplicate expanded terms from the ExpandAnyFieldRegex. Dedupe them here
+        // until we fix that.
+        config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
+
         if (null != config.getFieldRuleClassName()) {
             FieldTransformRule rule = new FieldTransformRule();
             rule.setupRules(config);
