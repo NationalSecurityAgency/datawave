@@ -48,14 +48,14 @@ class ErrorShardedIngestHelperTest {
         
         /*
 
-            Data Types: CSV, XYZ
-                /note: XYZ also uses the CSV ingest helper/
+            Data Types: CSV, JSON
+                /note: JSON also uses the CSV ingest helper/
 
             CSV Indexed Fields: CSV_A, CSV_B, CSV_C
-            XYZ Indexed Fields: XYZ_A, XYZ_B, XYZ_C
+            JSON Indexed Fields: JSON_A, JSON_B, JSON_C
 
             ERROR CSV Indexed Fields: CSV_ERROR_A, CSV_A
-            ERROR XYZ Indexed Fields: XYZ_ERROR_A, XYZ_A
+            ERROR JSON Indexed Fields: JSON_ERROR_A, JSON_A
 
          */
 
@@ -63,9 +63,9 @@ class ErrorShardedIngestHelperTest {
 
         // --- CSV ---
 
-        config.set(TypeRegistry.INGEST_DATA_TYPES, "csv, xyz");
-        config.set(DataTypeHelper.Properties.DATA_NAME, "csv");
-        config.set("csv" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
+        config.set(TypeRegistry.INGEST_DATA_TYPES, "csv, json, error");
+        config.set(DataTypeHelper.Properties.DATA_NAME, "error");
+        config.set("csv" + TypeRegistry.INGEST_HELPER, BaseIngestHelper.class.getName());
         config.set("csv" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         config.set("csv" + INDEX_FIELDS, "CSV_A, CSV_B, CSV_C");
 
@@ -77,20 +77,24 @@ class ErrorShardedIngestHelperTest {
                         IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         config.set("error" + "." + "csv" + INDEX_FIELDS, "CSV_ERROR_A, CSV_A");
 
-        // --- XYZ ---
+        // --- JSON ---
 
-        config.set("xyz" + TypeRegistry.INGEST_HELPER, CSVIngestHelper.class.getName());
-        config.set("xyz" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        config.set("xyz" + INDEX_FIELDS, "XYZ_A, XYZ_B, XYZ_C");
+        config.set("json" + TypeRegistry.INGEST_HELPER, BaseIngestHelper.class.getName());
+        config.set("json" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("json" + INDEX_FIELDS, "JSON_A, JSON_B, JSON_C");
 
-        config.set("xyz.data.header", "no-way");
-        config.set("xyz.data.separator", ",");
+        config.set("json.data.header", "no-way");
+        config.set("json.data.separator", ",");
 
-        config.set("error" + "." + "xyz" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
-        config.set("error" + "." + "xyz" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
+        config.set("error" + "." + "json" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
+        config.set("error" + "." + "json" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
                 IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        config.set("error" + "." + "xyz" + INDEX_FIELDS, "XYZ_ERROR_A, XYZ_A");
+        config.set("error" + "." + "json" + INDEX_FIELDS, "JSON_ERROR_A, JSON_A");
 
+        config.set("error" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
+        config.set("error" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
+                IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("error" + INDEX_FIELDS, "GLOB_ERROR_A, GLOB_A");
 
         ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
 
@@ -105,14 +109,13 @@ class ErrorShardedIngestHelperTest {
 
         // dt HAS NOT been set, field IS indexed as normal indexed field
         Assertions.assertTrue(errorHelper.isIndexedField("CSV_A"));
-        //Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A")); // todo: This doesn't get indexed since DataTypeHelper.Properties.DATA_NAME can only be set to a single dt.
-        // todo: how can we set both so we can do datatype specific tests?
+        Assertions.assertFalse(errorHelper.isIndexedField("JSON_A"));
 
         // dt HAS NOT been set, field IS NOT indexed as normal indexed field, only as error indexed field
         Assertions.assertFalse(errorHelper.isIndexedField("CSV_ERROR_A"));
-        // Assertions.assertFalse(errorHelper.isIndexedField("XYZ_ERROR_A")); //todo allow multiple dt's to be ingested
+        Assertions.assertFalse(errorHelper.isIndexedField("JSON_ERROR_A"));
 
-        // --- CSV vs XYZ DATA TYPE ---
+        // --- CSV vs JSON DATA TYPE ---
         errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
         // dt HAS been set, field IS NOT indexed on any datatype
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
@@ -121,11 +124,27 @@ class ErrorShardedIngestHelperTest {
 
         // dt HAS been set, field IS indexed as normal indexed field
         Assertions.assertTrue(errorHelper.isIndexedField("CSV_A"));
-        //Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A")); //todo allow multiple dt's to be ingested
+        Assertions.assertFalse(errorHelper.isIndexedField("JSON_A"));
 
         // dt HAS been set, field IS NOT indexed as normal indexed field, only as error indexed field
         Assertions.assertTrue(errorHelper.isIndexedField("CSV_ERROR_A"));
-        //Assertions.assertTrue(errorHelper.isIndexedField("XYZ_ERROR_A")); //todo allow multiple dt's to be ingested
+        Assertions.assertFalse(errorHelper.isIndexedField("JSON_ERROR_A"));
+
+        // --- JSON DATA TYPE ---
+        errorHelper.setActiveDataType(TypeRegistry.getType("json"));
+        // dt HAS been set, field IS NOT indexed on any datatype
+        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+
+        // The following should use the ErrorShardedIngestHelper.isIndexedField() method instead of the general one in BaseIngestHelper.
+
+        // dt HAS been set, field IS indexed as normal indexed field
+        Assertions.assertFalse(errorHelper.isIndexedField("CSV_A"));
+        Assertions.assertTrue(errorHelper.isIndexedField("JSON_A"));
+
+        // dt HAS been set, field IS NOT indexed as normal indexed field, only as error indexed field
+        Assertions.assertFalse(errorHelper.isIndexedField("CSV_ERROR_A"));
+        Assertions.assertTrue(errorHelper.isIndexedField("JSON_ERROR_A"));
+
     }
 
 //    @Test
