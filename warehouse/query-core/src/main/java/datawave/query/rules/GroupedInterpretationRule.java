@@ -105,6 +105,6 @@ public class GroupedInterpretationRule extends ShardQueryRule {
             }
 
         }
-        return "field(s): " + fieldList.toString() + " with value(s): " + valueList.toString();
+        return "field(s): " + fieldList + " with value(s): " + valueList;
     }
 }
