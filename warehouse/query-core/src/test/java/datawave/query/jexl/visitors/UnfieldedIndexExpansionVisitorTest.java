@@ -34,7 +34,6 @@ import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
@@ -292,27 +291,26 @@ public class UnfieldedIndexExpansionVisitorTest {
         test(query, expected, config, helper);
     }
 
-    // regex term fails to expand fields, marked with an exceeded term threshold marker
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testExceededTermThreshold() throws Exception {
         ShardQueryConfiguration config = createConfig();
+        // verify the unfielded expansion threshold is not applied
         config.setMaxUnfieldedExpansionThreshold(2);
 
         String query = "_ANYFIELD_ =~ 'dog.*'";
-        String expected = "((_Term_ = true) && (_ANYFIELD_ =~ 'dog.*'))";
+        String expected = "FIELD7 == 'dogfish' || FIELD7 == 'dog' || FIELD7 == 'doghouse' || FIELD8 == 'dogfish' || FIELD8 == 'dog' || FIELD8 == 'doghouse' || FIELD9 == 'dogfish' || FIELD9 == 'dog' || FIELD9 == 'doghouse'";
         test(query, expected, config);
     }
 
-    // regex term expands into fields, but values expansion fails by exceeding a threshold.
-    // a conjunction of fielded exceeded value markers is created.
     @Test
     public void testExceededValueThreshold() throws Exception {
         ShardQueryConfiguration config = createConfig();
-        config.setMaxUnfieldedExpansionThreshold(3); // 3 fields <= max threshold
-        config.setMaxValueExpansionThreshold(1); // values per field exceed threshold, preserving regex
+        // verify that neither threshold affects the final query plan
+        config.setMaxUnfieldedExpansionThreshold(3);
+        config.setMaxValueExpansionThreshold(1);
 
         String query = "_ANYFIELD_ =~ 'dog.*'";
-        String expected = "((_Value_ = true) && (FIELD7 =~ 'dog.*')) || ((_Value_ = true) && (FIELD8 =~ 'dog.*')) || ((_Value_ = true) && (FIELD9 =~ 'dog.*'))";
+        String expected = "FIELD7 == 'dogfish' || FIELD7 == 'dog' || FIELD7 == 'doghouse' || FIELD8 == 'dogfish' || FIELD8 == 'dog' || FIELD8 == 'doghouse' || FIELD9 == 'dogfish' || FIELD9 == 'dog' || FIELD9 == 'doghouse'";
         test(query, expected, config);
     }
 

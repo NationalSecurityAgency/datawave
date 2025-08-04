@@ -27,10 +27,16 @@ public abstract class AsyncIndexLookup extends IndexLookup {
 
     protected ExecutorService execService;
 
+    protected final int maxUnfieldedExpansionThreshold;
+    protected final int maxValueExpansionThreshold;
+
     public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
         this.unfieldedLookup = unfieldedLookup;
         this.execService = execService;
+
+        this.maxUnfieldedExpansionThreshold = config.getMaxUnfieldedExpansionThreshold();
+        this.maxValueExpansionThreshold = config.getMaxValueExpansionThreshold();
     }
 
     /**

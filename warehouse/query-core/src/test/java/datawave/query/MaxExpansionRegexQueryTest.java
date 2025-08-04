@@ -8,22 +8,15 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
-import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -75,19 +68,16 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
 
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        String expectedPlan = "CODE == 'b-code' || CITY == 'b-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b-state'";
+        assertEquals(expectedPlan, plan);
 
+        // a failure to fully expand a value means a field could be missed, that term is no longer executable
         this.logic.setMaxValueExpansionThreshold(1);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception condition expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
-
-        ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        expectedPlan = "CODE == 'b-code' || CITY == 'b-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b-state'";
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -100,29 +90,19 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
 
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
+        String plan = getPlan(query, true, true);
+        String expectedPlan = "CODE == 'a-code' || CITY == 'a-1' || STATE == 'a-state' || STATE == 'a-s2'";
+        assertEquals(expectedPlan, plan);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
 
+        // value expansion threshold should not affect an unfielded regex
         this.logic.setMaxValueExpansionThreshold(1);
-        // set regex to match more fields than are specified for the unified expansion
-        try {
-            runTest(query, expect);
-            Assert.fail("exception condition expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
-
-        ivaratorConfig();
-        runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     /**
-     * This test case consists of three phases.
-     * <ul>
-     * <li>In phase one, the query should NOT exceed any thresholds.</li>
-     * <li>In phase two, the query should exceed one threshold.</li>
-     * <li>In phase three, the query should exceed the threshold for each index.</li>
-     * </ul>
+     * At no point should any value expansion threshold affect the final plan for an unfielded regex
      *
      * @throws Exception
      *             if there is an issue
@@ -139,20 +119,23 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String expect = anyRegex + AND_OP + anyCity;
 
         ivaratorConfig();
+        String expectedPlan = "(CODE == 'b2-code' || CODE == 'b-code' || CODE == 'b3-code' || CITY == 'b-city' || CITY == 'b2-city' || CITY == 'b3-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2') && CITY == 'b-city'";
 
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
         this.logic.setMaxValueExpansionThreshold(4);
         runTest(query, expect);
-        // threshold should exist for each index
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
+        ;
 
         this.logic.setMaxValueExpansionThreshold(1);
         runTest(query, expect);
-        // threshold should exist for each index
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 3);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -164,31 +147,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String anyState = this.dataManager.convertAnyField(regexPhrase);
         String expect = anyState + AND_OP + CityField.CODE.name() + RN_OP + exclude;
 
+        String expectedPlan = "(CODE == 'b2-code' || CODE == 'b-code' || CODE == 'b3-code' || CITY == 'b-city' || CITY == 'b2-city' || CITY == 'b3-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2') && filter:excludeRegex(CODE, '.*de-a')";
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
-        parsePlan(FILTER_EXCLUDE_REGEX, 1);
-
-        this.logic.setMaxValueExpansionThreshold(4);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
-
-        ivaratorConfig();
-        runTest(query, expect);
-        // city should have a threshold
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
-        parsePlan(FILTER_EXCLUDE_REGEX, 1);
-
-        this.logic.setMaxValueExpansionThreshold(2);
-        ivaratorConfig();
-        runTest(query, expect);
-        // city,state, code should have all exceed threshold
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 3);
-        parsePlan(FILTER_EXCLUDE_REGEX, 1);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -199,20 +162,26 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + regexPhrase + AND_OP + Constants.ANY_FIELD + fieldVal;
 
         ivaratorConfig();
+        String expectedPlan = "!(((_Delayed_ = true) && (_ANYFIELD_ =~ 'b.*')) || CODE == 'b2-code' || CODE == 'b-code' || CODE == 'b3-code' || CITY == 'b-city' || CITY == 'b2-city' || CITY == 'b3-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2') && CITY == 'a-1'";
 
         // '!~' operation is not processed correctly - see QueryJexl docs
         // this is a hack for the expected results
         String expect = CityField.CITY.name() + EQ_OP + "'city-a'";
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // changing the value expansion threshold should not affect the final query plan
         this.logic.setMaxValueExpansionThreshold(4);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // changing the value expansion threshold should not affect the final query plan
         this.logic.setMaxValueExpansionThreshold(1);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 3);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -233,23 +202,28 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
                 CityField.CITY.name() + EQ_OP + "'b3-city'" + ")";
         // @formatter:on
 
+        String expectedPlan = "(CODE == 'b2-code' || CODE == 'b-code' || CODE == 'b3-code' || CITY == 'b-city' || CITY == 'b2-city' || CITY == 'b3-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2') && !((((_Delayed_ = true) && (_ANYFIELD_ =~ 'a-.*')) || CODE == 'a-code' || CITY == 'a-1' || STATE == 'a-state' || STATE == 'a-s2') && CITY == 'a-1')";
+
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
         this.logic.setMaxValueExpansionThreshold(4);
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
         this.logic.setMaxValueExpansionThreshold(1);
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 4);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     /**
-     * This tests a query without an intersection such that when we force the ivarators to fail with a maxResults setting of 1, the query will fail.
+     * Demonstrate that an unfielded regex fully expands into fields and values, regardless of thresholds
      *
      * @throws Exception
      *             if there is an issue
@@ -259,49 +233,14 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         log.info("------  testMaxIvaratorResultsFailsQuery  ------");
         String regex = RE_OP + "'b.*'";
         String query = Constants.ANY_FIELD + regex;
-
-        String anyRegex = this.dataManager.convertAnyField(regex);
-        String expect = anyRegex;
-
-        List<String> dirs = ivaratorConfig();
-        // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
-        this.logic.setCollapseUids(true);
         // force the regex lookup into an ivarator
         this.logic.setMaxValueExpansionThreshold(1);
         // set a small buffer size to ensure we actually persist the buffers so that we can detect this below
         this.logic.setIvaratorCacheBufferSize(2);
 
-        runTest(query, expect);
-        // verify that the ivarators ran and completed
-        if (this.logic.isCheckpointable()) {
-            assertEquals(8, countComplete(dirs));
-        } else {
-            assertEquals(3, countComplete(dirs));
-        }
-
-        // clear list before new set is added
-        dirs.clear();
-        // now get a new set of ivarator directories
-        dirs = ivaratorConfig();
-        // set the max ivarator results to 1
-        this.logic.setMaxIvaratorResults(1);
-        try {
-            // verify the query actually fails
-            runTest(query, expect);
-            fail("Expected the query to fail with the ivarators fail");
-        } catch (Exception e) {
-            if (!hasCause(e, DatawaveIvaratorMaxResultsException.class)) {
-                log.error("Unexpected exception", e);
-                fail("Unexpected exception: " + e.getMessage());
-            }
-        }
-    }
-
-    private boolean hasCause(Throwable e, Class<? extends Exception> causeClass) {
-        while (e != null && !causeClass.isInstance(e)) {
-            e = e.getCause();
-        }
-        return e != null;
+        String expectedPlan = "CODE == 'b2-code' || CODE == 'b-code' || CODE == 'b3-code' || CITY == 'b-city' || CITY == 'b2-city' || CITY == 'b3-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2'";
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     /**
@@ -322,7 +261,6 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String anyCity = this.dataManager.convertAnyField(city);
         String expect = anyRegex + AND_OP + anyCity;
 
-        List<String> dirs = ivaratorConfig();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
         this.logic.setCollapseUids(true);
         // force the regex lookup into an ivarator
@@ -330,51 +268,12 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // set a small buffer size to ensure we actually persist the buffers so that we can detect this below
         this.logic.setIvaratorCacheBufferSize(2);
 
+        // verify query gets all expected results
         runTest(query, expect);
 
-        // verify that the ivarators ran and completed
-        if (this.logic.isCheckpointable()) {
-            assertEquals(8, countComplete(dirs));
-        } else {
-            assertEquals(3, countComplete(dirs));
-        }
-
-        // clear list before new set is added
-        dirs.clear();
-
-        // now get a new set of ivarator directories
-        dirs = ivaratorConfig();
-        // set the max ivarator results to 1
-        this.logic.setMaxIvaratorResults(1);
-        // verify we still get our expected results
-        runTest(query, expect);
-        // and verify that the ivarators indeed persisted
-        assertEquals(3, countComplete(dirs));
-    }
-
-    private int countComplete(List<String> dirs) throws Exception {
-        int count = 0;
-        for (String dir : dirs) {
-            File file = new File(new URI(dir));
-            for (File leaf : getLeaves(file)) {
-                if (leaf.getName().equals("complete")) {
-                    count++;
-                }
-            }
-        }
-        return count;
-    }
-
-    private Collection<File> getLeaves(File file) {
-        List<File> children = new ArrayList<>();
-        for (File child : file.listFiles()) {
-            if (child.isDirectory()) {
-                children.addAll(getLeaves(child));
-            } else {
-                children.add(child);
-            }
-        }
-        return children;
+        String expectedPlan = "(CODE == 'b2-code' || CODE == 'b-code' || CODE == 'b3-code' || CITY == 'b-city' || CITY == 'b2-city' || CITY == 'b3-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2') && CITY == 'b-city'";
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     // ============================================

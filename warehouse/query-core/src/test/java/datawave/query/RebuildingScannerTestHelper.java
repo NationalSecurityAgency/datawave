@@ -41,6 +41,7 @@ import datawave.accumulo.inmemory.ScannerRebuilder;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.util.TableName;
 
 /**
  * This helper provides support for testing the teardown of iterators at randomly. Simply use the getConnector methods and all scanners created will contain an
@@ -629,31 +630,50 @@ public class RebuildingScannerTestHelper {
 
         @Override
         public BatchScanner createBatchScanner(String s, Authorizations authorizations, int i) throws TableNotFoundException {
+            if (s.equals(TableName.SHARD_INDEX)) {
+                return super.createBatchScanner(s, authorizations, i);
+            }
             return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s, authorizations, i)), teardown, interrupt);
         }
 
         @Override
         public BatchScanner createBatchScanner(String s, Authorizations authorizations) throws TableNotFoundException {
+            if (s.equals(TableName.SHARD_INDEX)) {
+                return super.createBatchScanner(s, authorizations);
+            }
             return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s, authorizations)), teardown, interrupt);
         }
 
         @Override
         public BatchScanner createBatchScanner(String s) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
+            if (s.equals(TableName.SHARD_INDEX)) {
+                return super.createBatchScanner(s);
+            }
             return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s)), teardown, interrupt);
         }
 
         @Override
         public Scanner createScanner(String s, Authorizations authorizations) throws TableNotFoundException {
+            Scanner scanner = super.createScanner(s, authorizations);
+            if (s.equals(TableName.SHARD_INDEX)) {
+                return scanner;
+            }
+            if (scanner instanceof RebuildingScanner) {
+                return scanner;
+            }
             return new RebuildingScanner((InMemoryScanner) (super.createScanner(s, authorizations)), teardown, interrupt);
         }
 
         @Override
         public Scanner createScanner(String s) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
             Scanner scanner = super.createScanner(s);
+            if (s.equals(TableName.SHARD_INDEX)) {
+                return scanner;
+            }
             if (scanner instanceof RebuildingScanner) {
                 return scanner;
             }
-            return new RebuildingScanner((InMemoryScanner) (super.createScanner(s)), teardown, interrupt);
+            return new RebuildingScanner((InMemoryScanner) scanner, teardown, interrupt);
         }
     }
 

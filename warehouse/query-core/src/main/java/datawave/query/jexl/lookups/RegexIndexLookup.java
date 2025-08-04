@@ -1,5 +1,7 @@
 package datawave.query.jexl.lookups;
 
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
+
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,12 +23,14 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.iterators.FieldedRegexExpansionIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
 import datawave.core.query.configuration.Result;
@@ -40,12 +44,14 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 
 /**
  * An asynchronous index lookup which looks up concrete values for the specified regex term.
  */
+@Deprecated
 public class RegexIndexLookup extends AsyncIndexLookup {
 
     private static final Object LOCK = new Object();
@@ -163,8 +169,29 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                 for (String key : forwardMap.keySet()) {
                     Collection<Range> ranges = forwardMap.get(key);
                     try {
-                        bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                        Collections.emptySet(), Collections.singleton(key), false, true);
+                        boolean next = false;
+                        if (next) {
+                            String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+                            bs = scannerFactory.newLimitedScanner(ScannerSession.class, config.getIndexTableName(), config.getAuthorizations(),
+                                            config.getQuery(), hintKey);
+
+                            bs.setRanges(ranges);
+
+                            Preconditions.checkArgument(fields.size() == 1);
+
+                            IteratorSetting setting = new IteratorSetting(50, "fielded regex expansion", FieldedRegexExpansionIterator.class.getName());
+                            setting.addOption(FieldedRegexExpansionIterator.FIELD, fields.iterator().next());
+                            setting.addOption(FieldedRegexExpansionIterator.PATTERN, key);
+                            setting.addOption(FieldedRegexExpansionIterator.START_DATE, DateHelper.format(config.getBeginDate()));
+                            setting.addOption(FieldedRegexExpansionIterator.END_DATE, DateHelper.format(config.getEndDate()));
+
+                            SessionOptions options = new SessionOptions();
+                            options.addScanIterator(setting);
+                            bs.setOptions(options);
+                        } else {
+                            bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                                            Collections.emptySet(), Collections.singleton(key), false, true);
+                        }
 
                         bs.setResourceClass(BatchResource.class);
                     } catch (Exception e) {
@@ -184,6 +211,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     forwardLookupData.getSessions().add(bs);
+                    // creating multiple batch scanners but not actually running them in parallel?
                     iter = Iterators.concat(iter, Result.keyValueIterator(bs));
                 }
 

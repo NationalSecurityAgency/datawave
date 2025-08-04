@@ -83,7 +83,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         super(CitiesDataType.getManager());
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testMaxUnfielded() throws Exception {
         log.info("------  testMaxUnfielded  ------");
 
@@ -96,13 +96,10 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
 
+        // unfielded regex expansion cannot under any circumstance have a value or field threshold imposed
+        // any threshold exception could leave a field undiscovered and thus reduce the accuracy of a query
         this.logic.setMaxUnfieldedExpansionThreshold(1);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception condition expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
+        runTest(query, expect);
     }
 
     @Test

@@ -4,18 +4,16 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.NOT_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
@@ -66,22 +64,24 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String code = RE_OP + "'b.*'";
 
         String query = CitiesDataType.CityField.CITY.name() + city + AND_OP + CitiesDataType.CityField.STATE.name() + code;
+        String expectedPlan = "CITY == 'a-1' && (STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2')";
 
         this.logic.setMaxValueExpansionThreshold(20);
         runTest(query, query);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // value threshold does not affect the final plan
         this.logic.setMaxValueExpansionThreshold(2);
-        try {
-            runTest(query, query);
-            Assert.fail("exception expected");
-        } catch (DatawaveFatalQueryException e) {
-            // expected
-        }
+        runTest(query, query);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // configuring ivarators does not affect the final plan
         ivaratorConfig();
         runTest(query, query);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -95,22 +95,24 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String code = RE_OP + "'b.*'";
 
         String query = CitiesDataType.CityField.CITY.name() + city + AND_OP + CitiesDataType.CityField.STATE.name() + code;
+        String expectedPlan = "CITY == 'a-1' && (STATE == 'b3-state' || STATE == 'b-state' || STATE == 'bi-s' || STATE == 'b2-state' || STATE == 'ba-s2')";
 
         this.logic.setMaxValueExpansionThreshold(20);
         runTest(query, query);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // value threshold does not affect final query plan
         this.logic.setMaxValueExpansionThreshold(2);
-        try {
-            runTest(query, query);
-            Assert.fail("exception expected");
-        } catch (DatawaveFatalQueryException e) {
-            // expected
-        }
+        runTest(query, query);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // ivarator config does not affect final query plan
         ivaratorConfig();
         runTest(query, query);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -126,21 +128,25 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String anyA = this.dataManager.convertAnyField(regexA);
         String expect = anyT + AND_OP + anyA;
 
+        String expectedPlan = "(CODE == 'b-code' || CITY == 'b-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b-state') && (CODE == 'a-code' || CITY == 'a-1' || STATE == 'a-state' || STATE == 'a-s2')";
+
+        // value threshold does not affect final plan
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // value threshold does not affect final plan
         this.logic.setMaxValueExpansionThreshold(2);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception expected");
-        } catch (RuntimeException re) {
-            // expected
-        }
+        runTest(query, expect);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // ivarator config does not affect final plan
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
         // hit exists in shard 20151010_0
         // range is 20150404_0 to 20150404 + MAX_VALUE
@@ -148,7 +154,8 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         this.logic.setUseDocumentScheduler(false);
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -164,26 +171,31 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String anyA = this.dataManager.convertAnyField(regexA);
         String expect = anyT + AND_OP + anyA;
 
+        String expectedPlan = "(CODE == 'b-code' || CITY == 'b-city' || CITY == 'b-2' || CITY == 'b-1' || STATE == 'b-state') && (CODE == 'a-code' || CITY == 'a-1' || STATE == 'a-state' || STATE == 'a-s2')";
+
+        // value threshold does not affect the final plan
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // value threshold does not affect the final plan
         this.logic.setMaxValueExpansionThreshold(2);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception expected");
-        } catch (RuntimeException re) {
-            // expected
-        }
+        runTest(query, expect);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // ivarator config does not affect the final plan
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
         this.logic.setMaxValueExpansionThreshold(1);
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -197,21 +209,25 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + EQ_OP + country + AND_OP + NOT_OP + "(" + Constants.ANY_FIELD + regexPhrase + ")";
         String expect = CitiesDataType.CityField.STATE.name() + EQ_OP + "'bi-s'";
 
+        String expectedPlan = "STATE == 'b-state' && !(((_Delayed_ = true) && (_ANYFIELD_ =~ 'a.*')) || CODE == 'a-code' || CITY == 'a-1' || STATE == 'a-state' || STATE == 'a-s2')";
+
+        // value threshold has no effect on final plan
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // value threshold has no effect on final plan
         this.logic.setMaxValueExpansionThreshold(1);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
+        runTest(query, expect);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // ivarator config has no effect on final plan
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     @Test
@@ -225,21 +241,25 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + EQ_OP + country + AND_OP + NOT_OP + "(" + Constants.ANY_FIELD + regexPhrase + ")";
         String expect = CitiesDataType.CityField.STATE.name() + EQ_OP + "'bi-s'";
 
+        String expectedPlan = "STATE == 'b-state' && !(((_Delayed_ = true) && (_ANYFIELD_ =~ 'a.*')) || CODE == 'a-code' || CITY == 'a-1' || STATE == 'a-state' || STATE == 'a-s2')";
+
+        // value expansion does not affect final plan
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        String plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // value expansion does not affect final plan
         this.logic.setMaxValueExpansionThreshold(1);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
+        runTest(query, expect);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
 
+        // ivarator config does not affect final plan
         ivaratorConfig();
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+        plan = getPlan(query, true, true);
+        assertEquals(expectedPlan, plan);
     }
 
     // ============================================

@@ -665,7 +665,7 @@ public class ShardIndexQueryTableStaticMethods {
                 Key endKey = new Key(reversedQueryTerm + Constants.MAX_UNICODE_STRING);
 
                 // set the upper and lower bounds
-                rangeDesc.range = new Range(startKey, false, endKey, false);
+                rangeDesc.range = new Range(startKey, true, endKey, false);
             }
 
         } else {
@@ -702,7 +702,7 @@ public class ShardIndexQueryTableStaticMethods {
 
                 // either middle or trailing wildcard, truncate the field value at the wildcard location
                 // for upper bound, tack on the upper bound UTF character
-                rangeDesc.range = new Range(startKey, false, endKey, false);
+                rangeDesc.range = new Range(startKey, true, endKey, false);
             }
         }
 
@@ -753,12 +753,12 @@ public class ShardIndexQueryTableStaticMethods {
         Set<String> datatypeFilter = config.getDatatypeFilter();
 
         // TODO Magical handling of a "null" fieldName
-        boolean isForwardIndexed = (null != fieldName) ? indexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
-        boolean isReverseIndexed = (null != fieldName) ? reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
+        boolean isForwardIndexed = null == fieldName || indexedInDatatype(fieldName, datatypeFilter, metadataHelper);
+        boolean isReverseIndexed = null == fieldName || reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper);
 
         // if not indexed at all, then error
         if (!isForwardIndexed && !isReverseIndexed) {
-            throw new DatawaveFatalQueryException("Cannot lookup a non-indexed term");
+            throw new DatawaveFatalQueryException("Cannot lookup a non-indexed term: " + fieldName);
         }
 
         // if only indexed one way, then choose that one

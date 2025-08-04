@@ -9,11 +9,12 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static org.apache.commons.jexl3.parser.JexlNodes.id;
 
-import java.util.Collection;
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -36,18 +37,25 @@ import com.google.common.collect.Maps;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.EmptyIndexLookup;
+import datawave.query.jexl.lookups.FieldedRegexIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredRangeDescription;
+import datawave.query.jexl.lookups.UnfieldedRegexIndexLookup;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
 
 /**
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
@@ -57,7 +65,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     protected boolean expandUnfieldedNegations;
 
-    protected Collection<String> onlyUseThese;
+    protected Set<String> onlyUseThese;
+    protected Set<String> expansionFields;
+    protected Set<String> forwardIndexedFields;
+    protected Set<String> reverseIndexedFields;
 
     // This flag keeps track of whether we are in a negated portion of the tree.
     protected boolean negated = false;
@@ -84,10 +95,19 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         if (config.isLimitTermExpansionToModel()) {
             QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
-            this.onlyUseThese = queryModel.getForwardQueryMapping().values();
+            this.onlyUseThese = new HashSet<>(queryModel.getForwardQueryMapping().values());
         } else {
             this.onlyUseThese = null;
         }
+
+        this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
+        if (this.expansionFields == null) {
+            this.expansionFields = new HashSet<>();
+        }
+
+        forwardIndexedFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helper);
+        reverseIndexedFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, config.getDatatypeFilter(), helper);
+
         this.stage = "regex";
     }
 
@@ -476,8 +496,42 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     }
 
     protected IndexLookup createLookup(JexlNode node) {
-        String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName, helper, executor);
+        String field = JexlASTHelper.getIdentifier(node);
+        String pattern = String.valueOf(JexlASTHelper.getLiteralValue(node));
+        validatePattern(pattern);
+
+        if (field.equals(Constants.ANY_FIELD)) {
+            field = null; // need to pass null to 'getRegexRange' to avoid checking the indexed status of 'ANYFIELD'
+        }
+
+        RefactoredRangeDescription description;
+        try {
+            description = ShardIndexQueryTableStaticMethods.getRegexRange(field, pattern, config.getFullTableScanEnabled(), helper, config);
+        } catch (JavaRegexAnalyzer.JavaRegexParseException | TableNotFoundException | ExecutionException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+
+        if (field == null) {
+
+            Set<String> expansionFields = onlyUseThese;
+            if (expansionFields == null) {
+                if (description.isForReverseIndex) {
+                    expansionFields = reverseIndexedFields;
+                } else {
+                    expansionFields = forwardIndexedFields;
+                }
+            }
+
+            if (expansionFields.isEmpty()) {
+                // unfielded expansions must be scoped to a set of preconfigured expansion fields or the set of indexed fields
+                return new EmptyIndexLookup(config);
+            }
+
+            return new UnfieldedRegexIndexLookup(config, scannerFactory, executor, pattern, description.range, description.isForReverseIndex, expansionFields);
+        } else {
+            return new FieldedRegexIndexLookup(config, scannerFactory, executor, field, pattern, description.range, description.isForReverseIndex);
+        }
     }
 
     /**
@@ -705,5 +759,14 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
 
         futureJexlNode.setRebuiltNode(newNode);
+    }
+
+    protected void validatePattern(String pattern) {
+        if (config.getDisallowedRegexPatterns().contains(pattern)) {
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
+                            MessageFormat.format("Pattern: {0}", pattern));
+            log.error(qe.getMessage(), qe);
+            throw new DoNotPerformOptimizedQueryException(qe);
+        }
     }
 }

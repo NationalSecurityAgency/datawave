@@ -40,9 +40,7 @@ public class TimeoutExceptionIterator extends WrappingIterator {
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
-
         super.init(source, options, env);
-
     }
 
     /**
@@ -56,10 +54,7 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     @Override
     public boolean hasTop() {
         if (exceededTime) {
-            if (null != lastKey)
-                return true;
-            else
-                return false;
+            return null != lastKey;
         }
         return super.hasTop();
     }
@@ -97,7 +92,6 @@ public class TimeoutExceptionIterator extends WrappingIterator {
 
     @Override
     public void next() throws IOException {
-
         if (exceededTime) {
             return;
         }
@@ -107,10 +101,11 @@ public class TimeoutExceptionIterator extends WrappingIterator {
         } catch (IteratorTimeoutException e) {
             setReturnKey();
         } catch (RuntimeException e) {
-            if (e.getCause() instanceof IteratorTimeoutException)
+            if (e.getCause() instanceof IteratorTimeoutException) {
                 setReturnKey();
-            else
+            } else {
                 throw e;
+            }
         }
     }
 
@@ -118,10 +113,11 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
 
         if (!range.isInfiniteStartKey()) {
-            if (range.isStartKeyInclusive())
+            if (range.isStartKeyInclusive()) {
                 lastKey = range.getStartKey();
-            else
+            } else {
                 lastKey = range.getStartKey().followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
+            }
         } else {
             lastKey = new Key();
         }
@@ -134,14 +130,13 @@ public class TimeoutExceptionIterator extends WrappingIterator {
         try {
             super.seek(range, columnFamilies, inclusive);
         } catch (IteratorTimeoutException e) {
-
             setReturnKey();
-
         } catch (RuntimeException e) {
-            if (e.getCause() instanceof IteratorTimeoutException)
+            if (e.getCause() instanceof IteratorTimeoutException) {
                 setReturnKey();
-            else
+            } else {
                 throw e;
+            }
         }
     }
 }

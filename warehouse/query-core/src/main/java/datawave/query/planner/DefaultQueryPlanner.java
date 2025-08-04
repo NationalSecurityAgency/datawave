@@ -1202,6 +1202,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // If the max regex expansion is reached for a term, then it will be
         // left as a regex
         if (!disableAnyFieldLookup) {
+            // should this be expanding into discrete values as well or no?
+            // seems like we should stick to doing one thing well, and do it fast
+            // allow the later stage to handle expanding values
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
         }
 

@@ -419,7 +419,7 @@ public abstract class ExecutableExpansionVisitorTest {
         String[] queryStrings = {"SENTENCE_DAYS=~'4015\\.0*'"};
         @SuppressWarnings("unchecked")
         // SOPRANO is the only one with a 0 after the 1234
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE")};
+        List<String>[] expectedLists = new List[] {List.of("CAPONE")};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -431,7 +431,7 @@ public abstract class ExecutableExpansionVisitorTest {
     }
 
     @Test
-    public void testAnyfieldNumericExpansion() throws Exception {
+    public void testAnyFieldNumericExpansion() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");

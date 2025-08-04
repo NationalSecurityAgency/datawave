@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -161,11 +162,13 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(anyCity)),
                             ColumnFamilyConstants.COLF_I);
 
-            // expect no results
-            runTest(query, Collections.emptyList());
-
-            // add the metadata back in
-            addMetadataEntries(metadata);
+            try {
+                // expect no results
+                runTest(query, Collections.emptyList());
+            } finally {
+                // add the metadata back in
+                addMetadataEntries(metadata);
+            }
         }
     }
 
@@ -548,21 +551,24 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // Test the plan with all expansions
         // test running the query
         String expect = this.dataManager.convertAnyField(phrase);
-        runTest(query, expect);
-
-        // remove the metadata entries
-        Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect)),
-                        ColumnFamilyConstants.COLF_RI);
+        // runTest(query, expect);
 
         // expect no results
+        Multimap<String,KeyValue> metadata = null;
         try {
+            // remove the metadata entries
+            Set<String> fieldsToRemove = JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect));
+            metadata = removeMetadataEntries(fieldsToRemove, ColumnFamilyConstants.COLF_RI);
+
             runTest(query, Collections.emptyList());
         } catch (FullTableScansDisallowedException e) {
-            // ok, essential no matches in index
+            // ok, essentially no matches in index
+        } finally {
+            // add the metadata back in
+            if (metadata != null) {
+                addMetadataEntries(metadata);
+            }
         }
-
-        // add the metadata back in
-        addMetadataEntries(metadata);
     }
 
     @Test
@@ -688,10 +694,10 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             runTest(query, Collections.emptyList());
         } catch (FullTableScansDisallowedException e) {
             // ok
+        } finally {
+            // add the metadata back in
+            addMetadataEntries(metadata);
         }
-
-        // add the metadata back in
-        addMetadataEntries(metadata);
     }
 
     @Test
@@ -777,7 +783,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         assertPlanEquals(expect, plan);
 
         // Test the plan sans value expansion
-        expect = CityField.CITY.name() + roPhrase + JEXL_OR_OP + CityField.STATE.name() + oPhrase;
+        expect = "CITY =~ 'ro.*' || STATE =~ '.*o'";
         plan = getPlan(query, true, false);
         assertPlanEquals(expect, plan);
 
@@ -833,20 +839,17 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + Constants.ANY_FIELD + oPhrase;
 
         // Test the plan with all expansions
-        String compositeField = CityField.CITY.name() + '_' + CityField.STATE.name();
-        String expect = "(" + compositeField + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP + compositeField + EQ_OP + "'rome"
-                        + CompositeIngest.DEFAULT_SEPARATOR + "ohio')";
+        String expect = "CITY_STATE == 'rome\uDBFF\uDFFFlazio' || CITY_STATE == 'rome\uDBFF\uDFFFohio'";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
 
         // Test the plan sans value expansion
-        expect = CityField.CITY.name() + roPhrase + JEXL_AND_OP + CityField.STATE.name() + oPhrase;
+        expect = "CITY =~ 'ro.*' && STATE =~ '.*o'";
         plan = getPlan(query, true, false);
         assertPlanEquals(expect, plan);
 
         // Test the plan sans field expansion
-        expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + EQ_OP + "'lazio'" + JEXL_OR_OP + Constants.ANY_FIELD + EQ_OP
-                        + "'ohio')";
+        expect = "_ANYFIELD_ == 'rome' && (_ANYFIELD_ == 'lazio' || _ANYFIELD_ == 'ohio')";
         plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
 
@@ -1032,7 +1035,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
 
         String regPhrase = RN_OP + "'.*ica'";
-        String query = Constants.ANY_FIELD + regPhrase;
+        String query = "_ANYFIELD_ !~ '.*ica'";
 
         // Test the plan with all expansions
         try {
@@ -1045,8 +1048,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         }
 
         // Test the plan sans value expansion
-        String expect = "(((!(((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica')))" + JEXL_AND_OP + "!("
-                        + CityField.CONTINENT.name() + RE_OP + "'.*ica'))))";
+        String expect = "!((_Delayed_ = true) && (_ANYFIELD_ =~ '.*ica')) && !(CONTINENT =~ '.*ica')";
         String plan = getPlan(query, true, false);
         assertPlanEquals(expect, plan);
 

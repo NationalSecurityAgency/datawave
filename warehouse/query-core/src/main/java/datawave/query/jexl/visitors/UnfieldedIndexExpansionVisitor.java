@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -43,18 +41,10 @@ import jline.internal.Preconditions;
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static final Logger log = LoggerFactory.getLogger(UnfieldedIndexExpansionVisitor.class);
 
-    protected Set<String> expansionFields;
-
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
                     throws TableNotFoundException, IllegalAccessException, InstantiationException {
         super(config, scannerFactory, helper, null, "FieldNameIndexExpansion");
-
-        this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
-        if (this.expansionFields == null) {
-            this.expansionFields = new HashSet<>();
-        }
-
         this.stage = "field";
     }
 
@@ -219,17 +209,6 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     @Override
     protected boolean shouldExpand(JexlNode node) {
         return (!negated || expandUnfieldedNegations) && hasUnfieldedIdentifier(node);
-    }
-
-    @Override
-    protected IndexLookup createLookup(JexlNode node) {
-        try {
-            // Using the datatype filter when expanding this term isn't really
-            // necessary
-            return ShardIndexQueryTableStaticMethods.expandQueryTerms(node, config, scannerFactory, expansionFields, helper, executor);
-        } catch (TableNotFoundException e) {
-            throw new DatawaveFatalQueryException(e);
-        }
     }
 
     protected IndexLookup createFieldNameIndexLookup(JexlNode node) {

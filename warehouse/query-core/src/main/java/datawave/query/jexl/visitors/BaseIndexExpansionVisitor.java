@@ -333,7 +333,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName(name + " Session " + threadIdentifier + " -" + threadNum++);
+            thread.setName(name + " " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler(config.getQuery().getUncaughtExceptionHandler());
             return thread;

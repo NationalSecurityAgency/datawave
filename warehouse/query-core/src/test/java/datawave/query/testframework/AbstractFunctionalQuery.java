@@ -641,7 +641,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
 
-        return this.logic.getPlan(client, q, this.authSet, expandFields, expandValues);
+        String plan = this.logic.getPlan(client, q, this.authSet, expandFields, expandValues);
+        // if this method is called multiple times the index expansion executor is still active
+        // calling close ensures consistent state
+        logic.close();
+        return plan;
     }
 
     /**
