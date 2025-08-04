@@ -162,6 +162,8 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
             }
         }
 
+        setActiveDataType(null);
+
     }
 
     private Map<Type,Map<String,String>> getDataTypeSpecificProperties(Configuration config) {
