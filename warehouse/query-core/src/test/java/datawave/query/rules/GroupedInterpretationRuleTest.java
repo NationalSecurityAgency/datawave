@@ -58,6 +58,15 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
     }
 
     @Test
+    void testQueryWithNestedFieldedTerms() throws Exception {
+        givenQuery("FOO:((abc def ghi))");
+
+        expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [abc, def, ghi] will be interpreted as: ( ( FOO:abc AND FOO:def AND FOO:ghi ) )");
+
+        assertResult();
+    }
+
+    @Test
     void testQueryWithMultipleNestedFieldedPhrasesAndTerms() throws Exception {
         givenQuery("FOO:(abc (def ghi)) OR BAR:(aaa (bbb (ccc)))");
 

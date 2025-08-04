@@ -64,47 +64,72 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         // @formatter:off
         return new StringBuilder()
                 .append("Operator precedence may be missing, ")
-                .append(originalQueryInfo((GroupQueryNode)node, query, new ArrayList(), new ArrayList(), ""))
+                .append(queryInfo((GroupQueryNode)node, query, new ArrayList(), new ArrayList(), new ArrayList()))
                 .append(" will be interpreted as: ")
                 .append(LuceneQueryStringBuildingVisitor.build(node))
                 .toString();
         // @formatter:on
     }
 
-    private String originalQueryInfo(GroupQueryNode node, String query, List valueList, List fieldList, String prevField) {
+    public String queryInfo (GroupQueryNode node, String query, ArrayList fieldList, ArrayList valueList, ArrayList prevField) {
+        prevField.add("");
+
+        ArrayList[] fieldValueList = new ArrayList[3];
+        fieldValueList[0] = fieldList;
+        fieldValueList[1] = valueList;
+        fieldValueList[2] = prevField;
+
+        return originalQueryInfo(node, query, fieldValueList);
+    }
+
+    private String originalQueryInfo(GroupQueryNode node, String query, ArrayList[] fieldValueList) {
+        // first checks to see if query is nested
+        QueryNode nestedChild = node.getChild();
+        if (QueryNodeType.get(nestedChild.getClass()) == QueryNodeType.GROUP) {
+            return originalQueryInfo((GroupQueryNode) nestedChild, query, fieldValueList);
+        }
         for (QueryNode child : node.getChildren()) {
             if (!(child.getChildren() == null)) {
                 for (QueryNode grandchild : child.getChildren()) {
                     if (QueryNodeType.get(grandchild.getClass()) == QueryNodeType.GROUP) {
-                        originalQueryInfo((GroupQueryNode) grandchild, query, valueList, fieldList, prevField);
+                        // checks if child is nested
+                        originalQueryInfo((GroupQueryNode) grandchild, query, fieldValueList);
                     } else if (!grandchild.toString().isEmpty()) {
-                        String start = (grandchild.toString()).substring(((grandchild.toString()).indexOf("start=\'") + 7),
-                                        (grandchild.toString()).indexOf("\' end"));
-                        String end = (grandchild.toString()).substring(((grandchild.toString()).indexOf("end=\'") + 5),
-                                        (grandchild.toString()).indexOf("\' field"));
-                        String field = (grandchild.toString()).substring(((grandchild.toString()).indexOf("field=\'") + 7),
-                                        (grandchild.toString()).indexOf("\' text"));
-
-                        valueList.add(query.substring(Integer.parseInt(start), Integer.parseInt(end)));
-                        if (!field.isEmpty() && !Objects.equals(field, prevField)) {
-                            fieldList.add(field);
-                            prevField = field;
-                        }
+                        fieldValueLists(grandchild, query, fieldValueList);
                     }
                 }
             } else if (!child.toString().isEmpty()) {
-                String start = (child.toString()).substring(((child.toString()).indexOf("start=\'") + 7), (child.toString()).indexOf("\' end"));
-                String end = (child.toString()).substring(((child.toString()).indexOf("end=\'") + 5), (child.toString()).indexOf("\' field"));
-                String field = (child.toString()).substring(((child.toString()).indexOf("field=\'") + 7), (child.toString()).indexOf("\' text"));
-
-                valueList.add(query.substring(Integer.parseInt(start), Integer.parseInt(end)));
-                if (!field.isEmpty() && !Objects.equals(field, prevField)) {
-                    fieldList.add(field);
-                    prevField = field;
-                }
+                fieldValueLists(child, query, fieldValueList);
             }
-
         }
+
+        Object fieldList = fieldValueList[0];
+        Object valueList = fieldValueList[1];
+
         return "field(s): " + fieldList + " with value(s): " + valueList;
+    }
+
+    private ArrayList[] fieldValueLists(QueryNode node, String query, ArrayList[] fieldValueList) {
+        // index 0 = fields, index 1 = values, index 3 = previous fields
+        ArrayList fieldList = fieldValueList[0];
+        ArrayList valueList = fieldValueList[1];
+        ArrayList prevField = fieldValueList[2];
+
+        if (!node.toString().isEmpty()) {
+            String start = (node.toString()).substring(((node.toString()).indexOf("start=\'") + 7), (node.toString()).indexOf("\' end"));
+            String end = (node.toString()).substring(((node.toString()).indexOf("end=\'") + 5), (node.toString()).indexOf("\' field"));
+            String field = (node.toString()).substring(((node.toString()).indexOf("field=\'") + 7), (node.toString()).indexOf("\' text"));
+
+            valueList.add(query.substring(Integer.parseInt(start), Integer.parseInt(end)));
+            if (!field.isEmpty() && !Objects.equals(field, prevField.get(0))) {
+                fieldList.add(field);
+                prevField.set(0, field);
+                fieldValueList[2] = prevField;
+            }
+        }
+        fieldValueList[0] = fieldList;
+        fieldValueList[1] = valueList;
+
+        return fieldValueList;
     }
 }
