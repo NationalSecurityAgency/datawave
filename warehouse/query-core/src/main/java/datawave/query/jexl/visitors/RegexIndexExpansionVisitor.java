@@ -477,8 +477,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     protected IndexLookup createLookup(JexlNode node) {
         String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName,
-                        config.getQueryFieldsDatatypes().get(fieldName), helper, executor);
+        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName, helper, executor);
     }
 
     /**
