@@ -12,8 +12,8 @@ import org.apache.lucene.queryparser.flexible.core.nodes.OrQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 /**
- * A {@link BaseVisitor} implementation that will search a query for any grouped phrases with similar fields, it would identify cases like {@code FOO:(aaa bbb ccc)},
- * {@code (FOO:aaa bbb ccc)}, and {@code (FOO:aaa AND FOO:bbb AND FOO:ccc)}
+ * A {@link BaseVisitor} implementation that will search a query for any grouped phrases with similar fields, it would identify cases like
+ * {@code FOO:(aaa bbb ccc)}, {@code (FOO:aaa bbb ccc)}, and {@code (FOO:aaa AND FOO:bbb AND FOO:ccc)}
  */
 
 public class GroupedInterpretationVisitor extends BaseVisitor {

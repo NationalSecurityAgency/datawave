@@ -109,6 +109,7 @@ public abstract class ShardQueryRuleTest {
         rule.setName(ruleName);
 
         ShardQueryValidationConfiguration validationConfiguration = getValidationConfiguration();
+        validationConfiguration.setQueryString(query);
         QueryRuleResult result = rule.validate(validationConfiguration);
         // @formatter:off
         QueryRuleResultAssert.assertThat(result)

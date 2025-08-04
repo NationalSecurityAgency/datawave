@@ -21,7 +21,8 @@ public class GroupedInterpretationRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(GroupedInterpretationRule.class);
 
-    public GroupedInterpretationRule() {}
+    public GroupedInterpretationRule() {
+    }
 
     public GroupedInterpretationRule(String name) {
         super(name);
@@ -64,33 +65,32 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         // @formatter:off
         return new StringBuilder()
                 .append("Operator precedence may be missing, ")
-                .append(printOriginalQueryInfo((GroupQueryNode)node, query))
+                .append(originalQueryInfo((GroupQueryNode)node, query, new ArrayList(), new ArrayList(), ""))
                 .append(" will be interpreted as: ")
                 .append(LuceneQueryStringBuildingVisitor.build(node))
                 .toString();
         // @formatter:on
     }
 
-    private String printOriginalQueryInfo(GroupQueryNode node, String query) {
-        QueryNode child = node.getChild();
-        QueryNodeType type = QueryNodeType.get(child.getClass());
-        if (type == QueryNodeType.GROUP) {
-            // child is a nested group
-            return printOriginalQueryInfo((GroupQueryNode) child, query);
-        } else {
-            return getOriginalQueryInfo(child, query);
-        }
-    }
+    private String originalQueryInfo(GroupQueryNode node, String query, List valueList, List fieldList, String prevField) {
+        for (QueryNode child : node.getChildren()) {
+            if (!(child.getChildren() == null)) {
+                for (QueryNode grandchild : child.getChildren()) {
+                    if (QueryNodeType.get(grandchild.getClass()) == QueryNodeType.GROUP) {
+                        originalQueryInfo((GroupQueryNode) grandchild, query, valueList, fieldList, prevField);
+                    } else if (!grandchild.toString().isEmpty()) {
+                        String start = (grandchild.toString()).substring(((grandchild.toString()).indexOf("start=\'") + 7), (grandchild.toString()).indexOf("\' end"));
+                        String end = (grandchild.toString()).substring(((grandchild.toString()).indexOf("end=\'") + 5), (grandchild.toString()).indexOf("\' field"));
+                        String field = (grandchild.toString()).substring(((grandchild.toString()).indexOf("field=\'") + 7), (grandchild.toString()).indexOf("\' text"));
 
-    private String getOriginalQueryInfo(QueryNode node, String query) {
-        // check node index then get query between indexes, return list
-        List<String> valueList = new ArrayList<>();
-        List<String> fieldList = new ArrayList<>();
-        String prevField = "";
-
-        List<QueryNode> children = node.getChildren();
-        for (QueryNode child : children) {
-            if (!child.toString().isEmpty()) {
+                        valueList.add(query.substring(Integer.parseInt(start), Integer.parseInt(end)));
+                        if (!field.isEmpty() && !Objects.equals(field, prevField)) {
+                            fieldList.add(field);
+                            prevField = field;
+                        }
+                    }
+                }
+            } else if (!child.toString().isEmpty()) {
                 String start = (child.toString()).substring(((child.toString()).indexOf("start=\'") + 7), (child.toString()).indexOf("\' end"));
                 String end = (child.toString()).substring(((child.toString()).indexOf("end=\'") + 5), (child.toString()).indexOf("\' field"));
                 String field = (child.toString()).substring(((child.toString()).indexOf("field=\'") + 7), (child.toString()).indexOf("\' text"));
@@ -101,9 +101,8 @@ public class GroupedInterpretationRule extends ShardQueryRule {
                     prevField = field;
                 }
             }
-        }
-        String message = "field(s): " + fieldList.toString() + " with value(s): " + valueList.toString();
-        return message;
-    }
 
+        }
+        return "field(s): " + fieldList.toString() + " with value(s): " + valueList.toString();
+    }
 }
