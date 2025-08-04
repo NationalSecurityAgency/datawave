@@ -21,8 +21,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(GroupedInterpretationRule.class);
 
-    public GroupedInterpretationRule() {
-    }
+    public GroupedInterpretationRule() {}
 
     public GroupedInterpretationRule(String name) {
         super(name);
@@ -79,9 +78,12 @@ public class GroupedInterpretationRule extends ShardQueryRule {
                     if (QueryNodeType.get(grandchild.getClass()) == QueryNodeType.GROUP) {
                         originalQueryInfo((GroupQueryNode) grandchild, query, valueList, fieldList, prevField);
                     } else if (!grandchild.toString().isEmpty()) {
-                        String start = (grandchild.toString()).substring(((grandchild.toString()).indexOf("start=\'") + 7), (grandchild.toString()).indexOf("\' end"));
-                        String end = (grandchild.toString()).substring(((grandchild.toString()).indexOf("end=\'") + 5), (grandchild.toString()).indexOf("\' field"));
-                        String field = (grandchild.toString()).substring(((grandchild.toString()).indexOf("field=\'") + 7), (grandchild.toString()).indexOf("\' text"));
+                        String start = (grandchild.toString()).substring(((grandchild.toString()).indexOf("start=\'") + 7),
+                                        (grandchild.toString()).indexOf("\' end"));
+                        String end = (grandchild.toString()).substring(((grandchild.toString()).indexOf("end=\'") + 5),
+                                        (grandchild.toString()).indexOf("\' field"));
+                        String field = (grandchild.toString()).substring(((grandchild.toString()).indexOf("field=\'") + 7),
+                                        (grandchild.toString()).indexOf("\' text"));
 
                         valueList.add(query.substring(Integer.parseInt(start), Integer.parseInt(end)));
                         if (!field.isEmpty() && !Objects.equals(field, prevField)) {
