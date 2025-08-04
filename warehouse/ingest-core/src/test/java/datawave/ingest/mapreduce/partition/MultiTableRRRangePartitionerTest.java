@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
-import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -23,14 +22,15 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.SplitsConstants;
-import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.TableName;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
+import datawave.ingest.mapreduce.job.SplitsConstants;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
+import datawave.util.TableName;
 
 public class MultiTableRRRangePartitionerTest {
 
@@ -145,7 +145,8 @@ public class MultiTableRRRangePartitionerTest {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int resultRow = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
 
-            Assertions.assertEquals(resultRow, resultForPrecedingRow, "These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow);
+            Assertions.assertEquals(resultRow, resultForPrecedingRow,
+                            "These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow);
         }
     }
 
@@ -203,8 +204,9 @@ public class MultiTableRRRangePartitionerTest {
         Assertions.assertEquals(27, numberTimesPartitionSeen.size(),
                         "Should have seen a total of 27 different partitions.  There is a split for each letter of the alphabet and the null split which is not in the file");
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            Assertions.assertEquals(2, partitionAndNumSeen.getValue().intValue(), "We haven't used the partition space so they should all be even, but partition " + partitionAndNumSeen.getKey().intValue()
-                + " did not see 2.");
+            Assertions.assertEquals(2, partitionAndNumSeen.getValue().intValue(),
+                            "We haven't used the partition space so they should all be even, but partition " + partitionAndNumSeen.getKey().intValue()
+                                            + " did not see 2.");
         }
     }
 

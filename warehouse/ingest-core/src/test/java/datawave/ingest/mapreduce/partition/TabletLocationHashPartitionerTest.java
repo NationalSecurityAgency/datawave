@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Assert;
@@ -14,6 +13,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class TabletLocationHashPartitionerTest {

@@ -16,7 +16,8 @@ public class SplitsCacheFactory {
                     try {
                         String splitsCacheImpl = conf.get(SPLITS_CACHE_IMPL);
                         // noinspection unchecked
-                        Class<? extends SplitsCache> clazz = splitsCacheImpl != null ? (Class<? extends SplitsCache>) Class.forName(splitsCacheImpl) : SplitsFile.class;
+                        Class<? extends SplitsCache> clazz = splitsCacheImpl != null ? (Class<? extends SplitsCache>) Class.forName(splitsCacheImpl)
+                                        : SplitsFile.class;
                         INSTANCE = clazz.getDeclaredConstructor().newInstance();
                         INSTANCE.init(conf);
                     } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {

@@ -1,5 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,28 +14,25 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
-
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.TableName;
-import datawave.util.time.DateHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
+import datawave.util.TableName;
+import datawave.util.time.DateHelper;
 
 public class BalancedShardPartitionerTest {
     private static final int TOTAL_TSERVERS = 600;
@@ -63,7 +63,8 @@ public class BalancedShardPartitionerTest {
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         partitioner = new BalancedShardPartitioner();
         // gotta load this every test, or using different values bleeds into other tests
-        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("root")).toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD);
+        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("root")).toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS,
+                        TableName.SHARD);
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard");
         shardIdFactory = new ShardIdFactory(conf);
@@ -87,7 +88,8 @@ public class BalancedShardPartitionerTest {
     @Test
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
-        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("test-two-tables")).toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD, TableName.ERROR_SHARD);
+        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("test-two-tables")).toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS,
+                        TableName.SHARD, TableName.ERROR_SHARD);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "errorShard,shard");
 
         partitioner.setConf(conf);
