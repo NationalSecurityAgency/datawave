@@ -43,6 +43,43 @@ class ErrorShardedIngestHelperTest {
      */
 
     @Test
+    public void testErrorIndexFieldsCreated(){
+
+        Configuration config = new Configuration();
+
+        config.set(TypeRegistry.INGEST_DATA_TYPES, "xyz, error");
+
+        config.set("xyz" + TypeRegistry.INGEST_HELPER, BaseIngestHelper.class.getName());
+        config.set("xyz" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
+                IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+
+        config.set("error" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
+        config.set("error" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
+                IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+
+        config.set("xyz" + INDEX_FIELDS, "XYZ_A, XYZ_B, XYZ_C");
+
+        config.set("error" + "." + "xyz" + TypeRegistry.INGEST_HELPER, ErrorShardedIngestHelper.class.getName());
+        config.set("error" + "." + "xyz" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
+                IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        config.set("error" + "." + "xyz" + INDEX_FIELDS, "XYZ_ERROR_A, XYZ_A");
+
+        ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
+        errorHelper.setup(config);
+
+        errorHelper.setActiveDataType(null);
+        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A")); // shouldn't this be true since it's an indexed field for xyz, and null results in the default isIndexedField()?
+        Assertions.assertFalse(errorHelper.isIndexedField("XYZ_ERROR_A")); // and this should be false since it's error.dt specific
+
+        errorHelper.setActiveDataType(TypeRegistry.getType("xyz"));
+        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A"));
+        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_ERROR_A"));
+
+    }
+
+    @Test
     public void testIsIndexedField() {
 
         
