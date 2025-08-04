@@ -127,8 +127,6 @@ public class GroupedInterpretationRule extends ShardQueryRule {
                 fieldValueList[2] = prevField;
             }
         }
-        fieldValueList[0] = fieldList;
-        fieldValueList[1] = valueList;
 
         return fieldValueList;
     }
