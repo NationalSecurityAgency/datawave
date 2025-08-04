@@ -39,11 +39,13 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -185,6 +187,14 @@ public abstract class RemoteHttpService {
                             retryCounter(), nonRetriableClasses, unavailableRetryClasses);
 
             // @formatter:off
+            RequestConfig requestConfig = RequestConfig.custom()
+                    .setConnectionRequestTimeout(config.getConnectionPoolTimeout())
+                    .setConnectTimeout(config.getConnectTimeout())
+                    .setSocketTimeout(config.getSocketTimeout())
+                    .build();
+            // @formatter:on
+
+            // @formatter:off
             client = HttpClients.custom()
                     .setSSLContext(ctx)
                     .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
@@ -192,6 +202,7 @@ public abstract class RemoteHttpService {
                     .setMaxConnTotal(maxConnections())
                     .setMaxConnPerRoute(maxConnections())
                     .setRetryHandler(datawaveRetryHandler)
+                    .setDefaultRequestConfig(requestConfig)
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .build();
             // @formatter:on
