@@ -71,7 +71,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         // @formatter:on
     }
 
-    public String queryInfo (GroupQueryNode node, String query, ArrayList fieldList, ArrayList valueList, ArrayList prevField) {
+    public String queryInfo(GroupQueryNode node, String query, ArrayList fieldList, ArrayList valueList, ArrayList prevField) {
         prevField.add("");
 
         ArrayList[] fieldValueList = new ArrayList[3];
