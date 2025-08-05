@@ -119,6 +119,7 @@
                         size="12px"
                         label="Show All Rows"
                         color="cyan-8"
+                        @click="queryTable()"
                       />
                     </div>
                   </q-card-section>
@@ -318,7 +319,6 @@ onMounted(() => {
       }
     });
     rows = Formatters.setVisibility(rows);
-    // new formatter here
     loading.value = false;
   })
   .catch((reason) => {
@@ -368,40 +368,22 @@ function exportTable(this: any) {
 
 // Query - Runs through a Search Process as it waits for the user.
 async function queryTable(priorDays?: any) {
-  // Wait Until User Enters...
   await waitUp();
-
-  // Handles the URL change to reflect when the user searches.
-  // Logic: Input -> URL (UI -> URL)
-  router.replace({
-    query: {
-      ...route.query,
-      search: changeFilter.value || undefined,
-    },
-  });
-
   // 1 - Filter the Rows
   const rowsToExport = table.value?.filteredSortedRows.filter(() => true);
-  const filteredSubset = rowsToExport.filter((row: { lastUpdated: any; }) => {
-    if (priorDays === undefined || priorDays < 0) return true;
-    const priorDateCode = Formatters.getDateCode(priorDays);
-    return Number(row.lastUpdated) >= priorDateCode;
-  });
 
   // 2 - Define Refresh Trigger (By Pagination) and Orginial Rows Stored
   const originalRows = rows;
   const triggerRefresh = paginationFront.value.rowsPerPage;
 
-  console.log('before', rows);
-  // 3 - Set the Current Rows to Filtered Value
-  rows = Formatters.setVisibility(filteredSubset, priorDays);
-  console.log('after', rows)
+  // 3 - Set filtered rows with visibility flags updated
+  rows = Formatters.setVisibility(rowsToExport, priorDays);
 
-  // 4 - Trigger the Refresh
+  // 4 - Refresh pagination to trigger table update
   paginationFront.value.rowsPerPage = 100;
   paginationFront.value.rowsPerPage = triggerRefresh;
 
-  // 5 - Restore Original Rows for Next Query
+  // 5 - Restore original rows for next queries
   rows = originalRows;
 }
 

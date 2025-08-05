@@ -90,8 +90,7 @@ export function toggleVisibility(row: any) {
 }
 
 // Set the Visibility in DOM, sorts and filters by lastUpdated, and the respective row to render button.
-export function setVisibility(rows: readonly any[], priorDays?: number) {
-  //console.log(rows);
+export function setVisibility(rows: readonly any[], priorDays?: any) {
   const fieldVisibility: Map<string, Ref<boolean>> = new Map<
     string,
     Ref<boolean>
@@ -104,7 +103,10 @@ export function setVisibility(rows: readonly any[], priorDays?: number) {
     const currentRowInternalFieldName: any = row.internalFieldName;
     const currentRowDataType: any = row.dataType;
 
-    if (currentRowDataType) {
+    const meetsDateFilter = priorDays === undefined || row.lastUpdated >= getDateCode(priorDays);
+    row['priorDays'] = meetsDateFilter;
+
+    if (currentRowDataType && meetsDateFilter) {
       let currentValue = countValues.get(currentRowInternalFieldName) || 0;
       countValues.set(currentRowInternalFieldName, ++currentValue);
     }
@@ -121,18 +123,17 @@ export function setVisibility(rows: readonly any[], priorDays?: number) {
   for (const row of rows) {
     // Checks to Render button
     if (
-      buttonValues.has(row.internalFieldName) &&
-      row.lastUpdated == buttonValues.get(row.internalFieldName)
+      (buttonValues.has(row.internalFieldName) &&
+      row.lastUpdated == buttonValues.get(row.internalFieldName)) && (countValues.get(row.internalFieldName)! > 1)
     ) {
       row['duplicate'] = 1;
       row['button'] = true;
-
       row['dataTypeCount'] = countValues.get(row.internalFieldName) + ' types';
     }
     // Checks to Render Collapsible Row - Refreshes on Search
     else if (
-      buttonValues.has(row.internalFieldName) &&
-      row.lastUpdated != buttonValues.get(row.internalFieldName)
+      (buttonValues.has(row.internalFieldName) &&
+      row.lastUpdated != buttonValues.get(row.internalFieldName))
     ) {
       row['duplicate'] = 1;
       row['button'] = false;
@@ -153,18 +154,11 @@ export function setVisibility(rows: readonly any[], priorDays?: number) {
     }
 
     const visibility = fieldVisibility.get(internalFieldName);
-    let priorDaysFilter = true;
-
-    if (priorDays !== undefined && priorDays >= 0) {
-      const priorDateCode = getDateCode(priorDays);
-      priorDaysFilter = Number(row.lastUpdated) >= Number(priorDateCode);
-    }
 
     row['toggleVisibility'] = () => {
       visibility!.value = !visibility?.value;
     };
     row['isVisible'] = visibility;
-    row['priorDays'] = priorDaysFilter;
   }
 
   return rows;
@@ -172,10 +166,14 @@ export function setVisibility(rows: readonly any[], priorDays?: number) {
 
 // Lets the DOM know what is visible and what is not based on setVisibility filters.
 export function isVisible(row: any) {
-  return (row.duplicate == 0 || row.isVisible.value) && row.priorDays;
+ return (row.duplicate == 0 || row.isVisible.value) && row.priorDays;
 }
 
-export function getDateCode(daysPrior = 0): number {
+export function getDateCode(daysPrior = Infinity): number {
+  if (!isFinite(daysPrior)) {
+    return 0; // return earliest possible dateCode (match all)
+  }
+
   const date = new Date();
   date.setDate(date.getDate() - daysPrior);
   const y = date.getFullYear();
