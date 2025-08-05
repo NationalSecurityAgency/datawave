@@ -88,6 +88,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         if (QueryNodeType.get(nestedChild.getClass()) == QueryNodeType.GROUP) {
             return originalQueryInfo((GroupQueryNode) nestedChild, query, fieldValueList);
         }
+
         for (QueryNode child : node.getChildren()) {
             if (!(child.getChildren() == null)) {
                 for (QueryNode grandchild : child.getChildren()) {
@@ -99,14 +100,12 @@ public class GroupedInterpretationRule extends ShardQueryRule {
                     }
                 }
             } else if (!child.toString().isEmpty()) {
+                // not nested, get info about fields/values
                 fieldValueLists(child, query, fieldValueList);
             }
         }
 
-        Object fieldList = fieldValueList[0];
-        Object valueList = fieldValueList[1];
-
-        return "field(s): " + fieldList + " with value(s): " + valueList;
+        return "field(s): " + fieldValueList[0] + " with value(s): " + fieldValueList[1];
     }
 
     private ArrayList[] fieldValueLists(QueryNode node, String query, ArrayList[] fieldValueList) {
