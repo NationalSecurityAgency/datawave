@@ -112,11 +112,11 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
      */
     @Test
     void testMultipleFieldsWithAmbiguousPhrases() throws Exception {
-        givenQuery("(YARD:dog mouse ferret) OR BEACH:((bird fish) turtle) AND 333 HAT:\"111\" 222 AND HEN:car VEE:elephant zebra VEE:deer BARN:(cat cow)");
+        givenQuery("(FOO:abc def ghi) OR BAR:(aaa bbb ccc) AND 333 HAT:\"111\" 222 AND HEN:car VEE:elephant zebra VEE:deer FOO:(aaa bbb)");
 
-        expectMessage("Operator precedence may be missing, field(s): [YARD] with value(s): [dog, mouse, ferret] will be interpreted as: ( YARD:dog AND mouse AND ferret )");
-        expectMessage("Operator precedence may be missing, field(s): [BEACH] with value(s): [bird, fish, turtle] will be interpreted as: ( ( BEACH:bird AND BEACH:fish ) AND BEACH:turtle )");
-        expectMessage("Operator precedence may be missing, field(s): [BARN] with value(s): [cat, cow] will be interpreted as: ( BARN:cat AND BARN:cow )");
+        expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [abc, def, ghi] will be interpreted as: ( FOO:abc AND def AND ghi )");
+        expectMessage("Operator precedence may be missing, field(s): [BAR] with value(s): [aaa, bbb, ccc] will be interpreted as: ( BAR:aaa AND BAR:bbb AND BAR:ccc )");
+        expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [aaa, bbb] will be interpreted as: ( FOO:aaa AND FOO:bbb )");
 
         assertResult();
     }
