@@ -52,9 +52,9 @@ if [[ -n "$3" ]]; then
 fi
 
 
-balancerDelay=1
+balancerDelayMS=1
 if [[ -n "$4" ]]; then
-    balancerDelay=$4
+    balancerDelayMS=$4
 fi
 
 TABLES="${SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME},${QUERYMETRICS_SHARD_TABLE_NAME}"
@@ -74,5 +74,5 @@ TYPES=${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_DATA_TYPES
 ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR:$THIS_DIR/$COMMON_UTIL_JAR:$THIS_DIR/$DATAWAVE_CORE_JAR:$THIS_DIR/$DATAWAVE_COMMON_UTILS_JAR:$THIS_DIR/$COMMONS_LANG_JAR
 
 for table in "${TABLES[@]}" ; do
-   CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_BIN/accumulo datawave.ingest.util.GenerateShardSplits $date $count ${NUM_SHARDS} $shardsPerSplit -balancerDelay $balancerDelay -maxBalancerDelay $balancerDelay -addShardMarkers $USERNAME $PASSWORD ${table} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+   CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_BIN/accumulo datawave.ingest.util.GenerateShardSplits $date $count ${NUM_SHARDS} $shardsPerSplit -balancerDelay $balancerDelayMS -maxBalancerDelay $balancerDelayMS -addShardMarkers $USERNAME $PASSWORD ${table} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
 done
