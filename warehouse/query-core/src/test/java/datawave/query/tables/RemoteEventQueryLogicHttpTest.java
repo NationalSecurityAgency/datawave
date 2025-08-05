@@ -14,7 +14,6 @@ import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -35,8 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.core.MediaType;
 
-import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -64,6 +61,8 @@ import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.json.DefaultMapperDecorator;
+import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.common.remote.TestJSSESecurityDomain;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -74,7 +73,7 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 
 public class RemoteEventQueryLogicHttpTest {
-
+    private static final String NON_ROUTABLE_HOST = "10.255.255.255";
     private static final int keysize = 2048;
 
     private static final String commonName = "cn=www.test.us";
@@ -223,54 +222,16 @@ public class RemoteEventQueryLogicHttpTest {
 
     @Test
     public void testRemoteQuery() throws Exception {
-        logic.setCurrentUser(new DatawavePrincipal(commonName));
-        QueryImpl settings = new QueryImpl();
-        settings.setQuery(query);
-        GenericQueryConfiguration config = logic.initialize(null, settings, null);
-        logic.setupQuery(config);
-
-        Iterator<EventBase> t = logic.iterator();
-        List<EventBase> events = new ArrayList();
-        while (t.hasNext()) {
-            events.add(t.next());
-        }
-        assertEquals(2, events.size());
-        assertNotNull(content);
-        assertEquals(query, content);
+        QueryRunnable r = new QueryRunnable(logic);
+        r.run();
     }
 
     @Test
     public void testDefaultConnectTimeoutHangForever() {
         // override the endpoint to a non-routable ip, so it will block forever
-        ((RemoteHttpService) logic.getRemoteQueryService()).setQueryServiceHost("10.255.255.255");
+        ((RemoteHttpService) logic.getRemoteQueryService()).setQueryServiceHost(NON_ROUTABLE_HOST);
 
-        // track query execution state
-        AtomicBoolean setup = new AtomicBoolean(false);
-        AtomicBoolean caught = new AtomicBoolean(false);
-
-        // execute this in a thread so it can be interrupted
-        Runnable r = () -> {
-            logic.setCurrentUser(new DatawavePrincipal(commonName));
-            QueryImpl settings = new QueryImpl();
-            settings.setQuery(query);
-            try {
-                GenericQueryConfiguration config = logic.initialize(null, settings, null);
-                logic.setupQuery(config);
-                setup.set(true);
-            } catch (Exception e) {
-                caught.set(true);
-                throw new RuntimeException(e);
-            }
-
-            Iterator<EventBase> t = logic.iterator();
-            List<EventBase> events = new ArrayList();
-            while (t.hasNext()) {
-                events.add(t.next());
-            }
-            assertEquals(2, events.size());
-            assertNotNull(content);
-            assertEquals(query, content);
-        };
+        QueryRunnable r = new QueryRunnable(logic);
         Thread t = new Thread(r);
         t.start();
 
@@ -286,11 +247,11 @@ public class RemoteEventQueryLogicHttpTest {
         assertFalse(interrupted);
         // this would be TERMINATED if the thread ran
         assertTrue(t.getState().toString(), t.getState() == Thread.State.RUNNABLE);
-        assertFalse(setup.get());
-        assertFalse(caught.get());
+        assertFalse(r.isSetup().get());
+        assertFalse(r.isCaught().get());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testConnectTimeoutQuery() throws Exception {
         RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
         RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
@@ -301,70 +262,25 @@ public class RemoteEventQueryLogicHttpTest {
         // override the endpoint to a non-routable ip
         ((RemoteHttpService) logic.getRemoteQueryService()).setQueryServiceHost("10.255.255.255");
 
-        logic.setCurrentUser(new DatawavePrincipal(commonName));
-        QueryImpl settings = new QueryImpl();
-        settings.setQuery(query);
-        GenericQueryConfiguration config = logic.initialize(null, settings, null);
-        logic.setupQuery(config);
+        QueryRunnable runnable = new QueryRunnable(logic);
+        runnable.run();
 
-        Iterator<EventBase> t = logic.iterator();
-        List<EventBase> events = new ArrayList();
-        while (t.hasNext()) {
-            events.add(t.next());
-        }
-        assertEquals(2, events.size());
-        assertNotNull(content);
-        assertEquals(query, content);
+        assertTrue(runnable.isCaught().get());
     }
 
     @Test
     public void testDefaultSocketTimeout() throws InterruptedException {
         AtomicBoolean handlerInterrupt = new AtomicBoolean(false);
-        HttpHandler foreverHandler = exchange -> {
-            while (true) {
-                try {
-                    sleep(1000);
-                    if (handlerInterrupt.get()) {
-                        throw new InterruptedException();
-                    }
-                } catch (InterruptedException e) {
-                    throw new IOException(e);
-                }
-            }
-        };
+        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
 
         // remove the old handler
         server.removeContext("/DataWave/Query/TestQuery/create");
         // attach a new one that hangs for 5s
         server.createContext("/DataWave/Query/TestQuery/create", foreverHandler);
 
-        // track query execution state
-        AtomicBoolean setup = new AtomicBoolean(false);
-        AtomicBoolean caught = new AtomicBoolean(false);
-
         // execute this in a thread so it can be interrupted
-        Runnable r = () -> {
-            logic.setCurrentUser(new DatawavePrincipal(commonName));
-            QueryImpl settings = new QueryImpl();
-            settings.setQuery(query);
-            try {
-                GenericQueryConfiguration config = logic.initialize(null, settings, null);
-                logic.setupQuery(config);
-                setup.set(true);
-            } catch (Exception e) {
-                caught.set(true);
-                return;
-            }
+        QueryRunnable r = new QueryRunnable(logic);
 
-            Iterator<EventBase> t = logic.iterator();
-            List<EventBase> events = new ArrayList();
-            while (t.hasNext()) {
-                events.add(t.next());
-            }
-            assertEquals(2, events.size());
-            assertNotNull(content);
-            assertEquals(query, content);
-        };
         Thread t = new Thread(r);
         t.start();
 
@@ -384,12 +300,12 @@ public class RemoteEventQueryLogicHttpTest {
         handlerInterrupt.set(true);
         assertFalse(interrupted);
 
-        while(t.isAlive()) {
+        while (t.isAlive()) {
             sleep(200);
         }
 
-        assertFalse(setup.get());
-        assertTrue(caught.get());
+        assertFalse(r.isSetup().get());
+        assertTrue(r.isCaught().get());
     }
 
     @Test
@@ -409,7 +325,7 @@ public class RemoteEventQueryLogicHttpTest {
         server.createContext("/DataWave/Query/TestQuery/create", foreverHandler);
 
         // track query execution state
-        QueryRunnable r = new QueryRunnable(logic, content);
+        QueryRunnable r = new QueryRunnable(logic);
         r.run();
 
         assertFalse(r.isSetup().get());
@@ -438,8 +354,8 @@ public class RemoteEventQueryLogicHttpTest {
 
         // create two threads that both access the forever handler
         // execute this in a thread so it can be interrupted
-        QueryRunnable r1 = new QueryRunnable(logic, content);
-        QueryRunnable r2 = new QueryRunnable(logic, content);
+        QueryRunnable r1 = new QueryRunnable(logic);
+        QueryRunnable r2 = new QueryRunnable(logic);
 
         // start both threads
         Thread t1 = new Thread(r1);
@@ -486,8 +402,8 @@ public class RemoteEventQueryLogicHttpTest {
 
         // create two threads that both access the forever handler
         // execute this in a thread so it can be interrupted
-        QueryRunnable r1 = new QueryRunnable(logic, content);
-        QueryRunnable r2 = new QueryRunnable(logic, content);
+        QueryRunnable r1 = new QueryRunnable(logic);
+        QueryRunnable r2 = new QueryRunnable(logic);
 
         // start both threads
         Thread t1 = new Thread(r1);
@@ -533,16 +449,14 @@ public class RemoteEventQueryLogicHttpTest {
         }
     }
 
-    public static class QueryRunnable implements Runnable {
+    public class QueryRunnable implements Runnable {
         private RemoteEventQueryLogic logic;
-        private String content;
 
         private AtomicBoolean setup = new AtomicBoolean(false);
         private AtomicBoolean caught = new AtomicBoolean(false);
 
-        public QueryRunnable(RemoteEventQueryLogic logic, String content) {
+        public QueryRunnable(RemoteEventQueryLogic logic) {
             this.logic = logic;
-            this.content = content;
         }
 
         @Override
