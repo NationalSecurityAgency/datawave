@@ -14,8 +14,8 @@ import datawave.query.lucene.visitors.QueryNodeType;
 
 /**
  * An implementation of {@link QueryRule} that interprets a LUCENE query for any grouped phrases with fields, e.g. {@code FOO:(aaa bbb ccc)},
- * {@code (FOO:aaa bbb ccc)} and will return a LUCENE string warning message to let the user know how the query will be interpreted e.g.
- * "{@code FOO:(aaa bbb ccc)} will be interpreted as {@code (FOO:aaa AND FOO:bbb AND FOO:ccc)}"
+ * {@code (FOO:aaa bbb ccc)} and will return a LUCENE string warning message to let the user know how the query will be interpreted e.g. "Operator precedence
+ * may be missing, field(s) {@code [FOO]} with value(s) {@code [aaa, bbb, ccc]} will be interpreted as {@code (FOO:aaa AND FOO:bbb AND FOO:ccc)}"
  */
 public class GroupedInterpretationRule extends ShardQueryRule {
 
@@ -64,14 +64,14 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         // @formatter:off
         return new StringBuilder()
                 .append("Operator precedence may be missing, ")
-                .append(queryInfo((GroupQueryNode)node, query, new ArrayList(), new ArrayList(), new ArrayList()))
+                .append(queryInfo(node, query, new ArrayList(), new ArrayList(), new ArrayList()))
                 .append(" will be interpreted as: ")
                 .append(LuceneQueryStringBuildingVisitor.build(node))
                 .toString();
         // @formatter:on
     }
 
-    public String queryInfo(GroupQueryNode node, String query, ArrayList fieldList, ArrayList valueList, ArrayList prevField) {
+    public String queryInfo(QueryNode node, String query, ArrayList fieldList, ArrayList valueList, ArrayList prevField) {
         prevField.add("");
 
         ArrayList[] fieldValueList = new ArrayList[3];
@@ -79,7 +79,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         fieldValueList[1] = valueList;
         fieldValueList[2] = prevField;
 
-        return originalQueryInfo(node, query, fieldValueList);
+        return originalQueryInfo((GroupQueryNode) node, query, fieldValueList);
     }
 
     private String originalQueryInfo(GroupQueryNode node, String query, ArrayList[] fieldValueList) {
