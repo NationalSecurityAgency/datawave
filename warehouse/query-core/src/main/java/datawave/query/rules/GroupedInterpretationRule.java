@@ -69,8 +69,6 @@ public class GroupedInterpretationRule extends ShardQueryRule {
     }
 
     private String originalQueryInfo(GroupQueryNode node, ArrayList fieldList, ArrayList valueList, ArrayList prevField) {
-        prevField.add("");
-
         ArrayList[] fieldValueList = new ArrayList[3];
         fieldValueList[0] = fieldList;
         fieldValueList[1] = valueList;
@@ -107,6 +105,11 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         ArrayList fieldList = fieldValueList[0];
         ArrayList valueList = fieldValueList[1];
         ArrayList prevField = fieldValueList[2];
+
+        // adds a value to compare later field(s) with
+        if (prevField.isEmpty()) {
+            prevField.add("");
+        }
 
         if (!node.toString().isEmpty()) {
             // adds string values from original query to lists

@@ -94,18 +94,13 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
     @SuppressWarnings("unchecked")
 
     private Object checkJunction(QueryNode node, Object data) {
-        // examine each child
         for (QueryNode child : node.getChildren()) {
             QueryNodeType type = QueryNodeType.get(child.getClass());
             switch (type) {
-                // current child is a GROUP.
                 case GROUP:
-                    // Check if the group consists solely of a fielded term followed by unfielded OR'd phrases.
                     if (groupConsistsOfUnfieldedTerms((GroupQueryNode) child, false)) {
-                        // If it does, add a copy of it to the data.
                         ((List<QueryNode>) data).add(copy(child));
                     } else {
-                        // Otherwise, examine the children of the GROUP node.
                         super.visit(child, data);
                     }
                     break;
@@ -137,12 +132,10 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
     private boolean junctionConsistsOfUnfieldedTerms(QueryNode node, boolean fieldedTermFound) {
         List<QueryNode> children = node.getChildren();
         String prevField = "";
-        // Examine the children.
+
         for (QueryNode child : children) {
             QueryNodeType type = QueryNodeType.get(child.getClass());
-            // If the child is a group, check if it consists of ambiguously ORed phrases.
             if (type == QueryNodeType.FIELD) {
-                // If the child is a field term, check if it is fielded or unfielded.
                 if (!((FieldQueryNode) child).getFieldAsString().isEmpty()) {
                     // If the field name is not empty, and we have not found a fielded term yet, mark that we've found one.
                     if (!fieldedTermFound) {

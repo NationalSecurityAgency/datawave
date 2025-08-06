@@ -90,7 +90,7 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
      */
     @Test
     void testAmbiguousPhraseAfterQuotedFieldedTerm() throws Exception {
-        givenQuery("FOO:\"abc\" def ghi");
+        givenQuery("(FOO:abc AND BAR:def)");
 
         // Do not expect any results.
         assertResult();
