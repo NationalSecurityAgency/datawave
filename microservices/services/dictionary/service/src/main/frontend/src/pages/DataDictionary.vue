@@ -69,64 +69,6 @@
           />
         </template>
         <template v-slot:top-right>
-          <div>
-            <q-btn
-              size="10px"
-              color="cyan-8"
-              icon="bi-funnel-fill"
-              style="margin-right: 10px; padding: 2px;"
-              dense
-              ref="buttonRef"
-            >
-              <q-menu
-                anchor="bottom right"
-                self="top right"
-                :offset="[0, 5]"
-              >
-                <q-card style="max-width: 205px; padding: 5px; box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);" class="q-pa-sm">
-                  <q-card-section class="text-center text-subtitle1" style="font-weight: 550;">
-                    FILTER DAYS
-                  </q-card-section>
-                  <q-separator />
-                  <q-card-section class="q-gutter-sm">
-                    <div class="row items-center q-col-gutter-sm">
-                      <q-input
-                        dense
-                        color="cyan-8"
-                        v-model="search"
-                        placeholder="30"
-                        @keyup.enter="queryTable(search)"
-                        style="width: 50px; margin-left: 15px;"
-                        input-class="text-center"
-                      />
-                      <q-item-label style="font-weight: 450;"> DAY(S) PRIOR</q-item-label>
-                    </div>
-                  </q-card-section>
-                  <q-separator />
-                  <q-card-section class="q-pt-none">
-                    <div class="row items-center q-gutter-sm" style="margin-top: 15px;">
-                      <q-btn
-                        dense
-                        style="padding: 5px;"
-                        size="12px"
-                        label="Apply"
-                        color="cyan-8"
-                        @click="queryTable(search)"
-                      />
-                      <q-btn
-                        dense
-                        style="padding: 5px;"
-                        size="12px"
-                        label="Show All Rows"
-                        color="cyan-8"
-                        @click="queryTable()"
-                      />
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </q-menu>
-            </q-btn>
-          </div>
           <q-input
             borderless
             dense
@@ -147,12 +89,86 @@
         <template v-slot:header="props">
           <q-tr :props="props">
             <q-th />
-            <q-th v-for="col in props.cols" :key="col.name" :props="props">
-              <div class="tooltip-wrapper">
-                {{ col.label }}
-                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
-                  {{ Feature.toolTipGen(col.name) }}
-                </q-tooltip>
+            <q-th
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+            >
+              <div class="tooltip-wrapper row items-center no-wrap">
+                <span class="q-mr-xs">
+                  <span class="cursor-pointer">
+                    {{ col.label }}
+                    <q-tooltip
+                      class="tooltip-text"
+                      anchor="bottom middle"
+                      self="top middle"
+                      :offset="[0, 5]"
+                    >
+                      {{ Feature.toolTipGen(col.name) }}
+                    </q-tooltip>
+                  </span>
+                </span>
+                <template v-if="col.name === 'lastUpdated'">
+                  <q-btn
+                    size="7px"
+                    color="cyan-8"
+                    icon="bi-funnel-fill"
+                    style="padding: 2.5px; margin-bottom: 1.5px;"
+                    dense
+                    ref="buttonRef"
+                  >
+                    <q-menu
+                      anchor="bottom right"
+                      self="top right"
+                      :offset="[0, 5]"
+                    >
+                      <q-card
+                        style="max-width: 205px; padding: 5px; box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);"
+                        class="q-pa-sm"
+                      >
+                        <q-card-section class="text-center text-subtitle1" style="font-weight: 550;">
+                          FILTER DAYS
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-gutter-sm">
+                          <div class="row items-center q-col-gutter-sm">
+                            <q-input
+                              dense
+                              color="cyan-8"
+                              v-model="search"
+                              placeholder="30"
+                              @keyup.enter="queryTable(search)"
+                              style="width: 50px; margin-left: 15px;"
+                              input-class="text-center"
+                            />
+                            <q-item-label style="font-weight: 450;"> DAY(S) PRIOR</q-item-label>
+                          </div>
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-pt-none">
+                          <div class="row items-center q-gutter-sm" style="margin-top: 15px;">
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Apply"
+                              color="cyan-8"
+                              @click="queryTable(search)"
+                            />
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Clear Filter"
+                              color="cyan-8"
+                              @click="queryTable()"
+                            />
+                          </div>
+                        </q-card-section>
+                      </q-card>
+                    </q-menu>
+                  </q-btn>
+                </template>
               </div>
             </q-th>
           </q-tr>
@@ -318,7 +334,7 @@ onMounted(() => {
         return b.lastUpdated - a.lastUpdated;
       }
     });
-    rows = Formatters.setVisibility(rows);
+    rows = Formatters.setVisibility(rows, 30); // defualt at 30 days
     loading.value = false;
   })
   .catch((reason) => {
