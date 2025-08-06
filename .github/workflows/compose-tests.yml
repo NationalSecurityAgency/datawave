@@ -7,18 +7,6 @@ on:
         description: 'Allow snapshots in the pom'
         required: true
         type: boolean
-      JAVA_VERSION:
-        description: 'Java Version'
-        required: true
-        type: string
-      JAVA_DISTRIBUTION:
-        description: 'Java Distribution'
-        required: true
-        type: string
-      MAVEN_OPTS:
-        description: 'Maven Opts'
-        required: true
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.allow-snapshots }}-${{ github.event.pull_request.number || github.ref }}
@@ -41,11 +29,11 @@ jobs:
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
-      - name: Set up JDK ${{inputs.JAVA_VERSION}}
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          distribution: ${{inputs.JAVA_DISTRIBUTION}}
-          java-version: ${{inputs.JAVA_VERSION}}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
           server-id: github-datawave
         # username and password are the env variables names that maven will use
           server-username: GITHUB_USERNAME
@@ -63,12 +51,12 @@ jobs:
       - name: Docker Compose Update POMs to use Snapshots
         if: ${{ inputs.allow-snapshots }}
         run: |
-          export MAVEN_OPTS="${{ inputs.MAVEN_OPTS }}"
+          export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
       - name: Docker Compose Build
         run: |
-          export MAVEN_OPTS="${{ inputs.MAVEN_OPTS }}"
+          export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
               -Djkube.container-image.tags.1=latest \
@@ -77,7 +65,7 @@ jobs:
         run: |
           # free up some space so that we don't run out
           docker system prune -f
-          export MAVEN_OPTS="${{ inputs.MAVEN_OPTS }}"
+          export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
       - name: Docker Compose Accumulo Start
