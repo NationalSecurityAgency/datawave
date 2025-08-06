@@ -39,6 +39,9 @@ jobs:
         with:
           distribution: ${{inputs.JAVA_DISTRIBUTION}}
           java-version: ${{inputs.JAVA_VERSION}}
+          server-id: github-datawave
+          server-username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+          server-password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
       - uses: actions/cache@v4
         if: ${{ !inputs.allow-snapshots }}
         with:
@@ -53,12 +56,12 @@ jobs:
         if: ${{ inputs.allow-snapshots }}
         run: |
           export MAVEN_OPTS="${{ inputs.MAVEN_OPTS }}"
-          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
       - name: Docker Compose Build
         run: |
           export MAVEN_OPTS="${{ inputs.MAVEN_OPTS }}"
-          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
               -Djkube.container-image.tags.1=latest \
               clean install
@@ -67,7 +70,7 @@ jobs:
           # free up some space so that we don't run out
           docker system prune -f
           export MAVEN_OPTS="${{ inputs.MAVEN_OPTS }}"
-          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
       - name: Docker Compose Accumulo Start
         run: |

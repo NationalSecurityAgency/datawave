@@ -52,6 +52,9 @@ jobs:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.ACCUMULO_JAVA_VERSION}}
         cache: 'maven'
+        server-id: github-datawave
+        server-username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+        server-password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
     - run: echo "ACCUMULO_JAVA=$JAVA_HOME" >> $GITHUB_ENV
     - name: Set up JDK ${{env.DATAWAVE_JAVA_VERSION}}
       uses: actions/setup-java@v4
@@ -59,8 +62,10 @@ jobs:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.DATAWAVE_JAVA_VERSION}}
         cache: 'maven'
+        server-id: github-datawave
+        server-username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+        server-password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
     - run: echo "DATAWAVE_JAVA=$JAVA_HOME" >> $GITHUB_ENV
-
     - name: Get Accumulo Version
       id: get-accumulo-version
       run: |
@@ -74,7 +79,7 @@ jobs:
       run: | 
         export JAVA_HOME="$ACCUMULO_JAVA"
         cd "$GITHUB_WORKSPACE/accumulo"
-        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -DskipTests -T1C clean source:jar deploy -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml"
+        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -DskipTests -T1C clean source:jar deploy
     - name: Log in to the Container registry
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
@@ -87,11 +92,11 @@ jobs:
 
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
+        mvn versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Dversion.accumulo=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
+        mvn clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Dversion.accumulo=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  

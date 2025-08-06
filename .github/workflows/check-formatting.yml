@@ -36,6 +36,9 @@ jobs:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
+        server-id: github-datawave
+        server-username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+        server-password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
     - name: Extract branch name
       shell: bash
       run: |
@@ -48,7 +51,7 @@ jobs:
     - name: Format code
       run: |
         if [[ "${{ github.event_name }}" != "merge_group" ]]; then
-          mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
+          mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
           if ! git diff-index --quiet HEAD; then
             echo "Code formatting issues detected. Please format locally.";
             exit 1;
