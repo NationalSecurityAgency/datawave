@@ -75,6 +75,7 @@ import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.next.stats.StatUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -3723,9 +3724,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.info(execution + "\t\t" + get + "\t\t" + saved + "\t\t" + stageName);
         }
 
-        log.info("Total concurrent execution time: " + TimeUnit.NANOSECONDS.toMillis(totalExecution) + " ms");
-        log.info("Total get future time: " + TimeUnit.NANOSECONDS.toMillis(totalGetFuture) + " ms");
-        log.info("Total time saved: " + TimeUnit.NANOSECONDS.toMillis(totalTimeSaved) + " ms");
+        log.info("Total concurrent execution time: " + StatUtil.formatNanos(totalExecution));
+        log.info("Total get future time: " + StatUtil.formatNanos(totalGetFuture));
+        log.info("Total time saved: " + StatUtil.formatNanos(totalTimeSaved));
     }
 
     /**
