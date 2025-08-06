@@ -37,6 +37,10 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+      # Clean up free space
+    - uses: ./.github/actions/free-space
+      with:
+        tool-cache: false
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v4
       with:
@@ -46,10 +50,6 @@ jobs:
         server-id: github-datawave
         server-username: ${{ secrets.GHCR_WRITE_USER_NAME }}
         server-password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
-    # Clean up free space
-    - uses: ./.github/actions/free-space
-      with:
-        tool-cache: false
     - name: Build and Run Unit Tests
       run: |
         cd microservices
