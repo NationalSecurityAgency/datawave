@@ -121,7 +121,7 @@
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j2>2.17.2</version.log4j2>
+        <version.log4j2>2.19.0</version.log4j2>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
@@ -133,7 +133,7 @@
         <version.powermock>2.0.9</version.powermock>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
-        <version.slf4j>1.7.36</version.slf4j>
+        <version.slf4j>2.0.12</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
