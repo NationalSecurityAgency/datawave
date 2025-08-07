@@ -61,18 +61,18 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         // @formatter:off
         return new StringBuilder()
                 .append("Operator precedence may be missing, ")
-                .append(originalQueryInfo((GroupQueryNode) node, new ArrayList(), new ArrayList(), new ArrayList()))
+                .append(originalQueryInfo((GroupQueryNode) node, new ArrayList<>(), new ArrayList<>(), new ArrayList<>()))
                 .append(" will be interpreted as: ")
                 .append(LuceneQueryStringBuildingVisitor.build(node))
                 .toString();
         // @formatter:on
     }
 
-    private String originalQueryInfo(GroupQueryNode node, ArrayList fieldList, ArrayList valueList, ArrayList prevField) {
-        ArrayList[] fieldValueList = new ArrayList[3];
-        fieldValueList[0] = fieldList;
-        fieldValueList[1] = valueList;
-        fieldValueList[2] = prevField;
+    private String originalQueryInfo(GroupQueryNode node, ArrayList<String> fieldList, ArrayList<String> valueList, ArrayList<String> prevField) {
+        List<List<String>> fieldValueList = new ArrayList<>(3);
+        fieldValueList.add(fieldList);
+        fieldValueList.add(valueList);
+        fieldValueList.add(prevField);
 
         // first checks to see if query is nested, i.e. FOO:((aaa bbb ccc))
         QueryNode nestedChild = node.getChild();
@@ -97,14 +97,14 @@ public class GroupedInterpretationRule extends ShardQueryRule {
             }
         }
 
-        return "field(s): " + fieldValueList[0] + " with value(s): " + fieldValueList[1];
+        return "field(s): " + fieldValueList.get(0) + " with value(s): " + fieldValueList.get(1);
     }
 
-    private ArrayList[] fieldValueLists(QueryNode node, ArrayList[] fieldValueList) {
+    private void fieldValueLists(QueryNode node, List<List<String>> fieldValueList) {
         // index 0 = fields, index 1 = values, index 3 = previous fields
-        ArrayList fieldList = fieldValueList[0];
-        ArrayList valueList = fieldValueList[1];
-        ArrayList prevField = fieldValueList[2];
+        List<String> fieldList = fieldValueList.get(0);
+        List<String> valueList = fieldValueList.get(1);
+        List<String> prevField = fieldValueList.get(2);
 
         // adds a value to compare later field(s) with
         if (prevField.isEmpty()) {
@@ -113,16 +113,14 @@ public class GroupedInterpretationRule extends ShardQueryRule {
 
         if (!node.toString().isEmpty()) {
             // adds string values from original query to lists
-            valueList.add((node.toString()).substring(((node.toString()).indexOf("text=\'") + 6), (node.toString()).indexOf("\'/>")));
+            valueList.add((node.toString()).substring(((node.toString()).indexOf("text='") + 6), (node.toString()).indexOf("'/>")));
 
-            String field = (node.toString()).substring(((node.toString()).indexOf("field=\'") + 7), (node.toString()).indexOf("\' text"));
+            String field = (node.toString()).substring(((node.toString()).indexOf("field='") + 7), (node.toString()).indexOf("' text"));
             if (!field.isEmpty() && !Objects.equals(field, prevField.get(0))) {
                 fieldList.add(field);
                 prevField.set(0, field);
-                fieldValueList[2] = prevField;
+                fieldValueList.set(2, prevField);
             }
         }
-
-        return fieldValueList;
     }
 }

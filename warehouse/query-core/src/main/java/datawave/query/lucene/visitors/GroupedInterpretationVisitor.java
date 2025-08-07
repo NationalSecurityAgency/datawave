@@ -138,7 +138,8 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
                         fieldedTermFound = true;
                         // make note of the field
                         prevField = ((FieldQueryNode) child).getFieldAsString();
-                    } else return Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField);
+                    } else
+                        return Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField);
                 } else {
                     // The current child is an unfielded term. If no fielded term has been found yet, then we may have something like (abc AND FOO:abc).
                     return fieldedTermFound;
