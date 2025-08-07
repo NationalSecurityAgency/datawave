@@ -33,6 +33,7 @@
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
         <version.protobuf-java>3.16.3</version.protobuf-java>
+        <version.slf4j>2.0.12</version.slf4j>
         <version.validation-api>2.0.2</version.validation-api>
         <version.webjars.bootstrap>4.3.1</version.webjars.bootstrap>
         <version.webjars.jquery>3.4.1</version.webjars.jquery>
@@ -212,7 +213,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-slf4j-impl</artifactId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -355,6 +356,11 @@
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
