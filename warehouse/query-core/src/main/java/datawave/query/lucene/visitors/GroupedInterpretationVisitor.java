@@ -93,17 +93,14 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
     private Object checkJunction(QueryNode node, Object data) {
         for (QueryNode child : node.getChildren()) {
             QueryNodeType type = QueryNodeType.get(child.getClass());
-            switch (type) {
-                case GROUP:
-                    if (groupConsistsOfUnfieldedTerms((GroupQueryNode) child, false)) {
-                        ((List<QueryNode>) data).add(copy(child));
-                    } else {
-                        super.visit(child, data);
-                    }
-                    break;
-                default:
+            if (Objects.requireNonNull(type) == QueryNodeType.GROUP) {
+                if (groupConsistsOfUnfieldedTerms((GroupQueryNode) child, false)) {
+                    ((List<QueryNode>) data).add(copy(child));
+                } else {
                     super.visit(child, data);
-                    break;
+                }
+            } else {
+                super.visit(child, data);
             }
         }
 
