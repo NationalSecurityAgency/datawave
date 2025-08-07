@@ -463,7 +463,7 @@ public class DateIndexHelper implements ApplicationContextAware {
 
             for (Entry<Key,Value> entry : scanner) {
                 Key k = entry.getKey();
-                String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
+                String[] parts = k.getColumnQualifier().toString().split("\0");
                 String date = parts[0];
 
                 // If the event date is more than one day before the event actually happened,
