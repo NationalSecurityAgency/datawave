@@ -1,6 +1,6 @@
 package datawave.query.jexl.lookups;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 
 /**
  * An index lookup which does no work and returns an empty IndexLookupMap
@@ -12,7 +12,7 @@ public class EmptyIndexLookup extends IndexLookup {
      * @param config
      *            the shard query configuration, not null
      */
-    public EmptyIndexLookup(ShardQueryConfiguration config) {
+    public EmptyIndexLookup(ImmutableShardQueryConfiguration config) {
         super(config, null);
     }
 

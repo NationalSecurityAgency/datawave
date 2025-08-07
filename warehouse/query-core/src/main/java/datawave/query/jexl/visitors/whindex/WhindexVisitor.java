@@ -40,7 +40,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
@@ -91,7 +91,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         public Multimap<String,JexlNode> usedAndedNodes = LinkedHashMultimap.create();
     }
 
-    private WhindexVisitor(ShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
+    private WhindexVisitor(ImmutableShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
         this(config.getWhindexMappingFields(), config.getWhindexFieldMappings(), config.getWhindexCreationDates(), beginDate, metadataHelper);
     }
 
@@ -119,7 +119,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            the metadata helper
      * @return An expanded version of the passed-in script containing whindex nodes
      */
-    public static <T extends JexlNode> T apply(T script, ShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
+    public static <T extends JexlNode> T apply(T script, ImmutableShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
         WhindexVisitor visitor = new WhindexVisitor(config, beginDate, metadataHelper);
 
         return apply(script, visitor);

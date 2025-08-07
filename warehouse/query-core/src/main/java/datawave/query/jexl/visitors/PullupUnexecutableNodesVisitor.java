@@ -57,7 +57,7 @@ import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
@@ -69,14 +69,14 @@ import datawave.query.util.MetadataHelper;
 public class PullupUnexecutableNodesVisitor extends BaseVisitor {
 
     protected MetadataHelper helper;
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
     protected Set<String> nonEventFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> indexedFields;
     protected boolean forFieldIndex;
 
-    public PullupUnexecutableNodesVisitor(ShardQueryConfiguration config, boolean forFieldIndex, Set<String> indexedFields, Set<String> indexOnlyFields,
-                    Set<String> nonEventFields, MetadataHelper helper) {
+    public PullupUnexecutableNodesVisitor(ImmutableShardQueryConfiguration config, boolean forFieldIndex, Set<String> indexedFields,
+                    Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
         this.forFieldIndex = forFieldIndex;
@@ -115,8 +115,8 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
 
     private static final Logger log = Logger.getLogger(PullupUnexecutableNodesVisitor.class);
 
-    public static JexlNode pullupDelayedPredicates(JexlNode queryTree, boolean forFieldIndex, ShardQueryConfiguration config, Set<String> indexedFields,
-                    Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
+    public static JexlNode pullupDelayedPredicates(JexlNode queryTree, boolean forFieldIndex, ImmutableShardQueryConfiguration config,
+                    Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
         PullupUnexecutableNodesVisitor visitor = new PullupUnexecutableNodesVisitor(config, forFieldIndex, indexedFields, indexOnlyFields, nonEventFields,
                         helper);
 

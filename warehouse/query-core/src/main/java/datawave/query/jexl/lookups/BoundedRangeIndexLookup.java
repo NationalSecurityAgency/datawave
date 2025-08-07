@@ -32,7 +32,7 @@ import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
 import datawave.data.type.DiscreteIndexType;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
@@ -68,7 +68,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      * @param execService
      *            the executor service, not null
      */
-    public BoundedRangeIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> literalRange, ExecutorService execService) {
+    public BoundedRangeIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> literalRange,
+                    ExecutorService execService) {
         super(config, scannerFactory, false, execService);
         this.literalRange = literalRange;
         this.fields = Collections.singleton(literalRange.getFieldName());

@@ -41,7 +41,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
@@ -79,7 +79,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         @Override
-        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ImmutableShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
+                        Set<String> datatypeFilter) {
             try {
                 Set<String> tfFields = new HashSet<>(helper.getTermFrequencyFields(datatypeFilter));
                 Set<String> indexedFields = new HashSet<>(helper.getIndexedFields(datatypeFilter));

@@ -23,7 +23,7 @@ import com.google.common.collect.Multimap;
 
 import datawave.data.type.Type;
 import datawave.query.CloseableIterable;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -37,7 +37,7 @@ import datawave.util.time.DateHelper;
 
 public class ShardRangeStream extends RangeStream {
 
-    public ShardRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
+    public ShardRangeStream(ImmutableShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
         super(config, scanners, helper);
     }
 
@@ -135,7 +135,7 @@ public class ShardRangeStream extends RangeStream {
     /**
      * Lift and shift from DefaultQueryPlanner to avoid reliance on static methods
      */
-    private void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper) {
+    private void configureTypeMappings(ImmutableShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper) {
         DefaultQueryPlanner.addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(true), false);
 
         Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create(config.getQueryFieldsDatatypes());

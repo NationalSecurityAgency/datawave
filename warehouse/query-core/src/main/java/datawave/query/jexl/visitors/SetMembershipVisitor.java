@@ -23,7 +23,7 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.JexlASTHelper;
@@ -46,7 +46,7 @@ public class SetMembershipVisitor extends BaseVisitor {
     private static final int FUNCTION_SEARCH_DEPTH_LIMIT = 7;
 
     private final Set<String> fields;
-    private final ShardQueryConfiguration config;
+    private final ImmutableShardQueryConfiguration config;
     private final Set<String> discoveredFields;
     private final boolean fullTraversal;
     private final boolean tagIndexOnlyFields;
@@ -63,7 +63,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      * @return true if the query contains any of the fields present in the given fields set
      */
 
-    public static Boolean contains(Set<String> fields, ShardQueryConfiguration config, JexlNode tree) {
+    public static Boolean contains(Set<String> fields, ImmutableShardQueryConfiguration config, JexlNode tree) {
         SetMembershipVisitor visitor = new SetMembershipVisitor(fields, config, false, false);
         return (Boolean) tree.jjtAccept(visitor, false);
     }
@@ -79,7 +79,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      *            the query tree
      * @return the set of fields found in the query that were in the given set of fields
      */
-    public static Set<String> getMembers(Set<String> fields, ShardQueryConfiguration config, JexlNode tree) {
+    public static Set<String> getMembers(Set<String> fields, ImmutableShardQueryConfiguration config, JexlNode tree) {
         return getMembers(fields, config, tree, false);
     }
 
@@ -101,13 +101,13 @@ public class SetMembershipVisitor extends BaseVisitor {
      *             if tagIndexOnlyFields is true, but lazySetMechanism in the given config is false and an index-only field was encountered. Note, in this case,
      *             it is assumed that the given set of fields consists of index-only fields.
      */
-    public static Set<String> getMembers(Set<String> fields, ShardQueryConfiguration config, JexlNode tree, boolean tagIndexOnlyFields) {
+    public static Set<String> getMembers(Set<String> fields, ImmutableShardQueryConfiguration config, JexlNode tree, boolean tagIndexOnlyFields) {
         final SetMembershipVisitor visitor = new SetMembershipVisitor(fields, config, true, tagIndexOnlyFields);
         tree.jjtAccept(visitor, false);
         return visitor.discoveredFields;
     }
 
-    private SetMembershipVisitor(Set<String> fields, ShardQueryConfiguration config, boolean fullTraversal, boolean tagIndexOnlyFields) {
+    private SetMembershipVisitor(Set<String> fields, ImmutableShardQueryConfiguration config, boolean fullTraversal, boolean tagIndexOnlyFields) {
         this.config = config;
         this.fields = fields;
         this.discoveredFields = new TreeSet<>();
@@ -303,8 +303,8 @@ public class SetMembershipVisitor extends BaseVisitor {
 
     /**
      * Returns true if {@link SetMembershipVisitor#fullTraversal} is true, otherwise return the inverse of matchFound. This allows us to stop traversing the
-     * query tree as soon as a match has been found for {@link SetMembershipVisitor#contains(Set, ShardQueryConfiguration, JexlNode)} where a full traversal may
-     * not be required.
+     * query tree as soon as a match has been found for {@link SetMembershipVisitor#contains(Set, ImmutableShardQueryConfiguration, JexlNode)} where a full
+     * traversal may not be required.
      *
      * @param matchFound
      *            whether a match has been found yet

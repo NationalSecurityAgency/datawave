@@ -47,7 +47,7 @@ import datawave.data.type.IpAddressType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
@@ -69,11 +69,11 @@ import datawave.webservice.query.exception.QueryException;
 public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandMultiNormalizedTerms.class);
 
-    private final ShardQueryConfiguration config;
+    private final ImmutableShardQueryConfiguration config;
     private final HashSet<JexlNode> expandedNodes;
     private final MetadataHelper helper;
 
-    public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper) {
+    public ExpandMultiNormalizedTerms(ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
 
@@ -96,7 +96,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
      * @return a reference to the node
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
+    public static <T extends JexlNode> T expandTerms(ImmutableShardQueryConfiguration config, MetadataHelper helper, T script) {
         ExpandMultiNormalizedTerms visitor = new ExpandMultiNormalizedTerms(config, helper);
 
         if (null == visitor.config.getQueryFieldsDatatypes()) {

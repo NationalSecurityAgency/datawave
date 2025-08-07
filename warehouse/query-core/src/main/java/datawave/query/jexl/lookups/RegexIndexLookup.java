@@ -31,7 +31,7 @@ import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
 import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -77,8 +77,8 @@ public class RegexIndexLookup extends AsyncIndexLookup {
      * @param execService
      *            the executor service, not null
      */
-    public RegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> reverseFields, Set<String> patterns,
-                    MetadataHelper helper, boolean unfieldedLookup, ExecutorService execService) {
+    public RegexIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> reverseFields,
+                    Set<String> patterns, MetadataHelper helper, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory, unfieldedLookup, execService);
         this.fields = fields;
         this.reverseFields = reverseFields;
@@ -101,8 +101,8 @@ public class RegexIndexLookup extends AsyncIndexLookup {
      * @param execService
      *            the executor service, not null
      */
-    public RegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName, Set<String> patterns, MetadataHelper helper,
-                    ExecutorService execService) {
+    public RegexIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName, Set<String> patterns,
+                    MetadataHelper helper, ExecutorService execService) {
         this(config, scannerFactory, Collections.singleton(fieldName), Collections.singleton(fieldName), patterns, helper, false, execService);
     }
 

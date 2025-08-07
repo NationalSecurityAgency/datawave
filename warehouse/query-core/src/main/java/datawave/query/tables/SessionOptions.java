@@ -9,7 +9,7 @@ import org.apache.accumulo.core.dataImpl.thrift.IterInfo;
 
 import com.google.common.collect.Lists;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 
 /**
  * Extension to allow an open constructor
@@ -18,7 +18,7 @@ import datawave.query.config.ShardQueryConfiguration;
  */
 public class SessionOptions extends ScannerOptions {
 
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
 
     public SessionOptions() {
         super();
@@ -29,11 +29,11 @@ public class SessionOptions extends ScannerOptions {
         this.config = other.config;
     }
 
-    public void setQueryConfig(ShardQueryConfiguration config) {
+    public void setQueryConfig(ImmutableShardQueryConfiguration config) {
         this.config = config;
     }
 
-    public ShardQueryConfiguration getConfiguration() {
+    public ImmutableShardQueryConfiguration getConfiguration() {
         return config;
     }
 

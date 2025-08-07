@@ -38,7 +38,7 @@ import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
 import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -85,7 +85,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         }
 
         @Override
-        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ImmutableShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
+                        Set<String> datatypeFilter) {
             // return the true node if unable to parse arguments
             JexlNode returnNode = TRUE_NODE;
 
@@ -377,7 +378,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         }
 
         @Override
-        public JexlNode rebuildNode(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
+        public JexlNode rebuildNode(ImmutableShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                         Set<String> datatypeFilter, ASTFunctionNode node) {
 
             try {

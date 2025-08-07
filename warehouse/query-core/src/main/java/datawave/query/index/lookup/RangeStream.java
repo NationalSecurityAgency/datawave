@@ -78,7 +78,7 @@ import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.iterator.QueryOptions;
@@ -117,7 +117,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      * An assignment to this variable can be used to specify a stream of shards and days anywhere in the query. Used by the date function index query creation.
      */
 
-    protected final ShardQueryConfiguration config;
+    protected final ImmutableShardQueryConfiguration config;
     protected final ScannerFactory scanners;
     protected final MetadataHelper metadataHelper;
     protected Iterator<QueryPlan> itr;
@@ -155,7 +155,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     private int maxLinesToPrint = -1;
     private int linesPrinted = 0;
 
-    public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
+    public RangeStream(ImmutableShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;
@@ -932,7 +932,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
     }
 
-    public Range rangeForTerm(String term, String field, ShardQueryConfiguration config) {
+    public Range rangeForTerm(String term, String field, ImmutableShardQueryConfiguration config) {
         return rangeForTerm(term, field, config.getBeginDate(), config.getEndDate());
     }
 
@@ -940,7 +940,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return new Range(new Key(term, field, DateHelper.format(start) + "_"), true, new Key(term, field, DateHelper.format(end) + "_" + '\uffff'), false);
     }
 
-    public static IteratorSetting makeDataTypeFilter(ShardQueryConfiguration config, int stackPosition) {
+    public static IteratorSetting makeDataTypeFilter(ImmutableShardQueryConfiguration config, int stackPosition) {
         IteratorSetting is = new IteratorSetting(stackPosition, DataTypeFilter.class);
         is.addOption(DataTypeFilter.TYPES, config.getDatatypeFilterAsString());
         return is;
@@ -972,7 +972,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      * @return The list of index info ranges
      */
     @Deprecated(forRemoval = true)
-    public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
+    public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ImmutableShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
 
         Calendar start = getCalendarStartOfDay(config.getBeginDate());

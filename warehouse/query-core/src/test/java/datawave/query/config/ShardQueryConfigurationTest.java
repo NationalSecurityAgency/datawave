@@ -1,6 +1,7 @@
 package datawave.query.config;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -654,6 +655,43 @@ public class ShardQueryConfigurationTest {
         return arrayListMultimap;
     }
 
+    @Test
+    public void testImmutableInterfaceHasAllGetters() throws Exception {
+        ShardQueryConfiguration config = ShardQueryConfiguration.create();
+        ObjectMapper mapper = JsonMapper.builder().enable(MapperFeature.PROPAGATE_TRANSIENT_MARKER).build();
+        JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
+        for (Iterator<String> it = root.fieldNames(); it.hasNext();) {
+            String fieldName = it.next();
+            Method getter = getGetterMethod(ImmutableShardQueryConfiguration.class, fieldName);
+            Assert.assertNotNull("Expected getter for " + fieldName + " on " + ImmutableShardQueryConfiguration.class.getSimpleName(), getter);
+        }
+    }
+
+    @Test
+    public void testImmutableInterfaceHasNoSetters() {
+        for (Map.Entry<String,Object> entry : updatedValues.entrySet()) {
+            try {
+                Class<?> valueClass = (entry.getValue() == null ? Object.class : entry.getValue().getClass());
+                getSetterMethod(ImmutableShardQueryConfiguration.class, entry.getKey(), valueClass);
+                Assert.fail("Did not expect to find setter method for " + entry.getKey() + " on " + ImmutableShardQueryConfiguration.class.getSimpleName()
+                                + " interface");
+            } catch (NoSuchMethodException ne) {
+                // expected
+            }
+        }
+
+        for (Map.Entry<String,Object> entry : extraValuesToSet.entrySet()) {
+            try {
+                Class<?> valueClass = (entry.getValue() == null ? Object.class : entry.getValue().getClass());
+                getSetterMethod(ImmutableShardQueryConfiguration.class, entry.getKey(), valueClass);
+                Assert.fail("Did not expect to find setter method for " + entry.getKey() + " on " + ImmutableShardQueryConfiguration.class.getSimpleName()
+                                + " interface");
+            } catch (NoSuchMethodException ne) {
+                // expected
+            }
+        }
+    }
+
     private void testValues(ShardQueryConfiguration config, Map<String,Object> values, Map<String,Predicate> predicates) throws Exception {
         ObjectMapper mapper = JsonMapper.builder().enable(MapperFeature.PROPAGATE_TRANSIENT_MARKER).build();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
@@ -695,42 +733,58 @@ public class ShardQueryConfigurationTest {
         return expectedSet.equals(actualSet);
     }
 
-    public Object getValue(Object source, String fieldName) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    public Method getGetterMethod(Class clas, String fieldName) throws NoSuchMethodException {
         String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
         try {
-            return source.getClass().getMethod(getter).invoke(source);
+            return clas.getMethod(getter);
         } catch (NoSuchMethodException e) {
             getter = "is" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-            return source.getClass().getMethod(getter).invoke(source);
+            return clas.getMethod(getter);
         }
+    }
+
+    public Method getGetterMethod(Object source, String fieldName) throws NoSuchMethodException {
+        return getGetterMethod(source.getClass(), fieldName);
+    }
+
+    public Object getValue(Object source, String fieldName) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        return getGetterMethod(source, fieldName).invoke(source);
     }
 
     public void setValue(Object source, String fieldName, Object value) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         setValue(source, fieldName, value, value.getClass());
     }
 
-    public Object setValue(Object source, String fieldName, Object value, Class<?> valueClass)
-                    throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        String getter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+    public Method getSetterMethod(Class clas, String fieldName, Class<?> valueClass) throws NoSuchMethodException {
+        String setter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
         try {
-            return source.getClass().getMethod(getter, valueClass).invoke(source, value);
+            return clas.getMethod(setter, valueClass);
         } catch (NoSuchMethodException e) {
             if (primitiveMap.containsKey(valueClass)) {
-                return setValue(source, fieldName, value, primitiveMap.get(valueClass));
+                return clas.getMethod(setter, primitiveMap.get(valueClass));
             } else if (!valueClass.equals(Object.class) && !valueClass.isPrimitive()) {
                 for (Class<?> infc : valueClass.getInterfaces()) {
                     try {
-                        return setValue(source, fieldName, value, infc);
+                        return getSetterMethod(clas, fieldName, infc);
                     } catch (NoSuchMethodException e2) {
                         // try next one
                     }
                 }
                 if (!valueClass.isInterface()) {
-                    return setValue(source, fieldName, value, valueClass.getSuperclass());
+                    return getSetterMethod(clas, fieldName, valueClass.getSuperclass());
                 }
             }
             throw e;
         }
+    }
+
+    public Method getSetterMethod(Object source, String fieldName, Class<?> valueClass) throws NoSuchMethodException {
+        return getSetterMethod(source.getClass(), fieldName, valueClass);
+    }
+
+    public Object setValue(Object source, String fieldName, Object value, Class<?> valueClass)
+                    throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return getSetterMethod(source, fieldName, valueClass).invoke(source, value);
     }
 
     /**

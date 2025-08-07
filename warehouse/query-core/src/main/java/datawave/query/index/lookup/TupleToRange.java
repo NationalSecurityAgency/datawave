@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.ranges.RangeFactory;
@@ -27,7 +27,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     protected String tableName;
     protected JexlNode currentScript;
     protected JexlNode tree = null;
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
 
     /**
      * The constructor
@@ -39,7 +39,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      * @param config
      *            a configuration
      */
-    public TupleToRange(String tableName, JexlNode currentNode, ShardQueryConfiguration config) {
+    public TupleToRange(String tableName, JexlNode currentNode, ImmutableShardQueryConfiguration config) {
         this.tableName = tableName;
         this.currentScript = currentNode;
         this.config = config;

@@ -13,7 +13,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -25,15 +25,15 @@ import datawave.query.util.MetadataHelper;
 public class ExecutableExpansionVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(ExecutableExpansionVisitor.class);
 
-    private final ShardQueryConfiguration config;
+    private final ImmutableShardQueryConfiguration config;
     private final MetadataHelper helper;
 
-    public ExecutableExpansionVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
+    public ExecutableExpansionVisitor(ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
         this.helper = helper;
     }
 
-    public static ASTJexlScript expand(ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper helper) {
+    public static ASTJexlScript expand(ASTJexlScript script, ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
         return (ASTJexlScript) script.jjtAccept(visitor, null);
     }

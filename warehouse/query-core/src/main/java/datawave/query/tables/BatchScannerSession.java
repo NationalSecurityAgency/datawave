@@ -41,7 +41,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.ImmutableGenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.configuration.ResultContext;
@@ -62,7 +62,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     /**
      * The configuration used for checkpoints
      */
-    private GenericQueryConfiguration config;
+    private ImmutableGenericQueryConfiguration config;
 
     /**
      * Delegates scanners to us, blocking if none are available or used by other sources.
@@ -234,7 +234,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         return this;
     }
 
-    public BatchScannerSession setConfig(GenericQueryConfiguration config) {
+    public BatchScannerSession setConfig(ImmutableGenericQueryConfiguration config) {
         this.config = config;
         return this;
     }

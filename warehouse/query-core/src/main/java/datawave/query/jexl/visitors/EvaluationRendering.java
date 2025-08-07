@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 
@@ -25,12 +25,12 @@ import datawave.query.util.MetadataHelper;
 public class EvaluationRendering extends BaseVisitor {
     private static final Logger log = Logger.getLogger(EvaluationRendering.class);
 
-    protected final ShardQueryConfiguration config;
+    protected final ImmutableShardQueryConfiguration config;
     protected final MetadataHelper helper;
 
     protected boolean allowRange;
 
-    public EvaluationRendering(ShardQueryConfiguration config, MetadataHelper helper) {
+    public EvaluationRendering(ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
 
@@ -38,11 +38,11 @@ public class EvaluationRendering extends BaseVisitor {
         this.helper = helper;
     }
 
-    public static boolean canDisableEvaluation(JexlNode script, ShardQueryConfiguration config, MetadataHelper helper) {
+    public static boolean canDisableEvaluation(JexlNode script, ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         return canDisableEvaluation(script, config, helper, false);
     }
 
-    public static boolean canDisableEvaluation(JexlNode script, ShardQueryConfiguration config, MetadataHelper helper, boolean allowRange) {
+    public static boolean canDisableEvaluation(JexlNode script, ImmutableShardQueryConfiguration config, MetadataHelper helper, boolean allowRange) {
         Preconditions.checkNotNull(script);
 
         AtomicBoolean res = new AtomicBoolean(true);

@@ -12,13 +12,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 
 /**
  * Abstract index lookup which provides a framework for creating and populating the {@link IndexLookupMap} asynchronously in a separate thread. Async index
  * lookups may perform some setup in {@link #submit()}, but should not block on any running threads until {@link #lookup()} is called, and even then they should
- * only block for up to the specified timeout {@link ShardQueryConfiguration#getMaxIndexScanTimeMillis()}
+ * only block for up to the specified timeout {@link ImmutableShardQueryConfiguration#getMaxIndexScanTimeMillis()}
  */
 public abstract class AsyncIndexLookup extends IndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(AsyncIndexLookup.class);
@@ -27,7 +27,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
 
     protected ExecutorService execService;
 
-    public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
+    public AsyncIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
         this.unfieldedLookup = unfieldedLookup;
         this.execService = execService;

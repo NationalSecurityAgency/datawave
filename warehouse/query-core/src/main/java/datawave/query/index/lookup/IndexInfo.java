@@ -34,7 +34,6 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
-import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -565,7 +564,7 @@ public class IndexInfo implements Writable, KryoSerializable, UidIntersector {
     /**
      * An infinite range is one that datawave created. This can happen several ways
      * <ol>
-     * <li>{@link RangeStream#createFullFieldIndexScanList(ShardQueryConfiguration, JexlNode)}</li>
+     * <li>{@link RangeStream#createFullFieldIndexScanList(ImmutableShardQueryConfiguration, JexlNode)}</li>
      * <li>{@link RangeStream#createIndexScanList(String[])}</li>
      * <li>{@link ShardLimitingIterator#next()}</li>
      * <li>{@link Union} of all delayed terms</li>

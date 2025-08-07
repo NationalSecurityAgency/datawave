@@ -74,7 +74,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
@@ -369,13 +369,14 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     protected Set<String> indexedFields = null;
     protected Set<String> indexOnlyFields = null;
     protected Set<String> nonEventFields = null;
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
 
-    public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex) {
+    public ExecutableDeterminationVisitor(ImmutableShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex) {
         this(conf, metadata, forFieldIndex, null);
     }
 
-    public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex, LinkedList<String> debugOutput) {
+    public ExecutableDeterminationVisitor(ImmutableShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex,
+                    LinkedList<String> debugOutput) {
         this.helper = metadata;
         this.config = conf;
         this.forFieldIndex = forFieldIndex;
@@ -434,15 +435,16 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
     }
 
-    public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
+    public static STATE getState(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         return getState(node, config, helper, false);
     }
 
-    public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex) {
+    public static STATE getState(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex) {
         return getState(node, config, helper, forFieldIndex, null);
     }
 
-    public static StateAndReason getStateAndReason(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, LinkedList<String> debugOutput) {
+    public static StateAndReason getStateAndReason(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper,
+                    LinkedList<String> debugOutput) {
         if (debugOutput == null) {
             debugOutput = new LinkedList<>();
         }
@@ -453,11 +455,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return sAndR;
     }
 
-    public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, LinkedList<String> debugOutput) {
+    public static STATE getState(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper, LinkedList<String> debugOutput) {
         return getState(node, config, helper, false, debugOutput);
     }
 
-    public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex, LinkedList<String> debugOutput) {
+    public static STATE getState(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex,
+                    LinkedList<String> debugOutput) {
         ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, helper, forFieldIndex, debugOutput);
 
         // push down any negations to ensure the state is accurate
@@ -467,7 +470,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return state;
     }
 
-    public static STATE getState(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+    public static STATE getState(JexlNode node, ImmutableShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
                     Set<String> nonEventFields, boolean forFieldIndex, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
         ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput)
                         .setNonEventFields(nonEventFields).setIndexOnlyFields(indexOnlyFields).setIndexedFields(indexedFields);
@@ -479,30 +482,30 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return state;
     }
 
-    public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
+    public static boolean isExecutable(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         return isExecutable(node, config, helper, false);
     }
 
-    public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex) {
+    public static boolean isExecutable(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex) {
         return isExecutable(node, config, helper, forFieldIndex, null);
     }
 
-    public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, LinkedList<String> debugOutput) {
+    public static boolean isExecutable(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper, LinkedList<String> debugOutput) {
         return isExecutable(node, config, helper, false, debugOutput);
     }
 
-    public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+    public static boolean isExecutable(JexlNode node, ImmutableShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
                     Set<String> nonEventFields, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
         return isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, debugOutput, metadataHelper);
     }
 
-    public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex,
+    public static boolean isExecutable(JexlNode node, ImmutableShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex,
                     LinkedList<String> debugOutput) {
         STATE state = getState(node, config, helper, forFieldIndex, debugOutput);
         return state == STATE.EXECUTABLE;
     }
 
-    public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+    public static boolean isExecutable(JexlNode node, ImmutableShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
                     Set<String> nonEventFields, boolean forFieldIndex, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
         STATE state = getState(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
         return state == STATE.EXECUTABLE;

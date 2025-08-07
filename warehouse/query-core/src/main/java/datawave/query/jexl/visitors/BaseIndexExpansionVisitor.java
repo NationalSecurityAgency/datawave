@@ -21,7 +21,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
@@ -42,7 +42,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     private static final Logger log = LoggerFactory.getLogger(BaseIndexExpansionVisitor.class);
     private static final int MIN_THREADS = 1;
 
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
     protected ScannerFactory scannerFactory;
     protected MetadataHelper helper;
     protected boolean expandFields;
@@ -60,14 +60,14 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
     protected String stage = "default";
 
-    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
+    protected BaseIndexExpansionVisitor(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
                     throws TableNotFoundException {
         this(config, scannerFactory, helper, null, threadName);
     }
 
     // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
-    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap,
-                    String threadName) throws TableNotFoundException {
+    protected BaseIndexExpansionVisitor(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    Map<String,IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
@@ -314,13 +314,13 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      * Serves as a means to associate index lookup threads with a particular Index Expansion Visitor
      */
     protected static class IndexExpansionThreadFactory implements ThreadFactory {
-        private final ShardQueryConfiguration config;
+        private final ImmutableShardQueryConfiguration config;
         private final ThreadFactory dtf = Executors.defaultThreadFactory();
         private int threadNum = 1;
         private final String threadIdentifier;
         protected String name;
 
-        public IndexExpansionThreadFactory(ShardQueryConfiguration config, String name) {
+        public IndexExpansionThreadFactory(ImmutableShardQueryConfiguration config, String name) {
             this.config = config;
             if (config.getQuery() == null || config.getQuery().getId() == null) {
                 this.threadIdentifier = "(unknown)";

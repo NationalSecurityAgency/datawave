@@ -14,7 +14,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -35,7 +35,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     private final JexlASTHelper.RangeFinder rangeFinder;
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
-    protected BoundedRangeIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
+    protected BoundedRangeIndexExpansionVisitor(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
                     throws TableNotFoundException {
         super(config, scannerFactory, helper, "BoundedRangeIndexExpansion");
 
@@ -60,8 +60,8 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
      * @throws TableNotFoundException
      *             if we fail to retrieve fields from the metadata helper
      */
-    public static <T extends JexlNode> T expandBoundedRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-                    throws TableNotFoundException {
+    public static <T extends JexlNode> T expandBoundedRanges(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    T script) throws TableNotFoundException {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues()) {
             BoundedRangeIndexExpansionVisitor visitor = new BoundedRangeIndexExpansionVisitor(config, scannerFactory, helper);

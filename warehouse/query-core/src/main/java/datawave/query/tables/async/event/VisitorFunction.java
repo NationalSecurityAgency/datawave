@@ -39,7 +39,7 @@ import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.microservice.query.Query;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.QueryOptions;
@@ -79,7 +79,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     protected static FileSystemCache fileSystemCache = null;
 
-    private ShardQueryConfiguration config;
+    private ImmutableShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
@@ -93,7 +93,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
-    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
+    public VisitorFunction(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
         this.config = config;
 
         if (VisitorFunction.fileSystemCache == null && this.config.getHdfsSiteConfigURLs() != null) {
@@ -622,7 +622,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     // push down large fielded lists. Assumes that the hdfs query cache uri and
     // site config urls are configured
-    protected ASTJexlScript pushdownLargeFieldedLists(ShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
+    protected ASTJexlScript pushdownLargeFieldedLists(ImmutableShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
         Query settings = config.getQuery();
 
         if (config.canHandleExceededValueThreshold()) {
@@ -693,7 +693,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
     }
 
-    protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
+    protected URI getFstHdfsQueryCacheUri(ImmutableShardQueryConfiguration config, Query settings) {
         if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
             String[] choices = config.getIvaratorFstHdfsBaseURIs().split(",");
             int index = random.nextInt(choices.length);

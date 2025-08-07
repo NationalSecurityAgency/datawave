@@ -15,7 +15,7 @@ import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
@@ -24,16 +24,16 @@ import datawave.query.util.MetadataHelper;
 
 public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
 
-    ShardQueryConfiguration config;
+    ImmutableShardQueryConfiguration config;
     MetadataHelper helper;
 
-    public BoundedRangeDetectionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
+    public BoundedRangeDetectionVisitor(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper) {
         this.config = config;
         this.helper = metadataHelper;
     }
 
     @SuppressWarnings("unchecked")
-    public static boolean mustExpandBoundedRange(ShardQueryConfiguration config, MetadataHelper metadataHelper, JexlNode script) {
+    public static boolean mustExpandBoundedRange(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper, JexlNode script) {
         BoundedRangeDetectionVisitor visitor = new BoundedRangeDetectionVisitor(config, metadataHelper);
 
         AtomicBoolean hasBounded = new AtomicBoolean(false);

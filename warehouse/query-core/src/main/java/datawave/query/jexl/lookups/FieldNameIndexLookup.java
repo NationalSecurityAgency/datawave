@@ -25,7 +25,7 @@ import com.google.common.collect.Lists;
 
 import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 
@@ -58,7 +58,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
      * @param execService
      *            the executor service, not null
      */
-    public FieldNameIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> terms,
+    public FieldNameIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> terms,
                     ExecutorService execService) {
         super(config, scannerFactory, true, execService);
 
