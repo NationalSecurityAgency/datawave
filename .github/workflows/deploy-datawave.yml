@@ -22,8 +22,8 @@ env:
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
   GITHUB_REGISTRY: ghcr.io
-  GITHUB_USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
-  GITHUB_ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+  GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   deploy-packages-and-images:
@@ -34,8 +34,8 @@ jobs:
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
         registry: ${{ env.GITHUB_REGISTRY }}
-        username: ${{ env.GITHUB_USER_NAME }}
-        password: ${{ env.GITHUB_ACCESS_TOKEN }}
+        username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+        password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
     - name: Checkout Code
       uses: actions/checkout@v4
     # Clean up free space
@@ -48,10 +48,14 @@ jobs:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
+        server-id: github-datawave
+        # username and password are the env variables names that maven will use
+        server-username: GITHUB_USERNAME
+        server-password: GITHUB_PASSWORD
     - name: Build and Push DataWave web/ingest images and packages
       run: |
         docker info
-        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Pkubernetes -Dmaven.build.cache.enabled=false -Dtar -Ddeploy -Ddist -Ddocker-release -Dutils -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
+        mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Pkubernetes -Dmaven.build.cache.enabled=false -Dtar -Ddeploy -Ddist -Ddocker-release -Dutils -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
     - name: Build and Push microservice images
       run: |
-        mvn --settings $GITHUB_WORKSPACE/.github/workflows/settings.xml --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Dmaven.build.cache.enabled=false -Dmicroservice-docker -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true -Dmaven.deploy.skip=true
+        mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Dmaven.build.cache.enabled=false -Dmicroservice-docker -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true -Dmaven.deploy.skip=true
