@@ -32,10 +32,7 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
         public QueryNodeType getType() {
             return type;
         }
-
-        public QueryNode getNewInstance(List<QueryNode> children) {
-            return constructor.apply(children);
-        }
+        
     }
 
     /**
