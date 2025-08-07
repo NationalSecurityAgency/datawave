@@ -21,7 +21,6 @@
         <start-class>datawave.microservice.cached.server.HazelcastService</start-class>
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
-        <version.slf4j>2.0.12</version.slf4j>
         <version.zookeeper>3.8.0</version.zookeeper>
     </properties>
     <dependencyManagement>
@@ -61,11 +60,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>hazelcast-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-            <version>${version.slf4j}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
