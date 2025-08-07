@@ -68,9 +68,9 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
 
     @Test
     void testQueryWithGroupedPhraseAndAmbiguousPhrase() throws Exception {
-        givenQuery("FOO:(abc def ghi) FOO:jkl mno");
+        givenQuery("FOO:abc def ghi FOO:(jkl mno)");
 
-        expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [abc, def, ghi] will be interpreted as: ( FOO:abc AND FOO:def AND FOO:ghi )");
+        expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [jkl, mno] will be interpreted as: ( FOO:jkl AND FOO:mno )");
 
         assertResult();
     }
