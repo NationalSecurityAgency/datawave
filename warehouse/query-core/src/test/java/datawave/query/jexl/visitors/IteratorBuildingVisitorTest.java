@@ -48,6 +48,33 @@ public class IteratorBuildingVisitorTest {
         return visitor;
     }
 
+    @Test
+    public void rangeToDocumentTest() {
+        IteratorBuildingVisitor visitor = getDefault();
+        String shard = "20250101_01";
+        String dt = "dt";
+        String uid = "2fe9872hg.1908h21f.10398hff1";
+        Key start = new Key(shard, dt + '\u0000' + uid + '\u0000');
+        Key end = new Key(shard, dt + '\u0000' + uid + new String(Character.toChars(Character.MAX_CODE_POINT)));
+        Range range = new Range(start, false, end, false);
+        String doc = visitor.getDocument(range);
+        Assert.assertEquals(dt + '_' + uid, doc);
+
+        end = new Key(shard, new String(Character.toChars(Character.MAX_CODE_POINT)) + "YIELD_BEGIN");
+        range = new Range(start, false, end, false);
+        doc = visitor.getDocument(range);
+        Assert.assertEquals(null, doc);
+
+        start = new Key(shard);
+        end = new Key(shard + '\u0000');
+        range = new Range(start, false, end, false);
+        doc = visitor.getDocument(range);
+        Assert.assertEquals(null, doc);
+
+        doc = visitor.getDocument(null);
+        Assert.assertEquals(null, doc);
+    }
+
     /**
      * null value should result in no iterator being built
      */
