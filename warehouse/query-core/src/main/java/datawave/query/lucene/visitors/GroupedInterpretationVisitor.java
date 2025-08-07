@@ -32,7 +32,7 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
         public QueryNodeType getType() {
             return type;
         }
-        
+
     }
 
     /**
@@ -143,7 +143,6 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
                         // If it does, we know the group is something like: FOO:(abc def ghi) or (FOO:abc AND FOO:def AND FOO:ghi)
                         return true;
                     } else {
-                        prevField = ((FieldQueryNode) child).getFieldAsString();
                         // If a fielded term was found previously, then we have may something like (FOO:abc AND BAR:abc).
                         return false;
                     }
