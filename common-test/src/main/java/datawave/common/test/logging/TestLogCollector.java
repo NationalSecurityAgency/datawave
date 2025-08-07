@@ -7,16 +7,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.log4j.bridge.FilterAdapter;
-import org.apache.log4j.spi.Filter;
-import org.apache.log4j.spi.LoggingEvent;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.StringLayout;
 import org.apache.logging.log4j.core.appender.WriterAppender;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.filter.AbstractFilter;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.rules.ExternalResource;
 
@@ -40,13 +39,13 @@ public class TestLogCollector extends ExternalResource {
     @Override
     protected void before() {
         StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
-        Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(new FilterAdapter(new Filter() {
+        Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(new AbstractFilter() {
             @Override
-            public int decide(LoggingEvent event) {
+            public Result filter(LogEvent event) {
                 messages.add(event.getMessage().toString());
-                return Filter.ACCEPT;
+                return Result.ACCEPT;
             }
-        })).setLayout(layout).setTarget(writer).build();
+        }).setLayout(layout).setTarget(writer).build();
         appender.start();
         this.loggers.stream().forEach(l -> l.setAppender(appender));
     }
