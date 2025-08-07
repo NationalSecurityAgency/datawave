@@ -101,7 +101,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
     }
 
     private void fieldValueLists(QueryNode node, List<List<String>> fieldValueList) {
-        // index 0 = fields, index 1 = values, index 3 = previous fields
+        // index 0 = fields, index 1 = values, index 2 = previous fields
         List<String> fieldList = fieldValueList.get(0);
         List<String> valueList = fieldValueList.get(1);
         List<String> prevField = fieldValueList.get(2);
