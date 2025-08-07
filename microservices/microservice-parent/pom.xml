@@ -488,7 +488,7 @@
                                                 <id>spring-jar</id>
                                                 <files>
                                                     <file>
-                                                        <source>${project.build.directory}/${project.build.finalName}-exec.jar</source>
+                                                        <source>${project.build.directory}/${project.build.finalName}-exec2.jar</source>
                                                         <!-- target/docker/<image path>/build -->
                                                         <outputDirectory>.</outputDirectory>
                                                         <fileMode>0640</fileMode>
