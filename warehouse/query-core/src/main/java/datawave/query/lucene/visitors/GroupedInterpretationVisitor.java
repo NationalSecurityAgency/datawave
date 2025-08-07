@@ -135,25 +135,16 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
             if (type == QueryNodeType.FIELD) {
                 if (!((FieldQueryNode) child).getFieldAsString().isEmpty()) {
                     // If the field name is not empty, and we have not found a fielded term yet, mark that we've found one.
+                    // If it does, we know the group is something like: FOO:(abc def ghi) or (FOO:abc AND FOO:def AND FOO:ghi)
+                    // If a fielded term was found previously, then we have may something like (FOO:abc AND BAR:abc).
                     if (!fieldedTermFound) {
                         fieldedTermFound = true;
                         // make note of the field
                         prevField = ((FieldQueryNode) child).getFieldAsString();
-                    } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
-                        // If it does, we know the group is something like: FOO:(abc def ghi) or (FOO:abc AND FOO:def AND FOO:ghi)
-                        return true;
-                    } else {
-                        // If a fielded term was found previously, then we have may something like (FOO:abc AND BAR:abc).
-                        return false;
-                    }
+                    } else return Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField);
                 } else {
                     // The current child is an unfielded term. If no fielded term has been found yet, then we may have something like (abc AND FOO:abc).
-                    if (!fieldedTermFound) {
-                        return false;
-                    } else {
-                        // Otherwise, mark that we've found an unfielded term.
-                        return true;
-                    }
+                    return fieldedTermFound;
                 }
             }
         }
