@@ -34,6 +34,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -3203,7 +3204,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         try {
             rstream = Class.forName(rangeStreamClass).asSubclass(RangeStream.class);
 
-            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
+            RangeStream stream = rstream.getConstructor(ImmutableShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
                             scannerFactory, metadataHelper);
 
             //  @formatter:off
