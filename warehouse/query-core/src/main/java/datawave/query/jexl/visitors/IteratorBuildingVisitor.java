@@ -1070,7 +1070,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @throws IOException
      *             for issues with read/write
      */
-    private List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber, Range rangeLimiter, String field, String value) throws IOException {
+    public List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber, Range rangeLimiter, String field, String value) throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
 
         // use the ivaratorCount / term number to create a unique subdirectory
