@@ -136,7 +136,7 @@ function downloadMavenTarball() {
    tarball="${artifact}-${version}.tar.gz"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       # download from maven repo
-      output=$( mvn -f "${pomFile}" -pl "${rootProject}" -DremoteRepositories="remote-repo::default::${DW_MAVEN_REPOSITORY}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
+      output=$( mvn --show-version --batch-mode --errors --no-transfer-progress --file "${pomFile}" --projects "${rootProject}" -DremoteRepositories="remote-repo::default::${DW_MAVEN_REPOSITORY}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
          error "Failed to download ${tarball} via maven"
@@ -147,7 +147,7 @@ function downloadMavenTarball() {
       fi
 
       # copy to specified directory
-      output=$( mvn -f "${pomFile}" -pl "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
+      output=$( mvn --show-version --batch-mode --errors --no-transfer-progress --file "${pomFile}" --projects "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
          error "Failed to copy ${tarball} to ${tarballdir} via maven"
