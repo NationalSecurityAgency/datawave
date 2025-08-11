@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -107,6 +108,8 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
                     range = buildRange(key);
 
                 scanner.setRange(range);
+
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
                 for (Text cf : getColumnFamilies(key)) {
                     if (log.isDebugEnabled())

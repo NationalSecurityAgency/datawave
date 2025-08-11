@@ -143,6 +143,7 @@ public class ScannerFactory {
     public Scanner newSingleScanner(String tableName, Set<Authorizations> auths, Query query) throws TableNotFoundException {
         if (open.get()) {
             Scanner bs = QueryScannerHelper.createScannerWithoutInfo(client, tableName, auths, query);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             applyConfigs(bs, tableName);
 

@@ -18,6 +18,7 @@ import javax.xml.bind.Unmarshaller;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -368,6 +369,7 @@ public class ModelBeanTest {
         }
 
         Scanner scanner = ScannerHelper.createScanner(client, ModelBean.DEFAULT_MODEL_TABLE_NAME, cbAuths);
+        scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
         for (Entry<Key,Value> entry : scanner) {
             System.out.println(entry.getKey());
         }

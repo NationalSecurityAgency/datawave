@@ -30,6 +30,7 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -273,6 +274,7 @@ public class Persister {
             try (Scanner scanner = ScannerHelper.createScanner(client, TABLE_NAME, auths)) {
                 scanner.setRange(new Range(sid, sid));
                 scanner.addScanIterator(regex);
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
                 return Lists.newArrayList(Iterables.transform(scanner, resultsTransform));
             }
@@ -318,6 +320,7 @@ public class Persister {
                 Range range = new Range(shortName, shortName);
                 scanner.setRange(range);
                 scanner.fetchColumnFamily(new Text(name));
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 List<Query> results = null;
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
@@ -363,6 +366,7 @@ public class Persister {
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(sid, sid);
                 scanner.setRange(range);
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 List<Query> results = null;
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
@@ -415,6 +419,7 @@ public class Persister {
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(user, user);
                 scanner.setRange(range);
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 List<Query> results = null;
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
@@ -454,6 +459,7 @@ public class Persister {
             auths.add(client.securityOperations().getUserAuthorizations(client.whoami()));
 
             try (final Scanner scanner = ScannerHelper.createScanner(client, TABLE_NAME, auths)) {
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 scanner.addScanIterator(regex);
                 return Lists.newArrayList(Iterables.transform(scanner, implResultsTransform));
             }

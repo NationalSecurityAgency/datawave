@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -238,6 +239,7 @@ public class AllFieldMetadataHelper {
             Range range = new Range(upCaseFieldName);
             scanner.setRange(range);
             scanner.fetchColumnFamily(colf);
+            scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : scanner) {
 
@@ -290,6 +292,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_T);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 Key key = entry.getKey();
@@ -355,6 +358,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_CI);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 String fieldName = entry.getKey().getRow().toString();
@@ -423,6 +427,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_CITD);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
 
@@ -495,6 +500,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_WCD);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
 
@@ -564,6 +570,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_CISEP);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
 
@@ -854,6 +861,7 @@ public class AllFieldMetadataHelper {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
             scanner.setRange(Range.exact(fieldName));
+            scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             IteratorSetting cqRegex = new IteratorSetting(50, RegExFilter.class);
             RegExFilter.setRegexs(cqRegex, null, null, ".*\u0000" + date, null, false);
@@ -949,6 +957,7 @@ public class AllFieldMetadataHelper {
 
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             // We don't want to fetch all columns because that could include model
             // field names
@@ -990,6 +999,8 @@ public class AllFieldMetadataHelper {
         final Map<String,Multimap<Text,Text>> metadata = new HashMap<>();
 
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
+
             // Fetch the 'e' and 'i' columns
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_E);
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_I);
@@ -1061,6 +1072,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_TF);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
@@ -1091,6 +1103,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_I);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
@@ -1121,6 +1134,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_RI);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
@@ -1150,6 +1164,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, fullUserAuths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_I);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
@@ -1179,6 +1194,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_EXP);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
@@ -1208,6 +1224,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_CONTENT);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
@@ -1240,6 +1257,7 @@ public class AllFieldMetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_E);
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : bs) {
                 entry.getKey().getColumnQualifier(holder);
@@ -1365,6 +1383,7 @@ public class AllFieldMetadataHelper {
             clientToUse = ((WrappedAccumuloClient) clientToUse).getReal();
         }
         try (Scanner bs = ScannerHelper.createScanner(clientToUse, metadataTableName, auths)) {
+            bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             // Fetch the frequency column and the specified index column.
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);

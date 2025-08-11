@@ -124,6 +124,7 @@ public class RunningResource extends AccumuloResource {
         hashCode += new HashCodeBuilder().append(tableName).append(auths).append(ranges).toHashCode();
 
         baseScanner = ScannerHelper.createScanner(getClient(), tableName, auths);
+        baseScanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
         if (baseScanner != null) {
             ((Scanner) baseScanner).setRange(currentRange.iterator().next());

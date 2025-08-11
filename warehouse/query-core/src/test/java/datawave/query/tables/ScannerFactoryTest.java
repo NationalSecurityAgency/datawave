@@ -50,7 +50,7 @@ class ScannerFactoryTest {
     @BeforeEach
     public void setup() {
         Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
-        consistencyLevels.put(TableName.SHARD, ScannerBase.ConsistencyLevel.IMMEDIATE);
+        consistencyLevels.put(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL);
         config.setTableConsistencyLevels(consistencyLevels);
         scannerFactory.updateConfigs(config);
     }
@@ -58,192 +58,199 @@ class ScannerFactoryTest {
     @Test
     void testSingleScannerWithTableNameAuthsQuery() throws TableNotFoundException {
         Scanner scanner = scannerFactory.newSingleScanner(TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newSingleScanner(TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newSingleScanner(TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testSingleScannerWithTableNameAuthsThreadsQuery() throws TableNotFoundException {
         BatchScanner scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), 1, getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), 1, getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), 1, getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testSingleScannerWithTableNameAuthsThreadsQueryReportErrors() throws TableNotFoundException {
         BatchScanner scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), 1, getQuery(), true);
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), 1, getQuery(), true);
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), 1, getQuery(), true);
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testScannerWithAuthsQuery() throws TableNotFoundException {
         BatchScanner scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newScanner(TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testScannerWithQuery() throws TableNotFoundException {
         BatchScanner scanner = scannerFactory.newScanner(TableName.SHARD, getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newScanner(TableName.SHARD, getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newScanner(TableName.SHARD, getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testQueryScannerWithAuthsQuery() throws Exception {
         BatchScannerSession scanner = scannerFactory.newQueryScanner(TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newQueryScanner(TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newQueryScanner(TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testLimitedScannerAsAnyFieldScanner() throws Exception {
         AnyFieldScanner scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testLimitedScannerAsRangeStreamScanner() throws Exception {
         RangeStreamScanner scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testLimitedScannerAsBatchScannerSession() throws Exception {
         BatchScannerSession scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testRangeScannerWithAuthsQuery() throws Exception {
         RangeStreamScanner scanner = scannerFactory.newRangeScanner(TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newRangeScanner(TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newRangeScanner(TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testRangeScannerWithAuthsQueryThreshold() throws Exception {
         RangeStreamScanner scanner = scannerFactory.newRangeScanner(TableName.SHARD, getAuths(), getQuery(), 123);
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newRangeScanner(TableName.SHARD, getAuths(), getQuery(), 123);
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newRangeScanner(TableName.SHARD, getAuths(), getQuery(), 123);
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     void testRFileScanner() {
         ScannerBase scanner = scannerFactory.newRfileScanner(TableName.SHARD, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
-
-        setEventualConsistency();
-        scanner = scannerFactory.newRfileScanner(TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+
+        setImmediateConsistency();
+        scanner = scannerFactory.newRfileScanner(TableName.SHARD, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
     }
 
     @Test
     public void testSingleScannerWithAbsentTableName() throws Exception {
         Scanner scanner = scannerFactory.newSingleScanner(ALT_INDEX, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
     }
 
     @Test
     public void testScannerWithAbsentTableName() throws Exception {
         BatchScanner scanner = scannerFactory.newScanner(ALT_INDEX, getQuery());
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newScanner(ALT_INDEX, getAuths(), 1, getQuery(), "ALT_HINT");
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newScanner(ALT_INDEX, getAuths(), 1, getQuery(), null);
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
     }
 
     @Test
     public void testQueryScannerWithAbsentTableName() throws Exception {
         BatchScannerSession scanner = scannerFactory.newQueryScanner(ALT_INDEX, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newQueryScanner(ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newQueryScanner(ALT_INDEX, getAuths(), getQuery(), null);
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
     }
 
     @Test
     public void testLimitedAnyFieldScannerWithAbsentTableName() throws Exception {
         AnyFieldScanner scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, ALT_INDEX, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, ALT_INDEX, getAuths(), getQuery(), null);
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
     }
 
     @Test
     public void testLimitedRangeStreamScannerWithAbsentTableName() throws Exception {
         RangeStreamScanner scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, ALT_INDEX, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, ALT_INDEX, getAuths(), getQuery(), null);
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
     }
 
     @Test
     public void testLimitedBatchScannerSessionWithAbsentTableName() throws Exception {
         BatchScannerSession scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, ALT_INDEX, getAuths(), getQuery());
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
 
         scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, ALT_INDEX, getAuths(), getQuery(), null);
-        assertImmediateConsistency(scanner);
+        assertEventualConsistency(scanner);
     }
 
     private void setEventualConsistency() {
         Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
         consistencyLevels.put(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL);
+        config.setTableConsistencyLevels(consistencyLevels);
+        scannerFactory.updateConfigs(config);
+    }
+
+    private void setImmediateConsistency() {
+        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
+        consistencyLevels.put(TableName.SHARD, ScannerBase.ConsistencyLevel.IMMEDIATE);
         config.setTableConsistencyLevels(consistencyLevels);
         scannerFactory.updateConfigs(config);
     }

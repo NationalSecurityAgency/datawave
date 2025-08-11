@@ -6,6 +6,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
 
@@ -23,6 +24,8 @@ public class QueryScannerHelper {
         Scanner scanner = ScannerHelper.createScanner(client, tableName, authorizations);
 
         scanner.addScanIterator(getQueryInfoIterator(query, false));
+
+        scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
         return scanner;
     }
@@ -43,6 +46,8 @@ public class QueryScannerHelper {
         BatchScanner batchScanner = ScannerHelper.createBatchScanner(client, tableName, authorizations, numQueryThreads);
 
         batchScanner.addScanIterator(getQueryInfoIterator(query, reportErrors));
+
+        batchScanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
         return batchScanner;
     }

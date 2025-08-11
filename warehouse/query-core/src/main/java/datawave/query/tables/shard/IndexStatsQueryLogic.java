@@ -154,11 +154,13 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 Set<Authorizations> auths = Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami()));
                 if (fields.isEmpty()) {
                     Scanner simpleScanner = ScannerHelper.createScanner(client, table, auths);
+                    simpleScanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                     dataSource = simpleScanner;
                     scanner = simpleScanner;
                 } else {
                     BatchScanner bScanner = ScannerHelper.createBatchScanner(client, table, auths, fields.size());
                     bScanner.setRanges(buildRanges(fields));
+                    bScanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                     scanner = bScanner;
                     dataSource = bScanner;
                 }

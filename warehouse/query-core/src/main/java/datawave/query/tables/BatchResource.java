@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
@@ -67,6 +68,7 @@ public class BatchResource extends RunningResource {
 
         if (baseScanner != null) {
             ((BatchScanner) baseScanner).setRanges(currentRange);
+            baseScanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
         }
     }
 

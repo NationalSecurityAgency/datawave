@@ -17,6 +17,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -324,6 +325,8 @@ public class DateIndexHelper implements ApplicationContextAware {
             // restrict to our date type
             scanner.fetchColumnFamily(new Text(dateType));
 
+            scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
+
             IteratorSetting setting = new IteratorSetting(50, "DateTypeDescriptionIterator", DateTypeDescriptionIterator.class);
             if (!datatypeFilter.isEmpty()) {
                 setting.addOption(DateTypeDescriptionIterator.DATATYPE_FILTER, joiner.join(datatypeFilter));
@@ -346,6 +349,8 @@ public class DateIndexHelper implements ApplicationContextAware {
 
             // restrict to our date type
             scanner.fetchColumnFamily(new Text(dateType));
+
+            scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             DateTypeDescription desc = new DateTypeDescription();
             for (Entry<Key,Value> entry : scanner) {
@@ -427,6 +432,7 @@ public class DateIndexHelper implements ApplicationContextAware {
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
         try (Scanner scanner = ScannerHelper.createScanner(client, dateIndexTableName, auths)) {
             scanner.setRange(range);
+            scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             IteratorSetting setting = new IteratorSetting(50, "ShardsAndDaysHint", DateIndexIterator.class);
             if (!datatypeFilter.isEmpty()) {
@@ -460,6 +466,7 @@ public class DateIndexHelper implements ApplicationContextAware {
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
         try (BatchScanner scanner = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads)) {
             scanner.setRanges(Set.of(range));
+            scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> entry : scanner) {
                 Key k = entry.getKey();

@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -215,6 +216,8 @@ public class CardinalityScanner {
             try (Scanner scanner = ScannerHelper.createScanner(client, config.getTableName(), authCollection)) {
                 Range r = new Range(config.getBeginDate(), config.getEndDate() + "\0");
                 scanner.setRange(r);
+
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
                 Iterator<Map.Entry<Key,Value>> itr = scanner.iterator();
                 while (itr.hasNext()) {

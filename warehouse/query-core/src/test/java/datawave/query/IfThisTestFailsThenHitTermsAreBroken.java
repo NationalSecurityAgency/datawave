@@ -18,6 +18,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -196,6 +197,7 @@ public abstract class IfThisTestFailsThenHitTermsAreBroken {
         Scanner s = ScannerHelper.createScanner(client, tableName, authSet);
         Range r = new Range();
         s.setRange(r);
+        s.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
         for (Entry<Key,Value> entry : s) {
             if (log.isDebugEnabled()) {
                 log.debug(entry.getKey() + " " + entry.getValue());

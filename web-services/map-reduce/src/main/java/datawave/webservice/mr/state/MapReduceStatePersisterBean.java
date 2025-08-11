@@ -32,6 +32,7 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -253,6 +254,7 @@ public class MapReduceStatePersisterBean {
             try (Scanner scanner = ScannerHelper.createScanner(c, INDEX_TABLE_NAME, Collections.singleton(new Authorizations()))) {
                 Range range = new Range(mapReduceJobId, mapReduceJobId);
                 scanner.setRange(range);
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.IMMEDIATE);
 
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
@@ -335,6 +337,7 @@ public class MapReduceStatePersisterBean {
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 scanner.fetchColumnFamily(new Text(sid));
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
                 // We need to create a response for each job
                 String previousRow = sid;
@@ -407,6 +410,7 @@ public class MapReduceStatePersisterBean {
                 Range range = new Range(id);
                 scanner.setRange(range);
                 scanner.fetchColumnFamily(new Text(sid));
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 MapReduceInfoResponse response = populateResponse(scanner);
                 if (null != response)
                     result.getResults().add(response);

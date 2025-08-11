@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -98,6 +99,8 @@ public class CompositeMetadataHelper {
 
         Range range = new Range();
         bs.setRange(range);
+
+        bs.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
         // Fetch all the column
         for (Text colf : metadataCompositeColfs) {

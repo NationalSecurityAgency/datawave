@@ -24,6 +24,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -834,6 +835,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             } else {
                 s.fetchColumn(family, qualifier);
             }
+            s.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             for (Entry<Key,Value> e : s) {
                 ColumnVisibility thisViz = new ColumnVisibility(e.getKey().getColumnVisibility());
@@ -899,6 +901,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         try {
             s.setRange(new Range(shardId));
             s.fetchColumnFamily(family);
+            s.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
             // Populate map with how often each timestamp occurs
             for (Entry<Key,Value> e : s) {
@@ -1132,6 +1135,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 options.put(FieldIndexDocumentFilter.EVENT_UID_OPT, eventUid);
                 IteratorSetting settings = new IteratorSetting(100, FieldIndexDocumentFilter.class, options);
                 scanner.addScanIterator(settings);
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.IMMEDIATE);
             }
         }
 
@@ -1203,6 +1207,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                         throws TableNotFoundException {
             scanner = ScannerHelper.createScanner(client, shardTable, userAuths);
             scanner.setRange(range);
+            scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.IMMEDIATE);
         }
 
         @Override

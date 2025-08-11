@@ -22,11 +22,13 @@ public class SessionOptions extends ScannerOptions {
 
     public SessionOptions() {
         super();
+        setConsistencyLevel(ConsistencyLevel.EVENTUAL);
     }
 
     public SessionOptions(SessionOptions other) {
         super(other);
         this.config = other.config;
+        setConsistencyLevel(ConsistencyLevel.EVENTUAL);
     }
 
     public void setQueryConfig(ShardQueryConfiguration config) {
