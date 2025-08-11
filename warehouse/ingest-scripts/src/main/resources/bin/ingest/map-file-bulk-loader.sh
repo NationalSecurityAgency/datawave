@@ -29,6 +29,8 @@ done
 WORKDIR=${BASE_WORK_DIR}/
 PATTERN="'*'"
 
+CLASSPATH=$CLASSPATH:../../config/log4j-bulkloader.xml
+
 if [[ -e "$INGEST_HADOOP_HOME/share/hadoop/tools/lib/hadoop-$HADOOP_VERSION-distcp.jar" ]]; then
     # standard naming
     export HADOOP_CLASSPATH=$CLASSPATH:$INGEST_HADOOP_HOME/share/hadoop/tools/lib/hadoop-$HADOOP_VERSION-distcp.jar
@@ -64,7 +66,7 @@ if [[ ! -z $JOB_OBSERVERS ]]; then
   OBSERVER_OPTS="-jobObservers $JOB_OBSERVERS $JOB_OBSERVER_EXTRA_OPTS"
 fi
 
-export HADOOP_OPTS=" ${HADOOP_INGEST_OPTS} -Dapp=bulkIngestMapFileLoader -DshutdownPort=$shutdownPort -Dfile.encoding=UTF8 -Duser.timezone=GMT"
+export HADOOP_OPTS=" ${HADOOP_INGEST_OPTS} -Dlog4j.configuration=log4j-bulkloader.xml -Dapp=bulkIngestMapFileLoader -DshutdownPort=$shutdownPort -Dfile.encoding=UTF8 -Duser.timezone=GMT"
 $MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop --config $WAREHOUSE_HADOOP_CONF jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.BulkIngestMapFileLoader $WORKDIR $PATTERN $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS $USERNAME $PASSWORD -majcThreshold ${MAP_LOADER_MAJC_THRESHOLD} -sleepTime 5000 -numHdfsThreads 100 -numThreads 20 -majcCheckInterval 1 -maxDirectories 200 -numAssignThreads 60 -seqFileHdfs $INGEST_HDFS_NAME_NODE -srcHdfs $WAREHOUSE_HDFS_NAME_NODE -destHdfs $WAREHOUSE_HDFS_NAME_NODE -jt $WAREHOUSE_JOBTRACKER_NODE $OBSERVER_OPTS $MAP_FILE_LOADER_EXTRA_ARGS $EXTRA_ARGS ${INGEST_CONFIG[@]}
 RETURN_CODE=$?
 
