@@ -24,6 +24,7 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.MultiNormalizerIngest;
 import datawave.query.QueryParameters;
+import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -240,37 +241,40 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testRangeSizeFourToTen() throws Exception {
         // range with text normalizer is not valid and thus finds zero hits
         withQuery("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
         withDate("20250707");
         planAndExecuteQuery();
         assertResultCount(0);
-        assertPlannedQuery("false");
+        assertPlannedQuery("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
 
         // range with numeric normalizer will find hits in the shard index and expand into discrete values
         withDate("20250708");
         withRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
         planAndExecuteQuery();
         assertResultCount(7);
-        assertPlannedQuery("(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1')");
+        assertPlannedQuery(
+                        "(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
 
         withDate("20250707", "20250708");
         withRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
         planAndExecuteQuery();
         assertResultCount(7);
-        assertPlannedQuery("(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1')");
+        assertPlannedQuery(
+                        "(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = DatawaveQueryException.class)
     public void testRangeSizeFourToTen_rangeExpansionDisabled() throws Exception {
         try {
             // simulate a bounded range expansion failure
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(true);
 
             // numeric range still matches against numeric data that has a text normalizer
-            withQuery("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
+            // withQuery("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))"); // expected when validating bounded ranges
+            withQuery("(((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1')) || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
             withDate("20250707");
             withRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
             planAndExecuteQuery();
@@ -295,14 +299,14 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testRangeSizeFourToTenWithAnchor() throws Exception {
         // range with text normalizer will not find any hits
         withQuery("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
         withDate("20250707");
         planAndExecuteQuery();
         assertResultCount(0);
-        assertPlannedQuery("false");
+        assertPlannedQuery("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
 
         // range with numeric normalizer finds expected hits
         withDate("20250708");
@@ -310,17 +314,17 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         planAndExecuteQuery();
         assertResultCount(7);
         assertPlannedQuery(
-                        "COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1')");
+                        "COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
 
         withDate("20250707", "20250708");
         withRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
         planAndExecuteQuery();
         assertResultCount(7);
         assertPlannedQuery(
-                        "COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1')");
+                        "COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = DatawaveQueryException.class)
     public void testRangeSizeFourToTenWithAnchor_rangeExpansionDisabled() throws Exception {
         try {
             // simulate a bounded range expansion failure
@@ -328,7 +332,8 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
 
             // range with text normalizer would ordinarily not find any hits but anchor term nominates candidates. At
             // evaluation multiple normalizers are applied, thus text number can match the numeric range
-            withQuery("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
+            // withQuery("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))"); // expected when validating bounded ranges
+            withQuery("COLOR == 'red' && (((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1')) || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
             withDate("20250707");
             withRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
             planAndExecuteQuery();
