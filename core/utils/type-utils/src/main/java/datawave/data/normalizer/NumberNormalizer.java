@@ -41,9 +41,16 @@ public class NumberNormalizer extends AbstractNormalizer<BigDecimal> {
     }
 
     public boolean normalizedRegexIsLossy(String untrimmedRegex) {
-        ZeroRegexStatus status = NumericRegexEncoder.getZeroRegexStatus(untrimmedRegex);
+        try {
+            // verify this is actually a numeric regex to start with
+            NumericRegexEncoder.encode(untrimmedRegex);
 
-        return (status.equals(ZeroRegexStatus.LEADING) || status.equals(ZeroRegexStatus.TRAILING));
+            ZeroRegexStatus status = NumericRegexEncoder.getZeroRegexStatus(untrimmedRegex);
+            return (status.equals(ZeroRegexStatus.LEADING) || status.equals(ZeroRegexStatus.TRAILING));
+        } catch (IllegalArgumentException e) {
+            log.debug("Failed to normalize numeric field pattern '" + untrimmedRegex + "', assuming not lossy", e);
+            return false;
+        }
     }
 
     @Override
