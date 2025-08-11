@@ -1239,11 +1239,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         String taskName = getTaskName(boundingFiRange);
         IvaratorFuture future = IteratorThreadPoolManager.getIvaratorFuture(taskName, this.initEnv);
         if (future == null) {
+            log.debug("Creating ivarator runnable for " + taskName);
             // no future exists, so get a source and create/execute a new IvaratorRunnable
             // this will block until an ivarator source becomes available
             SortedKeyValueIterator<Key,Value> source = takePoolSource();
             IvaratorRunnable ivaratorRunnable = new IvaratorRunnable(this, source, boundingFiRange, boundingFiRange, this.fiRow, this.queryId, totalResults);
             future = IteratorThreadPoolManager.executeIvarator(ivaratorRunnable, taskName, this.initEnv);
+        } else {
+            log.debug("Found ivarator runnable for " + taskName);
         }
         return future;
     }
@@ -1256,7 +1259,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         sb.append(" queryId:").append(queryId);
         sb.append(" fiRow:").append(fiRow);
         sb.append(" iHash:").append(getIHash(fiRow));
+        sb.append(" directory:").append(controlDir);
         sb.append(" termNumber:").append(termNumber);
+        sb.append(" range:").append(boundingFiRange);
         sb.append(" rangeHash:").append(Math.abs(boundingFiRange.hashCode() / 2));
         return sb.toString();
     }
@@ -1306,7 +1311,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 String taskName = ivaratorRunnable.getTaskName();
                 Status status = ivaratorRunnable.getStatus();
                 if (!status.equals(CREATED) && !status.equals(SUSPENDED) && !status.equals(COMPLETED)) {
-                    log.error(String.format("Resuming Ivarator %s failed - taskName:%s has status:%s", ivaratorInfo, taskName, status));
+                    log.info(String.format("Resuming Ivarator %s failed - taskName:%s has status:%s", ivaratorInfo, taskName, status));
                     canResume = false;
                     break;
                 }
@@ -1314,7 +1319,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 if (previousIvarator == null) {
                     previousIvarator = ivaratorRunnable.getIvarator();
                 } else if (previousIvarator != ivaratorRunnable.getIvarator()) {
-                    log.error(String.format("Resuming Ivarator %s failed - taskName:%s has inconsistent ivarator", ivaratorInfo, taskName));
+                    log.info(String.format("Resuming Ivarator %s failed - taskName:%s has inconsistent ivarator", ivaratorInfo, taskName));
                     canResume = false;
                     break;
                 }
@@ -1346,7 +1351,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     } catch (IllegalStateException e) {
                         // unable to resume this IvaratorRunnable, it will get recreated later
                         // because its IvaratorFuture was removed a few lines above this
-                        log.error(e.getMessage());
+                        log.warn(e.getMessage());
                     }
                 } else if (status.equals(COMPLETED)) {
                     completed++;
