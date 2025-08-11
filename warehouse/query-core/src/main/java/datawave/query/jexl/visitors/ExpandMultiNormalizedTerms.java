@@ -36,6 +36,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -155,10 +156,11 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         /*
-         * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
+         * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types If we
+         * have an evaluation only term predicate, then no need to apply normalizations If we have already expanded this node, then nothing to do
          */
         QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
-        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM) || this.expandedNodes.contains(node)) {
+        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM, EVALUATION_ONLY) || this.expandedNodes.contains(node)) {
             return node;
         }
 
@@ -302,6 +304,20 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             boolean lenient = config.getLenientFields().contains(fieldName)
                             || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LENIENT));
 
+            // Is this a regex node ?
+            boolean regexNode = (node instanceof ASTNRNode || node instanceof ASTERNode);
+
+            boolean indexOnly = false;
+            // For efficiency purposes, we only need to know if it is index only when dealing with regex nodes
+            if (regexNode) {
+                try {
+                    indexOnly = helper.getIndexOnlyFields(config.getDatatypeFilter()).contains(fieldName);
+                } catch (TableNotFoundException e) {
+                    log.error("Could not fetch index only fields while expanding unfielded term");
+                    throw new RuntimeException(e);
+                }
+            }
+
             if (strict && lenient) {
                 log.warn("Field " + fieldName + " marked both as strict and lenient.  Applying neither");
                 strict = false;
@@ -332,26 +348,52 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
-                            if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
-                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
-                                if (normTerms.size() == 1) {
-                                    String normTerm = normTerms.iterator().next();
-                                    normalizedTerms.add(normTerm);
-                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
-                                } else {
-                                    List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
-                                    Iterator<String> iter = normTerms.iterator();
-                                    while (iter.hasNext()) {
-                                        normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
+                            if (regexNode) {
+                                String normTerm = normalizer.normalizeRegex(term);
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
                                     }
-
-                                    JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
-                                    normalizedNodes.add(oneToManyNode);
+                                    normalizedTerms.add(normTerm);
+                                    JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
+                                    // if not index only, and we have a lossy normalized regex, then add the original regex as eval only
+                                    if (!indexOnly && (!term.equals(normTerm)) && normalizer.normalizedRegexIsLossy(term)) {
+                                        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
+                                                        EVALUATION_ONLY);
+                                        // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)
+                                        if (!(evalOnly instanceof ASTReferenceExpression)) {
+                                            evalOnly = JexlNodes.wrap(evalOnly);
+                                        }
+                                        // now we need to combine these two nodes so that both are required
+                                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {evalOnly, normalizedNode}));
+                                        normalizedNodes.add(combined);
+                                    } else {
+                                        normalizedNodes.add(normalizedNode);
+                                    }
                                 }
+                            } else if ((normalizer instanceof OneToManyNormalizerType) && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
+                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+                                String normTerm = Joiner.on(", ").join(normTerms);
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
+                                    }
+                                    normalizedTerms.add(normTerm);
+                                    if (normTerms.size() == 1) {
+                                        normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                    } else {
+                                        List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
+                                        Iterator<String> iter = normTerms.iterator();
+                                        while (iter.hasNext()) {
+                                            normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
+                                        }
 
+                                        JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
+                                        normalizedNodes.add(oneToManyNode);
+                                    }
+                                }
                             } else {
-                                String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
-                                                : normalizer.normalize(term));
+                                String normTerm = normalizer.normalize(term);
                                 if (!normalizedTerms.contains(normTerm)) {
                                     if (log.isDebugEnabled()) {
                                         log.debug("normalizedTerm = " + normTerm);
