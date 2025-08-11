@@ -8,8 +8,6 @@ DW_HOSTNAME=$(hostname)
 DW_HOSTNAME=${DW_HOSTNAME%%.*}
 DW_HOST_FQDN=$(hostname -f)
 
-ACCUMULO_JAVA_OPTS="-Dcom.google.protobuf.use_unsafe_pre22_gencode ${ACCUMULO_JAVA_OPTS}"
-
 # If the hostname matches the fqdn, leave the fqdn unset
 if [[ "${DW_HOST_FQDN}" == "${DW_HOSTNAME}" ]]; then
    DW_HOST_FQDN="unused"
@@ -39,7 +37,6 @@ COMPOSE_PROFILES=\"${COMPOSE_PROFILES}\"
 DW_HOSTNAME=\"${DW_HOSTNAME}\"
 DW_HOST_FQDN=\"${DW_HOST_FQDN}\"
 DW_HOST_IP=\"${DW_HOST_IP}\"
-ACCUMULO_JAVA_OPTS=\"${ACCUMULO_JAVA_OPTS}\"
 
 # These environment variables must be set when running the quickstart
 # from the host machine in hybrid mode.
