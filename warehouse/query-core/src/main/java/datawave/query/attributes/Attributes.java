@@ -75,6 +75,16 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         return Collections.unmodifiableSet(this.attributes);
     }
 
+    /**
+     * Access the raw values similar to {@link #getAttributes()} but without a collection copy
+     *
+     * @return the raw values
+     */
+    @Override
+    public Collection<Attribute<? extends Comparable<?>>> getRawAttributes() {
+        return attributes;
+    }
+
     private Set<Attribute<? extends Comparable<?>>> _getAttributes() {
         return this.attributes;
     }
@@ -224,7 +234,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(131, 127);
-        for (Attribute<?> a : getAttributes()) {
+        for (Attribute<?> a : _getAttributes()) {
             hcb.append(a);
         }
         return hcb.toHashCode();
@@ -233,7 +243,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public Collection<ValueTuple> visit(Collection<String> fieldNames, DatawaveJexlContext context) {
         Set<ValueTuple> children = new FunctionalSet<>();
-        for (Attribute<?> attr : getAttributes()) {
+        for (Attribute<?> attr : _getAttributes()) {
             children.addAll(attr.visit(fieldNames, context));
         }
 

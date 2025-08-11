@@ -1,7 +1,6 @@
 package datawave.next.stats;
 
 import java.io.Serializable;
-import java.text.DecimalFormat;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
@@ -21,8 +20,6 @@ public class DocumentRetrievalStats implements Serializable {
     private final DescriptiveStatistics submitStats = new DescriptiveStatistics(window);
     private final DescriptiveStatistics scanStats = new DescriptiveStatistics(window);
     private final DescriptiveStatistics elapsedStats = new DescriptiveStatistics(window);
-
-    private static final DecimalFormat format = new DecimalFormat("#.#");
 
     private String slowestContext = null;
     private long slowestTime = 0L;
@@ -67,7 +64,6 @@ public class DocumentRetrievalStats implements Serializable {
     }
 
     private String format(double ns) {
-        ns /= 1_000_000;
-        return format.format(ns);
+        return StatUtil.formatNanos((long) ns);
     }
 }
