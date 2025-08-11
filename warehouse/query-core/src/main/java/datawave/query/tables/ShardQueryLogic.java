@@ -2283,6 +2283,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setFilterClassNames(filterClassNames);
     }
 
+    public String getFieldRuleClassName() {
+        return getConfig().getFieldRuleClassName();
+    }
+
+    public void setFieldRuleClassName(String fieldRuleClassName) {
+        getConfig().setFieldRuleClassName(fieldRuleClassName);
+    }
+
     public List<String> getIndexFilteringClassNames() {
         return getConfig().getIndexFilteringClassNames();
     }
