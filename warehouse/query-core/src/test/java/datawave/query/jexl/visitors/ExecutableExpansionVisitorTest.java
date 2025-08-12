@@ -6,6 +6,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -439,14 +440,14 @@ public abstract class ExecutableExpansionVisitorTest {
             log.debug("testAnyfieldNumericExpansion");
         }
         String[] queryStrings = {"_ANYFIELD_ =~'12340.*?'"};
-        @SuppressWarnings("unchecked")
-        // SOPRANO is the only one with a 0 after the 1234
-        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO")};
+        // ANYFIELD numeric regex normalization is no longer used, so expect no results for this query
+        List<String> expectedLists = new ArrayList<>();
         for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            runTestQuery(expectedLists, queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
 
-        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Eval_ = true) && (_ANYFIELD_ =~ '12340.*?'))";
+        // No longer expect normalized numeric regexes for ANYFIELD
+        String expectedQueryStr = "_NOFIELD_ =~ '12340.*?'";
         String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
         Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
                         TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));

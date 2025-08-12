@@ -708,42 +708,42 @@ public class ExpandMultiNormalizedTermsTest {
         // EQ
         expandTerms("_ANYFIELD_ == 'anywhere'", "_ANYFIELD_ == 'anywhere'");
         expandTerms("_ANYFIELD_ == 'oHIo'", "_ANYFIELD_ == 'ohio' || _ANYFIELD_ == 'oHIo'");
-        expandTerms("_ANYFIELD_ == '123'", "_ANYFIELD_ == '+cE1.23' || _ANYFIELD_ == '123'");
+        expandTerms("_ANYFIELD_ == '123'", "_ANYFIELD_ == '123'");
 
         // NE
         expandTerms("_ANYFIELD_ != 'anywhere'", "_ANYFIELD_ != 'anywhere'");
         expandTerms("_ANYFIELD_ != 'oHIo'", "_ANYFIELD_ != 'ohio' && _ANYFIELD_ != 'oHIo'");
-        expandTerms("_ANYFIELD_ != '123'", "_ANYFIELD_ != '+cE1.23' && _ANYFIELD_ != '123'");
+        expandTerms("_ANYFIELD_ != '123'", "_ANYFIELD_ != '123'");
 
         // ER
         expandTerms("_ANYFIELD_ =~ 'anywhere'", "_ANYFIELD_ =~ 'anywhere'");
         expandTerms("_ANYFIELD_ =~ 'oHIo'", "_ANYFIELD_ =~ 'ohio' || _ANYFIELD_ =~ 'oHIo'");
-        expandTerms("_ANYFIELD_ =~ '123'", "_ANYFIELD_ =~ '\\+cE1\\.23' || _ANYFIELD_ =~ '123'");
+        expandTerms("_ANYFIELD_ =~ '123'", "_ANYFIELD_ =~ '123'");
 
         // NR
         expandTerms("_ANYFIELD_ !~ 'anywhere'", "_ANYFIELD_ !~ 'anywhere'");
         expandTerms("_ANYFIELD_ !~ 'oHIo'", "_ANYFIELD_ !~ 'ohio' && _ANYFIELD_ !~ 'oHIo'");
-        expandTerms("_ANYFIELD_ !~ '123'", "_ANYFIELD_ !~ '\\+cE1\\.23' && _ANYFIELD_ !~ '123'");
+        expandTerms("_ANYFIELD_ !~ '123'", "_ANYFIELD_ !~ '123'");
 
         // LT
         expandTerms("_ANYFIELD_ < 'anywhere'", "_ANYFIELD_ < 'anywhere'");
         expandTerms("_ANYFIELD_ < 'oHIo'", "_ANYFIELD_ < 'ohio' || _ANYFIELD_ < 'oHIo'");
-        expandTerms("_ANYFIELD_ < '123'", "_ANYFIELD_ < '+cE1.23' || _ANYFIELD_ < '123'");
+        expandTerms("_ANYFIELD_ < '123'", "_ANYFIELD_ < '123'");
 
         // LE
         expandTerms("_ANYFIELD_ <= 'anywhere'", "_ANYFIELD_ <= 'anywhere'");
         expandTerms("_ANYFIELD_ <= 'oHIo'", "_ANYFIELD_ <= 'ohio' || _ANYFIELD_ <= 'oHIo'");
-        expandTerms("_ANYFIELD_ <= '123'", "_ANYFIELD_ <= '+cE1.23' || _ANYFIELD_ <= '123'");
+        expandTerms("_ANYFIELD_ <= '123'", "_ANYFIELD_ <= '123'");
 
         // GT
         expandTerms("_ANYFIELD_ > 'anywhere'", "_ANYFIELD_ > 'anywhere'");
         expandTerms("_ANYFIELD_ > 'oHIo'", "_ANYFIELD_ > 'ohio' || _ANYFIELD_ > 'oHIo'");
-        expandTerms("_ANYFIELD_ > '123'", "_ANYFIELD_ > '+cE1.23' || _ANYFIELD_ > '123'");
+        expandTerms("_ANYFIELD_ > '123'", "_ANYFIELD_ > '123'");
 
         // GE
         expandTerms("_ANYFIELD_ >= 'anywhere'", "_ANYFIELD_ >= 'anywhere'");
         expandTerms("_ANYFIELD_ >= 'oHIo'", "_ANYFIELD_ >= 'ohio' || _ANYFIELD_ >= 'oHIo'");
-        expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '+cE1.23' || _ANYFIELD_ >= '123'");
+        expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '123'");
     }
 
     private void expandTerms(String original, String expected) throws ParseException {
