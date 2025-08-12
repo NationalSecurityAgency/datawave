@@ -1,10 +1,13 @@
 package datawave.query.rules;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
+import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
@@ -42,7 +45,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         QueryRuleResult result = new QueryRuleResult(getName());
         try {
             QueryNode luceneQuery = (QueryNode) config.getParsedQuery();
-            List<QueryNode> interpretNodes = GroupedInterpretationVisitor.check(luceneQuery, GroupedInterpretationVisitor.JUNCTION.AND);
+            List<QueryNode> interpretNodes = GroupedInterpretationVisitor.check(luceneQuery, QueryNodeType.AND);
             interpretNodes.stream().map(this::formatMessage).forEach(result::addMessage);
         } catch (Exception e) {
             log.error("Error occurred when validating against instance '" + getName() + "' of " + getClass(), e);
@@ -58,68 +61,44 @@ public class GroupedInterpretationRule extends ShardQueryRule {
 
     // Return a message about the given nodes.
     private String formatMessage(QueryNode node) {
+        System.out.println("formatMessage: " + LuceneQueryStringBuildingVisitor.build(node));
         // @formatter:off
         return new StringBuilder()
                 .append("Operator precedence may be missing, ")
-                .append(originalQueryInfo((GroupQueryNode) node, new ArrayList<>(), new ArrayList<>(), new ArrayList<>()))
+                .append(formatGroup((GroupQueryNode) node))
                 .append(" will be interpreted as: ")
                 .append(LuceneQueryStringBuildingVisitor.build(node))
                 .toString();
         // @formatter:on
     }
 
-    private String originalQueryInfo(GroupQueryNode node, ArrayList<String> fieldList, ArrayList<String> valueList, ArrayList<String> prevField) {
-        List<List<String>> fieldValueList = new ArrayList<>(3);
-        fieldValueList.add(fieldList);
-        fieldValueList.add(valueList);
-        fieldValueList.add(prevField);
-
-        // first checks to see if query is nested, i.e. FOO:((aaa bbb ccc))
-        QueryNode nestedChild = node.getChild();
-        if (QueryNodeType.get(nestedChild.getClass()) == QueryNodeType.GROUP) {
-            return originalQueryInfo((GroupQueryNode) nestedChild, fieldList, valueList, prevField);
-        }
-
-        for (QueryNode child : node.getChildren()) {
-            if (!(child.getChildren() == null)) {
-                for (QueryNode grandchild : child.getChildren()) {
-                    if (QueryNodeType.get(grandchild.getClass()) == QueryNodeType.GROUP) {
-                        // checks if child is nested, i.e. FOO:(aaa (bbb ccc))
-                        originalQueryInfo((GroupQueryNode) grandchild, fieldList, valueList, prevField);
-                    } else if (!grandchild.toString().isEmpty()) {
-                        // not nested, get info about fields/values
-                        fieldValueLists(grandchild, fieldValueList);
-                    }
-                }
-            } else if (!child.toString().isEmpty()) {
-                // may be a singularly grouped term, i.e. FOO:(aaa bbb (ccc))
-                fieldValueLists(child, fieldValueList);
-            }
-        }
-
-        return "field(s): " + fieldValueList.get(0) + " with value(s): " + fieldValueList.get(1);
+    // Return a formatted string containing the fields and values in the group.
+    private String formatGroup(GroupQueryNode node) {
+        Pair<Set<String>,List<String>> fieldValues = Pair.of(new HashSet<>(), new ArrayList<>());
+        collectFieldsAndValues(node, fieldValues);
+        return "field(s): " + fieldValues.getLeft() + " with value(s): " + fieldValues.getRight();
     }
 
-    private void fieldValueLists(QueryNode node, List<List<String>> fieldValueList) {
-        // index 0 = fields, index 1 = values, index 2 = previous fields
-        List<String> fieldList = fieldValueList.get(0);
-        List<String> valueList = fieldValueList.get(1);
-        List<String> prevField = fieldValueList.get(2);
-
-        // adds a value to compare later field(s) with
-        if (prevField.isEmpty()) {
-            prevField.add("");
-        }
-
-        if (!node.toString().isEmpty()) {
-            // adds string values from original query to lists
-            valueList.add((node.toString()).substring(((node.toString()).indexOf("text='") + 6), (node.toString()).indexOf("'/>")));
-
-            String field = (node.toString()).substring(((node.toString()).indexOf("field='") + 7), (node.toString()).indexOf("' text"));
-            if (!field.isEmpty() && !Objects.equals(field, prevField.get(0))) {
-                fieldList.add(field);
-                prevField.set(0, field);
-                fieldValueList.set(2, prevField);
+    // Collect the fields and values in the given node, traveling down through the children.
+    private void collectFieldsAndValues(QueryNode node, Pair<Set<String>,List<String>> fieldValues) {
+        for (QueryNode child : node.getChildren()) {
+            QueryNodeType childType = QueryNodeType.get(child.getClass());
+            switch (childType) {
+                case GROUP:
+                case OR:
+                case AND:
+                    collectFieldsAndValues(child, fieldValues);
+                    return;
+                default:
+                    // Skip any non-field query nodes.
+                    if (child instanceof FieldQueryNode) {
+                        FieldQueryNode fqn = (FieldQueryNode) child;
+                        String field = fqn.getField().toString();
+                        if (!field.isEmpty()) {
+                            fieldValues.getLeft().add(field);
+                        }
+                        fieldValues.getRight().add(fqn.getTextAsString());
+                    }
             }
         }
     }

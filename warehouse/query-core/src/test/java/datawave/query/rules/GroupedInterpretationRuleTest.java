@@ -75,9 +75,6 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
         assertResult();
     }
 
-    /**
-     * Test a query with ambiguous phrases after a quoted phrase.
-     */
     @Test
     void testGroupedFieldedTerms() throws Exception {
         givenQuery("(FOO:abc AND BAR:def)");
@@ -86,9 +83,6 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
         assertResult();
     }
 
-    /**
-     * Test a query with ambiguous phrases before a fielded term.
-     */
     @Test
     void testMultipleFieldsWithGroupedAmbiguousPhrases() throws Exception {
         givenQuery("(FOO:abc def ghi) OR BAR:(aaa bbb ccc) AND 333 HAT:\"111\" 222 AND HEN:car VEE:elephant zebra VEE:deer FOO:(aaa bbb)");
@@ -96,6 +90,34 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
         expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [abc, def, ghi] will be interpreted as: ( FOO:abc AND def AND ghi )");
         expectMessage("Operator precedence may be missing, field(s): [BAR] with value(s): [aaa, bbb, ccc] will be interpreted as: ( BAR:aaa AND BAR:bbb AND BAR:ccc )");
         expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [aaa, bbb] will be interpreted as: ( FOO:aaa AND FOO:bbb )");
+
+        assertResult();
+    }
+
+    @Test
+    void testDifferentFieldGroupedWithinTermGroup() throws Exception {
+        givenQuery("FOO:(abc HAT:(def ghi)) OR BAR:(aaa (bbb (ccc)))");
+
+        expectMessage("Operator precedence may be missing, field(s): [FOO, HAT] with value(s): [abc, def, ghi] will be interpreted as: ( FOO:abc AND ( HAT:def AND HAT:ghi ) )");
+        expectMessage("Operator precedence may be missing, field(s): [BAR] with value(s): [aaa, bbb, ccc] will be interpreted as: ( BAR:aaa AND ( BAR:bbb AND ( BAR:ccc ) ) )");
+
+        assertResult();
+    }
+
+    @Test
+    void testDifferentFieldWithinTermGroup() throws Exception {
+        givenQuery("FOO:(abc HAT:def ghi) OR BAR:(aaa (bbb (ccc)))");
+
+        expectMessage("Operator precedence may be missing, field(s): [BAR] with value(s): [aaa, bbb, ccc] will be interpreted as: ( BAR:aaa AND ( BAR:bbb AND ( BAR:ccc ) ) )");
+
+        assertResult();
+    }
+
+    @Test
+    void testGroupWithUnfieldedTermsAndNonFieldValueClause() throws Exception {
+        givenQuery("(FOO:abc def #ISNOTNULL(HAT))");
+
+        expectMessage("Operator precedence may be missing, field(s): [FOO] with value(s): [abc, def] will be interpreted as: ( FOO:abc AND def AND #ISNOTNULL(HAT) )");
 
         assertResult();
     }
