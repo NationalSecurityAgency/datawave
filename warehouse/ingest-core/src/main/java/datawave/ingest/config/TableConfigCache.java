@@ -8,7 +8,6 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -96,7 +95,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
         String propVal;
         Map<String,String> tempMap = new HashMap<>();
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, this.delimiter);
+            String[] parts = line.split(this.delimiter);
             if (table == null || !table.equals(parts[0])) {
                 table = parts[0];
                 tempMap = new HashMap<>();
