@@ -26,7 +26,7 @@
         <enabled>true</enabled>
         <hashAlgorithm>SHA-256</hashAlgorithm>
         <validateXml>true</validateXml>
-         <remote enabled="true" id="cache-remote-server">
+         <remote enabled="false" id="cache-remote-server">
             <url>http://localhost:8080</url>
         </remote>
         <local>
