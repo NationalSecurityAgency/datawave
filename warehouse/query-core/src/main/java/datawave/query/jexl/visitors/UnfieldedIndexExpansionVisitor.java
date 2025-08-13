@@ -21,6 +21,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -57,7 +58,12 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             this.expansionFields = new HashSet<>();
         }
 
-        this.allTypes = helper.getAllDatatypes();
+        this.allTypes = new HashSet<>();
+        this.allTypes.addAll(helper.getAllDatatypes());
+        for (Type<?> type : config.getExcludeUnfieldedTypes()) {
+            allTypes.removeIf(dataType -> dataType.getClass().equals(type.getClass()));
+        }
+
         this.stage = "field";
     }
 

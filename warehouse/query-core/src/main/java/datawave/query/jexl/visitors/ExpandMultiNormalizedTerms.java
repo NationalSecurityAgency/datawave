@@ -43,6 +43,7 @@ import com.google.common.collect.Sets;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
+import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.Constants;
@@ -316,6 +317,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             if (fieldName.equals(Constants.ANY_FIELD)) {
                 try {
                     dataTypes.addAll(helper.getAllDatatypes());
+                    for (Type<?> type : config.getExcludeUnfieldedTypes()) {
+                        dataTypes.removeIf(dataType -> dataType.getClass().equals(type.getClass()));
+                    }
+
                 } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
                     log.error("Could not fetch all DataTypes while expanding unfielded term");
                     throw new RuntimeException(e);
