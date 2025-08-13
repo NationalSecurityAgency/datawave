@@ -134,8 +134,8 @@ export function setVisibility(rows: readonly any[], priorDays?: any) {
     }
     // Checks to Render Collapsible Row - Refreshes on Search
     else if (
-      (buttonValues.has(row.internalFieldName) &&
-      row.lastUpdated != buttonValues.get(row.internalFieldName))
+      buttonValues.has(row.internalFieldName) &&
+      row.lastUpdated != buttonValues.get(row.internalFieldName)
     ) {
       row['duplicate'] = 1;
       row['button'] = false;

@@ -359,6 +359,7 @@ watch(
   (searchVal) => {
     // Converts the input into a valid string to be queried.
     let searchValNew = Formatters.filterSearch(searchVal, '');
+
     if (searchValNew !== changeFilter.value) {
       changeFilter.value = searchValNew;
       if (searchValNew) {
@@ -413,7 +414,6 @@ async function queryTable(priorDays?: any) {
 
   // Handles the URL change to reflect when the user searches.
   // Logic: Input -> URL (UI -> URL)
-  const daysToUse = priorDays ?? (Number(search.value) || Infinity);
   router.replace({
     query: {
       ...route.query,
