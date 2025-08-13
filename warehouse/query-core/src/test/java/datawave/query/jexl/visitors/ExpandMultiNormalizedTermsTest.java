@@ -757,7 +757,7 @@ public class ExpandMultiNormalizedTermsTest {
     public void testAnyFieldTermsTypeExclusion() throws ParseException {
 
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
-        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
         helper.setDataTypes(dataTypes);
 
         List<Type<?>> excludeUnfieldedTypes = new ArrayList<>();
