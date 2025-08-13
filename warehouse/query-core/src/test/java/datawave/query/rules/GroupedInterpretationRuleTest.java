@@ -122,6 +122,15 @@ class GroupedInterpretationRuleTest extends ShardQueryRuleTest {
         assertResult();
     }
 
+    @Test
+    void testGroupWithAndFieldedTerms() throws Exception {
+        givenQuery("(FOO:abc def AND BAR:ghi)");
+
+        expectMessage("Operator precedence may be missing, field(s): [BAR, FOO] with value(s): [abc, def, ghi] will be interpreted as: ( ( FOO:abc AND def ) AND BAR:ghi )");
+
+        assertResult();
+    }
+    
     @Override
     protected Object parseQuery() throws Exception {
         return parseQueryToLucene();

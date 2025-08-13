@@ -88,7 +88,6 @@ public class GroupedInterpretationRule extends ShardQueryRule {
                 case OR:
                 case AND:
                     collectFieldsAndValues(child, fieldValues);
-                    return;
                 default:
                     // Skip any non-field query nodes.
                     if (child instanceof FieldQueryNode) {
