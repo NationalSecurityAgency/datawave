@@ -462,22 +462,32 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
 
         // The predicted value
         @XmlElement
-        private double prediction = 0;
+        private double prediction = 0D;
+
+        // The confidence of the prediction.
+        @XmlElement
+        private double confidence = 0D;
 
         public Prediction() {
             super();
         }
 
-        public Prediction(String name, double value) {
+        public Prediction(String name, double prediction) {
+            this(name, prediction, 0D);
+        }
+
+        public Prediction(String name, double prediction, double confidence) {
             super();
             this.name = name;
-            this.prediction = value;
+            this.prediction = prediction;
+            this.confidence = confidence;
         }
 
         public Prediction(Prediction o) {
             super();
             this.name = o.name;
             this.prediction = o.prediction;
+            this.confidence = o.confidence;
         }
 
         public Prediction duplicate() {
@@ -500,9 +510,17 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
             this.prediction = prediction;
         }
 
+        public double getConfidence() {
+            return confidence;
+        }
+
+        public void setConfidence(double confidence) {
+            this.confidence = confidence;
+        }
+
         @Override
         public int hashCode() {
-            return new HashCodeBuilder(17, 37).append(name).append(prediction).toHashCode();
+            return new HashCodeBuilder(17, 37).append(name).append(prediction).append(confidence).toHashCode();
         }
 
         @Override
@@ -515,7 +533,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
             }
             if (o instanceof Prediction) {
                 Prediction other = (Prediction) o;
-                return new EqualsBuilder().append(this.name, other.name).append(this.prediction, other.prediction).isEquals();
+                return new EqualsBuilder().append(this.name, other.name).append(this.prediction, other.prediction).append(this.confidence, other.confidence)
+                                .isEquals();
             } else {
                 return false;
             }
@@ -523,12 +542,13 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
 
         @Override
         public int compareTo(Prediction o) {
-            return new CompareToBuilder().append(name, o.name).append(prediction, o.prediction).toComparison();
+            return new CompareToBuilder().append(name, o.name).append(prediction, o.prediction).append(confidence, o.confidence).toComparison();
         }
 
         @Override
         public String toString() {
-            return new StringBuilder().append("Name: ").append(this.name).append(" Prediction: ").append(this.prediction).toString();
+            return new StringBuilder().append("Name: ").append(this.name).append(" Prediction: ").append(this.prediction).append(" Confidence: ")
+                            .append(this.confidence).toString();
         }
 
         public static Schema<Prediction> getSchema() {
@@ -540,7 +560,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
             return SCHEMA;
         }
 
-        private static final Schema<Prediction> SCHEMA = new Schema<Prediction>() {
+        private static final Schema<Prediction> SCHEMA = new Schema<>() {
             public Prediction newMessage() {
                 return new Prediction();
             }
@@ -564,6 +584,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
             public void writeTo(Output output, Prediction message) throws IOException {
                 output.writeString(1, message.name, false);
                 output.writeDouble(2, message.prediction, false);
+                output.writeDouble(3, message.confidence, false);
             }
 
             public void mergeFrom(Input input, Prediction message) throws IOException {
@@ -575,6 +596,9 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
                             break;
                         case 2:
                             message.prediction = input.readDouble();
+                            break;
+                        case 3:
+                            message.confidence = input.readDouble();
                             break;
                         default:
                             input.handleUnknownField(number, this);
@@ -589,6 +613,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
                         return "name";
                     case 2:
                         return "prediction";
+                    case 3:
+                        return "confidence";
                     default:
                         return null;
                 }
@@ -596,7 +622,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
 
             public int getFieldNumber(String name) {
                 final Integer number = fieldMap.get(name);
-                return number == null ? 0 : number.intValue();
+                return number == null ? 0 : number;
             }
 
             final HashMap<String,Integer> fieldMap = new LinkedHashMap<>();
@@ -604,6 +630,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
             {
                 fieldMap.put("name", 1);
                 fieldMap.put("prediction", 2);
+                fieldMap.put("confidence", 3);
             }
         };
 
