@@ -46,7 +46,6 @@
                 <include>config/</include>
             </includes>
             <excludes>
-                <exclude>pom.xml</exclude>
                 <exclude>/dev/null</exclude>
                 <exclude>target/</exclude>
                 <exclude>**/*.log</exclude>
