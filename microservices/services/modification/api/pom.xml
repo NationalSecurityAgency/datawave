@@ -17,7 +17,7 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.guava>31.1-jre</version.guava>
     </properties>

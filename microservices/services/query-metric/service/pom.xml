@@ -39,7 +39,6 @@
         <version.webjars.jquery>3.4.1</version.webjars.jquery>
         <version.webjars.leaflet>1.5.1</version.webjars.leaflet>
         <version.webjars.locator-core>0.35</version.webjars.locator-core>
-        <version.zookeeper>3.8.3</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -266,7 +265,6 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>ch.qos.logback</groupId>
