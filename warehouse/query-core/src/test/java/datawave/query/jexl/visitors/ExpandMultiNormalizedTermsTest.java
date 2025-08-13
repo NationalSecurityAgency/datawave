@@ -699,53 +699,53 @@ public class ExpandMultiNormalizedTermsTest {
      * @throws ParseException
      *             if the query fails to parse
      */
-     @Test
-     public void testAnyFieldTerms() throws ParseException {
+    @Test
+    public void testAnyFieldTerms() throws ParseException {
 
-     Multimap<String,Type<?>> dataTypes = HashMultimap.create();
-     dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
-     helper.setDataTypes(dataTypes);
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
+        helper.setDataTypes(dataTypes);
 
-     // EQ
-     expandTerms("_ANYFIELD_ == 'anywhere'", "_ANYFIELD_ == 'anywhere'");
-     expandTerms("_ANYFIELD_ == 'oHIo'", "_ANYFIELD_ == 'ohio' || _ANYFIELD_ == 'oHIo'");
-     expandTerms("_ANYFIELD_ == '123'", "_ANYFIELD_ == '+cE1.23' || _ANYFIELD_ == '123'");
+        // EQ
+        expandTerms("_ANYFIELD_ == 'anywhere'", "_ANYFIELD_ == 'anywhere'");
+        expandTerms("_ANYFIELD_ == 'oHIo'", "_ANYFIELD_ == 'ohio' || _ANYFIELD_ == 'oHIo'");
+        expandTerms("_ANYFIELD_ == '123'", "_ANYFIELD_ == '+cE1.23' || _ANYFIELD_ == '123'");
 
-     // NE
-     expandTerms("_ANYFIELD_ != 'anywhere'", "_ANYFIELD_ != 'anywhere'");
-     expandTerms("_ANYFIELD_ != 'oHIo'", "_ANYFIELD_ != 'ohio' && _ANYFIELD_ != 'oHIo'");
-     expandTerms("_ANYFIELD_ != '123'", "_ANYFIELD_ != '+cE1.23' && _ANYFIELD_ != '123'");
+        // NE
+        expandTerms("_ANYFIELD_ != 'anywhere'", "_ANYFIELD_ != 'anywhere'");
+        expandTerms("_ANYFIELD_ != 'oHIo'", "_ANYFIELD_ != 'ohio' && _ANYFIELD_ != 'oHIo'");
+        expandTerms("_ANYFIELD_ != '123'", "_ANYFIELD_ != '+cE1.23' && _ANYFIELD_ != '123'");
 
-     // ER
-     expandTerms("_ANYFIELD_ =~ 'anywhere'", "_ANYFIELD_ =~ 'anywhere'");
-     expandTerms("_ANYFIELD_ =~ 'oHIo'", "_ANYFIELD_ =~ 'ohio' || _ANYFIELD_ =~ 'oHIo'");
-     expandTerms("_ANYFIELD_ =~ '123'", "_ANYFIELD_ =~ '\\+cE1\\.23' || _ANYFIELD_ =~ '123'");
+        // ER
+        expandTerms("_ANYFIELD_ =~ 'anywhere'", "_ANYFIELD_ =~ 'anywhere'");
+        expandTerms("_ANYFIELD_ =~ 'oHIo'", "_ANYFIELD_ =~ 'ohio' || _ANYFIELD_ =~ 'oHIo'");
+        expandTerms("_ANYFIELD_ =~ '123'", "_ANYFIELD_ =~ '\\+cE1\\.23' || _ANYFIELD_ =~ '123'");
 
-     // NR
-     expandTerms("_ANYFIELD_ !~ 'anywhere'", "_ANYFIELD_ !~ 'anywhere'");
-     expandTerms("_ANYFIELD_ !~ 'oHIo'", "_ANYFIELD_ !~ 'ohio' && _ANYFIELD_ !~ 'oHIo'");
-     expandTerms("_ANYFIELD_ !~ '123'", "_ANYFIELD_ !~ '\\+cE1\\.23' && _ANYFIELD_ !~ '123'");
+        // NR
+        expandTerms("_ANYFIELD_ !~ 'anywhere'", "_ANYFIELD_ !~ 'anywhere'");
+        expandTerms("_ANYFIELD_ !~ 'oHIo'", "_ANYFIELD_ !~ 'ohio' && _ANYFIELD_ !~ 'oHIo'");
+        expandTerms("_ANYFIELD_ !~ '123'", "_ANYFIELD_ !~ '\\+cE1\\.23' && _ANYFIELD_ !~ '123'");
 
-     // LT
-     expandTerms("_ANYFIELD_ < 'anywhere'", "_ANYFIELD_ < 'anywhere'");
-     expandTerms("_ANYFIELD_ < 'oHIo'", "_ANYFIELD_ < 'ohio' || _ANYFIELD_ < 'oHIo'");
-     expandTerms("_ANYFIELD_ < '123'", "_ANYFIELD_ < '+cE1.23' || _ANYFIELD_ < '123'");
+        // LT
+        expandTerms("_ANYFIELD_ < 'anywhere'", "_ANYFIELD_ < 'anywhere'");
+        expandTerms("_ANYFIELD_ < 'oHIo'", "_ANYFIELD_ < 'ohio' || _ANYFIELD_ < 'oHIo'");
+        expandTerms("_ANYFIELD_ < '123'", "_ANYFIELD_ < '+cE1.23' || _ANYFIELD_ < '123'");
 
-     // LE
-     expandTerms("_ANYFIELD_ <= 'anywhere'", "_ANYFIELD_ <= 'anywhere'");
-     expandTerms("_ANYFIELD_ <= 'oHIo'", "_ANYFIELD_ <= 'ohio' || _ANYFIELD_ <= 'oHIo'");
-     expandTerms("_ANYFIELD_ <= '123'", "_ANYFIELD_ <= '+cE1.23' || _ANYFIELD_ <= '123'");
+        // LE
+        expandTerms("_ANYFIELD_ <= 'anywhere'", "_ANYFIELD_ <= 'anywhere'");
+        expandTerms("_ANYFIELD_ <= 'oHIo'", "_ANYFIELD_ <= 'ohio' || _ANYFIELD_ <= 'oHIo'");
+        expandTerms("_ANYFIELD_ <= '123'", "_ANYFIELD_ <= '+cE1.23' || _ANYFIELD_ <= '123'");
 
-     // GT
-     expandTerms("_ANYFIELD_ > 'anywhere'", "_ANYFIELD_ > 'anywhere'");
-     expandTerms("_ANYFIELD_ > 'oHIo'", "_ANYFIELD_ > 'ohio' || _ANYFIELD_ > 'oHIo'");
-     expandTerms("_ANYFIELD_ > '123'", "_ANYFIELD_ > '+cE1.23' || _ANYFIELD_ > '123'");
+        // GT
+        expandTerms("_ANYFIELD_ > 'anywhere'", "_ANYFIELD_ > 'anywhere'");
+        expandTerms("_ANYFIELD_ > 'oHIo'", "_ANYFIELD_ > 'ohio' || _ANYFIELD_ > 'oHIo'");
+        expandTerms("_ANYFIELD_ > '123'", "_ANYFIELD_ > '+cE1.23' || _ANYFIELD_ > '123'");
 
-     // GE
-     expandTerms("_ANYFIELD_ >= 'anywhere'", "_ANYFIELD_ >= 'anywhere'");
-     expandTerms("_ANYFIELD_ >= 'oHIo'", "_ANYFIELD_ >= 'ohio' || _ANYFIELD_ >= 'oHIo'");
-     expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '+cE1.23' || _ANYFIELD_ >= '123'");
-     }
+        // GE
+        expandTerms("_ANYFIELD_ >= 'anywhere'", "_ANYFIELD_ >= 'anywhere'");
+        expandTerms("_ANYFIELD_ >= 'oHIo'", "_ANYFIELD_ >= 'ohio' || _ANYFIELD_ >= 'oHIo'");
+        expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '+cE1.23' || _ANYFIELD_ >= '123'");
+    }
 
     /**
      * Test type exclusion for each node type
