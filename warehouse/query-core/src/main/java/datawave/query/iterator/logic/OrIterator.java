@@ -391,6 +391,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // would have been the lowest if the operation completed, so we add back the key that was removed.
             // Since we are only concerned about the key and want the original value, skip the transform
             includeHeads.putAll(key, includedItrs);
+            // make sure the yield key is not past what we are moving to
+            e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) to, true, "to in OrIterator.moveIterators()"));
             throw e;
         }
         return includeHeads;
