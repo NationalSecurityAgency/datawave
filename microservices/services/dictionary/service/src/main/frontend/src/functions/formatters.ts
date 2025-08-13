@@ -129,6 +129,8 @@ export function setVisibility(rows: readonly any[], priorDays?: any) {
       row['duplicate'] = 1;
       row['button'] = true;
       row['dataTypeCount'] = countValues.get(row.internalFieldName) + ' types';
+
+      buttonValues.set(row.internalFieldName, -1); // This ensures only one button per internalFieldName (no duplicate buttons)
     }
     // Checks to Render Collapsible Row - Refreshes on Search
     else if (
