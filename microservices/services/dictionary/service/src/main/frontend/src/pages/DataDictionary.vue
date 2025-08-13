@@ -334,7 +334,7 @@ onMounted(() => {
         return b.lastUpdated - a.lastUpdated;
       }
     });
-    rows = Formatters.setVisibility(rows, 30); // defualt at 30 days
+    rows = Formatters.setVisibility(rows, 30); // default at 30 days
     loading.value = false;
   })
   .catch((reason) => {
