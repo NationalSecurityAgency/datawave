@@ -21,7 +21,6 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
