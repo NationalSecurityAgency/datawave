@@ -20,8 +20,7 @@ class NumericRegexEncoderTest {
 
     @BeforeAll
     static void beforeAll() {
-        letters.addAll(generateLetters('a', 'z'));
-        letters.addAll(generateLetters('A', 'Z'));
+        letters.addAll(generateLetters((char) 0x00, (char) 0x7f, ".{,}()<>*+=!?^$|[]-\\0123456789d"));
         letters.addAll(generateLetters('Ѐ', 'ӿ')); // cyrillic characters (i.e. non-ascii)
     }
 
@@ -35,9 +34,24 @@ class NumericRegexEncoderTest {
      * @return a list of letters
      */
     private static List<String> generateLetters(char start, char end) {
+        return generateLetters(start, end, "");
+    }
+
+    /**
+     * Return an unmodifiable list of letters in order from the given starting letter to the given ending letter removing characters from the exceptions list.
+     *
+     * @param start
+     *            the starting letter
+     * @param end
+     *            the ending letter
+     * @param exceptions
+     *            characters to exclude
+     * @return a list of letters
+     */
+    private static List<String> generateLetters(char start, char end, String exceptions) {
         // @formatter:off
         return IntStream.rangeClosed(start, end)
-                                        .mapToObj(c -> "" + (char) c).collect(Collectors.toUnmodifiableList());
+                .mapToObj(c -> "" + (char) c).filter(c -> !exceptions.contains(c)).collect(Collectors.toUnmodifiableList());
         // @formatter:on
     }
 
@@ -54,8 +68,8 @@ class NumericRegexEncoderTest {
      */
     @Test
     void testRegexWithWhitespace() {
-        assertExceptionThrown(" 123 ", "Regex pattern may not contain any whitespace.");
-        assertExceptionThrown("123| 234", "Regex pattern may not contain any whitespace.");
+        assertExceptionThrown(" 123 ", "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
+        assertExceptionThrown("123| 234", "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
     }
 
     /**
@@ -100,11 +114,11 @@ class NumericRegexEncoderTest {
     void testRegexWithRestrictedLetters() {
         // Verify an exception is thrown for any non-escaped letter.
         for (String letter : letters) {
-            assertExceptionThrown(letter, "Regex pattern may not contain any letters other than \\d to indicate a member of the digit character class 0-9.");
+            assertExceptionThrown(letter, "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
         }
 
         // Verify an exception is thrown for '\D'.
-        assertExceptionThrown("\\D", "Regex pattern may not contain any letters other than \\d to indicate a member of the digit character class 0-9.");
+        assertExceptionThrown("\\D", "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
     }
 
     /**
