@@ -334,7 +334,10 @@ onMounted(() => {
         return b.lastUpdated - a.lastUpdated;
       }
     });
-    rows = Formatters.setVisibility(rows, 30); // default at 30 days
+    rows = changeFilter.value
+      ? Formatters.setVisibility(rows) // if searched through URL bar, it removes 30 day filter.
+      : Formatters.setVisibility(rows, 30); // default at 30 days when loaded without '?search=<val>' query.
+
     loading.value = false;
   })
   .catch((reason) => {
@@ -348,6 +351,28 @@ onMounted(() => {
     queryTable();
   }
 });
+
+// This watch() handles a URL Change from a previous query.
+// Logic: Input + Table (reactive URL -> UI + Filters)
+watch(
+  () => route.query.search,
+  (searchVal) => {
+    // Converts the input into a valid string to be queried.
+    let searchValNew = Formatters.filterSearch(searchVal, '');
+    if (searchValNew !== changeFilter.value) {
+      changeFilter.value = searchValNew;
+      if (searchValNew) {
+        // Triggers a re-query if the user has changed to a new value.
+        queryTable();
+      } else {
+        // This retriggers back to the original state if user clears.
+        filter.value = '';
+        const originalRows = rows;
+        rows = Formatters.setVisibility(originalRows);
+      }
+    }
+  }
+);
 
 // Export - Attempts to Wrap the CSV and Download.
 function exportTable(this: any) {
@@ -385,6 +410,17 @@ function exportTable(this: any) {
 // Query - Runs through a Search Process as it waits for the user.
 async function queryTable(priorDays?: any) {
   await waitUp();
+
+  // Handles the URL change to reflect when the user searches.
+  // Logic: Input -> URL (UI -> URL)
+  const daysToUse = priorDays ?? (Number(search.value) || Infinity);
+  router.replace({
+    query: {
+      ...route.query,
+      search: changeFilter.value || undefined,
+    },
+  });
+
   // 1 - Filter the Rows
   const rowsToExport = table.value?.filteredSortedRows.filter(() => true);
 
