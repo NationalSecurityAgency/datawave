@@ -291,6 +291,13 @@
                 <value>datawave.query.enrich.DatawaveTermFrequencyEnricher</value>
             </list>
         </property>
+
+        <property name="excludeUnfieldedTypes">
+            <list value-type="datawave.data.type.Type">
+                <bean class="datawave.data.type.NumberType" />
+            </list>
+        </property>
+
         <property name="useFilters" value="false" />
         <property name="filterClassNames" value=""/>
 
