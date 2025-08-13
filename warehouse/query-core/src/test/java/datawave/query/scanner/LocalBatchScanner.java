@@ -10,11 +10,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.PluginEnvironment;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
@@ -23,6 +26,7 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
 import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.tables.SessionOptions;
@@ -106,6 +110,11 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
 
     public static class LocalIteratorEnvironment implements IteratorEnvironment {
         @Override
+        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
+            return null;
+        }
+
+        @Override
         public IteratorUtil.IteratorScope getIteratorScope() {
             return IteratorUtil.IteratorScope.scan;
         }
@@ -116,13 +125,48 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
         }
 
         @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
+
+        @Override
+        public TableId getTableId() {
+            return null;
+        }
+
+        @Override
         public boolean isFullMajorCompaction() {
             return false;
         }
 
         @Override
+        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
+
+        }
+
+        @Override
         public Authorizations getAuthorizations() {
             return new Authorizations();
+        }
+
+        @Override
+        public IteratorEnvironment cloneWithSamplingEnabled() {
+            return null;
+        }
+
+        @Override
+        public boolean isSamplingEnabled() {
+            return false;
+        }
+
+        @Override
+        public SamplerConfiguration getSamplerConfiguration() {
+            return null;
         }
     }
 

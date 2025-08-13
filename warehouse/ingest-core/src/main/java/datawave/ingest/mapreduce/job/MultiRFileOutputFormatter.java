@@ -1,18 +1,26 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
@@ -20,16 +28,17 @@ import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
-import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -44,12 +53,15 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 
@@ -58,6 +70,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     private static final Logger log = Logger.getLogger(MultiRFileOutputFormatter.class);
 
     protected Map<String,SizeTrackingWriter> writers = null;
+    protected boolean loadPlanningEnabled = false;
+    protected Map<String,List<LoadPlan>> loadPlans = null;
+    protected List<CompletableFuture<Void>> loadPlanFutures = null;
     protected Map<String,Path> unusedWriterPaths = null;
     protected Map<String,Path> usedWriterPaths = null;
     protected Map<String,String> writerTableNames = null;
@@ -177,6 +192,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         conf.set(CONFIGURE_LOCALITY_GROUPS, Joiner.on(",").join(splits, tableName));
     }
 
+    public static boolean loadPlanningEnabled(Configuration conf) {
+        return conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V1).equals(ImportMode.V2);
+    }
+
     /**
      * Insert a count into the filename. The filename is expected to end with our extension.
      *
@@ -238,7 +257,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         filename = insertFileCount(filename, count.intValue());
 
         // now create and register the writer
-        SizeTrackingWriter writer = openWriter(filename.toString(), tableConf);
+        SizeTrackingWriter writer = openWriter(filename.toString(), tableConf, table);
         writer.startDefaultLocalityGroup();
         writers.put(key, writer);
         unusedWriterPaths.put(key, filename);
@@ -249,11 +268,21 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
     }
 
-    protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
+    protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf, String table) throws IOException {
         startWriteTime = System.currentTimeMillis();
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
-        return new SizeTrackingWriter(
-                        FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs).withTableConfiguration(tableConf).build());
+        // @formatter:off
+
+        var builder = org.apache.accumulo.core.client.rfile.RFile.newWriter().to(filename).withFileSystem(fs).withTableProperties(tableConf);
+        if(this.loadPlanningEnabled) {
+            var splits = SplitsFile.getSplits(conf, table);
+            if(splits != null && !splits.isEmpty()) {
+                LoadPlan.SplitResolver splitResolver = row->findContainingSplits(row, splits);
+                builder = builder.withSplitResolver(splitResolver);
+            }
+        }
+
+        return new SizeTrackingWriter(builder.build());
+        // @formatter:on
     }
 
     /**
@@ -271,19 +300,92 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         // don't bother if we have not created a writer for this key yet
         if (writer != null) {
             String table = writerTableNames.get(key);
-            Path filename = usedWriterPaths.get(key);
+            Path file = usedWriterPaths.get(key);
             // don't bother if this writer has not been used yet
-            if (filename != null) {
+            if (file != null) {
                 writer.close();
+                if (loadPlanningEnabled) {
+                    addLoadPlan(table, writer.getLoadPlan(file.getName()));
+                }
                 // pull the index off the filename
-                filename = removeFileCount(filename);
-                createAndRegisterWriter(key, table, filename, tableConfigs.get(table));
+                file = removeFileCount(file);
+                createAndRegisterWriter(key, table, file, tableConfigs.get(table));
             }
         }
     }
 
-    public static class SizeTrackingWriter implements FileSKVWriter {
-        private FileSKVWriter delegate;
+    private void addLoadPlan(String tableName, LoadPlan loadPlan) {
+        loadPlans.computeIfAbsent(tableName, t -> new ArrayList<>()).add(loadPlan);
+    }
+
+    protected void commitLoadPlans(TaskAttemptContext context) {
+        loadPlanFutures.stream().forEach(f -> {
+            try {
+                f.get();
+            } catch (Exception e) {
+                log.error("Load planning failed", e);
+                throw new RuntimeException(e);
+            }
+        });
+        writeLoadPlans(context);
+    }
+
+    private void writeLoadPlans(TaskAttemptContext context) {
+        log.debug("Writing bulk load plans to disk for all tables");
+        // Consolidate all plans for a table into a single file
+        List<CompletableFuture<Void>> futures = new LinkedList<>();
+        for (Map.Entry<String,List<LoadPlan>> entry : loadPlans.entrySet()) {
+            var builder = LoadPlan.builder();
+            entry.getValue().stream().forEach(plan -> builder.addPlan(plan));
+            var table = entry.getKey();
+            var path = new Path(String.format("%s/%s", workDir, table), getUniqueFile(context, "accumulo-bulk-loadplan", ".json"));
+            var loadPlan = builder.build();
+            //@formatter:off
+            futures.add(CompletableFuture.runAsync(() -> {
+                try (FSDataOutputStream out = fs.create(path)) {
+                    log.debug("Begin writing load plan for " + path);
+                    out.write(loadPlan.toJson().getBytes(StandardCharsets.UTF_8));
+                    log.debug("Completed writing load plan for " + path);
+                } catch (IOException ioe) {
+                    log.error("Failed to write plan for " + path, ioe);
+                    throw new RuntimeException(ioe);
+                }
+            }));
+            //@formatter:on
+        }
+        futures.stream().forEach(f -> {
+            try {
+                f.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        log.debug("Finished writing bulk load plans to disk");
+    }
+
+    /**
+     * Finds two contiguous table splits that contain the specified row should reside
+     *
+     * @param lookupRow
+     *            Row value to be mapped
+     * @param tableSplits
+     *            Splits for the table in question
+     * @return KeyExtent mapping for the given row
+     */
+    static LoadPlan.TableSplits findContainingSplits(Text lookupRow, List<Text> tableSplits) {
+        int position = Collections.binarySearch(tableSplits, lookupRow);
+        if (position < 0) {
+            position = -1 * (position + 1);
+        }
+
+        Text prevRow = position == 0 ? null : tableSplits.get(position - 1);
+        Text endRow = position == tableSplits.size() ? null : tableSplits.get(position);
+
+        return new LoadPlan.TableSplits(prevRow, endRow);
+    }
+
+    public static class SizeTrackingWriter {
+        private RFileWriter delegate;
         long size = 0;
         int entries = 0;
 
@@ -295,12 +397,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             return entries;
         }
 
-        public boolean supportsLocalityGroups() {
-            return delegate.supportsLocalityGroups();
-        }
-
         public void startNewLocalityGroup(String name, Set<ByteSequence> columnFamilies) throws IOException {
-            delegate.startNewLocalityGroup(name, columnFamilies);
+            var fams = columnFamilies.stream().map(bs -> bs.toArray()).collect(Collectors.toList());
+            delegate.startNewLocalityGroup(name, fams);
         }
 
         public void startDefaultLocalityGroup() throws IOException {
@@ -313,20 +412,19 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             delegate.append(key, value);
         }
 
-        public DataOutputStream createMetaStore(String name) throws IOException {
-            return delegate.createMetaStore(name);
-        }
-
         public void close() throws IOException {
             delegate.close();
         }
 
-        @Override
         public long getLength() throws IOException {
             return getSize();
         }
 
-        public SizeTrackingWriter(FileSKVWriter delegate) {
+        public LoadPlan getLoadPlan(String filename) {
+            return delegate.getLoadPlan(filename);
+        }
+
+        public SizeTrackingWriter(RFileWriter delegate) {
             this.delegate = delegate;
         }
     }
@@ -460,6 +558,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         columnFamilyToLocalityGroup = Maps.newHashMap();
         localityGroupToColumnFamilies = Maps.newHashMap();
 
+        loadPlanningEnabled = loadPlanningEnabled(conf);
+        if (loadPlanningEnabled) {
+            loadPlans = new ConcurrentHashMap<>();
+            loadPlanFutures = new LinkedList<>();
+        }
+
         extension = conf.get(FILE_TYPE);
         if (extension == null || extension.isEmpty())
             extension = RFile.EXTENSION;
@@ -558,15 +662,31 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     }
                 }
                 writer.append(key.getKey(), value);
-
             }
 
             @Override
             public void close(TaskAttemptContext context) throws IOException, InterruptedException {
-                // Close all of the Map File Writers
-                for (SizeTrackingWriter writer : writers.values()) {
+                Preconditions.checkState(Collections.disjoint(usedWriterPaths.keySet(), unusedWriterPaths.keySet()), "Sets unexpectedly overlap %s %s",
+                                usedWriterPaths.keySet(), unusedWriterPaths.keySet());
+                Preconditions.checkState(writers.keySet().equals(Sets.union(usedWriterPaths.keySet(), unusedWriterPaths.keySet())),
+                                "Some keys are missing from writer paths %s %s %s", writers.keySet(), usedWriterPaths.keySet(), unusedWriterPaths.keySet());
+
+                for (Map.Entry<String,SizeTrackingWriter> entry : writers.entrySet()) {
+                    var writer = entry.getValue();
                     writer.close();
+                    if (loadPlanningEnabled) {
+                        var tableName = writerTableNames.get(entry.getKey());
+                        var rfilePath = usedWriterPaths.get(entry.getKey());
+                        if (rfilePath != null) {
+                            addLoadPlan(tableName, writer.getLoadPlan(rfilePath.getName()));
+                        } // else this table is unused and should exist in unusedWriterPaths according to previous checks
+                    }
                 }
+
+                if (loadPlanningEnabled) {
+                    commitLoadPlans(context);
+                }
+
                 // To verify the file was actually written successfully, we need to reopen it which will reread
                 // the index at the end and verify its integrity.
                 FileOperations fops = FileOperations.getInstance();
@@ -628,6 +748,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         if (shardLocation == null) {
                             // in this case we have a shard id that has no split. Lets put this in one "extra" file
                             shardLocation = "extra";
+                        } else {
+                            // Ensure there's no colon
+                            shardLocation = shardLocation.replace(":", "_");
                         }
                     }
                     // Combine table name with shard location so that we end up

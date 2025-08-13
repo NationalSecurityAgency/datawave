@@ -18,7 +18,7 @@
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.type-utils>3.1.2</version.datawave.type-utils>
@@ -120,6 +120,12 @@
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>xerces</groupId>
