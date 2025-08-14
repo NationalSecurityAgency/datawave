@@ -170,21 +170,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         SessionOptions newOptions = new SessionOptions(options);
 
         for (IteratorSetting setting : options.getIterators()) {
-
-            int documentRangeCount = 0;
-            int shardRangeCount = 0;
-
-            for (Range range : newSettings.getRanges()) {
-                Key key = range.getStartKey();
-                String cf = key.getColumnFamily().toString();
-                if (cf.length() > 0) {
-                    documentRangeCount++;
-                } else {
-                    shardRangeCount++;
-                }
-            }
-
-            IteratorSetting newIteratorSettings = apply(setting, input.getRanges(), documentRangeCount, shardRangeCount);
+            IteratorSetting newIteratorSettings = apply(setting, input.getRanges());
 
             newOptions.removeScanIterator(setting.getName());
             newOptions.addScanIterator(newIteratorSettings);
@@ -198,7 +184,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         return newSettings;
     }
 
-    public IteratorSetting apply(IteratorSetting setting, Collection<Range> ranges, int documentRangeCount, int shardRangeCount) {
+    public IteratorSetting apply(IteratorSetting setting, Collection<Range> ranges) {
         final String query = setting.getOptions().get(QueryOptions.QUERY);
         if (query == null) {
             return setting;
@@ -207,6 +193,20 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         IteratorSetting newIteratorSetting = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
 
         newIteratorSetting.addOptions(setting.getOptions());
+
+        int documentRangeCount = 0;
+        int shardRangeCount = 0;
+
+        for (Range range : ranges) {
+            Key key = range.getStartKey();
+            String cf = key.getColumnFamily().toString();
+            if (!cf.isEmpty()) {
+                documentRangeCount++;
+            } else {
+                shardRangeCount++;
+            }
+        }
+
         try {
 
             ASTJexlScript script = null;
@@ -400,10 +400,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
             }
             if (logic instanceof WritesQuerySubplanMetrics) {
-                RangeCounts ranges = new RangeCounts();
-                ranges.setDocumentRangeCount(documentRangeCount);
-                ranges.setShardRangeCount(shardRangeCount);
-                ((WritesQuerySubplanMetrics) logic).addSubPlan(newQuery, ranges);
+                RangeCounts rangeCounts = new RangeCounts();
+                rangeCounts.setDocumentRangeCount(documentRangeCount);
+                rangeCounts.setShardRangeCount(shardRangeCount);
+                ((WritesQuerySubplanMetrics) logic).addSubPlan(newQuery, rangeCounts);
             }
         } catch (ParseException e) {
             throw new DatawaveFatalQueryException(e);
