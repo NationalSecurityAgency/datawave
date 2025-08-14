@@ -1034,16 +1034,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                         IteratorThreadPoolManager.removeIvarator(future.getIvaratorRunnable().getTaskName(), this.initEnv);
                     }
                 }
-                log.info(String.format(controlDir + ": Suspended Ivarator %s fillSortedSets for %d ranges", ivaratorInfo, boundingFiRanges.size()));
+                log.info(String.format("%s: Suspended Ivarator %s fillSortedSets for %d ranges", controlDir, ivaratorInfo, boundingFiRanges.size()));
             }
         }
 
         long fillSetTiming = System.currentTimeMillis() - firstIvaratorRunnableCreated;
-        log.info(String.format(controlDir + ": Completed Ivarator %s fillSortedSets for %d ranges, matched %d of %d keys in %dms", ivaratorInfo,
+        log.info(String.format("%s: Completed Ivarator %s fillSortedSets for %d ranges, matched %d of %d keys in %dms", controlDir, ivaratorInfo,
                         boundingFiRanges.size(), matched, scanned, fillSetTiming));
 
         if (failed) {
-            log.error(String.format(controlDir + ": Failed Ivarator %s fillSortedSets: %s", ivaratorInfo, result), exception);
+            log.error(String.format("%s: Failed Ivarator %s fillSortedSets: %s", controlDir, ivaratorInfo, result), exception);
             throw new IvaratorException("Failed Ivarator fillSortedSets: " + result, exception);
         }
 
@@ -1313,7 +1313,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 String taskName = ivaratorRunnable.getTaskName();
                 Status status = ivaratorRunnable.getStatus();
                 if (!status.equals(CREATED) && !status.equals(SUSPENDED) && !status.equals(COMPLETED)) {
-                    log.info(String.format(controlDir + ": Resuming Ivarator %s failed - taskName:%s has status:%s", ivaratorInfo, taskName, status));
+                    log.info(String.format("%s: Resuming Ivarator %s failed - taskName:%s has status:%s", controlDir, ivaratorInfo, taskName, status));
                     canResume = false;
                     break;
                 }
@@ -1321,7 +1321,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 if (previousIvarator == null) {
                     previousIvarator = ivaratorRunnable.getIvarator();
                 } else if (previousIvarator != ivaratorRunnable.getIvarator()) {
-                    log.info(String.format(controlDir + ": Resuming Ivarator %s failed - taskName:%s has inconsistent ivarator", ivaratorInfo, taskName));
+                    log.info(String.format("%s: Resuming Ivarator %s failed - taskName:%s has inconsistent ivarator", controlDir, ivaratorInfo, taskName));
                     canResume = false;
                     break;
                 }
@@ -1360,7 +1360,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 }
             }
             int recreated = this.boundingFiRanges.size() - resumed - completed;
-            log.info(String.format(controlDir + ": Resumed Ivarator %s IvaratorRunnables completed:%d resumed:%d recreated:%d", ivaratorInfo, completed,
+            log.info(String.format("%s: Resumed Ivarator %s IvaratorRunnables completed:%d resumed:%d recreated:%d", controlDir, ivaratorInfo, completed,
                             resumed, recreated));
         } else {
             // can not resume from the previous Ivarator, so ensure that the previous IvaratorFutures are removed
@@ -1422,12 +1422,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             if (!this.setControl.isCompleteAndPersisted(row)) {
                 this.set.clear();
                 this.keys = null;
-                log.info(String.format(controlDir + ": Creating empty HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s",
-                                getIvaratorInfo(row, false), ivaratorCacheDirs));
+                log.info(String.format("%s: Creating empty HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s",
+                                controlDir, getIvaratorInfo(row, false), ivaratorCacheDirs));
             } else {
                 this.keys = new CachingIterator<>(this.set.iterator());
-                log.info(String.format(controlDir + ": Reusing completed HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s",
-                                getIvaratorInfo(row, false), ivaratorCacheDirs));
+                log.info(String.format("%s: Reusing completed HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s",
+                                controlDir, getIvaratorInfo(row, false), ivaratorCacheDirs));
             }
 
             // reset the keyValues counter as we have a new set here
