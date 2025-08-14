@@ -400,7 +400,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     throw e2;
                 }
             } catch (WaitWindowOverrunException e) {
-                log.warn(id + ": Passing through WaitWindowOverrunException: " + e.getMessage());
+                log.warn(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                 // When comparing possible yield keys in the AndIterator, we choose the highest
                 // key because the uids of the sources need to be equal to return a match
                 this.waitWindowObserver.propagateException(null, true, false, e);
