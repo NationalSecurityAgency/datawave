@@ -964,7 +964,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             futures.add(fillSet(range, totalResults));
         }
         if (!resumeFromIvaratorFutures) {
-            log.info(String.format(controlDir + ": Started Ivarator %s IvaratorRunnables created:%d", getIvaratorInfo(fiRow.toString(), true), futures.size()));
+            log.info(String.format("%s: Started Ivarator %s IvaratorRunnables created:%d", controlDir, getIvaratorInfo(fiRow.toString(), true), futures.size()));
         }
 
         boolean failed = false;
