@@ -23,7 +23,7 @@
      -->
 
     <configuration>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <hashAlgorithm>SHA-256</hashAlgorithm>
         <validateXml>true</validateXml>
         <local>
@@ -35,14 +35,18 @@
     <input>
         <global>
             <glob>
-                {*.java,*.sh,*.py,*.properties}
+                {*.java,*.sh,*.py,*.properties,*.yml,*.yaml,Dockerfile*,*.json,*.xml}
             </glob>
             <includes>
                 <include>src/</include>
+                <include>docker/</include>
+                <include>config/</include>
             </includes>
             <excludes>
                 <exclude>pom.xml</exclude>
                 <exclude>/dev/null</exclude>
+                <exclude>target/</exclude>
+                <exclude>**/*.log</exclude>
             </excludes>
         </global>
         <plugins>
@@ -61,30 +65,84 @@
                     </excludeProperties>
                 </effectivePom>
             </plugin>
+            <!-- Exclude volatile properties from cache key for Docker builds -->
+            <plugin artifactId="kubernetes-maven-plugin">
+                <effectivePom>
+                    <excludeProperties>
+                        <excludeProperty>maven.build.timestamp</excludeProperty>
+                        <excludeProperty>user.name</excludeProperty>
+                        <excludeProperty>user.dir</excludeProperty>
+                    </excludeProperties>
+                </effectivePom>
+            </plugin>
+            <!-- Exclude volatile properties from Spring Boot packaging -->
+            <plugin artifactId="spring-boot-maven-plugin">
+                <effectivePom>
+                    <excludeProperties>
+                        <excludeProperty>maven.build.timestamp</excludeProperty>
+                        <excludeProperty>user.name</excludeProperty>
+                    </excludeProperties>
+                </effectivePom>
+            </plugin>
+            <!-- Exclude volatile properties from git commit plugin -->
+            <plugin artifactId="git-commit-id-maven-plugin">
+                <effectivePom>
+                    <excludeProperties>
+                        <excludeProperty>git.build.time</excludeProperty>
+                        <excludeProperty>git.build.host</excludeProperty>
+                        <excludeProperty>git.build.user.name</excludeProperty>
+                        <excludeProperty>git.build.user.email</excludeProperty>
+                    </excludeProperties>
+                </effectivePom>
+            </plugin>
         </plugins>
     </input>
     <executionControl>
         <runAlways>
             <goalsLists>
+                <!-- Always run install to ensure artifacts are available locally -->
                 <goalsList artifactId="maven-install-plugin">
                     <goals>
                         <goal>install</goal>
                     </goals>
                 </goalsList>
+                <!-- Always run Docker/Kubernetes image builds for compose setup -->
                 <goalsList artifactId="kubernetes-maven-plugin">
                     <goals>
                         <goal>build</goal>
                         <goal>push</goal>
                     </goals>
                 </goalsList>
+                <!-- Always run resource copying for proper configuration -->
                 <goalsList artifactId="maven-resources-plugin">
                     <goals>
                         <goal>copy-resources</goal>
                     </goals>
                 </goalsList>
+                <!-- Always run Spring Boot repackaging for microservices -->
                 <goalsList artifactId="spring-boot-maven-plugin">
                     <goals>
                         <goal>repackage</goal>
+                        <goal>build-info</goal>
+                    </goals>
+                </goalsList>
+                <!-- Always run Maven dependency plugin for artifact copying -->
+                <goalsList artifactId="maven-dependency-plugin">
+                    <goals>
+                        <goal>copy</goal>
+                        <goal>copy-dependencies</goal>
+                    </goals>
+                </goalsList>
+                <!-- Always run git commit info generation -->
+                <goalsList artifactId="git-commit-id-maven-plugin">
+                    <goals>
+                        <goal>revision</goal>
+                    </goals>
+                </goalsList>
+                <!-- Always run Maven deploy plugin for publishing -->
+                <goalsList artifactId="maven-deploy-plugin">
+                    <goals>
+                        <goal>deploy</goal>
                     </goals>
                 </goalsList>
             </goalsLists>
