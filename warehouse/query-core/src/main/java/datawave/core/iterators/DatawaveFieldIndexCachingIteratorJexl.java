@@ -964,7 +964,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             futures.add(fillSet(range, totalResults));
         }
         if (!resumeFromIvaratorFutures) {
-            log.info(String.format("%s: Started Ivarator %s IvaratorRunnables created:%d", controlDir, getIvaratorInfo(fiRow.toString(), true), futures.size()));
+            log.info(String.format("%s: Started Ivarator %s IvaratorRunnables created:%d", controlDir, getIvaratorInfo(fiRow.toString(), true),
+                            futures.size()));
         }
 
         boolean failed = false;
@@ -1422,12 +1423,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             if (!this.setControl.isCompleteAndPersisted(row)) {
                 this.set.clear();
                 this.keys = null;
-                log.info(String.format("%s: Creating empty HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s",
-                                controlDir, getIvaratorInfo(row, false), ivaratorCacheDirs));
+                log.info(String.format("%s: Creating empty HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s", controlDir,
+                                getIvaratorInfo(row, false), ivaratorCacheDirs));
             } else {
                 this.keys = new CachingIterator<>(this.set.iterator());
-                log.info(String.format("%s: Reusing completed HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s",
-                                controlDir, getIvaratorInfo(row, false), ivaratorCacheDirs));
+                log.info(String.format("%s: Reusing completed HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s", controlDir,
+                                getIvaratorInfo(row, false), ivaratorCacheDirs));
             }
 
             // reset the keyValues counter as we have a new set here
