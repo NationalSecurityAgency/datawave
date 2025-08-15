@@ -142,4 +142,9 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
             seek(new Range(pointer, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), seekColumnFamilies, seekInclusive);
         }
     }
+
+    @Override
+    public String toString() {
+        return "DocumentAggregatingIterator(" + getSource() + ')';
+    }
 }

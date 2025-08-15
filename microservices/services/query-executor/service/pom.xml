@@ -19,7 +19,7 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.curator>5.2.0</version.curator>
         <version.datawave>7.3.0</version.datawave>
         <version.datawave.query-executor-api>1.0.7</version.datawave.query-executor-api>
