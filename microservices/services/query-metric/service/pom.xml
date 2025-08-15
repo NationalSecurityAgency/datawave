@@ -28,8 +28,8 @@
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
         <version.datawave.query-metric-api>4.1.1</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.5</version.datawave.starter>
-        <version.datawave.starter-datawave-query-metric>3.0.3</version.datawave.starter-datawave-query-metric>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
+        <version.datawave.starter-metrics>3.0.3</version.datawave.starter-metrics>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
         <version.protobuf-java>3.16.3</version.protobuf-java>
@@ -224,7 +224,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-query-metric</artifactId>
-                <version>${version.datawave.starter-datawave-query-metric}</version>
+                <version>${version.datawave.starter-metrics}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
