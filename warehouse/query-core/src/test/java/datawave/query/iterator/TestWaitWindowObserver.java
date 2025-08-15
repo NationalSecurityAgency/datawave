@@ -11,7 +11,7 @@ public class TestWaitWindowObserver extends WaitWindowObserver {
 
     protected AtomicLong checksRemainingBeforeYield = new AtomicLong(Long.MAX_VALUE);
     protected long maxChecksBeforeYield;
-    protected long randomYieldFrequency;
+    protected long randomYieldFrequency; // percentile
     protected boolean isStarted = false;
     protected Random random = new Random();
 
@@ -39,7 +39,7 @@ public class TestWaitWindowObserver extends WaitWindowObserver {
     @Override
     public boolean waitWindowOverrun() {
         checksRemainingBeforeYield.decrementAndGet();
-        if (isStarted && ((randomYieldFrequency > 0 && (random.nextInt() % randomYieldFrequency == 0)) || checksRemainingBeforeYield.get() <= 0)) {
+        if (isStarted && ((randomYieldFrequency > 0 && (random.nextInt(100) < randomYieldFrequency)) || checksRemainingBeforeYield.get() <= 0)) {
             checksRemainingBeforeYield.set(0);
             return true;
         } else {
@@ -50,7 +50,7 @@ public class TestWaitWindowObserver extends WaitWindowObserver {
     @Override
     public long remainingTimeMs() {
         checksRemainingBeforeYield.decrementAndGet();
-        if (isStarted && ((randomYieldFrequency > 0 && (random.nextInt() % randomYieldFrequency == 0)) || checksRemainingBeforeYield.get() <= 0)) {
+        if (isStarted && ((randomYieldFrequency > 0 && (random.nextInt(100) < randomYieldFrequency)) || checksRemainingBeforeYield.get() <= 0)) {
             checksRemainingBeforeYield.set(0);
             return 0;
         } else {
