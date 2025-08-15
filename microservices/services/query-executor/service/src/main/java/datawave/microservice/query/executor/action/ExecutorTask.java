@@ -3,8 +3,8 @@ package datawave.microservice.query.executor.action;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -404,7 +404,7 @@ public abstract class ExecutorTask implements Runnable {
                         baseQueryMetric.setSubPlans(((WritesQuerySubplanMetrics) queryLogic).getSubPlans());
                         // Since the subPlans have been added to baseQueryMetric, they are removed from the logic
                         // to prevent any duplicates.
-                        ((WritesQuerySubplanMetrics) queryLogic).setSubPlans(new HashMap<String,RangeCounts>());
+                        ((WritesQuerySubplanMetrics) queryLogic).setSubPlans(new TreeMap<String,RangeCounts>());
                     }
                 }
                 try {
