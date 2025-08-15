@@ -57,7 +57,12 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             this.expansionFields = new HashSet<>();
         }
 
-        this.allTypes = helper.getAllDatatypes();
+        this.allTypes = new HashSet<>();
+        this.allTypes.addAll(helper.getAllDatatypes());
+        for (Type<?> type : config.getExcludeUnfieldedTypes()) {
+            allTypes.removeIf(dataType -> dataType.getClass().equals(type.getClass()));
+        }
+
         this.stage = "field";
     }
 
