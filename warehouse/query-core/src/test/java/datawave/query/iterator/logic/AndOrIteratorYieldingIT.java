@@ -90,6 +90,18 @@ public class AndOrIteratorYieldingIT extends BaseNestedIteratorYieldingTest {
         }
     }
 
+    // A && (B || (C && D))
+    @Test
+    public void testDeeplyNestedQuery() throws Exception {
+        log.info("deeply nested query: A || (B && (C || D)");
+        for (int i = 0; i < maxIterations; i++) {
+            rebuildUids();
+            WaitWindowObserver observer = new TestWaitWindowObserver(100, 25);
+            observer.setYieldCallback(new YieldCallback<>());
+            drive(observer, this::createDeeplyNestedQuery, this::expectedForDeeplyNestedQuery);
+        }
+    }
+
     /**
      * Create a NestedIterator for a single nested union
      *
@@ -184,6 +196,25 @@ public class AndOrIteratorYieldingIT extends BaseNestedIteratorYieldingTest {
         return new OrIterator<>(List.of(anchor, intersection), null, observer);
     }
 
+    /**
+     * Create a NestedIterator for a deeply nested query
+     *
+     * @param observer
+     *            the WaitWindowObserver
+     * @return a NestedIterator
+     */
+    private NestedIterator<Key> createDeeplyNestedQuery(WaitWindowObserver observer) {
+        // A && (B || (C && D)
+        NestedIterator<Key> a = createIterator("A", new TreeSet<>(uidsA));
+        NestedIterator<Key> b = createIterator("B", new TreeSet<>(uidsB));
+        NestedIterator<Key> c = createIterator("C", new TreeSet<>(uidsC));
+        NestedIterator<Key> d = createIterator("D", new TreeSet<>(uidsD));
+
+        AndIterator<Key> cd = new AndIterator<>(List.of(c, d), null, observer);
+        OrIterator<Key> bcd = new OrIterator<>(List.of(b, cd), null, observer);
+        return new AndIterator<>(List.of(a, bcd), null, observer);
+    }
+
     private SortedSet<String> expectedForNestedUnion() {
         // A && (B || C)
         SortedSet<String> nested = new TreeSet<>(uidsB);
@@ -237,5 +268,18 @@ public class AndOrIteratorYieldingIT extends BaseNestedIteratorYieldingTest {
 
         a.addAll(b);
         return a;
+    }
+
+    private SortedSet<String> expectedForDeeplyNestedQuery() {
+        // A && (B || (C && D)
+        SortedSet<String> cd = new TreeSet<>(uidsC);
+        cd.retainAll(uidsD);
+
+        SortedSet<String> bcd = new TreeSet<>(uidsB);
+        bcd.addAll(cd);
+
+        SortedSet<String> abcd = new TreeSet<>(uidsA);
+        abcd.retainAll(bcd);
+        return abcd;
     }
 }
