@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -18,7 +19,7 @@ public class StringRangeCountMapAdapter extends XmlAdapter<StringRangeCountMapAd
 
     @Override
     public Map<String,RangeCounts> unmarshal(StringRangeCountMap v) throws Exception {
-        HashMap<String,RangeCounts> map = new HashMap<>();
+        TreeMap<String,RangeCounts> map = new TreeMap<>();
         for (StringRangeCountMapEntry entry : v.entries) {
             RangeCounts unmarshalledRangeCounts = new RangeCounts();
             unmarshalledRangeCounts.setDocumentRangeCount(Long.parseLong(entry.value.split(",")[0]));

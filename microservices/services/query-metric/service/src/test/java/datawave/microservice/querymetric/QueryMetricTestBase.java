@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.inject.Named;
 
@@ -358,7 +359,7 @@ public class QueryMetricTestBase {
     }
 
     private static Map<String,RangeCounts> createSubplans() {
-        Map<String,RangeCounts> subPlans = new HashMap<>();
+        Map<String,RangeCounts> subPlans = new TreeMap<>();
 
         RangeCounts rangeCountOne = new RangeCounts();
         rangeCountOne.setDocumentRangeCount(3);

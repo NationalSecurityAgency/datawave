@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -425,7 +426,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
     @Test
     public void CombineSubPlanCompleteMetricsTest() throws Exception {
         QueryMetric updatedQueryMetric = (QueryMetric) createMetric();
-        updatedQueryMetric.setSubPlans(new HashMap<>());
+        updatedQueryMetric.setSubPlans(new TreeMap<>());
         RangeCounts updatedRangeCounts = new RangeCounts();
         updatedRangeCounts.setDocumentRangeCount(2);
         updatedRangeCounts.setShardRangeCount(1);
@@ -433,7 +434,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         updatedQueryMetric.addSubPlan("F2 == value2 || F3 == value3 || F4 == value4", updatedRangeCounts);
 
         QueryMetric storedQueryMetric = (QueryMetric) createMetric();
-        storedQueryMetric.setSubPlans(new HashMap<>());
+        storedQueryMetric.setSubPlans(new TreeMap<>());
         RangeCounts storedRangeCounts = new RangeCounts();
         storedRangeCounts.setDocumentRangeCount(1);
         storedRangeCounts.setShardRangeCount(0);
@@ -460,14 +461,14 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
     @Test
     public void CombineSubPlanDistributedMetricsTest() throws Exception {
         QueryMetric updatedQueryMetric = (QueryMetric) createMetric();
-        updatedQueryMetric.setSubPlans(new HashMap<>());
+        updatedQueryMetric.setSubPlans(new TreeMap<>());
         RangeCounts updatedRangeCounts = new RangeCounts();
         updatedRangeCounts.setDocumentRangeCount(1);
         updatedRangeCounts.setShardRangeCount(0);
         updatedQueryMetric.addSubPlan("F1 == value1 || F2 == value2", updatedRangeCounts);
 
         QueryMetric storedQueryMetric = (QueryMetric) createMetric();
-        storedQueryMetric.setSubPlans(new HashMap<>());
+        storedQueryMetric.setSubPlans(new TreeMap<>());
         RangeCounts storedRangeCounts = new RangeCounts();
         storedRangeCounts.setDocumentRangeCount(2);
         storedRangeCounts.setShardRangeCount(1);
