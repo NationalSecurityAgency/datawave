@@ -569,7 +569,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
-            Map<String,RangeCounts> subplans = new HashMap<>();
+            Map<String,RangeCounts> subplans = new TreeMap<>();
 
             boolean createDateSet = false;
             for (FieldBase f : field) {
