@@ -38,23 +38,24 @@ public class TestWaitWindowObserver extends WaitWindowObserver {
 
     @Override
     public boolean waitWindowOverrun() {
-        checksRemainingBeforeYield.decrementAndGet();
-        if (isStarted && ((randomYieldFrequency > 0 && (random.nextInt(100) < randomYieldFrequency)) || checksRemainingBeforeYield.get() <= 0)) {
-            checksRemainingBeforeYield.set(0);
-            return true;
-        } else {
-            return false;
-        }
+        return yielded();
     }
 
     @Override
     public long remainingTimeMs() {
-        checksRemainingBeforeYield.decrementAndGet();
-        if (isStarted && ((randomYieldFrequency > 0 && (random.nextInt(100) < randomYieldFrequency)) || checksRemainingBeforeYield.get() <= 0)) {
-            checksRemainingBeforeYield.set(0);
+        if (yielded()) {
             return 0;
         } else {
             return Long.MAX_VALUE;
         }
+    }
+
+    private boolean yielded() {
+        checksRemainingBeforeYield.decrementAndGet();
+        if (isStarted && ((randomYieldFrequency > 0 && (random.nextInt(100) < randomYieldFrequency)) || checksRemainingBeforeYield.get() <= 0)) {
+            checksRemainingBeforeYield.set(0);
+            return true;
+        }
+        return false;
     }
 }
