@@ -703,25 +703,21 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     }
 
     public void addSubPlan(String plan, RangeCounts rangeCounts) {
-        synchronized (this.subPlans) {
-            if (subPlans.containsKey(plan)) {
-                RangeCounts combinedCounts = new RangeCounts();
-                RangeCounts currentCounts = subPlans.get(plan);
-                combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
-                combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
-                subPlans.put(plan, combinedCounts);
-            } else {
-                subPlans.put(plan, rangeCounts);
-            }
+        if (subPlans.containsKey(plan)) {
+            RangeCounts combinedCounts = new RangeCounts();
+            RangeCounts currentCounts = subPlans.get(plan);
+            combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
+            combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
+            subPlans.put(plan, combinedCounts);
+        } else {
+            subPlans.put(plan, rangeCounts);
         }
     }
 
     public void addSubPlans(Map<String,RangeCounts> subplanMap) {
-        synchronized (this.subPlans) {
-            if (subplanMap != null && !subplanMap.isEmpty()) {
-                for (Map.Entry<String,RangeCounts> entry : subplanMap.entrySet()) {
-                    addSubPlan(entry.getKey(), entry.getValue());
-                }
+        if (subplanMap != null && !subplanMap.isEmpty()) {
+            for (Map.Entry<String,RangeCounts> entry : subplanMap.entrySet()) {
+                addSubPlan(entry.getKey(), entry.getValue());
             }
         }
     }
