@@ -72,7 +72,6 @@
           <q-input
             borderless
             dense
-            debounce="300"
             v-model="changeFilter"
             placeholder="Search"
             @keydown.enter.prevent="queryTable"
@@ -83,7 +82,6 @@
                 size="12px"
                 color="cyan-8"
                 icon="search"
-                round
                 dense
                 @click="queryTable"
               />
@@ -91,12 +89,86 @@
         <template v-slot:header="props">
           <q-tr :props="props">
             <q-th />
-            <q-th v-for="col in props.cols" :key="col.name" :props="props">
-              <div class="tooltip-wrapper">
-                {{ col.label }}
-                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
-                  {{ Feature.toolTipGen(col.name) }}
-                </q-tooltip>
+            <q-th
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+            >
+              <div class="tooltip-wrapper row items-center no-wrap">
+                <span class="q-mr-xs">
+                  <span class="cursor-pointer">
+                    {{ col.label }}
+                    <q-tooltip
+                      class="tooltip-text"
+                      anchor="bottom middle"
+                      self="top middle"
+                      :offset="[0, 5]"
+                    >
+                      {{ Feature.toolTipGen(col.name) }}
+                    </q-tooltip>
+                  </span>
+                </span>
+                <template v-if="col.name === 'lastUpdated'">
+                  <q-btn
+                    size="7px"
+                    color="cyan-8"
+                    icon="bi-funnel-fill"
+                    style="padding: 2.5px; margin-bottom: 1.5px;"
+                    dense
+                    ref="buttonRef"
+                  >
+                    <q-menu
+                      anchor="bottom right"
+                      self="top right"
+                      :offset="[0, 5]"
+                    >
+                      <q-card
+                        style="max-width: 205px; padding: 5px; box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);"
+                        class="q-pa-sm"
+                      >
+                        <q-card-section class="text-center text-subtitle1" style="font-weight: 550;">
+                          FILTER DAYS
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-gutter-sm">
+                          <div class="row items-center q-col-gutter-sm">
+                            <q-input
+                              dense
+                              color="cyan-8"
+                              v-model="search"
+                              placeholder="30"
+                              @keyup.enter="queryTable(search)"
+                              style="width: 50px; margin-left: 15px;"
+                              input-class="text-center"
+                            />
+                            <q-item-label style="font-weight: 450;"> DAY(S) PRIOR</q-item-label>
+                          </div>
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-pt-none">
+                          <div class="row items-center q-gutter-sm" style="margin-top: 15px;">
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Apply"
+                              color="cyan-8"
+                              @click="queryTable(search)"
+                            />
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Clear Filter"
+                              color="cyan-8"
+                              @click="queryTable()"
+                            />
+                          </div>
+                        </q-card-section>
+                      </q-card>
+                    </q-menu>
+                  </q-btn>
+                </template>
               </div>
             </q-th>
           </q-tr>
@@ -104,9 +176,9 @@
         <template v-slot:body="props">
           <q-tr
             :props="props"
-            v-if="Formatters.isVisible(props.row)"
+            v-if="Formatters.buttonParse(props.row)"
           >
-            <q-td style="width: 60px; min-width: 60px">
+            <q-td class="cell-spacing">
               <q-btn
                 size="9px"
                 color="cyan-8"
@@ -119,8 +191,33 @@
                   }
                 "
                 :icon="props.row.isVisible.value ? 'remove' : 'add'"
-                v-if="Formatters.buttonParse(props.cols, props.row)"
               />
+            </q-td>
+            <q-td
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              :class="{ 'text-bold': col.name === 'dataType'}"
+              style="font-size: 13px;"
+              @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+              >
+                <label style="cursor: pointer;">
+                  {{
+                    Formatters.maxSubstring(
+                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                    )
+                  }}
+                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                  </q-tooltip>
+                </label>
+              </q-td>
+          </q-tr>
+          <q-tr
+            :props="props"
+            v-if="Formatters.isVisible(props.row)"
+          >
+            <q-td class="cell-spacing">
               <q-icon
                   style="margin-left: 4px;"
                   size="1rem"
@@ -134,7 +231,7 @@
               :key="col.name"
               :props="props"
               style="font-size: 13px;"
-              @click="Feature.copyLabel(col.name, col.value)"
+              @click="Feature.copyLabel(col.name, col.value, null)"
             >
               <label style="cursor: pointer;">
                 {{
@@ -161,7 +258,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
@@ -175,9 +273,12 @@ const $q = useQuasar();
 const table = ref();
 const loading = ref(true);
 const filter = ref('');
-const changeFilter = ref('');
+const route = useRoute();
+const router = useRouter();
+const changeFilter = ref<string>('');
 const banner = ref<Banner>();
 const system = ref<System>();
+const search = ref('');
 let rows: QTableProps['rows'] = [];
 const paginationFront = ref({
   rowsPerPage: 200,
@@ -233,13 +334,46 @@ onMounted(() => {
         return b.lastUpdated - a.lastUpdated;
       }
     });
-    rows = Formatters.setVisibility(rows);
+    rows = changeFilter.value
+      ? Formatters.setVisibility(rows) // if searched through URL bar, it removes 30 day filter.
+      : Formatters.setVisibility(rows, 30); // default at 30 days when loaded without '?search=<val>' query.
+
     loading.value = false;
   })
   .catch((reason) => {
     console.log('Error fetching and formatting rows: ' + reason);
   });
+
+  // This line is similar to the one in the watch() method below, but handles the search when initially set via the URL.
+  changeFilter.value = Formatters.filterSearch(route.query.search, changeFilter.value);
+
+  if (changeFilter.value) {
+    queryTable();
+  }
 });
+
+// This watch() handles a URL Change from a previous query.
+// Logic: Input + Table (reactive URL -> UI + Filters)
+watch(
+  () => route.query.search,
+  (searchVal) => {
+    // Converts the input into a valid string to be queried.
+    let searchValNew = Formatters.filterSearch(searchVal, '');
+
+    if (searchValNew !== changeFilter.value) {
+      changeFilter.value = searchValNew;
+      if (searchValNew) {
+        // Triggers a re-query if the user has changed to a new value.
+        queryTable();
+      } else {
+        // This retriggers back to the original state if user clears.
+        filter.value = '';
+        const originalRows = rows;
+        rows = Formatters.setVisibility(originalRows);
+      }
+    }
+  }
+);
 
 // Export - Attempts to Wrap the CSV and Download.
 function exportTable(this: any) {
@@ -275,9 +409,17 @@ function exportTable(this: any) {
 }
 
 // Query - Runs through a Search Process as it waits for the user.
-async function queryTable(this: any) {
-  // Wait Until User Enters...
+async function queryTable(priorDays?: any) {
   await waitUp();
+
+  // Handles the URL change to reflect when the user searches.
+  // Logic: Input -> URL (UI -> URL)
+  router.replace({
+    query: {
+      ...route.query,
+      search: changeFilter.value || undefined,
+    },
+  });
 
   // 1 - Filter the Rows
   const rowsToExport = table.value?.filteredSortedRows.filter(() => true);
@@ -286,14 +428,14 @@ async function queryTable(this: any) {
   const originalRows = rows;
   const triggerRefresh = paginationFront.value.rowsPerPage;
 
-  // 3 - Set the Current Rows to Filtered Value
-  rows = Formatters.setVisibility(rowsToExport);
+  // 3 - Set filtered rows with visibility flags updated
+  rows = Formatters.setVisibility(rowsToExport, priorDays);
 
-  // 4 - Trigger the Refresh
+  // 4 - Refresh pagination to trigger table update
   paginationFront.value.rowsPerPage = 100;
   paginationFront.value.rowsPerPage = triggerRefresh;
 
-  // 5 - Restore Original Rows for Next Query
+  // 5 - Restore original rows for next queries
   rows = originalRows;
 }
 

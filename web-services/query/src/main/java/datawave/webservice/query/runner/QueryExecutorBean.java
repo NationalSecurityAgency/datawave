@@ -71,9 +71,9 @@ import javax.xml.bind.Marshaller;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.jexl3.parser.TokenMgrException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -2274,13 +2274,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " closed.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getLeft();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getRight());
                 response.addMessage(id + " closed before create completed.");
             }
 
@@ -2334,13 +2334,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " closed.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getLeft();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getRight());
                 response.addMessage(id + " closed before create completed.");
             }
 
@@ -2428,13 +2428,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " canceled.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getLeft();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getRight());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
 
@@ -2489,13 +2489,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " closed.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getLeft();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getRight());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
 
