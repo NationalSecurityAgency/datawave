@@ -1411,16 +1411,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     public void addSubPlan(String plan, RangeCounts rangeCounts) {
-        synchronized (this.subPlans) {
-            if (subPlans.containsKey(plan)) {
-                RangeCounts combinedCounts = new RangeCounts();
-                RangeCounts currentCounts = subPlans.get(plan);
-                combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
-                combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
-                subPlans.put(plan, combinedCounts);
-            } else {
-                subPlans.put(plan, rangeCounts);
-            }
+        if (subPlans.containsKey(plan)) {
+            RangeCounts combinedCounts = new RangeCounts();
+            RangeCounts currentCounts = subPlans.get(plan);
+            combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
+            combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
+            subPlans.put(plan, combinedCounts);
+        } else {
+            subPlans.put(plan, rangeCounts);
         }
     }
 
