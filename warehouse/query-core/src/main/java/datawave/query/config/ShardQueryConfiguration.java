@@ -409,6 +409,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     private List<String> contentFieldNames = Collections.emptyList();
 
+    private List<Type<?>> excludeUnfieldedTypes = Collections.emptyList();
+
     /**
      * The source to use as the active query log name for all query iterators in scans generated for the shard query logic. If the value
      * {@value #TABLE_NAME_SOURCE} is supplied, the shard table name will be used. If {@value #QUERY_LOGIC_NAME_SOURCE} is supplied, the name of the shard query
@@ -727,6 +729,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
         this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
         this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+        this.setExcludeUnfieldedTypes(other.getExcludeUnfieldedTypes());
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         this.setIvaratorNumRetries(other.getIvaratorNumRetries());
@@ -1603,6 +1606,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+    }
+
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return excludeUnfieldedTypes;
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        this.excludeUnfieldedTypes = excludeUnfieldedTypes;
     }
 
     public int getMaxFieldIndexRangeSplit() {
@@ -3003,6 +3014,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize() &&
                 getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold() &&
                 getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout() &&
+                getExcludeUnfieldedTypes() == that.getExcludeUnfieldedTypes() &&
                 getMaxFieldIndexRangeSplit() == that.getMaxFieldIndexRangeSplit() &&
                 getIvaratorMaxOpenFiles() == that.getIvaratorMaxOpenFiles() &&
                 getIvaratorNumRetries() == that.getIvaratorNumRetries() &&
@@ -3272,6 +3284,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize(),
                 getIvaratorCacheScanPersistThreshold(),
                 getIvaratorCacheScanTimeout(),
+                getExcludeUnfieldedTypes(),
                 getMaxFieldIndexRangeSplit(),
                 getIvaratorMaxOpenFiles(),
                 getIvaratorNumRetries(),
