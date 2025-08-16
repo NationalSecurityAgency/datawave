@@ -33,6 +33,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.util.ConfigurationImpl;
@@ -377,6 +378,11 @@ public class SourceManagerTest {
         }
 
         @Override
+        public TableId getTableId() {
+            return null;
+        }
+
+        @Override
         public AccumuloConfiguration getConfig() {
             return conf;
         }
@@ -394,6 +400,11 @@ public class SourceManagerTest {
         @Override
         public boolean isUserCompaction() {
             return false;
+        }
+
+        @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
         }
 
         @Override
