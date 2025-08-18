@@ -2412,6 +2412,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setIvaratorCacheScanTimeout(hdfsCacheScanTimeoutMinutes * 1000 * 60);
     }
 
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return getConfig().getExcludeUnfieldedTypes();
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        getConfig().setExcludeUnfieldedTypes(excludeUnfieldedTypes);
+    }
+
     public String getHdfsSiteConfigURLs() {
         return getConfig().getHdfsSiteConfigURLs();
     }
