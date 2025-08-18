@@ -1411,14 +1411,16 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     public void addSubPlan(String plan, RangeCounts rangeCounts) {
-        if (subPlans.containsKey(plan)) {
-            RangeCounts combinedCounts = new RangeCounts();
-            RangeCounts currentCounts = subPlans.get(plan);
-            combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
-            combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
-            subPlans.put(plan, combinedCounts);
-        } else {
-            subPlans.put(plan, rangeCounts);
+        if (this.getCollectQuerySubPlans()) {
+            if (subPlans.containsKey(plan)) {
+                RangeCounts combinedCounts = new RangeCounts();
+                RangeCounts currentCounts = subPlans.get(plan);
+                combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
+                combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
+                subPlans.put(plan, combinedCounts);
+            } else {
+                subPlans.put(plan, rangeCounts);
+            }
         }
     }
 
@@ -2970,6 +2972,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setCollectTimingDetails(Boolean collectTimingDetails) {
         getConfig().setCollectTimingDetails(collectTimingDetails);
+    }
+
+    public Boolean getCollectQuerySubPlans() {
+        return getConfig().getCollectQuerySubPlans();
+    }
+
+    public void setCollectQuerySubPlans(Boolean collectQuerySubPlans) {
+        getConfig().setCollectQuerySubPlans(collectQuerySubPlans);
     }
 
     public Boolean getLogTimingDetails() {
