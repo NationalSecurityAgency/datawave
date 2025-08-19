@@ -844,18 +844,30 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         return values;
     }
 
-    public void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String column, String fieldValue, byte[] visibility,
+    public void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
-        if (shardId != null && fieldValue != null && column != null && visibility != null) {
-            String row = new String(shardId);
-            String cf = fieldValue;
-            String cq = column + '\u0000' + event.getDataType().outputName();
+        if (shardId != null && value != null && field != null && visibility != null) {
+            String row = new String(shardId) + '\u0000' + value;
+            String cf = field;
+            String cq = event.getDataType().outputName();
             String viz = new String(visibility);
+            long ts = getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(row, cf, cq, viz);
+            Key key = new Key(row, cf, cq, viz, ts);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
-            Value value = getValueForDayIndex(row);
-            values.put(bulkIngestKey, value);
+            Value bitSetValue = getValueForDayIndex(row);
+            values.put(bulkIngestKey, bitSetValue);
+
+            if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
+                // write both the masked value and masked visibility
+                // and the original value at the masked visibility
+                String maskedValue = maskedFieldHelper.get(field);
+                String maskedRow = new String(shardId) + '\u0000' + maskedValue;
+                String maskedViz = new String(maskedVisibility);
+                Key maskedKey = new Key(maskedRow, cf, cq, maskedViz, ts);
+                BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), maskedKey);
+                values.put(maskedBulkIngestKey, bitSetValue);
+            }
             log.info("wrote key for shard day index");
         }
     }
@@ -870,30 +882,46 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     /**
      * Get the shard number used as the offset for the day index
+     * <p>
+     * TODO: move to utility
      *
      * @param shard
      *            the shard
      * @return the day index offset
      */
     public int getOffsetForDayIndex(String shard) {
-        int index = shard.indexOf('_');
-        String bucket = shard.substring(index + 1);
+        int underscoreIndex = shard.indexOf('_');
+        int nullByteIndex = shard.indexOf('\u0000');
+        String bucket = shard.substring(underscoreIndex + 1, nullByteIndex);
         return Integer.parseInt(bucket);
     }
 
-    public void writeShardYearIndexKeyBitSet(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String column, String fieldValue,
-                    byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
+    public void writeShardYearIndexKeyBitSet(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
 
-        if (shardId != null && fieldValue != null && column != null && visibility != null) {
-            String row = new String(shardId);
-            String cf = fieldValue;
-            String cq = column + '\u0000' + event.getDataType().outputName();
+        if (shardId != null && value != null && field != null && visibility != null) {
+            String fullShard = new String(shardId);
+            // you are insane if the data is from the year 999 or 10,000
+            String row = fullShard.substring(0, 4) + '\u0000' + value;
+            String cf = field;
+            String cq = event.getDataType().outputName();
             String viz = new String(visibility);
 
-            Key key = new Key(row, cf, cq, viz);
-            BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
-            Value value = getValueForYearIndex(row);
-            values.put(bulkIngestKey, value);
+            Key key = new Key(row, cf, cq, viz, getIndexTimestamp(event.getTimestamp()));
+            BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
+            Value bitsetValue = getValueForYearIndex(fullShard);
+            values.put(bulkIngestKey, bitsetValue);
+
+            if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
+                // write both the masked value and masked visibility
+                // and the original value at the masked visibility
+                String maskedValue = maskedFieldHelper.get(field);
+                String maskedRow = fullShard.substring(0, 4) + '\u0000' + maskedValue;
+                String maskedViz = new String(maskedVisibility);
+                Key maskedKey = new Key(maskedRow, cf, cq, maskedViz, getIndexTimestamp(event.getTimestamp()));
+                BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), maskedKey);
+                values.put(maskedBulkIngestKey, bitsetValue);
+            }
             log.info("wrote bitset key for shard day index");
         }
     }
