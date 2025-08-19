@@ -248,7 +248,7 @@
         </template>
       </q-table>
     </div>
-    <HelpMenu :menu?="helpMenu" />
+    <HelpMenu v-if="helpMenu" :menu="helpMenu" />
   </main>
   <div v-if="banner?.enabled" :style="banner?.styleTop" style="margin-top: 0.50vh;">
       {{ banner?.messageTop }}
