@@ -22,5 +22,29 @@
     <module name="UnusedImports">
         <property name="severity" value="error"/>
     </module>
+    <module name="MissingJavadocType">
+        <property name="scope" value="protected"/>
+        <property name="tokens"
+                  value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF,
+                    RECORD_DEF, ANNOTATION_DEF"/>
+        <property name="excludeScope" value="nothing"/>
+        <property name="severity" value="warning"/>
+    </module>
+    <module name="JavadocMethod">
+      <property name="accessModifiers" value="public"/>
+      <property name="allowMissingParamTags" value="true"/>
+      <property name="allowMissingReturnTag" value="true"/>
+      <property name="allowedAnnotations" value="Override, Test"/>
+      <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF, COMPACT_CTOR_DEF"/>
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MissingJavadocMethod">
+      <property name="scope" value="protected"/>
+      <property name="allowMissingPropertyJavadoc" value="true"/>
+      <property name="allowedAnnotations" value="Override, Test"/>
+      <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF,
+                                   COMPACT_CTOR_DEF"/>
+      <property name="severity" value="error"/>
+    </module>
   </module>
 </module>

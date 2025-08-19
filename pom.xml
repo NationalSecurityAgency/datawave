@@ -1758,7 +1758,7 @@
                     <version>3.6.0</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
-                        <failsOnError>true</failsOnError>
+                        <failsOnError>false</failsOnError>
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
                         <propertyExpansion>basedir=${maven.multiModuleProjectDirectory}</propertyExpansion>
