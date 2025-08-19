@@ -83,6 +83,7 @@
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
+        <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
         <version.geoserver>2.26.2</version.geoserver>
@@ -355,6 +356,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${version.dnsjava}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
