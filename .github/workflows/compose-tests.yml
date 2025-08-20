@@ -1,0 +1,132 @@
+name: Compose
+
+on:
+  workflow_call:
+    inputs:
+      allow-snapshots:
+        description: 'Allow snapshots in the pom'
+        required: true
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.allow-snapshots }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose-build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      JAVA_VERSION: '11'
+      JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
+      MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
+      GITHUB_REGISTRY: ghcr.io
+      GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+      GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      # Clean up free space
+      - uses: ./.github/actions/free-space
+        with:
+          tool-cache: false
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          server-id: github-datawave
+        # username and password are the env variables names that maven will use
+          server-username: GITHUB_USERNAME
+          server-password: GITHUB_PASSWORD
+      - uses: actions/cache@v4
+        if: ${{ !inputs.allow-snapshots }}
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-
+            ${{ runner.os }}-maven-format-
+            ${{ runner.os }}-maven-
+      # Builds the quickstart and microservice docker images and runs a query test
+      - name: Docker Compose Update POMs to use Snapshots
+        if: ${{ inputs.allow-snapshots }}
+        run: |
+          export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
+          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+              versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+      - name: Docker Compose Build
+        run: |
+          export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
+          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
+              -Djkube.container-image.tags.1=latest \
+              clean install
+      - name: Docker Compose Clear Space
+        run: |
+          # free up some space so that we don't run out
+          docker system prune -f
+          export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
+          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+      - name: Docker Compose Accumulo Start
+        run: |
+          cd docker
+          ./bootstrap.sh
+          attempt=0
+          max_attempts=20
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+      - name: Docker Compose Ingest Tests
+        run: |
+          cd docker/scripts
+          ./testAll.sh
+      - name: Dump Logs
+        if: failure()
+        run: |
+          cd docker
+          docker compose logs
+      - name: Docker Compose Reset for Web
+        run: |
+          cd docker
+          docker compose down
+          sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--ingest", "--web", "--test"\]/g' docker-compose.yml
+      - name: Docker Compose Web Start and Run Tests
+        run: |
+          cd docker
+          ./bootstrap.sh
+          attempt=0
+          max_attempts=20
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+      - name: Docker Compose Web Test Logs
+        run: |
+          cd docker
+          docker compose logs -f quickstart

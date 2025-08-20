@@ -31,7 +31,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.hadoop>3.3.4</version.hadoop>
         <version.junit5>5.12.0</version.junit5>
         <version.log4j.bom>2.17.2</version.log4j.bom>
@@ -106,6 +106,18 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
     <pluginRepositories>
         <pluginRepository>
             <releases>

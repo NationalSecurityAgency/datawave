@@ -80,6 +80,11 @@ class InMemoryInstanceOperations implements InstanceOperations {
     }
 
     @Override
+    public Set<String> getCompactors() {
+        return Set.of();
+    }
+
+    @Override
     public List<String> getTabletServers() {
         return new ArrayList<>();
     }
