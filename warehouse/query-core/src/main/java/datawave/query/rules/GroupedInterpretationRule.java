@@ -45,7 +45,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
         QueryRuleResult result = new QueryRuleResult(getName());
         try {
             QueryNode luceneQuery = (QueryNode) config.getParsedQuery();
-            List<QueryNode> interpretNodes = GroupedInterpretationVisitor.check(luceneQuery, QueryNodeType.AND);
+            List<QueryNode> interpretNodes = GroupedInterpretationVisitor.check(luceneQuery);
             interpretNodes.stream().map(this::formatMessage).forEach(result::addMessage);
         } catch (Exception e) {
             log.error("Error occurred when validating against instance '" + getName() + "' of " + getClass(), e);
@@ -61,7 +61,6 @@ public class GroupedInterpretationRule extends ShardQueryRule {
 
     // Return a message about the given nodes.
     private String formatMessage(QueryNode node) {
-        System.out.println("formatMessage: " + LuceneQueryStringBuildingVisitor.build(node));
         // @formatter:off
         return new StringBuilder()
                 .append("Operator precedence may be missing, ")

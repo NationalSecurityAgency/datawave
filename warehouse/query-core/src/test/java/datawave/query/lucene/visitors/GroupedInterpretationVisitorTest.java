@@ -10,8 +10,7 @@ import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
@@ -22,24 +21,20 @@ class GroupedInterpretationVisitorTest {
     private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
 
     private String query;
-    private String junction;
     private final List<QueryNode> expectedNodes = new ArrayList<>();
 
     @AfterEach
     void tearDown() {
         query = null;
-        junction = null;
         expectedNodes.clear();
     }
 
     /**
      * Test a query with a single fielded term.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithSingleFieldedTerm(String junction) throws QueryNodeParseException {
+    @Test
+    void testQueryWithSingleFieldedTerm() throws QueryNodeParseException {
         givenQuery("FOO:abc");
-        givenJunction(junction);
 
         // Do not expect any results.
         assertResult();
@@ -48,11 +43,9 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query with a single fielded term.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithWrappedSingleFieldedTerm(String junction) throws QueryNodeParseException {
+    @Test
+    void testQueryWithWrappedSingleFieldedTerm() throws QueryNodeParseException {
         givenQuery("(FOO:abc)");
-        givenJunction(junction);
 
         // Do not expect any results.
         assertResult();
@@ -61,11 +54,9 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query that consists of a single unfielded terms. Only unfielded terms directly following a fielded term are expected.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithUnfieldedTermOnly(String junction) throws QueryNodeParseException {
+    @Test
+    void testQueryWithUnfieldedTermOnly() throws QueryNodeParseException {
         givenQuery("abc");
-        givenJunction(junction);
 
         // Do not expect any results.
         assertResult();
@@ -74,11 +65,9 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query that consists of an unfielded term before a fielded term. Only unfielded terms directly following a fielded term are expected.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithUnfieldedTermBeforeFieldedTerm(String junction) throws QueryNodeParseException {
+    @Test
+    void testQueryWithUnfieldedTermBeforeFieldedTerm() throws QueryNodeParseException {
         givenQuery("abc FOO:def");
-        givenJunction(junction);
 
         // Do not expect any results.
         assertResult();
@@ -87,14 +76,12 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query where terms are wrapped directly after a field name.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithWrappedTerms(String junction) throws QueryNodeParseException {
-        givenQuery("FOO:(abc " + junction + " def)");
-        givenJunction(junction);
+    @Test
+    void testQueryWithWrappedTerms() throws QueryNodeParseException {
+        givenQuery("FOO:(abc AND def)");
 
         // Expect the terms.
-        expectNode("(FOO:abc " + junction + " FOO:def)");
+        expectNode("(FOO:abc AND FOO:def)");
 
         assertResult();
     }
@@ -102,14 +89,12 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query where terms are wrapped multiple times in a nested fashion.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithNestedWrappedTerms(String junction) throws QueryNodeParseException {
-        givenQuery("FOO:(((abc " + junction + " def)))");
-        givenJunction(junction);
+    @Test
+    void testQueryWithNestedWrappedTerms() throws QueryNodeParseException {
+        givenQuery("FOO:(((abc AND def)))");
 
         // Expect the terms.
-        expectNode("(((FOO:abc " + junction + " FOO:def)))");
+        expectNode("(((FOO:abc AND FOO:def)))");
 
         assertResult();
     }
@@ -117,11 +102,9 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query where a single unfielded term follows a fielded term.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithSingleUnfieldedTermAfterFieldedTerm(String junction) throws QueryNodeParseException {
-        givenQuery("FOO:abc " + junction + " def");
-        givenJunction(junction);
+    @Test
+    void testQueryWithSingleUnfieldedTermAfterFieldedTerm() throws QueryNodeParseException {
+        givenQuery("FOO:abc AND def");
 
         // Do not expect any results.
         assertResult();
@@ -130,11 +113,9 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query where multiple unfielded terms follows a fielded term.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithMultipleUnfieldedTermAfterFieldedTerm(String junction) throws QueryNodeParseException {
-        givenQuery("FOO:abc " + junction + " def " + junction + " efg");
-        givenJunction(junction);
+    @Test
+    void testQueryWithMultipleUnfieldedTermAfterFieldedTerm() throws QueryNodeParseException {
+        givenQuery("FOO:abc AND def AND efg");
 
         // Do not expect any results.
         assertResult();
@@ -143,14 +124,12 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query where multiple unfielded terms follows a fielded term are all grouped.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithFullyGroupedFieldedTermAndUnfieldedTerms(String junction) throws QueryNodeParseException {
-        givenQuery("(FOO:abc " + junction + " def " + junction + " efg)");
-        givenJunction(junction);
+    @Test
+    void testQueryWithFullyGroupedFieldedTermAndUnfieldedTerms() throws QueryNodeParseException {
+        givenQuery("(FOO:abc AND def AND efg)");
 
         // Expect the terms.
-        expectNode("(FOO:abc " + junction + " def " + junction + " efg)");
+        expectNode("(FOO:abc AND def AND efg)");
 
         assertResult();
     }
@@ -158,14 +137,12 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query with unfielded terms nested within multiple groups.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithNestedUnfieldedTerms(String junction) throws QueryNodeParseException {
-        givenQuery("(FOO:abc " + junction + " (def " + junction + " efg " + junction + "(jkl)))");
-        givenJunction(junction);
+    @Test
+    void testQueryWithNestedUnfieldedTerms() throws QueryNodeParseException {
+        givenQuery("(FOO:abc AND (def AND efg AND (jkl)))");
 
         // Expect the terms.
-        expectNode("(FOO:abc " + junction + " (def " + junction + " efg " + junction + "(jkl)))");
+        expectNode("(FOO:abc AND (def AND efg AND (jkl)))");
 
         assertResult();
     }
@@ -173,11 +150,9 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query where multiple grouped unfielded terms follows a fielded term.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithFieldedTermAndGroupedUnfieldedTerms(String junction) throws QueryNodeParseException {
-        givenQuery("FOO:abc " + junction + " (def " + junction + " efg)");
-        givenJunction(junction);
+    @Test
+    void testQueryWithFieldedTermAndGroupedUnfieldedTerms() throws QueryNodeParseException {
+        givenQuery("FOO:abc AND (def AND efg)");
 
         // Do not expect any results.
         assertResult();
@@ -186,14 +161,12 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query where the fielded term is in a sibling group.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithFieldedTermInSiblingGroup(String junction) throws QueryNodeParseException {
-        givenQuery("((FOO:abc " + junction + " def) " + junction + " (aaa " + junction + " bbb))");
-        givenJunction(junction);
+    @Test
+    void testQueryWithFieldedTermInSiblingGroup() throws QueryNodeParseException {
+        givenQuery("((FOO:abc AND def) AND (aaa AND bbb))");
 
         // Only expect the terms from the first group sibling.
-        expectNode("(FOO:abc " + junction + " def)");
+        expectNode("(FOO:abc AND def)");
 
         assertResult();
     }
@@ -201,14 +174,12 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query with multiple sets of ambiguous phrases.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testQueryWithMultipleGroupedAmbiguousPhrases(String junction) throws QueryNodeParseException {
-        givenQuery("FOO:(abc " + junction + " def) " + junction + " (BAR:aaa " + junction + " bbb)");
-        givenJunction(junction);
+    @Test
+    void testQueryWithMultipleGroupedAmbiguousPhrases() throws QueryNodeParseException {
+        givenQuery("FOO:(abc AND def) AND (BAR:aaa AND bbb)");
 
-        expectNode("(FOO:abc " + junction + " FOO:def)");
-        expectNode("(BAR:aaa " + junction + " bbb)");
+        expectNode("(FOO:abc AND FOO:def)");
+        expectNode("(BAR:aaa AND bbb)");
 
         assertResult();
     }
@@ -216,17 +187,21 @@ class GroupedInterpretationVisitorTest {
     /**
      * Test a query with a variety of ambiguous phrases.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"AND"})
-    void testMixedComplexityQuery(String junction) throws QueryNodeParseException {
-        String otherJunction = junction.equals("OR") ? "AND" : "OR";
-        givenQuery("FOO:aaa " + otherJunction + " bbb " + otherJunction + " (BAR:aaa " + junction + " bbb " + junction + " ccc " + junction
-                        + " HAT:\"ear\" nose) " + junction + " (aaa " + junction + " bbb " + junction + " VEE:eee " + junction + " 123 " + junction + " (gee "
-                        + junction + " \"wiz\")) " + otherJunction + " (EGG:yolk " + junction + " shell)");
-        givenJunction(junction);
+    @Test
+    void testMixedComplexityQuery() throws QueryNodeParseException {
+        givenQuery("FOO:aaa OR bbb OR (BAR:aaa AND bbb AND ccc AND HAT:\"ear\" nose) AND (aaa AND bbb AND VEE:eee AND 123 AND (gee AND \"wiz\")) OR (EGG:yolk AND shell)");
 
-        expectNode("(BAR:aaa " + junction + " bbb " + junction + " ccc " + junction + " (HAT:\"ear\" " + junction + " nose)) ");
-        expectNode("(EGG:yolk " + junction + " shell)");
+        expectNode("(BAR:aaa AND bbb AND ccc AND (HAT:\"ear\" AND nose)) ");
+        expectNode("(EGG:yolk AND shell)");
+
+        assertResult();
+    }
+
+    @Test
+    void testGroupedUnfieldedTermWithNonFieldedClause() throws QueryNodeParseException {
+        givenQuery("(FOO:abc def #ISNOTNULL(HAT))");
+
+        expectNode("(FOO:abc def #ISNOTNULL(HAT))");
 
         assertResult();
     }
@@ -235,17 +210,13 @@ class GroupedInterpretationVisitorTest {
         this.query = query;
     }
 
-    private void givenJunction(String QueryNodeType) {
-        this.junction = QueryNodeType;
-    }
-
     private void expectNode(String node) throws QueryNodeParseException {
         expectedNodes.add(parser.parse(node, ""));
     }
 
     private void assertResult() throws QueryNodeParseException {
         QueryNode queryNode = parser.parse(query, "");
-        List<QueryNode> actual = GroupedInterpretationVisitor.check(queryNode, QueryNodeType.AND);
+        List<QueryNode> actual = GroupedInterpretationVisitor.check(queryNode);
         // Compare the lists via their query strings.
         List<String> actualStrs = actual.stream().map(node -> node.toQueryString(escapedSyntax).toString()).collect(Collectors.toList());
         List<String> expectedStrs = expectedNodes.stream().map(node -> node.toQueryString(escapedSyntax).toString()).collect(Collectors.toList());

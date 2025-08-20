@@ -25,8 +25,8 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
      *            the junction type AND
      * @return the list of ambiguous nodes
      */
-    public static List<QueryNode> check(QueryNode node, QueryNodeType junction) {
-        GroupedInterpretationVisitor visitor = new GroupedInterpretationVisitor(junction);
+    public static List<QueryNode> check(QueryNode node) {
+        GroupedInterpretationVisitor visitor = new GroupedInterpretationVisitor(QueryNodeType.AND);
         // noinspection unchecked
         return (List<QueryNode>) visitor.visit(node, new ArrayList<QueryNode>());
     }
