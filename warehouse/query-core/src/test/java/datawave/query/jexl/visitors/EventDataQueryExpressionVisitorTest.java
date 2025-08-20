@@ -10,11 +10,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.data.Key;
@@ -987,7 +987,7 @@ public class EventDataQueryExpressionVisitorTest {
 
     @Test
     public void testClonesInThreads() throws Exception {
-        final Set<Object> exceptions = Collections.synchronizedSet(new HashSet<>());
+        Set<Object> exceptions = ConcurrentHashMap.newKeySet();
 
         Thread[] threads = new Thread[256];
         String originalQuery = "FOO =~ 'a.*' && FOO == null";

@@ -10,6 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
@@ -85,7 +86,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         this.connectionFactory = connectionFactory;
         this.publisher = publisher;
         this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
-        this.working = Collections.synchronizedSet(new HashSet<>());
+        this.working = ConcurrentHashMap.newKeySet();
         this.queryToTask = Multimaps.synchronizedMultimap(LinkedHashMultimap.create());
         this.metricFactory = metricFactory;
         this.metricClient = metricClient;

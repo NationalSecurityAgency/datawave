@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -40,8 +40,8 @@ public class ScannerFactory {
     private static final int DEFAULT_MAX_THREADS = 100;
     protected int maxQueue = 1000;
 
-    protected final Set<ScannerBase> instances = Collections.synchronizedSet(new HashSet<>());
-    protected final Set<ScannerSession> sessionInstances = Collections.synchronizedSet(new HashSet<>());
+    protected final Set<ScannerBase> instances = ConcurrentHashMap.newKeySet();
+    protected final Set<ScannerSession> sessionInstances = ConcurrentHashMap.newKeySet();
     protected AccumuloClient client;
     // using an AtomicBoolean to give us a separate monitor for synchronization
     protected final AtomicBoolean open = new AtomicBoolean(true);
