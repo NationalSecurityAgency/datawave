@@ -24,7 +24,7 @@
         <npm.downloadRoot>https://registry.npmjs.org/npm/-/</npm.downloadRoot>
         <npm.version>9.2.0</npm.version>
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.curator>5.2.0</version.curator>
         <version.datawave.dictionary-api>4.0.5</version.datawave.dictionary-api>
         <version.datawave.starter>4.0.5</version.datawave.starter>
