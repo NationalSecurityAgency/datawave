@@ -1036,6 +1036,33 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return null;
     }
 
+    public String getDocument(Range range) {
+        // if the range has the same document in the start and end key, then return the document name.
+        // This is used to create unique ivarator directories for the DelayedNonEventSubTreeVisitor
+        if (range != null && range.getStartKey() != null && range.getEndKey() != null) {
+            String cf1 = range.getStartKey().getColumnFamily().toString();
+            String cf2 = range.getEndKey().getColumnFamily().toString();
+            StringBuilder builder = new StringBuilder();
+            int minLen = Math.min(cf1.length(), cf2.length());
+            for (int i = 0; i < minLen; i++) {
+                char c1 = cf1.charAt(i);
+                char c2 = cf2.charAt(i);
+                if (c1 == c2) {
+                    if (c1 == NULL_DELIMETER.charAt(0)) {
+                        c1 = '_';
+                    }
+                    builder.append(c1);
+                } else {
+                    break;
+                }
+            }
+            if (builder.length() > 0) {
+                return builder.toString();
+            }
+        }
+        return null;
+    }
+
     /**
      * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      *
@@ -1043,11 +1070,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @throws IOException
      *             for issues with read/write
      */
-    private List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber) throws IOException {
+    public List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber, Range rangeLimiter, String field, String value) throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
 
         // use the ivaratorCount / term number to create a unique subdirectory
-        String subdirectory = ivaratorCacheSubDirPrefix + "term" + termNumber;
+        String subdirectory = ivaratorCacheSubDirPrefix + "_term_" + termNumber + "_field_" + field + "_valueHash_" + value.hashCode();
+        String document = getDocument(rangeLimiter);
+        if (document != null) {
+            subdirectory = subdirectory + "_doc_" + document;
+        }
 
         if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
             for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
@@ -1152,6 +1183,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
                                         hdfsFileSystem.getFileSystem(fstUri));
                     }
+                    listIterBuilder.setValue(fstUri.toString());
                     listIterBuilder.setFst(fst);
 
                     // cache this fst for use during JexlEvaluation.
@@ -1453,7 +1485,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCompositeSeekThreshold(compositeSeekThreshold);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
-        builder.setIvaratorCacheDirs(getIvaratorCacheDirs(this.ivaratorCount));
+        builder.setIvaratorCacheDirs(getIvaratorCacheDirs(this.ivaratorCount, rangeLimiter, builder.getField(), builder.getValue()));
         builder.setTermNumber(this.ivaratorCount);
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
         builder.setQueryLock(queryLock);

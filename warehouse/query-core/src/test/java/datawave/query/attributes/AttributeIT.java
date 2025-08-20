@@ -2,7 +2,6 @@ package datawave.query.attributes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.junit.jupiter.api.Test;
@@ -12,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.data.type.LcType;
+import datawave.next.stats.StatUtil;
 import datawave.query.common.grouping.GroupingAttribute;
 
 /**
@@ -83,7 +83,7 @@ public abstract class AttributeIT {
             total += System.nanoTime() - start;
         }
 
-        log.info("{} took {} ms", getContext(), TimeUnit.NANOSECONDS.toMillis(total));
+        log.info("{} took {}", getContext(), StatUtil.formatNanos(total));
     }
 
     static class ContentIT extends AttributeIT {
