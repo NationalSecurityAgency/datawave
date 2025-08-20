@@ -21,8 +21,6 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
      *
      * @param node
      *            the node
-     * @param junction
-     *            the junction type AND
      * @return the list of ambiguous nodes
      */
     public static List<QueryNode> check(QueryNode node) {
@@ -44,7 +42,6 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
 
     @Override
     public Object visit(GroupQueryNode node, Object data) {
-        // If the group node consists entirely of a single fielded term with ambiguously ORed unfielded phrases, add a copy of the group node to the data.
         if (groupConsistsOfUnfieldedTerms(node, false)) {
             // noinspection unchecked
             ((List<QueryNode>) data).add(copy(node));
