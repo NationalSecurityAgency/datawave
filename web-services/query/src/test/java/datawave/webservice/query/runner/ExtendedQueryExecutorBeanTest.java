@@ -101,6 +101,7 @@ import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.cache.QueryHeartbeatCache;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.QueryTraceCache.CacheListener;
 import datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
@@ -110,6 +111,9 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.limit.QueryHeartbeat;
+import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -230,6 +234,12 @@ public class ExtendedQueryExecutorBeanTest {
     UserOperationsBean userOperations;
 
     QueryExpirationProperties queryExpirationConf;
+
+    @Mock
+    QueryLimiter queryLimiter;
+
+    @Mock
+    QueryHeartbeatCache queryHeartbeatCache;
 
     @BeforeClass
     public static void setup() throws Exception {}
@@ -705,6 +715,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        String systemFrom = "systemFrom";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -725,6 +736,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.add(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.add(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.add(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.add(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
         queryParameters.add(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.add("valid", "param");
 
@@ -739,6 +751,17 @@ public class ExtendedQueryExecutorBeanTest {
         op.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.add(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryId.toString(), heartbeat);
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -772,6 +795,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
         expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
@@ -828,6 +852,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         GenericResponse<String> result1 = subject.createQuery(queryLogicName, uriInfo, MapUtils.toMultivaluedMap(queryParameters), httpHeaders);
         PowerMock.verifyAll();
 
@@ -855,6 +881,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        String systemFrom = "systemFrom";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -877,6 +904,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.add(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.add(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.add("valid", "param");
+        queryParameters.add(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         // create the query parameters with the page size to be overridden
         MultiValueMap<String,String> queryParametersWithOverride = new LinkedMultiValueMap<>(queryParameters);
@@ -893,6 +921,17 @@ public class ExtendedQueryExecutorBeanTest {
         op.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.add(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryId.toString(), heartbeat);
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParametersWithOverride);
@@ -928,6 +967,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
@@ -987,6 +1027,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         GenericResponse<String> result1 = subject.createQuery(queryLogicName, uriInfo, MapUtils.toMultivaluedMap(queryParameters), httpHeaders);
         PowerMock.verifyAll();
 
@@ -1018,6 +1060,7 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         long pageNumber = 0L;
+        String systemFrom = "systemFrom";
 
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
@@ -1036,6 +1079,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.add(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.add(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.add("valid", "param");
+        queryParameters.add(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -1047,6 +1091,17 @@ public class ExtendedQueryExecutorBeanTest {
         op.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.add(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryId.toString(), heartbeat);
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1083,6 +1138,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
         expect(this.query.getEndDate()).andReturn(null).anyTimes();
@@ -1169,6 +1225,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
         PowerMock.verifyAll();
 
@@ -1200,6 +1258,7 @@ public class ExtendedQueryExecutorBeanTest {
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
+        String systemFrom = "systemFrom";
 
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
@@ -1218,6 +1277,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.putSingle("valid", "param");
+        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -1230,6 +1290,17 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryId.toString(), heartbeat);
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1265,6 +1336,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
         expect(this.query.getEndDate()).andReturn(null).anyTimes();
@@ -1329,6 +1401,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         subject.createQuery(queryLogicName, queryParameters);
 
         Throwable result1 = null;
@@ -1712,6 +1786,7 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         long pageNumber = 0L;
+        String systemFrom = "systemFrom";
 
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
@@ -1729,6 +1804,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         queryParameters.putSingle(QueryParameters.QUERY_PARAMS, "auditType:NONE;auditColumnVisibility:A&B&C&D;auditUserDN:" + userDN);
 
@@ -1745,6 +1821,17 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryId.toString(), heartbeat);
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1777,6 +1864,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
         expect(this.query.getEndDate()).andReturn(null).anyTimes();
@@ -1869,6 +1957,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
         PowerMock.verifyAll();
 
@@ -1899,6 +1989,7 @@ public class ExtendedQueryExecutorBeanTest {
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
+        String systemFrom = "systemFrom";
 
         MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>();
         queryParameters.set(QueryParameters.QUERY_STRING, query);
@@ -1914,6 +2005,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.set(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.set("valid", "param");
         queryParameters.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.set(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -1926,6 +2018,23 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryId.toString(), heartbeat);
+        expectLastCall();
+
+        queryLimiter.stopTrackingQuery(queryId.toString());
+        expectLastCall();
+
+        queryHeartbeatCache.stopAndRemoveHeartbeat(queryId.toString());
+        expectLastCall();
 
         // Set expectations
         expect(context.getCallerPrincipal()).andReturn(principal);
@@ -1961,6 +2070,8 @@ public class ExtendedQueryExecutorBeanTest {
         this.persister.remove(this.query);
         PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
         expect(this.query.getId()).andReturn(queryId).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
 
         expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
@@ -1983,6 +2094,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         Throwable result1 = null;
         try {
             subject.createQueryAndNext(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
@@ -2020,6 +2133,7 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         long pageNumber = 0L;
+        String systemFrom = "systemFrom";
 
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
@@ -2038,6 +2152,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.putSingle("valid", "param");
+        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -2049,6 +2164,17 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryId.toString(), heartbeat);
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -2080,6 +2206,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
         expect(this.query.getEndDate()).andReturn(null).anyTimes();
@@ -2192,6 +2319,8 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             setInternalState(connectionRequestBean, EJBContext.class, context);
             setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+            setInternalState(subject, QueryLimiter.class, queryLimiter);
+            setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
 
             subject.createQueryAndNext(queryLogicName, queryParameters);
         } finally {
@@ -3615,6 +3744,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userDN = "userDN";
         String sid = "sid";
         UUID queryId = UUID.randomUUID();
+        String systemFrom = "systemFrom";
 
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(authorization));
@@ -3638,6 +3768,18 @@ public class ExtendedQueryExecutorBeanTest {
         map.set(AuditParameters.AUDIT_ID, queryName);
         MultiValueMap<String,String> auditMap = new LinkedMultiValueMap();
         auditMap.putAll(map);
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN, systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+
+        this.queryLimiter.trackQuery(queryName, userDN, systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryName)).andReturn(heartbeat);
+
+        queryHeartbeatCache.put(queryName, heartbeat);
+        expectLastCall();
 
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -3667,6 +3809,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
         expect(this.query.getQueryName()).andReturn(queryName).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         expect(this.cache.lock(queryName)).andReturn(true);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
@@ -3742,6 +3885,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         VoidResponse result1 = subject.reset(queryName);
         PowerMock.verifyAll();
 
@@ -3757,6 +3902,8 @@ public class ExtendedQueryExecutorBeanTest {
         String queryName = "queryName";
         String userName = "userName";
         String userSid = "sid";
+        String systemFrom = "systemFrom";
+        String queryLogicName = "queryLogicName";
 
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -3768,15 +3915,28 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
         expect(this.cache.get(queryName)).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query);
-        expect(this.query.getOwner()).andReturn(userSid);
+        expect(this.query.getOwner()).andReturn(userSid).anyTimes();
+        expect(this.query.getUserDN()).andReturn(userSid).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         // expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         expect(this.cache.lock(queryName)).andReturn(true);
+        expect(this.runningQuery.getSettings()).andReturn(this.query);
         expect(this.runningQuery.getClient()).andReturn(this.client);
         this.runningQuery.closeConnection(this.connectionFactory);
         PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 1ST-LEVEL TEST EXCEPTION"));
         cache.unlock(queryName);
         this.transaction.commit();
         PowerMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userSid, systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+
+        queryHeartbeatCache.stopAndRemoveHeartbeat(queryName);
+        expectLastCall();
+
+        queryLimiter.stopTrackingQuery(queryName);
+        expectLastCall();
 
         // Run the test
         PowerMock.replayAll();
@@ -3792,6 +3952,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         Throwable result1 = null;
         try {
             subject.reset(queryName);
@@ -4199,6 +4361,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        String systemFrom = "systemFrom";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -4218,8 +4381,10 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.putSingle("valid", "param");
+        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -4231,6 +4396,20 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN, systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        heartbeat.stop();
+        expectLastCall();
+
+        queryLimiter.stopTrackingQuery(queryId.toString());
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -4264,6 +4443,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
         expect(this.query.getEndDate()).andReturn(null).anyTimes();
@@ -4285,9 +4465,9 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the cleanup
         this.connectionFactory.returnClient(this.client);
-        EasyMock.expectLastCall().times(2);
+        expectLastCall().times(2);
         queryLogic1.close();
-        EasyMock.expectLastCall();
+        expectLastCall();
 
         // Run the test
         PowerMock.replayAll();
@@ -4310,6 +4490,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         GenericResponse<String> result1 = subject.planQuery(queryLogicName, uriInfo, queryParameters);
         PowerMock.verifyAll();
 
@@ -4337,6 +4519,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        String systemFrom = "systemFrom";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -4356,6 +4539,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.set(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.set(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.set(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
         queryParameters.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.set("valid", "param");
         queryParameters.set(QueryExecutorBean.EXPAND_VALUES, "true");
@@ -4370,6 +4554,20 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the query limiter.
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        this.queryLimiter.trackQuery(queryId.toString(), userDN, systemFrom, queryLogicName);
+        expectLastCall();
+
+        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
+        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+
+        heartbeat.stop();
+        expectLastCall();
+
+        queryLimiter.stopTrackingQuery(queryId.toString());
+        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -4406,6 +4604,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
         expect(this.query.getEndDate()).andReturn(null).anyTimes();
@@ -4431,9 +4630,9 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the cleanup
         this.connectionFactory.returnClient(this.client);
-        EasyMock.expectLastCall().times(2);
+        expectLastCall().times(2);
         queryLogic1.close();
-        EasyMock.expectLastCall();
+        expectLastCall();
 
         // Run the test
         PowerMock.replayAll();
@@ -4456,6 +4655,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryLimiter.class, queryLimiter);
+        setInternalState(subject, QueryHeartbeatCache.class, queryHeartbeatCache);
         GenericResponse<String> result1 = subject.planQuery(queryLogicName, uriInfo, MapUtils.toMultivaluedMap(queryParameters));
         PowerMock.verifyAll();
 

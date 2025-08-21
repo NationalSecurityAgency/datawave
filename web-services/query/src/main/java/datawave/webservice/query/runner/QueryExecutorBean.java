@@ -141,6 +141,7 @@ import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.cache.QueryHeartbeatCache;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
@@ -152,6 +153,9 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.limit.QueryHeartbeat;
+import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -264,6 +268,12 @@ public class QueryExecutorBean implements QueryExecutor {
 
     @Inject
     private ClosedQueryCache closedQueryCache;
+
+    @Inject
+    private QueryLimiter queryLimiter;
+
+    @Inject
+    private QueryHeartbeatCache queryHeartbeatCache;
 
     private static final int PAGE_TIMEOUT_MIN = 1;
     private static final int PAGE_TIMEOUT_MAX = 60;
@@ -723,6 +733,22 @@ public class QueryExecutorBean implements QueryExecutor {
             // callers know they have to call next (even though next may not return results).
             response.setHasResults(true);
 
+            try {
+                // Check if submitting a new query would exceed any configured concurrent query limits.
+                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM),
+                                queryLogicName);
+                if (limiterResponse.exceedsLimit()) {
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                    response.addException(qe);
+                    throw new BadRequestException(qe, response);
+                }
+            } catch (Exception e) {
+                log.error("Error checking concurrent query limits");
+                QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+                response.addException(qe);
+                throw qe;
+            }
+
             AuditType auditType = qd.logic.getAuditType(null);
             try {
                 Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
@@ -771,6 +797,12 @@ public class QueryExecutorBean implements QueryExecutor {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
 
+            // Start tracking the query information in the query limiter.
+            queryLimiter.trackQuery(q.getId().toString(), qd.userDn, q.getSystemFrom(), q.getQueryLogicName());
+            // Fetch a heartbeat from the query limit to indicate this query is considered active, and store it in the heartbeat cache.
+            QueryHeartbeat heartbeat = queryLimiter.createHeartbeat(q.getId().toString());
+            queryHeartbeatCache.put(q.getId().toString(), heartbeat);
+
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
             if (shouldTraceQuery) {
                 // TODO: OTEL-based tracing setup here
@@ -817,6 +849,23 @@ public class QueryExecutorBean implements QueryExecutor {
                     log.error("Error returning connection on failed create", e);
                 }
             }
+
+            if (q != null && q.getId() != null) {
+                // Stop the query heartbeat.
+                try {
+                    queryHeartbeatCache.stopAndRemoveHeartbeat(q.getId().toString());
+                } catch (Exception e) {
+                    log.error("Error stopping query heartbeat in cache", e);
+                }
+
+                // Stop tracking the query in Zookeeper.
+                try {
+                    queryLimiter.stopTrackingQuery(q.getId().toString());
+                } catch (Exception e) {
+                    log.error("Failed to stop tracking query '" + q.getId() + "' via Query Limiter ", e);
+                }
+            }
+
             try {
                 if (null != q)
                     persister.remove(q);
@@ -878,9 +927,26 @@ public class QueryExecutorBean implements QueryExecutor {
 
         GenericResponse<String> response = new GenericResponse<>();
 
+        try {
+            // Check if submitting a new query would exceed any configured concurrent query limits.
+            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM),
+                            queryLogicName);
+            if (limiterResponse.exceedsLimit()) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                response.addException(qe);
+                throw new BadRequestException(qe, response);
+            }
+        } catch (Exception e) {
+            log.error("Error checking concurrent query limits");
+            QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+            response.addException(qe);
+            throw new DatawaveWebApplicationException(qe, response, qe.getStatusCode());
+        }
+
         Query q = null;
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
+        QueryHeartbeat heartbeat = null;
         try {
             // Default hasResults to true.
             response.setHasResults(true);
@@ -949,6 +1015,11 @@ public class QueryExecutorBean implements QueryExecutor {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
 
+            // Start tracking the query information in the query limiter.
+            queryLimiter.trackQuery(q.getId().toString(), q.getUserDN(), q.getSystemFrom(), q.getQueryLogicName());
+            // Fetch a heartbeat from the query limit to indicate this query is considered active.
+            heartbeat = queryLimiter.createHeartbeat(q.getId().toString());
+
             // the query principal is our local principal unless the query logic has a different user operations
             if (qp.getAuths() != null) {
                 qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
@@ -992,6 +1063,22 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
 
+            // Stop the query heartbeat.
+            if (heartbeat != null) {
+                try {
+                    heartbeat.stop();
+                } catch (IOException e) {
+                    log.error("Error stopping query heartbeat", e);
+                }
+            }
+
+            // Stop tracking the query in Zookeeper.
+            try {
+                queryLimiter.stopTrackingQuery(q.getId().toString());
+            } catch (Exception e) {
+                log.error("Failed to stop tracking query '" + q.getId() + "' via Query Limiter ", e);
+            }
+
             // close the logic on exception
             try {
                 if (null != qd.logic) {
@@ -1008,6 +1095,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     log.error("Error returning connection on failed create", e);
                 }
             }
+
         }
     }
 
@@ -1254,7 +1342,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         AccumuloClient client = null;
         RunningQuery query = null;
-
+        QueryHeartbeat heartbeat = null;
         try {
             ctx.getUserTransaction().begin();
 
@@ -1264,6 +1352,23 @@ public class QueryExecutorBean implements QueryExecutor {
             // The lock should be released at the end of the method call.
             if (!queryCache.lock(id))
                 throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
+
+            try {
+                Query settings = query.getSettings();
+                // Check if submitting a new query would exceed any configured concurrent query limits.
+                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
+                                settings.getQueryLogicName());
+                if (limiterResponse.exceedsLimit()) {
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                    response.addException(qe);
+                    throw new BadRequestException(qe, response);
+                }
+            } catch (Exception e) {
+                log.error("Error checking concurrent query limits");
+                QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+                response.addException(qe);
+                throw qe;
+            }
 
             // We did not allocate a connection when we looked up the query. If
             // there's a connection when we get here, then we know it can only be
@@ -1320,6 +1425,14 @@ public class QueryExecutorBean implements QueryExecutor {
             } finally {
                 accumuloConnectionRequestBean.requestEnd(id);
             }
+            // Start tracking the query information in the query limiter.
+            Query settings = query.getSettings();
+
+            queryLimiter.trackQuery(id, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
+            // Fetch a heartbeat from the query limit to indicate this query is considered active, and store it in the heartbeat cache.
+            heartbeat = queryLimiter.createHeartbeat(id);
+            queryHeartbeatCache.put(id, heartbeat);
+
             query.setClient(client);
             response.addMessage(id + " reset.");
             CreateQuerySessionIDFilter.QUERY_ID.set(id);
@@ -1351,6 +1464,21 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception e2) {
                 log.error("Error returning connection on failed reset", e2);
             }
+
+            // Stop and remove the heartbeat from the query heartbeat cache.
+            try {
+                queryHeartbeatCache.stopAndRemoveHeartbeat(id);
+            } catch (Exception e2) {
+                log.error("Error stopping heartbeat in cache", e2);
+            }
+
+            // Stop tracking the query in Zookeeper.
+            try {
+                queryLimiter.stopTrackingQuery(id);
+            } catch (Exception e2) {
+                log.error("Failed to stop tracking query '" + id + "' via Query Limiter ", e2);
+            }
+
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_RESET_ERROR, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -2310,8 +2438,25 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getRight());
-                response.addMessage(id + " closed before create completed.");
+
+                try {
+                    connectionFactory.returnClient(tuple.getRight());
+                    response.addMessage(id + " closed before create completed.");
+                } finally {
+                    // If there was a heartbeat cached for this query, stop it.
+                    try {
+                        queryHeartbeatCache.stopAndRemoveHeartbeat(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping heartbeat", e);
+                    }
+
+                    // Stop tracking this query for the query limiter.
+                    try {
+                        queryLimiter.stopTrackingQuery(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
+                    }
+                }
             }
 
             // no longer need to remember this query
@@ -2370,8 +2515,25 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getRight());
-                response.addMessage(id + " closed before create completed.");
+
+                try {
+                    connectionFactory.returnClient(tuple.getRight());
+                    response.addMessage(id + " closed before create completed.");
+                } finally {
+                    // If there was a heartbeat cached for this query, stop it.
+                    try {
+                        queryHeartbeatCache.stopAndRemoveHeartbeat(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping heartbeat", e);
+                    }
+
+                    // Stop tracking this query for the query limiter.
+                    try {
+                        queryLimiter.stopTrackingQuery(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
+                    }
+                }
             }
 
             return response;
@@ -2464,8 +2626,25 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getRight());
-                response.addMessage(id + " closed before create completed due to cancel.");
+
+                try {
+                    connectionFactory.returnClient(tuple.getRight());
+                    response.addMessage(id + " closed before create completed due to cancel.");
+                } finally {
+                    // If there was a heartbeat cached for this query, stop it.
+                    try {
+                        queryHeartbeatCache.stopAndRemoveHeartbeat(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping heartbeat", e);
+                    }
+
+                    // Stop tracking this query for the query limiter.
+                    try {
+                        queryLimiter.stopTrackingQuery(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
+                    }
+                }
             }
 
             // no longer need to remember this query
@@ -2525,8 +2704,25 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getRight());
-                response.addMessage(id + " closed before create completed due to cancel.");
+
+                try {
+                    connectionFactory.returnClient(tuple.getRight());
+                    response.addMessage(id + " closed before create completed due to cancel.");
+                } finally {
+                    // If there was a heartbeat cached for this query, stop it.
+                    try {
+                        queryHeartbeatCache.stopAndRemoveHeartbeat(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping heartbeat", e);
+                    }
+
+                    // Stop tracking this query for the query limiter.
+                    try {
+                        queryLimiter.stopTrackingQuery(id);
+                    } catch (Exception e) {
+                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
+                    }
+                }
             }
 
             return response;
@@ -3880,5 +4076,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 throw new QueryException(handler.getThrowable());
             }
         }
+    }
+
+    private void checkForQueryLimits(String userDn, String systemFrom, String queryLogic) {
+
     }
 }

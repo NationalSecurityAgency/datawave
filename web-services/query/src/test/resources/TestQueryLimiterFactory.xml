@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.0.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <!-- This file provides bean definitions for testing the creation of a QueryLimiter. -->
+
+    <!-- Configurations for query logic group limits. -->
+    <bean id="queryLogicGroupConfig_1" class="datawave.webservice.query.limit.QueryLogicGroupLimitConfiguration">
+        <property name="groupName" value="GROUP_1"/>
+        <property name="queryLimit" value="50"/>
+        <property name="queryLogicPattern" value="LOGIC1.*"/>
+    </bean>
+
+    <bean id="queryLogicGroupConfig_2" class="datawave.webservice.query.limit.QueryLogicGroupLimitConfiguration">
+        <property name="groupName" value="GROUP_2"/>
+        <property name="queryLimit" value="25"/>
+        <property name="queryLogicPattern" value="LOGIC2.*"/>
+    </bean>
+
+    <!-- Configurations for individual system limits. -->
+    <bean id="systemConfig_1" class="datawave.webservice.query.limit.SystemLimitConfiguration">
+        <property name="systemPattern" value="SYSTEM_.*"/>
+        <property name="queryLimit" value="500"/>
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="GROUP_1" value="10"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="systemConfig_2" class="datawave.webservice.query.limit.SystemLimitConfiguration">
+        <property name="systemPattern" value="SYSTEM_FOO"/>
+        <property name="countsAgainstsUserLimit" value="false"/>
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="GROUP_2" value="200"/>
+            </map>
+        </property>
+    </bean>
+
+    <!-- Configurations for individual user limits. -->
+    <bean id="userConfig1" class="datawave.webservice.query.limit.UserLimitConfiguration">
+        <property name="userDn" value="cn=userA c=us"/>
+        <property name="queryLimit" value="250"/>
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="GROUP_1" value="25"/>
+                <entry key="GROUP_2" value="75"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="userConfig2" class="datawave.webservice.query.limit.UserLimitConfiguration">
+        <property name="userDn" value="cn=userB c=us"/>
+        <property name="queryLimit" value="50"/>
+    </bean>
+
+    <bean id="userConfig3" class="datawave.webservice.query.limit.UserLimitConfiguration">
+        <property name="userDn" value="cn=userC c=us"/>
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="GROUP_1" value="5"/>
+            </map>
+        </property>
+    </bean>
+
+    <!-- Configuration for the QueryLimitProvider. -->
+    <bean id="queryLimitProviderConfig" class="datawave.webservice.query.limit.QueryLimitConfiguration">
+        <property name="defaultSystemQueryLimit" value="5000"/>
+        <property name="defaultUserQueryLimit" value="100"/>
+        <property name="systemConfigs">
+            <list>
+                <ref bean="systemConfig_1"/>
+                <ref bean="systemConfig_2"/>
+            </list>
+        </property>
+        <property name="queryLogicGroupConfigs">
+            <list>
+                <ref bean="queryLogicGroupConfig_1"/>
+                <ref bean="queryLogicGroupConfig_2"/>
+            </list>
+        </property>
+        <property name="userConfigs">
+            <list>
+                <ref bean="userConfig1"/>
+                <ref bean="userConfig2"/>
+                <ref bean="userConfig3"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Configuration for the QueryLimiter. -->
+    <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" >
+        <property name="zookeeperConfig" value="fakeZookeeperConfig"/>
+    </bean>
+</beans>
