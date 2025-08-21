@@ -238,7 +238,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         if (!(o instanceof Attribute)) {
             return false;
         }
-        Attribute other = (Attribute) o;
+        Attribute<?> other = (Attribute<?>) o;
         EqualsBuilder equals = new EqualsBuilder().append(this.isMetadataSet(), other.isMetadataSet());
         if (this.isMetadataSet()) {
             equals.append(this.getMetadata(), other.getMetadata());

@@ -409,6 +409,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     private List<String> contentFieldNames = Collections.emptyList();
 
+    private List<Type<?>> excludeUnfieldedTypes = Collections.emptyList();
+
     /**
      * The source to use as the active query log name for all query iterators in scans generated for the shard query logic. If the value
      * {@value #TABLE_NAME_SOURCE} is supplied, the shard table name will be used. If {@value #QUERY_LOGIC_NAME_SOURCE} is supplied, the name of the shard query
@@ -537,6 +539,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
+
+    private String fieldRuleClassName;
     private double indexFieldHoleMinThreshold = 1.0d;
 
     /**
@@ -655,6 +659,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseFilters(other.getUseFilters());
         this.setFilterClassNames(null == other.getFilterClassNames() ? null : Lists.newArrayList(other.getFilterClassNames()));
         this.setIndexFilteringClassNames(null == other.getIndexFilteringClassNames() ? null : Lists.newArrayList(other.getIndexFilteringClassNames()));
+        this.setFieldRuleClassName(null == other.getIndexFilteringClassNames() ? null : other.getFieldRuleClassName());
         this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
@@ -733,6 +738,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
         this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
         this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+        this.setExcludeUnfieldedTypes(other.getExcludeUnfieldedTypes());
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         this.setIvaratorNumRetries(other.getIvaratorNumRetries());
@@ -1313,6 +1319,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
     }
 
+    public String getFieldRuleClassName() {
+        return fieldRuleClassName;
+    }
+
+    public void setFieldRuleClassName(String fieldRuleClassName) {
+        this.fieldRuleClassName = (fieldRuleClassName != null && !fieldRuleClassName.isEmpty()) ? fieldRuleClassName : null;
+    }
+
     /**
      * Gets any predicate-based filters to apply when iterating through the field index. These filters will be "anded" with the default data type filter, if
      * any, used to construct the IndexIterator, particularly via the TLDQueryIterator.
@@ -1610,6 +1624,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+    }
+
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return excludeUnfieldedTypes;
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        this.excludeUnfieldedTypes = excludeUnfieldedTypes;
     }
 
     public int getMaxFieldIndexRangeSplit() {
@@ -3010,6 +3032,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize() &&
                 getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold() &&
                 getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout() &&
+                getExcludeUnfieldedTypes() == that.getExcludeUnfieldedTypes() &&
                 getMaxFieldIndexRangeSplit() == that.getMaxFieldIndexRangeSplit() &&
                 getIvaratorMaxOpenFiles() == that.getIvaratorMaxOpenFiles() &&
                 getIvaratorNumRetries() == that.getIvaratorNumRetries() &&
@@ -3056,6 +3079,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getEnricherClassNames(), that.getEnricherClassNames()) &&
                 Objects.equals(getUseFilters(), that.getUseFilters()) &&
                 Objects.equals(getFilterClassNames(), that.getFilterClassNames()) &&
+                Objects.equals(getFieldRuleClassName(), that.getFieldRuleClassName()) &&
                 Objects.equals(getIndexFilteringClassNames(), that.getIndexFilteringClassNames()) &&
                 Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes()) &&
                 Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) &&
@@ -3279,6 +3303,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize(),
                 getIvaratorCacheScanPersistThreshold(),
                 getIvaratorCacheScanTimeout(),
+                getExcludeUnfieldedTypes(),
                 getMaxFieldIndexRangeSplit(),
                 getIvaratorMaxOpenFiles(),
                 getIvaratorNumRetries(),

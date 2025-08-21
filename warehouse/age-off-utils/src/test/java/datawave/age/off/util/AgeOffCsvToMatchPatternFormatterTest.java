@@ -250,6 +250,54 @@ public class AgeOffCsvToMatchPatternFormatterTest {
     }
 
     @Test
+    public void appliesOverrideWhenConfiguredTwo() throws IOException {
+        // @formatter:off
+
+        // add an override for driedBeans from 548d to 365d
+        String input = prepareInputWithOverrideTwo();
+
+        String expectedOutputText =
+                "bakingPowder=365d\n" +
+                        "driedBeans=548d\n"+
+                        "bakingSoda=720d\n"+
+                        "coffeeGround=90d\n"+
+                        "sunbutter=183d\n" +
+                        "coffeeWholeBean=183d\n"+
+                        "coffeeInstant=730d\n" +
+                        "twinkies=2147483647d\n";
+        // @formatter:on
+
+        Builder builder = new Builder();
+        builder.useOverrides();
+        builder.disableLabel();
+        assertEquals(expectedOutputText, reformat(builder, input));
+    }
+
+    @Test
+    public void appliesOverrideWhenConfiguredThree() throws IOException {
+        // @formatter:off
+
+        // add an override for driedBeans from 548d to 365d
+        String input = prepareInputWithOverrideThree();
+
+        String expectedOutputText =
+                "bakingPowder=365d\n" +
+                        "driedBeans=380d\n"+
+                        "bakingSoda=720d\n"+
+                        "coffeeGround=90d\n"+
+                        "sunbutter=183d\n" +
+                        "coffeeWholeBean=183d\n"+
+                        "coffeeInstant=730d\n" +
+                        "twinkies=2147483647d\n";
+        // @formatter:on
+
+        Builder builder = new Builder();
+        builder.useOverrides();
+        builder.disableLabel();
+        assertEquals(expectedOutputText, reformat(builder, input));
+    }
+
+    @Test
     public void ignoresOverrideWhenNotConfigured() throws IOException {
         // @formatter:off
 
@@ -374,6 +422,30 @@ public class AgeOffCsvToMatchPatternFormatterTest {
         String inputWithOneOverride = adjustEachLine(INPUT_TEXT, line -> {
             if (line.contains("driedBeans")) {
                 return line + ",365d";
+            }
+            return line + ",";
+        });
+
+        return HEADER_WITHOUT_LABEL + ",override" + "\n" + inputWithOneOverride;
+    }
+
+    private String prepareInputWithOverrideTwo() {
+        // add an override for driedBeans from 548d to 365d
+        String inputWithOneOverride = adjustEachLine(INPUT_TEXT, line -> {
+            if (line.contains("driedBeans")) {
+                return line + ",-1";
+            }
+            return line + ",";
+        });
+
+        return HEADER_WITHOUT_LABEL + ",override" + "\n" + inputWithOneOverride;
+    }
+
+    private String prepareInputWithOverrideThree() {
+        // add an override for driedBeans from 548d to 365d
+        String inputWithOneOverride = adjustEachLine(INPUT_TEXT, line -> {
+            if (line.contains("driedBeans")) {
+                return line + ",380";
             }
             return line + ",";
         });
