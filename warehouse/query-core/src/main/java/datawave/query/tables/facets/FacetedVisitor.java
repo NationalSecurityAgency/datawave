@@ -3,6 +3,7 @@ package datawave.query.tables.facets;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,6 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.util.TypeFilter;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SourceManager;
@@ -55,7 +55,7 @@ public class FacetedVisitor extends BaseVisitor {
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
     protected IteratorEnvironment env;
-    protected TypeFilter includeReferences = new TypeFilter();
+    protected Set<String> includeReferences = new HashSet<>();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;

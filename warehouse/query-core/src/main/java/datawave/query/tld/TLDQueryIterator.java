@@ -113,10 +113,9 @@ public class TLDQueryIterator extends QueryIterator {
             Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(getScript(), getAllFields(), expressionFilters,
-                            useAllowListedFields ? allowListedFields.getElements() : null, useDisallowListedFields ? disallowListedFields : null,
-                            getEventFieldSeek(), getEventNextSeek(), limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField,
-                            getNonEventFields());
+            this.evaluationFilter = new TLDEventDataFilter(getScript(), getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
+                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
@@ -151,9 +150,8 @@ public class TLDQueryIterator extends QueryIterator {
 
             // setup an evaluation filter to avoid loading every single child key into the event
             this.eventEvaluationFilter = new TLDEventDataFilter(getScript(), getEventFields(), expressionFilters,
-                            useAllowListedFields ? allowListedFields.getElements() : null, useDisallowListedFields ? disallowListedFields : null,
-                            getEventFieldSeek(), getEventNextSeek(), limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField,
-                            getNonEventFields());
+                            useAllowListedFields ? allowListedFields : null, useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(),
+                            getEventNextSeek(), limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }

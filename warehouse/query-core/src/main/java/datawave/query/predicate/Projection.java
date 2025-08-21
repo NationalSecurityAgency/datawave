@@ -103,9 +103,9 @@ public final class Projection implements Predicate<String> {
         String fieldName = JexlASTHelper.deconstructIdentifier(inputFieldName, false);
 
         if (type == ProjectionType.EXCLUDES) {
-            return !projections.contains(fieldName);
+            return projections == null || projections.isEmpty() || !projections.contains(fieldName);
         } else {
-            return projections.contains(fieldName);
+            return projections == null || projections.isEmpty() || projections.contains(fieldName);
         }
     }
 

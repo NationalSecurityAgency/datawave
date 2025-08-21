@@ -316,7 +316,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected boolean projectResults = false;
     protected boolean useAllowListedFields = false;
-    protected TypeFilter allowListedFields = new TypeFilter();
+    protected Set<String> allowListedFields = new HashSet<>();
     protected boolean useDisallowListedFields = false;
     protected Set<String> disallowListedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
@@ -889,7 +889,7 @@ public class QueryOptions implements OptionDescriber {
         Set<String> fields = getQueryFields();
 
         if (!allowListedFields.isEmpty()) {
-            fields.addAll(allowListedFields.getElements());
+            fields.addAll(allowListedFields);
         }
 
         if (groupFields != null) {
@@ -1539,7 +1539,7 @@ public class QueryOptions implements OptionDescriber {
 
             String option = options.get(PROJECTION_FIELDS);
             if (option != null) {
-                this.allowListedFields = TypeFilter.fromString(option);
+                this.allowListedFields = new HashSet<>(Splitter.on(',').splitToList(option));
             }
 
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
