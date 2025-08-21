@@ -44,8 +44,8 @@ public class DataDictionaryProperties {
 
     @Getter
     @Setter
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class HelpMenu {
-        private boolean enabled = false;
         private String menuOne;
         private String menuOneLink;
         private String menuTwo;

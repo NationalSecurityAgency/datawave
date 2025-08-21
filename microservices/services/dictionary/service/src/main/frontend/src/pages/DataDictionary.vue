@@ -20,7 +20,8 @@
       class="icon"
       :src="'icons/favicon-32x32.png'"
       spinner-color="white"
-    />
+      />
+      <HelpMenu v-if="helpMenu" :menu="helpMenu" />
     </div>
     <div class="row" style="width: 100%; height: 80%">
       <p class="information">
@@ -248,7 +249,6 @@
         </template>
       </q-table>
     </div>
-    <HelpMenu v-if="helpMenu" :menu="helpMenu" />
   </main>
   <div v-if="banner?.enabled" :style="banner?.styleTop" style="margin-top: 0.50vh;">
       {{ banner?.messageTop }}
