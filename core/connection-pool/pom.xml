@@ -8,18 +8,6 @@
     </parent>
     <artifactId>datawave-core-connection-pool</artifactId>
     <name>${project.artifactId}</name>
-    <properties>
-        <version.dnsjava>2.1.8</version.dnsjava>
-    </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>dnsjava</groupId>
-                <artifactId>dnsjava</artifactId>
-                <version>${version.dnsjava}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
