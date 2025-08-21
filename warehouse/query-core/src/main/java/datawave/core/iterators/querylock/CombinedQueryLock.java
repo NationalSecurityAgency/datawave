@@ -7,7 +7,6 @@ import java.util.List;
  */
 public class CombinedQueryLock implements QueryLock {
     private QueryLock[] locks;
-
     public CombinedQueryLock(List<QueryLock> locks) {
         this.locks = locks.toArray(new QueryLock[locks.size()]);
     }

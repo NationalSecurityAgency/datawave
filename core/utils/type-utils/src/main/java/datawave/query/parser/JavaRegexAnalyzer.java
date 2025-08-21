@@ -23,7 +23,7 @@ public class JavaRegexAnalyzer {
 
     // Types as applied to portions of the regex. We are interested in portions that
     // are literals and those that contain regex constructs.
-    private enum RegexType {
+    public enum RegexType {
         LITERAL(true), // a literal value
         ESCAPED_LITERAL(true), // an escaped literal (e.g. \[ or \.)
         REGEX(false), // a regex
@@ -42,7 +42,7 @@ public class JavaRegexAnalyzer {
         }
     }
 
-    private static class RegexPart {
+    public static class RegexPart {
         // the regex is not-final to allow applyRegexCaseSensitivity
         public String regex;
         public RegexType type;
@@ -57,7 +57,19 @@ public class JavaRegexAnalyzer {
         public RegexPart(String reg, RegexType typ, int nonCapt) {
             this(reg, typ, (nonCapt > 0));
         }
-
+        
+        public String getRegex() {
+            return regex;
+        }
+        
+        public RegexType getType() {
+            return type;
+        }
+        
+        public boolean isNonCapturing() {
+            return nonCapturing;
+        }
+        
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof RegexPart)) {
@@ -151,6 +163,10 @@ public class JavaRegexAnalyzer {
 
     public String getRegex() {
         return getRegex(regexParts);
+    }
+    
+    public RegexPart[] getRegexParts() {
+        return regexParts;
     }
 
     public static String getRegex(RegexPart[] regexParts) {

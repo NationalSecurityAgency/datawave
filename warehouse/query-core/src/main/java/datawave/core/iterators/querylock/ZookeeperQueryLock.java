@@ -26,13 +26,16 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  * zookeeper client after the specified interval of non-use.
  */
 public class ZookeeperQueryLock implements QueryLock {
-    private static Logger log = Logger.getLogger(ZookeeperQueryLock.class);
-    private String queryId;
-    private String zookeeperConfig;
+    
+    private static final Logger log = Logger.getLogger(ZookeeperQueryLock.class);
+    
+    private final String queryId;
+    private final String zookeeperConfig;
+    private final long clientCleanupInterval;
+    private final Lock clientLock = new ReentrantLock();
+    
     private Timer timer = null;
-    private long clientCleanupInterval;
     private long lastClientAccess;
-    private Lock clientLock = new ReentrantLock();
     private CuratorFramework client = null;
     private DistributedAtomicLong atomicLong = null;
 
@@ -40,7 +43,7 @@ public class ZookeeperQueryLock implements QueryLock {
         this.queryId = queryId;
         this.clientCleanupInterval = clientCleanupInterval;
 
-        URI zookeeperConfigFile = null;
+        URI zookeeperConfigFile;
         try {
             zookeeperConfigFile = new Path(zookeeperConfig).toUri();
             if (new File(zookeeperConfigFile).exists()) {
@@ -64,7 +67,7 @@ public class ZookeeperQueryLock implements QueryLock {
         this.zookeeperConfig = zookeeperConfig;
     }
 
-    private CuratorFramework getClient() {
+    private void initClient() {
         if (client == null) {
             clientLock.lock();
             try {
@@ -87,11 +90,10 @@ public class ZookeeperQueryLock implements QueryLock {
                 clientLock.unlock();
             }
         }
-        return client;
     }
 
     private DistributedAtomicLong getLong() {
-        getClient();
+        initClient();
         return atomicLong;
     }
 

@@ -69,6 +69,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
+import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimiterResponse;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
@@ -265,6 +267,9 @@ public class QueryExecutorBean implements QueryExecutor {
     @Inject
     private ClosedQueryCache closedQueryCache;
 
+    @Inject
+    private QueryLimiter queryLimiter;
+    
     private static final int PAGE_TIMEOUT_MIN = 1;
     private static final int PAGE_TIMEOUT_MAX = 60;
     private static final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
@@ -646,7 +651,23 @@ public class QueryExecutorBean implements QueryExecutor {
         QueryData qd = validateQueryParameters(queryLogicName, uriInfo, queryParameters, httpHeaders);
 
         GenericResponse<String> response = new GenericResponse<>();
-
+        
+        try {
+            // Check if submitting a new query would exceed any configured concurrent query limits.
+            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM),
+                            queryLogicName);
+            if (limiterResponse.exceedsLimit()) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                response.addException(qe);
+                throw new BadRequestException(qe, response);
+            }
+        } catch (Exception e) {
+            log.error("Error checking concurrent query limits");
+            QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+            response.addException(qe);
+            throw new DatawaveWebApplicationException(qe, response, qe.getStatusCode());
+        }
+        
         // We need to put a disconnected RunningQuery instance into the cache. Otherwise TRANSIENT queries
         // will not exist when reset is called.
         RunningQuery rq;
@@ -722,7 +743,24 @@ public class QueryExecutorBean implements QueryExecutor {
             // then their value will overwrite this one. Otherwise, we return true so that
             // callers know they have to call next (even though next may not return results).
             response.setHasResults(true);
-
+            
+            try {
+                // Check if submitting a new query would exceed any configured concurrent query limits.
+                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM),
+                                queryLogicName);
+                if (limiterResponse.exceedsLimit()) {
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                    response.addException(qe);
+                    throw new BadRequestException(qe, response);
+                }
+            } catch (Exception e) {
+                log.error("Error checking concurrent query limits");
+                QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+                response.addException(qe);
+                throw qe;
+            }
+        
+            
             AuditType auditType = qd.logic.getAuditType(null);
             try {
                 Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
@@ -877,7 +915,23 @@ public class QueryExecutorBean implements QueryExecutor {
         QueryData qd = validateQueryParameters(queryLogicName, uriInfo, queryParameters, null);
 
         GenericResponse<String> response = new GenericResponse<>();
-
+        
+        try {
+            // Check if submitting a new query would exceed any configured concurrent query limits.
+            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM),
+                            queryLogicName);
+            if (limiterResponse.exceedsLimit()) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                response.addException(qe);
+                throw new BadRequestException(qe, response);
+            }
+        } catch (Exception e) {
+            log.error("Error checking concurrent query limits");
+            QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+            response.addException(qe);
+            throw new DatawaveWebApplicationException(qe, response, qe.getStatusCode());
+        }
+        
         Query q = null;
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
@@ -1264,7 +1318,24 @@ public class QueryExecutorBean implements QueryExecutor {
             // The lock should be released at the end of the method call.
             if (!queryCache.lock(id))
                 throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
-
+            
+            try {
+                Query settings = query.getSettings();
+                // Check if submitting a new query would exceed any configured concurrent query limits.
+                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getOwner(), settings.getSystemFrom(), settings.getQueryLogicName());
+                if (limiterResponse.exceedsLimit()) {
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                    response.addException(qe);
+                    throw new BadRequestException(qe, response);
+                }
+            } catch (Exception e) {
+                log.error("Error checking concurrent query limits");
+                QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+                response.addException(qe);
+                throw qe;
+            }
+            
+            
             // We did not allocate a connection when we looked up the query. If
             // there's a connection when we get here, then we know it can only be
             // because the query was alive and in use, so we need to close that

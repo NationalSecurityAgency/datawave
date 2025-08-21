@@ -16,10 +16,12 @@ import datawave.core.iterators.filesystem.FileSystemCache;
  * found, the query will be considered not running.
  */
 public class HdfsQueryLock implements QueryLock {
-    private static Logger log = Logger.getLogger(HdfsQueryLock.class);
-    private String queryId;
-    private String[] hdfsBaseURIs;
-    private FileSystemCache fsCache;
+    private static final Logger log = Logger.getLogger(HdfsQueryLock.class);
+    
+    private final String queryId;
+    private final String[] hdfsBaseURIs;
+    private final FileSystemCache fsCache;
+    
     private boolean privateCache = false;
 
     public HdfsQueryLock(String hdfsSiteConfigs, String hdfsBaseURIs, String queryId) throws MalformedURLException {
@@ -27,7 +29,7 @@ public class HdfsQueryLock implements QueryLock {
         this.privateCache = true;
     }
 
-    public HdfsQueryLock(FileSystemCache fsCache, String hdfsBaseURIs, String queryId) throws MalformedURLException {
+    public HdfsQueryLock(FileSystemCache fsCache, String hdfsBaseURIs, String queryId) {
         this.queryId = queryId;
         this.hdfsBaseURIs = filterHdfsOnly(hdfsBaseURIs.split(","));
         this.fsCache = fsCache;

@@ -1,0 +1,78 @@
+package datawave.webservice.query.limit;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
+
+/**
+ * Represents a custom query limit configuration that can be configured for matching systems.
+ */
+public class SystemConfiguration {
+    
+    // The system name regex pattern.
+    private String systemPattern;
+    
+    // Whether queries submitted on matching systems should count against a user's query limit.
+    private Boolean countsAgainstsUserLimit = true;
+    
+    // The maximum number of queries that can run concurrently on matching systems.
+    private Integer queryLimit;
+    
+    // Map of query logic group names to the maximum number of queries that can run concurrently on the system when originating from query logics that fall
+    // within the query logic group.
+    private Map<String, Integer> queryLogicGroupLimits;
+    
+    public String getSystemPattern() {
+        return systemPattern;
+    }
+    
+    public void setSystemPattern(String systemPattern) {
+        this.systemPattern = systemPattern;
+    }
+    
+    public Boolean getCountsAgainstsUserLimit() {
+        return countsAgainstsUserLimit;
+    }
+    
+    public void setCountsAgainstsUserLimit(Boolean countsAgainstsUserLimit) {
+        this.countsAgainstsUserLimit = countsAgainstsUserLimit;
+    }
+    
+    public Integer getQueryLimit() {
+        return queryLimit;
+    }
+    
+    public void setQueryLimit(Integer queryLimit) {
+        this.queryLimit = queryLimit;
+    }
+    
+    public Map<String,Integer> getQueryLogicGroupLimits() {
+        return queryLogicGroupLimits;
+    }
+    
+    public void setQueryLogicGroupLimits(Map<String,Integer> queryLogicGroupLimits) {
+        this.queryLogicGroupLimits = queryLogicGroupLimits;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SystemConfiguration that = (SystemConfiguration) o;
+        return Objects.equals(systemPattern, that.systemPattern) && Objects.equals(countsAgainstsUserLimit, that.countsAgainstsUserLimit) && Objects.equals(
+                        queryLimit, that.queryLimit) && Objects.equals(queryLogicGroupLimits, that.queryLogicGroupLimits);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(systemPattern, countsAgainstsUserLimit, queryLimit, queryLogicGroupLimits);
+    }
+    
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", SystemConfiguration.class.getSimpleName() + "[", "]").add("systemPattern='" + systemPattern + "'")
+                        .add("countsAgainstsUserLimit=" + countsAgainstsUserLimit).add("queryLimit=" + queryLimit)
+                        .add("queryLogicGroupLimits=" + queryLogicGroupLimits).toString();
+    }
+}
