@@ -24,20 +24,14 @@ public class GroupedInterpretationVisitor extends BaseVisitor {
      * @return the list of ambiguous nodes
      */
     public static List<QueryNode> check(QueryNode node) {
-        GroupedInterpretationVisitor visitor = new GroupedInterpretationVisitor(QueryNodeType.AND);
+        GroupedInterpretationVisitor visitor = new GroupedInterpretationVisitor();
         // noinspection unchecked
         return (List<QueryNode>) visitor.visit(node, new ArrayList<QueryNode>());
     }
 
-    private final QueryNodeType junction;
-
-    private GroupedInterpretationVisitor(QueryNodeType junction) {
-        this.junction = junction;
-    }
-
     @Override
     public Object visit(AndQueryNode node, Object data) {
-        return this.junction == QueryNodeType.AND ? checkJunction(node, data) : super.visit(node, data);
+        return checkJunction(node, data);
     }
 
     @Override
