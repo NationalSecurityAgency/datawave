@@ -48,6 +48,7 @@ import datawave.query.rules.AmbiguousOrPhrasesRule;
 import datawave.query.rules.AmbiguousUnquotedPhrasesRule;
 import datawave.query.rules.FieldExistenceRule;
 import datawave.query.rules.FieldPatternPresenceRule;
+import datawave.query.rules.GroupedInterpretationRule;
 import datawave.query.rules.IncludeExcludeArgsRule;
 import datawave.query.rules.IncludeExcludeIndexFieldsRule;
 import datawave.query.rules.InvalidQuoteRule;
@@ -166,6 +167,7 @@ public class ShardQueryLogicQueryValidationTest {
         expectedRules.add(new AmbiguousNotRule("Check for Ambiguous Usage of NOT"));
         expectedRules.add(new AmbiguousOrPhrasesRule("Check for Unfielded Terms That Could Be Wrapped"));
         expectedRules.add(new AmbiguousUnquotedPhrasesRule("Check for Unfielded Terms That Could Be Quoted"));
+        expectedRules.add(new GroupedInterpretationRule("Interpret Grouped Phrases"));
         expectedRules.add(new MinimumSlopProximityRule("Validate Slop Proximity"));
         expectedRules.add(new IncludeExcludeArgsRule("Validate Args of #INCLUDE and #EXCLUDE"));
         expectedRules.add(new FieldExistenceRule("Check Field Existence", Set.of("I_DO_NOT_EXIST", "_NOFIELD_", "_ANYFIELD_")));
