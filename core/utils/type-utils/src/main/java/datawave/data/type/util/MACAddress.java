@@ -136,7 +136,7 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
             if (groupingSize < 1 || groupingSize > MAC_ADDRESS_LENGTH) {
                 throw new IllegalArgumentException("Grouping size must be between 1 and " + MAC_ADDRESS_LENGTH + ", inclusive.");
             }
-            if (sep.matches("\\.")) {
+            if (sep.matches(DOT_REGEX)) {
                 sep = "\\" + sep;
             }
             String[] digits;

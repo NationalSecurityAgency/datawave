@@ -120,7 +120,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
          * This normalizer is just worrying about stripping punctuation from phone numbers, so if this is a string of digits, just return instead of doing the
          * other checks.
          */
-        if (number.matches("^\\d+$")) {
+        if (number.matches(DIGIT_STRING)) {
             return new PhoneNumber(number);
         }
 

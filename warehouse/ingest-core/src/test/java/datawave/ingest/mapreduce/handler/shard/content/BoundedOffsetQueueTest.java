@@ -8,6 +8,8 @@ import org.junit.Test;
  */
 public class BoundedOffsetQueueTest {
 
+    private static final String OFFSET_REGEX = "Cannot compare a key that has no offsets to be found";
+
     @Test
     public void testAddOffset() {
 
@@ -58,7 +60,7 @@ public class BoundedOffsetQueueTest {
 
             Assert.assertTrue(String.format(
                             "BoundedOffsetQueue.OffsetListComparator threw the expected exception, however it did not have the correct message: %s", msg),
-                            msg.matches("Cannot compare a key that has no offsets to be found"));
+                            msg.matches(OFFSET_REGEX));
         }
 
         TermAndZone taz = new TermAndZone(token);
