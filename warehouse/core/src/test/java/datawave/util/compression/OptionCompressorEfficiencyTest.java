@@ -1,5 +1,6 @@
 package datawave.util.compression;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -16,14 +17,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils; // Apache Commons Lang for capitalization
 import org.junit.jupiter.api.Test;
 
 import datawave.query.util.TypeMetadata;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Compression benchmark for OptionCompressor across generated datasets.
@@ -235,7 +233,7 @@ public class OptionCompressorEfficiencyTest {
         Collections.sort(fields);
         for (String f : fields) {
             System.out.println("- " + f + ":");
-            Map<String, Set<String>> types = ds.byField.getOrDefault(f, Collections.emptyMap());
+            Map<String,Set<String>> types = ds.byField.getOrDefault(f, Collections.emptyMap());
             List<String> typeNames = new ArrayList<>(types.keySet());
             Collections.sort(typeNames);
             for (String t : typeNames) {
