@@ -136,18 +136,24 @@ public class ShardRangeStream extends RangeStream {
      * Lift and shift from DefaultQueryPlanner to avoid reliance on static methods
      */
     private void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper) {
+        System.out.println("SETH SMUCKER");
         DefaultQueryPlanner.addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(true), false);
 
         Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create(config.getQueryFieldsDatatypes());
         nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
         String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
+        System.out.println("NON_INDEXED_DATATYPES: " + nonIndexedTypes);
         DefaultQueryPlanner.addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
 
         try {
             String serializedTypeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter()).toString();
+            System.out.println("TYPE_METADATA: " + serializedTypeMetadata);
+
             DefaultQueryPlanner.addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
 
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
+            System.out.println("TYPE_METADATA_AUTHS: " + requiredAuthsString);
+
             requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
             DefaultQueryPlanner.addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
         } catch (TableNotFoundException | IOException e) {

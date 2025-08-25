@@ -69,6 +69,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -203,6 +204,24 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isTraceEnabled()) {
             log.trace(JexlStringBuildingVisitor.buildQuery(node));
         }
+
+        System.out.println("SETH SMUCKER");
+
+        Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create(config.getQueryFieldsDatatypes());
+        nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
+        String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
+        System.out.println("NON_INDEXED_DATATYPES: " + nonIndexedTypes);
+
+        try {
+            String serializedTypeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter()).toString();
+            System.out.println("TYPE_METADATA: " + serializedTypeMetadata);
+
+        } catch (TableNotFoundException ignored) {
+
+        }
+
+        // String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
+        // System.out.println("TYPE_METADATA_AUTHS: " + requiredAuthsString);
 
         BaseIndexStream ranges = (BaseIndexStream) node.jjtAccept(this, null);
 
