@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import com.sun.management.OperatingSystemMXBean;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.result.GenericResponse;
 
@@ -64,6 +65,9 @@ public class HealthBean {
 
     private static boolean shutdownInProgress = false;
     private static String status = "ready";
+
+    @Inject
+    private AccumuloTableCache tableCache;
 
     @Inject
     private AccumuloConnectionFactory accumuloConnectionFactoryBean;
@@ -97,7 +101,10 @@ public class HealthBean {
         ServerHealth health = new ServerHealth();
         health.status = status;
         health.connectionUsagePercent = accumuloConnectionFactoryBean.getConnectionUsagePercent();
-        if (health.connectionUsagePercent >= maxUsedPercent) {
+        if (!tableCache.isAvailable()) {
+            health.details = "Accumulo table cache is not ready yet";
+            return Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build();
+        } else if (health.connectionUsagePercent >= maxUsedPercent) {
             health.details = health.connectionUsagePercent + " of connections used [>= max of " + maxUsedPercent + " allowed]";
             return Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build();
         } else if (shutdownInProgress) {

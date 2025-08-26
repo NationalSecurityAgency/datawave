@@ -20,6 +20,8 @@ public interface TableCache extends Callable<Boolean>, Serializable {
 
     Date getLastRefresh();
 
+    boolean isAvailable();
+
     AccumuloConnectionFactory getConnectionFactory();
 
     InMemoryInstance getInstance();
