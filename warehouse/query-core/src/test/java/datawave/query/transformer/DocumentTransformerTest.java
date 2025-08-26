@@ -119,7 +119,7 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
 
         Map<String,List<String>> fieldMap = new HashMap<>();
-        List<String> fieldList = Collections.EMPTY_LIST;
+        List<String> fieldList = Collections.emptyList();
         fieldMap.put("field2", fieldList);
         Document d = new Document();
         basicExpects(d, key, entry);

@@ -21,7 +21,6 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
-import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
@@ -94,7 +93,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
     }
 
     public static class HelperDelegate<T extends BaseQueryMetric> {
-        private Collection<String> ignoredFields = Collections.EMPTY_LIST;
+        private Collection<String> ignoredFields = Collections.emptyList();
 
         public HelperDelegate() {}
 
