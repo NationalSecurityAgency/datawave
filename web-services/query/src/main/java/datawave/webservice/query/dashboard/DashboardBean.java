@@ -24,6 +24,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -146,6 +147,7 @@ public class DashboardBean {
         long start = Instant.now().toEpochMilli() - MS_IN_12_HRS;
         long end = start + (1000 * 60 * 10);// 10 minutes
         Scanner scanner = ScannerHelper.createScanner(accumuloClient, TABLE_NAME_JMC, getAuths());
+        scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
         Key startKey = new Key(Long.toString(start));
         Key endKey = new Key(Long.toString(end));
         Range range = new Range(startKey, endKey);

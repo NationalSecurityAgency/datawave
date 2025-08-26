@@ -38,6 +38,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -158,6 +159,7 @@ public class ModelBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 for (Entry<Key,Value> entry : scanner) {
                     String colf = entry.getKey().getColumnFamily().toString();
                     if (!RESERVED_COLF_VALUES.contains(colf) && !modelNames.contains(colf)) {
@@ -361,6 +363,7 @@ public class ModelBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 IteratorSetting cfg = new IteratorSetting(21, "colfRegex", RegExFilter.class.getName());
                 cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
                 scanner.addScanIterator(cfg);

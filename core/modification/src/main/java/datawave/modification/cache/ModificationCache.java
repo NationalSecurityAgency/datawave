@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -60,6 +61,7 @@ public class ModificationCache {
                             Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami())), 8);
             s.setRanges(Collections.singleton(new Range()));
             s.fetchColumnFamily(MODIFICATION_COLUMN);
+            s.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
             for (Entry<Key,Value> e : s) {
                 // Field name is in the row and datatype is in the colq.
                 String datatype = e.getKey().getColumnQualifier().toString();

@@ -30,6 +30,7 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -273,6 +274,7 @@ public class Persister {
             try (Scanner scanner = ScannerHelper.createScanner(client, TABLE_NAME, auths)) {
                 scanner.setRange(new Range(sid, sid));
                 scanner.addScanIterator(regex);
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
 
                 return Lists.newArrayList(Iterables.transform(scanner, resultsTransform));
             }

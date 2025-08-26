@@ -43,6 +43,7 @@ import org.apache.abdera.model.Feed;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -137,6 +138,8 @@ public class AtomServiceBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(userDN, proxyServers, poolName, Priority.NORMAL, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(client, tableName + "Categories", auths)) {
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
+
                 Map<String,String> props = new HashMap<>();
                 props.put(MatchingKeySkippingIterator.ROW_DELIMITER_OPTION, "\0");
                 props.put(MatchingKeySkippingIterator.NUM_SCANS_STRING_NAME, "5");
@@ -231,6 +234,7 @@ public class AtomServiceBean {
                 } else {
                     scanner.setRange(new Range(category, true, category + "\1", false));
                 }
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 for (Map.Entry<Key,Value> entry : scanner) {
                     AtomKeyValueParser atom = AtomKeyValueParser.parse(entry.getKey(), entry.getValue());
                     if (atom.getUpdated().after(maxDate)) {
@@ -312,6 +316,7 @@ public class AtomServiceBean {
 
             try (Scanner scanner = ScannerHelper.createScanner(client, tableName, auths)) {
                 scanner.setRange(new Range(category, true, category + "\1", false));
+                scanner.setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
                 // ID is fieldValue\0UUID
                 scanner.fetchColumnFamily(new Text(AtomKeyValueParser.decodeId(id)));
                 for (Map.Entry<Key,Value> entry : scanner) {
