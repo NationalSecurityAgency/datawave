@@ -220,6 +220,10 @@
         <property name="name" value="Check for Unfielded Terms That Could Be Quoted"/>
     </bean>
 
+    <bean id="GroupedInterpretationRule" scope="prototype" class="datawave.query.rules.GroupedInterpretationRule">
+        <property name="name" value="Interpret Grouped Phrases"/>
+    </bean>
+
     <bean id="IncludeExcludeArgsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeArgsRule">
         <property name="name" value="Validate Args of #INCLUDE and #EXCLUDE"/>
     </bean>
@@ -415,6 +419,7 @@
                 <ref bean="AmbiguousNotRule"/>
                 <ref bean="AmbiguousOrPhrasesRule"/>
                 <ref bean="AmbiguousUnquotedPhrasesRule"/>
+                <ref bean="GroupedInterpretationRule"/>
                 <ref bean="MinimumSlopProximityRule"/>
                 <ref bean="IncludeExcludeArgsRule"/>
                 <ref bean="FieldExistenceRule"/>
