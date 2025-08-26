@@ -50,7 +50,7 @@ import datawave.query.rules.FieldExistenceRule;
 import datawave.query.rules.FieldPatternPresenceRule;
 import datawave.query.rules.GroupedInterpretationRule;
 import datawave.query.rules.IncludeExcludeArgsRule;
-import datawave.query.rules.IncludeExcludeIndexFieldsRule;
+import datawave.query.rules.IncludeExcludeIndexOnlyFieldsRule;
 import datawave.query.rules.InvalidQuoteRule;
 import datawave.query.rules.MinimumSlopProximityRule;
 import datawave.query.rules.NumericValueRule;
@@ -174,7 +174,7 @@ public class ShardQueryLogicQueryValidationTest {
         expectedRules.add(new UnescapedSpecialCharsRule("Check for Unescaped Special Characters", Set.of('?'), Set.of('_'), false, false));
         expectedRules.add(new FieldPatternPresenceRule("Check Presence of Field or Pattern", Map.of("_ANYFIELD_", "Detected presence of _ANYFIELD_"),
                         Map.of(".*", "Detected pattern '.*' that will match everything")));
-        expectedRules.add(new IncludeExcludeIndexFieldsRule("Check #INCLUDE and #EXCLUDE for Indexed Fields"));
+        expectedRules.add(new IncludeExcludeIndexOnlyFieldsRule("Check #INCLUDE and #EXCLUDE for Index Only Fields"));
         expectedRules.add(new NumericValueRule("Validate Numeric Values Only Given for Numeric Fields"));
         expectedRules.add(new TimeFunctionRule("Validate #TIME_FUNCTION has Date Fields"));
 

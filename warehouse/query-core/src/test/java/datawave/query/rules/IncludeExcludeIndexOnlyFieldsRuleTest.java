@@ -10,17 +10,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import datawave.query.util.MockMetadataHelper;
 
-/**
- * @deprecated use IncludeExcludeIndexOnlyFieldsRule/IncludeExcludeIndexOnlyFieldsRuleTest instead
- */
-@Deprecated
-class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
+class IncludeExcludeIndexOnlyFieldsRuleTest extends ShardQueryRuleTest {
 
     private static final MockMetadataHelper metadataHelper = new MockMetadataHelper();
 
     @BeforeAll
     static void beforeAll() {
-        metadataHelper.setIndexedFields(Set.of("INDEXED1", "INDEXED2"));
+        metadataHelper.setIndexOnlyFields(Set.of("INDEXED1", "INDEXED2"));
     }
 
     @BeforeEach
@@ -42,14 +38,14 @@ class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
     }
 
     /**
-     * Test versions of the includeRegex and excludeRegex functions without indexed fields.
+     * Test versions of the includeRegex and excludeRegex functions without index only fields.
      *
      * @param name
      *            the function name
      */
     @ParameterizedTest
     @ValueSource(strings = {"includeRegex", "excludeRegex"})
-    void testFunctionWithoutIndexedField(String name) throws Exception {
+    void testFunctionWithoutIndexedOnlyField(String name) throws Exception {
         givenQuery("filter:" + name + "(FOO,'value')");
 
         // Do not expect any messages.
@@ -57,16 +53,16 @@ class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
     }
 
     /**
-     * Test versions of the includeRegex and excludeRegex functions with an indexed field.
+     * Test versions of the includeRegex and excludeRegex functions with an index only field.
      *
      * @param name
      *            the function name
      */
     @ParameterizedTest
     @ValueSource(strings = {"includeRegex", "excludeRegex"})
-    void testFunctionWithSingleIndexedField(String name) throws Exception {
+    void testFunctionWithSingleIndexOnlyField(String name) throws Exception {
         givenQuery("filter:" + name + "(INDEXED1,'value')");
-        expectMessage("Indexed fields found within the function filter:" + name + ": INDEXED1");
+        expectMessage("Index Only fields found within the filter function filter:" + name + ": INDEXED1");
 
         assertResult();
     }
@@ -75,10 +71,10 @@ class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
      * Test a query with both the includeRegex and excludeRegex functions with indexed fields.
      */
     @Test
-    void testMultipleFunctionWithIndexedField() throws Exception {
+    void testMultipleFunctionWithIndexOnlyField() throws Exception {
         givenQuery("filter:includeRegex(INDEXED1,'value') && filter:excludeRegex(INDEXED2, 'value')");
-        expectMessage("Indexed fields found within the function filter:includeRegex: INDEXED1");
-        expectMessage("Indexed fields found within the function filter:excludeRegex: INDEXED2");
+        expectMessage("Index Only fields found within the filter function filter:includeRegex: INDEXED1");
+        expectMessage("Index Only fields found within the filter function filter:excludeRegex: INDEXED2");
 
         assertResult();
     }
@@ -87,7 +83,7 @@ class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
      * Test a query with both the includeRegex and excludeRegex functions without indexed fields.
      */
     @Test
-    void testMultipleFunctionWithoutIndexedField() throws Exception {
+    void testMultipleFunctionWithoutIndexOnlyField() throws Exception {
         givenQuery("filter:includeRegex(FOO,'value') && filter:excludeRegex(BAR, 'value')");
 
         // Do not expect any messages.
@@ -101,6 +97,6 @@ class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
 
     @Override
     protected ShardQueryRule getNewRule() {
-        return new IncludeExcludeIndexFieldsRule(ruleName);
+        return new IncludeExcludeIndexOnlyFieldsRule(ruleName);
     }
 }
