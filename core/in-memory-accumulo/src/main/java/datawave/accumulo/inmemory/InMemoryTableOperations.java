@@ -176,6 +176,21 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         rename(oldTableName, newTableName, false);
     }
 
+    /**
+     * Rename a table. If the force flag is used, then the existence of the new table prior to renaming will not halt the operation, and will allow for
+     * atomically replacing the table.
+     *
+     * @param oldTableName
+     *            The table to rename
+     * @param newTableName
+     *            The new table name
+     * @param force
+     *            A flag to allow for renaming the table even if the new table name already exists
+     * @throws TableNotFoundException
+     *             Thrown is the table to rename does not exist
+     * @throws TableExistsException
+     *             Thrown if the new table already exists (unless force is specified as true)
+     */
     public void rename(String oldTableName, String newTableName, boolean force) throws TableNotFoundException, TableExistsException {
         if (!exists(oldTableName))
             throw new TableNotFoundException(oldTableName, oldTableName, "");
