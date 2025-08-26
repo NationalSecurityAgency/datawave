@@ -44,7 +44,7 @@ public class InMemoryAccumulo {
     final Map<String,InMemoryTable> tables = Collections.synchronizedMap(new HashMap<>());
     final Map<String,InMemoryNamespace> namespaces = Collections.synchronizedMap(new HashMap<>());
     final Map<String,String> systemProperties = Collections.synchronizedMap(new HashMap<>());
-    Map<String,InMemoryUser> users = Collections.synchronizedMap(new HashMap<>());
+    final Map<String,InMemoryUser> users = Collections.synchronizedMap(new HashMap<>());
     final FileSystem fs;
     final AtomicInteger tableIdCounter = new AtomicInteger(0);
 
