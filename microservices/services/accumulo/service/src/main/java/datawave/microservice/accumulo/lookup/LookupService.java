@@ -190,6 +190,8 @@ public class LookupService {
             ranges.add(new Range(begin, true, end, true));
             batchScanner.setRanges(ranges);
 
+            batchScanner.setConsistencyLevel(ConsistencyLevel.EVENTUAL);
+
             final Iterator<Map.Entry<Key,Value>> itr = batchScanner.iterator();
 
             int currEntry = -1;
