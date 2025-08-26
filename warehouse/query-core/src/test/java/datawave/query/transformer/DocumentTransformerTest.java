@@ -83,7 +83,7 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         EasyMock.expect(mockDeserializer.apply(entry)).andReturn(documentEntry);
         // EasyMock.expect(mockDocument.getDictionary()).andReturn(Collections.EMPTY_MAP);
         // mockDocument.debugDocumentSize(key);
-        EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.EMPTY_MAP);
+        EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.emptyMap());
         // EasyMock.expect(mockDocument.getDictionary()).andReturn(dictionary);
         // EasyMock.expect(mockNumeric.getData()).andReturn("5");
         EasyMock.expect(mockResponseFactory.getField()).andReturn(simpleField);
