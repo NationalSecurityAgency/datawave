@@ -79,7 +79,7 @@ import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 
-class InMemoryTableOperations extends TableOperationsHelper {
+public class InMemoryTableOperations extends TableOperationsHelper {
     private static final Logger log = LoggerFactory.getLogger(InMemoryTableOperations.class);
     private static final byte[] ZERO = {0};
     private final InMemoryAccumulo acu;
@@ -173,9 +173,13 @@ class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public void rename(String oldTableName, String newTableName)
                     throws AccumuloSecurityException, TableNotFoundException, AccumuloException, TableExistsException {
+        rename(oldTableName, newTableName, false);
+    }
+
+    public void rename(String oldTableName, String newTableName, boolean force) throws TableNotFoundException, TableExistsException {
         if (!exists(oldTableName))
             throw new TableNotFoundException(oldTableName, oldTableName, "");
-        if (exists(newTableName))
+        if ((!force) && exists(newTableName))
             throw new TableExistsException(newTableName, newTableName, "");
         InMemoryTable t = acu.tables.remove(oldTableName);
         String namespace = TableNameUtil.qualify(newTableName).getFirst();
