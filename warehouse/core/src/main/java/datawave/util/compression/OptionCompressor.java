@@ -35,13 +35,6 @@ import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream;
  */
 public class OptionCompressor {
 
-    // possible data class for holding metadata for the compression method. Not sure if I'll need to actually include this.
-    // see Gz.java or Bzip2.java from Accumulo.
-    // public CompressionAlgorithmConfiguration configuration;
-
-    // additionally, see https://commons.apache.org/proper/commons-compress/
-    // it's probably best to source all the compression from the same place if possible.
-
     public enum CompressionMethod {
         NONE, GZIP, BZIP2, SEVEN_ZIP
     }
@@ -80,11 +73,10 @@ public class OptionCompressor {
     private String compressGZIP(final String data, final Charset charset) {
         final byte[] input = data.getBytes(charset);
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
-
-            gzip.write(input);
-            gzip.close(); // must close to flush all compressed data into baos
-
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
+                gzip.write(input);
+            }
             return Base64.encodeBase64String(baos.toByteArray());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -98,11 +90,10 @@ public class OptionCompressor {
     private String compressBZIP2(final String data, final Charset charset) {
         final byte[] input = data.getBytes(charset);
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); BZip2CompressorOutputStream bzos = new BZip2CompressorOutputStream(baos)) {
-
-            bzos.write(input);
-            bzos.close(); // finalize BZIP2 stream
-
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (BZip2CompressorOutputStream bzos = new BZip2CompressorOutputStream(baos)) {
+                bzos.write(input);
+            }
             return Base64.encodeBase64String(baos.toByteArray());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -118,11 +109,10 @@ public class OptionCompressor {
     private String compress7ZIP(final String data, final Charset charset) {
         final byte[] input = data.getBytes(charset);
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); LZMACompressorOutputStream lzma = new LZMACompressorOutputStream(baos)) {
-
-            lzma.write(input);
-            lzma.close(); // finalize LZMA stream
-
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (LZMACompressorOutputStream lzma = new LZMACompressorOutputStream(baos)) {
+                lzma.write(input);
+            }
             return Base64.encodeBase64String(baos.toByteArray());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -136,18 +126,18 @@ public class OptionCompressor {
     private String decompressGZIP(final String dataBase64, final Charset charset) {
         final byte[] compressed = Base64.decodeBase64(dataBase64);
 
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed);
-                        GZIPInputStream gzip = new GZIPInputStream(bais);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = gzip.read(buf)) != -1) {
-                baos.write(buf, 0, n);
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed)) {
+            try (GZIPInputStream gzip = new GZIPInputStream(bais)) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[4096];
+                    int n;
+                    while ((n = gzip.read(buf)) != -1) {
+                        baos.write(buf, 0, n);
+                    }
+                    // NOTE: Keeping the same pattern as provided code.
+                    return baos.toString(charset);
+                }
             }
-
-            // NOTE: Keeping the same pattern as provided code.
-            return baos.toString(charset);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -160,17 +150,17 @@ public class OptionCompressor {
     private String decompressBZIP2(final String dataBase64, final Charset charset) {
         final byte[] compressed = Base64.decodeBase64(dataBase64);
 
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed);
-                        BZip2CompressorInputStream bzis = new BZip2CompressorInputStream(bais);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = bzis.read(buf)) != -1) {
-                baos.write(buf, 0, n);
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed)) {
+            try (BZip2CompressorInputStream bzis = new BZip2CompressorInputStream(bais)) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[4096];
+                    int n;
+                    while ((n = bzis.read(buf)) != -1) {
+                        baos.write(buf, 0, n);
+                    }
+                    return baos.toString(charset);
+                }
             }
-
-            return baos.toString(charset);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -185,17 +175,17 @@ public class OptionCompressor {
     private String decompress7ZIP(final String dataBase64, final Charset charset) {
         final byte[] compressed = Base64.decodeBase64(dataBase64);
 
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed);
-                        LZMACompressorInputStream lzma = new LZMACompressorInputStream(bais);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = lzma.read(buf)) != -1) {
-                baos.write(buf, 0, n);
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed)) {
+            try (LZMACompressorInputStream lzma = new LZMACompressorInputStream(bais)) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[4096];
+                    int n;
+                    while ((n = lzma.read(buf)) != -1) {
+                        baos.write(buf, 0, n);
+                    }
+                    return baos.toString(charset);
+                }
             }
-
-            return baos.toString(charset);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
