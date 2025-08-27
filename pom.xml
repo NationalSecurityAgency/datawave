@@ -41,13 +41,13 @@
         <!-- suppress noise about missing javadocs, but keep other javadoc warnings -->
         <doclint>all,-missing</doclint>
         <env>dev</env>
+        <extraTestArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.management/java.lang.management=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.util.stream=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.time=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED</extraTestArgs>
         <image.prefix>datawave/</image.prefix>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
-        <extraTestArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.management/java.lang.management=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.util.stream=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.time=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED</extraTestArgs>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
