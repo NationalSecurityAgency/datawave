@@ -15,21 +15,20 @@ import datawave.query.jexl.visitors.FetchFunctionFieldsVisitor;
 import datawave.query.util.MetadataHelper;
 
 /**
- * @deprecated use IncludeExcludeIndexOnlyFieldsRule instead A {@link QueryRule} implementation that will check if any indexed fields are used within the
- *             functions {@code filter:includeRegex} or {@code filter:excludeRegex} in a query.
+ * A {@link QueryRule} implementation that will check if any indexed only fields are used within the functions {@code filter:includeRegex} or
+ * {@code filter:excludeRegex} in a query.
  */
-@Deprecated
-public class IncludeExcludeIndexFieldsRule extends ShardQueryRule {
+public class IncludeExcludeIndexOnlyFieldsRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(IncludeExcludeIndexFieldsRule.class);
+    private static final Logger log = Logger.getLogger(IncludeExcludeIndexOnlyFieldsRule.class);
 
     private static final Set<Pair<String,String>> functions = Collections.unmodifiableSet(Sets.newHashSet(
                     Pair.of(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE, EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX),
                     Pair.of(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE, EvaluationPhaseFilterFunctionsDescriptor.EXCLUDE_REGEX)));
 
-    public IncludeExcludeIndexFieldsRule() {}
+    public IncludeExcludeIndexOnlyFieldsRule() {}
 
-    public IncludeExcludeIndexFieldsRule(String name) {
+    public IncludeExcludeIndexOnlyFieldsRule(String name) {
         super(name);
     }
 
@@ -51,16 +50,16 @@ public class IncludeExcludeIndexFieldsRule extends ShardQueryRule {
             ASTJexlScript jexlScript = (ASTJexlScript) ruleConfig.getParsedQuery();
             // Fetch the set of fields given within any filter:includeRegex or filter:excludeRegex function calls in the query, if any.
             Set<FetchFunctionFieldsVisitor.FunctionFields> functions = FetchFunctionFieldsVisitor.fetchFields(jexlScript,
-                            IncludeExcludeIndexFieldsRule.functions, metadataHelper);
+                            IncludeExcludeIndexOnlyFieldsRule.functions, metadataHelper);
             if (!functions.isEmpty()) {
-                Set<String> indexedFields = metadataHelper.getIndexedFields(null);
+                Set<String> indexOnlyFields = metadataHelper.getIndexOnlyFields(null);
                 // Each FunctionField object represents the collection of all fields seen for either filter:includeRegex or filter:excludeRegex.
                 for (FetchFunctionFieldsVisitor.FunctionFields functionFields : functions) {
-                    Set<String> intersection = Sets.intersection(indexedFields, functionFields.getFields());
-                    // If the function contains any index fields, add a message to the result.
+                    Set<String> intersection = Sets.intersection(indexOnlyFields, functionFields.getFields());
+                    // If the function contains any index only fields, add a message to the result.
                     if (!intersection.isEmpty()) {
-                        result.addMessage("Indexed fields found within the function " + functionFields.getNamespace() + ":" + functionFields.getFunction()
-                                        + ": " + String.join(", ", intersection));
+                        result.addMessage("Index Only fields found within the filter function " + functionFields.getNamespace() + ":"
+                                        + functionFields.getFunction() + ": " + String.join(", ", intersection));
                     }
                 }
             }
@@ -74,6 +73,6 @@ public class IncludeExcludeIndexFieldsRule extends ShardQueryRule {
 
     @Override
     public QueryRule copy() {
-        return new IncludeExcludeIndexFieldsRule(name);
+        return new IncludeExcludeIndexOnlyFieldsRule(name);
     }
 }
