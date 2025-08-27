@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.config.QueryMetricHandlerProperties;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
@@ -49,6 +50,7 @@ public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic
         logic.setResponseObjectFactory(this.responseObjectFactory);
         logic.setAccumuloPassword(this.queryMetricHandlerProperties.getPassword());
         logic.setMaxEvaluationPipelines(1); // use SerialIterator
+        logic.setQueryPlanner(new DefaultQueryPlanner());
         return logic;
     }
 

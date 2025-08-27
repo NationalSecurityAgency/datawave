@@ -20,7 +20,8 @@
       class="icon"
       :src="'icons/favicon-32x32.png'"
       spinner-color="white"
-    />
+      />
+      <HelpMenu v-if="helpMenu" :menu="helpMenu" />
     </div>
     <div class="row" style="width: 100%; height: 80%">
       <p class="information">
@@ -263,10 +264,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
-import { Banner, columns, System } from '../functions/components';
+import { Banner, Menu, columns, System } from '../functions/components';
 import * as Formatters from '../functions/formatters';
 import * as Wrapper from '../functions/csvWrapper';
 import * as Feature from '../functions/features';
+import HelpMenu from './HelpMenu.vue';
 
 // Defines the Table References, loading for axios, search filter, and pagination to sort.
 const $q = useQuasar();
@@ -278,6 +280,7 @@ const router = useRouter();
 const changeFilter = ref<string>('');
 const banner = ref<Banner>();
 const system = ref<System>();
+const helpMenu = ref<Menu>();
 const search = ref('');
 let rows: QTableProps['rows'] = [];
 const paginationFront = ref({
@@ -291,10 +294,12 @@ onMounted(() => {
   let endpointData = '';
   let bannerData = 'banner';
   let systemData = 'system';
+  let helpMenuData = 'menu';
   if (process.env.DEV) {
     endpointData = 'data/v2/'
     bannerData = 'data/v2/banner/'
     systemData = 'data/v2/system/'
+    helpMenuData = 'data/v2/menu/'
   }
 
   api
@@ -304,6 +309,14 @@ onMounted(() => {
   })
   .catch((reason) => {
     console.error('Could not fetch banner: ' + reason);
+  });
+
+  api.get(helpMenuData)
+  .then((response) => {
+    helpMenu.value = response.data as Menu;
+  })
+  .catch((reason) => {
+    console.error('Could not fetch help menu: ' + reason);
   });
 
   api

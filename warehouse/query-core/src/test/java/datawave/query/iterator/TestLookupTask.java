@@ -70,7 +70,7 @@ public class TestLookupTask<T extends QueryIterator> {
             Range r = range;
             while (!rangeCompleted) {
                 log.trace("Seeking to range:" + r);
-                this.iterator.seek(r, Collections.EMPTY_LIST, false);
+                this.iterator.seek(r, Collections.emptyList(), false);
                 while (this.iterator.hasTop()) {
                     Document document = deserializeAndFilterDocument(this.iterator.getTopValue());
                     if (document.getDictionary().size() > 0) {
