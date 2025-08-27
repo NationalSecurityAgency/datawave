@@ -7,6 +7,7 @@ services:
   quickstart:
     profiles:
       - quickstart
+    # Additional testing change
     # To run the wildfly webservice, change `--accumulo` to `--web`
     command: ["datawave-bootstrap.sh", "--accumulo"]
     image: datawave/quickstart-compose
