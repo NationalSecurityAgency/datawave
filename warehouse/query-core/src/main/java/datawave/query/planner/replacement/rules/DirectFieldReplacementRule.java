@@ -20,8 +20,9 @@ public class DirectFieldReplacementRule implements FieldReplacementRule {
         return node instanceof ASTIdentifier && ((ASTIdentifier) node).getName().equals(field);
     }
 
-    public void apply(JexlNode node) {
+    public JexlNode apply(JexlNode node) {
         JexlASTHelper.setField(node, replacement);
+        return node;
     }
 
     public String getField() {

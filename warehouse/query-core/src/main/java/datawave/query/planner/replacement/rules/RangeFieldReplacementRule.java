@@ -4,10 +4,10 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import java.util.HashMap;
@@ -32,61 +32,41 @@ public class RangeFieldReplacementRule implements FieldReplacementRule {
     }
 
     @Override
-    public void apply(JexlNode node) {
+    public JexlNode apply(JexlNode node) {
         LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
 
         if (range == null || !fieldMap.containsKey(range.getFieldName())) {
-            return;
+            return node;
         }
 
-        // Clone original range node and rename identifier in the clone
-        JexlNode clonedLower = cloneAndReplaceField(range.getLowerNode(), fieldMap.get(range.getFieldName()));
-        JexlNode clonedUpper = cloneAndReplaceField(range.getUpperNode(), fieldMap.get(range.getFieldName()));
+        // Create a copy and mark it as "evaluationOnly"
+        JexlNode copy = RebuildingVisitor.copy(node);
+        JexlNode evalNode = QueryPropertyMarker.create(copy, EVALUATION_ONLY);
 
-        ASTAndNode newAnd = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-        newAnd.jjtAddChild(clonedLower, 0);
-        newAnd.jjtAddChild(clonedUpper, 1);
 
-        // Mark the original node as "evaluationOnly"
-        QueryPropertyMarker.create(node, EVALUATION_ONLY);
+        // rename the field for the range nodes
+        replaceField(range.getLowerNode(), fieldMap.get(range.getFieldName()));
+        replaceField(range.getUpperNode(), fieldMap.get(range.getFieldName()));
 
-        // Replace the original node in-place with a new parent AND node
+        // Create a top level AND for both the original node and the eval node
         ASTAndNode topLevel = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-        topLevel.jjtAddChild(node, 0);
-        topLevel.jjtAddChild(newAnd, 1);
+        topLevel.jjtAddChild(evalNode, 0);
+        topLevel.jjtAddChild(node, 1);
+        node.jjtSetParent(topLevel);
+        evalNode.jjtSetParent(topLevel);
 
-        replaceNodeInParent(node, topLevel);
+        return topLevel;
     }
 
-    private JexlNode cloneAndReplaceField(JexlNode original, String newName) {
-        try {
-            JexlNode copy = JexlNodes.newInstanceOfType(original);
-
-            for (int i = 0; i < original.jjtGetNumChildren(); i++) {
-                JexlNode child = original.jjtGetChild(i);
-                if (child instanceof ASTIdentifier) {
-                    ASTIdentifier newId = JexlNodeFactory.buildIdentifier(newName);
-                    copy.jjtAddChild(newId, i);
-                } else {
-                    copy.jjtAddChild(cloneAndReplaceField(child, newName), i);
-                }
-            }
-            return copy;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to clone node: " + original.getClass(), e);
-        }
-    }
-
-    private void replaceNodeInParent(JexlNode oldNode, JexlNode newNode) {
-        JexlNode parent = oldNode.jjtGetParent();
-        if (parent == null)
-            return; // if root node, you’ll need to replace externally todo figure out root nodes
-
-        for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
-            if (parent.jjtGetChild(i) == oldNode) {
-                parent.jjtAddChild(newNode, i);
-                newNode.jjtSetParent(parent);
-                return;
+    private void replaceField(JexlNode node, String newName) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
+            if (child instanceof ASTIdentifier) {
+                ASTIdentifier newId = JexlNodeFactory.buildIdentifier(newName);
+                node.jjtAddChild(newId, i);
+                newId.jjtSetParent(node);
+            } else {
+                replaceField(child, newName);
             }
         }
     }

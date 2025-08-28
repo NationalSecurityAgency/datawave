@@ -1,16 +1,15 @@
 package datawave.query.planner.replacement;
 
-import java.util.List;
-
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.planner.replacement.rules.FieldReplacementRule;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.planner.replacement.rules.FieldReplacementRule;
+import java.util.List;
 
 public class FieldReplacementVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(FieldReplacementVisitor.class);
@@ -40,7 +39,7 @@ public class FieldReplacementVisitor extends RebuildingVisitor {
         JexlNode jexlNode = (JexlNode) node;
         for (FieldReplacementRule rule : rules) {
             if (rule.matches(jexlNode)) {
-                rule.apply(jexlNode);
+                jexlNode = rule.apply(jexlNode);
             }
         }
         return jexlNode;
