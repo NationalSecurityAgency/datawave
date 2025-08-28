@@ -115,6 +115,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      *            maximum number of splits to return
      * @return split points grouped into fewer evenly grouped splits so as not to exceed maxSplits
      */
+    // TODO seems like this code is only used in test
     public static List<Text> trimSplits(List<Text> tableSplits, int maxSplits) {
         if (tableSplits.size() <= maxSplits) {
             return tableSplits;
@@ -362,6 +363,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         String line;
         String tableName = null;
         Map tmpSplitLocations = new ShardLocationTrieMap();
+        Map<String,List<Text>> tableSplits = new HashMap<>();
         List<Text> tmpSplits = null;
 
         while ((line = in.readLine()) != null) {
@@ -373,7 +375,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 tableName = parts[0];
                 tmpSplitLocations = new ShardLocationTrieMap();
                 tmpSplits = new ArrayList<>();
-                this.splits.put(tableName, Collections.unmodifiableList(tmpSplits));
+                tableSplits.put(tableName, tmpSplits);
             }
             if (parts.length >= 2) {
                 Text split = new Text(Base64.decodeBase64(parts[1]));
@@ -386,6 +388,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         if (!tmpSplitLocations.isEmpty()) {
             this.splitLocations.put(tableName, tmpSplitLocations);
         }
+
+        this.splits.putAll(tableSplits);
+
         in.close();
     }
 
@@ -411,7 +416,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             read();
         }
         List<Text> splitList = this.splits.get(table);
-        return (splitList == null ? Collections.emptyList() : splitList);
+        return (splitList == null ? List.of() : splitList);
     }
 
     /**
@@ -424,6 +429,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
+    // TODO seems like this code is only used in test, can it be removed? Looked into making it return SortedList
     public List<Text> getSplits(String table, int maxSplits) throws IOException {
         return trimSplits(getSplits(table), maxSplits);
     }
@@ -447,11 +453,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     public Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException {
         if (this.splitLocations.isEmpty())
             read();
-        if (this.splitLocations.containsKey(table)) {
-            return this.splitLocations.get(table);
-        } else {
-            return Collections.emptyMap();
-        }
+        return this.splitLocations.getOrDefault(table, Collections.emptyMap());
     }
 
     /**
