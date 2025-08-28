@@ -70,7 +70,7 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
 
     @Test
     void testQueryWithNumericValuesForMixedTypedFields() throws Exception {
-        givenQuery("FOO == 1 && BAR != '1' || HAT > 1 || BAT < 1 || HEN <= 1 || VEE >= 1");
+        givenQuery("FOO == '[1 TO 20]' && BAR != '1' || HAT > 1 || BAT < 1 || HEN <= 1 || VEE >= 1");
 
         // Set up a mock TypeMetadata that will return field type information.
         TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
@@ -80,6 +80,20 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
         EasyMock.expect(typeMetadata.getNormalizerNamesForField("BAT")).andReturn(LC_NO_DIACRITICS_TYPE);
         EasyMock.expect(typeMetadata.getNormalizerNamesForField("HEN")).andReturn(NUMBER_TYPE);
         EasyMock.expect(typeMetadata.getNormalizerNamesForField("VEE")).andReturn(LC_NO_DIACRITICS_TYPE);
+        EasyMock.replay(typeMetadata);
+        givenTypeMetadata(typeMetadata);
+
+        expectMessage("Numeric values supplied for non-numeric field(s): BAR, BAT, VEE");
+
+        assertResult();
+    }
+
+    @Test
+    void testQueryWithNumericRanges() throws Exception {
+        givenQuery("FOO == 1 && BAR == '[0 TO 20]'");
+
+        // Set up a mock TypeMetadata that will return field type information.
+        TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
         EasyMock.replay(typeMetadata);
         givenTypeMetadata(typeMetadata);
 
