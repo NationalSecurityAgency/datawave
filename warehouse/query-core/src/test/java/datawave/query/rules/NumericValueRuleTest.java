@@ -90,10 +90,14 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
 
     @Test
     void testQueryWithNumericRanges() throws Exception {
-        givenQuery("FOO == 1 && BAR == '[0 TO 20]'");
+        givenQuery("FOO:'1' && BAR:'[0 TO 20]'");
+        parseQueryToLucene();
 
         // Set up a mock TypeMetadata that will return field type information.
         TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("FOO")).andReturn(NUMBER_TYPE);  // not sure exactly how EasyMock sets all of this up
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("BAR")).andReturn(NUMBER_TYPE);  // not sure exactly how EasyMock sets all of this up
+
         EasyMock.replay(typeMetadata);
         givenTypeMetadata(typeMetadata);
 
@@ -104,7 +108,7 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
 
     @Override
     protected Object parseQuery() throws Exception {
-        return parseQueryToJexl();
+        return parseQueryToLucene(); //originaly jexl, I'm going to need some other way totest this since switching it up break everything.
     }
 
     @Override
