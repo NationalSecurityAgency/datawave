@@ -97,6 +97,7 @@ import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.index.day.DayIndexStream;
+import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
@@ -3122,6 +3123,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             QueryPlanStream stream = getQueryPlanStream(config, scannerFactory, metadataHelper);
             ranges = stream.streamPlans(queryTree);
+
+            if (stream instanceof RangeStream) {
+                RangeStream rangeStream = (RangeStream) stream;
+
+                if (log.isDebugEnabled()) {
+                    log.debug("range stream context: " + rangeStream.context());
+                }
+
+                if (rangeStream.context().equals(IndexStream.StreamContext.DELAYED)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because query consists of only delayed expressions");
+                    }
+                    needsFullTable = true;
+                }
+            }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
             // TODO -- in practice the second half of this config is always false, so this check is pointless
