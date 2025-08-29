@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -65,7 +66,6 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
-import datawave.query.exceptions.QueryIteratorYieldingException;
 import datawave.query.function.Aggregation;
 import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMetadata;
@@ -96,6 +96,8 @@ import datawave.query.iterator.profile.PipelineQuerySpanCollectionIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
+import datawave.query.iterator.waitwindow.WaitWindowOverseerIterator;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -113,6 +115,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
+import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
@@ -122,7 +125,6 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.TupleToEntry;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -165,6 +167,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected SortedKeyValueIterator<Key,Value> source;
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;
+    protected int numberOfDeepCopies = 0;
+    protected List<String> deepCopyStages = new LinkedList<>();
+
     protected Map<String,String> documentOptions;
     protected NestedIterator<Key> initKeySource, seekKeySource;
     protected Iterator<Entry<Key,Document>> documentIterator;
@@ -175,7 +180,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected Key key;
     protected Value value;
-    protected YieldCallback<Key> yield;
+    protected YieldCallback<Key> yieldCallback;
+    protected WaitWindowObserver waitWindowObserver = new WaitWindowObserver();
 
     protected IteratorEnvironment myEnvironment;
 
@@ -199,6 +205,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected ExcerptTransform excerptTransform = null;
 
+    protected SummaryTransform summaryTransform = null;
+
     protected RangeProvider rangeProvider;
 
     public QueryIterator() {}
@@ -218,6 +226,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.typeMetadata = other.typeMetadata;
         this.exceededOrEvaluationCache = other.exceededOrEvaluationCache;
         this.trackingSpan = other.trackingSpan;
+        this.waitWindowObserver = other.waitWindowObserver;
         // Defer to QueryOptions to re-set all the query options
         super.deepCopy(other);
     }
@@ -236,6 +245,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
 
+        // affects the way waitWindowObserver creates some yieldKeys
+        this.waitWindowObserver.setSortedUIDs(sortedUIDs);
+
         // We want to add in spoofed dataTypes for Aggregation/Evaluation to
         // ensure proper numeric evaluation.
         this.typeMetadata = new TypeMetadata(this.getTypeMetadata());
@@ -249,14 +261,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.myEnvironment = env;
 
         if (gatherTimingDetails()) {
-            this.trackingSpan = new MultiThreadedQuerySpan(getStatsdClient());
+            this.trackingSpan = new MultiThreadedQuerySpan(querySpanCollector, getStatsdClient());
+            this.waitWindowObserver.setTrackingSpan(trackingSpan);
             this.source = new SourceTrackingIterator(trackingSpan, source);
         } else {
             this.source = source;
         }
 
         if (isDebugMultithreadedSources()) {
-            this.source = new SourceThreadTrackingIterator(this.source);
+            this.source = new SourceThreadTrackingIterator<>(this.source);
         }
 
         this.sourceForDeepCopies = this.source.deepCopy(this.myEnvironment);
@@ -308,21 +321,34 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     @Override
     public boolean hasTop() {
-        boolean yielded = (this.yield != null) && this.yield.hasYielded();
+        // If collectTimingDetails, then yielding happens in (SerialIterator|PipelineIterator).handleWaitWindowOverrun()
+        // If !collectTimingDetails, then yielding happens in this call after a WaitWindowOverrun Document is returned
+        this.waitWindowObserver.yieldOnWaitWindowOverrun();
+        boolean yielded = (this.yieldCallback != null) && this.yieldCallback.hasYielded();
         boolean result = (!yielded) && (this.key != null) && (this.value != null);
+        if (result == false) {
+            // ensure that the timerTask is cancelled
+            this.waitWindowObserver.stop();
+        }
         if (log.isTraceEnabled()) {
-            log.trace("hasTop() " + result);
+            log.trace("hasTop() " + result + " yielded " + yielded);
         }
         return result;
     }
 
     @Override
     public void enableYielding(YieldCallback<Key> yieldCallback) {
-        this.yield = yieldCallback;
+        this.yieldCallback = yieldCallback;
+        this.waitWindowObserver.setYieldCallback(yieldCallback);
     }
 
     @Override
     public void next() throws IOException {
+        // If collectTimingDetails, then we return an WAIT_WINDOW_OVERRUN first, then yield.
+        // In this case, we are ready to yield and the iterator stack is not in a state to iterate
+        if (this.waitWindowObserver.isReadyToYield()) {
+            return;
+        }
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
         try {
             if (log.isTraceEnabled()) {
@@ -348,8 +374,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
-        originalRange = range;
-        getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
+        this.originalRange = range;
+        this.waitWindowObserver.setSeekRange(range);
+        if (WaitWindowObserver.getNumYields(range.getStartKey(), this.collectTimingDetails) < this.maxYields) {
+            this.waitWindowObserver.start(this.queryId, this.yieldThresholdMs);
+        }
+        getActiveQueryLog().get(this.queryId).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
 
         try {
@@ -362,7 +392,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("Seek range: " + range + " " + query);
+                log.debug("Seek range: " + range + " queryId:" + queryId + " query:" + query);
             }
             this.range = range;
 
@@ -370,7 +400,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             long resultCount = 0;
             if (!range.isStartKeyInclusive()) {
                 // see if we can fail fast. If we were rebuilt with the FinalDocument key, then we are already completely done
-                if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
+                if (this.collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
                     this.seekKeySource = new EmptyTreeIterable();
                     this.documentIterator = EmptyIterator.emptyIterator();
                     prepareKeyValue();
@@ -379,7 +409,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
                 // see if we have a count in the cf
                 Key startKey = range.getStartKey();
-                String[] parts = StringUtils.split(startKey.getColumnFamily().toString(), '\0');
+                String[] parts = startKey.getColumnFamily().toString().split("\0");
                 if (parts.length == 3) {
                     resultCount = NumericalEncoder.decode(parts[0]).longValue();
                     // remove the count from the range
@@ -391,11 +421,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // determine whether this is a document specific range
             Range documentRange = isDocumentSpecificRange(range) ? range : null;
-
-            // if we have a document specific range, but the key is not
-            // inclusive then we have already returned the document; this scan
-            // is done
-            if (documentRange != null && !documentRange.isStartKeyInclusive()) {
+            // if we have a non-inclusive document specific range and this isn't a re-seeked document
+            // range after a yield then we have already returned the document and this scan is done
+            if (documentRange != null && !documentRange.isStartKeyInclusive() && !WaitWindowObserver.hasBeginMarker(documentRange.getStartKey())) {
                 if (log.isTraceEnabled()) {
                     log.trace("Received non-inclusive event specific range: " + documentRange);
                 }
@@ -411,7 +439,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 if (log.isTraceEnabled()) {
                     log.trace("Received event specific range: " + documentRange);
                 }
-                // We can take a shortcut to the directly to the event
+                // We can take a shortcut directly to the event
                 Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
                 if (log.isTraceEnabled()) {
                     log.trace("Transformed document key: " + documentKey);
@@ -431,9 +459,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // Create the pipeline iterator for document aggregation and
             // evaluation within a thread pool
+
+            SortedKeyValueIterator<Key,Value> pipelineSource = null;
+            if (getMaxEvaluationPipelines() > 1) {
+                // only need to create a source copy IFF more than one evaluation pipeline will be used
+                // else, the query iterator itself is passed in and the method call to createDocumentPipeline
+                // can use the proper method for requesting sources
+                pipelineSource = getSourceDeepCopy("pipeline source");
+            }
             PipelineIterator pipelineIter = PipelineFactory.createIterator(this.seekKeySource, getMaxEvaluationPipelines(), getMaxPipelineCachedResults(),
-                            getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment,
-                            yield, yieldThresholdMs, columnFamilies, inclusive);
+                            getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, pipelineSource, myEnvironment, yieldCallback, yieldThresholdMs,
+                            waitWindowObserver, queryId, columnFamilies, inclusive);
 
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
             // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
@@ -474,7 +510,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
                 // last chance before the documents are serialized
-                getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
+                getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null, false));
                 // Always return true since we just want to record data in the ActiveQueryLog
                 return true;
             });
@@ -484,21 +520,29 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now add the result count to the keys (required when not sorting UIDs)
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
             if (!sortedUIDs && documentRange == null) {
-                this.documentIterator = new ResultCountingIterator(documentIterator, resultCount, yield);
+                ResultCountingIterator resultCountingIterator = new ResultCountingIterator(documentIterator, resultCount, yieldCallback);
+                // this is necessary to allow the waitWindowObserver to use the same logic and count
+                // when modifying the yieldKey
+                this.waitWindowObserver.setResultCountingIterator(resultCountingIterator);
+                this.documentIterator = resultCountingIterator;
+
             } else if (this.sortedUIDs) {
                 // we have sorted UIDs, so we can mask out the cq
-                this.documentIterator = new KeyAdjudicator<>(documentIterator, yield);
+                this.documentIterator = new KeyAdjudicator<>(documentIterator);
             }
 
-            // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
-            if (collectTimingDetails) {
-                // if there is no document to return, then add an empty document
-                // to store the timing metadata
-                this.documentIterator = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, documentIterator, yield);
+            if (this.collectTimingDetails) {
+                // if there is no document to return then return a FinalDocument with the accumulated timing metadata
+                this.documentIterator = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, documentIterator, yieldCallback);
             }
-            if (log.isTraceEnabled()) {
-                this.documentIterator = Iterators.filter(this.documentIterator, keyValueEntry -> {
-                    log.debug("finally, considering:" + keyValueEntry);
+            // add this filter for logging if logLevel is either DEBUG or TRACE
+            if (log.isDebugEnabled()) {
+                this.documentIterator = Iterators.filter(this.documentIterator, keyDocumentEntry -> {
+                    if (log.isTraceEnabled()) {
+                        log.trace("returning key/doument " + keyDocumentEntry);
+                    } else {
+                        log.debug("returning key " + keyDocumentEntry.getKey());
+                    }
                     return true;
                 });
             }
@@ -539,16 +583,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        QueryIteratorYieldingException qiy = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
-        }
-        if (reason instanceof QueryIteratorYieldingException) {
-            qiy = (QueryIteratorYieldingException) reason;
         }
         if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
@@ -563,9 +603,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
-            if (reason instanceof QueryIteratorYieldingException) {
-                qiy = (QueryIteratorYieldingException) reason;
-            }
             if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;
             }
@@ -577,14 +614,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (iie != null) {
             log.debug("Query interrupted " + queryId, e);
             throw iie;
-        } else if (qiy != null) {
-            // exit gracefully if we are yielding as a qiy is expected in this case
-            if ((this.yield != null) && this.yield.hasYielded()) {
-                log.debug("Query yielded " + queryId);
-            } else {
-                log.error("QueryIteratorYieldingException throws but yield callback not set for " + queryId, qiy);
-                throw qiy;
-            }
         } else if (tce != null) {
             log.debug("Query tablet closed " + queryId, e);
             throw tce;
@@ -657,12 +686,26 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *
      * @return the deep copy of the source
      */
+    @Override
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-        SortedKeyValueIterator<Key,Value> sourceDeepCopy;
+        return getSourceDeepCopy(null);
+    }
+
+    /**
+     * A version of {@link #getSourceDeepCopy()} that tracks the number of deep copies made and optionally tracks which stages requested a source
+     *
+     * @param stage
+     *            the stage name, may be null
+     * @return a source deep copy
+     */
+    @Override
+    @SuppressWarnings("SynchronizeOnNonFinalField")
+    public SortedKeyValueIterator<Key,Value> getSourceDeepCopy(String stage) {
         synchronized (sourceForDeepCopies) {
-            sourceDeepCopy = sourceForDeepCopies.deepCopy(this.myEnvironment);
+            numberOfDeepCopies++;
+            deepCopyStages.add(stage);
+            return sourceForDeepCopies.deepCopy(this.myEnvironment);
         }
-        return sourceDeepCopy;
     }
 
     /**
@@ -759,7 +802,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             };
         } else {
             //  @formatter:off
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEventEvaluationFilter(), this.includeHierarchyFields,
+            SortedKeyValueIterator<Key, Value> docMapperSource = getSourceDeepCopy("document pipeline - key to document data");
+            docMapper = new KeyToDocumentData(docMapperSource, myEnvironment, documentOptions, getEquality(), getEventEvaluationFilter(), this.includeHierarchyFields,
                             this.includeHierarchyFields)
                             .withRangeProvider(getRangeProvider())
                             .withAggregationThreshold(getDocAggregationThresholdMs());
@@ -803,11 +847,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
 
+        SortedKeyValueIterator<Key,Value> evaluationSource = getSourceDeepCopy("document pipeline - evaluation");
+
         if (gatherTimingDetails()) {
-            documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, deepSourceCopy,
+            documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, evaluationSource,
                             documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies, inclusive));
         } else {
-            documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
+            documents = getEvaluation(documentSpecificSource, evaluationSource, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
                             inclusive);
         }
 
@@ -816,13 +862,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             documents = excerptTransform.getIterator(documents);
         }
 
+        SummaryTransform summaryTransform = getSummaryTransform();
+        if (summaryTransform != null) {
+            documents = summaryTransform.getIterator(documents);
+        }
+
         // a hook to allow mapping the document such as with the TLD or Parent
         // query logics
         // or if the document was not aggregated in the first place because the
         // field index fields completely satisfied the query
-        documents = mapDocument(deepSourceCopy, documents, compositeMetadata);
+        // No source is passed, mapDocument() uses the correct method to request a source
+        documents = mapDocument(null, documents, compositeMetadata);
 
-        // apply any configured post processing
+        // apply any configured post-processing
         documents = getPostProcessingChain(documents);
         if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.PostProcessing, trackingSpan, documents);
@@ -890,12 +942,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
 
-        // only add the pipeline query span collection iterator which will cache metrics with each document if collectTimingDetails is true
+        // only add the pipeline query span collection iterator which will record the metrics from each
+        // hasNext and next call in the document evaluation Pipeline if collectTimingDetails is true
         if (collectTimingDetails) {
-            // if there is not a result, then add the trackingSpan to the
-            // QuerySpanCollector
-            // if there was a result, then the metrics from the trackingSpan
-            // will be added here
             documents = new PipelineQuerySpanCollectionIterator(querySpanCollector, trackingSpan, documents);
         }
 
@@ -927,11 +976,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // get the function we use for the tf functionality. Note we are
             // getting an additional source deep copy for this function
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
+            // TODO: this should be dynamic based on the query fields, not a flag passed to the iterator
             if (this.isTermFrequenciesRequired()) {
+
+                SortedKeyValueIterator<Key,Value> tfSource = getSourceDeepCopy("tf aggregation");
 
                 TermFrequencyConfig tfConfig = new TermFrequencyConfig();
                 tfConfig.setScript(getScript(documentSource));
-                tfConfig.setSource(sourceDeepCopy.deepCopy(myEnvironment));
+                tfConfig.setSource(tfSource);
                 tfConfig.setContentExpansionFields(getContentExpansionFields());
                 tfConfig.setTfFields(getTermFrequencyFields());
                 tfConfig.setTypeMetadata(getTypeMetadata());
@@ -1084,7 +1136,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         if (fieldIndexSatisfiesQuery) {
             //  @formatter:off
-            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
+
+            SortedKeyValueIterator<Key, Value> docMapperSource = getSourceDeepCopy("map document - key to document");
+
+            final KeyToDocumentData docMapper = new KeyToDocumentData(docMapperSource, this.myEnvironment, this.documentOptions, getEquality(),
                             getEventEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields)
                             .withRangeProvider(getRangeProvider())
                             .withAggregationThreshold(getDocAggregationThresholdMs());
@@ -1145,9 +1200,24 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.value = entry.getValue();
 
         } else {
-            if (log.isTraceEnabled()) {
+            if (log.isTraceEnabled() && (this.yieldCallback == null || !this.yieldCallback.hasYielded())) {
                 log.trace("Exhausted all keys");
             }
+            this.key = null;
+            this.value = null;
+
+            if (log.isTraceEnabled()) {
+                synchronized (this) {
+                    log.trace("=== produced " + numberOfDeepCopies + " source deep copies ===");
+                    for (String stage : deepCopyStages) {
+                        log.trace(stage);
+                    }
+                }
+            }
+        }
+        if (this.yieldCallback != null && this.yieldCallback.hasYielded()) {
+            // ensure that the timerTask is cancelled
+            this.waitWindowObserver.stop();
             this.key = null;
             this.value = null;
         }
@@ -1374,7 +1444,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             sourceIter = getEventDataNestedIterator(source);
         }
 
-        return sourceIter;
+        return new WaitWindowOverseerIterator(sourceIter, this.myEnvironment);
     }
 
     /**
@@ -1423,6 +1493,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorCacheDirConfigs(this.getIvaratorCacheDirConfigs())
                 .setQueryId(this.getQueryId())
                 .setScanId(this.getScanId())
+                .setWaitWindowObserver(this.waitWindowObserver)
                 .setIvaratorCacheSubDirPrefix(this.getHdfsCacheSubDirPrefix())
                 .setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec())
                 .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
@@ -1465,7 +1536,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
             @Override
             public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
-                return sourceFactory.getSourceDeepCopy();
+                return sourceFactory.getSourceDeepCopy("ivarator");
             }
         };
     }
@@ -1581,7 +1652,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
                     groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
-                                    this.yield);
+                                    this.yieldCallback);
                 }
             }
         }
@@ -1613,7 +1684,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             synchronized (getExcerptFields()) {
                 if (excerptTransform == null) {
                     try {
-                        excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                        SortedKeyValueIterator<Key,Value> excerptSource = getSourceDeepCopy("excerpt transform");
+
+                        excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, excerptSource,
                                         excerptIterator.getDeclaredConstructor().newInstance());
                     } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not create excerpt transform", e);
@@ -1622,6 +1695,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
         return excerptTransform;
+    }
+
+    protected SummaryTransform getSummaryTransform() {
+        if (summaryTransform == null && getSummaryOptions() != null && getSummaryOptions().getSummarySize() != 0) {
+            synchronized (getSummaryOptions()) {
+                if (summaryTransform == null) {
+                    try {
+                        summaryTransform = new SummaryTransform(summaryOptions, summaryFieldname, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                                        summaryIterator.getDeclaredConstructor().newInstance());
+                    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException("Could not create summary transform", e);
+                    }
+                }
+            }
+        }
+        return summaryTransform;
     }
 
     /**

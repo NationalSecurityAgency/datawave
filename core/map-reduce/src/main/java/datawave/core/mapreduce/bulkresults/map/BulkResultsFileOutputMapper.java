@@ -120,6 +120,9 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
                     }
                     context.write(key, val);
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
                 }
                 context.progress();

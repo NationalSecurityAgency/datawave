@@ -26,7 +26,6 @@ import org.junit.Assert;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
 import datawave.ingest.csv.mr.handler.ContentCSVColumnBasedHandler;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.TypeRegistry;
@@ -42,7 +41,6 @@ import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
 import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentDataTypeHelper;
 import datawave.policy.IngestPolicyEnforcer;
 
 /**
@@ -59,6 +57,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     private static final String TEST_VISIBILITY = "public";
     private static final String[] AUTH_VALUES = new String[] {"public", "private", "Euro", "NA"};
     private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
+    private static RawDataManager manager;
 
     /**
      * Retrieves an {@link Authorizations} object to use for query.
@@ -158,6 +157,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.ingestPath = url.toURI();
         this.dataType = dt;
         this.fieldConfig = config;
+        this.manager = manager;
 
         // default Hadoop settings - override if needed
         this.hConf.set(DataTypeHelper.Properties.DATA_NAME, this.dataType);
@@ -275,5 +275,9 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + ", fieldConfig=" + fieldConfig + '}';
+    }
+
+    public static RawDataManager getManager() {
+        return manager;
     }
 }

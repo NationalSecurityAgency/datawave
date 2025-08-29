@@ -8,13 +8,17 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.WritableComparable;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 
-public class IndexMatch implements WritableComparable<IndexMatch> {
+public class IndexMatch implements KryoSerializable, WritableComparable<IndexMatch> {
 
     protected String shard;
     protected String uid;
@@ -156,8 +160,18 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     }
 
     @Override
+    public void read(Kryo kryo, Input input) {
+        uid = input.readString();
+    }
+
+    @Override
     public void readFields(DataInput in) throws IOException {
         uid = in.readUTF();
+    }
+
+    @Override
+    public void write(Kryo kryo, Output output) {
+        output.writeString(uid);
     }
 
     @Override

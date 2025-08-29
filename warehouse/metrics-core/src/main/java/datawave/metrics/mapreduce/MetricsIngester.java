@@ -102,6 +102,9 @@ public class MetricsIngester extends Configured implements Tool {
         if ("errors".equals(type)) {
             try {
                 launchErrorsJob(Job.getInstance(conf), conf);
+            } catch (InterruptedException e) {
+                log.info("Failed to launch errors job", e);
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 log.info("Failed to launch errors job", e);
             }
@@ -238,7 +241,7 @@ public class MetricsIngester extends Configured implements Tool {
                 }
 
                 if (jobName.startsWith((jobNamePrefix))) {
-                    int end = jobName.lastIndexOf(".");
+                    int end = jobName.lastIndexOf('.');
                     if (end < 0)
                         end = jobName.length();
                     date = jobName.substring(jobNamePrefix.length(), end);

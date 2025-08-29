@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.facet;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,7 +23,6 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
-import org.geotools.feature.type.DateUtil;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.clearspring.analytics.stream.cardinality.ICardinality;
@@ -46,7 +46,6 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 
 public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT>, FacetedEstimator<RawRecordContainer> {
@@ -126,10 +125,10 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
             for (Map.Entry<String,String> category : categories.entrySet()) {
                 final String fields = category.getValue();
                 Preconditions.checkNotNull(fields);
-                final String[] fieldArray = StringUtils.split(fields, categoryDelimiter.charAt(0));
+                final String[] fieldArray = fields.split(categoryDelimiter);
                 Preconditions.checkArgument(fieldArray.length == 2);
                 final String pivot = fieldArray[0];
-                final String[] facets = StringUtils.split(fieldArray[1], ',');
+                final String[] facets = fieldArray[1].split(",");
                 pivotMap.putAll(pivot, ImmutableList.copyOf(facets));
             }
         } else {
@@ -142,8 +141,8 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                 // Will throw RuntimeException if class can't be coerced into Predicate<String>
                 @SuppressWarnings("unchecked")
                 Class<Predicate<String>> projClazz = (Class<Predicate<String>>) Class.forName(predClazzStr).asSubclass(Predicate.class);
-                fieldFilterPredicate = projClazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                fieldFilterPredicate = projClazz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         }

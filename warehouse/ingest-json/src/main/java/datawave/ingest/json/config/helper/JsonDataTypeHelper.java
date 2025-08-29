@@ -73,13 +73,13 @@ public class JsonDataTypeHelper extends CSVHelper {
         } else if (null != this.getFieldAllowlist()) {
             allowlistFields = this.getFieldAllowlist();
         } else {
-            allowlistFields = Collections.EMPTY_SET;
+            allowlistFields = Collections.emptySet();
         }
 
         if (null != this.getFieldDisallowlist()) {
             disallowlistFields = this.getFieldDisallowlist();
         } else {
-            disallowlistFields = Collections.EMPTY_SET;
+            disallowlistFields = Collections.emptySet();
         }
 
         return new JsonIngestFlattener.Builder().jsonDataTypeHelper(this).mapKeyAllowlist(allowlistFields).mapKeyDisallowlist(disallowlistFields)

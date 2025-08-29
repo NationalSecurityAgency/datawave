@@ -96,7 +96,7 @@ public class CacheableQueryRowReader {
                 for (Map.Entry<String,String> entry : combinedColumnMarkings.entrySet()) {
                     String columnName = entry.getKey();
                     String combinedString = entry.getValue();
-                    int x = combinedString.lastIndexOf(":");
+                    int x = combinedString.lastIndexOf(':');
                     if (x >= 0) {
                         columnMarkingsMap.put(columnName, MarkingFunctions.Encoding.fromString(combinedString.substring(0, x)));
                         columnVisibilityMap.put(columnName, combinedString.substring(x + 1));

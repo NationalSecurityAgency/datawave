@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: query
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
+  security:
+    user.password: passwordNotUsed
+    datawave:
+      jwt.ttl: 3600
+      issuers-required: true
+      enforce-allowed-callers: false
+      allowed-callers:
+        - "cn=test keystore, ou=my department, o=my company, st=some-state, c=us<cn=test keystore, ou=my department, o=my company, st=some-state, c=us>"
+
+hazelcast.client.enabled: false
+
+server:
+  port: 0
+  non-secure-port: 0
+  servlet.context-path: /query
+  ssl:
+    client-auth: NEED
+    trust-store: 'classpath:testCA.p12'
+    trust-store-type: PKCS12
+    trust-store-password: 'ChangeIt'
+    key-store: 'classpath:testServer.p12'
+    key-store-type: PKCS12
+    key-store-password: 'ChangeIt'
+  outbound-ssl:
+    key-store: ${server.ssl.key-store}
+    key-store-password: ${server.ssl.key-store-password}
+    key-store-type: ${server.ssl.key-store-type}
+    trust-store: ${server.ssl.trust-store}
+    trust-store-password: ${server.ssl.trust-store-password}
+    trust-store-type: ${server.ssl.trust-store-type}
+
+management:
+  endpoints:
+    web:
+      base-path: "/mgmt"
+
+datawave:
+  query:
+    messaging:
+      backend: hazelcast
+    metric:
+      client:
+        confirmAckEnabled: false
+
+logging:
+  level:
+    root: FATAL

@@ -59,6 +59,7 @@ import datawave.query.index.lookup.ScannerStream;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
+import datawave.query.util.ValueSerializerType;
 import datawave.util.time.DateHelper;
 
 /**
@@ -220,6 +221,9 @@ public class RangeStreamScannerTest {
         // Set iterator option. Do not collapse uids into shard ranges, just pass results back.
         final IteratorSetting uidSetting = new IteratorSetting(priority++, CreateUidsIterator.class);
         uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());
+
+        // Use Kryo serialization
+        uidSetting.addOption(CreateUidsIterator.VALUE_ENCODING, ValueSerializerType.KRYO.toString());
 
         options.addScanIterator(uidSetting);
         options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));

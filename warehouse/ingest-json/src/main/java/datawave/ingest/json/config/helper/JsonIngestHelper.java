@@ -47,8 +47,7 @@ public class JsonIngestHelper extends ContentBaseIngestHelper {
         HashMultimap<String,String> fields = HashMultimap.create();
         String jsonString = new String(event.getRawData());
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(jsonString);
+        JsonElement jsonElement = JsonParser.parseString(jsonString);
         flattener.flatten(jsonElement.getAsJsonObject(), fields);
 
         return normalizeMap(getGroupNormalizedMap(fields));

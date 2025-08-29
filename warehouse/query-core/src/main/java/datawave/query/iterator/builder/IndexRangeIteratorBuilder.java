@@ -81,6 +81,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withMaxRangeSplit(maxRangeSplit)
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withTermNumber(termNumber)
                         .withNumRetries(ivaratorNumRetries)
                         .withPersistOptions(ivaratorPersistOptions)
                         .withMaxResults(maxIvaratorResults)
@@ -94,6 +95,9 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withSubRanges(subRanges)
                         .withIteratorEnv(env)
                         .withIvaratorSourcePool(ivaratorSourcePool)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver)
                         .build();
                 // @formatter:on
 
@@ -104,13 +108,8 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                 rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRangeIteratorJexl: " + rangeIterator);
 
-                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-                if (forceDocumentBuild) {
-                    canBuildDocument = true;
-                }
-
                 // Add an iterator to aggregate documents. This is needed for index only fields.
-                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
+                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(buildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(rangeIterator, null, null);
 
                 docIterator = aggregatingIterator;

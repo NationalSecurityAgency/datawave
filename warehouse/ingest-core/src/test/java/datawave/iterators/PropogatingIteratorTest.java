@@ -15,18 +15,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -124,6 +127,21 @@ public class PropogatingIteratorTest {
         }
 
         @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
+
+        @Override
+        public TableId getTableId() {
+            return null;
+        }
+
+        @Override
         public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
             throw new UnsupportedOperationException();
         }
@@ -185,7 +203,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -221,7 +239,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -245,7 +263,7 @@ public class PropogatingIteratorTest {
 
         iter.init(createSourceWithTestData(), null, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
     }
 
     private SortedMultiMapIterator createSourceWithTestData() {
@@ -271,7 +289,7 @@ public class PropogatingIteratorTest {
 
         iter.init(createSourceWithTestData(), options, null);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
     }
 
     @Test
@@ -294,7 +312,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -321,7 +339,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -351,7 +369,7 @@ public class PropogatingIteratorTest {
 
         iter.init(data, options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -377,7 +395,7 @@ public class PropogatingIteratorTest {
 
         iter.init(createSourceWithTestData(), options, env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -419,7 +437,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -456,7 +474,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -505,7 +523,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -533,7 +551,7 @@ public class PropogatingIteratorTest {
         iter.init(data, options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -562,7 +580,7 @@ public class PropogatingIteratorTest {
         iter.init(createSourceWithTestData(), options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -588,7 +606,7 @@ public class PropogatingIteratorTest {
         iter.init(createSourceWithTestData(), options, env);
         iter = iter.deepCopy(env);
 
-        iter.seek(new Range(), Collections.emptyList(), false);
+        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
         assertTrue(iter.hasTop());
 
@@ -623,7 +641,7 @@ public class PropogatingIteratorTest {
                 Random rand = new Random();
                 LockSupport.parkNanos(rand.nextInt(10));
 
-                myitr.seek(new Range(), Collections.emptyList(), false);
+                myitr.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
 
                 List<Entry<Key,Value>> resultList = Lists.newArrayList();
 

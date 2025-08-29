@@ -12,7 +12,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 public class QueryMetricMessage implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8027804532088963172L;
     private QueryMetricHolder metricHolder = null;
 
     public QueryMetricMessage(QueryMetricHolder metricHolder) {
@@ -41,7 +41,7 @@ public class QueryMetricMessage implements Serializable {
     @Override
     public String toString() {
         if (this.metricHolder == null) {
-            return null;
+            return "";
         } else {
             return this.metricHolder.toString();
         }
