@@ -40,9 +40,9 @@ public class FieldsWithNumericValuesVisitor extends ShortCircuitBaseVisitor {
     }
 
     @Override
-    public Object visit(ASTEQNode node, Object data) {
+    public Object visit(ASTEQNode node, Object data) { // SETH need 1:1 of these comaprison nodes
         checkSingleField(node, data);
-        return data;
+        return data; // SETH return fields that have comparison against value
     }
 
     @Override

@@ -55,6 +55,8 @@ public class NumericValueRule extends ShardQueryRule {
             // ooooooo actually!!!!!!! it might not even be this visitor cuz the regex stuff ISNT ACTUALLY REGEX!!!!! it's a range node. look for that
 
 
+            // if the datatypes only exist in JEXL, how do we check
+
             // If fields with numeric values were found, check the field types.
             if (!fields.isEmpty()) {
                 // A temporary cache to avoid unnecessary lookups via TypeMetadata if we see a field more than once.

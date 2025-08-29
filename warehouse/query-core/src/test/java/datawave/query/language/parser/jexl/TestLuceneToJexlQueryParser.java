@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import datawave.query.jexl.visitors.PrintingVisitor;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
@@ -24,6 +25,18 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlQueryParser {
+
+
+
+    @Test
+    public void name() throws ParseException {
+
+        String q = "FOO:[10 TO 30] OR FOO:[* TO 0]";
+        PrintingVisitor.printQuery(parser.parse(q).toString());
+    }
+
+
+
 
     private LuceneToJexlQueryParser parser;
 
@@ -438,6 +451,8 @@ public class TestLuceneToJexlQueryParser {
         } catch (RuntimeException e) {
             throw new ParseException(e);
         }
+
+
         return parsedQuery;
     }
 

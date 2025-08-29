@@ -1611,6 +1611,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             return result;
         }
 
+        // SETH fresh off the LUCENE pipeline
         logQuery(config.getQueryTree(), "Query after parsing to JEXL");
 
         // Normalize the JEXL query on a very basic level, and apply the query model to the query.
@@ -1636,6 +1637,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         logQuery(config.getQueryTree(), "Query after capitalizing identifiers");
 
+
+        // SETH don't assume you wont't need to mess with groupingts, even though most are removed
         // Flatten the tree.
         config.setQueryTree(TreeFlatteningRebuilder.flatten(config.getQueryTree()));
 
@@ -1651,6 +1654,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         validationConfig.setParsedQuery(config.getQueryTree());
         validationConfig.setQueryString(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
 
+
+        // SETH this is where the RULES coime in
         // Validate the JEXL query against the remaining rules that support JEXL.
         for (QueryRule rule : unexecutedRules) {
             try {
