@@ -1259,20 +1259,23 @@ public class DocumentGrouperTest {
         // 2025, FEMALE, 2025-01-05T10 (Count of 2)
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
         // Groupings for GENDER[ALL], EXPIRATION_DATE[DAY], CREATION_DATE[HOUR]
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10"))
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10:00:00.000"))
                         .hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10"))
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10:00:00.000"))
                         .hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T22"))
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T22:00:00.000"))
                         .hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12"), stringKey("CREATION_DATE", "2025-01-05T10"))
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12"), stringKey("CREATION_DATE", "2025-01-05T10:00:00.000"))
                         .hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12"), stringKey("CREATION_DATE", "2025-01-05T10"))
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12"), stringKey("CREATION_DATE", "2025-01-05T10:00:00.000"))
                         .hasCount(1);
         // Groupings for GENDER[ALL], EXPIRATION_DATE[YEAR], CREATION_DATE[HOUR]
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T22")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10")).hasCount(2);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T22:00:00.000"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10:00:00.000"))
+                        .hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10:00:00.000"))
+                        .hasCount(2);
     }
 
     private void givenGroupFields(String... fields) {

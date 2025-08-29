@@ -32,7 +32,7 @@ public enum TemporalGranularity {
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour. Otherwise, the original
      * value will be returned.
      */
-    TRUNCATE_TEMPORAL_TO_HOUR("HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH")),
+    TRUNCATE_TEMPORAL_TO_HOUR("HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:00:00.000")),
 
     /**
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the month. Otherwise, the original
@@ -50,7 +50,7 @@ public enum TemporalGranularity {
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the second. Otherwise, the
      * original value will be returned.
      */
-    TRUNCATE_TEMPORAL_TO_SECOND("SECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss")),
+    TRUNCATE_TEMPORAL_TO_SECOND("SECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.000")),
 
     /**
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the millisecond. Otherwise, the
@@ -68,7 +68,7 @@ public enum TemporalGranularity {
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the
      * original value will be returned.
      */
-    TRUNCATE_TEMPORAL_TO_MINUTE("MINUTE", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm"));
+    TRUNCATE_TEMPORAL_TO_MINUTE("MINUTE", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:00.000"));
 
     private final String name;
     private final Function<String,String> function;
@@ -153,7 +153,9 @@ public enum TemporalGranularity {
                 if (!isTenth) {
                     return formattedDate;
                 } else {
-                    return formattedDate.substring(0, formattedDate.length() - 1);
+                    String truncatedString = formattedDate.substring(0, formattedDate.length() - 1);
+                    // If the minutes is less than 10, then we must pad with two 0s instead of 1.
+                    return truncatedString.length() == 15 ? truncatedString + "0:00.000" : truncatedString + "00:00.000";
                 }
             } catch (Exception e) {
                 if (log.isDebugEnabled()) {
