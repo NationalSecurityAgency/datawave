@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
 
@@ -191,14 +193,16 @@ public class AuthorizationsUtil {
             return "";
         }
 
-        HashSet<byte[]> b = new HashSet<>();
+        Set<ByteSequence> b = new HashSet<>();
         for (Collection<String> userAuth : userAuths) {
             for (String string : userAuth) {
-                b.add(string.getBytes(StandardCharsets.UTF_8));
+                b.add(new ArrayByteSequence(string.getBytes(StandardCharsets.UTF_8)));
             }
         }
 
-        return new Authorizations(b).toString();
+        List<byte[]> byteList = b.stream().map(ByteSequence::toArray).collect(Collectors.toList());
+
+        return new Authorizations(byteList).toString();
     }
 
     /**
