@@ -575,7 +575,7 @@ public class TableConfigurationUtil {
                 }
                 for (Map.Entry<String,String> entry : tableProps.entrySet()) {
 
-                    if (entry.getKey().contains(TableName.SHARD_DAY_INDEX) || entry.getValue().contains("DayIndexCombiner")) {
+                    if (entry.getKey().contains(TableName.SHARD_DAY_INDEX) || entry.getKey().contains(TableName.SHARD_YEAR_INDEX)) {
                         continue;
                     }
 

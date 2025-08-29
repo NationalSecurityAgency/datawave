@@ -863,24 +863,21 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         if (getDayIndexEnabled() || getYearIndexEnabled()) {
             String shard = new String(shardId);
             String row = shard + '\u0000' + nFV.getEventFieldValue();
-            String cf = nFV.getEventFieldName();
             String cq = event.getDataType().outputName();
             String viz = new String(visibility);
 
-            Key key = new Key(row, cf, cq, viz);
+            Key key = new Key(row, nFV.getEventFieldName(), cq, viz);
 
             if (getDayIndexEnabled()) {
                 Value value = getValueForDayIndex(shard);
                 BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
                 contextWriter.write(bulkIngestKey, value, context);
-                log.info("wrote bitset key for shard day index");
             }
 
             if (getYearIndexEnabled()) {
                 Value value = getValueForYearIndex(shard);
                 BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
                 contextWriter.write(bulkIngestKey, value, context);
-                log.info("wrote bitset key for shard day index");
             }
         }
     }

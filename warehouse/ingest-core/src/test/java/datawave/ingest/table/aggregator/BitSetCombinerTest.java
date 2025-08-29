@@ -69,7 +69,6 @@ class BitSetCombinerTest {
         BitSet combinedBits = BitSet.valueOf(combined.get());
         BitSet expectedBits = BitSet.valueOf(expected.get());
         assertEquals(expectedBits, combinedBits);
-        System.out.println(combined.get().length);
     }
 
     private Value createValue(int[] indices) {

@@ -219,8 +219,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     private boolean shardIndexCreateUids = true;
     private boolean suppressEventKeys = false;
-    boolean dayIndexEnabled = false;
-    boolean yearIndexEnabled = false;
+    private boolean dayIndexEnabled = false;
+    private boolean yearIndexEnabled = false;
 
     /**
      * Determines whether or not we produce cardinality estimates for data
@@ -848,12 +848,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
         if (shardId != null && value != null && field != null && visibility != null) {
             String row = new String(shardId) + '\u0000' + value;
-            String cf = field;
             String cq = event.getDataType().outputName();
             String viz = new String(visibility);
             long ts = getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(row, cf, cq, viz, ts);
+            Key key = new Key(row, field, cq, viz, ts);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
             Value bitSetValue = getValueForDayIndex(row);
             values.put(bulkIngestKey, bitSetValue);
@@ -864,11 +863,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 String maskedValue = maskedFieldHelper.get(field);
                 String maskedRow = new String(shardId) + '\u0000' + maskedValue;
                 String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedRow, cf, cq, maskedViz, ts);
+                Key maskedKey = new Key(maskedRow, field, cq, maskedViz, ts);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitSetValue);
             }
-            log.info("wrote key for shard day index");
         }
     }
 
@@ -903,11 +901,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             String fullShard = new String(shardId);
             // you are insane if the data is from the year 999 or 10,000
             String row = fullShard.substring(0, 4) + '\u0000' + value;
-            String cf = field;
             String cq = event.getDataType().outputName();
             String viz = new String(visibility);
 
-            Key key = new Key(row, cf, cq, viz, getIndexTimestamp(event.getTimestamp()));
+            Key key = new Key(row, field, cq, viz, getIndexTimestamp(event.getTimestamp()));
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
             Value bitsetValue = getValueForYearIndex(fullShard);
             values.put(bulkIngestKey, bitsetValue);
@@ -918,11 +915,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 String maskedValue = maskedFieldHelper.get(field);
                 String maskedRow = fullShard.substring(0, 4) + '\u0000' + maskedValue;
                 String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedRow, cf, cq, maskedViz, getIndexTimestamp(event.getTimestamp()));
+                Key maskedKey = new Key(maskedRow, field, cq, maskedViz, getIndexTimestamp(event.getTimestamp()));
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitsetValue);
             }
-            log.info("wrote bitset key for shard day index");
         }
     }
 
@@ -948,7 +944,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         calendar.setTime(DateHelper.parse(date));
 
         int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
-        log.trace("day of year: " + dayOfYear);
+        if (log.isTraceEnabled()) {
+            log.trace("day of year: " + dayOfYear);
+        }
         return dayOfYear;
     }
 

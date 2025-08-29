@@ -31,6 +31,7 @@ public class ErrorShardTableConfigHelper extends ShardTableConfigHelper {
         this.shardTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_TNAME, null);
         this.shardGidxTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_GIDX_TNAME, null);
         this.shardDayIndexTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
+        this.shardYearIndexTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
         this.shardGridxTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_GRIDX_TNAME, null);
         this.shardDictionaryTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_DINDX_NAME, null);
 

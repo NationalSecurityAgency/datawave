@@ -78,10 +78,14 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
             Key top = source.getTopKey();
             parser.parse(top);
 
-            log.info("next: {}", top.toStringNoTime());
+            if (log.isDebugEnabled()) {
+                log.debug("next: {}", top.toStringNoTime());
+            }
 
             if (accepted()) {
-                log.info("key accepted {}", top.toStringNoTime());
+                if (log.isDebugEnabled()) {
+                    log.debug("key accepted {}", top.toStringNoTime());
+                }
                 // do the stuff
                 String field = parser.getField();
                 BitSet bits = BitSet.valueOf(source.getTopValue().get());
@@ -90,10 +94,12 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
             } else {
                 Range seekRange = getNextSeekRange();
                 if (seekRange != null) {
-                    log.info("key rejected, next seek range: {}", seekRange.getStartKey().toStringNoTime());
+                    if (log.isDebugEnabled()) {
+                        log.debug("key rejected, next seek range: {}", seekRange.getStartKey().toStringNoTime());
+                    }
                     source.seek(seekRange, columnFamilies, true);
                 } else {
-                    log.info("key rejected, no seek range available. call next");
+                    log.debug("key rejected, no seek range available. call next");
                     source.next();
                 }
             }
@@ -137,7 +143,7 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
     }
 
     private Range seekToNextField() {
-        log.info("seek to next field");
+        log.debug("seek to next field");
         String nextField = valuesAndFields.get(parser.getValue()).higher(parser.getField());
 
         if (nextField == null) {
@@ -150,7 +156,7 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
     }
 
     private Range seekToNextValue() {
-        log.info("seek to next value");
+        log.debug("seek to next value");
 
         // done with all fields for current value, seek to next value
         String nextValue = valuesAndFields.keySet().higher(parser.getValue());

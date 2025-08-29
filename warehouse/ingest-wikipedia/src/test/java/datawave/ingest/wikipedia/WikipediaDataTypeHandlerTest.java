@@ -1,6 +1,5 @@
 package datawave.ingest.wikipedia;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -36,8 +35,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         private final Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
 
         @Override
-        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
-                        throws IOException, InterruptedException {
+        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) {
             for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                 cache.put(entry.getKey(), entry.getValue());
             }
@@ -66,10 +64,6 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         RawRecordContainer e = reader.getEvent();
 
         handler.setup(ctx);
-        // handler.setDayIndexEnabled(true);
-        // handler.setShardDayIndexTableName(new Text(TableName.SHARD_DAY_INDEX));
-        // handler.setYearIndexEnabled(true);
-        // handler.setShardYearIndexTableName(new Text(TableName.SHARD_YEAR_INDEX));
 
         WikipediaIngestHelper helper = new WikipediaIngestHelper();
         helper.setup(conf);

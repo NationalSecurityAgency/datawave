@@ -275,10 +275,6 @@ public class ShardedDataTypeHandlerTest {
             byte[] keyBytes = k.getKey().getColumnVisibility().getBytes();
             assertArrayEquals(keyBytes, maskVisibility);
         }
-
-        for (Value value : termIndex.values()) {
-            System.out.println(value.get().length);
-        }
     }
 
     @Test
@@ -635,10 +631,6 @@ public class ShardedDataTypeHandlerTest {
     }
 
     private void assertBulkIngestKey(Multimap<BulkIngestKey,Value> multimap, BulkIngestKey expectedKey, Value expectedValue) {
-        System.out.println("expected:  " + expectedKey.toString());
-        for (BulkIngestKey bik : multimap.keySet()) {
-            System.out.println("candidate: " + bik.toString());
-        }
         assertTrue("did not find expected BulkIngestKey", multimap.containsKey(expectedKey));
         Collection<Value> values = multimap.get(expectedKey);
         boolean found = values.remove(expectedValue);
