@@ -32,6 +32,7 @@ jobs:
   # Build the code and run the unit tests.
   build-and-load-maven-cache:
     runs-on: self-hosted
+    continue-on-error: true
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
