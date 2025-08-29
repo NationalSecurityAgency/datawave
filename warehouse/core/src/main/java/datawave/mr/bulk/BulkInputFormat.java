@@ -1100,14 +1100,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     binnedRanges = binOfflineTable(job, tableName, ranges);
                 }
             } else {
-                try (AccumuloClient client = getClient(job.getConfiguration())) {
+                ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
+                try (AccumuloClient client = getClient(job.getConfiguration());
+                                ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
+                                                ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);) {
                     TableId tableId = null;
                     tl = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
-                    ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
-                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
@@ -1123,9 +1123,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         tl.invalidateCache();
 
                     }
-
                     clipRanges(binnedRanges);
-                    context.close();
                 }
             }
         } catch (Exception e) {
