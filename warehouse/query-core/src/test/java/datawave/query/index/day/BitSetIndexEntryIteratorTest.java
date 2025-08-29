@@ -32,11 +32,14 @@ import datawave.util.TableName;
 /**
  * Day Index key structure
  * <p>
- * <code>date value:FIELD-null-datatype bitset</code>
+ *
+ * <pre>
+ * date value:FIELD-null-datatype bitset
+ * </pre>
  */
 public class BitSetIndexEntryIteratorTest {
 
-    private static final Logger log = LoggerFactory.getLogger(DayIndexEntryIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(BitSetIndexEntryIteratorTest.class);
 
     private static final String DAY_INDEX_TABLE = TableName.SHARD_DAY_INDEX;
 

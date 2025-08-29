@@ -7,7 +7,7 @@ import org.apache.accumulo.core.data.Key;
  * Day Index key structure
  *
  * <pre>
- *     row: shard <null> value
+ *     row: shard-null-value
  *     columnFamily: field
  *     columnQualifier: datatype
  *     value: bitset
