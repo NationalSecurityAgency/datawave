@@ -1,4 +1,4 @@
-name: Main Repo Tests
+name: Maven Cache Preload
 
 on:
   push:
