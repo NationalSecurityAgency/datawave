@@ -60,7 +60,7 @@ public class IncludeExcludeIndexOnlyFieldsRule extends ShardQueryRule {
                     if (!intersection.isEmpty()) {
                         result.addMessage("Index Only fields found within the filter function " + functionFields.getNamespace() + ":"
                                         + functionFields.getFunction() + ": " + String.join(", ", intersection)
-                                        + " The field(s) cannot be used in this manner.");
+                                        + " -- The field(s) cannot be used in this manner.");
                     }
                 }
             }
