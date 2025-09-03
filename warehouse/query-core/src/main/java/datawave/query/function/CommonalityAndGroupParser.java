@@ -16,47 +16,12 @@ public class CommonalityAndGroupParser {
      */
     @Nullable
     public CommonalityAndGroup parse(String field) {
-        CommonalityAndGroup result = null;
-        int keyOffset = -1;
-        int keyEndOffset = -1;
-        int groupOffset = -1;
-        int totalTokens = 0;
-
-        int i = 0;
-
-        while ((i = field.indexOf('.', i)) != -1) {
-            if (totalTokens == 0) {
-                keyOffset = i + 1;
-            } else if (totalTokens == 1) {
-                keyEndOffset = i;
-            }
-            if (totalTokens >= 1) {
-                // the group offset is after a delimiter is found (or the last sequence of characters
-                // after the delimiter is found)
-                groupOffset = i + 1;
-            }
-            totalTokens++;
-            i++;
+        String[] splits = field.split("\\.");
+        if (splits.length >= 3) {
+            // return the first group and last group (a.k.a the instance in the first group)
+            return new CommonalityAndGroup(splits[1], splits[splits.length - 1]);
         }
+        return null;
 
-        // Return key/group for the following examples:
-        // FIELD_3.FIELD.5
-        // FIELD_3.FIELD.4.5
-        if (totalTokens >= 2 && groupOffset != field.length()) {
-            String keyVal = field.substring(keyOffset, keyEndOffset);
-            String groupVal = field.substring(groupOffset, field.length() - groupOffset + groupOffset);
-            return new CommonalityAndGroup(keyVal, groupVal);
-        }
-
-        return result;
-    }
-
-    public String removeGrouping(String key) {
-        // if we have grouping context on, remove the grouping context
-        int index = key.indexOf('.');
-        if (index != -1) {
-            key = key.substring(0, index);
-        }
-        return key;
     }
 }
