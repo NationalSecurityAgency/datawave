@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 
 import datawave.security.util.ProxiedEntityUtils;
-import io.micrometer.common.util.StringUtils;
 
 /**
  * A simple pair containing a subject and (optional) issuer DN. The supplied DN values are normalized into a lower-case form with the CN portion first.
