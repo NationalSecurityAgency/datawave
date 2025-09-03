@@ -501,12 +501,12 @@ public class ShardUidMappingIterator extends UidMappingIterator {
             orgValue.write(0);
             orgValue.write(value.get(), 0, value.getSize());
         } else {
-            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream(4);
             if (value != null && value.getSize() > 0) {
                 bytes.write(value.get(), 0, value.getSize());
             }
             cache.put(new Key(key), bytes);
         }
     }
-
+    // #1699
 }
