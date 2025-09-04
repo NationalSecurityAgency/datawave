@@ -184,7 +184,7 @@ public class SplitsFile {
         return dateIsBalanced;
     }
 
-    public static Map<String,List<Text>> getSplits(Configuration conf) throws IOException {
+    public static Map<Integer,List<Text>> getSplits(Configuration conf) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplits();
 
     }
