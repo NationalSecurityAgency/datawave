@@ -26,7 +26,7 @@ public enum TemporalGranularity {
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day. Otherwise, the original
      * value will be returned.
      */
-    TRUNCATE_TEMPORAL_TO_DAY("DAY", new DateTimeValueFormatter("yyyy-MM-dd")),
+    TRUNCATE_TEMPORAL_TO_DAY("DAY", new DateTimeValueFormatter("yyyy-MM-dd'T'00:00:00.000")),
 
     /**
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour. Otherwise, the original
@@ -38,13 +38,13 @@ public enum TemporalGranularity {
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the month. Otherwise, the original
      * value will be returned.
      */
-    TRUNCATE_TEMPORAL_TO_MONTH("MONTH", new DateTimeValueFormatter("yyyy-MM")),
+    TRUNCATE_TEMPORAL_TO_MONTH("MONTH", new DateTimeValueFormatter("yyyy-MM-00'T'00:00:00.000")),
 
     /**
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the year. Otherwise, the original
      * value will be returned.
      */
-    TRUNCATE_TEMPORAL_TO_YEAR("YEAR", new DateTimeValueFormatter("yyyy")),
+    TRUNCATE_TEMPORAL_TO_YEAR("YEAR", new DateTimeValueFormatter("yyyy-00-00'T'00:00:00.000")),
 
     /**
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the second. Otherwise, the
