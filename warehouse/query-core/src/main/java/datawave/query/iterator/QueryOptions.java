@@ -199,9 +199,6 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String NON_INDEXED_DATATYPES = "non.indexed.dataTypes";
 
-    @Deprecated
-    public static final String EVERYTHING = "*";
-
     public static final String CONTAINS_INDEX_ONLY_TERMS = "contains.index.only.terms";
 
     public static final String ALLOW_FIELD_INDEX_EVALUATION = "allow.field.index.evaluation";
