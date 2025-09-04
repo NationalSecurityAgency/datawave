@@ -13,84 +13,98 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
 
 class FieldsWithNumericRangeValuesVisitorTest {
 
+    // Toggle printing the parsed AST via PrintingVisitor.
+    // Set to true to see parsed JEXL and AST output during tests.
+    private static final boolean PRINT_VISITOR = false;
+
     private String query;
+    private String luceneQuery;
     private final Set<String> expectedFields = new LinkedHashSet<>();
+
+    private static final LuceneToJexlQueryParser LUCENE = new LuceneToJexlQueryParser();
 
     @AfterEach
     void tearDown() {
         query = null;
+        luceneQuery = null;
         expectedFields.clear();
     }
 
-    /**
-     * Test the various field operators with string values.
-     *
-     * @param operator
-     *            the operator
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"==", "!=", "<", ">", "<=", ">="})
-    void testOperatorsWithTextValue(String operator) throws ParseException {
-        givenQuery("FOO " + operator + " 'abc'");
-
-        // Do not expect any fields.
-        assertResult();
-    }
-
-    /**
-     * Test the various field operators with boolean values.
-     *
-     * @param operator
-     *            the operator
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"==", "!=", "<", ">", "<=", ">="})
-    void testOperatorsWithBooleanValue(String operator) throws ParseException {
-        givenQuery("FOO " + operator + " true");
-
-        // Do not expect any fields.
-        assertResult();
-    }
-
-    /**
-     * Test the various field operators with numeric values.
-     *
-     * @param operator
-     *            the operator
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"==", "!=", "<", ">", "<=", ">="})
-    void testOperatorsWithNumericValue(String operator) throws ParseException {
-        givenQuery("FOO " + operator + " 1");
+    @Test
+    void testLuceneSinglePointRange() throws ParseException {
+        givenLuceneQuery("FOO:[10 TO 10]");
         expectFields("FOO");
-        assertResult();
+        assertLuceneResult();
     }
 
-    /**
-     * Test multiple fields with numeric values.
-     */
     @Test
-    void testMultipleFieldsWithNumericValues() throws ParseException {
-        givenQuery("FOO == 'abc' && BAR != true || HAT > 3 || BAT < 5 || HEN <= 15 || VEE >= 20");
-        expectFields("HAT", "BAT", "HEN", "VEE");
-        assertResult();
+    void testLuceneClosedClosedRange() throws ParseException {
+        givenLuceneQuery("FOO:[10 TO 20]");
+        expectFields("FOO");
+        assertLuceneResult();
     }
 
-    /**
-     * Test string literals that are valid numbers.
-     */
     @Test
-    void testFieldWithStringThatIsNumeric() throws ParseException {
-        givenQuery("FOO == '1' && BAR == '2.0' && HAT == 'def'");
-        expectFields("FOO", "BAR");
-        assertResult();
+    void testLuceneClosedOpenRange() throws ParseException {
+        givenLuceneQuery("FOO:[10 TO 20}");
+        expectFields("FOO");
+        assertLuceneResult();
+    }
+
+    @Test
+    void testLuceneOpenOpenRange() throws ParseException {
+        givenLuceneQuery("FOO:{10 TO 20}");
+        expectFields("FOO");
+        assertLuceneResult();
+    }
+
+    @Test
+    void testLuceneLowerBoundOnly() throws ParseException {
+        givenLuceneQuery("FOO:[10 TO *]");
+        expectFields("FOO");
+        assertLuceneResult();
+    }
+
+    @Test
+    void testLuceneUpperBoundOnly() throws ParseException {
+        givenLuceneQuery("FOO:[* TO 20]");
+        expectFields("FOO");
+        assertLuceneResult();
+    }
+
+    @Test
+    void testLuceneMixedWithNonNumeric() throws ParseException {
+        givenLuceneQuery("FOO:[10 TO 20] AND BAR:'abc' OR BAZ:true");
+        expectFields("FOO");
+        assertLuceneResult();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"FOO:[-1 TO 0]", "FOO:{-1.5 TO 10.25}", "FOO:[-1.5 TO *]", "FOO:[* TO 10.25}", "FOO:{-100 TO -1}", "FOO:[0 TO 0]"})
+    void testLuceneVariousRanges(String lucene) throws ParseException {
+        givenLuceneQuery(lucene);
+        expectFields("FOO");
+        assertLuceneResult();
+    }
+
+    @Test
+    void testLuceneMultipleFields() throws ParseException {
+        givenLuceneQuery("A:[1 TO 2] OR B:[* TO 10} AND C:'xyz' OR D:[5 TO 5]");
+        expectFields("A", "B", "D");
+        assertLuceneResult();
     }
 
     private void givenQuery(String query) {
         this.query = query;
+    }
+
+    private void givenLuceneQuery(String lucene) {
+        this.luceneQuery = lucene;
     }
 
     private void expectFields(String... fields) {
@@ -99,9 +113,34 @@ class FieldsWithNumericRangeValuesVisitorTest {
 
     private void assertResult() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Set<String> actual = FieldsWithNumericValuesVisitor.getFields(script);
+        if (PRINT_VISITOR) {
+            System.out.println("JEXL input: " + query);
+            PrintingVisitor.printQuery(script);
+        }
+        Set<String> actual = FieldsWithNumericRangeValuesVisitor.getFields(script);
         Assertions.assertEquals(expectedFields, actual);
     }
 
+    private void assertLuceneResult() throws ParseException {
+        try {
+            // Lucene -> QueryNode (whose toString is a JEXL string)
+            QueryNode node = LUCENE.parse(luceneQuery);
+            String jexl = node.toString();
 
+            // JEXL string -> AST
+            ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(jexl);
+
+            if (PRINT_VISITOR) {
+                System.out.println("Lucene input: " + luceneQuery);
+                System.out.println("Converted JEXL: " + jexl);
+                PrintingVisitor.printQuery(jexlScript);
+            }
+
+            // Visitor under test
+            Set<String> actual = FieldsWithNumericRangeValuesVisitor.getFields(jexlScript);
+            Assertions.assertEquals(expectedFields, actual, "Lucene: " + luceneQuery + "  JEXL: " + jexl);
+        } catch (datawave.query.language.parser.ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

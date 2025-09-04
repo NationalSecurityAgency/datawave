@@ -1,26 +1,23 @@
 package datawave.query.rules;
 
-import java.text.NumberFormat;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.ibm.icu.impl.number.parse.ParsedNumber;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.PrintingVisitor;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.type.NumberType;
-import datawave.query.jexl.visitors.FieldsWithNumericValuesVisitor;
+import datawave.query.jexl.visitors.FieldsWithNumericRangeValuesVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.TypeMetadata;
 
 /**
- * Implementation of {@link QueryRule} that will verify that fields with numeric values are actually numeric fields.
+ * Validates that any field used in a range comparison (<, >, <=, >=) is a numeric field.
+ * <p>
+ * Lucene range syntax is converted to JEXL prior to validation; this rule expects a JEXL AST.
  */
 public class NumericValueRule extends ShardQueryRule {
 
@@ -49,19 +46,18 @@ public class NumericValueRule extends ShardQueryRule {
 
         try {
             ASTJexlScript jexlScript = (ASTJexlScript) ruleConfig.getParsedQuery();
-            PrintingVisitor.printQuery(jexlScript);
-            // Fetch the set of fields that have numeric values.
-            Set<String> fields = FieldsWithNumericValuesVisitor.getFields(jexlScript); // TODO ALLLLLLLL FIELDS WITH A NUMERIC VALUE... wtf this SHOULD return non-REGEX value'd fields.......
-            // ooooooo actually!!!!!!! it might not even be this visitor cuz the regex stuff ISNT ACTUALLY REGEX!!!!! it's a range node. look for that
+            if (log.isDebugEnabled()) {
+                PrintingVisitor.printQuery(jexlScript);
+            }
 
+            // Identify fields that participate in range comparisons (<, >, <=, >=), including those derived from Lucene ranges.
+            Set<String> fields = FieldsWithNumericRangeValuesVisitor.getFields(jexlScript);
 
-            // if the datatypes only exist in JEXL, how do we check
-
-            // If fields with numeric values were found, check the field types.
-            if (!fields.isEmpty()) {
+            // If no range fields were found, or no type metadata is available, nothing to validate.
+            TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
+            if (!fields.isEmpty() && typeMetadata != null) {
                 // A temporary cache to avoid unnecessary lookups via TypeMetadata if we see a field more than once.
                 Multimap<String,String> types = HashMultimap.create();
-                TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
                 // Maintain insertion order.
                 Set<String> nonNumericFields = new LinkedHashSet<>();
                 // Find any fields that are not a number type.
@@ -70,24 +66,14 @@ public class NumericValueRule extends ShardQueryRule {
                         types.putAll(field, typeMetadata.getNormalizerNamesForField(field));
                     }
 
-                    //get all nodes
-                    // for each one check if its type is numeric
-                    // if it is, check its value for an actual numbner
-                    // if it's not (like if it's regex) then throw the error
-
-
-//                    Number num = NumberFormat.getInstance().parse(types.get(typeMetadata.getNormalizerNamesForField(field)));
-                    //yea but how the heck do i even get the value, there's no value anywhere just the fields
-
-                    if (!types.containsEntry(field, NUMBER_TYPE)) { //ADD IT HERER!!!! tHIS IS WHERE YOU DOUBLE CHECK THAT THE VALUE SAVED ISN'T A CONST LIKE 1234
+                    // If the field does not have NumberType as one of its normalizers, flag it.
+                    if (!types.containsEntry(field, NUMBER_TYPE)) {
                         nonNumericFields.add(field);
-
-                        //the prob above is that NUMBER_TYPE can be either a const or regex, right? so i need to cehck if the value is just a double
                     }
                 }
-                // If any non-numeric fields were specified with numeric values, add a message to the result.
-                if (!nonNumericFields.isEmpty()) { //todo: UPDATE THIS TO CARE ONLY ABOUT RANGES. CONSTANTS LIKE 123 DONT MATTER
-                    result.addMessage("Numeric values supplied for non-numeric field(s): " + String.join(", ", nonNumericFields));
+                // If any non-numeric fields were used in a range, add a message to the result.
+                if (!nonNumericFields.isEmpty()) {
+                    result.addMessage("Range values supplied for non-numeric field(s): " + String.join(", ", nonNumericFields));
                 }
             }
         } catch (Exception e) {

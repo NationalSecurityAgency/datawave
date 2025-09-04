@@ -130,10 +130,6 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
         return copy(node);
     }
 
-    // SETH in both we use QPM.findInstanceNode is any dropped
-    // returns true if it has the structire of a property marker!!!! very useful. has data about it, like the tupe
-    // in my new visitor, to find ranges, visit ASTAnd and REef nodes, use QPM.fI passing the node, .isType(BoundedRAnge.Type)
-
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if we know from a parent that this is evaluation only (or ignored), pass that forward. if we don't know, check.
