@@ -16,7 +16,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
- * Visitor that collects fields participating in range comparisons (<, >, <=, >=).
+ * Visitor that collects fields participating in range comparisons.
  * <p>
  * Intended to be used after Lucene queries are converted to JEXL, where Lucene ranges are represented as JEXL comparison nodes (optionally wrapped by a bounded
  * marker). This visitor does not perform any type validation; callers can validate field normalizers via {@code TypeMetadata}.

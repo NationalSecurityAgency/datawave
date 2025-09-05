@@ -21,6 +21,7 @@ import datawave.query.jexl.JexlASTHelper;
  * <p>
  * This visitor is used for scenarios where any numeric literal usage is of interest (equality and range operators). For range-only use cases, prefer
  * {@link FieldsWithNumericRangeValuesVisitor}.
+ * </p>
  */
 public class FieldsWithNumericValuesVisitor extends ShortCircuitBaseVisitor {
 
