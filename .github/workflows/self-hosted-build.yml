@@ -23,6 +23,8 @@ env:
   GITHUB_REGISTRY: ghcr.io
   GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
   GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+  M2_HOME: /opt/apache-maven-3.9.11/
+  PATH: /opt/apache-maven-3.9.11/bin:$PATH
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
@@ -51,12 +53,5 @@ jobs:
         server-username: GITHUB_USERNAME
         server-password: GITHUB_PASSWORD
     - name: Build and Run Unit Tests
-      run: |
-        export M2_HOME=/opt/apache-maven-3.9.11/
-        export M2=$M2_HOME/bin
-        export PATH=$M2:$PATH
-        
+      run: |        
         mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipITs -DskipFormat
-
-
-
