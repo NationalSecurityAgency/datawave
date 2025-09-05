@@ -20,6 +20,7 @@ import datawave.query.jexl.JexlASTHelper;
  * <p>
  * Intended to be used after Lucene queries are converted to JEXL, where Lucene ranges are represented as JEXL comparison nodes (optionally wrapped by a bounded
  * marker). This visitor does not perform any type validation; callers can validate field normalizers via {@code TypeMetadata}.
+ * </p>
  */
 public class FieldsWithNumericRangeValuesVisitor extends ShortCircuitBaseVisitor {
 

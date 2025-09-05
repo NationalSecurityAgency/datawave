@@ -18,6 +18,7 @@ import datawave.query.util.TypeMetadata;
  * Validates that any field used in a range comparison (<, >, <=, >=) is a numeric field.
  * <p>
  * Lucene range syntax is converted to JEXL prior to validation; this rule expects a JEXL AST.
+ * </p>
  */
 public class NumericValueRule extends ShardQueryRule {
 
