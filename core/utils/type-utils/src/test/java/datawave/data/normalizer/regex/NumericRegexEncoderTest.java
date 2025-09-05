@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import datawave.data.normalizer.ZeroRegexStatus;
 import datawave.data.type.util.NumericalEncoder;
 
 class NumericRegexEncoderTest {
@@ -564,6 +565,27 @@ class NumericRegexEncoderTest {
         // @formatter:on
     }
 
+    @Test
+    void testZeroListBeforeAndAfterDecimal() {
+        // @formatter:off
+        assertRegex("123400.*").normalizesTo("\\+[f-z]E1\\.234(0{2})?.*")
+                .lossyMatchesAllOf("1234099", "12341234")
+                .matchesAllOf("123400", "1234001", "1234001234")
+                .matchesNoneOf("12340", "1123400", "1234.00");
+        assertRegex("1234\\.00.*").normalizesTo("\\+dE1\\.234(0{2})?.*")
+                .lossyMatchesAllOf("1234", "1234.0", "1234.01", "1234.1")
+                .matchesAllOf("1234.00123")
+                .matchesNoneOf("12340", "11234.001");
+        assertRegex("123400").normalizesTo("\\+fE1\\.234")
+                .matchesAllOf("123400")
+                .matchesNoneOf("12340", "1123400", "1234.00", "123409", "12341234");
+        assertRegex("1234\\.00").normalizesTo("\\+dE1\\.234")
+                .lossyMatchesAllOf("1234", "1234.0")
+                .matchesAllOf("1234.00")
+                .matchesNoneOf("12340", "1234.01", "11234.001");
+        // @formatter:on
+    }
+
     private void assertExceptionThrown(String pattern, String message) {
         assertThatThrownBy(() -> NumericRegexEncoder.encode(pattern)).hasMessage(message);
     }
@@ -587,8 +609,20 @@ class NumericRegexEncoderTest {
             return this;
         }
 
+        public RegexAssert lossyMatches(String number) {
+            assertMatchStatus(number, true, true);
+            return this;
+        }
+
         public RegexAssert matches(String number) {
-            assertMatchStatus(number, true);
+            assertMatchStatus(number, true, false);
+            return this;
+        }
+
+        public RegexAssert lossyMatchesAllOf(String... numbers) {
+            for (String number : numbers) {
+                lossyMatches(number);
+            }
             return this;
         }
 
@@ -600,7 +634,7 @@ class NumericRegexEncoderTest {
         }
 
         public RegexAssert doesNotMatch(String number) {
-            assertMatchStatus(number, false);
+            assertMatchStatus(number, false, false);
             return this;
         }
 
@@ -611,12 +645,29 @@ class NumericRegexEncoderTest {
             return this;
         }
 
-        private void assertMatchStatus(String number, boolean match) {
-            String matchStatus = match ? " matches " : " does not match ";
-            assertThat(original.matcher(number).matches()).as("Assert " + original + matchStatus + number).isEqualTo(match);
+        /**
+         * Assert a number matches the original regex and the normalized form matches the normalized regex. If lossy, then the expected results for the original
+         * regex will differ from the normalized.
+         *
+         * @param number
+         *            The number to test
+         * @param match
+         *            Are expecting to match or not match
+         * @param lossy
+         */
+        private void assertMatchStatus(String number, boolean match, boolean lossy) {
+            boolean matchOriginal = match && !lossy;
+            String matchStatus = matchOriginal ? " matches " : " does not match ";
+            assertThat(original.matcher(number).matches()).as("Assert " + original + matchStatus + number).isEqualTo(matchOriginal);
             String encodedNumber = NumericalEncoder.encode(number);
+            matchStatus = match ? " matches " : " does not match ";
             assertThat(normalized.matcher(encodedNumber).matches()).as("Assert " + normalized + matchStatus + encodedNumber + " (" + number + ")")
                             .isEqualTo(match);
+            if (lossy) {
+                ZeroRegexStatus status = NumericRegexEncoder.getZeroRegexStatus(original.toString());
+                assertThat(status.equals(ZeroRegexStatus.LEADING) || status.equals(ZeroRegexStatus.TRAILING)).as("Assert " + original + " is lossy")
+                                .isEqualTo(lossy);
+            }
         }
     }
 }
