@@ -15,7 +15,6 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.jexl.JexlASTHelper;
 
-
 public class FieldsWithNumericRangeValuesVisitor extends ShortCircuitBaseVisitor {
 
     /**
