@@ -23,50 +23,71 @@ public enum TemporalGranularity {
     ALL("ALL", Function.identity()),
 
     /**
-     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day. Otherwise, the original
-     * value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day padded with 0s. Otherwise,
+     * the original value will be returned.
+     * <p>
+     * Format: <code>yyyy-MM-dd'T'00:00:00.000</code>
      */
     TRUNCATE_TEMPORAL_TO_DAY("DAY", new DateTimeValueFormatter("yyyy-MM-dd'T'00:00:00.000")),
 
     /**
-     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour. Otherwise, the original
-     * value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour padded with 0s.
+     * Otherwise, the original value will be returned.
+     * <p>
+     * Format: <code>yyyy-MM-dd'T'HH:00:00.000</code>
      */
     TRUNCATE_TEMPORAL_TO_HOUR("HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:00:00.000")),
 
     /**
-     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the month. Otherwise, the original
-     * value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the month padded with 0s.
+     * Otherwise, the original value will be returned.
+     * <p>
+     * Format: <code>yyyy-MM-00'T'00:00:00.000</code>
      */
     TRUNCATE_TEMPORAL_TO_MONTH("MONTH", new DateTimeValueFormatter("yyyy-MM-00'T'00:00:00.000")),
 
     /**
-     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the year. Otherwise, the original
-     * value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the year padded with 0s.
+     * Otherwise, the original value will be returned.
+     * <p>
+     * Format: <code>yyyy-00-00'T'00:00:00.000</code>
      */
     TRUNCATE_TEMPORAL_TO_YEAR("YEAR", new DateTimeValueFormatter("yyyy-00-00'T'00:00:00.000")),
 
     /**
-     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the second. Otherwise, the
-     * original value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the second padded with 0s.
+     * Otherwise, the original value will be returned.
+     * <p>
+     * Format: <code>yyyy-MM-dd'T'HH:mm:ss.000</code>
      */
     TRUNCATE_TEMPORAL_TO_SECOND("SECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.000")),
 
     /**
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the millisecond. Otherwise, the
      * original value will be returned.
+     * <p>
+     * Format: <code>yyyy-MM-dd'T'HH:mm:ss.SSS</code>
      */
     TRUNCATE_TEMPORAL_TO_MILLISECOND("MILLISECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS")),
 
     /**
-     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the tenth of an hour. Otherwise,
-     * the original value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the tenth of an hour padded with
+     * 0s. Otherwise, the original value will be returned. Since the length of this datetime value can differ, we must ensure the correct amount of 0s are
+     * included. We accomplish this by utilizing {@link #replaceCharWithZero(String, int)}.
+     * <p>
+     * Potential formats:
+     * <p>
+     * <code>yyyy-MM-dd'T'HH:m0:00.000</code>
+     * <p>
+     * <code>yyyy-MM-dd'T'HH:00:00.000</code>
      */
-    TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR("TENTH_OF_HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:m", true)),
+    TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR("TENTH_OF_HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:00.000", (date) -> replaceCharWithZero(date, 16))),
 
     /**
-     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the
-     * original value will be returned.
+     * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute padded with 0s.
+     * Otherwise, the original value will be returned.
+     * <p>
+     * Format: <code>yyyy-MM-dd'T'HH:mm:00.000</code>
      */
     TRUNCATE_TEMPORAL_TO_MINUTE("MINUTE", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:00.000"));
 
@@ -127,21 +148,34 @@ public enum TemporalGranularity {
     }
 
     /**
+     * Replaces the character at the given index in the string with the character '0'. Useful for truncating values in date strings.
+     *
+     * @param str
+     *            the string
+     * @param index
+     *            the character index
+     * @return the new string
+     */
+    private static String replaceCharWithZero(String str, int index) {
+        return str.substring(0, (index - 1)) + "0" + str.substring(index);
+    }
+
+    /**
      * A {@link Function} implementation to will handle datetime value formatting.
      */
     private static class DateTimeValueFormatter implements Function<String,String> {
 
         private static final Logger log = Logger.getLogger(DateTimeValueFormatter.class);
         private final SimpleDateFormat formatter;
-        private boolean isTenth = false;
+        private final Function<String,String> postFormatFunction;
 
         private DateTimeValueFormatter(String pattern) {
-            this.formatter = new SimpleDateFormat(pattern);
+            this(pattern, Function.identity());
         }
 
-        private DateTimeValueFormatter(String pattern, boolean isTenth) {
+        private DateTimeValueFormatter(String pattern, Function<String,String> postFormatFunction) {
             this.formatter = new SimpleDateFormat(pattern);
-            this.isTenth = isTenth;
+            this.postFormatFunction = postFormatFunction;
         }
 
         @Override
@@ -150,13 +184,8 @@ public enum TemporalGranularity {
                 // Attempt to format the denormalized date value.
                 Date date = DateNormalizer.DATE_NORMALIZER.denormalize(value);
                 String formattedDate = formatter.format(date);
-                if (!isTenth) {
-                    return formattedDate;
-                } else {
-                    String truncatedString = formattedDate.substring(0, formattedDate.length() - 1);
-                    // If the minutes is less than 10, then we must pad with two 0s instead of 1.
-                    return truncatedString.length() == 15 ? truncatedString + "0:00.000" : truncatedString + "00:00.000";
-                }
+                // Perform any additional formatting required.
+                return postFormatFunction.apply(formattedDate);
             } catch (Exception e) {
                 if (log.isDebugEnabled()) {
                     log.debug("Failed to format value " + value + " as date with pattern " + formatter.toPattern(), e);
