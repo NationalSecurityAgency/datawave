@@ -15,13 +15,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.jexl.JexlASTHelper;
 
-/**
- * Visitor that collects fields participating in range comparisons.
- * <p>
- * Intended to be used after Lucene queries are converted to JEXL, where Lucene ranges are represented as JEXL comparison nodes (optionally wrapped by a bounded
- * marker). This visitor does not perform any type validation; callers can validate field normalizers via {@code TypeMetadata}.
- * </p>
- */
+
 public class FieldsWithNumericRangeValuesVisitor extends ShortCircuitBaseVisitor {
 
     /**
@@ -81,7 +75,7 @@ public class FieldsWithNumericRangeValuesVisitor extends ShortCircuitBaseVisitor
      * @param node
      *            a JEXL comparison node
      * @param data
-     *            the accumulating set (LinkedHashSet<String>)
+     *            the accumulating set {@code (LinkedHashSet<String>)}
      */
     @SuppressWarnings("unchecked")
     private void checkComparisonNodeField(JexlNode node, Object data) {

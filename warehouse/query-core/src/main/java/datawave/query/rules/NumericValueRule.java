@@ -14,12 +14,6 @@ import datawave.query.jexl.visitors.FieldsWithNumericRangeValuesVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.TypeMetadata;
 
-/**
- * Validates that any field used in a range comparison is a numeric field.
- * <p>
- * Lucene range syntax is converted to JEXL prior to validation; this rule expects a JEXL AST.
- * </p>
- */
 public class NumericValueRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(NumericValueRule.class);
