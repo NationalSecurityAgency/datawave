@@ -47,6 +47,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
@@ -110,6 +111,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private URI seqFileHdfs;
     private URI srcHdfs;
     private URI destHdfs;
+    private Path historyFolder;
     private String jobtracker;
     private StandaloneStatusReporter reporter = new StandaloneStatusReporter();
     private volatile boolean running;
@@ -138,6 +140,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         URI seqFileHdfs = null;
         URI srcHdfs = null;
         URI destHdfs = null;
+        Path historyFolder = null;
         String jobtracker = null;
         Configuration conf = new Configuration();
         ArrayList<String[]> properties = new ArrayList<>();
@@ -151,7 +154,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             + "[-seqFileHdfs seqFileSystemUri (URI for the sequence file's HDFS)] "
                             + "[-srcHdfs srcFileSystemURI (URI for the source file's HDFS)] "
                             + "[-destHdfs destFileSystemURI (URI for the destination file's HDFS)] " + "[-jt jobTracker (job tracker address for Hadoop jobs)] "
-                            + "[-ingestMetricsDisabled (flag to disable ingest metrics collection)] "
+                            + "[-historyDir directory for history] " + "[-ingestMetricsDisabled (flag to disable ingest metrics collection)] "
                             + "[-jobObservers jobObserverClasses (comma-separated observer class names)] "
                             + "[-shutdownPort portNum (port number for shutdown commands)] "
                             + "[-delayPathPattern pattern (delay this job if the directory contains a file matching this pattern)] "
@@ -289,6 +292,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-destHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).", e);
                         System.exit(-2);
                     }
+                } else if ("-historyDir".equalsIgnoreCase(args[i])) {
+                    try {
+                        historyFolder = new Path(args[++i]);
+                    } catch (Exception e) {
+                        log.error("-historyFolder needs to be a path (e.g. /archive)", e);
+                        System.exit(-2);
+                    }
                 } else if ("-jt".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-jt must be followed a jobtracker (e.g. hostname:54311).");
@@ -409,8 +419,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
         String passwordStr = PasswordConverter.parseArg(args[5]);
 
         BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, user, new PasswordToken(passwordStr),
-                        seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers, SLEEP_TIME,
-                        FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
+                        seqFileHdfs, srcHdfs, destHdfs, historyFolder, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers,
+                        SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
         Thread t = new Thread(processor, "map-file-watcher");
         t.start();
     }
@@ -420,20 +430,23 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
-                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf,
-                        SHUTDOWN_PORT, 1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, Path historyFolder, String jobtracker, Map<String,Integer> tablePriorities,
+                    Configuration conf) {
+        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, historyFolder, jobtracker, tablePriorities,
+                        conf, SHUTDOWN_PORT, 1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
-                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort,
-                        1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, Path historyFolder, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf,
+                    int shutdownPort) {
+        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, historyFolder, jobtracker, tablePriorities,
+                        conf, shutdownPort, 1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
-                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
-                    int numHdfsThreads, List<Observer> jobObservers, int sleepTime, int failSleepTime, boolean writeStats, ImportMode importMode) {
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, Path historyFolder, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf,
+                    int shutdownPort, int numHdfsThreads, List<Observer> jobObservers, int sleepTime, int failSleepTime, boolean writeStats,
+                    ImportMode importMode) {
         this.conf = conf;
         this.tablePriorities = tablePriorities;
         this.workDir = new Path(workDir);
@@ -445,6 +458,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         this.seqFileHdfs = seqFileHdfs;
         this.srcHdfs = srcHdfs;
         this.destHdfs = destHdfs;
+        this.historyFolder = historyFolder;
         this.jobtracker = jobtracker;
         this.running = true;
         this.sleepTime = sleepTime;
@@ -542,6 +556,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                     // copy the data if needed
                                     dstJobDirectory = distCpDirectory(srcJobDirectory);
                                     workingHdfs = destHdfs;
+
+                                    // copy job to history (if enabled)
+                                    historyCopyDirectory(dstJobDirectory);
 
                                     // recreate the map files directory reference in case it moved filesystems
                                     mapFilesDir = new Path(dstJobDirectory, "mapFiles");
@@ -661,6 +678,28 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
     private FileSystem getFileSystem(URI uri) throws IOException {
         return (uri == null ? FileSystem.get(conf) : FileSystem.get(uri, conf));
+    }
+
+    private void historyCopyDirectory(Path jobDirectory) throws Exception {
+        if (historyFolder == null) {
+            return;
+        }
+
+        FileSystem destFs = getFileSystem(destHdfs);
+        FileStatus jobDirectoryStatus = destFs.getFileStatus(jobDirectory);
+        Path historyJobDirectory = new Path(historyFolder, jobDirectory);
+
+        if (!destFs.exists(jobDirectory)) {
+            throw new IllegalStateException("The job directory does not exist: " + jobDirectory);
+        } else if (!destFs.exists(historyFolder)) {
+            throw new IllegalStateException("The history directory doe snot exist: " + historyJobDirectory);
+        }
+
+        // Copy job folder to history
+        FileUtil.copy(destFs, jobDirectory, destFs, historyJobDirectory, false, true, conf);
+
+        // Set history folder times, which is used for cleanup
+        destFs.setTimes(historyJobDirectory, jobDirectoryStatus.getModificationTime(), jobDirectoryStatus.getAccessTime());
     }
 
     private Path distCpDirectory(Path jobDirectory) throws Exception {

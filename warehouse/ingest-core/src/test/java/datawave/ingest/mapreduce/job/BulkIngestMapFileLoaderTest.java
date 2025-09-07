@@ -232,7 +232,7 @@ public class BulkIngestMapFileLoaderTest {
 
     private static BulkIngestMapFileLoader newMapFileLoader(int loaderSleepTime, ImportMode mode, Configuration config) {
         return new BulkIngestMapFileLoader(workPath.toString(), "*", cluster.getInstanceName(), cluster.getZooKeepers(), USER, new PasswordToken(PASSWORD),
-                        tmpDir.toURI(), tmpDir.toURI(), tmpDir.toURI(), null, new HashMap<>(), config, 0, 1, new ArrayList<>(), loaderSleepTime,
+                        tmpDir.toURI(), tmpDir.toURI(), tmpDir.toURI(), null, null, new HashMap<>(), config, 0, 1, new ArrayList<>(), loaderSleepTime,
                         loaderSleepTime, false, mode);
     }
 
@@ -469,7 +469,7 @@ public class BulkIngestMapFileLoaderTest {
     public void testShutdownPortAlreadyInUse() throws IOException {
         exit.expectSystemExitWithStatus(-3);
         try (final ServerSocket socket = new ServerSocket(0)) {
-            new BulkIngestMapFileLoader(".", null, "test", "localhost:2181", "root", new PasswordToken(""), null, null, null, null, null, null,
+            new BulkIngestMapFileLoader(".", null, "test", "localhost:2181", "root", new PasswordToken(""), null, null, null, null, null, null, null,
                             socket.getLocalPort());
         }
     }
@@ -1948,12 +1948,12 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
 
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+                            seqFileHdfs, srcHdfs, destHdfs, null, jobtracker, tablePriorities, conf, 0);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"), seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+                            destHdfs, null, jobtracker, tablePriorities, conf, 0);
 
             return uut;
         } catch (URISyntaxException e) {
