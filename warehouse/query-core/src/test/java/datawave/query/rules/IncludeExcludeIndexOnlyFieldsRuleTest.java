@@ -62,7 +62,7 @@ class IncludeExcludeIndexOnlyFieldsRuleTest extends ShardQueryRuleTest {
     @ValueSource(strings = {"includeRegex", "excludeRegex"})
     void testFunctionWithSingleIndexOnlyField(String name) throws Exception {
         givenQuery("filter:" + name + "(INDEXED1,'value')");
-        expectMessage("Index Only fields found within the filter function filter:" + name + ": INDEXED1");
+        expectMessage("Index Only fields found within the filter function filter:" + name + ": INDEXED1 -- The field(s) cannot be used in this manner.");
 
         assertResult();
     }
@@ -73,8 +73,8 @@ class IncludeExcludeIndexOnlyFieldsRuleTest extends ShardQueryRuleTest {
     @Test
     void testMultipleFunctionWithIndexOnlyField() throws Exception {
         givenQuery("filter:includeRegex(INDEXED1,'value') && filter:excludeRegex(INDEXED2, 'value')");
-        expectMessage("Index Only fields found within the filter function filter:includeRegex: INDEXED1");
-        expectMessage("Index Only fields found within the filter function filter:excludeRegex: INDEXED2");
+        expectMessage("Index Only fields found within the filter function filter:includeRegex: INDEXED1 -- The field(s) cannot be used in this manner.");
+        expectMessage("Index Only fields found within the filter function filter:excludeRegex: INDEXED2 -- The field(s) cannot be used in this manner.");
 
         assertResult();
     }

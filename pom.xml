@@ -86,7 +86,7 @@
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
-        <version.geoserver>2.26.2</version.geoserver>
+        <version.geoserver>2.26.3</version.geoserver>
         <version.geotools>28.1</version.geotools>
         <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
