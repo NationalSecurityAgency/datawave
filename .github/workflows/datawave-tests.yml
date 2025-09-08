@@ -35,7 +35,7 @@ jobs:
     - name: Passing build
       run: echo "This build executes solely so we can set branch protections on integration to look for build-and-test-microservices"
   build-and-test-main:
-    runs-on: ubuntu-latest
+    runs-on: private-kubernetes-runners
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
