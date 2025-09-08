@@ -36,14 +36,14 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private final AccumuloTableCache cache;
-    private final ConnectionPoolsProperties connectionPoolsConfiguration;
+    protected final AccumuloTableCache cache;
+    protected final ConnectionPoolsProperties connectionPoolsConfiguration;
 
-    private Map<String,Map<Priority,AccumuloClientPool>> pools;
+    protected Map<String,Map<Priority,AccumuloClientPool>> pools;
 
-    private String defaultPoolName = null;
+    protected String defaultPoolName = null;
 
-    private static AccumuloConnectionFactoryImpl factory = null;
+    protected static AccumuloConnectionFactoryImpl factory = null;
 
     public static AccumuloConnectionFactory getInstance(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         if (factory == null) {
@@ -56,7 +56,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         return factory;
     }
 
-    private AccumuloConnectionFactoryImpl(AccumuloTableCache cache, ConnectionPoolsProperties config) {
+    protected AccumuloConnectionFactoryImpl(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         this.cache = cache;
         this.connectionPoolsConfiguration = config;
         log.info("Initializing AccumuloConnectionFactoryImpl with {} and {}", config.getDefaultPool(), config.getPoolNames());
@@ -99,7 +99,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         cache.setConnectionFactory(this);
     }
 
-    private AccumuloClientPool createConnectionPool(ConnectionPoolProperties conf, int limit) {
+    protected AccumuloClientPool createConnectionPool(ConnectionPoolProperties conf, int limit) {
         AccumuloClientPoolFactory factory = new AccumuloClientPoolFactory(conf.getUsername(), conf.getPassword(), conf.getZookeepers(), conf.getInstance());
         AccumuloClientPool pool = new AccumuloClientPool(factory);
         pool.setTestOnBorrow(true);
@@ -150,7 +150,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         }
     }
 
-    private static void setFactory(AccumuloConnectionFactoryImpl factory) {
+    protected static void setFactory(AccumuloConnectionFactoryImpl factory) {
         AccumuloConnectionFactoryImpl.factory = factory;
     }
 
