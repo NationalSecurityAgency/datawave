@@ -29,11 +29,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -50,21 +52,30 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.HashMultimap;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.composite.CompositeLogicException;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.common.remote.TestJSSESecurityDomain;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
+import datawave.webservice.query.remote.RemoteTimeoutQueryException;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
@@ -91,6 +102,7 @@ public class RemoteEventQueryLogicHttpTest {
     volatile int nextCalls = 0;
 
     private volatile String content = null;
+    private UUID uuid;
 
     private void setContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
@@ -135,7 +147,7 @@ public class RemoteEventQueryLogicHttpTest {
         server.setExecutor(null);
         server.start();
 
-        UUID uuid = UUID.randomUUID();
+        uuid = UUID.randomUUID();
         GenericResponse<String> createResponse = new GenericResponse<String>();
         createResponse.setResult(uuid.toString());
 
@@ -266,6 +278,9 @@ public class RemoteEventQueryLogicHttpTest {
         runnable.run();
 
         assertTrue(runnable.isCaught().get());
+
+        assertNotNull(runnable.getException());
+        assertTrue(runnable.getException() instanceof RemoteTimeoutQueryException);
     }
 
     @Test
@@ -331,6 +346,8 @@ public class RemoteEventQueryLogicHttpTest {
         assertFalse(r.isSetup().get());
         // the socket timeout will cause this to throw an exception prior to the interrupt being sent
         assertTrue(r.isCaught().get());
+        assertNotNull(r.getException());
+        assertTrue(r.getException() instanceof RemoteTimeoutQueryException);
 
         interrupt.set(true);
     }
@@ -425,6 +442,202 @@ public class RemoteEventQueryLogicHttpTest {
 
         assertFalse(r1.isSetup().get());
         assertFalse(r2.isSetup().get());
+
+        assertTrue(r1.getException() != null || r2.getException() != null);
+        assertTrue(r1.getException() == null || r1.getException() instanceof RemoteTimeoutQueryException);
+        assertTrue(r2.getException() == null || r2.getException() instanceof RemoteTimeoutQueryException);
+    }
+
+    @Test
+    public void testIteratorTimeout() {
+        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
+        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+
+        // only wait 100ms for the read
+        remoteConfig.setSocketTimeout(100);
+
+        // patch in the forever handler which will block until its unlocked
+        AtomicBoolean handlerInterrupt = new AtomicBoolean(false);
+        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+
+        server.removeContext("/DataWave/Query/" + uuid.toString() + "/next");
+        // attach a new one that hangs forever
+        server.createContext("/DataWave/Query/" + uuid.toString() + "/next", foreverHandler);
+
+        try {
+            QueryRunnable r1 = new QueryRunnable(logic);
+            r1.run();
+            assertTrue(r1.isCaught().get());
+            assertTrue(r1.getException().getMessage(), r1.getException() instanceof RemoteTimeoutQueryRuntimeException);
+        } finally {
+            handlerInterrupt.set(true);
+        }
+
+    }
+
+    @Test
+    public void testCompositeRemoteWithTimeoutOnInitialize() {
+        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
+        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+
+        // only wait 100ms for the read
+        remoteConfig.setSocketTimeout(10);
+
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        AtomicBoolean handlerInterrupt = new AtomicBoolean(false);
+        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+
+        // remove the old handler
+        server.removeContext("/DataWave/Query/TestQuery/create");
+        // attach a new one that hangs for 5s
+        server.createContext("/DataWave/Query/TestQuery/create", foreverHandler);
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+
+        logics.put("RemoteLogic", logic);
+
+        CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
+        compositeLogic.setMaxPageSize(1);
+        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
+        compositeLogic.setQueryLogics(logics);
+        compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        try {
+            QueryRunnable r = new QueryRunnable(compositeLogic);
+            r.run();
+
+            assertTrue(r.isCaught().get());
+            assertTrue(r.getException() instanceof CompositeLogicException);
+            assertTrue(r.getException().getMessage().startsWith("All logics have failed to initialize"));
+        } finally {
+            handlerInterrupt.set(true);
+        }
+    }
+
+    @Test
+    public void testCompositeRemoteWithTimeoutOnInitializePassThrough() {
+        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
+        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+
+        // only wait 100ms for the read
+        remoteConfig.setSocketTimeout(10);
+
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        AtomicBoolean handlerInterrupt = new AtomicBoolean(false);
+        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+
+        // remove the old handler
+        server.removeContext("/DataWave/Query/TestQuery/create");
+        // attach a new one that hangs for 5s
+        server.createContext("/DataWave/Query/TestQuery/create", foreverHandler);
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+
+        logics.put("RemoteLogic", logic);
+
+        CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
+        compositeLogic.setMaxPageSize(1);
+        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
+        compositeLogic.setQueryLogics(logics);
+        compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        compositeLogic.setLogicsToSuppressTimeouts(List.of("RemoteLogic"));
+
+        try {
+            QueryRunnable r = new QueryRunnable(compositeLogic, 0);
+            r.run();
+
+            if (r.getException() != null) {
+                throw new RuntimeException(r.getException());
+            }
+            assertFalse(r.isCaught().get());
+        } finally {
+            handlerInterrupt.set(true);
+        }
+    }
+
+    @Test
+    public void testCompositeRemoteWithTimeoutOnResults() {
+        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
+        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+
+        // only wait 100ms for the read
+        remoteConfig.setSocketTimeout(100);
+
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        AtomicBoolean handlerInterrupt = new AtomicBoolean(false);
+        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+
+        // remove the old handler
+        server.removeContext("/DataWave/Query/" + uuid.toString() + "/next");
+        // attach a new one that hangs for 5s
+        server.createContext("/DataWave/Query/" + uuid.toString() + "/next", foreverHandler);
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+
+        logics.put("RemoteLogic", logic);
+
+        CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
+        compositeLogic.setMaxPageSize(1);
+        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
+        compositeLogic.setQueryLogics(logics);
+        compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        try {
+            QueryRunnable r = new QueryRunnable(compositeLogic);
+            r.run();
+
+            assertTrue(r.isCaught().get());
+            assertTrue(r.getException() instanceof CompositeLogicException);
+            assertTrue(r.getException().getMessage().startsWith("Failed to retrieve results"));
+        } finally {
+            handlerInterrupt.set(true);
+        }
+    }
+
+    @Test
+    public void testCompositeRemoteWithTimeoutOnResultsPassThrough() {
+        RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
+        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+
+        // only wait 100ms for the read
+        remoteConfig.setSocketTimeout(100);
+
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        AtomicBoolean handlerInterrupt = new AtomicBoolean(false);
+        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+
+        // remove the old handler
+        server.removeContext("/DataWave/Query/" + uuid.toString() + "/next");
+        // attach a new one that hangs for 5s
+        server.createContext("/DataWave/Query/" + uuid.toString() + "/next", foreverHandler);
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+
+        logics.put("RemoteLogic", logic);
+
+        CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
+        compositeLogic.setMaxPageSize(1);
+        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
+        compositeLogic.setQueryLogics(logics);
+        compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        compositeLogic.setLogicsToSuppressTimeouts(List.of("RemoteLogic"));
+
+        try {
+            QueryRunnable r = new QueryRunnable(compositeLogic, 0);
+            r.run();
+
+            assertFalse(r.isCaught().get());
+        } finally {
+            handlerInterrupt.set(true);
+        }
     }
 
     public static class ForeverHandler implements HttpHandler {
@@ -438,7 +651,7 @@ public class RemoteEventQueryLogicHttpTest {
         public void handle(HttpExchange exchange) throws IOException {
             while (true) {
                 try {
-                    sleep(1000);
+                    sleep(50);
                     if (interrupt.get()) {
                         throw new InterruptedException();
                     }
@@ -450,37 +663,64 @@ public class RemoteEventQueryLogicHttpTest {
     }
 
     public class QueryRunnable implements Runnable {
-        private RemoteEventQueryLogic logic;
+        private final QueryLogic logic;
+        private final int expectedCount;
 
         private AtomicBoolean setup = new AtomicBoolean(false);
         private AtomicBoolean caught = new AtomicBoolean(false);
+        private Exception exception = null;
 
-        public QueryRunnable(RemoteEventQueryLogic logic) {
+        public QueryRunnable(QueryLogic logic) {
+            this(logic, 2);
+        }
+
+        public QueryRunnable(QueryLogic logic, int expectedCount) {
             this.logic = logic;
+            this.expectedCount = expectedCount;
         }
 
         @Override
         public void run() {
-            logic.setCurrentUser(new DatawavePrincipal(commonName));
+            DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(commonName), DatawaveUser.UserType.USER, List.of("A"), List.of(), HashMultimap.create(),
+                            1);
+            logic.setCurrentUser(new DatawavePrincipal(List.of(user)));
+
             QueryImpl settings = new QueryImpl();
+            settings.setId(UUID.randomUUID());
+            settings.setQueryAuthorizations("A,B,C,D,E");
+            settings.setPagesize(10);
             settings.setQuery(query);
             try {
                 GenericQueryConfiguration config = logic.initialize(null, settings, null);
                 logic.setupQuery(config);
                 setup.set(true);
+
+                if (logic instanceof CompositeQueryLogic) {
+                    TransformIterator itr = logic.getTransformIterator(settings);
+                    List<DefaultEvent> events = new ArrayList();
+                    while (itr.hasNext()) {
+                        DefaultEvent event = (DefaultEvent) itr.next();
+                        events.add(event);
+                    }
+                    assertEquals(expectedCount, events.size());
+                } else {
+                    Iterator<EventBase> t = logic.iterator();
+                    List<EventBase> events = new ArrayList();
+                    while (t.hasNext()) {
+                        events.add(t.next());
+                    }
+                    assertEquals(expectedCount, events.size());
+                }
             } catch (Exception e) {
                 caught.set(true);
+                exception = e;
                 return;
             }
 
-            Iterator<EventBase> t = logic.iterator();
-            List<EventBase> events = new ArrayList();
-            while (t.hasNext()) {
-                events.add(t.next());
+            if (expectedCount > 0) {
+                assertNotNull(content);
+                assertEquals(query, content);
             }
-            assertEquals(2, events.size());
-            assertNotNull(content);
-            assertEquals(query, content);
         }
 
         public AtomicBoolean isCaught() {
@@ -489,6 +729,10 @@ public class RemoteEventQueryLogicHttpTest {
 
         public AtomicBoolean isSetup() {
             return setup;
+        }
+
+        public Exception getException() {
+            return exception;
         }
     }
 }
