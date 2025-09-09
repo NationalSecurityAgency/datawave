@@ -47,7 +47,7 @@ public class NumericValueRule extends ShardQueryRule {
 
             // If no range fields were found, or no type metadata is available, nothing to validate.
             TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
-            if(typeMetadata == null){
+            if (typeMetadata == null) {
                 throw new IllegalStateException("TypeMetadata should not be null.");
             }
             if (!fields.isEmpty()) {
