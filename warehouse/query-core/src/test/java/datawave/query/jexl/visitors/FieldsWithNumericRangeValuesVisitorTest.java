@@ -26,7 +26,7 @@ class FieldsWithNumericRangeValuesVisitorTest {
     private String luceneQuery;
     private final Set<String> expectedFields = new LinkedHashSet<>();
 
-    private static final LuceneToJexlQueryParser LUCENE = new LuceneToJexlQueryParser();
+    private static final LuceneToJexlQueryParser luceneParser = new LuceneToJexlQueryParser();
 
     @AfterEach
     void tearDown() {
@@ -99,7 +99,7 @@ class FieldsWithNumericRangeValuesVisitorTest {
         assertLuceneResult();
     }
 
-    private void givenQuery(String query) {
+    private void givenJexlQuery(String query) {
         this.query = query;
     }
 
@@ -111,7 +111,7 @@ class FieldsWithNumericRangeValuesVisitorTest {
         this.expectedFields.addAll(List.of(fields));
     }
 
-    private void assertResult() throws ParseException {
+    private void assertJexlResult() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         if (PRINT_VISITOR) {
             System.out.println("JEXL input: " + query);
@@ -124,7 +124,7 @@ class FieldsWithNumericRangeValuesVisitorTest {
     private void assertLuceneResult() throws ParseException {
         try {
             // Lucene -> QueryNode (whose toString is a JEXL string)
-            QueryNode node = LUCENE.parse(luceneQuery);
+            QueryNode node = luceneParser.parse(luceneQuery);
             String jexl = node.toString();
 
             // JEXL string -> AST

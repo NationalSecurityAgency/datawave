@@ -41,16 +41,16 @@ public class NumericValueRule extends ShardQueryRule {
 
         try {
             ASTJexlScript jexlScript = (ASTJexlScript) ruleConfig.getParsedQuery();
-            if (log.isDebugEnabled()) {
-                PrintingVisitor.printQuery(jexlScript);
-            }
 
             // Identify fields that participate in range comparisons (<, >, <=, >=), including those derived from Lucene ranges.
             Set<String> fields = FieldsWithNumericRangeValuesVisitor.getFields(jexlScript);
 
             // If no range fields were found, or no type metadata is available, nothing to validate.
             TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
-            if (!fields.isEmpty() && typeMetadata != null) {
+            if(typeMetadata == null){
+                throw new IllegalStateException("TypeMetadata should not be null.");
+            }
+            if (!fields.isEmpty()) {
                 // A temporary cache to avoid unnecessary lookups via TypeMetadata if we see a field more than once.
                 Multimap<String,String> types = HashMultimap.create();
                 // Maintain insertion order.
