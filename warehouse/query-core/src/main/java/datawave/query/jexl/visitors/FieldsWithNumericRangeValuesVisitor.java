@@ -19,10 +19,9 @@ import datawave.query.jexl.JexlASTHelper;
 /**
  * Visitor that collects fields that participate in numeric range comparisons.
  * <p>
- * This visitor inspects inequality comparison nodes (less-than, less-than-or-equal, greater-than, greater-than-or-equal) and
- * returns the ordered set of field names whose compared literal is numeric, or a string value that can be parsed as a number.
- * Equality and not-equal comparisons are intentionally ignored. For collecting all numeric comparisons (range and equality),
- * see {@link FieldsWithNumericValuesVisitor}.
+ * This visitor inspects inequality comparison nodes (less-than, less-than-or-equal, greater-than, greater-than-or-equal) and returns the ordered set of field
+ * names whose compared literal is numeric, or a string value that can be parsed as a number. Equality and not-equal comparisons are intentionally ignored. For
+ * collecting all numeric comparisons (range and equality), see {@link FieldsWithNumericValuesVisitor}.
  * </p>
  */
 public class FieldsWithNumericRangeValuesVisitor extends ShortCircuitBaseVisitor {

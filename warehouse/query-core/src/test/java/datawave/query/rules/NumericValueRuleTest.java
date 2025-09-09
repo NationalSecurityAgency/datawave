@@ -27,7 +27,8 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
     void testQueryWithoutNumericValues() throws Exception {
         givenQuery("FOO == 'abc' && BAR != 'abc' || HAT > 'abc' || BAT < 'abc' || HEN <= 'abc' || VEE >= 'abc'");
 
-        // Do not expect any messages.
+        // Expect an exception due to missing TypeMetadata
+        expectException(new IllegalStateException("TypeMetadata should not be null."));
         assertResult();
     }
 

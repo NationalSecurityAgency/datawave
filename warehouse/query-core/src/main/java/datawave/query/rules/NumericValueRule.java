@@ -11,7 +11,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.data.type.NumberType;
 import datawave.query.jexl.visitors.FieldsWithNumericRangeValuesVisitor;
-import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.TypeMetadata;
 
 public class NumericValueRule extends ShardQueryRule {
