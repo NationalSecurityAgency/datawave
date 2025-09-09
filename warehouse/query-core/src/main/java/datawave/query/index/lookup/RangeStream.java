@@ -207,8 +207,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
         Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create(config.getQueryFieldsDatatypes());
         nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
-        String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
-
         BaseIndexStream ranges = (BaseIndexStream) node.jjtAccept(this, null);
 
         // Guards against the case of a very oddly formed JEXL query, e.g. ("foo")
