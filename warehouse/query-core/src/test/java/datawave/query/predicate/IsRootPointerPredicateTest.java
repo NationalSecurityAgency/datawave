@@ -9,7 +9,7 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import datawave.data.hash.HashUID;
-import datawave.data.hash.HashUIDBuilder;
+import datawave.data.hash.UID;
 
 public class IsRootPointerPredicateTest {
 
@@ -17,7 +17,7 @@ public class IsRootPointerPredicateTest {
     public void testIsRootPointerSansContext() {
         RootPointerPredicate isRootPointer = new RootPointerPredicate();
 
-        HashUID uid = new HashUIDBuilder().newId(getRandomBytes(20), null);
+        UID uid = HashUID.builder().newId(getRandomBytes(20), null);
         assertTrue(isRootPointer.apply(new Key("shard", "dt\u0000" + uid.toString())));
         assertFalse(isRootPointer.apply(new Key("shard", "dt\u0000" + uid.toString() + ".")));
         assertFalse(isRootPointer.apply(new Key("shard", "dt\u0000" + uid.toString() + ".1")));
@@ -38,7 +38,7 @@ public class IsRootPointerPredicateTest {
     public void testIsRootPointerWithContext() {
         RootPointerPredicate isRootPointer = new RootPointerPredicate();
 
-        HashUID uid = new HashUIDBuilder().newId(getRandomBytes(20), null);
+        UID uid = HashUID.builder().newId(getRandomBytes(20), null);
         isRootPointer.startNewDocument(new Key("shard", "dt\u0000" + uid.toString()));
 
         assertTrue(isRootPointer.apply(new Key("shard", "dt\u0000" + uid.toString())));
