@@ -55,6 +55,8 @@ public class TabletLocationHashPartitionerTest {
         TabletLocationHashPartitioner partitionerTwo = new TabletLocationHashPartitioner();
         partitionerTwo.setConf(conf);
 
+        System.out.println();
+
         BalancedShardPartitionerTest.assertExpectedCollisions(partitionerTwo, 0, MAX_EXPECTED_COLLISIONS);
         BalancedShardPartitionerTest.assertExpectedCollisions(partitionerTwo, 1, MAX_EXPECTED_COLLISIONS);
         BalancedShardPartitionerTest.assertExpectedCollisions(partitionerTwo, 2, MAX_EXPECTED_COLLISIONS);
