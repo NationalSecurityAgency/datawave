@@ -12,7 +12,7 @@ public class AnnotationManagerUtil {
             final String[] parts = value.split("/");
             if (parts.length != 3) {
                 throw new IllegalArgumentException("DOCUMENT reference does not specify all needed parts: " + value
-                        + ". value should be in the form 'DOCUMENT:shardId/datatype/eventUID'.");
+                                + ". value should be in the form 'DOCUMENT:shardId/datatype/eventUID'.");
             }
             // Extract the relevant parts of the value and use them to build a content Range
             else {
@@ -30,7 +30,6 @@ public class AnnotationManagerUtil {
         log.debug("Could not find UID for field: '{}', value: '{}'", field, value);
         return null;
     }
-
 
     public static class RawRecordReference {
         private final String shard;

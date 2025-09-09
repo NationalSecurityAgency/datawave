@@ -33,17 +33,19 @@ public class AnnotationDataAccess<A> {
     protected static final Logger log = LoggerFactory.getLogger(AnnotationDataAccess.class);
 
     final AccumuloClient accumuloClient;
+    final Authorizations authorizations;
     final String tableName;
     final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,A> annotationSerializer;
 
-    public AnnotationDataAccess(AccumuloClient accumuloClient, String tableName, AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,A> annotationSerializer) {
+    public AnnotationDataAccess(AccumuloClient accumuloClient, Authorizations authorizations, String tableName, AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,A> annotationSerializer) {
         this.accumuloClient = accumuloClient;
+        this.authorizations = authorizations;
         this.tableName = tableName;
         this.annotationSerializer = annotationSerializer;
     }
 
     /** Get a specific annotation */
-    public Optional<A> get(Authorizations authorizations, String shard, String datatype, String uid, String annotationType, String annotationUid) {
+    public Optional<A> get(String shard, String datatype, String uid, String annotationType, String annotationUid) {
         try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL + annotationType;
             final String columnQualifierPrefix = annotationUid + NULL;
@@ -69,7 +71,7 @@ public class AnnotationDataAccess<A> {
     }
 
     /** Get the annotation types for a document */
-    public Collection<String> getTypes(Authorizations authorizations, String shard, String datatype, String uid) {
+    public Collection<String> getTypes(String shard, String datatype, String uid) {
         try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
             final String columnFamilyPrefix = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamilyPrefix + ".*";
@@ -92,7 +94,7 @@ public class AnnotationDataAccess<A> {
 
 
     /** Get all annotations for a document */
-    public List<A> getAll(Authorizations authorizations, String shard, String datatype, String uid) {
+    public List<A> getAll(String shard, String datatype, String uid) {
         try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
             final String columnFamilyPrefix = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamilyPrefix + ".*";
@@ -114,7 +116,7 @@ public class AnnotationDataAccess<A> {
     }
 
     /** Get all annotations of a specific type for a document */
-    public List<A> getAllForType(Authorizations authorizations, String shard, String datatype, String uid, String annotationType) {
+    public List<A> getAllForType(String shard, String datatype, String uid, String annotationType) {
         try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL + annotationType;
 

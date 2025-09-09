@@ -81,7 +81,7 @@ public class AnnotationDataAccessTest {
 
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
         AnnotationDataAccess<Annotation> setupDao = new AnnotationDataAccess<>(mac.createAccumuloClient("root", new PasswordToken("pass")),
-                        "datawave.annotations", serializer);
+                        auths, "datawave.annotations", serializer);
         for (Annotation annotation : manyAnnotations) {
             setupDao.save(annotation);
         }
@@ -93,7 +93,7 @@ public class AnnotationDataAccessTest {
     @BeforeEach
     public void setup() throws AccumuloException, AccumuloSecurityException, TableExistsException {
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        dao = new AnnotationDataAccess<>(mac.createAccumuloClient("root", new PasswordToken("pass")), "datawave.annotations", serializer);
+        dao = new AnnotationDataAccess<>(mac.createAccumuloClient("root", new PasswordToken("pass")), auths, "datawave.annotations", serializer);
     }
 
     /** Insert a new annotation into the table and retrieve it and validate */
@@ -102,7 +102,7 @@ public class AnnotationDataAccessTest {
         Annotation sourceAnnotation = generateTestAnnotation();
         dao.save(sourceAnnotation);
 
-        List<Annotation> annotation = dao.getAll(auths, sourceAnnotation.getShard(), sourceAnnotation.getDataType(), sourceAnnotation.getUid());
+        List<Annotation> annotation = dao.getAll(sourceAnnotation.getShard(), sourceAnnotation.getDataType(), sourceAnnotation.getUid());
         assertFalse(annotation.isEmpty());
         assertEquals(1, annotation.size());
         Annotation resultAnnotation = annotation.get(0);
@@ -118,7 +118,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAll(auths, row, dataType, documentUid);
+        List<Annotation> annotations = dao.getAll(row, dataType, documentUid);
         assertFalse(annotations.isEmpty());
         assertEquals(1, annotations.size());
         Annotation a = annotations.get(0);
@@ -184,7 +184,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAll(auths, row, dataType, documentUid);
+        List<Annotation> annotations = dao.getAll(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -195,7 +195,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAll(auths, row, dataType, documentUid);
+        List<Annotation> annotations = dao.getAll(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -206,7 +206,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = "helios"; // non-existent uid from this seed.
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAll(auths, row, dataType, documentUid);
+        List<Annotation> annotations = dao.getAll(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -218,7 +218,7 @@ public class AnnotationDataAccessTest {
         String annotationType = "tokens";
 
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
-        List<Annotation> annotations = dao.getAllForType(auths, row, dataType, documentUid, annotationType);
+        List<Annotation> annotations = dao.getAllForType(row, dataType, documentUid, annotationType);
         assertFalse(annotations.isEmpty());
         assertEquals(1, annotations.size());
         Annotation a = annotations.get(0);
@@ -234,7 +234,7 @@ public class AnnotationDataAccessTest {
         String annotationType = "tokens";
 
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
-        List<Annotation> annotations = dao.getAllForType(auths, row, dataType, documentUid, annotationType);
+        List<Annotation> annotations = dao.getAllForType(row, dataType, documentUid, annotationType);
         assertTrue(annotations.isEmpty());
     }
 
@@ -248,7 +248,7 @@ public class AnnotationDataAccessTest {
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
         String annotationUid = "kir5i4.tf9ozi.-ji6i29";
 
-        Optional<Annotation> annotationOptional = dao.get(auths, row, dataType, documentUid, annotationType, annotationUid);
+        Optional<Annotation> annotationOptional = dao.get(row, dataType, documentUid, annotationType, annotationUid);
         assertFalse(annotationOptional.isEmpty());
         Annotation a = annotationOptional.get();
         assertExpectedMetadata(a.getMetadata());
@@ -265,7 +265,7 @@ public class AnnotationDataAccessTest {
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
         String annotationUid = "kir5i4.tf9ozi.-ji6i29";
 
-        Optional<Annotation> annotationOptional = dao.get(auths, row, dataType, documentUid, annotationType, annotationUid);
+        Optional<Annotation> annotationOptional = dao.get(row, dataType, documentUid, annotationType, annotationUid);
         assertTrue(annotationOptional.isEmpty());
     }
 
