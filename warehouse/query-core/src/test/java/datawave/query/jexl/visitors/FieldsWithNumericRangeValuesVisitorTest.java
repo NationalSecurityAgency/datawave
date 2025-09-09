@@ -99,6 +99,108 @@ class FieldsWithNumericRangeValuesVisitorTest {
         assertLuceneResult();
     }
 
+    @Test
+    void testLuceneEqualsShouldNotMatch() throws ParseException {
+        // Equality is not a range comparison.
+        givenLuceneQuery("A:1");
+        // Expect no fields.
+        assertLuceneResult();
+    }
+
+    @Test
+    void testLuceneNotEqualsShouldNotMatch() throws ParseException {
+        // A positive equality and a negated equality are not ranges.
+        givenLuceneQuery("A:1 NOT B:4");
+        // Expect no fields.
+        assertLuceneResult();
+    }
+
+    @Test
+    void testJexlExplicitBoundedRangeShouldMatch() throws ParseException {
+        givenJexlQuery("((_Bounded_ = true) && (FOO >= '1' && FOO <= '4'))");
+        expectFields("FOO");
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlEqualsShouldNotMatch() throws ParseException {
+        givenJexlQuery("FOO == '1'");
+        // Expect no fields.
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlNotEqualsShouldNotMatch() throws ParseException {
+        givenJexlQuery("FOO != '1'");
+        // Expect no fields.
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlGreaterThanShouldMatch() throws ParseException {
+        givenJexlQuery("FOO > '1'");
+        expectFields("FOO");
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlGreaterThanOrEqualShouldMatch() throws ParseException {
+        givenJexlQuery("FOO >= '1'");
+        expectFields("FOO");
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlLessThanShouldMatch() throws ParseException {
+        givenJexlQuery("FOO < '1'");
+        expectFields("FOO");
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlLessThanOrEqualShouldMatch() throws ParseException {
+        givenJexlQuery("FOO <= '1'");
+        expectFields("FOO");
+        assertJexlResult();
+    }
+
+    // Non-numeric variants: should not match
+
+    @Test
+    void testJexlExplicitBoundedRangeWithTextShouldNotMatch() throws ParseException {
+        givenJexlQuery("((_Bounded_ = true) && (FOO >= 'abc' && FOO <= 'def'))");
+        // Expect no fields when range values are non-numeric.
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlGreaterThanWithTextShouldNotMatch() throws ParseException {
+        givenJexlQuery("FOO > 'abc'");
+        // Expect no fields when value is non-numeric.
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlGreaterThanOrEqualWithTextShouldNotMatch() throws ParseException {
+        givenJexlQuery("FOO >= 'abc'");
+        // Expect no fields when value is non-numeric.
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlLessThanWithTextShouldNotMatch() throws ParseException {
+        givenJexlQuery("FOO < 'abc'");
+        // Expect no fields when value is non-numeric.
+        assertJexlResult();
+    }
+
+    @Test
+    void testJexlLessThanOrEqualWithTextShouldNotMatch() throws ParseException {
+        givenJexlQuery("FOO <= 'abc'");
+        // Expect no fields when value is non-numeric.
+        assertJexlResult();
+    }
+
     private void givenJexlQuery(String query) {
         this.query = query;
     }

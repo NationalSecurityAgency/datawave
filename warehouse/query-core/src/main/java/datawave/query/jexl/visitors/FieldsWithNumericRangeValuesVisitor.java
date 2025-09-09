@@ -12,6 +12,7 @@ import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -80,7 +81,15 @@ public class FieldsWithNumericRangeValuesVisitor extends ShortCircuitBaseVisitor
     private void checkComparisonNodeField(JexlNode node, Object data) {
         String field = JexlASTHelper.getIdentifier(node);
         if (field != null) {
-            ((Set<String>) data).add(field);
+            Object literal = JexlASTHelper.getLiteralValueSafely(node);
+            if (literal instanceof Number) {
+                // Only track fields that compare against numeric values.
+                ((Set<String>) data).add(field);
+            } else if (literal instanceof String) {
+                if (NumberUtils.isCreatable((String) literal)) {
+                    ((Set<String>) data).add(field);
+                }
+            }
         }
     }
 }
