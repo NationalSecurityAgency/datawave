@@ -130,9 +130,18 @@ public class AccumuloTableCacheProperties {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("zookeepers", zookeepers).append("tableNames", tableNames).append("poolName", poolName)
-                        .append("reloadInterval", reloadInterval).append("evictionReaperIntervalInSeconds", evictionReaperIntervalInSeconds)
-                        .append("numLocks", numLocks).append("maxRetries", maxRetries).append("tableCacheReloadTaskLease", tableCacheReloadTaskLease)
-                        .append("tableCacheReloadTaskLeaseTimeUnit", tableCacheReloadTaskLeaseTimeUnit).toString();
+        // @formatter:off
+        return new ToStringBuilder(this)
+            .append("zookeepers", zookeepers)
+            .append("tableNames", tableNames)
+            .append("poolName", poolName)
+            .append("reloadInterval", reloadInterval)
+            .append("evictionReaperIntervalInSeconds", evictionReaperIntervalInSeconds)
+            .append("numLocks", numLocks)
+            .append("maxRetries", maxRetries)
+            .append("tableCacheReloadTaskLease", tableCacheReloadTaskLease)
+            .append("tableCacheReloadTaskLeaseTimeUnit", tableCacheReloadTaskLeaseTimeUnit)
+            .toString();
+        // @formatter:on
     }
 }
