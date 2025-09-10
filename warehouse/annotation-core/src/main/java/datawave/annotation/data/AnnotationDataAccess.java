@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Used to read and write annotation data to Accumulo */
-public class AnnotationDataAccess<A> {
+public class AnnotationDataAccess<A,S> {
 
     public static final char NULL = '\0';
     public static final char MAX = '\uFFFF';
@@ -136,6 +136,14 @@ public class AnnotationDataAccess<A> {
                             e.getClass().getSimpleName() + " reading " + annotationType + " annotations for document: " + shard + "/" + datatype + "/" + uid,
                             e);
         }
+    }
+
+    public Optional<A> getAnnotation(String shard, String datatype, String uid, String annotationId) {
+
+    }
+
+    public Optional<S> getSegment(String shard, String datatype, String uid, String annotationId, String segmentId) {
+
     }
 
     /** Save an annotation */

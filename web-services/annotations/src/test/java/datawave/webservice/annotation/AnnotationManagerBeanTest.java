@@ -8,7 +8,9 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.ejb.EJBContext;
+import javax.ws.rs.core.Response;
 
+import datawave.webservice.query.exception.QueryException;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.core.Dispatcher;
@@ -102,7 +104,7 @@ public class AnnotationManagerBeanTest {
 
         PowerMock.replayAll();
 
-        bean.getAnnotationsFor("DOCUMENT", "20250406_456/news/aiddza.kdn85e.-wnbwkq");
+        Response response = bean.getAnnotationsFor("DOCUMENT", "20250406_456/news/aiddza.kdn85e.-wnbwkq");
 
         PowerMock.verifyAll();
     }
