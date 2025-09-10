@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 public class AccumuloTableCacheProperties {
     private String zookeepers = null;
     private List<String> tableNames = new ArrayList<>();
@@ -126,4 +128,20 @@ public class AccumuloTableCacheProperties {
         this.tableCacheReloadTaskLeaseTimeUnit = tableCacheReloadTaskLeaseTimeUnit;
     }
 
+    @Override
+    public String toString() {
+        // @formatter:off
+        return new ToStringBuilder(this)
+            .append("zookeepers", zookeepers)
+            .append("tableNames", tableNames)
+            .append("poolName", poolName)
+            .append("reloadInterval", reloadInterval)
+            .append("evictionReaperIntervalInSeconds", evictionReaperIntervalInSeconds)
+            .append("numLocks", numLocks)
+            .append("maxRetries", maxRetries)
+            .append("tableCacheReloadTaskLease", tableCacheReloadTaskLease)
+            .append("tableCacheReloadTaskLeaseTimeUnit", tableCacheReloadTaskLeaseTimeUnit)
+            .toString();
+        // @formatter:on
+    }
 }
