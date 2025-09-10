@@ -10,6 +10,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import datawave.query.util.MockMetadataHelper;
 
+/**
+ * @deprecated use IncludeExcludeIndexOnlyFieldsRule/IncludeExcludeIndexOnlyFieldsRuleTest instead
+ */
+@Deprecated
 class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
 
     private static final MockMetadataHelper metadataHelper = new MockMetadataHelper();
