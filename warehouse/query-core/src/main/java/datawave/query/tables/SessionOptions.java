@@ -47,10 +47,13 @@ public class SessionOptions implements ScannerBase {
 
     protected ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
-    public SessionOptions() {}
+    public SessionOptions() {
+        setConsistencyLevel(ConsistencyLevel.EVENTUAL);
+    }
 
     public SessionOptions(SessionOptions options) {
         setOptions(this, options);
+        setConsistencyLevel(ConsistencyLevel.EVENTUAL);
     }
 
     protected static void setOptions(SessionOptions dst, SessionOptions src) {
