@@ -26,6 +26,7 @@ import org.xbill.DNS.TextParseException;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.ProxiedUserDetails;
