@@ -15,12 +15,9 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.core.query.remote.RemoteTimeoutQueryException;
-import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.transformer.EventQueryTransformerSupport;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
@@ -92,7 +89,7 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
         public boolean hasNext() {
             if (data.isEmpty() && !complete) {
                 try {
-                    EventQueryResponseBase response = (EventQueryResponseBase) remoteQueryService.next(getRemoteId(), currentUser);
+                    EventQueryResponseBase response = (EventQueryResponseBase) uncheckedRemoteNext();
                     if (response != null) {
                         if (response.getReturnedEvents() == 0) {
                             if (response.isPartialResults()) {
@@ -111,12 +108,9 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
                         // in this case we must have gotten a 204, so we are done
                         complete = true;
                     }
-                } catch (QueryException e) {
+                } catch (RuntimeException e) {
                     complete = true;
-                    if (e instanceof RemoteTimeoutQueryException) {
-                        throw new RemoteTimeoutQueryRuntimeException(e);
-                    }
-                    throw new RuntimeException(e.getMessage(), e);
+                    throw e;
                 }
             }
             return !data.isEmpty();
