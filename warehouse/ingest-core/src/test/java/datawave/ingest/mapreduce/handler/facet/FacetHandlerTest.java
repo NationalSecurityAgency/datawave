@@ -112,6 +112,7 @@ public class FacetHandlerTest {
             EasyMock.expect(event.getDataType()).andReturn(TypeRegistry.getType(TEST_TYPE)).anyTimes();
             EasyMock.expect(event.getId()).andReturn(TEST_UID).anyTimes();
             EasyMock.expect(event.getDate()).andReturn(timestamp).anyTimes();
+            EasyMock.expect(event.getShardId()).andReturn(null).anyTimes();
             EasyMock.expect(event.getRawFileName()).andReturn("dummy_filename.txt").anyTimes();
             EasyMock.replay(event);
         } catch (Exception e) {

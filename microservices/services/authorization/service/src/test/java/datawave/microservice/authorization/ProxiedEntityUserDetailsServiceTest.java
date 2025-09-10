@@ -101,7 +101,7 @@ public class ProxiedEntityUserDetailsServiceTest {
     public static class ProxiedEntityUserDetailsServiceTestConfiguration {
         @Bean
         public CachedDatawaveUserService cachedDatawaveUserService() {
-            return new AuthorizationTestUserService(Collections.EMPTY_MAP, true);
+            return new AuthorizationTestUserService(Collections.emptyMap(), true);
         }
 
         @Bean

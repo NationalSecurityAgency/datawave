@@ -219,7 +219,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
             AbstractColumnBasedHandler<Key> handler = new ContentIndexingColumnBasedHandler() {
                 @Override
                 public AbstractContentIngestHelper getContentIndexingDataTypeHelper() {
-                    return getQueryMetricsIngestHelper(false, Collections.EMPTY_LIST);
+                    return getQueryMetricsIngestHelper(false, Collections.emptyList());
                 }
             };
             Map<String,String> trackingMap = AccumuloClientTracking.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -255,7 +255,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
     }
 
     public void writeMetric(T updatedQueryMetric, List<T> storedQueryMetrics, long timestamp, boolean delete) throws Exception {
-        writeMetric(updatedQueryMetric, storedQueryMetrics, timestamp, delete, Collections.EMPTY_LIST);
+        writeMetric(updatedQueryMetric, storedQueryMetrics, timestamp, delete, Collections.emptyList());
     }
 
     public void writeMetadata(T metric) throws Exception {
@@ -341,7 +341,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
     public Map<String,String> getEventFields(BaseQueryMetric queryMetric) {
         // ignore duplicates as none are expected
         Map<String,String> eventFields = new HashMap<>();
-        ContentQueryMetricsIngestHelper ingestHelper = getQueryMetricsIngestHelper(false, Collections.EMPTY_LIST);
+        ContentQueryMetricsIngestHelper ingestHelper = getQueryMetricsIngestHelper(false, Collections.emptyList());
         ingestHelper.setup(conf);
         Multimap<String,NormalizedContentInterface> fieldsToWrite = ingestHelper.getEventFieldsToWrite(queryMetric, null);
         for (Entry<String,NormalizedContentInterface> entry : fieldsToWrite.entries()) {

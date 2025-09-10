@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.PluginEnvironment;
@@ -56,10 +57,10 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
 
     @Override
     public Iterator<Map.Entry<Key,Value>> iterator() {
-        Collections.sort(serverSideIteratorList, (o1, o2) -> {
-            if (o1.priority < o2.priority) {
+        Collections.sort(this.scanIterators, (o1, o2) -> {
+            if (o1.getPriority() < o2.getPriority()) {
                 return -1;
-            } else if (o1.priority > o2.priority) {
+            } else if (o1.getPriority() > o2.getPriority()) {
                 return 1;
             } else {
                 return 0;
@@ -79,7 +80,13 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
             }
         }
 
-        IteratorBuilder iteratorBuilder = IteratorBuilder.builder(serverSideIteratorList).opts(serverSideIteratorOptions).env(env).build();
+        // Make a copy of the scan iterators list using accumulo's IterInfo implementation. This should be a temporary solution until the usage of
+        // IteratorBuilder is removed from Datawave since it's not part of accumulo's public API.
+        List<org.apache.accumulo.core.dataImpl.thrift.IterInfo> serverSideIteratorList = this.scanIterators.stream()
+                        .map(info -> new org.apache.accumulo.core.dataImpl.thrift.IterInfo(info.getPriority(), info.getIteratorClass(), info.getName()))
+                        .collect(Collectors.toList());
+
+        IteratorBuilder iteratorBuilder = IteratorBuilder.builder(serverSideIteratorList).opts(this.scanIteratorOptions).env(env).build();
 
         List<Map.Entry<Key,Value>> list = new ArrayList<>();
         try {
