@@ -109,7 +109,7 @@ public class AnnotationDataAccess<A,S> {
             scanner.addScanIterator(cfg);
 
             Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
-            return processIterator(it);
+            return processAnnotationsIterator(it);
         } catch (TableNotFoundException | AnnotationSerializationException e) {
             throw new AnnotationReadException(e.getClass().getSimpleName() + " reading all annotations for document: " + shard + "/" + datatype + "/" + uid, e);
         }
@@ -130,20 +130,44 @@ public class AnnotationDataAccess<A,S> {
             scanner.addScanIterator(cfg);
 
             Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
-            return processIterator(it);
+            return processAnnotationsIterator(it);
         } catch (TableNotFoundException | AnnotationSerializationException e) {
             throw new AnnotationReadException(
-                            e.getClass().getSimpleName() + " reading " + annotationType + " annotations for document: " + shard + "/" + datatype + "/" + uid,
+                            e.getClass().getSimpleName() + " reading " + annotationType + " type annotations for document: " + shard + "/" + datatype + "/" + uid,
                             e);
         }
     }
 
     public Optional<A> getAnnotation(String shard, String datatype, String uid, String annotationId) {
+        try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
+            final String columnFamily = datatype + NULL + uid + NULL;
+            final String columnFamilyRegex = columnFamily + ".*";
+            final String columnQualifierRegex = annotationId + NULL + ".*";
 
-    }
+            final Key startKey = new Key(shard, columnFamily);
+            final Key endKey = new Key(shard, columnFamily + MAX);
+            final Range range = new Range(startKey, true, endKey, false);
+            scanner.setRange(range);
 
-    public Optional<S> getSegment(String shard, String datatype, String uid, String annotationId, String segmentId) {
+            final IteratorSetting cfg = new IteratorSetting(50, "AnnotationDataAccess#getAnnotation", RegExFilter.class);
+            RegExFilter.setRegexs(cfg, shard, columnFamilyRegex, columnQualifierRegex, null, false, false);
+            scanner.addScanIterator(cfg);
 
+            Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
+            List<A> annotations = processAnnotationsIterator(it);
+            if (annotations.isEmpty()) {
+                return Optional.empty();
+            }
+            else if (annotations.size() > 1) {
+                // TODO: there should be only one here. what kind of exception should we throw?
+            }
+
+            return Optional.of(annotations.get(0));
+        } catch (TableNotFoundException | AnnotationSerializationException e) {
+            throw new AnnotationReadException(
+                    e.getClass().getSimpleName() + " reading annotationId " + annotationId + " for document: " + shard + "/" + datatype + "/" + uid,
+                    e);
+        }
     }
 
     /** Save an annotation */
@@ -185,17 +209,17 @@ public class AnnotationDataAccess<A,S> {
 
     /** Extract the data referenced by the interator into a collection of Annotation objects.
      *
-     * @param it
-     * @return
-     * @throws AnnotationSerializationException
+     * @param it the iterator to process
+     * @return a list of zero to many Annotations extracted from the iterator. Never null.
+     * @throws AnnotationSerializationException if there is a problem deserializing any portions of the Accumulo entries.
      */
-    public List<A> processIterator(Iterator<Map.Entry<Key,Value>> it) throws AnnotationSerializationException {
+    public List<A> processAnnotationsIterator(Iterator<Map.Entry<Key,Value>> it) throws AnnotationSerializationException {
         final List<Map.Entry<Key,Value>> buffer = new ArrayList<>();
         final List<A> results = new ArrayList<>();
         String currentAnnotationId = null;
 
-        // TODO: add visibility field to Annotation.
-        // TODO: interpret ColumnVisibilities to set access controls.
+        // TODO: add visibility field to Annotation metadata?
+        // TODO: interpret ColumnVisibilities to set access controls metadata?
 
         while (it.hasNext()) {
             Map.Entry<Key,Value> e = it.next();

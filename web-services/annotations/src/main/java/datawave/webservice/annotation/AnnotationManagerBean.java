@@ -1,6 +1,7 @@
 package datawave.webservice.annotation;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import javax.ws.rs.core.Response;
 
 import com.google.common.base.Objects;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.util.v1.AnnotationUtils;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
@@ -276,17 +278,38 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response getAnnotationSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     @PathParam("segmentId") String segmentId) {
         try {
+
+            //TODO: validate that we still need to retrieve individual segments. This is sorta brute force for now, we
+            // retrieve the entire annotation and return the segment with the matching id. Optimize later if this is a
+            // heavily used case.
             final InternalRecordId internalId = lookupInternalId(idType, id);
             if (internalId == null) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
 
             final AnnotationDataAccess<Annotation, Segment> annotationDataAccess = initializeAnnotationService();
-            final Optional<Segment> annotations = annotationDataAccess.getSegment(internalId.getShard(), internalId.getDataType(), internalId.getUid(), annotationId, segmentId);
-            if (annotations.isEmpty()) {
-                return jsonNotFound(String.format("No segment found for identifier '%s:%s', internalId: '%s', with annotation id '%s', segment id '%s'.", idType, id, internalId, annotationId, segmentId));
+            final Optional<Annotation> annotation = annotationDataAccess.getAnnotation(internalId.getShard(), internalId.getDataType(), internalId.getUid(), annotationId);
+            if (annotation.isEmpty()) {
+                return jsonNotFound(String.format("No annotation found for identifier '%s:%s', internalId: '%s', with annotation id '%s'", idType, id, internalId, annotationId));
             }
-            return jsonOk(annotations);
+
+            // now filter out the segment that was requested
+            Annotation a = annotation.get();
+            List<Segment> matchingSegments = new ArrayList<>();
+            for (Segment s: a.getSegmentsList()) {
+                if (s.getSegmentId().equals(segmentId)) {
+                    matchingSegments.add(s);
+                }
+            }
+
+            if (matchingSegments.isEmpty()) {
+                return jsonNotFound(String.format("No segment found for identifier '%s:%s', internalId: '%s', with annotation id '%s' and segment id '%s'", idType, id, internalId, annotationId, segmentId));
+            }
+            else if (matchingSegments.size() > 1) {
+                //TODO some sorta warning?
+            }
+            return jsonOk(matchingSegments);
+
         } catch (Exception e) {
             log.error("Internal error fetching annotations", e);
             return jsonError(String.format("Internal error fetching annotations: %s", e.getMessage()));
@@ -297,8 +320,8 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Path("/{idType}/{id}/annotation/{annotationId}/segment")
     @Consumes("application/json")
     @Produces("application/json")
-    public Response addSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId) {
-        // TODO return the new segment
+    public Response addSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId, String body) {
+        Annotation annotation = AnnotationUtils.fromJson(body);
 
         return Response.ok().build();
     }

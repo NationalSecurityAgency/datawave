@@ -6,11 +6,46 @@ import java.util.Map;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
+import com.google.protobuf.util.JsonFormat;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentValue;
 
 public class SegmentUtils {
+    private static final JsonFormat.Printer PRINTER = JsonFormat.printer().preservingProtoFieldNames();
+    private static final JsonFormat.Parser PARSER = JsonFormat.parser().ignoringUnknownFields();
+
+    public static String getBoundaryCaseString(Segment.BoundaryCase boundaryCase) {
+        switch (boundaryCase) {
+            case ALL:
+                return "ENTIRE";
+            case POINTLIST:
+                return "POINTLIST";
+            case TIME:
+                return "TIME";
+            case CHARACTERS:
+                return "CHARACTERS";
+            case BOUNDARY_NOT_SET:
+            default:
+                return "";
+        }
+    }
+
+    public static String toJsonWithBoundaryType(Segment s) throws Exception {
+        return PRINTER.print(injectBoundaryType(s));
+    }
+
+    public static Segment fromJson(String json) throws Exception {
+        Segment.Builder b = Segment.newBuilder();
+        PARSER.merge(json, b);
+        return b.build();
+    }
+
+    public static Segment injectBoundaryType(Segment segment) {
+        String type = getBoundaryCaseString(segment.getBoundaryCase());
+        return segment.toBuilder().setBoundaryType(type).build();
+    }
+
     public static Annotation injectAnnotationId(Annotation.Builder builder) {
         final Annotation tempAnnotation = builder.build();
         final String hash = calculateAnnotationHash(tempAnnotation);
