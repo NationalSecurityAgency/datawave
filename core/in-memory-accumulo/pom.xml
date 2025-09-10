@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-in-memory-accumulo</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>4.0.3</version>
     <packaging>jar</packaging>
     <name>Datawave InMemory Accumulo</name>
     <url>https://code.nsa.gov/datawave-in-memory-accumulo</url>
@@ -16,7 +16,7 @@
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
         <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>core/in-memory-accumulo-4.0.3</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <distributionManagement>
