@@ -1,5 +1,6 @@
 package datawave.annotation.util.v1;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
@@ -18,11 +19,11 @@ public class AnnotationUtils {
         return b.build();
     }
 
-    public static String toJsonWithBoundaryTypes(Annotation a) throws Exception {
+    public static String toJsonWithBoundaryTypes(Annotation a) throws InvalidProtocolBufferException {
         return PRINTER.print(addSegmentBoundaryTypes(a));
     }
 
-    public static Annotation fromJson(String json) throws Exception {
+    public static Annotation fromJson(String json) throws InvalidProtocolBufferException {
         Annotation.Builder b = Annotation.newBuilder();
         PARSER.merge(json, b);
         return b.build();

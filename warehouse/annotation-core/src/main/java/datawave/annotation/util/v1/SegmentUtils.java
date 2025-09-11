@@ -6,6 +6,7 @@ import java.util.Map;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
@@ -31,11 +32,11 @@ public class SegmentUtils {
         }
     }
 
-    public static String toJsonWithBoundaryType(Segment s) throws Exception {
+    public static String toJsonWithBoundaryType(Segment s) throws InvalidProtocolBufferException {
         return PRINTER.print(injectBoundaryType(s));
     }
 
-    public static Segment fromJson(String json) throws Exception {
+    public static Segment fromJson(String json) throws InvalidProtocolBufferException {
         Segment.Builder b = Segment.newBuilder();
         PARSER.merge(json, b);
         return b.build();
