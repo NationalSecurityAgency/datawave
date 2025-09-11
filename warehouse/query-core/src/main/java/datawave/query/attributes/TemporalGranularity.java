@@ -73,7 +73,8 @@ public enum TemporalGranularity {
     /**
      * A {@link TemporalGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the tenth of an hour padded with
      * 0s. Otherwise, the original value will be returned. Since the length of this datetime value can differ, we must ensure the correct amount of 0s are
-     * included. We accomplish this by utilizing {@link #replaceCharWithZero(String, int)}.
+     * included. We accomplish this by utilizing {@link #replaceCharWithZero(String, int)}. If the index provided is larger than the length of the date or less
+     * than 1, it will return the original value.
      * <p>
      * Potential formats:
      * <p>
@@ -148,7 +149,8 @@ public enum TemporalGranularity {
     }
 
     /**
-     * Replaces the character at the given index in the string with the character '0'. Useful for truncating values in date strings.
+     * Replaces the character at the given index in the string with the character '0'. Useful for truncating values in date strings. If the index provided is
+     * invalid (greater than the length of the date or less than 1), the original value will be returned with no replacements.
      *
      * @param str
      *            the string
@@ -157,7 +159,13 @@ public enum TemporalGranularity {
      * @return the new string
      */
     private static String replaceCharWithZero(String str, int index) {
-        return str.substring(0, (index - 1)) + "0" + str.substring(index);
+        char[] strCharArray = str.toCharArray();
+        if (index <= str.length() && index > 0) {
+            strCharArray[index - 1] = '0';
+            return String.valueOf(strCharArray);
+        } else {
+            return str;
+        }
     }
 
     /**

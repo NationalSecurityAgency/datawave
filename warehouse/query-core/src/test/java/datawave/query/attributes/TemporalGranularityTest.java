@@ -89,7 +89,6 @@ public class TemporalGranularityTest {
         assertEquals("2022-11-03T12:30:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2022-11-03T12:30:00.976Z"));
         assertEquals("2019-01-15T12:03:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:03:15"));
         assertEquals("2022-11-03T12:03:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2022-11-03T12:03:00.976Z"));
-
     }
 
     @Test
