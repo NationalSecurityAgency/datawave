@@ -15,7 +15,7 @@
   "dependencies": {
     "@quasar/extras": "^1.16.4",
     "@vueuse/core": "^11.0.3",
-    "axios": "^1.1.2",
+    "axios": "^1.12.0",
     "bootstrap-icons": "^1.11.3",
     "quasar": "^2.8.0",
     "vue": "^3.0.0",
