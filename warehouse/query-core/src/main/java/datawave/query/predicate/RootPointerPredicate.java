@@ -9,6 +9,12 @@ import com.google.common.base.Predicate;
 
 import datawave.query.Constants;
 
+/**
+ * This class will test a key and determine if references the root pointer (top level document (TLD)) or not. The "SansContext" mechanism will try to
+ * efficiently determine this without knowing the actual root pointer and hence may get it wrong if the UID is too smaller or bigger than expected. This will
+ * only work with the HashUID mechanism. The "WithContext" mechanism however in which the root document is preconfigured is much more reliable and even more
+ * efficient. To use the "WithContext" mechanism one merely needs to provide the root document pointer via the startNewDocument(Key documentKey) method.
+ */
 public class RootPointerPredicate implements Predicate<Key> {
 
     public static final byte[] FI_CF = Constants.FI_PREFIX.getBytes();
