@@ -65,7 +65,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
