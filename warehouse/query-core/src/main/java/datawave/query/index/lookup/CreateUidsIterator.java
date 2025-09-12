@@ -1,5 +1,7 @@
 package datawave.query.index.lookup;
 
+import static datawave.query.util.ValueSerializerType.WRITABLE;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,9 +18,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
@@ -27,6 +27,8 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
+import datawave.query.util.ValueSerializer;
+import datawave.query.util.ValueSerializerType;
 import datawave.query.util.count.CountMap;
 
 /**
@@ -68,10 +70,13 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
 
     private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
 
+    public static final ValueSerializerType DEFAULT_VALUE_ENCODING_TYPE = WRITABLE;
+
     public static final String COLLAPSE_UIDS = "index.lookup.collapse";
     public static final String PARSE_TLD_UIDS = "index.lookup.parse.tld.uids";
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
+    public static final String VALUE_ENCODING = "value.encoding";
 
     protected boolean collapseUids = false;
     protected boolean parseTldUids = false;
@@ -81,6 +86,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
     protected SortedKeyValueIterator<Key,Value> src;
     protected Key tk;
     protected IndexInfo tv;
+    protected ValueSerializer<IndexInfo> valueSerializer;
 
     private String field;
     private String value;
@@ -109,6 +115,10 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
             if (null != termCountsOpt) {
                 termCounts = Boolean.parseBoolean(termCountsOpt);
             }
+            valueSerializer = ValueSerializer.newSerializer(IndexInfo.class, options.get(VALUE_ENCODING), DEFAULT_VALUE_ENCODING_TYPE);
+        }
+        if (valueSerializer == null) {
+            valueSerializer = ValueSerializer.newSerializer(IndexInfo.class, DEFAULT_VALUE_ENCODING_TYPE);
         }
     }
 
@@ -136,7 +146,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 if (!ignore)
                     for (String uid : uidInfo.third()) {
                         if (log.isTraceEnabled())
-                            log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1]);
+                            log.trace("Adding uid " + uid.split("\u0000")[1]);
                         uids.add(uid);
                     }
                 src.next();
@@ -226,7 +236,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
 
     @Override
     public Value getTopValue() {
-        return new Value(WritableUtils.toByteArray(this.getValue()));
+        return valueSerializer.serializeUnchecked(this.getValue());
     }
 
     @Override
