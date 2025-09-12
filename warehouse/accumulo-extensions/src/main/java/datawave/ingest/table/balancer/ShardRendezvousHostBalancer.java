@@ -8,6 +8,7 @@ import java.time.format.DateTimeParseException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.TableId;
@@ -120,7 +122,7 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
         return configuredTiers;
     }
 
-    protected List<Long> getDaysBack(List<Map.Entry<Long,Matcher>> configuredTiers, TabletServerId tabletServerId) {
+    private List<Long> getDaysBack(List<Map.Entry<Long,Matcher>> configuredTiers, TabletServerId tabletServerId, HashSet<Pattern> unMatchedPatterns) {
         ArrayList<Long> db = new ArrayList<>();
         for (var entry : configuredTiers) {
             long daysBack = entry.getKey();
@@ -128,6 +130,9 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
             matcher.reset(tabletServerId.getHost() + ":" + tabletServerId.getPort());
             if (matcher.matches()) {
                 db.add(daysBack);
+                if (!unMatchedPatterns.isEmpty()) {
+                    unMatchedPatterns.remove(matcher.pattern());
+                }
             }
         }
         return db;
@@ -159,10 +164,17 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
             throw new IllegalStateException("Tier configuration is not set");
         }
 
+        final HashSet<Pattern> unMatchedPatterns = new HashSet<>();
+        unMatchedPatterns.addAll(configuredTiers.stream().map(Map.Entry::getValue).map(Matcher::pattern).collect(Collectors.toSet()));
+
         TreeMap<Long,List<TabletServerId>> serverPartitioningMap = new TreeMap<>();
 
+        // Ensure each tier has a list of tservers. This will ensure that when a tiers regex matches nothing that the tier has an empty list. This will cause
+        // its tablets to not be assigned anywhere.
+        configuredTiers.forEach(e -> serverPartitioningMap.put(e.getKey(), new ArrayList<>()));
+
         allTservers.forEach(tabletServerId -> {
-            var daysBack = getDaysBack(configuredTiers, tabletServerId);
+            var daysBack = getDaysBack(configuredTiers, tabletServerId, unMatchedPatterns);
             if (!daysBack.isEmpty()) {
                 for (var db : daysBack) {
                     log.trace(" daysBack:{} tserver:{}", db, tabletServerId);
@@ -172,6 +184,11 @@ public class ShardRendezvousHostBalancer extends RendezvousHostBalancer {
                 log.warn("Tserver {} did not match any tiers", tabletServerId);
             }
         });
+
+        unMatchedPatterns.forEach(regex -> {
+            log.warn("Regex: {} did not match against any tservers", regex);
+        });
+        unMatchedPatterns.clear();
 
         // grab this once outside the lambda so the lambda always makes consistent decisions.
         var today = today();

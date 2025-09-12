@@ -11,6 +11,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+import static datawave.query.util.ValueSerializerType.KRYO;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -100,7 +101,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import datawave.util.StringUtils;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -221,7 +221,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             log.debug("Query returned a stream with a context of " + this.context);
             if (queryStream != null) {
                 int count = 0;
-                for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                for (String line : queryStream.getContextDebug().split("\n")) {
                     log.debug(line);
                     if (maxLinesToPrint > 0 && ++count > maxLinesToPrint) {
                         break;
@@ -293,7 +293,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
                     int count = 0;
-                    for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                    for (String line : queryStream.getContextDebug().split("\n")) {
                         log.debug(line);
                         if (maxLinesToPrint > 0 && ++count > maxLinesToPrint) {
                             break;
@@ -609,6 +609,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 uidSetting.addOption(CreateUidsIterator.TERM_COUNTS, Boolean.toString(false));
             }
 
+            uidSetting.addOption(CreateUidsIterator.VALUE_ENCODING, KRYO.name());
+
             /*
              * Create a scanner in the initialized state so that we can scan immediately
              */
@@ -632,7 +634,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             scannerSession.setRanges(Collections.singleton(range));
 
             // Create the EntryParser prior to ScannerStream.
-            EntryParser entryParser = new EntryParser(node, fieldName, literal, indexOnlyFields);
+            EntryParser entryParser = new EntryParser(node, fieldName, literal, indexOnlyFields, KRYO);
 
             return ScannerStream.initialized(scannerSession, entryParser, node);
 
@@ -828,7 +830,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         String identifier = JexlASTHelper.getIdentifier(node);
         if (Constants.SHARD_DAY_HINT.equals(identifier)) {
             JexlNode myNode = JexlNodeFactory.createExpression(node);
-            String[] shardsAndDays = StringUtils.split(JexlASTHelper.getLiteralValue(node).toString(), ',');
+            String[] shardsAndDays = JexlASTHelper.getLiteralValue(node).toString().split(",");
 
             if (shardsAndDays.length == 0) {
                 return ScannerStream.noData(myNode);

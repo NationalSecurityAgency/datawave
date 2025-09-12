@@ -8,13 +8,17 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.PluginEnvironment;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
@@ -23,6 +27,7 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
 import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.tables.SessionOptions;
@@ -52,10 +57,10 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
 
     @Override
     public Iterator<Map.Entry<Key,Value>> iterator() {
-        Collections.sort(serverSideIteratorList, (o1, o2) -> {
-            if (o1.priority < o2.priority) {
+        Collections.sort(this.scanIterators, (o1, o2) -> {
+            if (o1.getPriority() < o2.getPriority()) {
                 return -1;
-            } else if (o1.priority > o2.priority) {
+            } else if (o1.getPriority() > o2.getPriority()) {
                 return 1;
             } else {
                 return 0;
@@ -75,7 +80,13 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
             }
         }
 
-        IteratorBuilder iteratorBuilder = IteratorBuilder.builder(serverSideIteratorList).opts(serverSideIteratorOptions).env(env).build();
+        // Make a copy of the scan iterators list using accumulo's IterInfo implementation. This should be a temporary solution until the usage of
+        // IteratorBuilder is removed from Datawave since it's not part of accumulo's public API.
+        List<org.apache.accumulo.core.dataImpl.thrift.IterInfo> serverSideIteratorList = this.scanIterators.stream()
+                        .map(info -> new org.apache.accumulo.core.dataImpl.thrift.IterInfo(info.getPriority(), info.getIteratorClass(), info.getName()))
+                        .collect(Collectors.toList());
+
+        IteratorBuilder iteratorBuilder = IteratorBuilder.builder(serverSideIteratorList).opts(this.scanIteratorOptions).env(env).build();
 
         List<Map.Entry<Key,Value>> list = new ArrayList<>();
         try {
@@ -106,6 +117,11 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
 
     public static class LocalIteratorEnvironment implements IteratorEnvironment {
         @Override
+        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
+            return null;
+        }
+
+        @Override
         public IteratorUtil.IteratorScope getIteratorScope() {
             return IteratorUtil.IteratorScope.scan;
         }
@@ -116,13 +132,48 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
         }
 
         @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
+
+        @Override
+        public TableId getTableId() {
+            return null;
+        }
+
+        @Override
         public boolean isFullMajorCompaction() {
             return false;
         }
 
         @Override
+        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
+
+        }
+
+        @Override
         public Authorizations getAuthorizations() {
             return new Authorizations();
+        }
+
+        @Override
+        public IteratorEnvironment cloneWithSamplingEnabled() {
+            return null;
+        }
+
+        @Override
+        public boolean isSamplingEnabled() {
+            return false;
+        }
+
+        @Override
+        public SamplerConfiguration getSamplerConfiguration() {
+            return null;
         }
     }
 

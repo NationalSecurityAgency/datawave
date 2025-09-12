@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-in-memory-accumulo</artifactId>
-    <version>4.0.2-SNAPSHOT</version>
+    <version>4.0.5-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Datawave InMemory Accumulo</name>
     <url>https://code.nsa.gov/datawave-in-memory-accumulo</url>
@@ -16,7 +16,7 @@
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
         <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>core/in-memory-accumulo-4.0.3</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <distributionManagement>
@@ -31,7 +31,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.hadoop>3.3.4</version.hadoop>
         <version.junit5>5.12.0</version.junit5>
         <version.log4j.bom>2.17.2</version.log4j.bom>
@@ -65,7 +65,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -106,6 +106,18 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
     <pluginRepositories>
         <pluginRepository>
             <releases>
@@ -183,7 +195,7 @@
                         <dependency>
                             <groupId>gov.nsa.datawave</groupId>
                             <artifactId>datawave-code-style</artifactId>
-                            <version>1.0</version>
+                            <version>1.0.1</version>
                         </dependency>
                     </dependencies>
                     <executions>
