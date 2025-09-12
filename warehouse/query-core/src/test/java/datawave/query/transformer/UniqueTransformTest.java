@@ -610,11 +610,17 @@ public class UniqueTransformTest {
 
         InputDocumentBuilder(String cq, long ts) {
             Key key = new Key("shardid", "datatype\u0000" + getUid(), cq, ts);
+            Key key2 = new Key("shardid", "datatype\u0000" + getUid() + ".1", cq, ts);
+            Key key3 = new Key("shardid", "datatype\u0000" + getUid() + ".5", cq, ts);
             this.document = new Document(key, true);
             inputDocuments.add(document);
             this.document.getMetadata().set(key);
             Attribute<?> docKeyAttributes = new DocumentKey(key, true);
+            Attribute<?> docKeyAttributes2 = new DocumentKey(key2, true);
+            Attribute<?> docKeyAttributes3 = new DocumentKey(key3, true);
             this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes2);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes3);
         }
 
         String getUid() {
