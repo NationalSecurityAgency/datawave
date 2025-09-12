@@ -42,15 +42,15 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     private static final String ERROR = "error";
     private IngestHelperInterface delegate = null;
 
-    private Map<Type,IndexedFields> errorIndexedFields = new HashMap<>();
-    private Map<Type,IndexedFields> errorReverseIndexedFields = new HashMap<>();
+    private final Map<Type,IndexedFields> errorIndexedFields = new HashMap<>();
+    private final Map<Type,IndexedFields> errorReverseIndexedFields = new HashMap<>();
 
     private Type activeDataType;
 
     private static class IndexedFields {
-        private Set<String> indexedFields = new HashSet<>();
-        private Map<String,Pattern> patterns = new HashMap<>();
-        private Set<String> unindexedFields = new HashSet<>();
+        private final Set<String> indexedFields = new HashSet<>();
+        private final Map<String,Pattern> patterns = new HashMap<>();
+        private final Set<String> unindexedFields = new HashSet<>();
         public boolean hasDisallowList = false;
     }
 
