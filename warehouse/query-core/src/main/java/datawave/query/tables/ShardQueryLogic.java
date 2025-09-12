@@ -182,14 +182,14 @@ import datawave.webservice.result.QueryValidationResponse;
  *  4. We support the ability to define a list of {@link DataEnricher}s to add additional information to returned events. Found events are
  *     passed through the {@link EnrichingMaster} which passes the event through each configured data enricher class. Only the value
  *     can be modified. The key *cannot* be modified through this interface (as it could break the sorted order). Enriching must be enabled
- *     by setting {@link ShardQueryConfiguration#useEnrichers} to true and providing a list of {@link datawave.query.enrich.DataEnricher} class names in
- *     {@link ShardQueryConfiguration#enricherClassNames}.
+ *     by setting useEnrichers to true and providing a list of {@link datawave.query.enrich.DataEnricher} class names in
+ *     enricherClassNames.
  *  5. A list of {@link datawave.query.index.lookup.DataTypeFilter}s can be specified to remove found Events before they are returned to the user.
  *     These data filters can return a true/false value on whether the Event should be returned to the user or discarded. Additionally,
  *     the filter can return a {@code Map<String, Object>} that can be passed into a JexlContext (provides the necessary information for Jexl to
  *     evaluate an Event based on information not already present in the Event or information that doesn't need to be returned with the Event.
- *     Filtering must be enabled by setting {@link ShardQueryConfiguration#useFilters} to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
- *     names in {@link ShardQueryConfiguration#filterClassNames}.
+ *     Filtering must be enabled by setting useFilters to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
+ *     names in filterClassNames.
  *  6. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
  *
  * </pre>

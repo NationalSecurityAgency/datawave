@@ -814,7 +814,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
-        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
         this.setTserverLoggingActive(other.isTserverLoggingActive());
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
@@ -3161,15 +3160,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-<<<<<<< HEAD
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
- isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed() &&
-                isTserverLoggingActive() == that.isTserverLoggingActive();
-=======
                 Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
-
->>>>>>> integration
-        // @formatter:on
     }
 
     @Override
@@ -3378,17 +3369,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-<<<<<<< HEAD
-                getNoExpansionIfCurrentDateTypes(),
-                isShardsAndDaysHintAllowed(),
-                isSortQueryPostIndexWithFieldCounts(),
-                isTserverLoggingActive(),
-                getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes(),
-                isShardsAndDaysHintAllowed()
-=======
                 getNoExpansionIfCurrentDateTypes()
->>>>>>> integration
         );
         // @formatter:on
     }
