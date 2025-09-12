@@ -115,8 +115,8 @@ public class ShardIndexQueryTableStaticMethods {
     public static IndexLookup expandQueryTerms(String literal, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Set<String> terms = Sets.newHashSet(literal);
-        return new FieldNameIndexLookup(config, scannerFactory, getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef), terms,
-                        execService);
+        Set<String> indexedExpansionFields = getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef);
+        return new FieldNameIndexLookup(config, scannerFactory, indexedExpansionFields, terms, execService);
     }
 
     /**

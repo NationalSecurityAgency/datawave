@@ -80,7 +80,7 @@ public class EmbeddedAccumuloConnectionFactory implements AccumuloConnectionFact
 
     @Override
     public List<ConnectionPool> getConnectionPools() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override

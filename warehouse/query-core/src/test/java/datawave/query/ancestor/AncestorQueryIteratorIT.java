@@ -40,7 +40,7 @@ public class AncestorQueryIteratorIT extends QueryIteratorIT {
 
         public TestAncestorQueryIterator() {
             super();
-            this.waitWindowObserver = new TestWaitWindowObserver(5, 2);
+            this.waitWindowObserver = new TestWaitWindowObserver(5, 50);
         }
 
         public TestAncestorQueryIterator(TestAncestorQueryIterator other, IteratorEnvironment env) {

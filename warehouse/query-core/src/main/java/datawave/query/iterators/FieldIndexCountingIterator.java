@@ -29,6 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
@@ -510,7 +511,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             fieldValueStringBuilder.append(fieldVal);
 
             // if we have datatypes, start back at the first one.
-            if (null != this.dataTypeFilter) {
+            if (null != this.dataTypeFilter && !this.dataTypeFilter.isEmpty()) {
                 fieldValueStringBuilder.append(Constants.NULL_BYTE_STRING);
                 fieldValueStringBuilder.append(this.dataTypeFilter.first());
             }
@@ -756,7 +757,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                     } else { // same field value
 
                         // see if we care about data type
-                        if (this.uniqByDataTypeOption || this.dataTypeFilter != null) {
+                        if (this.uniqByDataTypeOption || (this.dataTypeFilter != null && !this.dataTypeFilter.isEmpty())) {
                             if (log.isTraceEnabled()) {
                                 log.trace("I care about data type");
                             }
@@ -778,7 +779,8 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
 
                             } else { // we are returning uniq data types
                                 if (null == this.currentDataType) {
-                                    if (null == this.dataTypeFilter) { // if the dataTypeFilter is null then just accept it.
+                                    // key is accepted if the dataTypeFilter is null or empty
+                                    if (null == this.dataTypeFilter || this.dataTypeFilter.isEmpty()) {
                                         this.currentDataType = dataType;
                                     } else {
                                         // check that it's in the filter
@@ -902,7 +904,8 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         // -----------------------------
         // See if we have a data type filter
         if (null != options.get(DATA_TYPES) && !options.get(DATA_TYPES).trim().isEmpty()) {
-            this.dataTypeFilter = new TreeSet<>(Arrays.asList(options.get(DATA_TYPES).split(SEP)));
+            TypeFilter types = TypeFilter.fromString(options.get(DATA_TYPES));
+            this.dataTypeFilter = new TreeSet<>(types.getElements());
             if (log.isTraceEnabled()) {
                 log.trace("data types: " + options.get(DATA_TYPES));
             }
