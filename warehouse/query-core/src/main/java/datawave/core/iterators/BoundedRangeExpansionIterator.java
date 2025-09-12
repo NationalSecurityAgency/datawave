@@ -18,8 +18,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Splitter;
-
+import datawave.core.common.util.TypeFilter;
 import datawave.query.Constants;
 import datawave.query.jexl.LiteralRange;
 
@@ -55,7 +54,12 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
         if (StringUtils.isBlank(opt)) {
             datatypes = new TreeSet<>();
         } else {
-            datatypes = new TreeSet<>(Splitter.on(',').splitToList(opt));
+            TypeFilter filter = TypeFilter.fromString(opt);
+            if (filter.isEmpty()) {
+                datatypes = new TreeSet<>();
+            } else {
+                datatypes = new TreeSet<>(filter.getElements());
+            }
         }
 
         startDate = options.get(START_DATE);
