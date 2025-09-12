@@ -50,7 +50,6 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
     private String endDate;
     private String field;
     private Pattern pattern;
-    private Matcher matcher;
     private Set<String> datatypes;
 
     private boolean reverse = false;
@@ -146,6 +145,7 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
         parser.parse(k);
         hint = HINT_TYPE.NONE;
 
+        Matcher matcher;
         if (reverse) {
             sb.setLength(0);
             sb.append(parser.getValue());

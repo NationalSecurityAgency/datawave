@@ -50,7 +50,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
     private boolean reverse;
     private final StringBuilder sb = new StringBuilder();
 
-    private Matcher matcher;
     private Set<String> datatypes;
 
     private Text columnQualifierDate;
@@ -141,6 +140,7 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         parser.parse(k);
         hint = HINT_TYPE.NONE;
 
+        Matcher matcher;
         if (reverse) {
             sb.setLength(0);
             sb.append(parser.getValue());
