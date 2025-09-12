@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -28,6 +27,7 @@ import com.google.common.base.Splitter;
 
 import datawave.next.stats.DocIdQueryIteratorStats;
 import datawave.next.stats.DocumentIteratorStats;
+import datawave.next.stats.StatUtil;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 
@@ -40,6 +40,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
     public static final String BATCH_SIZE = "batch.size";
     public static final String SCAN_TIMEOUT = "scan.timeout";
+    public static final String PARTIAL_INTERSECTIONS = "partial.intersections";
 
     private Range range;
     private ASTJexlScript script;
@@ -53,6 +54,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private IteratorEnvironment env;
     private int batchSize = 1;
     private long scanTimeout = -1;
+    private boolean allowPartialIntersections = true;
 
     private Key tk;
     private Value tv = new Value();
@@ -127,6 +129,10 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
         if (options.containsKey(SCAN_TIMEOUT)) {
             scanTimeout = Long.parseLong(options.get(SCAN_TIMEOUT));
+        }
+
+        if (options.containsKey(PARTIAL_INTERSECTIONS)) {
+            allowPartialIntersections = Boolean.parseBoolean(options.get(PARTIAL_INTERSECTIONS));
         }
     }
 
@@ -227,6 +233,9 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
             if (scanTimeout > 0) {
                 visitor.setMaxScanTimeMillis(scanTimeout);
             }
+            if (allowPartialIntersections) {
+                visitor.setAllowPartialIntersections(allowPartialIntersections);
+            }
 
             Set<Key> docIds = visitor.getDocIds(script);
             data = new TreeSet<>(docIds).iterator();
@@ -235,8 +244,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
             if (log.isDebugEnabled()) {
                 long elapsedNS = timingStats.getScanTime();
-                long elapsedMS = TimeUnit.NANOSECONDS.toMillis(elapsedNS);
-                log.debug("scanned {} ids in {} ns or {} ms", docIds.size(), elapsedNS, elapsedMS);
+                log.debug("scanned {} ids in {}", docIds.size(), StatUtil.formatNanos(elapsedNS));
             }
             iteratorStats.merge(visitor.getStats());
             timingStats.incrementTotalDocumentIds(docIds.size());

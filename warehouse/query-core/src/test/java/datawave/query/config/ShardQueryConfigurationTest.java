@@ -34,6 +34,7 @@ import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -269,6 +270,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFilters", true);
         defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
         updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
+        defaultValues.put("fieldRuleClassName", null);
+        updatedValues.put("fieldRuleClassName", "proj.datawave.query.planner.rule.someFieldRuleClass");
         defaultValues.put("indexValueHoles", Lists.newArrayList());
         updatedValues.put("indexValueHoles", Lists.newArrayList(new IndexValueHole()));
         defaultValues.put("indexedFields", Sets.newHashSet());
@@ -409,6 +412,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("ivaratorCacheScanPersistThreshold", 1040L);
         defaultValues.put("ivaratorCacheScanTimeout", 3600000L);
         updatedValues.put("ivaratorCacheScanTimeout", 3600L);
+        defaultValues.put("excludeUnfieldedTypes", Collections.emptyList());
+        updatedValues.put("excludeUnfieldedTypes", Lists.newArrayList(new NumberType()));
         defaultValues.put("maxFieldIndexRangeSplit", 11);
         updatedValues.put("maxFieldIndexRangeSplit", 20);
         defaultValues.put("ivaratorMaxOpenFiles", 100);
@@ -539,7 +544,7 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("datatypeFilter", Sets.newHashSet());
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
-        defaultValues.put("datatypeFilterAsString", "");
+        defaultValues.put("datatypeFilterAsString", "*");
         updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");
         alreadySet.add("datatypeFilterAsString");
 
@@ -628,6 +633,9 @@ public class ShardQueryConfigurationTest {
         DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
         defaultValues.put("documentScannerConfig", null);
         updatedValues.put("documentScannerConfig", documentScannerConfig);
+
+        defaultValues.put("maxLinesToPrint", -1);
+        updatedValues.put("maxLinesToPrint", 150);
     }
 
     private Query createQuery(String query) {

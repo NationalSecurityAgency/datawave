@@ -1,5 +1,7 @@
 package datawave.query.planner;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.microservice.query.QueryParameters.QUERY_END;
@@ -11,7 +13,6 @@ import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -228,7 +229,7 @@ public class MultiValueCompositeIndexTest {
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(COMPOSITE_BEGIN_DATE).getTime());
-            record.setRawData(entry.toString().getBytes("UTF8"));
+            record.setRawData(entry.toString().getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
 
@@ -513,22 +514,17 @@ public class MultiValueCompositeIndexTest {
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer record) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
+            TestData entry = TestData.fromString(new String(record.getRawData(), UTF_8));
 
-            try {
-                TestData entry = TestData.fromString(new String(record.getRawData(), "UTF8"));
+            for (int i = 0; i < entry.wktData.size(); i++) {
+                NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, entry.wktData.get(i), Integer.toString(i), null);
+                eventFields.put(GEO_FIELD, geo_nci);
+            }
 
-                for (int i = 0; i < entry.wktData.size(); i++) {
-                    NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, entry.wktData.get(i), Integer.toString(i), null);
-                    eventFields.put(GEO_FIELD, geo_nci);
-                }
-
-                for (int i = 0; i < entry.numData.size(); i++) {
-                    NormalizedContentInterface wktByteLength_nci = new NormalizedFieldAndValue(WKT_BYTE_LENGTH_FIELD, Integer.toString(entry.numData.get(i)),
-                                    Integer.toString(i), null);
-                    eventFields.put(WKT_BYTE_LENGTH_FIELD, wktByteLength_nci);
-                }
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            for (int i = 0; i < entry.numData.size(); i++) {
+                NormalizedContentInterface wktByteLength_nci = new NormalizedFieldAndValue(WKT_BYTE_LENGTH_FIELD, Integer.toString(entry.numData.get(i)),
+                                Integer.toString(i), null);
+                eventFields.put(WKT_BYTE_LENGTH_FIELD, wktByteLength_nci);
             }
 
             return normalizeMap(eventFields);

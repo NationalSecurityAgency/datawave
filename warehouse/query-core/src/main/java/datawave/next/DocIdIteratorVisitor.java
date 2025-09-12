@@ -68,6 +68,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     private long maxScanTimeMillis = 15_000L;
     private long resultInterval = 500;
+    private boolean allowPartialIntersections = false;
 
     private final DocumentIteratorStats stats = new DocumentIteratorStats();
 
@@ -151,7 +152,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 if (result == null) {
                     result = scanResult;
                 } else {
-                    result.addKeys(scanResult.getResults());
+                    result.union(scanResult);
                 }
             } else {
                 if (log.isTraceEnabled()) {
@@ -220,11 +221,10 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
             if (result == null) {
                 result = scanResult;
-            } else if (scanResult.isTimeout()) {
-                log.debug("scan timed out");
-                // TODO: partial intersection with sorted sets
             } else {
-                result.getResults().retainAll(scanResult.getResults());
+                // scan results know how to handle partial intersections, as in the case of a timeout
+                result.intersect(scanResult);
+
                 if (result.getResults().isEmpty()) {
                     if (log.isDebugEnabled()) {
                         log.debug("short circuit intersection, no ids exist after merge");
@@ -258,6 +258,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             // uncomment for exceptions
             // Preconditions.checkNotNull(ids);
             if (result != null && !result.getResults().isEmpty()) {
+                // results can be removed even for a partial scan of a negated term
                 result.getResults().removeAll(scanResult.getResults());
             }
 
@@ -381,7 +382,9 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         long elapsedScanTime;
 
         int count = 0;
-        ScanResult result = new ScanResult();
+        ScanResult result = new ScanResult(allowPartialIntersections);
+        result.updateSource(iterator);
+
         while (iterator.hasNext()) {
             count++;
             result.addKey(iterator.next());
@@ -452,70 +455,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         this.maxScanTimeMillis = maxScanTimeMillis;
     }
 
-    /**
-     * This class allows us to retain knowledge of the min and max keys from a scan without requiring an expensive sorted set. Future scan ranges are restricted
-     * by the min and max
-     */
-    public static class ScanResult {
-        private Key min;
-        private Key max;
-        private final Set<Key> results;
-
-        private boolean timeout = false;
-
-        public ScanResult() {
-            results = new HashSet<>();
-        }
-
-        /**
-         * Bulk add method
-         *
-         * @param keys
-         *            the set of keys to add
-         */
-        public void addKeys(Set<Key> keys) {
-            for (Key key : keys) {
-                addKey(key);
-            }
-        }
-
-        /**
-         * Adds a key to the result set, checking the key against the existing min or max value.
-         */
-        public void addKey(Key key) {
-            if (min == null) {
-                min = key;
-            } else if (key.compareTo(min) < 0) {
-                min = key;
-            }
-
-            if (max == null) {
-                max = key;
-            } else if (key.compareTo(max) > 0) {
-                max = key;
-            }
-
-            results.add(key);
-        }
-
-        public void setTimeout(boolean timeout) {
-            this.timeout = timeout;
-        }
-
-        public boolean isTimeout() {
-            return timeout;
-        }
-
-        public Key getMin() {
-            return min;
-        }
-
-        public Key getMax() {
-            return max;
-        }
-
-        public Set<Key> getResults() {
-            return results;
-        }
+    public void setAllowPartialIntersections(boolean allowPartialIntersections) {
+        this.allowPartialIntersections = allowPartialIntersections;
     }
 }

@@ -48,6 +48,8 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
 
     public abstract Collection<Attribute<? extends Comparable<?>>> getAttributes();
 
+    protected abstract Collection<Attribute<? extends Comparable<?>>> getRawAttributes();
+
     @Override
     public long getTimestamp() {
         // calling isMetadataSet first to update the metadata as needed
@@ -67,7 +69,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         long ts = updateTimestamps();
         ColumnVisibility vis = super.getColumnVisibility();
         try {
-            vis = this.combineAndSetColumnVisibilities(getAttributes());
+            vis = this.combineAndSetColumnVisibilities(getRawAttributes());
         } catch (Exception e) {
             log.error("got error combining visibilities", e);
         }
@@ -85,7 +87,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
 
     private long updateTimestamps() {
         MutableLong ts = new MutableLong(Long.MAX_VALUE);
-        for (Attribute<?> attribute : getAttributes()) {
+        for (Attribute<?> attribute : getRawAttributes()) {
             mergeTimestamps(attribute, ts);
         }
         return ts.longValue();
@@ -95,7 +97,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         // if this is a set of attributes, then examine each one. Note not recursing on a Document as it should have already applied the shard time.
         if (other instanceof AttributeBag) {
             // recurse on the sub attributes
-            for (Attribute<?> attribute : ((AttributeBag<?>) other).getAttributes()) {
+            for (Attribute<?> attribute : ((AttributeBag<?>) other).getRawAttributes()) {
                 mergeTimestamps(attribute, ts);
             }
         } else if (other.isMetadataSet()) {

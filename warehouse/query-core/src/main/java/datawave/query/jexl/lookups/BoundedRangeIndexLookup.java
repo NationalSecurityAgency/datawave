@@ -22,7 +22,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.springframework.util.StringUtils;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
@@ -139,7 +138,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 setting.addOption(BoundedRangeExpansionIterator.START_DATE, startDay);
                 setting.addOption(BoundedRangeExpansionIterator.END_DATE, endDay);
                 if (!config.getDatatypeFilter().isEmpty()) {
-                    setting.addOption(BoundedRangeExpansionIterator.DATATYPES_OPT, Joiner.on(',').join(config.getDatatypeFilter()));
+                    setting.addOption(BoundedRangeExpansionIterator.DATATYPES_OPT, config.getDatatypeFilterAsString());
                 }
                 bs.addScanIterator(setting);
 

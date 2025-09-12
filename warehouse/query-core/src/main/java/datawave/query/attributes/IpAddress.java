@@ -36,8 +36,11 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
 
     @Override
     public long sizeInBytes() {
-        return sizeInBytes(value.toString()) + sizeInBytes(normalizedValue) + super.sizeInBytes(8);
-        // 8 for string references
+        if (sizeInBytes == Long.MIN_VALUE) {
+            // 8 for string references
+            sizeInBytes = sizeInBytes(value.toString()) + sizeInBytes(normalizedValue) + super.sizeInBytes(8);
+        }
+        return sizeInBytes;
     }
 
     protected void validate() {
@@ -103,10 +106,15 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(163, 157);
-        hcb.append(super.hashCode()).append(this.value);
-
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(163, 157)
+                    .append(super.hashCode())
+                    .append(this.value)
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
     }
 
     @Override

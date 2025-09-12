@@ -34,6 +34,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
@@ -65,7 +66,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
-import datawave.util.UniversalSet;
 
 /**
  * <p>
@@ -92,7 +92,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     // is this a tld query, explicitly default to false
     private boolean tldQuery = false;
-    private Map<String,String> filterOptions = new HashMap<>();
+    private final Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;
     private transient QueryStopwatch timers = new QueryStopwatch();
     private int maxScannerBatchSize = 1000;
@@ -237,7 +237,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Default to having no unevaluatedFields
     private Set<String> unevaluatedFields = Collections.emptySet();
     // Filter results on datatypes. Default to having no filters
-    private Set<String> datatypeFilter = UniversalSet.instance();
+    private Set<String> datatypeFilter = new HashSet<>();
     // A set of sorted index holes
     private List<IndexValueHole> indexValueHoles = new ArrayList<>();
     // a set of user specified mappings
@@ -409,6 +409,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     private List<String> contentFieldNames = Collections.emptyList();
 
+    private List<Type<?>> excludeUnfieldedTypes = Collections.emptyList();
+
     /**
      * The source to use as the active query log name for all query iterators in scans generated for the shard query logic. If the value
      * {@value #TABLE_NAME_SOURCE} is supplied, the shard table name will be used. If {@value #QUERY_LOGIC_NAME_SOURCE} is supplied, the name of the shard query
@@ -537,6 +539,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
+
+    private String fieldRuleClassName;
     private double indexFieldHoleMinThreshold = 1.0d;
 
     /**
@@ -552,6 +556,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     private boolean useDocumentScheduler = false;
     private DocumentScannerConfig documentScannerConfig;
+
+    /**
+     * The maximum number of lines to print when streaming the query from the global index. Useful for limiting the logging footprint of large queries when
+     * debug logging is enabled.
+     */
+    private int maxLinesToPrint = -1;
 
     /**
      * Default constructor
@@ -654,10 +664,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseFilters(other.getUseFilters());
         this.setFilterClassNames(null == other.getFilterClassNames() ? null : Lists.newArrayList(other.getFilterClassNames()));
         this.setIndexFilteringClassNames(null == other.getIndexFilteringClassNames() ? null : Lists.newArrayList(other.getIndexFilteringClassNames()));
+        this.setFieldRuleClassName(null == other.getIndexFilteringClassNames() ? null : other.getFieldRuleClassName());
         this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
-        this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
-                        : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
+        this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
         this.setIndexValueHoles(null == other.getIndexValueHoles() ? null : Lists.newArrayList(other.getIndexValueHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
@@ -732,6 +742,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
         this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
         this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+        this.setExcludeUnfieldedTypes(other.getExcludeUnfieldedTypes());
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         this.setIvaratorNumRetries(other.getIvaratorNumRetries());
@@ -807,6 +818,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTserverLoggingActive(other.isTserverLoggingActive());
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
+        this.setMaxLinesToPrint(other.getMaxLinesToPrint());
     }
 
     /**
@@ -1100,7 +1112,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getDatatypeFilterAsString() {
-        return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
+        return new TypeFilter(datatypeFilter).toString();
     }
 
     private Set<String> deconstruct(Collection<String> fields) {
@@ -1310,7 +1322,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @SuppressWarnings("unchecked")
     public void setFilterClassNames(List<String> filterClassNames) {
-        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
+        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.emptyList()));
+    }
+
+    public String getFieldRuleClassName() {
+        return fieldRuleClassName;
+    }
+
+    public void setFieldRuleClassName(String fieldRuleClassName) {
+        this.fieldRuleClassName = (fieldRuleClassName != null && !fieldRuleClassName.isEmpty()) ? fieldRuleClassName : null;
     }
 
     /**
@@ -1334,7 +1354,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     @SuppressWarnings("unchecked")
     public void setIndexFilteringClassNames(List<String> classNames) {
-        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.EMPTY_LIST));
+        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.emptyList()));
     }
 
     public Class<? extends Type<?>> getDefaultType() {
@@ -1610,6 +1630,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+    }
+
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return excludeUnfieldedTypes;
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        this.excludeUnfieldedTypes = excludeUnfieldedTypes;
     }
 
     public int getMaxFieldIndexRangeSplit() {
@@ -3018,6 +3046,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize() &&
                 getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold() &&
                 getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout() &&
+                getExcludeUnfieldedTypes() == that.getExcludeUnfieldedTypes() &&
                 getMaxFieldIndexRangeSplit() == that.getMaxFieldIndexRangeSplit() &&
                 getIvaratorMaxOpenFiles() == that.getIvaratorMaxOpenFiles() &&
                 getIvaratorNumRetries() == that.getIvaratorNumRetries() &&
@@ -3064,6 +3093,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getEnricherClassNames(), that.getEnricherClassNames()) &&
                 Objects.equals(getUseFilters(), that.getUseFilters()) &&
                 Objects.equals(getFilterClassNames(), that.getFilterClassNames()) &&
+                Objects.equals(getFieldRuleClassName(), that.getFieldRuleClassName()) &&
                 Objects.equals(getIndexFilteringClassNames(), that.getIndexFilteringClassNames()) &&
                 Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes()) &&
                 Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) &&
@@ -3293,6 +3323,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize(),
                 getIvaratorCacheScanPersistThreshold(),
                 getIvaratorCacheScanTimeout(),
+                getExcludeUnfieldedTypes(),
                 getMaxFieldIndexRangeSplit(),
                 getIvaratorMaxOpenFiles(),
                 getIvaratorNumRetries(),
@@ -3415,5 +3446,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setUseDocumentScheduler(boolean useDocumentScheduler) {
         this.useDocumentScheduler = useDocumentScheduler;
+    }
+
+    public int getMaxLinesToPrint() {
+        return maxLinesToPrint;
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        this.maxLinesToPrint = maxLinesToPrint;
     }
 }

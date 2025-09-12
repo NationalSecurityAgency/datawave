@@ -51,6 +51,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
@@ -101,7 +102,6 @@ import datawave.query.util.count.CountMap;
 import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
-import datawave.util.UniversalSet;
 
 /**
  * QueryOptions are set on the iterators.
@@ -198,8 +198,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String POSTPROCESSING_OPTIONS = "postprocessing.options";
 
     public static final String NON_INDEXED_DATATYPES = "non.indexed.dataTypes";
-
-    public static final String EVERYTHING = "*";
 
     public static final String CONTAINS_INDEX_ONLY_TERMS = "contains.index.only.terms";
 
@@ -787,7 +785,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setDocumentPermutationClasses(String documentPermutationClassesStr) {
-        setDocumentPermutationClasses(Arrays.asList(StringUtils.split(documentPermutationClassesStr, ',')));
+        setDocumentPermutationClasses(Arrays.asList(documentPermutationClassesStr.split(",")));
     }
 
     public boolean isIncludeRecordId() {
@@ -858,7 +856,7 @@ public class QueryOptions implements OptionDescriber {
      */
     public EventDataQueryFilter getEventFilter() {
 
-        if (!useAllowListedFields || allowListedFields instanceof UniversalSet || !isSeekingEventAggregation()) {
+        if (!useAllowListedFields || !isSeekingEventAggregation()) {
             return null;
         }
 
@@ -1536,13 +1534,11 @@ public class QueryOptions implements OptionDescriber {
             this.projectResults = true;
             this.useAllowListedFields = true;
 
-            String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(fieldList)) {
-                this.allowListedFields = UniversalSet.instance();
-            } else if (fieldList != null && !fieldList.trim().equals("")) {
-                this.allowListedFields = new HashSet<>();
-                Collections.addAll(this.allowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+            String option = options.get(PROJECTION_FIELDS);
+            if (option != null) {
+                this.allowListedFields = new HashSet<>(Splitter.on(',').splitToList(option));
             }
+
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
                 this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
@@ -1660,9 +1656,10 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(DATATYPE_FILTER)) {
-            String filterCsv = options.get(DATATYPE_FILTER);
-            if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+            String option = options.get(DATATYPE_FILTER);
+            if (option != null && !option.isEmpty()) {
+                TypeFilter filter = TypeFilter.fromString(option);
+                HashSet<String> set = Sets.newHashSet(filter.getElements());
 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
 
@@ -2049,14 +2046,14 @@ public class QueryOptions implements OptionDescriber {
         Map<String,Set<String>> mapping = new HashMap<>();
 
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
                 } else {
-                    String[] values = StringUtils.split(entrySplits[1], ',');
+                    String[] values = entrySplits[1].split(",");
                     HashSet<String> dataTypes = new HashSet<>();
 
                     Collections.addAll(dataTypes, values);
@@ -2076,9 +2073,9 @@ public class QueryOptions implements OptionDescriber {
     public static Set<String> fetchDataTypeKeys(String data) {
         Set<String> keys = Sets.newHashSet();
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
@@ -2193,7 +2190,7 @@ public class QueryOptions implements OptionDescriber {
 
     public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
-        for (String field : StringUtils.split(fieldStr, ',')) {
+        for (String field : fieldStr.split(",")) {
             if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
                 fields.add(field);
             }
@@ -2227,7 +2224,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {
-        return Sets.newHashSet(StringUtils.split(colFams, ','));
+        return Sets.newHashSet(colFams.split(","));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -16,6 +17,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.next.DocIdQueryIterator;
@@ -107,6 +110,15 @@ public class DocumentIdProducer implements RunnableWithContext {
         Scanner scanner = config.getClient().createScanner(context.getTableName(), config.getAuthorizations());
         scanner.setRange(range);
         scanner.addScanIterator(createIteratorSetting());
+
+        if (config.getSearchScanHintTable() != null && config.getSearchScanHintPool() != null) {
+            Preconditions.checkArgument(context.getTableName().equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
+            scanner.setExecutionHints(Map.of("scan_type", config.getSearchScanHintPool()));
+        }
+
+        if (config.getSearchConsistencyLevel() != null) {
+            scanner.setConsistencyLevel(ConsistencyLevel.valueOf(config.getSearchConsistencyLevel()));
+        }
         return scanner;
     }
 
@@ -122,6 +134,7 @@ public class DocumentIdProducer implements RunnableWithContext {
             next.addOption(QueryOptions.DATATYPE_FILTER, settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
         }
         next.addOption(DocIdQueryIterator.BATCH_SIZE, String.valueOf(config.getCandidateBatchSize()));
+        next.addOption(DocIdQueryIterator.PARTIAL_INTERSECTIONS, String.valueOf(config.isAllowPartialIntersections()));
         return next;
     }
 
