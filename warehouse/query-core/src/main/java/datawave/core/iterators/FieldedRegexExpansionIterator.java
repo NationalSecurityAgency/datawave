@@ -44,8 +44,6 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
     public static final String PATTERN = "pattern";
     public static final String REVERSE = "reverse";
 
-    // TODO: max value threshold, max keys seen threshold?
-
     private String startDate;
     private String endDate;
     private String field;
@@ -54,6 +52,8 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
 
     private boolean reverse = false;
     private final StringBuilder sb = new StringBuilder();
+
+    private String previousMatch = null;
 
     private Text columnQualifierDate;
     private Text columnQualifierDateAndDatatype;
@@ -145,20 +145,23 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
         parser.parse(k);
         hint = HINT_TYPE.NONE;
 
-        Matcher matcher;
-        if (reverse) {
-            sb.setLength(0);
-            sb.append(parser.getValue());
-            sb.reverse();
-            matcher = pattern.matcher(sb);
-        } else {
-            matcher = pattern.matcher(parser.getValue());
-        }
+        if (previousMatch == null || !previousMatch.equals(parser.getValue())) {
+            Matcher matcher;
+            if (reverse) {
+                sb.setLength(0);
+                sb.append(parser.getValue());
+                sb.reverse();
+                matcher = pattern.matcher(sb);
+            } else {
+                matcher = pattern.matcher(parser.getValue());
+            }
 
-        if (!matcher.matches()) {
-            // advance to next row
-            log.info("pattern does not match, advance to next row");
-            return new FilterResult(false, AdvanceResult.NEXT_ROW);
+            if (!matcher.matches()) {
+                // advance to next row
+                log.info("pattern does not match, advance to next row");
+                return new FilterResult(false, AdvanceResult.NEXT_ROW);
+            }
+            previousMatch = parser.getValue();
         }
 
         int result = parser.getField().compareTo(field);

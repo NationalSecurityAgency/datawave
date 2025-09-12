@@ -52,6 +52,8 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
 
     private Set<String> datatypes;
 
+    private String previousMatch = null;
+
     private Text columnQualifierDate;
     private Text columnQualifierDateAndDatatype;
 
@@ -113,7 +115,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (!range.isStartKeyInclusive()) {
             // need to skip to next row
-            // TODO: for the unfielded case this might need to be next column family
             Key skip = new Key(range.getStartKey().getRow().toString() + '\u0000');
             if (skip.compareTo(range.getEndKey()) > 0) {
                 // handles case of bounded range against single value
@@ -140,20 +141,23 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         parser.parse(k);
         hint = HINT_TYPE.NONE;
 
-        Matcher matcher;
-        if (reverse) {
-            sb.setLength(0);
-            sb.append(parser.getValue());
-            sb.reverse();
-            matcher = pattern.matcher(sb);
-        } else {
-            matcher = pattern.matcher(parser.getValue());
-        }
+        if (previousMatch == null || !previousMatch.equals(parser.getValue())) {
+            Matcher matcher;
+            if (reverse) {
+                sb.setLength(0);
+                sb.append(parser.getValue());
+                sb.reverse();
+                matcher = pattern.matcher(sb);
+            } else {
+                matcher = pattern.matcher(parser.getValue());
+            }
 
-        if (!matcher.matches()) {
-            // advance to next row
-            log.info("pattern does not match, advance to next row");
-            return new FilterResult(false, AdvanceResult.NEXT_ROW);
+            if (!matcher.matches()) {
+                // advance to next row
+                log.info("pattern does not match, advance to next row");
+                return new FilterResult(false, AdvanceResult.NEXT_ROW);
+            }
+            previousMatch = parser.getValue();
         }
 
         String candidate = parser.getValue() + parser.getField();
