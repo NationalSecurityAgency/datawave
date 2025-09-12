@@ -137,8 +137,8 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
 
     @Override
     public FilterResult filter(Key k, Value v) {
-        if (log.isInfoEnabled()) {
-            log.info("tk: {}", k.toStringNoTime());
+        if (log.isDebugEnabled()) {
+            log.debug("tk: {}", k.toStringNoTime());
         }
 
         // parse key and reset hint
@@ -158,7 +158,7 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
 
             if (!matcher.matches()) {
                 // advance to next row
-                log.info("pattern does not match, advance to next row");
+                log.debug("pattern does not match, advance to next row");
                 return new FilterResult(false, AdvanceResult.NEXT_ROW);
             }
             previousMatch = parser.getValue();
@@ -167,33 +167,33 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
         int result = parser.getField().compareTo(field);
         if (result < 0) {
             // advance to field
-            log.info("field {} sorts before target {}, advance to {}", parser.getField(), field, field);
+            log.debug("field {} sorts before target {}, advance to {}", parser.getField(), field, field);
             hint = HINT_TYPE.FIELD;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (result > 0) {
             // advance to next row
-            log.info("field {} sorts after target {}, advance to next row", parser.getField(), field);
+            log.debug("field {} sorts after target {}, advance to next row", parser.getField(), field);
             return new FilterResult(true, AdvanceResult.NEXT_ROW);
         }
 
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
-            log.info("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            log.debug("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
             hint = HINT_TYPE.DATE;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (date.compareTo(endDate) > 0) {
             // advance to next row
-            log.info("date {} sorts after end date {}, advance to next row", date, endDate);
+            log.debug("date {} sorts after end date {}, advance to next row", date, endDate);
             return new FilterResult(false, AdvanceResult.NEXT_ROW);
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
-            log.info("datatype {} does not match, advance to next key", parser.getDatatype());
+            log.debug("datatype {} does not match, advance to next key", parser.getDatatype());
             return new FilterResult(false, AdvanceResult.NEXT);
         }
 
-        log.info("key accepted, advancing to next row");
+        log.debug("key accepted, advancing to next row");
         return new FilterResult(true, AdvanceResult.NEXT_ROW);
     }
 
