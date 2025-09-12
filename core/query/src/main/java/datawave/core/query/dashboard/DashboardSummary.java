@@ -44,7 +44,7 @@ public final class DashboardSummary implements Comparable<DashboardSummary> {
             errorCount++;
         } else {
 
-            int elapsed = new Long(latency).intValue();
+            int elapsed = Long.valueOf(latency).intValue();
 
             if (elapsed < 3_000) {
                 upTo3Sec++;
