@@ -7,7 +7,6 @@ import static datawave.query.testframework.CitiesDataType.getTestAuths;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
