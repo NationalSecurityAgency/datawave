@@ -565,10 +565,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     private static long getTimestamp(Document doc) {
-        return getDocKeyAttr(doc).getTimestamp();
+        return getRootDocKeyAttr(doc).getTimestamp();
     }
 
-    private static Attribute getDocKeyAttr(Document doc) {
+    public static Attribute getRootDocKeyAttr(Document doc) {
         Attribute<?> attr = doc.get(Document.DOCKEY_FIELD_NAME);
         if (attr instanceof Attributes) {
             // if the attr is an instanceof Attributes, then we need to frind the one that best describes
@@ -586,7 +586,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     private static Key getDocKey(Document doc) {
-        return getDocKeyAttr(doc).getMetadata();
+        return getRootDocKeyAttr(doc).getMetadata();
     }
 
 }

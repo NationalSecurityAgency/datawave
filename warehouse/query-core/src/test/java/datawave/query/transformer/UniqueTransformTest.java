@@ -1,6 +1,7 @@
 package datawave.query.transformer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -700,6 +701,19 @@ public class UniqueTransformTest {
             }
         }
 
+    }
+
+    @Test
+    public void testRootDocKeyAttr() {
+        givenInputDocument();
+        givenInputDocument();
+        givenInputDocument();
+        givenInputDocument();
+        for (Document d : inputDocuments) {
+            Attribute a = UniqueTransform.getRootDocKeyAttr(d);
+            String cf = a.getMetadata().getColumnFamily().toString();
+            assertFalse(cf.contains("."));
+        }
     }
 
 }
