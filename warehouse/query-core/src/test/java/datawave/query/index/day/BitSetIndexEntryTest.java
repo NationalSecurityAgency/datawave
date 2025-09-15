@@ -18,10 +18,10 @@ public class BitSetIndexEntryTest {
 
     @Test
     public void testUniqueness() {
-        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry first = new BitSetIndexEntry("2023", firstMap);
 
-        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry second = new BitSetIndexEntry("2023", secondMap);
 
         assertEquals(first, second);
@@ -34,10 +34,10 @@ public class BitSetIndexEntryTest {
 
     @Test
     public void testCompareToYear() {
-        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry first = new BitSetIndexEntry("2023", firstMap);
 
-        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry second = new BitSetIndexEntry("2024", secondMap);
 
         assertEquals(-1, first.compareTo(second));
@@ -46,10 +46,10 @@ public class BitSetIndexEntryTest {
 
     @Test
     public void testCompareToMapKey() {
-        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry first = new BitSetIndexEntry("2023", firstMap);
 
-        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'baz'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'baz'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry second = new BitSetIndexEntry("2023", secondMap);
 
         assertTrue(first.compareTo(second) < 0);
@@ -58,10 +58,10 @@ public class BitSetIndexEntryTest {
 
     @Test
     public void testCompareToBitSets() {
-        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> firstMap = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry first = new BitSetIndexEntry("2023", firstMap);
 
-        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(4, 5, 6));
+        Map<String,BitSet> secondMap = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(4, 5, 6));
         BitSetIndexEntry second = new BitSetIndexEntry("2023", secondMap);
 
         assertTrue(first.compareTo(second) < 0);
@@ -70,7 +70,7 @@ public class BitSetIndexEntryTest {
 
     @Test
     public void testSortOrderBasedOnYear() {
-        Map<String,BitSet> map = Collections.singletonMap("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        Map<String,BitSet> map = Collections.singletonMap("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
         BitSetIndexEntry first = new BitSetIndexEntry("2023", map);
         BitSetIndexEntry second = new BitSetIndexEntry("2024", map);
 
@@ -85,10 +85,10 @@ public class BitSetIndexEntryTest {
     @Test
     public void testSortOrderBasedOnMapKey() {
         Map<String,BitSet> firstMap = new HashMap<>();
-        firstMap.put("FOO == 'bar'", BitSetUtil.create(1, 2, 3));
+        firstMap.put("FOO == 'bar'", BitSetFactory.create(1, 2, 3));
 
         Map<String,BitSet> secondMap = new HashMap<>();
-        secondMap.put("FOO == 'baz'", BitSetUtil.create(1, 2, 3));
+        secondMap.put("FOO == 'baz'", BitSetFactory.create(1, 2, 3));
 
         BitSetIndexEntry first = new BitSetIndexEntry("2024", firstMap);
         BitSetIndexEntry second = new BitSetIndexEntry("2024", secondMap);

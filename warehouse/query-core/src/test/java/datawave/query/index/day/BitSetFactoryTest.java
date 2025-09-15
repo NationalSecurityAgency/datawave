@@ -6,11 +6,11 @@ import java.util.BitSet;
 
 import org.junit.jupiter.api.Test;
 
-public class BitSetUtilTest {
+public class BitSetFactoryTest {
 
     @Test
     public void testSimpleCreate() {
-        BitSet bits = BitSetUtil.create(1, 2, 3);
+        BitSet bits = BitSetFactory.create(1, 2, 3);
         assertTrue(bits.get(1));
         assertTrue(bits.get(2));
         assertTrue(bits.get(3));
@@ -18,7 +18,7 @@ public class BitSetUtilTest {
 
     @Test
     public void testZeroIndex() {
-        BitSet bits = BitSetUtil.create(0);
+        BitSet bits = BitSetFactory.create(0);
         assertTrue(bits.get(0));
     }
 }

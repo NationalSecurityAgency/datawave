@@ -27,7 +27,7 @@ public class DayIndexScanner {
     private final AccumuloClient client;
     private final Multimap<String,String> valuesAndFields;
 
-    private final BitSetIndexEntrySerDe serDe = new BitSetIndexEntrySerDe();
+    private final BitSetIndexEntrySerializer serDe = new BitSetIndexEntrySerializer();
 
     public DayIndexScanner(DayIndexConfig config) {
         indexTableName = config.getDayIndexTableName();

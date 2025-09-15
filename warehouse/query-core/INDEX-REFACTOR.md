@@ -40,9 +40,9 @@ number of shards per day, averaged by field cardinality.
 
 ```
 # proposed table structure
-value FIELD:20240101<null>datatype-a  (010101)
-value FIELD:20240102<null>datatype-a  (101010)
-value FIELD:20240103<null>datatype-a  (000111)
+20240101<null>value FIELD:datatype-a  (010101)
+20240102<null>value FIELD:datatype-a  (101010)
+20240103<null>value FIELD:datatype-a  (000111)
 ```
 
 #### Partitioning the global index

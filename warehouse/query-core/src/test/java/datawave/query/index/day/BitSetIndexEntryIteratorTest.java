@@ -45,7 +45,7 @@ public class BitSetIndexEntryIteratorTest {
 
     private static DayIndexIngestUtil ingestUtil;
 
-    private final BitSetIndexEntrySerDe serDe = new BitSetIndexEntrySerDe();
+    private final BitSetIndexEntrySerializer serDe = new BitSetIndexEntrySerializer();
 
     private Multimap<String,String> valuesAndFields;
     private Map<String,BitSet> expected;

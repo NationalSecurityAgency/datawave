@@ -54,7 +54,7 @@ public class ShardedDataTypeHandlerTest {
 
     private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
 
-    // constants to reducer verbosity
+    // constants to reduce verbosity
     private final byte[] visibility = "PUBLIC".getBytes();
     private final byte[] maskedVisibility = "PRIVATE".getBytes();
     private final byte[] shardId = "20250606_23".getBytes();

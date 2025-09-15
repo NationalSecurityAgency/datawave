@@ -19,8 +19,8 @@ import datawave.query.planner.QueryPlan;
 
 class DayIndexIteratorTest {
 
-    private final BitSet even = BitSetUtil.create(0, 2, 4, 6, 8);
-    private final BitSet odd = BitSetUtil.create(1, 3, 5, 7, 9);
+    private final BitSet even = BitSetFactory.create(0, 2, 4, 6, 8);
+    private final BitSet odd = BitSetFactory.create(1, 3, 5, 7, 9);
 
     private String query;
     private String day;

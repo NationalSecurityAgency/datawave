@@ -76,8 +76,10 @@ public class ErrorShardTableConfigHelper extends ShardTableConfigHelper {
             this.tableType = ShardTableType.SHARD;
         } else if (tableName.equals(shardGidxTableName)) {
             this.tableType = ShardTableType.GIDX;
-        } else if (shardDayIndexTableName != null && tableName.equals(shardDictionaryTableName)) {
+        } else if (tableName.equals(shardDayIndexTableName)) {
             this.tableType = ShardTableType.GLOBAL_DAY_INDEX;
+        } else if (tableName.equals(shardYearIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_YEAR_INDEX;
         } else if (tableName.equals(shardGridxTableName)) {
             this.tableType = ShardTableType.GRIDX;
         } else if (tableName.equals(shardDictionaryTableName)) {

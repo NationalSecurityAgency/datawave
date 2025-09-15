@@ -47,7 +47,7 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
     private TreeMultimap<String,String> valuesAndFields;
 
     private final DayIndexKey parser = new DayIndexKey();
-    private final BitSetIndexEntrySerDe serDe = new BitSetIndexEntrySerDe();
+    private final BitSetIndexEntrySerializer serDe = new BitSetIndexEntrySerializer();
     private final Map<String,BitSet> shards = new HashMap<>();
 
     @Override

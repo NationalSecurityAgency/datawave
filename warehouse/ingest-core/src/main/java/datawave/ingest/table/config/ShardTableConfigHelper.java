@@ -84,8 +84,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         markingsSetupIteratorEnabled = conf.getBoolean(MARKINGS_SETUP_ITERATOR_ENABLED, markingsSetupIteratorEnabled);
         markingsSetupIteratorConfig = conf.get(MARKINGS_SETUP_ITERATOR_CONFIG, markingsSetupIteratorConfig);
 
-        if (shardTableName == null && shardGidxTableName == null && shardDayIndexTableName == null && shardYearIndexTableName == null
-                        && shardGridxTableName == null && shardDictionaryTableName == null) {
+        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardDayIndexTableName == null
+                        && shardYearIndexTableName == null && shardDictionaryTableName == null) {
             throw new IllegalArgumentException("No Shard Tables Defined");
         }
 

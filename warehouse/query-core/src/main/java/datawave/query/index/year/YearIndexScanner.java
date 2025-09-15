@@ -18,7 +18,7 @@ import org.apache.hadoop.io.Text;
 import com.google.common.collect.Multimap;
 
 import datawave.query.index.day.BitSetIndexEntry;
-import datawave.query.index.day.BitSetIndexEntrySerDe;
+import datawave.query.index.day.BitSetIndexEntrySerializer;
 import datawave.query.index.day.DayIndexConfig;
 import datawave.query.index.day.DayIndexEntryIterator;
 
@@ -32,7 +32,7 @@ public class YearIndexScanner {
     private final AccumuloClient client;
     private final Multimap<String,String> valuesAndFields;
 
-    private final BitSetIndexEntrySerDe serDe = new BitSetIndexEntrySerDe();
+    private final BitSetIndexEntrySerializer serDe = new BitSetIndexEntrySerializer();
 
     public YearIndexScanner(DayIndexConfig config) {
         indexTableName = config.getYearIndexTableName();

@@ -5,9 +5,9 @@ import java.util.BitSet;
 /**
  * Simple utility to create a {@link BitSet} from a list of integer values
  */
-public class BitSetUtil {
+public class BitSetFactory {
 
-    private BitSetUtil() {
+    private BitSetFactory() {
         // enforce static access
     }
 

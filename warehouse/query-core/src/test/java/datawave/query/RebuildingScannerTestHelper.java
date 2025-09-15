@@ -661,10 +661,6 @@ public class RebuildingScannerTestHelper {
             }
             return new RebuildingScanner((InMemoryScanner) (super.createScanner(s)), teardown, interrupt);
         }
-
-        public Scanner createDefaultScanner(String s, Authorizations auths) throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
-            return super.createScanner(s, auths);
-        }
     }
 
     public static class DelegatingScannerBase implements ScannerBase {

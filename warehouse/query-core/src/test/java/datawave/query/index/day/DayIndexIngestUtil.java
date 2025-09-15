@@ -63,19 +63,19 @@ public class DayIndexIngestUtil {
     }
 
     public BitSet getEven() {
-        return BitSetUtil.create(0, 2, 4, 6, 8);
+        return BitSetFactory.create(0, 2, 4, 6, 8);
     }
 
     public BitSet getOdd() {
-        return BitSetUtil.create(1, 3, 5, 7, 9);
+        return BitSetFactory.create(1, 3, 5, 7, 9);
     }
 
     public BitSet getPrime() {
-        return BitSetUtil.create(2, 3, 5, 7);
+        return BitSetFactory.create(2, 3, 5, 7);
     }
 
     public BitSet getThree() {
-        return BitSetUtil.create(3, 6);
+        return BitSetFactory.create(3, 6);
     }
 
     private static Value serializeBitSet(BitSet bits) {

@@ -8,9 +8,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-class BitSetIndexEntrySerDeTest {
+class BitSetIndexEntrySerializerTest {
 
-    private final BitSetIndexEntrySerDe serDe = new BitSetIndexEntrySerDe();
+    private final BitSetIndexEntrySerializer serDe = new BitSetIndexEntrySerializer();
 
     @Test
     public void testSerDeBytes() {
@@ -35,8 +35,8 @@ class BitSetIndexEntrySerDeTest {
     private BitSetIndexEntry createEntry() {
         String day = "20220101";
         Map<String,BitSet> shards = new HashMap<>();
-        shards.put("FIELD_A", BitSetUtil.create(0, 2, 4, 6, 8));
-        shards.put("FIELD_B", BitSetUtil.create(1, 3, 5, 7, 9));
+        shards.put("FIELD_A", BitSetFactory.create(0, 2, 4, 6, 8));
+        shards.put("FIELD_B", BitSetFactory.create(1, 3, 5, 7, 9));
         return new BitSetIndexEntry(day, shards);
     }
 

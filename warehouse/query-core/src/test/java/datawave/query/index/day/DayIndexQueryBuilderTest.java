@@ -26,9 +26,9 @@ public class DayIndexQueryBuilderTest {
 
     private final int max = 1000; // max iterations for random input tests
 
-    private final BitSet even = BitSetUtil.create(0, 2, 4, 6, 8);
-    private final BitSet odd = BitSetUtil.create(1, 3, 5, 7, 9);
-    private final BitSet prime = BitSetUtil.create(2, 3, 5, 7);
+    private final BitSet even = BitSetFactory.create(0, 2, 4, 6, 8);
+    private final BitSet odd = BitSetFactory.create(1, 3, 5, 7, 9);
+    private final BitSet prime = BitSetFactory.create(2, 3, 5, 7);
 
     private Map<String,BitSet> shards;
 

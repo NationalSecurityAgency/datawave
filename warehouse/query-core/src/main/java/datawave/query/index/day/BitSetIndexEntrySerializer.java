@@ -10,12 +10,12 @@ import com.esotericsoftware.kryo.io.Output;
 /**
  * Utility class for serialized and deserializing {@link BitSetIndexEntry}
  */
-public class BitSetIndexEntrySerDe {
+public class BitSetIndexEntrySerializer {
 
     private final Kryo kryo;
     private final ByteArrayOutputStream baos;
 
-    public BitSetIndexEntrySerDe() {
+    public BitSetIndexEntrySerializer() {
         kryo = new Kryo();
         baos = new ByteArrayOutputStream(4096);
     }

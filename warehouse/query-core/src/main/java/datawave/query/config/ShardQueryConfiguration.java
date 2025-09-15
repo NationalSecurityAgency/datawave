@@ -53,7 +53,6 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
-import datawave.query.index.day.DayIndexStream;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.ContentSummaryIterator;
@@ -562,8 +561,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxLinesToPrint = -1;
 
     /**
-     * Flag that controls usage of the sharded index tables. Enables usage of the {@link DayIndexStream} which scans the {@link TableName#SHARD_DAY_INDEX} and
-     * {@link TableName#SHARD_YEAR_INDEX}.
+     * Flag that controls usage of the sharded index tables. These tables are sharded based on the year or day and shard offsets are tracked in a bitset.
      */
     private boolean useShardedIndex = false;
 
