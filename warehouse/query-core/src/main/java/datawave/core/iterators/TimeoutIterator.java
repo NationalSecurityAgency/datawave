@@ -15,9 +15,9 @@ import org.apache.log4j.Logger;
 
 /**
  * Purpose: Enforces a timeout within this scan session
- *
+ * <p>
  * Design: Upon calls to next, seek, and even init ( in the case where we have filters ) we will check if we have reached an unfair execution event in which we
- * have exceed our timeout
+ * have exceeded our timeout
  */
 public class TimeoutIterator extends WrappingIterator {
 
@@ -57,21 +57,15 @@ public class TimeoutIterator extends WrappingIterator {
                 }
             }
         }
-
         currentSession = System.currentTimeMillis();
-
     }
 
     @Override
     public void next() throws IOException {
-
         if (isUnfairExecution()) {
-
             throw new IteratorTimeoutException("Exception next()");
         }
-
         super.next();
-
     }
 
     /**
@@ -85,13 +79,9 @@ public class TimeoutIterator extends WrappingIterator {
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-
         if (isUnfairExecution()) {
             throw new IteratorTimeoutException("Exception seek()");
         }
-
         super.seek(range, columnFamilies, inclusive);
-
     }
-
 }

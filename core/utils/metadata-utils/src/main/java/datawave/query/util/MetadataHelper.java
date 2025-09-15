@@ -83,7 +83,6 @@ import datawave.query.model.QueryModel;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
-import datawave.util.UniversalSet;
 import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
@@ -1379,7 +1378,7 @@ public class MetadataHelper {
      * @return the count
      */
     public Long getCountsByFieldForDays(String fieldName, Date begin, Date end) {
-        return getCountsByFieldForDays(fieldName, begin, end, UniversalSet.instance());
+        return getCountsByFieldForDays(fieldName, begin, end, Collections.emptySet());
     }
 
     /**
@@ -1442,7 +1441,7 @@ public class MetadataHelper {
      * @return the number of times this field appears on the given day across all datatypes
      */
     public Long getCountsByFieldInDay(String fieldName, String date) {
-        return getCountsByFieldInDayWithTypes(fieldName, date, UniversalSet.instance());
+        return getCountsByFieldInDayWithTypes(fieldName, date, Collections.emptySet());
     }
 
     /**
@@ -1463,7 +1462,8 @@ public class MetadataHelper {
 
         try {
             Map<String,Long> countsByType = getCountsByFieldInDayWithTypes(Maps.immutableEntry(fieldName, date));
-            Iterable<Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(), input -> datatypes.contains(input.getKey()));
+            Iterable<Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(),
+                            input -> datatypes.isEmpty() || datatypes.contains(input.getKey()));
 
             long sum = 0;
             for (Entry<String,Long> entry : filteredByType) {
