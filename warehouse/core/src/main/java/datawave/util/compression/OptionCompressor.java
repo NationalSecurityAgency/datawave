@@ -73,7 +73,7 @@ public class OptionCompressor {
     private String compressGZIP(final String data, final Charset charset) {
         final byte[] input = data.getBytes(charset);
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(input.length)) {
             try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
                 gzip.write(input);
             }
@@ -90,7 +90,7 @@ public class OptionCompressor {
     private String compressBZIP2(final String data, final Charset charset) {
         final byte[] input = data.getBytes(charset);
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(input.length)) {
             try (BZip2CompressorOutputStream bzos = new BZip2CompressorOutputStream(baos)) {
                 bzos.write(input);
             }
@@ -109,7 +109,7 @@ public class OptionCompressor {
     private String compress7ZIP(final String data, final Charset charset) {
         final byte[] input = data.getBytes(charset);
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(input.length)) {
             try (LZMACompressorOutputStream lzma = new LZMACompressorOutputStream(baos)) {
                 lzma.write(input);
             }
@@ -128,7 +128,7 @@ public class OptionCompressor {
 
         try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed)) {
             try (GZIPInputStream gzip = new GZIPInputStream(bais)) {
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream(compressed.length)) {
                     byte[] buf = new byte[4096];
                     int n;
                     while ((n = gzip.read(buf)) != -1) {
@@ -152,7 +152,7 @@ public class OptionCompressor {
 
         try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed)) {
             try (BZip2CompressorInputStream bzis = new BZip2CompressorInputStream(bais)) {
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream(compressed.length)) {
                     byte[] buf = new byte[4096];
                     int n;
                     while ((n = bzis.read(buf)) != -1) {
@@ -177,7 +177,7 @@ public class OptionCompressor {
 
         try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed)) {
             try (LZMACompressorInputStream lzma = new LZMACompressorInputStream(bais)) {
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream(compressed.length)) {
                     byte[] buf = new byte[4096];
                     int n;
                     while ((n = lzma.read(buf)) != -1) {
