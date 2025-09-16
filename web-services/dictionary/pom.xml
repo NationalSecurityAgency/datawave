@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>7.23.9-collapseMetadata</version>
+        <version>7.23.10-collapseMetadata</version>
     </parent>
     <artifactId>datawave-ws-dictionary</artifactId>
     <packaging>ejb</packaging>
