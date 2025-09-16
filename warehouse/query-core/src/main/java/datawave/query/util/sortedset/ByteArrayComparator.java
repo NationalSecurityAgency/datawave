@@ -1,8 +1,8 @@
 package datawave.query.util.sortedset;
 
-import org.apache.hadoop.io.WritableComparator;
-
 import java.util.Comparator;
+
+import org.apache.hadoop.io.WritableComparator;
 
 public class ByteArrayComparator implements Comparator<byte[]> {
 
