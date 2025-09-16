@@ -43,7 +43,7 @@ public class ByteArrayComparatorTest {
         assertTrue(comparator.compare(bytes2, bytes1) > 0);
 
         bytes2[10] = (byte) 11;
-        bytes1[10] = (byte) -181; // as an unsigned byte this should be greater than 10
+        bytes1[10] = (byte) -181; // as an unsigned byte this should be greater than 11
 
         assertTrue(comparator.compare(bytes1, bytes2) > 0);
         assertTrue(comparator.compare(bytes2, bytes1) < 0);
