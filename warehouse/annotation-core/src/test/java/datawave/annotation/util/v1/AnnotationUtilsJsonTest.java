@@ -1,16 +1,16 @@
 package datawave.annotation.util.v1;
 
-import datawave.annotation.protobuf.v1.Annotation;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import datawave.annotation.protobuf.v1.Annotation;
 
-public class AnnotationJsonConverterTest {
+public class AnnotationUtilsJsonTest {
 
-    private static final Logger log = LoggerFactory.getLogger(AnnotationJsonConverterTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AnnotationUtilsJsonTest.class);
 
+    //@formatter:off
     String testJson = "{\n" +
             "  \"shard\": \"20250704_249\",\n" +
             "  \"dataType\": \"testDataType\",\n" +
@@ -38,6 +38,7 @@ public class AnnotationJsonConverterTest {
             "    }\n" +
             "  }]\n" +
             "}";
+    //@formater:on
 
     @Test
     public void testToJson() throws Exception {

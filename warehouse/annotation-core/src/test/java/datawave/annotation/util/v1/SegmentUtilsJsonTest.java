@@ -1,25 +1,28 @@
 package datawave.annotation.util.v1;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.annotation.protobuf.v1.Segment;
-import datawave.annotation.protobuf.v1.SegmentValue;
-import datawave.annotation.protobuf.v1.TextSpanChars;
-import datawave.annotation.protobuf.v1.TimeSpanSeconds;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SegmentJsonConverterTest {
+import java.util.List;
 
-    private static final Logger log = LoggerFactory.getLogger(SegmentJsonConverterTest.class);
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.protobuf.v1.SegmentValue;
+import datawave.annotation.protobuf.v1.TextSpanChars;
+import datawave.annotation.protobuf.v1.TimeSpanSeconds;
+
+public class SegmentUtilsJsonTest {
+
+    private static final Logger log = LoggerFactory.getLogger(SegmentUtilsJsonTest.class);
+
+    //@formatter:off
     final String testJson = "{\n" +
             "  \"segmentId\": \"5674ff10\",\n" +
             "  \"segmentValue\": [{\n" +
@@ -58,6 +61,7 @@ public class SegmentJsonConverterTest {
             "    \"endSeconds\": 0.52\n" +
             "  }\n" +
             "}";
+    //@formatter:on
 
     @Test
     public void testToJson() throws Exception {
@@ -108,7 +112,12 @@ public class SegmentJsonConverterTest {
 
     @Test
     public void testFromMalformedJsonOne() throws Exception {
-        Exception e = assertThrows(InvalidProtocolBufferException.class, () -> SegmentUtils.fromJson(testMalformedJsonOne), "expected an exception from malformed json");
+        //@formatter:off
+        Exception e = assertThrows(
+                InvalidProtocolBufferException.class,
+                () -> SegmentUtils.fromJson(testMalformedJsonOne),
+                "Expected an exception from malformed json");
+        //@formatter:on
         System.out.println(e.getMessage());
         assertTrue(e.getMessage().contains("Expect an array"));
 
@@ -116,7 +125,13 @@ public class SegmentJsonConverterTest {
 
     @Test
     public void testFromMalformedJsonTwo() throws Exception {
-        Exception e = assertThrows(InvalidProtocolBufferException.class, () -> SegmentUtils.fromJson(testMalformedJsonTwo), "expected an exception from malformed json");
+        //@formatter:off
+        Exception e = assertThrows(
+                InvalidProtocolBufferException.class,
+                () -> SegmentUtils.fromJson(testMalformedJsonTwo),
+                "Expected an exception from malformed json");
+        //@formatter:on
+
         System.out.println(e.getMessage());
         assertTrue(e.getMessage().contains("MalformedJsonException"));
     }

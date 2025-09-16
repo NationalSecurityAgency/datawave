@@ -5,9 +5,9 @@ import java.util.Map;
 
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentValue;
@@ -47,11 +47,9 @@ public class SegmentUtils {
         return segment.toBuilder().setBoundaryType(type).build();
     }
 
-    public static Annotation injectAnnotationId(Annotation.Builder builder) {
-        final Annotation tempAnnotation = builder.build();
-        final String hash = calculateAnnotationHash(tempAnnotation);
-        builder.clear(); // TODO: might not need this
-        return builder.mergeFrom(tempAnnotation).setAnnotationId(hash).build();
+    public static Annotation injectAnnotationId(Annotation annotation) {
+        final String hash = calculateAnnotationHash(annotation);
+        return annotation.toBuilder().setAnnotationId(hash).build();
     }
 
     @SuppressWarnings("UnstableApiUsage")
@@ -69,11 +67,9 @@ public class SegmentUtils {
     }
 
     /** Funny pattern to assign segment id */
-    public static Segment injectSegmentHash(Segment.Builder builder) {
-        final Segment tempSegment = builder.build();
-        final String hash = calculateSegmentHash(tempSegment);
-        builder.clear(); // TODO: might not need this
-        return builder.mergeFrom(tempSegment).setSegmentId(hash).build();
+    public static Segment injectSegmentHash(Segment segment) {
+        final String hash = calculateSegmentHash(segment);
+        return segment.toBuilder().setSegmentId(hash).build();
     }
 
     @SuppressWarnings("UnstableApiUsage")

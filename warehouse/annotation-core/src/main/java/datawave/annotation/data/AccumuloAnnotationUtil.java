@@ -1,12 +1,12 @@
 package datawave.annotation.data;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
-
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
 
 public class AccumuloAnnotationUtil {
     /**
@@ -19,7 +19,7 @@ public class AccumuloAnnotationUtil {
      * @throws AnnotationSerializationException
      *             if the keys don't all share the same rowId.
      */
-    public static Mutation mutationAdapter(Iterator<Map.Entry<Key, Value>> it) throws AnnotationSerializationException {
+    public static Mutation mutationAdapter(Iterator<Map.Entry<Key,Value>> it) throws AnnotationSerializationException {
         if (it == null) {
             return null;
         }

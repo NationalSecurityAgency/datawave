@@ -13,11 +13,11 @@ public interface AnnotationManager {
 
     Response getAnnotation(String idType, String id, String annotationId);
 
-    Response updateAnnotation(String idType, String id, String annotationId);
+    Response updateAnnotation(String idType, String id, String annotationId, String body);
 
     Response getAnnotationSegment(String idType, String id, String annotationId, String segmentId);
 
-    Response addSegment(String idType, String id, String annotationId);
+    Response addSegment(String idType, String id, String annotationId, String body);
 
-    Response updateSegment(String idType, String id, String annotationId, String segmentId);
+    Response updateSegment(String idType, String id, String annotationId, String segmentId, String body);
 }

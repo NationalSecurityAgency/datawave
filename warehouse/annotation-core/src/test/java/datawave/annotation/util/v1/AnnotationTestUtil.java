@@ -1,6 +1,7 @@
 package datawave.annotation.util.v1;
 
 import static datawave.annotation.util.v1.SegmentUtils.injectAnnotationId;
+import static datawave.annotation.util.v1.SegmentUtils.injectBoundaryType;
 import static datawave.annotation.util.v1.SegmentUtils.injectSegmentHash;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,14 +25,14 @@ import datawave.annotation.protobuf.v1.TimeSpanSeconds;
 public class AnnotationTestUtil {
     public static Annotation generateTestAnnotation() {
         //@formatter:off
-        Annotation.Builder annotationBuilder = Annotation.newBuilder()
+        Annotation annotation = Annotation.newBuilder()
                 .setShard("20250704_249")
                 .setDataType("testDataType")
                 .setUid("abcde.fghij.klmno")
                 .setAnnotationType("testAnnotationType")
                 .addAllSegments(List.of(generateMultiTestSegment()))
-                .putAllMetadata(generateTestMetadata());
-        return injectAnnotationId(annotationBuilder);
+                .putAllMetadata(generateTestMetadata()).build();
+        return injectAnnotationId(annotation);
         //@formatter:on
     }
 
@@ -45,16 +46,16 @@ public class AnnotationTestUtil {
     public static Segment generateTestSegment() {
         TimeSpanSeconds time = TimeSpanSeconds.newBuilder().setStartSeconds(0.154).setEndSeconds(0.52).build();
         SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").setScore(.21f).build();
-        Segment.Builder segmentBuilder = Segment.newBuilder().addSegmentValue(segmentValue).setTime(time);
-        return injectSegmentHash(segmentBuilder);
+        Segment segment = Segment.newBuilder().addSegmentValue(segmentValue).setTime(time).build();
+        return injectSegmentHash(injectBoundaryType(segment));
     }
 
     public static Segment generateMultiTestSegment() {
         TimeSpanSeconds time = TimeSpanSeconds.newBuilder().setStartSeconds(0.154).setEndSeconds(0.52).build();
         SegmentValue segmentValueOne = SegmentValue.newBuilder().setValue("cow").setScore(.235f).build();
         SegmentValue segmentValueTwo = SegmentValue.newBuilder().setValue("horse").setScore(.21f).setExtension("animal").build();
-        Segment.Builder segmentBuilder = Segment.newBuilder().addSegmentValue(segmentValueOne).addSegmentValue(segmentValueTwo).setTime(time);
-        return injectSegmentHash(segmentBuilder);
+        Segment segment = Segment.newBuilder().addSegmentValue(segmentValueOne).addSegmentValue(segmentValueTwo).setTime(time).build();
+        return injectSegmentHash(injectBoundaryType(segment));
     }
 
     public static void assertMetadataEqual(Map<String,String> expectedMetadata, List<Map.Entry<String,String>> observedMetadata) {

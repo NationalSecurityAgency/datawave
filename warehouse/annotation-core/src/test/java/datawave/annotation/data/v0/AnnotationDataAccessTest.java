@@ -80,15 +80,15 @@ public class AnnotationDataAccessTest {
         List<Annotation> manyAnnotations = generateManyTestAnnotations();
 
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        AnnotationDataAccess<Annotation, Segment> setupDao = new AnnotationDataAccess<>(mac.createAccumuloClient("root", new PasswordToken("pass")),
-                        auths, "datawave.annotations", serializer);
+        AnnotationDataAccess<Annotation,Segment> setupDao = new AnnotationDataAccess<>(mac.createAccumuloClient("root", new PasswordToken("pass")), auths,
+                        "datawave.annotations", serializer);
         for (Annotation annotation : manyAnnotations) {
             setupDao.save(annotation);
         }
         dumpTable("datawave.annotations");
     }
 
-    AnnotationDataAccess<Annotation, Segment> dao;
+    AnnotationDataAccess<Annotation,Segment> dao;
 
     @BeforeEach
     public void setup() throws AccumuloException, AccumuloSecurityException, TableExistsException {

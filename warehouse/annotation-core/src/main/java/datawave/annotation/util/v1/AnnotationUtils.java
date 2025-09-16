@@ -2,6 +2,7 @@ package datawave.annotation.util.v1;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
 
@@ -13,7 +14,7 @@ public class AnnotationUtils {
 
     public static Annotation addSegmentBoundaryTypes(Annotation a) {
         Annotation.Builder b = a.toBuilder().clearSegments();
-        for (Segment s: a.getSegmentsList()) {
+        for (Segment s : a.getSegmentsList()) {
             b.addSegments(SegmentUtils.injectBoundaryType(s));
         }
         return b.build();

@@ -37,7 +37,8 @@ public class AnnotationDataAccess<A,S> {
     final String tableName;
     final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,A> annotationSerializer;
 
-    public AnnotationDataAccess(AccumuloClient accumuloClient, Authorizations authorizations, String tableName, AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,A> annotationSerializer) {
+    public AnnotationDataAccess(AccumuloClient accumuloClient, Authorizations authorizations, String tableName,
+                    AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,A> annotationSerializer) {
         this.accumuloClient = accumuloClient;
         this.authorizations = authorizations;
         this.tableName = tableName;
@@ -88,10 +89,10 @@ public class AnnotationDataAccess<A,S> {
             Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
             return extractTypes(it);
         } catch (TableNotFoundException e) {
-            throw new AnnotationReadException(e.getClass().getSimpleName() + " reading annotation types for document: " + shard + "/" + datatype + "/" + uid, e);
+            throw new AnnotationReadException(e.getClass().getSimpleName() + " reading annotation types for document: " + shard + "/" + datatype + "/" + uid,
+                            e);
         }
     }
-
 
     /** Get all annotations for a document */
     public List<A> getAll(String shard, String datatype, String uid) {
@@ -132,9 +133,8 @@ public class AnnotationDataAccess<A,S> {
             Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
             return processAnnotationsIterator(it);
         } catch (TableNotFoundException | AnnotationSerializationException e) {
-            throw new AnnotationReadException(
-                            e.getClass().getSimpleName() + " reading " + annotationType + " type annotations for document: " + shard + "/" + datatype + "/" + uid,
-                            e);
+            throw new AnnotationReadException(e.getClass().getSimpleName() + " reading " + annotationType + " type annotations for document: " + shard + "/"
+                            + datatype + "/" + uid, e);
         }
     }
 
@@ -157,16 +157,14 @@ public class AnnotationDataAccess<A,S> {
             List<A> annotations = processAnnotationsIterator(it);
             if (annotations.isEmpty()) {
                 return Optional.empty();
-            }
-            else if (annotations.size() > 1) {
+            } else if (annotations.size() > 1) {
                 // TODO: there should be only one here. what kind of exception should we throw?
             }
 
             return Optional.of(annotations.get(0));
         } catch (TableNotFoundException | AnnotationSerializationException e) {
             throw new AnnotationReadException(
-                    e.getClass().getSimpleName() + " reading annotationId " + annotationId + " for document: " + shard + "/" + datatype + "/" + uid,
-                    e);
+                            e.getClass().getSimpleName() + " reading annotationId " + annotationId + " for document: " + shard + "/" + datatype + "/" + uid, e);
         }
     }
 
@@ -190,28 +188,32 @@ public class AnnotationDataAccess<A,S> {
         // TODO: implement delete
     }
 
-    /** The annotation type is always stored in the last slot of the column family, extract all of the types found
-     *  in the iterator to a set.
+    /**
+     * The annotation type is always stored in the last slot of the column family, extract all of the types found in the iterator to a set.
+     *
      * @param it
      * @return a list of distinct annotation types.
      */
-    public Collection<String> extractTypes(Iterator<Map.Entry<Key, Value>> it) {
+    public Collection<String> extractTypes(Iterator<Map.Entry<Key,Value>> it) {
         final Set<String> annotationTypes = new TreeSet<>();
         while (it.hasNext()) {
             Map.Entry<Key,Value> e = it.next();
             Key k = e.getKey();
             String cf = k.getColumnFamily().toString();
             int typeSep = cf.lastIndexOf(NULL);
-            annotationTypes.add(cf.substring(typeSep+1));
+            annotationTypes.add(cf.substring(typeSep + 1));
         }
         return annotationTypes;
     }
 
-    /** Extract the data referenced by the interator into a collection of Annotation objects.
+    /**
+     * Extract the data referenced by the interator into a collection of Annotation objects.
      *
-     * @param it the iterator to process
+     * @param it
+     *            the iterator to process
      * @return a list of zero to many Annotations extracted from the iterator. Never null.
-     * @throws AnnotationSerializationException if there is a problem deserializing any portions of the Accumulo entries.
+     * @throws AnnotationSerializationException
+     *             if there is a problem deserializing any portions of the Accumulo entries.
      */
     public List<A> processAnnotationsIterator(Iterator<Map.Entry<Key,Value>> it) throws AnnotationSerializationException {
         final List<Map.Entry<Key,Value>> buffer = new ArrayList<>();

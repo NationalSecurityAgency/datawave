@@ -3,6 +3,7 @@ package datawave.annotation.data.v1;
 import static datawave.annotation.util.v1.AnnotationTestUtil.assertAnnotationsEqual;
 import static datawave.annotation.util.v1.AnnotationTestUtil.generateTestAnnotation;
 import static datawave.annotation.util.v1.SegmentUtils.injectAnnotationId;
+import static datawave.annotation.util.v1.SegmentUtils.injectBoundaryType;
 import static datawave.annotation.util.v1.SegmentUtils.injectSegmentHash;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -85,15 +86,15 @@ public class AnnotationDataAccessTest {
         List<Annotation> manyAnnotations = generateManyTestAnnotations();
 
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        AnnotationDataAccess<Annotation, Segment> setupDao = new AnnotationDataAccess<>(mac.createAccumuloClient("root", new PasswordToken("pass")),
-                        auths, "datawave.annotations", serializer);
+        AnnotationDataAccess<Annotation,Segment> setupDao = new AnnotationDataAccess<>(mac.createAccumuloClient("root", new PasswordToken("pass")), auths,
+                        "datawave.annotations", serializer);
         for (Annotation annotation : manyAnnotations) {
             setupDao.save(annotation);
         }
         dumpTable("datawave.annotations");
     }
 
-    AnnotationDataAccess<Annotation, Segment> dao;
+    AnnotationDataAccess<Annotation,Segment> dao;
 
     @BeforeEach
     public void setup() throws AccumuloException, AccumuloSecurityException, TableExistsException {
@@ -350,10 +351,10 @@ public class AnnotationDataAccessTest {
                     String documentUid = HashUID.builder().newId(seed.getBytes(StandardCharsets.UTF_8)).toString();
 
                     // @formatter: off
-                    Annotation.Builder annotationBuilder = Annotation.newBuilder().setShard(row).setDataType(dataTypes[i]).setUid(documentUid)
+                    Annotation annotation = Annotation.newBuilder().setShard(row).setDataType(dataTypes[i]).setUid(documentUid)
                                     .addAllSegments(generateTestSegments(day, shard, dataType)).putAllMetadata(generateTestMetadata(day, shard, dataType))
-                                    .setAnnotationType(annotationType);
-                    testAnnotations.add(injectAnnotationId(annotationBuilder));
+                                    .setAnnotationType(annotationType).build();
+                    testAnnotations.add(injectAnnotationId(annotation));
                     // @formatter on;
                 }
             }
@@ -386,8 +387,8 @@ public class AnnotationDataAccessTest {
             TimeSpanSeconds timeSpan = TimeSpanSeconds.newBuilder().setStartSeconds(i).setEndSeconds(i + 5).build();
             SegmentValue valueOne = SegmentValue.newBuilder().setValue(words[wordPos]).setScore(.235f).build();
             SegmentValue valueTwo = SegmentValue.newBuilder().setValue(altWords[wordPos]).setScore(.21f).build();
-            Segment.Builder segmentBuilder = Segment.newBuilder().setTime(timeSpan).addSegmentValue(valueOne).addSegmentValue(valueTwo);
-            segments.add(injectSegmentHash(segmentBuilder));
+            Segment segment = Segment.newBuilder().setTime(timeSpan).addSegmentValue(valueOne).addSegmentValue(valueTwo).build();
+            segments.add(injectSegmentHash(segment));
 
             // cycle through words
             wordPos++;
@@ -408,8 +409,8 @@ public class AnnotationDataAccessTest {
             // character offsets
             TextSpanChars charSpan = TextSpanChars.newBuilder().setStartCharacter(start).setEndCharacter(end).build();
             SegmentValue valueOne = SegmentValue.newBuilder().setValue(word).setScore(1.0f).build();
-            Segment.Builder segmentBuilder = Segment.newBuilder().setCharacters(charSpan).addSegmentValue(valueOne);
-            segments.add(injectSegmentHash(segmentBuilder));
+            Segment segment = Segment.newBuilder().setCharacters(charSpan).addSegmentValue(valueOne).build();
+            segments.add(injectSegmentHash(segment));
 
             start = end + 1;
         }
@@ -436,7 +437,7 @@ public class AnnotationDataAccessTest {
             if (!altObjects[i].isEmpty()) {
                 segmentBuilder.addSegmentValue(SegmentValue.newBuilder().setValue(altObjects[i]).setScore(.86f).setExtension(model[i]).build());
             }
-            segments.add(injectSegmentHash(segmentBuilder));
+            segments.add(injectSegmentHash(injectBoundaryType(segmentBuilder.build())));
         }
 
         return segments;

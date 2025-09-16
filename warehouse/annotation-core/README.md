@@ -40,10 +40,24 @@ Each annotation has one or more segments. Each segment is defined by:
   * score - a score for this value, typically a confidence score.
   * extension (optional) - a class of segment, used to group values.
 
-# Protobuf Compiler
+# Protobuf Compiler, Supporting Libraries and Tools
 
-We used `protoc` from RedHat 8's `libprotoc 3.5.0` to build the java implementations included here.
+The source code for the generated source code in `src/main/java/datawave/annotation/protobuf` is located in
+`src/main/protobuf`. The tools used were not part of the standard operating system distribution.
+
+### Prerequisites 
+
+* **Protoc**: We used `protoc` from `libprotoc 3.16.3` from [the GitHub protobuf releases page](https://github.com/protocolbuffers/protobuf/releases/tag/v3.16.3).
+  * Follow the instructions to install this into `/usr/local/bin`.
+* **Google APIs**:`SegmentV1.proto` imports `field_mask` and `timestamp` from [fuchsia.googlesource.com](https://fuchsia.googlesource.com/third_party/googleapis).
+  * These get installed into `/usr/local/include`
+* **JSON Schema Generation**: `compile_v1.sh` uses the `protoc-gen-jsonschema` plugin from [github.com/pubg/protoc-gen-jsonschma](https://github.com/pubg/protoc-gen-jsonschema) to generate a json schema file.
+  * **TL;DR;**: `go install github.com/pubg/protoc-gen-jsonschema` assuming you have a golang installation (1.24.6+)
+
+### Building
+Once the prerequisites are installed, the protobuf files are compiled using:
 
 ```bash
-protoc --java_out=src/main/java src/main/protobuf/SegmentPB.proto
+cd src/main/protobuf
+./compile_v1.sh
 ```
