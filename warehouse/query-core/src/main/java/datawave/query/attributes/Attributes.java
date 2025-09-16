@@ -75,6 +75,16 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         return Collections.unmodifiableSet(this.attributes);
     }
 
+    /**
+     * Access the raw values similar to {@link #getAttributes()} but without a collection copy
+     *
+     * @return the raw values
+     */
+    @Override
+    public Collection<Attribute<? extends Comparable<?>>> getRawAttributes() {
+        return attributes;
+    }
+
     private Set<Attribute<? extends Comparable<?>>> _getAttributes() {
         return this.attributes;
     }
@@ -90,8 +100,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     }
 
     public void add(Attribute<? extends Comparable<?>> attr) {
-        if (!this.attributes.contains(attr)) {
-            this.attributes.add(attr);
+        boolean updated = this.attributes.add(attr);
+        if (updated) {
             this._count += attr.size();
             if (trackSizes) {
                 this._bytes += attr.sizeInBytes() + 24 + 24;
@@ -224,7 +234,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(131, 127);
-        for (Attribute<?> a : getAttributes()) {
+        for (Attribute<?> a : _getAttributes()) {
             hcb.append(a);
         }
         return hcb.toHashCode();
@@ -233,7 +243,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public Collection<ValueTuple> visit(Collection<String> fieldNames, DatawaveJexlContext context) {
         Set<ValueTuple> children = new FunctionalSet<>();
-        for (Attribute<?> attr : getAttributes()) {
+        for (Attribute<?> attr : _getAttributes()) {
             children.addAll(attr.visit(fieldNames, context));
         }
 
@@ -287,8 +297,14 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         output.writeInt(this.attributes.size(), true);
 
         for (Attribute<? extends Comparable<?>> attr : this.attributes) {
-            // Write out the concrete Attribute class
-            output.writeString(attr.getClass().getName());
+
+            int index = DatawaveAttributeIndex.getAttributeIndex(attr.getClass().getTypeName());
+            output.writeInt(index, true);
+
+            if (index == 0) {
+                // Write out the concrete Attribute class, if not found in the index
+                output.writeString(attr.getClass().getName());
+            }
 
             // Defer to the concrete instance to write() itself
             attr.write(kryo, output);
@@ -303,28 +319,17 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
-            // Get the name of the concrete Attribute
-            String attrClassName = input.readString();
-            Class<?> clz = null;
-            try {
-                clz = classCache.get(attrClassName);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+
+            String clazzName;
+            int index = input.readInt(true);
+            if (index == 0) {
+                clazzName = input.readString();
+            } else {
+                clazzName = DatawaveAttributeIndex.getAttributeClassName(index);
             }
 
-            if (!Attribute.class.isAssignableFrom(clz)) {
-                throw new ClassCastException("Found class that was not an instance of Attribute");
-            }
-
-            // Get the Class for the name of the class of the concrete Attribute
-            Attribute<?> attr;
-            try {
-                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-
-            // Reload the attribute
+            // create the attribute and populate from the input
+            Attribute<?> attr = createAttributeFromClassName(clazzName);
             attr.read(kryo, input);
 
             // Add the attribute back to the Set
@@ -332,6 +337,36 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         }
 
         invalidateMetadata();
+    }
+
+    /**
+     * Create the attribute from the provided class name, using the class cache as appropriate
+     *
+     * @param clazzName
+     *            the class name
+     * @return the attribute
+     */
+    private Attribute<?> createAttributeFromClassName(String clazzName) {
+        Class<?> clz;
+        try {
+            // Get the Class for the name of the class of the concrete Attribute
+            clz = classCache.get(clazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        Attribute<?> attr;
+        if (Attribute.class.isAssignableFrom(clz)) {
+            // Get an instance of the concrete Attribute
+            try {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new ClassCastException("Found class that was not an instance of Attribute");
+        }
+        return attr;
     }
 
     /*

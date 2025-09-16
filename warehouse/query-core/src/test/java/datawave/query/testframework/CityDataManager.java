@@ -26,9 +26,19 @@ import datawave.query.testframework.CitiesDataType.CityField;
 public class CityDataManager extends AbstractDataManager {
 
     private static final Logger log = Logger.getLogger(CityDataManager.class);
+    private static CityDataManager INSTANCE = new CityDataManager();
 
-    public CityDataManager() {
+    private CityDataManager() {
         super(CityField.EVENT_ID.name(), CityField.START_DATE.name(), CityField.getFieldsMetadata());
+    }
+
+    public static CityDataManager getInstance() {
+        return INSTANCE;
+    }
+
+    public static synchronized CityDataManager newInstance() {
+        INSTANCE = new CityDataManager();
+        return INSTANCE;
     }
 
     @Override

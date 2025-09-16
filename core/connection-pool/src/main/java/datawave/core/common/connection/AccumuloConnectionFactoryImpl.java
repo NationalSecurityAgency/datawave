@@ -15,9 +15,9 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,14 +36,14 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private final AccumuloTableCache cache;
-    private final ConnectionPoolsProperties connectionPoolsConfiguration;
+    protected final AccumuloTableCache cache;
+    protected final ConnectionPoolsProperties connectionPoolsConfiguration;
 
-    private Map<String,Map<Priority,AccumuloClientPool>> pools;
+    protected Map<String,Map<Priority,AccumuloClientPool>> pools;
 
-    private String defaultPoolName = null;
+    protected String defaultPoolName = null;
 
-    private static AccumuloConnectionFactoryImpl factory = null;
+    protected static AccumuloConnectionFactoryImpl factory = null;
 
     public static AccumuloConnectionFactory getInstance(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         if (factory == null) {
@@ -56,7 +56,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         return factory;
     }
 
-    private AccumuloConnectionFactoryImpl(AccumuloTableCache cache, ConnectionPoolsProperties config) {
+    protected AccumuloConnectionFactoryImpl(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         this.cache = cache;
         this.connectionPoolsConfiguration = config;
         log.info("Initializing AccumuloConnectionFactoryImpl with {} and {}", config.getDefaultPool(), config.getPoolNames());
@@ -80,26 +80,21 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             p.put(Priority.NORMAL, createConnectionPool(conf, conf.getNormalPriorityPoolSize()));
             p.put(Priority.LOW, createConnectionPool(conf, conf.getLowPriorityPoolSize()));
             this.pools.put(entry.getKey(), Collections.unmodifiableMap(p));
-            try {
-                setupMockAccumuloUser(conf, p.get(AccumuloConnectionFactory.Priority.NORMAL), instances);
-            } catch (Exception e) {
-                log.error("Error configuring mock accumulo user for AccumuloConnectionFactoryBean.", e);
-            }
-
-            // Initialize the distributed tracing system. This needs to be done once at application startup. Since
-            // it is tied to Accumulo connections, we do it here in this singleton bean.
-            String appName = "datawave_ws";
-            try {
-                appName = System.getProperty("app", "datawave_ws");
-            } catch (SecurityException e) {
-                log.warn("Unable to retrieve system property \"app\": {}", e.getMessage());
+            if (this.cache != null) {
+                try {
+                    setupMockAccumuloUser(conf, p.get(AccumuloConnectionFactory.Priority.NORMAL), instances);
+                } catch (Exception e) {
+                    log.error("Error configuring mock accumulo user for AccumuloConnectionFactoryBean.", e);
+                }
             }
         }
 
-        cache.setConnectionFactory(this);
+        if (this.cache != null) {
+            this.cache.setConnectionFactory(this);
+        }
     }
 
-    private AccumuloClientPool createConnectionPool(ConnectionPoolProperties conf, int limit) {
+    protected AccumuloClientPool createConnectionPool(ConnectionPoolProperties conf, int limit) {
         AccumuloClientPoolFactory factory = new AccumuloClientPoolFactory(conf.getUsername(), conf.getPassword(), conf.getZookeepers(), conf.getInstance());
         AccumuloClientPool pool = new AccumuloClientPool(factory);
         pool.setTestOnBorrow(true);
@@ -124,9 +119,6 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
 
             Pair<String,PasswordToken> pair = instances.get(cache.getInstance().getInstanceID());
             String user = "root";
-            PasswordToken password = new PasswordToken(new byte[0]);
-            if (pair != null && user.equals(pair.getFirst()))
-                password = pair.getSecond();
             SecurityOperations security = new InMemoryAccumuloClient(user, cache.getInstance()).securityOperations();
             Set<String> users = security.listLocalUsers();
             if (!users.contains(conf.getUsername())) {
@@ -137,10 +129,10 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
                 // If we're changing root's password, and trying to change then keep track of that. If we have multiple instances
                 // that specify mismatching passwords, then throw an error.
                 if (user.equals(conf.getUsername())) {
-                    if (pair != null && !newPassword.equals(pair.getSecond()))
+                    if (pair != null && !newPassword.equals(pair.getRight()))
                         throw new IllegalStateException(
                                         "Invalid AccumuloConnectionFactoryBean configuration--multiple pools are configured with different root passwords!");
-                    instances.put(cache.getInstance().getInstanceID(), new Pair<>(conf.getUsername(), newPassword));
+                    instances.put(cache.getInstance().getInstanceID(), Pair.of(conf.getUsername(), newPassword));
                 }
                 // match root's password on mock to the password on the actual Accumulo instance
                 security.changeLocalUserPassword(conf.getUsername(), newPassword);
@@ -150,7 +142,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         }
     }
 
-    private static void setFactory(AccumuloConnectionFactoryImpl factory) {
+    protected static void setFactory(AccumuloConnectionFactoryImpl factory) {
         AccumuloConnectionFactoryImpl.factory = factory;
     }
 
@@ -216,21 +208,24 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         log.info("Pools = {}", pools);
         log.info("Pools.get(poolName) = {}", pools.get(poolName));
         AccumuloClientPool pool = pools.get(poolName).get(priority);
-        AccumuloClient c = pool.borrowObject(trackingMap);
-        AccumuloClient mock = new InMemoryAccumuloClient(pool.getFactory().getUsername(), cache.getInstance());
-        WrappedAccumuloClient wrappedAccumuloClient = new WrappedAccumuloClient(c, mock);
-        if (connectionPoolsConfiguration.getClientConfiguration(poolName) != null) {
-            wrappedAccumuloClient.setClientConfig(connectionPoolsConfiguration.getClientConfiguration(poolName).getConfiguration());
+        AccumuloClient accumuloClient = pool.borrowObject(trackingMap);
+        if (this.cache != null) {
+            AccumuloClient mock = new InMemoryAccumuloClient(pool.getFactory().getUsername(), cache.getInstance());
+            WrappedAccumuloClient wrappedAccumuloClient = new WrappedAccumuloClient(accumuloClient, mock);
+            if (connectionPoolsConfiguration.getClientConfiguration(poolName) != null) {
+                wrappedAccumuloClient.setClientConfig(connectionPoolsConfiguration.getClientConfiguration(poolName).getConfiguration());
+            }
+            String classLoaderContext = System.getProperty("dw.accumulo.classLoader.context");
+            if (classLoaderContext != null) {
+                wrappedAccumuloClient.setScannerClassLoaderContext(classLoaderContext);
+            }
+            String timeout = System.getProperty("dw.accumulo.scan.batch.timeout.seconds");
+            if (timeout != null) {
+                wrappedAccumuloClient.setScanBatchTimeoutSeconds(Long.parseLong(timeout));
+            }
+            accumuloClient = wrappedAccumuloClient;
         }
-        String classLoaderContext = System.getProperty("dw.accumulo.classLoader.context");
-        if (classLoaderContext != null) {
-            wrappedAccumuloClient.setScannerClassLoaderContext(classLoaderContext);
-        }
-        String timeout = System.getProperty("dw.accumulo.scan.batch.timeout.seconds");
-        if (timeout != null) {
-            wrappedAccumuloClient.setScanBatchTimeoutSeconds(Long.parseLong(timeout));
-        }
-        return wrappedAccumuloClient;
+        return accumuloClient;
     }
 
     /**

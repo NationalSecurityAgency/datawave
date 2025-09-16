@@ -4,15 +4,15 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.1</version>
+        <version>4.0.7</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-api</artifactId>
-    <version>4.1.1-SNAPSHOT</version>
+    <version>4.1.2-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-query-metric-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
@@ -21,7 +21,7 @@
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-text>1.9</version.commons-text>
-        <version.datawave>7.18.3</version.datawave>
+        <version.datawave>7.25.0</version.datawave>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
@@ -31,7 +31,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.protobuf-java>3.16.3</version.protobuf-java>
         <version.protostuff>1.6.2</version.protostuff>
-        <version.slf4j>1.7.36</version.slf4j>
+        <version.slf4j>2.0.12</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>

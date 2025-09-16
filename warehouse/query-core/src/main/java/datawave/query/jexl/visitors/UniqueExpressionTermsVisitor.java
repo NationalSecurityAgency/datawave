@@ -53,6 +53,9 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
         UniqueExpressionTermsVisitor visitor = new UniqueExpressionTermsVisitor();
         copy = (T) copy.jjtAccept(visitor, null);
 
+        // Flatten query tree again as we may have produced a non-flattened tree in the process of removing nodes
+        copy = TreeFlatteningRebuildingVisitor.flatten(copy);
+
         if (log.isDebugEnabled()) {
             log.debug(UniqueExpressionTermsVisitor.class.getSimpleName() + " removed " + visitor.duplicates + " duplicate terms");
         }

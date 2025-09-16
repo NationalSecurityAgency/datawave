@@ -34,9 +34,11 @@ import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
@@ -268,6 +270,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFilters", true);
         defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
         updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
+        defaultValues.put("fieldRuleClassName", null);
+        updatedValues.put("fieldRuleClassName", "proj.datawave.query.planner.rule.someFieldRuleClass");
         defaultValues.put("indexValueHoles", Lists.newArrayList());
         updatedValues.put("indexValueHoles", Lists.newArrayList(new IndexValueHole()));
         defaultValues.put("indexedFields", Sets.newHashSet());
@@ -312,6 +316,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hitList", true);
         defaultValues.put("dateIndexTimeTravel", false);
         updatedValues.put("dateIndexTimeTravel", true);
+        defaultValues.put("dateIndexIterator", false);
+        updatedValues.put("dateIndexIterator", true);
         defaultValues.put("beginDateCap", -1L);
         updatedValues.put("beginDateCap", 1000L);
         defaultValues.put("failOutsideValidDateRange", true);
@@ -406,6 +412,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("ivaratorCacheScanPersistThreshold", 1040L);
         defaultValues.put("ivaratorCacheScanTimeout", 3600000L);
         updatedValues.put("ivaratorCacheScanTimeout", 3600L);
+        defaultValues.put("excludeUnfieldedTypes", Collections.emptyList());
+        updatedValues.put("excludeUnfieldedTypes", Lists.newArrayList(new NumberType()));
         defaultValues.put("maxFieldIndexRangeSplit", 11);
         updatedValues.put("maxFieldIndexRangeSplit", 20);
         defaultValues.put("ivaratorMaxOpenFiles", 100);
@@ -536,7 +544,7 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("datatypeFilter", Sets.newHashSet());
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
-        defaultValues.put("datatypeFilterAsString", "");
+        defaultValues.put("datatypeFilterAsString", "*");
         updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");
         alreadySet.add("datatypeFilterAsString");
 
@@ -615,6 +623,16 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
         updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
+
+        defaultValues.put("useDocumentScheduler", false);
+        updatedValues.put("useDocumentScheduler", true);
+
+        DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
+        defaultValues.put("documentScannerConfig", null);
+        updatedValues.put("documentScannerConfig", documentScannerConfig);
+
+        defaultValues.put("maxLinesToPrint", -1);
+        updatedValues.put("maxLinesToPrint", 150);
     }
 
     private Query createQuery(String query) {

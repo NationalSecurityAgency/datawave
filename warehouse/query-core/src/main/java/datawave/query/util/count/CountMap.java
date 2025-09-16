@@ -14,11 +14,10 @@ import com.esotericsoftware.kryo.io.Output;
  * Wrapper around a HashMap that supports Kryo serialization
  */
 public class CountMap implements KryoSerializable {
-
     private final Map<String,Long> counts;
 
     public CountMap() {
-        counts = new HashMap<>();
+        this.counts = new HashMap<>();
     }
 
     public Long put(String key, Long value) {

@@ -7,7 +7,8 @@ import java.util.Map;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue.EdgeValueBuilder;
@@ -28,7 +29,7 @@ import datawave.util.time.DateHelper;
  */
 public class EdgeDataBundle {
 
-    private static final Logger log = Logger.getLogger(EdgeDataBundle.class);
+    private static final Logger log = LoggerFactory.getLogger(EdgeDataBundle.class);
 
     // Input/Setup variables
     // final so you're not tempted to change them
@@ -91,7 +92,7 @@ public class EdgeDataBundle {
         if (event.getAltIds() != null && !event.getAltIds().isEmpty()) {
             this.uuid = event.getAltIds().iterator().next();
         }
-        // even though event, etc references are saved above, passing in the event
+        // even though event, etc. references are saved above, passing in the event
         // prevents future bug
         this.initFieldMasking(helper, event);
         this.initMarkings(getSource().getMarkings(), getSink().getMarkings());
@@ -533,7 +534,7 @@ public class EdgeDataBundle {
 
             return (new Value(hll.getBytes()));
         } catch (IOException e) {
-            log.warn("Failed to add " + realmedIdentifier + " to HyperLogLog", e);
+            log.warn("Failed to add {} to HyperLogLog", realmedIdentifier, e);
 
             return (null);
         }

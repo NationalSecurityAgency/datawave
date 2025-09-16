@@ -118,9 +118,9 @@ public class WaitWindowObserver {
     }
 
     /*
-     * Set seekRange, remainingTimeMs, endOfWaitWindow and start the Timer
+     * Set seekRange
      */
-    public void start(String queryId, Range seekRange, long yieldThresholdMs) {
+    public void setSeekRange(Range seekRange) {
         Key startKey = seekRange.getStartKey();
         if (startKey == null) {
             startKey = convertInfiniteStartKey(startKey);
@@ -128,6 +128,12 @@ public class WaitWindowObserver {
         } else {
             this.seekRange = seekRange;
         }
+    }
+
+    /*
+     * Set remainingTimeMs, endOfWaitWindow and start the Timer
+     */
+    public void start(String queryId, long yieldThresholdMs) {
         this.queryId = queryId;
         if (yieldThresholdMs > 0 && yieldThresholdMs < Long.MAX_VALUE) {
             this.remainingTimeMs.set(yieldThresholdMs);
@@ -436,6 +442,17 @@ public class WaitWindowObserver {
 
     static public boolean shouldYieldToBeginning(Key key) {
         return !hasEndMarker(key);
+    }
+
+    static public Key removeMarkers(Key key) {
+        Key fixedKey = key;
+        if (hasMarker(key)) {
+            Text row = removeMarkers(key.getRow());
+            Text colFam = removeMarkers(key.getColumnFamily());
+            Text colQual = removeMarkers(key.getColumnQualifier());
+            fixedKey = new Key(row, colFam, colQual, key.getTimestamp());
+        }
+        return fixedKey;
     }
 
     static public Text removeMarkers(Text text) {

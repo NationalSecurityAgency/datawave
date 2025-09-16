@@ -4,6 +4,10 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 import datawave.data.normalizer.Normalizer;
 import datawave.webservice.query.data.ObjectSizeOf;
 
@@ -160,7 +164,7 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
      * One string (normalizedValue) one unknown object (delegate) one normalizer (singleton reference) ref to object (4) normalizers will not be counted because
      * they are singletons
      *
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
@@ -169,7 +173,25 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
             List<String> values = ((OneToManyNormalizerType<?>) this).getNormalizedValues();
             size += values.stream().map(String::length).map(length -> 2 * length + ObjectSizeOf.Sizer.REFERENCE).reduce(Integer::sum).orElse(0);
         }
-        size += STATIC_SIZE + (2 * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
+        size += STATIC_SIZE + (2L * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
         return size;
+    }
+
+    @Override
+    public void write(Kryo kryo, Output output) {
+        output.writeString(getDelegateAsString());
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
+        String delegateString = input.readString();
+        try {
+            setDelegateFromString(delegateString);
+        } catch (Exception e) {
+            // if there was some problem with setting the delegate for the specific Type, then
+            // set the normalized value to the input string. This effectively mimics falling back
+            // to a NoOpType
+            setNormalizedValue(delegateString);
+        }
     }
 }
