@@ -52,10 +52,11 @@ public class TabletLocationHashPartitionerTest {
     public void testLocationHashPartitioner() throws Exception {
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
+
         TabletLocationHashPartitioner partitionerTwo = new TabletLocationHashPartitioner();
         partitionerTwo.setConf(conf);
-
-        System.out.println();
 
         BalancedShardPartitionerTest.assertExpectedCollisions(partitionerTwo, 0, MAX_EXPECTED_COLLISIONS);
         BalancedShardPartitionerTest.assertExpectedCollisions(partitionerTwo, 1, MAX_EXPECTED_COLLISIONS);
