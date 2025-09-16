@@ -122,12 +122,13 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
             map.put(field, set);
         }
 
-        if (exceededValueThreshold.get()) {
-            map.setKeyThresholdExceeded();
-        }
-
-        if (exceededTimeoutThreshold.get()) {
+        if (exceededTimeoutThreshold.get() || exceededValueThreshold.get()) {
             map.setTimeoutExceeded(true);
+            // legacy logic would set this in the event of a timeout
+            for (String field : map.keySet()) {
+                map.put(field, "");
+                map.get(field).setThresholdExceeded();
+            }
         }
 
         return map;
