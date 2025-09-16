@@ -24,6 +24,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.query.data.parsers.DayIndexKey;
 
 /**
@@ -31,6 +32,10 @@ import datawave.query.data.parsers.DayIndexKey;
  * <p>
  * The executable fields and values are used to seek within a tablet to gather all relevant shard offset information. The client simply configures this iterator
  * and makes a single next call.
+ * <p>
+ * See {@link DayIndexKey} for details on the underlying key structure.
+ * <p>
+ * See {@link BitSetCombiner} for the table combiner.
  */
 public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> {
 
