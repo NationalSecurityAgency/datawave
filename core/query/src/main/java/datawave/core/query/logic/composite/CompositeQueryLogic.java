@@ -37,13 +37,11 @@ import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.filtered.FilteredQueryLogic;
-import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.exception.TimeoutQueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.QueryValidationResponse;
@@ -170,13 +168,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 }
                 success = true;
             } catch (Exception e) {
-                // anything out of the iterator will come as a RuntimeException if it was a TimeoutQueryException under the covers still suppress it if
-                // configured
-                if (!(e instanceof RemoteTimeoutQueryRuntimeException && isTimeoutSuppressed(logicName))) {
-                    throw new CompositeLogicException("Failed to retrieve results", getLogicName(), e);
-                }
-                // a suppressed timeout exception is the same as success
-                success = true;
+                throw new CompositeLogicException("Failed to retrieve results", getLogicName(), e);
             } finally {
                 if (success) {
                     completionLatch.countDown();
@@ -310,12 +302,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                         }
                     }
                 } catch (Exception e) {
-                    if (!(e instanceof TimeoutQueryException && isTimeoutSuppressed(logicName))) {
-                        exceptions.put(logicName, e);
-                        log.error("Failed to initialize {}", logic.getClass().getName(), e);
-                        logicQueryStringBuilder.append(" && ").append("( failure = '").append(e.getMessage()).append("' )");
-                        failedQueryLogics.put(logicName, logic);
-                    }
+                    exceptions.put(logicName, e);
+                    log.error("Failed to initialize {}", logic.getClass().getName(), e);
+                    logicQueryStringBuilder.append(" && ").append("( failure = '").append(e.getMessage()).append("' )");
+                    failedQueryLogics.put(logicName, logic);
                 } finally {
                     queryLogics.remove(next.getKey());
                 }
@@ -406,28 +396,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
         CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) configuration;
 
-        List<String> suppressedLogics = new ArrayList<>();
         for (QueryLogicHolder holder : logicState.values()) {
             if (!holder.wasStarted()) {
                 GenericQueryConfiguration config = compositeConfig != null ? compositeConfig.getConfig(holder.getLogicName()) : null;
-                try {
-                    holder.getLogic().setupQuery(config);
-                } catch (TimeoutQueryException e) {
-                    if (isTimeoutSuppressed(holder.logicName)) {
-                        suppressedLogics.add(holder.logicName);
-                    }
-                }
-                if (!suppressedLogics.contains(holder.logicName)) {
-                    TransformIterator transformIterator = holder.getLogic().getTransformIterator(holder.getSettings());
-                    holder.setTransformIterator(transformIterator);
-                    count++;
-                }
+                holder.getLogic().setupQuery(config);
+                TransformIterator transformIterator = holder.getLogic().getTransformIterator(holder.getSettings());
+                holder.setTransformIterator(transformIterator);
+                count++;
             }
-        }
-
-        // remove any suppressed logics that timed out
-        for (String suppressLogic : suppressedLogics) {
-            logicState.remove(suppressLogic);
         }
 
         startLatch = new CountDownLatch(count);
@@ -636,7 +612,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     @Override
     public boolean isCheckpointable() {
-        boolean checkpointable = !logicState.isEmpty();
+        boolean checkpointable = true;
         for (QueryLogicHolder logicHolder : logicState.values()) {
             QueryLogic<?> logic = logicHolder.getLogic();
             if (!(logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable())) {
@@ -809,10 +785,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         return false;
     }
 
-    public boolean isTimeoutSuppressed(String logicName) {
-        return getConfig().getLogicsToSuppressTimeout().contains(logicName);
-    }
-
     public boolean isAllMustInitialize() {
         return getConfig().isAllMustInitialize();
     }
@@ -859,9 +831,5 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     public TimeUnit getResultsPollTimeoutTimeUnit() {
         return getConfig().getResultsPollTimeoutTimeUnit();
-    }
-
-    public void setLogicsToSuppressTimeouts(List<String> logicsToSuppressTimeouts) {
-        getConfig().setLogicsToSuppressTimeout(logicsToSuppressTimeouts);
     }
 }

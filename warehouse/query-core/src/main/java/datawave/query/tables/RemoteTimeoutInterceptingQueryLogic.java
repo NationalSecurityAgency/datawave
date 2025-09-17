@@ -6,8 +6,11 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.DelegatingQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
@@ -19,7 +22,7 @@ import datawave.microservice.query.Query;
  * timeout will be short-circuited.
  */
 public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic implements QueryLogic<Object> {
-    public static final String REMOTE_TIMEOUT_PLAN = "( plan = 'RemoteTimeoutQueryException' )";
+    public static final String REMOTE_TIMEOUT_PLAN = "( error = 'RemoteTimeoutQueryException' )";
 
     private boolean suppressTimeout;
     private transient boolean timedOut;
@@ -60,6 +63,13 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
         }
 
         // op didn't complete
+        if (getDelegate() instanceof BaseQueryLogic) {
+            GenericQueryConfiguration config = ((BaseQueryLogic<Object>) getDelegate()).getConfig();
+            config.setQuery(settings);
+            return config;
+        }
+
+        // can't return isn't available
         return null;
     }
 
@@ -77,6 +87,30 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
             }
             timedOut = true;
         }
+    }
+
+    @Override
+    public TransformIterator getTransformIterator(Query settings) {
+        TransformIterator base = super.getTransformIterator(settings);
+
+        return new DatawaveTransformIterator(base.getIterator(), base.getTransformer()) {
+            @Override
+            public boolean hasNext() {
+                if (timedOut) {
+                    return false;
+                }
+
+                try {
+                    return super.hasNext();
+                } catch (RemoteTimeoutQueryRuntimeException e) {
+                    if (!suppressTimeout) {
+                        throw e;
+                    }
+                    timedOut = true;
+                    return false;
+                }
+            }
+        };
     }
 
     @Override

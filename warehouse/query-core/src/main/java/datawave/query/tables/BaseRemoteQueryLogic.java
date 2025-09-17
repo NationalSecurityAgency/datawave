@@ -187,6 +187,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
 
     /**
      * Provide an unchecked alternative that keeps the distinction of a RemoteTimeoutQueryException by wrapping it as a RemoteTimeoutQueryRuntimeException.
+     *
      * @return
      */
     protected BaseQueryResponse uncheckedRemoteNext() {

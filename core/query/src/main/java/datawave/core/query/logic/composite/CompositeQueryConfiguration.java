@@ -1,9 +1,7 @@
 package datawave.core.query.logic.composite;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -26,8 +24,6 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
 
     private TimeUnit resultsPollTimeoutTimeUnit = TimeUnit.MILLISECONDS;
 
-    private List<String> logicsToSuppressTimeout = new ArrayList<>();
-
     public CompositeQueryConfiguration() {
         super();
         setQuery(new QueryImpl());
@@ -47,7 +43,6 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
         allMustInitialize = other.allMustInitialize;
         shortCircuitExecution = other.shortCircuitExecution;
         resultsPollTimeout = other.resultsPollTimeout;
-        logicsToSuppressTimeout = other.logicsToSuppressTimeout;
     }
 
     /**
@@ -141,13 +136,5 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
 
     public void setResultsPollTimeoutTimeUnit(TimeUnit resultsPollTimeoutTimeUnit) {
         this.resultsPollTimeoutTimeUnit = resultsPollTimeoutTimeUnit;
-    }
-
-    public void setLogicsToSuppressTimeout(List<String> logicsToSuppressTimeout) {
-        this.logicsToSuppressTimeout = logicsToSuppressTimeout;
-    }
-
-    public List<String> getLogicsToSuppressTimeout() {
-        return logicsToSuppressTimeout;
     }
 }
