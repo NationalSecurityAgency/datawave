@@ -30,7 +30,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.user.UserOperationsBean;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;

@@ -49,7 +49,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.user.UserOperationsBean;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -84,7 +84,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     private ResponseObjectFactory responseObjectFactory;
 
     @Inject
-    private UserOperationsBean userOperationsBean;
+    private UserOperations userOperations;
 
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
@@ -108,7 +108,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @PostConstruct
     public void init() {
         this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, queryExecutor, this.ctx, responseObjectFactory, this.queryLogicFactory,
-                        this.userOperationsBean);
+                        this.userOperations);
     }
 
     public AnnotationDataAccess<Annotation,Segment> initializeAnnotationService() throws QueryException {

@@ -142,6 +142,7 @@ public class PrintUtility {
             lastError = e.getMessage();
         }
 
+        /*
         try {
             final ExtendedHyperLogLogPlus ehllp = new ExtendedHyperLogLogPlus(value);
             return (String.valueOf(ehllp.getCardinality()));
@@ -149,6 +150,8 @@ public class PrintUtility {
             logger.trace("Deserialization as ExtendedHyperLogLogPlus failed, trying other methods", e);
             lastError = e.getMessage();
         }
+        */
+
 
         try {
             ByteArrayInputStream byteStream = new ByteArrayInputStream(value.get());
