@@ -43,6 +43,8 @@ import datawave.webservice.query.exception.QueryException;
 
 /**
  * An asynchronous index lookup which looks up concrete values for the specified bounded range.
+ * <p>
+ * A fielded bounded range is already executable so this lookup is allowed to hit timeout or value thresholds.
  */
 public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexLookup.class);
