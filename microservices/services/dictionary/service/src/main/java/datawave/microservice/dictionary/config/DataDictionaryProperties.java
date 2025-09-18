@@ -26,6 +26,7 @@ public class DataDictionaryProperties {
     @NotBlank
     private String metadataTableName;
     private Banner banner = new Banner();
+    private HelpMenu helpMenu = new HelpMenu();
     @Positive
     private int numThreads;
     private Map<String,String> normalizerMap;
@@ -40,4 +41,17 @@ public class DataDictionaryProperties {
         private String styleTop;
         private String styleBottom;
     }
+
+    @Getter
+    @Setter
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class HelpMenu {
+        private String menuOne;
+        private String menuOneLink;
+        private String menuTwo;
+        private String menuTwoLink;
+        private String menuThree;
+        private String menuThreeLink;
+    }
+
 }

@@ -8,6 +8,16 @@ export interface Banner {
   styleBottom?: string;
 }
 
+export interface Menu {
+  enabled: boolean;
+  menuOne?: string;
+  menuTwo?: string;
+  menuThree?: string;
+  menuOneLink?: string;
+  menuTwoLink?: string;
+  menuThreeLink?: string;
+}
+
 export interface System {
   systemName: string;
 }

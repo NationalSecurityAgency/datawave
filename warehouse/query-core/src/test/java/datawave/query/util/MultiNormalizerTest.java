@@ -184,7 +184,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testRangeSizeOneToTwo() throws Exception {
+    public void testRangeSizeOneToTwo_firstDay() throws Exception {
         // range with text normalizer expands into value "10", while technically correct this is wrong for numeric data
         withQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         withDate("20250707");
@@ -192,15 +192,23 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         planAndExecuteQuery();
         assertResultCount(3);
         assertPlannedQuery("(SIZE == '1' || SIZE == '10' || SIZE == '2')");
+    }
 
+    @Test
+    public void testRangeSizeOneToTwo_lastDay() throws Exception {
         // range with numeric normalizer does not expand into "10". This is more correct.
+        withQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         withDate("20250708");
         withRequiredAnyOf("SIZE:1", "SIZE:2");
         planAndExecuteQuery();
         assertResultCount(2);
         assertPlannedQuery("(SIZE == '+aE1' || SIZE == '+aE2')");
+    }
 
+    @Test
+    public void testRangeSizeOneToTwo_bothDays() throws Exception {
         // range with both normalizers applied will expand into all values above, including the incorrect value "10"
+        withQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         withDate("20250707", "20250708");
         withRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
         planAndExecuteQuery();

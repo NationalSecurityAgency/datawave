@@ -67,14 +67,19 @@ public class ShardIdFactory {
      * @return the shard id
      */
     public String getShardId(RawRecordContainer record) {
-        String shardId = getBaseShardId(record);
-        for (ShardIdGenerator generator : generators) {
-            if (generator.isApplicable(record)) {
-                int numShards = getNumShards(record.getDate());
-                shardId = generator.getShardId(record, shardId, numShards);
-                break;
+        String shardId = record.getShardId();
+
+        if (shardId == null) {
+            shardId = getBaseShardId(record);
+            for (ShardIdGenerator generator : generators) {
+                if (generator.isApplicable(record)) {
+                    int numShards = getNumShards(record.getDate());
+                    shardId = generator.getShardId(record, shardId, numShards);
+                    break;
+                }
             }
         }
+
         return shardId;
     }
 
