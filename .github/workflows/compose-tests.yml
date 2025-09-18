@@ -13,8 +13,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  configure-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - id: set_output_step # at least one step is required in a job
+        run: |
+          echo "Determining runner to be ${{vars.RUNNER_TYPE}}"
+          echo "runner=${{vars.RUNNER_TYPE}}" >> $GITHUB_OUTPUT
+          if [[ "${{ vars.RUNNER_TYPE }}" -eq "self-hosted" ]]; then
+            echo "We have hit the true case"
+            echo "cache_settings=-Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
+          else
+            echo "We have reached the false case"
+            echo cache_settings="" >> $GITHUB_OUTPUT
+          fi
+          echo $GITHUB_OUTPUT
+    outputs:
+      runner:  ${{ steps.set_output_step.outputs.runner }}
+      cache_settings:  ${{ steps.set_output_step.outputs.cache_settings }}
   compose-build-and-test:
-    runs-on: self-hosted
+    needs: configure-runner
+    runs-on: ${{ needs.configure-runner.outputs.runner }}
     env:
       JAVA_VERSION: '11'
       JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -23,6 +42,7 @@ jobs:
       GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
       GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
       M2_HOME: /opt/apache-maven-3.9.11/
+      DW_BUILD_CACHE_OPTIONS: ${{ needs.configure-runner.outputs.cache_settings }}
     steps:
       - name: Set owner of working dir recursively
         #Needed because compose can leave around files owned by root.
@@ -62,9 +82,9 @@ jobs:
       - name: Docker Compose Build
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
+          export PATH=/opt/apache-maven-3.9.11/bin:$PATH
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
-              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345 \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
               -Djkube.container-image.tags.1=latest \
               clean install
       - name: Docker Compose Clear Space
@@ -74,7 +94,7 @@ jobs:
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
-              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345 clean
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
       - name: Docker Compose Accumulo Start
         run: |
           cd docker
