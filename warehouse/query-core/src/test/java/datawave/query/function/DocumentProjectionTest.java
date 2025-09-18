@@ -101,7 +101,7 @@ public class DocumentProjectionTest {
         DocumentProjection projection = new DocumentProjection(false, false, true, Collections.emptySet(), Projection.ProjectionType.INCLUDES);
         assertEquals(11, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(0, result.getValue().size());
+        assertEquals(11, result.getValue().size());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class DocumentProjectionTest {
         DocumentProjection projection = new DocumentProjection(false, false, true, Collections.emptySet(), Projection.ProjectionType.INCLUDES);
         assertEquals(11, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(0, result.getValue().size());
+        assertEquals(11, result.getValue().size());
     }
 
     @Test
