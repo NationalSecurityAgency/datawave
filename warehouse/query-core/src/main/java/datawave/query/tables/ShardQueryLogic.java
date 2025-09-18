@@ -842,7 +842,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 this.setReducedResponse(false);
                 config.setReducedResponse(false);
                 // clear the content field names to prevent content field transformations (see DocumentTransformer)
-                this.setContentFieldNames(Collections.EMPTY_LIST);
+                this.setContentFieldNames(Collections.emptyList());
                 // clear the model name to avoid field name translations
                 this.setModelName(null);
                 config.setModelName(null);
@@ -923,7 +923,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();
         if (StringUtils.isNotBlank(transformContentStr)) {
             if (!Boolean.valueOf(transformContentStr)) {
-                setContentFieldNames(Collections.EMPTY_LIST);
+                setContentFieldNames(Collections.emptyList());
             }
         }
 
@@ -2383,6 +2383,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setIvaratorCacheScanTimeoutMinutes(long hdfsCacheScanTimeoutMinutes) {
         getConfig().setIvaratorCacheScanTimeout(hdfsCacheScanTimeoutMinutes * 1000 * 60);
+    }
+
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return getConfig().getExcludeUnfieldedTypes();
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        getConfig().setExcludeUnfieldedTypes(excludeUnfieldedTypes);
     }
 
     public String getHdfsSiteConfigURLs() {

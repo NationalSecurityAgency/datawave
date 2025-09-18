@@ -9,6 +9,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -744,6 +745,48 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms("_ANYFIELD_ >= 'anywhere'", "_ANYFIELD_ >= 'anywhere'");
         expandTerms("_ANYFIELD_ >= 'oHIo'", "_ANYFIELD_ >= 'ohio' || _ANYFIELD_ >= 'oHIo'");
         expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '+cE1.23' || _ANYFIELD_ >= '123'");
+    }
+
+    /**
+     * Test type exclusion for each node type
+     *
+     * @throws ParseException
+     *             if the query fails to parse
+     */
+    @Test
+    public void testAnyFieldTermsTypeExclusion() throws ParseException {
+
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
+        helper.setDataTypes(dataTypes);
+
+        List<Type<?>> excludeUnfieldedTypes = new ArrayList<>();
+        excludeUnfieldedTypes.add(new NumberType());
+        config.setExcludeUnfieldedTypes(excludeUnfieldedTypes);
+
+        // EQ
+        expandTerms("_ANYFIELD_ == '123'", "_ANYFIELD_ == '123'");
+
+        // NE
+        expandTerms("_ANYFIELD_ != '123'", "_ANYFIELD_ != '123'");
+
+        // ER
+        expandTerms("_ANYFIELD_ =~ '123'", "_ANYFIELD_ =~ '123'");
+
+        // NR
+        expandTerms("_ANYFIELD_ !~ '123'", "_ANYFIELD_ !~ '123'");
+
+        // LT
+        expandTerms("_ANYFIELD_ < '123'", "_ANYFIELD_ < '123'");
+
+        // LE
+        expandTerms("_ANYFIELD_ <= '123'", "_ANYFIELD_ <= '123'");
+
+        // GT
+        expandTerms("_ANYFIELD_ > '123'", "_ANYFIELD_ > '123'");
+
+        // GE
+        expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '123'");
     }
 
     private void expandTerms(String original, String expected) throws ParseException {

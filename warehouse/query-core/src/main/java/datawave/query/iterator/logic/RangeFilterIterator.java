@@ -67,7 +67,7 @@ public class RangeFilterIterator implements NestedIterator<Key>, Comparable<Inde
 
     @Override
     public void seek(Range range, Collection<ByteSequence> collection, boolean b) throws IOException {
-        source.seek(range, collection, b);
+        // no-op
     }
 
     @Override

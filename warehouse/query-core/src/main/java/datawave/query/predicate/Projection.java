@@ -27,7 +27,6 @@ public final class Projection implements Predicate<String> {
             throw new RuntimeException("This Projection instance was already initialized");
         }
 
-        // do not make a copy of the incoming include fields. It could be a UniversalSet
         this.projections = includes;
         this.initialized = true;
         type = ProjectionType.INCLUDES;
@@ -67,7 +66,6 @@ public final class Projection implements Predicate<String> {
         this.initialized = true;
         this.type = type;
         if (type == ProjectionType.INCLUDES) {
-            // do not make a copy of the incoming include fields. It could be a UniversalSet
             this.projections = items;
         } else {
             this.projections = Sets.newHashSet(items);
@@ -105,9 +103,9 @@ public final class Projection implements Predicate<String> {
         String fieldName = JexlASTHelper.deconstructIdentifier(inputFieldName, false);
 
         if (type == ProjectionType.EXCLUDES) {
-            return !projections.contains(fieldName);
+            return projections == null || projections.isEmpty() || !projections.contains(fieldName);
         } else {
-            return projections.contains(fieldName);
+            return projections == null || projections.isEmpty() || projections.contains(fieldName);
         }
     }
 

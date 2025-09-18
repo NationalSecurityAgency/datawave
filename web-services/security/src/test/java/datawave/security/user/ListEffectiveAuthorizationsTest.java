@@ -253,7 +253,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         SubjectIssuerDNPair filteredUserDN = SubjectIssuerDNPair.of("filteredUserDN", "filteredIssuerDN");
 
         DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
-        DatawaveUser filteredUser = new DatawaveUser(filteredUserDN, DatawaveUser.UserType.USER, Collections.EMPTY_LIST, null, null,
+        DatawaveUser filteredUser = new DatawaveUser(filteredUserDN, DatawaveUser.UserType.USER, Collections.emptyList(), null, null,
                         System.currentTimeMillis());
         DatawavePrincipal proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user));
         DatawavePrincipal remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(filteredUser));

@@ -96,7 +96,7 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
         setting.addOption(FieldExpansionIterator.END_DATE, DateHelper.format(config.getEndDate()));
 
         if (!config.getDatatypeFilter().isEmpty()) {
-            setting.addOption(FieldExpansionIterator.DATATYPES, Joiner.on(',').join(config.getDatatypeFilter()));
+            setting.addOption(FieldExpansionIterator.DATATYPES, config.getDatatypeFilterAsString());
         }
 
         if (!fields.isEmpty()) {

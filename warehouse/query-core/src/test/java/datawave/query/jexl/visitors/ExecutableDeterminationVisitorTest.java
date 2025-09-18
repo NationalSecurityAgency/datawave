@@ -38,6 +38,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         config = createMock(ShardQueryConfiguration.class);
         helper = createMock(MetadataHelper.class);
 
+        // TODO: this is wrong. The datatype filter is never null.
         EasyMock.expect(config.getDatatypeFilter()).andReturn(null).anyTimes();
     }
 
