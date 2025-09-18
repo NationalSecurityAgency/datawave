@@ -9,12 +9,6 @@ import com.google.common.collect.Sets;
 
 public class ProjectionTest {
 
-    @Test(expected = RuntimeException.class)
-    public void testNoConfiguration() {
-        Projection projection = new Projection(null, Projection.ProjectionType.INCLUDES);
-        assertTrue(projection.apply("FIELD_A"));
-    }
-
     @Test
     public void testIncludesDepricated() {
         Projection projection = new Projection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);

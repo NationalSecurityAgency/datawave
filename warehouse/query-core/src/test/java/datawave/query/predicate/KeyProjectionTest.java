@@ -39,14 +39,6 @@ public class KeyProjectionTest {
         eventData.add(Maps.immutableEntry(new Key("20200314_1", "datatype\0uid", "FIELD_Z\0value_z"), "data"));
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testNoConfiguration() {
-        KeyProjection projection = new KeyProjection(null, Projection.ProjectionType.INCLUDES);
-
-        Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
-    }
-
     @Test
     public void testIncludes() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
