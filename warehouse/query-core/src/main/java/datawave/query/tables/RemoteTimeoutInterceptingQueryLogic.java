@@ -6,10 +6,10 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.DelegatingQueryLogic;
 import datawave.core.query.logic.QueryLogic;
@@ -91,9 +91,10 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        TransformIterator base = super.getTransformIterator(settings);
+        final TransformIterator delegate = super.getTransformIterator(settings);
 
-        return new DatawaveTransformIterator(base.getIterator(), base.getTransformer()) {
+        // wrap the existing TransformIterator and catch timeouts
+        return new TransformIterator() {
             @Override
             public boolean hasNext() {
                 if (timedOut) {
@@ -101,7 +102,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
                 }
 
                 try {
-                    return super.hasNext();
+                    return delegate.hasNext();
                 } catch (RemoteTimeoutQueryRuntimeException e) {
                     if (!suppressTimeout) {
                         throw e;
@@ -109,6 +110,31 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
                     timedOut = true;
                     return false;
                 }
+            }
+
+            @Override
+            public Object next() {
+                return delegate.next();
+            }
+
+            @Override
+            public void remove() {
+                delegate.remove();
+            }
+
+            @Override
+            public Iterator getIterator() {
+                return delegate.getIterator();
+            }
+
+            @Override
+            public Transformer getTransformer() {
+                return delegate.getTransformer();
+            }
+
+            @Override
+            public void setTransformer(Transformer transformer) {
+                delegate.setTransformer(transformer);
             }
         };
     }
