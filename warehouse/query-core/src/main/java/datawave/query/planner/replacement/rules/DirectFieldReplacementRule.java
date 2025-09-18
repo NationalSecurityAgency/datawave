@@ -1,15 +1,15 @@
 package datawave.query.planner.replacement.rules;
 
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
+
+import datawave.query.jexl.JexlASTHelper;
 
 public class DirectFieldReplacementRule implements FieldReplacementRule {
     private String field = null;
     private String replacement = null;
 
-    public DirectFieldReplacementRule() {
-    }
+    public DirectFieldReplacementRule() {}
 
     public DirectFieldReplacementRule(String field, String replacement) {
         this.field = field;

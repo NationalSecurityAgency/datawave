@@ -7,7 +7,9 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import java.util.HashMap;
@@ -43,17 +45,19 @@ public class RangeFieldReplacementRule implements FieldReplacementRule {
         JexlNode copy = RebuildingVisitor.copy(node);
         JexlNode evalNode = QueryPropertyMarker.create(copy, EVALUATION_ONLY);
 
-
         // rename the field for the range nodes
         replaceField(range.getLowerNode(), fieldMap.get(range.getFieldName()));
         replaceField(range.getUpperNode(), fieldMap.get(range.getFieldName()));
 
-        // Create a top level AND for both the original node and the eval node
+        // Create a Reference Expression for the original node and top level AND for both the ref and the eval node
+        ASTReferenceExpression ref = JexlNodes.makeRefExp();
         ASTAndNode topLevel = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-        topLevel.jjtAddChild(evalNode, 0);
-        topLevel.jjtAddChild(node, 1);
-        node.jjtSetParent(topLevel);
+        node.jjtSetParent(ref);
+        ref.jjtSetParent(topLevel);
         evalNode.jjtSetParent(topLevel);
+        ref.jjtAddChild(node, 0);
+        topLevel.jjtAddChild(evalNode, 0);
+        topLevel.jjtAddChild(ref, 1);
 
         return topLevel;
     }

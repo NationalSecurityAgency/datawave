@@ -12,6 +12,7 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
@@ -41,8 +42,15 @@ public class FieldReplacementVisitorTest {
         assertLineage(originalScript);
 
         if (checkRange) {
-            RangeTestVisitor visitor = new RangeTestVisitor();
-            resultScript.jjtAccept(visitor, null);
+            RangeVerificationVisitor resultVisitor = new RangeVerificationVisitor();
+            resultScript.jjtAccept(resultVisitor, null);
+
+            ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+            RangeVerificationVisitor expectedVistor = new RangeVerificationVisitor();
+            expectedScript.jjtAccept(expectedVistor, null);
+
+            Assert.assertEquals(expectedVistor.getRangesFound(), resultVisitor.getRangesFound());
+            Assert.assertTrue(resultVisitor.getRangesFound() > 0);
         }
 
     }
@@ -160,7 +168,7 @@ public class FieldReplacementVisitorTest {
         testReplacement(query, expected, List.of(rfrRule), false);
     }
 
-    public class RangeTestVisitor extends BaseVisitor {
+    public class RangeVerificationVisitor extends BaseVisitor {
         private int rangesFound = 0;
 
         @Override
