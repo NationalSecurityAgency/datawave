@@ -166,9 +166,9 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         String field = JexlASTHelper.getIdentifier(node);
         if (field.equals(Constants.ANY_FIELD)) {
             return buildIndexLookup(node, true, negated, () -> createUnfieldedRegexIndexLookup(node));
-        } else {
-            return super.visit(node, data);
         }
+        // in the future a single index expansion visitor could handle all cases
+        return copy(node);
     }
 
     @Override
@@ -178,9 +178,9 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             String field = JexlASTHelper.getIdentifier(node);
             if (field.equals(Constants.ANY_FIELD)) {
                 return buildIndexLookup(node, true, negated, () -> createUnfieldedRegexIndexLookup(node));
-            } else {
-                return super.visit(node, data);
             }
+            // in the future a single index expansion visitor could handle all cases
+            return copy(node);
         } finally {
             toggleNegation();
         }

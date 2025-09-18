@@ -1,8 +1,6 @@
 package datawave.query.jexl.lookups;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -31,7 +29,6 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
     private static final Logger log = LoggerFactory.getLogger(FieldedRegexIndexLookup.class);
 
     private final String field;
-    private final Set<String> values = new HashSet<>();
 
     public FieldedRegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, ExecutorService execService, String field, String pattern,
                     Range range, boolean reverse) {
@@ -69,6 +66,8 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
                         if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                             exceededTimeoutThreshold.set(true);
+                            indexLookupMap.setTimeoutExceeded(true);
+                            indexLookupMap.get(field).setThresholdExceeded();
                             break;
                         }
 
@@ -76,15 +75,14 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
                         if (reverse) {
                             value = reverse(value);
                         }
-                        values.add(value);
 
-                        if (values.size() > maxValueExpansionThreshold) {
-                            values.remove(value); // remove operation so test results make logical sense
-                            exceededValueThreshold.set(true);
-                            break;
-                        }
+                        indexLookupMap.put(field, value);
                     }
 
+                } catch (ExceededThresholdException e) {
+                    log.info("ExceededThresholdException", e);
+                    exceededValueThreshold.set(true);
+                    indexLookupMap.get(field).setThresholdExceeded();
                 } catch (Exception e) {
                     exceptionSeen.set(true);
                     log.error(e.getMessage(), e);
@@ -112,25 +110,7 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
     @Override
     public IndexLookupMap lookup() {
-
         await();
-
-        IndexLookupMap map = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
-        if (!values.isEmpty()) {
-            ValueSet set = new ValueSet(Integer.MAX_VALUE);
-            set.addAll(values);
-            map.put(field, set);
-        }
-
-        if (exceededTimeoutThreshold.get() || exceededValueThreshold.get()) {
-            map.setTimeoutExceeded(true);
-            // legacy logic would set this in the event of a timeout
-            for (String field : map.keySet()) {
-                map.put(field, "");
-                map.get(field).setThresholdExceeded();
-            }
-        }
-
-        return map;
+        return indexLookupMap;
     }
 }
