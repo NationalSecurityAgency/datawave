@@ -33,7 +33,6 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
@@ -566,15 +565,28 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     private static long getTimestamp(Document doc) {
-        return getDocKeyAttr(doc).getTimestamp();
+        return getRootDocKeyAttr(doc).getTimestamp();
     }
 
-    private static DocumentKey getDocKeyAttr(Document doc) {
-        return (DocumentKey) (doc.get(Document.DOCKEY_FIELD_NAME));
+    public static Attribute getRootDocKeyAttr(Document doc) {
+        Attribute<?> attr = doc.get(Document.DOCKEY_FIELD_NAME);
+        if (attr instanceof Attributes) {
+            // if the attr is an instanceof Attributes, then we need to find the one that best describes
+            // the root or TLD document which should be the one with the smallest CF (datatype\x00uid)
+            Attribute smallest = null;
+            for (Attribute<?> child : ((Attributes) attr).getAttributes()) {
+                if (smallest == null || child.getMetadata().getColumnFamily().getLength() < smallest.getMetadata().getColumnFamily().getLength()) {
+                    smallest = child;
+                }
+            }
+            return smallest;
+        } else {
+            return attr;
+        }
     }
 
     private static Key getDocKey(Document doc) {
-        return getDocKeyAttr(doc).getDocKey();
+        return getRootDocKeyAttr(doc).getMetadata();
     }
 
 }
