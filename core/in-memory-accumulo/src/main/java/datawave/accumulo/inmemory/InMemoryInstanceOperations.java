@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import org.apache.accumulo.core.classloader.ClassLoaderUtil;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.admin.ActiveCompaction;
@@ -97,9 +96,15 @@ class InMemoryInstanceOperations implements InstanceOperations {
     @Override
     public boolean testClassLoad(String className, String asTypeName) throws AccumuloException, AccumuloSecurityException {
         try {
-            ClassLoaderUtil.loadClass(className, Class.forName(asTypeName));
-        } catch (ClassNotFoundException e) {
-            log.warn("Could not find class named '" + className + "' in testClassLoad.", e);
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl == null) {
+                cl = ClassLoader.getSystemClassLoader();
+                if (cl == null) {
+                    throw new ClassNotFoundException("Class '" + className + "' is not assignable to expected type '" + asTypeName + "'.");
+                }
+            }
+        } catch (ClassNotFoundException | LinkageError | RuntimeException e) {
+            log.warn("Could not load class '" + className + "' as type '" + asTypeName + "' in testClassLoad().", e);
             return false;
         }
         return true;

@@ -532,10 +532,17 @@ public class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public boolean testClassLoad(String tableName, String className, String asTypeName)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+
         try {
-            ClassLoaderUtil.loadClass(className, Class.forName(asTypeName));
-        } catch (ClassNotFoundException e) {
-            log.warn("Could not load class '" + className + "' with type name '" + asTypeName + "' in testClassLoad().", e);
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl == null) {
+                cl = ClassLoader.getSystemClassLoader();
+                if (cl == null) {
+                    throw new ClassNotFoundException("Class '" + className + "' is not assignable to expected type '" + asTypeName + "'.");
+                }
+            }
+        } catch (ClassNotFoundException | LinkageError | RuntimeException e) {
+            log.warn("Could not load class '" + className + "' as type '" + asTypeName + "' in testClassLoad().", e);
             return false;
         }
         return true;
