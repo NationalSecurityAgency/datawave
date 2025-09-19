@@ -150,14 +150,19 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
-
-        for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
-            // deconstruct the identifier
-            final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-            // changed to allow _ANYFIELD_ in functions
-            if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
-                nonExistentFieldNames.add(testFieldName);
+        
+        if (desc != null) {
+            for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
+                // deconstruct the identifier
+                final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
+                // changed to allow _ANYFIELD_ in functions
+                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
+                    nonExistentFieldNames.add(testFieldName);
+                }
             }
+        } else if(log.isTraceEnabled()) {
+            String jexlFunction = JexlStringBuildingVisitor.buildQuery(node);
+            log.trace("Ignoring null argument descriptor for JEXL function: " + jexlFunction);
         }
 
         return nonExistentFieldNames;
@@ -169,29 +174,4 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         node.childrenAccept(this, data);
         return data;
     }
-
-    @Override
-    public Object visit(ASTAndNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTNotNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReferenceExpression node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
 }
