@@ -97,7 +97,8 @@ jobs:
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
             export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
-          fi          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          fi          
+          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
       - name: Docker Compose Accumulo Start
         run: |
