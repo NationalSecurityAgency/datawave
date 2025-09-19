@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import datawave.query.jexl.visitors.FieldMissingFromDateRangeVisitor;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
@@ -77,9 +78,14 @@ public class FieldExistenceRule extends ShardQueryRule {
             ASTJexlScript jexlQuery = (ASTJexlScript) ruleConfig.getParsedQuery();
             Set<String> nonExistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(ruleConfig.getMetadataHelper(), jexlQuery,
                             Collections.emptySet(), getSpecialFields());
+            Set<String> nonIngestedFieldsForDateRange = FieldMissingFromDateRangeVisitor.getNonIngestedFields(ruleConfig.getMetadataHelper(), jexlQuery,
+                    Collections.emptySet(), getSpecialFields(), ruleConfig.getQuerySettings());
             // If any non-existent fields were found, add them to the result.
             if (!nonExistentFields.isEmpty()) {
                 result.addMessage("Fields not found in data dictionary: " + String.join(", ", nonExistentFields));
+            }
+            if (!nonIngestedFieldsForDateRange.isEmpty()) {
+                result.addMessage("Fields not ingested in provided date range: " + String.join(", ", nonIngestedFieldsForDateRange));
             }
         } catch (Exception e) {
             // If an exception occurred, log and preserve it in the result.
