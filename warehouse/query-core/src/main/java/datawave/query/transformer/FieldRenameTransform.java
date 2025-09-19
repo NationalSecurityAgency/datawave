@@ -1,8 +1,6 @@
 package datawave.query.transformer;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -10,13 +8,10 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
 
@@ -60,7 +55,7 @@ public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTrans
                     for (String mappedField : mappedFields) {
                         if (!mappedField.equals(baseField)) {
                             String newField = field.replace(baseField, mappedField);
-                            document.put(newField, document.get(field), this.includeGroupingContext, this.reducedResponse);
+                            document.put(newField, document.get(field), this.includeGroupingContext);
                         }
                     }
                     if (!mappedFields.contains(baseField)) {

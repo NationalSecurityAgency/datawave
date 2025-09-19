@@ -26,6 +26,10 @@
     -->
 
     <Match>
+        <Class name="~datawave\.metadata\.protobuf\.EdgeMetadata.*" />
+    </Match>
+
+    <Match>
         <Class name="~datawave\.edge\.protobuf\.EdgeData.*" />
     </Match>
 
@@ -137,6 +141,12 @@
 
     <Match>
         <Class name="~datawave\.query\..*" />
+        <Method name="clone" />
+        <Bug pattern="CN_IDIOM_NO_SUPER_CALL" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.core\.query\..*" />
         <Method name="clone" />
         <Bug pattern="CN_IDIOM_NO_SUPER_CALL" />
     </Match>

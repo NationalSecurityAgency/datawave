@@ -15,6 +15,7 @@ import datawave.query.attributes.TypeAttribute;
  *            the delegate type
  */
 public class GroupingAttribute<T extends Comparable<T>> extends TypeAttribute<T> {
+    private static final long serialVersionUID = 1685645033880633567L;
 
     public GroupingAttribute(Type<T> type, Key key, boolean toKeep) {
         super(type, key, toKeep);
@@ -57,6 +58,21 @@ public class GroupingAttribute<T extends Comparable<T>> extends TypeAttribute<T>
      */
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(2099, 2129).append(getType().getDelegateAsString()).toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(2099, 2129)
+                    .append(getType().getDelegateAsString())
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
+    }
+
+    @Override
+    public long sizeInBytes() {
+        if (sizeInBytes == Long.MIN_VALUE) {
+            sizeInBytes = super.sizeInBytes();
+        }
+        return sizeInBytes;
     }
 }

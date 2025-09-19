@@ -20,10 +20,10 @@ findAccumuloJar (){
   ls -1 $WAREHOUSE_ACCUMULO_LIB/$1-[0-9]*.jar | sort | tail -1
 }
 findZookeeperJar(){
-  result=$(ls -1 $ZOOKEEPER_HOME/zookeeper-*.jar 2>/dev/null | head -1)
-  [[ -f $result ]] || result=$(ls -1 $ZOOKEEPER_HOME/lib/zookeeper-*.jar | head -1)
+  result=$(ls -1 $ZOOKEEPER_HOME/$1-*.jar 2>/dev/null | head -1)
+  [[ -f $result ]] || result=$(ls -1 $ZOOKEEPER_HOME/lib/$1-*.jar | head -1)
+  echo $result
 }
-
 
 CONF_DIR=../../config
 DATAWAVE_INDEX_STATS_JAR=$(findJar datawave-index-stats)
@@ -75,7 +75,7 @@ SLF4J_JAR=$(findJar slf4j-api)
 LOG4J2_API_JAR=$(findJar log4j-api)
 LOG4J2_CORE_JAR=$(findJar log4j-core)
 LOG4J2_12_API_JAR=$(findJar log4j-1.2-api)
-LOG4J2_SLF4J_JAR=$(findJar log4j-slf4j-impl)
+LOG4J2_SLF4J_JAR=$(findJar log4j-slf4j2-impl)
 JSON_SIMPLE=$(findJar json-simple)
 LUCENE_JAR=$(findJar lucene-core)
 LUCENE_JAR=$LUCENE_JAR:$(findJar lucene-queryparser)
@@ -94,7 +94,8 @@ INFINISPAN_CORE_JAR=$(findJar infinispan-core)
 INFINISPAN_COMMONS_JAR=$(findJar infinispan-commons)
 JBOSS_LOGGING_JAR=$(findJar jboss-logging)
 JGROUPS_JAR=$(findJar jgroups)
-ZOOKEEPER_JAR=$(findZookeeperJar)
+ZOOKEEPER_JAR=$(findZookeeperJar zookeeper)
+ZOOKEEPER_JUTE_JAR=$(findZookeeperJar zookeeper-jute)
 DATAWAVE_QUERY_CORE_JAR=$(findJar datawave-query-core)
 COMMONS_JEXL_JAR=$(findJar commons-jexl3)
 PROTOSTUFF_API_JAR=$(findJar protostuff-api)

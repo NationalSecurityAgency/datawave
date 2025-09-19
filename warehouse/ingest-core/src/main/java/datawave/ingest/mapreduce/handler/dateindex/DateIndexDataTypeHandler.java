@@ -38,7 +38,6 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.aggregator.DateIndexDateAggregator;
 import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -82,8 +81,6 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
 
     public static final String DATEINDEX_TNAME = "date.index.table.name";
     public static final String DATEINDEX_LPRIORITY = "date.index.table.loader.priority";
-
-    private static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     // comma delimited <date type>=<field name> values
     public static final String DATEINDEX_TYPE_TO_FIELDS = ".date.index.type.to.field.map";
@@ -172,7 +169,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
             typeToFieldsSet.addAll(conf.getTrimmedStringCollection(dataType.typeName() + DATEINDEX_TYPE_TO_FIELDS));
             Multimap<String,String> typeToFields = HashMultimap.create();
             for (String typeToField : typeToFieldsSet) {
-                String[] parts = StringUtils.split(typeToField, '=');
+                String[] parts = typeToField.split("=");
                 if (parts.length != 2) {
                     throw new IllegalStateException("Improper date index type to field configuration: " + typeToField);
                 }
@@ -315,7 +312,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         Key key = new Key(row, type, colq, biased, date.getTime());
 
         if (log.isTraceEnabled()) {
-            log.trace("Dateate index key: " + key + " for shardId " + shardId);
+            log.trace("Date index key: " + key + " for shardId " + shardId);
         }
 
         return new KeyValue(key, shardList);
@@ -367,7 +364,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions.flatten(vis);
+        return MarkingFunctions.Factory.createMarkingFunctions().flatten(vis);
     }
 
     public Text getDateIndexTableName() {

@@ -12,15 +12,18 @@ import java.util.UUID;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.MapContext;
@@ -46,6 +49,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.util.TableName;
 
 public class AccumuloSetup extends ExternalResource {
 
@@ -223,6 +227,12 @@ public class AccumuloSetup extends ExternalResource {
             }
         }
 
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_1", new Value());
+            bw.addMutation(m);
+        }
+
         tableHelper.printTables(auths);
 
         return client;
@@ -264,8 +274,8 @@ public class AccumuloSetup extends ExternalResource {
     private RawLocalFileSystem createSequenceFile(Configuration conf, Path path, TestFileLoader loader) throws IOException {
         RawLocalFileSystem rfs = new RawLocalFileSystem();
         rfs.setConf(conf);
-
-        try (SequenceFile.Writer seqWriter = new SequenceFile.Writer(rfs, conf, path, Text.class, RawRecordContainerImpl.class)) {
+        try (Writer seqWriter = SequenceFile.createWriter(conf, Writer.file(path), Writer.keyClass(Text.class),
+                        Writer.valueClass(RawRecordContainerImpl.class))) {
             loader.loadTestData(seqWriter);
             return rfs;
         }

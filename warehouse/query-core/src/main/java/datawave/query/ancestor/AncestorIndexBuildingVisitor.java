@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 
 import datawave.query.Constants;
 import datawave.query.function.Equality;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.tld.TLD;
@@ -50,14 +51,14 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             if (limitLookup && !negation) {
                 final String identifier = JexlASTHelper.getIdentifier(node);
                 if (!disableFiEval && fieldsToAggregate.contains(identifier)) {
-                    final SortedKeyValueIterator<Key,Value> baseIterator = source.deepCopy(env);
+                    final SortedKeyValueIterator<Key,Value> baseIterator = deepCopySource();
                     kvIter = new AncestorChildExpansionIterator(baseIterator, getMembers(), equality);
                     seekIndexOnlyDocument(kvIter, node);
                 } else {
                     kvIter = new IteratorToSortedKeyValueIterator(getNodeEntry(node).iterator());
                 }
             } else {
-                kvIter = source.deepCopy(env);
+                kvIter = deepCopySource();
                 seekIndexOnlyDocument(kvIter, node);
             }
 
@@ -105,7 +106,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
 
         // use the cached tree if available
         if (members == null) {
-            SortedKeyValueIterator<Key,Value> kvIter = source.deepCopy(env);
+            SortedKeyValueIterator<Key,Value> kvIter = deepCopySource();
             members = getMembers(wholeDocRange.getStartKey().getRow().toString(), tld, dataType, kvIter);
 
             // set the members for later use
@@ -132,7 +133,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
 
         // use the cached tree if available
         if (members == null) {
-            SortedKeyValueIterator<Key,Value> kvIter = source.deepCopy(env);
+            SortedKeyValueIterator<Key,Value> kvIter = deepCopySource();
             members = getMembers(wholeDocRange.getStartKey().getRow().toString(), tld, dataType, kvIter);
 
             // set the members for later use
@@ -141,11 +142,18 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
 
         for (String uid : members) {
             // only generate index keys beyond the current uid in the tree
-            Key rangeCheckKey = new Key(rangeLimiter.getStartKey().getRow().toString(), dataType + Constants.NULL_BYTE_STRING + uid);
-            if (!rangeLimiter.beforeStartKey(rangeCheckKey) && !rangeLimiter.afterEndKey(rangeCheckKey)) {
+            // If we are re-creating the iterators with a YIELD_AT_BEGIN in the startKey, then we
+            // need to use a rangeLimiter with that marker removed and that is startKey inclusive
+            Range rangeLimiterNoYield = rangeLimiter;
+            if (WaitWindowObserver.hasBeginMarker(rangeLimiter.getStartKey())) {
+                Key startKey = WaitWindowObserver.removeMarkers(rangeLimiter.getStartKey());
+                rangeLimiterNoYield = new Range(startKey, true, rangeLimiter.getEndKey(), rangeLimiter.isEndKeyInclusive());
+            }
+            Key rangeCheckKey = new Key(rangeLimiterNoYield.getStartKey().getRow().toString(), dataType + Constants.NULL_BYTE_STRING + uid);
+            if (!rangeLimiterNoYield.beforeStartKey(rangeCheckKey) && !rangeLimiterNoYield.afterEndKey(rangeCheckKey)) {
                 Long timestamp = timestampMap.get(uid);
                 if (timestamp == null) {
-                    timestamp = rangeLimiter.getStartKey().getTimestamp();
+                    timestamp = rangeLimiterNoYield.getStartKey().getTimestamp();
                 }
                 keys.add(Maps.immutableEntry(getKey(node, rangeLimiter.getStartKey().getRow(), dataType, uid, timestamp), Constants.NULL_VALUE));
             }
@@ -251,7 +259,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         String uid = getUid(key);
 
         // if the uid is not empty
-        if (!uid.isEmpty()) {
+        if (uid != null && !uid.isEmpty()) {
             uid = TLD.parseRootPointerFromId(uid);
         }
 
@@ -284,7 +292,9 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
 
         // if the start key is not inclusive, and we have a datatype\0UID, then move the start past the children thereof
-        if (!r.isStartKeyInclusive() && !startCf.isEmpty()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!r.isStartKeyInclusive() && !startCf.isEmpty() && !WaitWindowObserver.hasBeginMarker(r.getStartKey())) {
             // we need to bump append 0xff to that byte array because we want to skip the children
             String row = start.getRow().toString().intern();
 

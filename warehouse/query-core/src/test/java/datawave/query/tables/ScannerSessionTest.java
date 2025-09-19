@@ -2,8 +2,6 @@ package datawave.query.tables;
 
 import static java.lang.Thread.sleep;
 
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -45,9 +43,6 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Service;
 
 /**
  * This test spins up a mini accumulo to accurately test the effect of underlying Scanner/Batch scanners against the ScannerSession. InMemoryAccumulo makes some

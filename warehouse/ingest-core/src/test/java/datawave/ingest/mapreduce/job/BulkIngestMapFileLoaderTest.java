@@ -1,5 +1,16 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.CLEANUP_FILE_MARKER;
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.COMPLETE_FILE_MARKER;
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.FAILED_FILE_MARKER;
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.INPUT_FILES_MARKER;
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.LOADING_FILE_MARKER;
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.LOADPLAN_FILE_GLOB;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,14 +22,41 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.data.LoadPlan;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.file.FileOperations;
+import org.apache.accumulo.core.file.FileSKVIterator;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.crypto.NoCryptoServiceFactory;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -32,12 +70,16 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
@@ -51,24 +93,377 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.input.reader.LongLineEventRecordReader;
+import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
 
 @Category(IntegrationTest.class)
 public class BulkIngestMapFileLoaderTest {
 
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     protected static final URI FILE_SYSTEM_URI = URI.create("file:///");
 
     protected static final Logger logger = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
-    protected Level testDriverLevel;
 
-    private List<String> systemProperties;
+    private static final String PASSWORD = "secret";
 
-    private Configuration conf = new Configuration();
+    private static final String USER = "root";
+
+    private static final Authorizations USER_AUTHS = new Authorizations("BAR", "FOO", "PRIVATE", "PUBLIC");
+
+    private static final String METADATA_TABLE = "metadata";
+    private static final String METADATA_RFILE_PATH = "/datawave/rfiles/metadata/I3abcdef01.rf";
+
+    private static final String SHARD_TABLE = "shard";
+    private static final String SHARD_RFILE_PATH = "/datawave/rfiles/shard/I2abcdef01.rf";
+
+    private static final Map<String,Long> EXPECTED_TABLE_KEYCOUNT = Map.of(SHARD_TABLE, 16301L, METADATA_TABLE, 380L);
+
+    private static MiniAccumuloCluster cluster;
+    private static File tmpDir;
+    private static java.nio.file.Path workPath;
+    private static java.nio.file.Path flaggedPath;
+    private static java.nio.file.Path loadedPath;
+    private static URI metadataRfile;
+    private static URI shardRfile;
 
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Rule
     public TestLogCollector logCollector = new TestLogCollector.Builder().with(BulkIngestMapFileLoader.class, Level.ALL).build();
+
+    protected Level testDriverLevel;
+
+    private List<String> systemProperties;
+    private Configuration conf = new Configuration();
+
+    @BeforeClass
+    public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
+                    InterruptedException, URISyntaxException {
+        tmpDir = temporaryFolder.newFolder();
+        cluster = new MiniAccumuloCluster(tmpDir, PASSWORD);
+        cluster.start();
+
+        workPath = Paths.get(tmpDir.getAbsolutePath(), "datawave", "ingest", "work");
+        Files.createDirectories(workPath);
+
+        flaggedPath = Files.createDirectory(Paths.get(workPath.toString(), "flagged"));
+        loadedPath = Files.createDirectory(Paths.get(workPath.toString(), "loaded"));
+
+        metadataRfile = BulkIngestMapFileLoaderTest.class.getResource(METADATA_RFILE_PATH).toURI();
+        shardRfile = BulkIngestMapFileLoaderTest.class.getResource(SHARD_RFILE_PATH).toURI();
+
+        try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
+            if (!client.tableOperations().exists(METADATA_TABLE)) {
+                client.tableOperations().create(METADATA_TABLE);
+            }
+            if (!client.tableOperations().exists(SHARD_TABLE)) {
+                client.tableOperations().create(SHARD_TABLE);
+            }
+            client.securityOperations().changeUserAuthorizations(USER, USER_AUTHS);
+        }
+    }
+
+    /**
+     * Stages a completed datawave ingest job (job.complete) in preparation for running the returned {@link BulkIngestMapFileLoader} instance against MAC
+     *
+     * @param jobName
+     *            should uniquely identify the bulk load job to be run
+     * @param loaderSleepTime
+     *            desired sleep time (in ms) for the bulk loader
+     * @param mode
+     *            Desired bulk mode
+     *
+     * @return BulkIngestMapFileLoader instance for running the job
+     * @throws IOException
+     */
+    private BulkIngestMapFileLoader newJobCompleteLoader(String jobName, int loaderSleepTime, ImportMode mode) throws Exception {
+
+        Assert.assertFalse("jobName can't be null/empty", jobName == null || jobName.isEmpty());
+
+        java.nio.file.Path metaSrc, metaDest, shardSrc, shardDest, inputFilesPath, inputFile, jobPathsFile;
+
+        var parentDir = workPath.toString();
+        var mapFilesDir = "mapFiles";
+
+        Assert.assertFalse(jobName + " directory already exists", Files.exists(Paths.get(parentDir, jobName)));
+        Assert.assertFalse(jobName + " flagged directory already exists", Files.exists(Paths.get(flaggedPath.toString(), jobName)));
+        Assert.assertFalse(jobName + " loaded directory already exists", Files.exists(Paths.get(loadedPath.toString(), jobName)));
+
+        // Copy metadata rfile into jobName/mapFiles/DW_METADATA_TABLE dir
+        metaSrc = Paths.get(metadataRfile);
+        var metaSrcString = metaSrc.toAbsolutePath().toString();
+        metaDest = Files.createDirectories(Paths.get(parentDir, jobName, mapFilesDir, METADATA_TABLE));
+        Files.copy(metaSrc, Paths.get(metaDest.toString(), metaSrc.getFileName().toString()));
+
+        validateRfile(metaSrcString, conf);
+
+        // Copy shard rfile into jobName/mapFiles/DW_SHARD_TABLE dir
+        shardSrc = Paths.get(shardRfile);
+        var shardSrcString = shardSrc.toAbsolutePath().toString();
+        shardDest = Files.createDirectories(Paths.get(parentDir, jobName, mapFilesDir, SHARD_TABLE));
+        Files.copy(shardSrc, Paths.get(shardDest.toString(), shardSrc.getFileName().toString()));
+
+        validateRfile(shardSrcString, conf);
+
+        // For V2, create load plans. And add some non-default splits to make things slightly more interesting
+        if (mode == ImportMode.V2) {
+            var shardSplits = toRowSet(toRfileScanner(shardSrcString, conf));
+            setTableSplits(SHARD_TABLE, shardSplits);
+            setLoadPlan(shardRfile, new Path(shardDest.toUri()), shardSplits, conf);
+
+            var metaSplits = toRowSet(toRfileScanner(metaSrcString, conf));
+            setTableSplits(METADATA_TABLE, metaSplits);
+            setLoadPlan(metadataRfile, new Path(metaDest.toUri()), metaSplits, conf);
+        }
+
+        // Create 'job.paths' marker and associated dummy input file...
+        inputFilesPath = Files.createDirectory(Paths.get(flaggedPath.toString(), jobName));
+        inputFile = Files.createFile(Paths.get(inputFilesPath.toString(), "dummy"));
+        jobPathsFile = Files.createFile(Paths.get(parentDir, jobName, INPUT_FILES_MARKER));
+        Files.write(jobPathsFile, inputFile.toString().getBytes(StandardCharsets.UTF_8));
+
+        // Create 'job.complete' marker
+        Files.createFile(Paths.get(parentDir, jobName, COMPLETE_FILE_MARKER));
+
+        return newMapFileLoader(loaderSleepTime, mode, conf);
+    }
+
+    private static BulkIngestMapFileLoader newMapFileLoader(int loaderSleepTime, ImportMode mode, Configuration config) {
+        return new BulkIngestMapFileLoader(workPath.toString(), "*", cluster.getInstanceName(), cluster.getZooKeepers(), USER, new PasswordToken(PASSWORD),
+                        tmpDir.toURI(), tmpDir.toURI(), tmpDir.toURI(), null, new HashMap<>(), config, 0, 1, new ArrayList<>(), loaderSleepTime,
+                        loaderSleepTime, false, mode);
+    }
+
+    private static void setTableSplits(String table, SortedSet<Text> splits) throws Exception {
+        try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
+            client.tableOperations().addSplits(table, splits);
+        }
+    }
+
+    private static Scanner toRfileScanner(String rfile, Configuration config) throws IOException {
+        // @formatter:off
+        return RFile.newScanner().from(rfile)
+                .withFileSystem(FileSystem.getLocal(config))
+                .withAuthorizations(USER_AUTHS).build();
+        // @formatter:on
+    }
+
+    private static SortedSet<Text> toRowSet(Scanner scanner) {
+        SortedSet<Text> rows = new TreeSet<>();
+        if (scanner != null) {
+            scanner.stream().forEach(e -> rows.add(e.getKey().getRow()));
+        }
+        return rows;
+    }
+
+    private static void setLoadPlan(URI rfileSrc, Path loadPlanDir, SortedSet<Text> tableSplits, Configuration config) throws IOException {
+        var loadPlan = LoadPlan.compute(rfileSrc, LoadPlan.SplitResolver.from(tableSplits));
+        var filename = getLoadPlanFilename(new Path(rfileSrc).getName());
+        var path = new Path(String.format("%s/%s", loadPlanDir.toString(), filename));
+        try (FSDataOutputStream out = FileSystem.getLocal(config).create(path)) {
+            out.write(loadPlan.toJson().getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private static String getLoadPlanFilename(String rfileName) {
+        return LOADPLAN_FILE_GLOB.replaceAll("\\*", "-" + rfileName);
+    }
+
+    /**
+     * Instantiates and runs {@link BulkIngestMapFileLoader} after staging a 'job.complete' directory structure, using canned rfiles for shard and metadata
+     * tables. Expects/verifies that rfile imports are successful and that job directories are cleaned up as appropriate
+     *
+     * @param jobName
+     *            Unique name for the M/R job, denoting the parent directory name for loader processing
+     * @param bulkMode
+     *            Desired bulk import mode
+     * @throws Exception
+     */
+    private void runLoaderHappyTest(String jobName, ImportMode bulkMode) throws Exception {
+        List<String> log = logCollector.getMessages();
+        Assert.assertTrue("Unexpected log messages", log.isEmpty());
+
+        BulkIngestMapFileLoader loader = null;
+
+        var jobDir = Paths.get(workPath.toString(), jobName);
+        var loadingFileMarker = Paths.get(jobDir.toString(), LOADING_FILE_MARKER).toAbsolutePath().toString();
+
+        try {
+            loader = newJobCompleteLoader(jobName, 1000, bulkMode);
+
+            new Thread(loader, "map-file-watcher").start();
+
+            // Wait up to 30 secs for the bulk loader to log completion
+            for (int i = 1; i <= 15; i++) {
+                Thread.sleep(2000);
+                if (log.contains("Renamed file:" + loadingFileMarker + " to " + CLEANUP_FILE_MARKER)) {
+                    break;
+                }
+            }
+            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + SHARD_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + METADATA_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + SHARD_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Marking 1 sequence files from flagged to loaded"));
+
+            verifyImportedData(SHARD_TABLE, METADATA_TABLE);
+
+            Assert.assertTrue(jobDir + " still exists, but should've been cleaned up by the loader", !Files.exists(jobDir));
+
+        } finally {
+            if (loader != null) {
+                loader.shutdown();
+            }
+        }
+    }
+
+    /**
+     * Instantiates and runs {@link BulkIngestMapFileLoader} using intentionally corrupted rfile(s)/loadplan(s) to verify that loader behaves as expected in the
+     * face of import failure
+     *
+     * @param jobName
+     *            Unique name for the M/R job, denoting the parent directory name for loader processing
+     * @param bulkMode
+     *            Desired bulk import mode
+     * @throws Exception
+     */
+    private void runLoaderSadTest(String jobName, ImportMode bulkMode) throws Exception {
+        List<String> log = logCollector.getMessages();
+        Assert.assertTrue("Unexpected log messages", log.isEmpty());
+
+        java.nio.file.Path metaRfilePath, shardRfilePath, expectedFailedMarker, mapFilesDir;
+
+        expectedFailedMarker = Paths.get(workPath.toString(), jobName, FAILED_FILE_MARKER);
+        mapFilesDir = Paths.get(workPath.toString(), jobName, "mapFiles");
+
+        BulkIngestMapFileLoader loader = null;
+        try {
+            // Tee up a loader as usual
+            loader = newJobCompleteLoader(jobName, 500, bulkMode);
+
+            // rfile to corrupt...
+            metaRfilePath = Paths.get(mapFilesDir.toString(), METADATA_TABLE, new Path(metadataRfile).getName());
+            Assert.assertTrue(metaRfilePath + " missing after setup", Files.exists(metaRfilePath));
+
+            // Overwrite the staged metadata rfile with bad content
+            Files.delete(metaRfilePath);
+            Files.createFile(metaRfilePath);
+            Files.write(metaRfilePath, "Intentionally invalid rfile content here!!!".getBytes(StandardCharsets.UTF_8));
+
+            try {
+                validateRfile(metaRfilePath.toAbsolutePath().toString(), conf);
+                Assert.fail();
+            } catch (IOException e) {
+                // Ignore
+            }
+
+            // rfile that should succeed...
+            shardRfilePath = Paths.get(mapFilesDir.toString(), SHARD_TABLE, new Path(shardRfile).getName());
+            Assert.assertTrue(shardRfilePath + " missing after setup", Files.exists(shardRfilePath));
+
+            if (bulkMode == ImportMode.V2) {
+                // TODO: Should client side Accumulo or DataWave code detect a corrupt rfile at this point in a load planning scenario?
+
+                // For V2, corrupting the rfile alone isn't enough to trigger a client- or server-side import failure,
+                // assuming the rfile has an associated LoadPlan already written for it. So, without additional action
+                // here, the import would succeed with no way to know there's a problem until later, if/when a scan or
+                // majc hits the affected tablet, resulting in the tserver throwing "IOException: Not a valid BCFile".
+                // I noted that the tserver logs the full stacktrace as well as the path of the rfile culprit.
+
+                // It's also worth noting that, in the case of actual M/R jobs, our reduce tasks (via MultiRFileOutputFormatter)
+                // perform a final validating read from hdfs of all the rfiles that were written. That mitigates most, but
+                // not all, of the risk associated with this particular edge case. We may want to consider similar
+                // validation in BulkIngestMapFileLoader prior to the import attempt
+
+                // For testing purposes, we'll delete the rfile's LoadPlan here to ensure job.failed for V2
+                var loadPlanPath = Paths.get(mapFilesDir.toString(), METADATA_TABLE, getLoadPlanFilename(metaRfilePath.toFile().getName()));
+                Files.delete(loadPlanPath);
+            }
+
+            // Start loader and wait up to 30 secs for it to mark the failure
+            new Thread(loader, "map-file-watcher").start();
+
+            for (int i = 1; i <= 10; i++) {
+                Thread.sleep(3000);
+                if (Files.exists(expectedFailedMarker)) {
+                    break;
+                }
+            }
+
+            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
+
+            switch (bulkMode) {
+                case V1:
+                    // Verify failures dir has corrupted rfile, which was renamed by Accumulo
+                    var failDir = Paths.get(workPath.toString(), jobName, "mapFiles", "failures", METADATA_TABLE);
+                    Assert.assertTrue(Files.exists(failDir));
+
+                    boolean found = false;
+                    var failMatcher = FileSystems.getDefault().getPathMatcher("glob:I*.rf");
+                    try (DirectoryStream<java.nio.file.Path> dirStream = Files.newDirectoryStream(failDir)) {
+                        for (java.nio.file.Path p : dirStream) {
+                            Assert.assertTrue(failMatcher.matches(p.getFileName()));
+                            logger.info("Found " + p.getFileName() + " in " + failDir);
+                            found = true;
+                        }
+                    }
+                    Assert.assertTrue("We found " + failDir + "as expected, but rfile was missing", found);
+                    break;
+                case V2:
+                    // Verify that metadata rfile remains in place
+                    Assert.assertTrue("metadata rfile should've remained in place after failure", Files.exists(metaRfilePath));
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported import mode " + bulkMode);
+            }
+
+            Assert.assertTrue(shardRfilePath + " should've been imported but it got left behind", !Files.exists(shardRfilePath));
+
+            verifyImportedData(SHARD_TABLE);
+
+            Assert.assertTrue("Missing " + FAILED_FILE_MARKER + " marker after failed import", Files.exists(expectedFailedMarker));
+
+        } finally {
+            if (loader != null) {
+                loader.shutdown();
+            }
+        }
+    }
+
+    /**
+     * Throws an exception unless the given path is a valid rfile
+     */
+    private static void validateRfile(String rfilePath, Configuration conf) throws Exception {
+        FileOperations fops = FileOperations.getInstance();
+        try (FileSKVIterator reader = fops.newReaderBuilder().forFile(rfilePath, FileSystem.getLocal(conf), conf, NoCryptoServiceFactory.NONE)
+                        .withTableConfiguration(DefaultConfiguration.getInstance()).build()) {}
+    }
+
+    private static void verifyImportedData(String... tables) throws TableNotFoundException {
+        for (String table : tables) {
+            Assert.assertTrue("Unexpected table name: " + table, EXPECTED_TABLE_KEYCOUNT.containsKey(table));
+            long actualKeyCount = 0;
+            Collection ranges = Collections.singleton(new Range());
+            try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
+                try (BatchScanner scanner = client.createBatchScanner(table, USER_AUTHS)) {
+                    scanner.setRanges(ranges);
+                    Iterator it = scanner.iterator();
+                    while (it.hasNext()) {
+                        it.next();
+                        actualKeyCount++;
+                    }
+                }
+            }
+            Assert.assertEquals("Unexpected number of " + table + " entries", (long) EXPECTED_TABLE_KEYCOUNT.get(table), actualKeyCount);
+        }
+    }
+
+    @AfterClass
+    public static void teardownClass() throws IOException {
+        cluster.close();
+    }
 
     @Test
     public void testShutdownPortAlreadyInUse() throws IOException {
@@ -538,6 +933,46 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.logger.info("testMainWithAllOptionalArgs completed.");
 
         }
+    }
+
+    /**
+     * Verify that loader in bulk V1 mode behaves as expected in the typical use case, utilizing MiniAccumuloCluster
+     */
+    @Test
+    public void testLoaderV1SucceedsWithMAC() throws Exception {
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1SucceedsWithMAC called...");
+        runLoaderHappyTest("job_shouldSucceed_V1", ImportMode.V1);
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1SucceedsWithMAC completed.");
+    }
+
+    /**
+     * Verify that loader in bulk V2 mode behaves as expected in the typical use case, utilizing MiniAccumuloCluster
+     */
+    @Test
+    public void testLoaderV2SucceedsWithMAC() throws Exception {
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV2SucceedsWithMAC called...");
+        runLoaderHappyTest("job_shouldSucceed_V2", ImportMode.V2);
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV2SucceedsWithMAC completed.");
+    }
+
+    /**
+     * Verify that loader in bulk V1 mode behaves as expected when an importDirectory failure occurs, utilizing MiniAccumuloCluster
+     */
+    @Test
+    public void testLoaderV1FailsWithMAC() throws Exception {
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1FailsWithMAC called...");
+        runLoaderSadTest("job_shouldFail_V1", ImportMode.V1);
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1FailsWithMAC completed.");
+    }
+
+    /**
+     * Verify that loader in bulk V2 mode behaves as expected when an importDirectory failure occurs, utilizing MiniAccumuloCluster
+     */
+    @Test
+    public void testLoaderV2FailsWithMAC() throws Exception {
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV2FailsWithMAC called...");
+        runLoaderSadTest("job_shouldFail_V2", ImportMode.V2);
+        BulkIngestMapFileLoaderTest.logger.info("testLoaderV2FailsWithMAC completed.");
     }
 
     @Test
@@ -1625,8 +2060,13 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(), null, true,
                             false, false, false, new HashMap<>(), false, false);
 
-            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-
+            try {
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            } catch (IOException ioException) {
+                Assert.fail(ioException.getMessage());
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
             Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
@@ -1669,8 +2109,11 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(
                             createMockInputStream(new String[] {"/dummy/entry"}), null, false, false, false, false, null, false, false);
 
-            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-
+            try {
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
             Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
@@ -1713,9 +2156,11 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[0], false, false, false, false, null, false, false);
-
-            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-
+            try {
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
             Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
@@ -1906,10 +2351,10 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> exists = new HashMap<>();
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url.toString(), LOADING_FILE_MARKER);
 
             exists.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url.toString(), COMPLETE_FILE_MARKER);
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -1955,9 +2400,9 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
-            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url, COMPLETE_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2006,9 +2451,9 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url, COMPLETE_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2057,7 +2502,7 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2107,7 +2552,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2157,7 +2602,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2205,7 +2650,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2238,6 +2683,182 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryExistsThrowsException completed.");
         }
 
+    }
+
+    private BulkIngestMapFileLoader setupBulkIngestMapFileLoader(String delayPathPattern, int maxDirectories) {
+        BulkIngestMapFileLoader loader = new BulkIngestMapFileLoader();
+        BulkIngestMapFileLoader.DELAY_PATH_PATTERN = delayPathPattern;
+        BulkIngestMapFileLoader.MAX_DIRECTORIES = maxDirectories;
+        return loader;
+    }
+
+    private FileSystem setupMockFileSystem(Path pathPattern, FileStatus[] fileStatuses) throws IOException {
+        FileSystem mockFileSystem = mock(FileSystem.class);
+        when(mockFileSystem.globStatus(pathPattern)).thenReturn(fileStatuses);
+        return mockFileSystem;
+    }
+
+    private FileStatus createFileStatusMock(Path filePath, long modificationTime) {
+        FileStatus fileStatus = mock(FileStatus.class);
+        when(fileStatus.getPath()).thenReturn(filePath);
+        when(fileStatus.getModificationTime()).thenReturn(modificationTime);
+        return fileStatus;
+    }
+
+    private void setupDelayPatternMock(FileSystem mockFileSystem, Path parentPath, String delayPattern, FileStatus[] delayStatuses) throws IOException {
+        if (delayPattern != null) {
+            when(mockFileSystem.globStatus(new Path(parentPath, delayPattern))).thenReturn(delayStatuses);
+        }
+    }
+
+    private void assertJobDirectories(Path[] actualResult, Path... expectedPaths) {
+        assertNotNull(actualResult, "The result should not be null");
+        assertEquals(expectedPaths.length, actualResult.length, "Unexpected number of job directories returned");
+
+        for (int i = 0; i < expectedPaths.length; i++) {
+            assertEquals(expectedPaths[i], actualResult[i], "Unexpected directory at index " + i);
+        }
+    }
+
+    @Test
+    public void testGetJobDirectoriesNothingToDelay() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+    }
+
+    @Test
+    public void testGetJobDirectoriesNullDelayPattern() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = null;
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+    }
+
+    @Test
+    public void testGetJobDirectoriesNoNonDelayed() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        FileStatus mockDelayStatus = mock(FileStatus.class);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        when(mockDelayStatus.isFile()).thenReturn(true);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+    }
+
+    @Test
+    public void testGetJobDirectoriesNoBacklog() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        FileStatus mockDelayStatus = mock(FileStatus.class);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        when(mockDelayStatus.isFile()).thenReturn(true);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        // mockParentDir2 should be the first in result, as dir1 was delayed.
+        assertJobDirectories(result, mockParentDir2, mockParentDir1);
+    }
+
+    @Test
+    public void testGetJobDirectoriesInBacklog() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        FileStatus mockDelayStatus = mock(FileStatus.class);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        when(mockDelayStatus.isFile()).thenReturn(true);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 5);
+        BulkIngestMapFileLoader.NUM_CONSIDERED_BACKLOG = 1;
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir2);
     }
 
     @Test
@@ -2409,10 +3030,10 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> exists = new HashMap<>();
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
+            String filePath = String.format("%s%s", url, CLEANUP_FILE_MARKER);
 
             exists.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2449,10 +3070,10 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> exists = new HashMap<>();
-            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
+            String filePath = String.format("%s%s", url, CLEANUP_FILE_MARKER);
 
             exists.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),

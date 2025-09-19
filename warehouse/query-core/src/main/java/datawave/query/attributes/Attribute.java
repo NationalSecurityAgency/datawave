@@ -9,6 +9,7 @@ import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
@@ -35,6 +36,10 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected Key metadata = null;
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
     protected boolean fromIndex = true; // Assume attributes are from the index unless specified otherwise.
+
+    // cache computation to avoid repeated calculation
+    protected int hashcode = Integer.MIN_VALUE;
+    protected long sizeInBytes = Long.MIN_VALUE;
 
     public Attribute() {}
 
@@ -160,7 +165,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         metadata = null;
     }
 
-    protected void writeMetadata(DataOutput out, Boolean reducedResponse) throws IOException {
+    protected void writeMetadata(DataOutput out) throws IOException {
         out.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
             byte[] cvBytes = getColumnVisibility().getExpression();
@@ -172,7 +177,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         }
     }
 
-    protected void writeMetadata(Kryo kryo, Output output, Boolean reducedResponse) {
+    protected void writeMetadata(Kryo kryo, Output output) {
         output.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
             byte[] cvBytes = getColumnVisibility().getExpression();
@@ -228,7 +233,22 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         return fromIndex;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Attribute)) {
+            return false;
+        }
+        Attribute<?> other = (Attribute<?>) o;
+        EqualsBuilder equals = new EqualsBuilder().append(this.isMetadataSet(), other.isMetadataSet());
+        if (this.isMetadataSet()) {
+            equals.append(this.getMetadata(), other.getMetadata());
+        }
+        return equals.isEquals();
+    }
+
+    @Override
     public int hashCode() {
+        // Note: implementations of Attribute should cache the result of this operation
         HashCodeBuilder hcb = new HashCodeBuilder(145, 11);
         hcb.append(this.isMetadataSet());
         if (isMetadataSet()) {
@@ -270,15 +290,17 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         // 8 for the object overhead
         // 4 for the key reference
         // 1 for the keep boolean
-        // all rounded up to the nearest multiple of 8 to make 16 out of 13 bytes
+        // 4 for the hashcode reference
+        // 8 for the sizeInBytes references
+        // all rounded up to the nearest multiple of 8 to make 32 out of 25 bytes
         size += getMetadataSizeInBytes();
         return size;
     }
 
     // for use by subclasses to estimate size
     protected long sizeInBytes(long extra) {
-        return roundUp(extra + 13) + getMetadataSizeInBytes();
-        // 13 is the base size in bytes (see sizeInBytes(), unrounded and without metadata)
+        return roundUp(extra + 25) + getMetadataSizeInBytes();
+        // 25 is the base size in bytes (see sizeInBytes(), unrounded and without metadata)
     }
 
     // a helper method to return the size of a string
@@ -324,9 +346,9 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         }
     }
 
-    public abstract void write(DataOutput output, boolean reducedResponse) throws IOException;
+    public abstract void write(DataOutput output) throws IOException;
 
-    public abstract void write(Kryo kryo, Output output, Boolean reducedResponse);
+    public abstract void write(Kryo kryo, Output output);
 
     public abstract Object getData();
 

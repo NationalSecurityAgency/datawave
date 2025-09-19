@@ -44,9 +44,8 @@ public class QueryOptionsSwitch {
                     config.setMatchingFieldSets(Sets.newHashSet(mfs));
                     break;
                 case QueryParameters.GROUP_FIELDS:
-                    String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setGroupByFields(Sets.newHashSet(groups));
+                    groupFields.setGroupByFieldMap(GroupFields.from(value).getGroupByFieldMap());
                     config.setGroupFields(groupFields);
                     // If there are any group-by fields, update the projection fields to include them.
                     if (groupFields.hasGroupByFields()) {
@@ -62,7 +61,13 @@ public class QueryOptionsSwitch {
                     break;
                 case QueryParameters.UNIQUE_FIELDS:
                     UniqueFields uniqueFields = UniqueFields.from(value);
+                    // preserve the most recent flag
+                    uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                     config.setUniqueFields(uniqueFields);
+                    break;
+                case QueryParameters.MOST_RECENT_UNIQUE:
+                    log.info("Setting unique fields to be most recent");
+                    config.getUniqueFields().setMostRecent(Boolean.parseBoolean(value));
                     break;
                 case QueryParameters.EXCERPT_FIELDS:
                     ExcerptFields excerptFields = ExcerptFields.from(value);

@@ -13,14 +13,15 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public class FlagSocket implements Runnable, PropertyChangeListener {
 
-    private static final Logger log = Logger.getLogger(FlagSocket.class);
+    private static final Logger log = LoggerFactory.getLogger(FlagSocket.class);
     private ServerSocket serverSocket;
     private volatile boolean running = true;
     private PropertyChangeSupport support;
@@ -34,14 +35,15 @@ public class FlagSocket implements Runnable, PropertyChangeListener {
     public void run() {
         // register ourselves to observe...
         support.addPropertyChangeListener(this);
-
-        log.info("Listening for shutdown commands on port " + serverSocket.getLocalPort());
+        if (log.isInfoEnabled()) {
+            log.info("Listening for shutdown commands on port {}", serverSocket.getLocalPort());
+        }
         while (running) {
             try {
                 Socket s = serverSocket.accept();
                 SocketAddress remoteAddress = s.getRemoteSocketAddress();
                 try {
-                    log.info(remoteAddress + " connected to the shutdown port");
+                    log.info("{} connected to the shutdown port", remoteAddress);
                     s.setSoTimeout(30000);
                     InputStream is = s.getInputStream();
                     BufferedReader rdr = new BufferedReader(new InputStreamReader(is));
@@ -50,14 +52,14 @@ public class FlagSocket implements Runnable, PropertyChangeListener {
                     s.close();
                     support.firePropertyChange("line", line, line);
                 } catch (SocketTimeoutException e) {
-                    log.info("Timed out waiting for input from " + remoteAddress);
+                    log.info("Timed out waiting for input from {}", remoteAddress);
                 }
             } catch (SocketException e) {
                 if (running) {
-                    log.info("Socket Exception occurred: " + e.getMessage(), e);
+                    log.info("Socket Exception occurred: {}", e.getMessage(), e);
                 }
             } catch (IOException e) {
-                log.error("Error waiting for shutdown connection: " + e.getMessage(), e);
+                log.error("Error waiting for shutdown connection: {}", e.getMessage(), e);
             }
         }
     }
