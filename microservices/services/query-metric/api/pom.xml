@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.5</version>
+        <version>4.0.7</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-api</artifactId>
@@ -31,7 +31,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.protobuf-java>3.16.3</version.protobuf-java>
         <version.protostuff>1.6.2</version.protostuff>
-        <version.slf4j>1.7.36</version.slf4j>
+        <version.slf4j>2.0.12</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>

@@ -50,6 +50,7 @@ public class MockMetadataHelper extends MetadataHelper {
     private Set<String> contentFields = new HashSet<>();
     private Set<String> riFields = new HashSet<>();
     private Set<String> nonEventFields = new HashSet<>();
+    private Multimap<String,String> compositeToFieldMap = HashMultimap.create();
     private Multimap<String,String> fieldsToDatatype = HashMultimap.create();
     protected Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     protected Map<String,Map<String,MetadataCardinalityCounts>> termCounts = new HashMap<>();
@@ -192,6 +193,19 @@ public class MockMetadataHelper extends MetadataHelper {
     @Override
     public boolean isReverseIndexed(String fieldName, Set<String> ingestTypeFilter) {
         return this.riFields.contains(fieldName);
+    }
+
+    @Override
+    public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) {
+        return this.riFields;
+    }
+
+    public void setCompositeToFieldMap(Multimap<String,String> compositeToFieldMap) {
+        this.compositeToFieldMap = compositeToFieldMap;
+    }
+
+    public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
+        return this.compositeToFieldMap;
     }
 
     @Override

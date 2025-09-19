@@ -75,6 +75,7 @@ import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.next.stats.StatUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -358,6 +359,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * performance impact.
      */
     protected boolean showReducedQueryPrune = true;
+
+    /**
+     * Verify that a lower bound sorts before a range's upper bound
+     */
+    protected boolean validateBoundedRanges = false;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -1199,6 +1205,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
         }
 
+        // Enforce unique terms within an AND or OR expression. For some reason we get duplicate expanded terms from the ExpandAnyFieldRegex. Dedupe them here
+        // until we fix that.
+        config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
+
         if (null != config.getFieldRuleClassName()) {
             FieldTransformRule rule = new FieldTransformRule();
             rule.setupRules(config);
@@ -1335,8 +1345,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // whether bounded ranges were expanded or not, validate all ranges
-        timedValidateBoundedRanges(timers, config.getQueryTree());
+        if (validateBoundedRanges) {
+            // whether bounded ranges were expanded or not, validate all ranges
+            timedValidateBoundedRanges(timers, config.getQueryTree());
+        }
 
         // fields may have been added or removed from the query, need to update the field to type map
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
@@ -2537,8 +2549,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 false);
             }
 
-            String datatypeFilter = config.getDatatypeFilterAsString();
-            addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
+            // only serialize the filter if not empty
+            if (!config.getDatatypeFilter().isEmpty()) {
+                cfg.addOption(QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString());
+            }
 
             addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, getContentExpansionFields(), false);
 
@@ -3712,9 +3726,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.info(execution + "\t\t" + get + "\t\t" + saved + "\t\t" + stageName);
         }
 
-        log.info("Total concurrent execution time: " + TimeUnit.NANOSECONDS.toMillis(totalExecution) + " ms");
-        log.info("Total get future time: " + TimeUnit.NANOSECONDS.toMillis(totalGetFuture) + " ms");
-        log.info("Total time saved: " + TimeUnit.NANOSECONDS.toMillis(totalTimeSaved) + " ms");
+        log.info("Total concurrent execution time: " + StatUtil.formatNanos(totalExecution));
+        log.info("Total get future time: " + StatUtil.formatNanos(totalGetFuture));
+        log.info("Total time saved: " + StatUtil.formatNanos(totalTimeSaved));
     }
 
     /**
@@ -3749,5 +3763,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public void setConcurrentTimeoutMillis(int concurrentTimeoutMillis) {
         this.concurrentTimeoutMillis = concurrentTimeoutMillis;
+    }
+
+    public boolean isValidateBoundedRanges() {
+        return validateBoundedRanges;
+    }
+
+    public void setValidateBoundedRanges(boolean validateBoundedRanges) {
+        this.validateBoundedRanges = validateBoundedRanges;
     }
 }

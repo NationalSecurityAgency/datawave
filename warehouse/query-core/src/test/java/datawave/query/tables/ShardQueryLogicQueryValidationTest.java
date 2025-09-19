@@ -48,8 +48,9 @@ import datawave.query.rules.AmbiguousOrPhrasesRule;
 import datawave.query.rules.AmbiguousUnquotedPhrasesRule;
 import datawave.query.rules.FieldExistenceRule;
 import datawave.query.rules.FieldPatternPresenceRule;
+import datawave.query.rules.GroupedInterpretationRule;
 import datawave.query.rules.IncludeExcludeArgsRule;
-import datawave.query.rules.IncludeExcludeIndexFieldsRule;
+import datawave.query.rules.IncludeExcludeIndexOnlyFieldsRule;
 import datawave.query.rules.InvalidQuoteRule;
 import datawave.query.rules.MinimumSlopProximityRule;
 import datawave.query.rules.NumericValueRule;
@@ -167,13 +168,14 @@ public class ShardQueryLogicQueryValidationTest {
         expectedRules.add(new AmbiguousNotRule("Check for Ambiguous Usage of NOT"));
         expectedRules.add(new AmbiguousOrPhrasesRule("Check for Unfielded Terms That Could Be Wrapped"));
         expectedRules.add(new AmbiguousUnquotedPhrasesRule("Check for Unfielded Terms That Could Be Quoted"));
+        expectedRules.add(new GroupedInterpretationRule("Interpret Grouped Phrases"));
         expectedRules.add(new MinimumSlopProximityRule("Validate Slop Proximity"));
         expectedRules.add(new IncludeExcludeArgsRule("Validate Args of #INCLUDE and #EXCLUDE"));
         expectedRules.add(new FieldExistenceRule("Check Field Existence", Set.of("I_DO_NOT_EXIST", "_NOFIELD_", "_ANYFIELD_")));
         expectedRules.add(new UnescapedSpecialCharsRule("Check for Unescaped Special Characters", Set.of('?'), Set.of('_'), false, false));
         expectedRules.add(new FieldPatternPresenceRule("Check Presence of Field or Pattern", Map.of("_ANYFIELD_", "Detected presence of _ANYFIELD_"),
                         Map.of(".*", "Detected pattern '.*' that will match everything")));
-        expectedRules.add(new IncludeExcludeIndexFieldsRule("Check #INCLUDE and #EXCLUDE for Indexed Fields"));
+        expectedRules.add(new IncludeExcludeIndexOnlyFieldsRule("Check #INCLUDE and #EXCLUDE for Index Only Fields"));
         expectedRules.add(new NumericValueRule("Validate Numeric Values Only Given for Numeric Fields"));
         expectedRules.add(new TimeFunctionRule("Validate #TIME_FUNCTION has Date Fields"));
 

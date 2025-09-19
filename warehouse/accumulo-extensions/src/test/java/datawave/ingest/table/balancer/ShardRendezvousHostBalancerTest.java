@@ -212,6 +212,17 @@ public class ShardRendezvousHostBalancerTest {
         public List<TabletMigration> migrationsOut() {
             return migrationsOut;
         }
+
+        @Override
+        public String partitionName() {
+            return "Null Partition";
+        }
+
+        @Override
+        public Map<String,TableId> getTablesToBalance() {
+            return Map.of();
+        }
+
     }
 
     @Test
