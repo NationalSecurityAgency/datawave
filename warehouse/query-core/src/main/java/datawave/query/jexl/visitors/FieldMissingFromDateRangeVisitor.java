@@ -81,7 +81,6 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
         Set<String> fieldNamesToTestDateRange = new HashSet<>();
-        Set<String> nonIngestedFieldNames = new HashSet<>();
         List<ASTIdentifier> identifiers;
 
         int numChildren = node.jjtGetNumChildren();
@@ -111,12 +110,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
         Map<String,Long> occurrences = helper.getCountsForFieldsInDateRange(fieldNamesToTestDateRange, this.datatypeFilter, this.queryBeginDate,
                 this.queryEndDate);
         if (occurrences.values().stream().mapToLong(Long::longValue).sum() < 1) {
-            nonIngestedFieldNames.addAll(fieldNamesToTestDateRange);
-        }
-
-        // If ALL fields in the OR are NOT ingested within date window, add them to nonExistentFieldNames
-        if (nonIngestedFieldNames.size() == numChildren) {
-            return nonExistentFieldNames.addAll(nonIngestedFieldNames);
+            return nonExistentFieldNames.addAll(fieldNamesToTestDateRange);
         } else {
             return nonExistentFieldNames;
         }
