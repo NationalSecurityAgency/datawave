@@ -41,7 +41,6 @@ jobs:
       GITHUB_REGISTRY: ghcr.io
       GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
       GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
-      M2_HOME: /opt/apache-maven-3.9.11/
       DW_BUILD_CACHE_OPTIONS: ${{ needs.configure-runner.outputs.cache_settings }}
     steps:
       - name: Set owner of working dir recursively
@@ -76,13 +75,17 @@ jobs:
         if: ${{ inputs.allow-snapshots }}
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
+          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+            export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
+          fi
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
       - name: Docker Compose Build
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          export PATH=/opt/apache-maven-3.9.11/bin:$PATH
+          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+            export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
+          fi
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
               -Djkube.container-image.tags.1=latest \
@@ -92,8 +95,9 @@ jobs:
           # free up some space so that we don't run out
           docker system prune -f
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
-          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+            export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
+          fi          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
       - name: Docker Compose Accumulo Start
         run: |
