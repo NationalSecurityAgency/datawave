@@ -225,7 +225,7 @@ public class MixedGeoAndGeoWaveTest {
             record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
-            record.setDate(formatter.parse(ingestDate).getTime());
+            record.setTimestamp(formatter.parse(ingestDate).getTime());
             record.setRawData((fieldName + data[i]).getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));

@@ -61,7 +61,7 @@ public class RawRecordContainerImplTest {
     private ValidatingRawRecordContainerImpl create() {
         ValidatingRawRecordContainerImpl event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);
@@ -201,7 +201,7 @@ public class RawRecordContainerImplTest {
     public void testMissingRecordNumber() {
         ValidatingRawRecordContainerImpl event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.getIds().add(uuid);
@@ -326,7 +326,7 @@ public class RawRecordContainerImplTest {
 
         event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);

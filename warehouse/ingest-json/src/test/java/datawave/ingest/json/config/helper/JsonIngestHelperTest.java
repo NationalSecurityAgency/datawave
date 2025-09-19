@@ -54,7 +54,7 @@ public class JsonIngestHelperTest {
         JsonIngestHelper ingestHelper = init(initConfig(FlattenMode.NORMAL));
 
         RawRecordContainer event = new RawRecordContainerImpl();
-        event.setDate((new Date()).getTime());
+        event.setTimestamp((new Date()).getTime());
         event.setRawData(testRecord);
         event.generateId(null);
         Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
@@ -76,7 +76,7 @@ public class JsonIngestHelperTest {
         JsonIngestHelper ingestHelper = init(initConfig(FlattenMode.SIMPLE));
 
         RawRecordContainer event = new RawRecordContainerImpl();
-        event.setDate((new Date()).getTime());
+        event.setTimestamp((new Date()).getTime());
         event.setRawData(testRecord);
         event.generateId(null);
         Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
@@ -98,7 +98,7 @@ public class JsonIngestHelperTest {
         JsonIngestHelper ingestHelper = init(initConfig(FlattenMode.GROUPED));
 
         RawRecordContainer event = new RawRecordContainerImpl();
-        event.setDate((new Date()).getTime());
+        event.setTimestamp((new Date()).getTime());
         event.setRawData(testRecord);
         event.generateId(null);
         Assert.assertNotNull(ingestHelper.getEmbeddedHelper());

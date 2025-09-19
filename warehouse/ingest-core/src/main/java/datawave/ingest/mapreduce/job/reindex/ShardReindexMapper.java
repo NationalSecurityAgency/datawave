@@ -602,7 +602,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         RawRecordContainer metadataEvent = createEvent(context.getConfiguration());
         metadataEvent.setId(HashUID.parse(parsedFi.getUid()));
         metadataEvent.setDataType(fieldHelper.getType());
-        metadataEvent.setDate(key.getTimestamp());
+        metadataEvent.setTimestamp(key.getTimestamp());
         metadataEvent.setVisibility(key.getColumnVisibilityParsed());
 
         // create the normalized field
@@ -1043,7 +1043,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         type = new Type(type.typeName(), dataType.toString(), type.getHelperClass(), type.getReaderClass(), type.getDefaultDataTypeHandlers(),
                         type.getFilterPriority(), type.getDefaultDataTypeFilters());
         this.event.setDataType(type);
-        this.event.setDate(key.getTimestamp());
+        this.event.setTimestamp(key.getTimestamp());
         this.event.setVisibility(key.getColumnVisibilityParsed());
 
         // check for different batch modes

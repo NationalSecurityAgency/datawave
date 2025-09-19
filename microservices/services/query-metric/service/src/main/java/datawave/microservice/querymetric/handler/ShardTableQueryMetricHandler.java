@@ -359,7 +359,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         RawRecordContainerImpl event = new RawRecordContainerImpl();
         event.setConf(this.conf);
         event.setDataType(type);
-        event.setDate(updatedQueryMetric.getCreateDate().getTime());
+        event.setTimestamp(updatedQueryMetric.getCreateDate().getTime());
         // get markings from metric, otherwise use the default markings
         Map<String,String> markings = updatedQueryMetric.getMarkings();
         if (markings != null && !markings.isEmpty()) {

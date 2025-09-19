@@ -164,7 +164,7 @@ public class ContentFunctionQueryTest {
         record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 1, null));
         record.setRawFileName("example.dat");
         record.setRawRecordNumber(1);
-        record.setDate(formatter.parse(BEGIN_DATE).getTime());
+        record.setTimestamp(formatter.parse(BEGIN_DATE).getTime());
         record.setRawData(data);
         record.generateId(null);
         record.setVisibility(new ColumnVisibility(AUTHS));

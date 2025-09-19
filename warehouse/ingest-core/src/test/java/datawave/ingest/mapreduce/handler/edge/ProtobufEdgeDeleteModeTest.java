@@ -137,7 +137,7 @@ public class ProtobufEdgeDeleteModeTest {
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2016-04-26T01:31:53Z"));
-        myEvent.setDate(i.getEpochSecond());
+        myEvent.setTimestamp(i.getEpochSecond());
         return myEvent;
     }
 

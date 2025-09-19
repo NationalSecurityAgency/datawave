@@ -33,7 +33,7 @@ public class DateIdParser extends MetadataIdParser {
                 time = format.parse(date).getTime();
             }
             if (event != null) {
-                event.setDate(time);
+                event.setTimestamp(time);
             }
         }
     }

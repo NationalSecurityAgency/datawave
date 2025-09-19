@@ -142,7 +142,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        record.setDate(System.currentTimeMillis());
+        record.setTimestamp(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -163,7 +163,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        record.setDate(System.currentTimeMillis());
+        record.setTimestamp(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -193,7 +193,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        record.setDate(System.currentTimeMillis());
+        record.setTimestamp(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -223,7 +223,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        record.setDate(System.currentTimeMillis());
+        record.setTimestamp(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -252,7 +252,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        record.setDate(System.currentTimeMillis());
+        record.setTimestamp(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -281,7 +281,7 @@ public class ShardedDataTypeHandlerTest {
         record.setId(HashUID.builder().newId(record.getRawData()));
         record.setVisibility(new ColumnVisibility("PUBLIC"));
         long expectedEventDate = System.currentTimeMillis();
-        record.setDate(expectedEventDate);
+        record.setTimestamp(expectedEventDate);
         Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
 
         assertEquals(expectedEventDate, record.getDate());
