@@ -10,16 +10,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
 import datawave.query.model.QueryModel;
+import datawave.util.time.DateHelper;
 
 /**
  * Collection of tests for the {@link RegexIndexExpansionVisitor}
  */
 public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
 
-    private final Set<String> indexedFields = Set.of("FIELD_A", "COMPOSITE");
+    // FIELD_B not indexed
+    private final Set<String> indexedFields = Set.of("FIELD_A", "FIELD_C", "COMPOSITE");
 
     @BeforeEach
     public void beforeEach() throws Exception {
@@ -35,6 +41,9 @@ public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         queryModel.addTermToModel("FIELD_A", "FIELD_A");
         queryModel.addTermToModel("FIELD_A", "FIELD_B");
         config.setQueryModel(queryModel);
+
+        config.setBeginDate(DateHelper.parse("20250606"));
+        config.setEndDate(DateHelper.parse("20250607"));
 
         helper.setIndexedFields(indexedFields);
     }
@@ -169,6 +178,28 @@ public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         String query = "FIELD_A =~ 'ba.*'";
         String expected = "FIELD_A == 'bar' || FIELD_A == 'baz'";
         config.setDatatypeFilter(Set.of("datatype-a", "datatype-b"));
+        driveExpansion(query, expected);
+    }
+
+    @Test
+    public void testIgnoreRegexBasedOnCost() throws Exception {
+        //  @formatter:off
+        helper.setCardinalities(ImmutableMap.of(
+                Maps.immutableEntry("FIELD_A", DEFAULT_DATE), ImmutableMap.of("datatype", 10_000L),
+                Maps.immutableEntry("FIELD_C", DEFAULT_DATE), ImmutableMap.of("datatype", 600L)
+        ));
+        //  @formatter:on
+
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.put("FIELD_A", new LcNoDiacriticsType());
+        dataTypes.put("FIELD_C", new LcNoDiacriticsType());
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+
+        write("bar", "FIELD_A");
+        write("baz", "FIELD_A");
+        String query = "(FIELD_A =~ 'ba.*' || FIELD_A == 'other') && FIELD_C == 'value'";
+        String expected = "(((_Delayed_ = true) && (FIELD_A =~ 'ba.*')) || FIELD_A == 'other') && FIELD_C == 'value'";
         driveExpansion(query, expected);
     }
 
