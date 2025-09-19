@@ -301,17 +301,17 @@ public class FieldMissingFromSchemaVisitorTest {
     }
 
     private void checkDatatypeFilter(Set<String> expected, ASTJexlScript script, Set<String> dataTypeFilter) {
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
+        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields, null);
         assertEquals(expected, actual);
     }
 
     private void checkNullDatatypeFilter(Set<String> expected, ASTJexlScript script) {
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
+        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields, null);
         assertEquals(expected, actual);
     }
 
     private void checkEmptyDatatypeFilter(Set<String> expected, ASTJexlScript script) {
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
+        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields, null);
         assertEquals(expected, actual);
     }
 }

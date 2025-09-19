@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.lucene.visitors.InvalidSlopProximityVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 
@@ -29,7 +30,7 @@ public class MinimumSlopProximityRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration configuration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration configuration, GenericQueryConfiguration queryConfiguration) throws Exception {
         ShardQueryValidationConfiguration config = (ShardQueryValidationConfiguration) configuration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + config);

@@ -11,6 +11,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.lucene.visitors.GroupedInterpretationVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 import datawave.query.lucene.visitors.QueryNodeType;
@@ -36,7 +37,7 @@ public class GroupedInterpretationRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration configuration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration configuration, GenericQueryConfiguration queryConfiguration) throws Exception {
         ShardQueryValidationConfiguration config = (ShardQueryValidationConfiguration) configuration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + config);

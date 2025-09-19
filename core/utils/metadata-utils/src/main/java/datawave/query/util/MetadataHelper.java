@@ -714,6 +714,30 @@ public class MetadataHelper {
     }
 
     /**
+     * Determines whether a field has been hidden by looking for the h column in the metadata table
+     *
+     * @param fieldName
+     *            the field name
+     * @param ingestTypeFilter
+     *            the ingest type filter
+     * @return true if the field is hidden for the provided ingest types
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    public boolean isHidden(String fieldName, Set<String> ingestTypeFilter) throws TableNotFoundException {
+        Preconditions.checkNotNull(fieldName);
+        Preconditions.checkNotNull(ingestTypeFilter);
+
+        Entry<String,Entry<String,Set<String>>> entry = Maps.immutableEntry(metadataTableName, Maps.immutableEntry(fieldName, ingestTypeFilter));
+
+        try {
+            return this.allFieldMetadataHelper.isIndexed(ColumnFamilyConstants.COLF_H, entry);
+        } catch (InstantiationException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Returns a Set of all TextNormalizers in use by any type in Accumulo
      *
      * @param table

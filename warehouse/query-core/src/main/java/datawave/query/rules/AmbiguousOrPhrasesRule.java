@@ -7,6 +7,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
 import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
@@ -37,7 +38,7 @@ public class AmbiguousOrPhrasesRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration configuration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration configuration, GenericQueryConfiguration queryConfiguration) throws Exception {
         ShardQueryValidationConfiguration config = (ShardQueryValidationConfiguration) configuration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + config);

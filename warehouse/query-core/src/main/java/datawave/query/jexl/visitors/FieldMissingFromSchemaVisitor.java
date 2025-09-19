@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -26,9 +27,12 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
 
 /**
@@ -47,8 +51,10 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     private final Set<String> allFieldsForDatatypes; // All fields for the specified datatypes pulled from MetadataHelper
     private final Set<String> specialFields;
     private final Set<String> datatypeFilter;
+    private final GenericQueryConfiguration queryConfiguration;
 
-    public FieldMissingFromSchemaVisitor(MetadataHelper helper, Set<String> datatypeFilter, Set<String> specialFields) {
+    public FieldMissingFromSchemaVisitor(MetadataHelper helper, Set<String> datatypeFilter, Set<String> specialFields,
+                    GenericQueryConfiguration queryConfiguration) {
         this.helper = helper;
         this.specialFields = specialFields;
         try {
@@ -62,11 +68,16 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
             throw new RuntimeException("Unable to get metadata", e);
         }
         this.datatypeFilter = datatypeFilter;
+        if (queryConfiguration == null) {
+            queryConfiguration = new GenericQueryConfiguration();
+        }
+        this.queryConfiguration = queryConfiguration;
     }
 
     @SuppressWarnings("unchecked")
-    public static Set<String> getNonExistentFields(MetadataHelper helper, ASTJexlScript script, Set<String> datatypes, Set<String> specialFields) {
-        FieldMissingFromSchemaVisitor visitor = new FieldMissingFromSchemaVisitor(helper, datatypes, specialFields);
+    public static Set<String> getNonExistentFields(MetadataHelper helper, ASTJexlScript script, Set<String> datatypes, Set<String> specialFields,
+                    GenericQueryConfiguration queryConfiguration) {
+        FieldMissingFromSchemaVisitor visitor = new FieldMissingFromSchemaVisitor(helper, datatypes, specialFields, queryConfiguration);
         // Maintain insertion order.
         return (Set<String>) script.jjtAccept(visitor, new LinkedHashSet<>());
     }
@@ -78,10 +89,11 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
      *            The set of names which we have determined do not exist
      * @return the updated set of names which do not exist
      */
-    protected Object genericVisit(JexlNode node, Object data) {
+    protected Object genericVisit(JexlNode node, Object data) throws TableNotFoundException {
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
         List<ASTIdentifier> identifiers;
+        Collection<String> modelFields = List.of();
 
         // A node could be literal == literal in terms of an identityQuery
         try {
@@ -98,7 +110,14 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
 
         for (ASTIdentifier identifier : identifiers) {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
-            if (!this.allFieldsForDatatypes.contains(fieldName) && !specialFields.contains(fieldName)) {
+            if (this.queryConfiguration instanceof ShardQueryConfiguration) {
+                String modelName = ((ShardQueryConfiguration) this.queryConfiguration).getModelName();
+                String modelTableName = ((ShardQueryConfiguration) this.queryConfiguration).getModelTableName();
+                QueryModel queryModel = helper.getQueryModel(modelTableName, modelName);
+                modelFields = queryModel.getMappingsForAlias(fieldName);
+            }
+            if (!this.allFieldsForDatatypes.contains(fieldName) && !specialFields.contains(fieldName)
+                            || (helper.isHidden(fieldName, this.datatypeFilter) && !modelFields.isEmpty())) {
                 nonExistentFieldNames.add(fieldName);
             }
         }
@@ -107,42 +126,74 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return genericVisit(node, data);
+        try {
+            return genericVisit(node, data);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -150,13 +201,30 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
+        Collection<String> modelFields = List.of();
 
         for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
             // deconstruct the identifier
             final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
             // changed to allow _ANYFIELD_ in functions
-            if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
-                nonExistentFieldNames.add(testFieldName);
+            if (this.queryConfiguration instanceof ShardQueryConfiguration) {
+                String modelName = ((ShardQueryConfiguration) this.queryConfiguration).getModelName();
+                String modelTableName = ((ShardQueryConfiguration) this.queryConfiguration).getModelTableName();
+                QueryModel queryModel;
+                try {
+                    queryModel = helper.getQueryModel(modelTableName, modelName);
+                } catch (TableNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                modelFields = queryModel.getMappingsForAlias(fieldName);
+            }
+            try {
+                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)
+                                || (helper.isHidden(fieldName, this.datatypeFilter) && !modelFields.isEmpty())) {
+                    nonExistentFieldNames.add(testFieldName);
+                }
+            } catch (TableNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
 
