@@ -63,7 +63,7 @@ public class ObjectSizeOfTest {
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Byte((byte) 1)));
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Character((char) 1)));
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Short((short) 1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Integer(1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(1));
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Float(1)));
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Long(1)));
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Double(1)));

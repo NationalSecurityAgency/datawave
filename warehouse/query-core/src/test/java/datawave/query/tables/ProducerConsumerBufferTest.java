@@ -255,7 +255,7 @@ public class ProducerConsumerBufferTest {
             current.interrupt();
         }).start();
 
-        queue.put(new Integer(1));
+        queue.put(1);
         InterruptedException caught = null;
         try {
             // will block until interrupted since it's waiting on the second item for min size
@@ -264,7 +264,7 @@ public class ProducerConsumerBufferTest {
             caught = e;
         }
         assertTrue(caught != null);
-        queue.put(new Integer(2));
+        queue.put(2);
         queue.take();
     }
 
@@ -280,8 +280,8 @@ public class ProducerConsumerBufferTest {
             queue.close();
         }).start();
 
-        queue.put(new Integer(1));
-        assertEquals(new Integer(1), queue.take());
+        queue.put(1);
+        assertEquals(Integer.valueOf(1), queue.take());
     }
 
     @Ignore
