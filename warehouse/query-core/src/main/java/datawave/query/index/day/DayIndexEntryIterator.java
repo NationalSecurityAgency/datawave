@@ -111,10 +111,7 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
         }
 
         // build final entry
-        if (shards.isEmpty()) {
-            tk = null;
-            tv = null;
-        } else {
+        if (!shards.isEmpty()) {
             String day = trimRowToDate(range.getStartKey());
             BitSetIndexEntry entry = new BitSetIndexEntry(day, shards);
             tk = new Key(day);
