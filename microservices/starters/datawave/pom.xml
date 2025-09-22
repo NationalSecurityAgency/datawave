@@ -40,7 +40,7 @@
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>2.0.12</version.slf4j>
         <version.springdoc>1.6.9</version.springdoc>
-        <version.zookeeper>3.8.3</version.zookeeper>
+        <version.zookeeper>3.8.4</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
