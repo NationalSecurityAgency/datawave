@@ -4,6 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,18 +14,19 @@ import datawave.util.keyword.language.YakeLanguage;
 /**
  * The KeywordExtractor serves as the glue between the keyword extracting iterator and the keyword extractor implementation. It interprets the iterator options
  * and translates them into configuration for the extractor, attempts to extract keywords from the view in defined order and then packages the keyword extractor
- * results into something that can be serialized and returned to the query logic.
+ * results into something that can be serialized and returned to the query logic. <br>
+ * <br>
+ * When using wildcard view names, the first view found when traversing the keys will be the one to get processed.
  *
  */
 public class KeywordExtractor {
-
-    public static final String MAX_CONTENT_CHARS = "max.content.chars";
     private static final Logger logger = LoggerFactory.getLogger(KeywordExtractor.class);
 
     public static final String MIN_NGRAMS = "min.ngram.count";
     public static final String MAX_NGRAMS = "max.ngram.count";
     public static final String MAX_KEYWORDS = "max.keyword.count";
     public static final String MAX_SCORE = "max.score";
+    public static final String MAX_CONTENT_CHARS = "max.content.chars";
 
     private final List<String> preferredViews;
     private final Map<String,VisibleContent> foundContent;
@@ -99,23 +102,37 @@ public class KeywordExtractor {
         }
     }
 
+    @Nonnull
     public KeywordResults extractKeywords() {
+        if (foundContent.isEmpty()) {
+            return EMPTY_RESULTS;
+        }
         KeywordResults results = EMPTY_RESULTS;
         for (String viewName : preferredViews) {
             for (Map.Entry<String,VisibleContent> foundEntry : foundContent.entrySet()) {
-                if (viewName.equals(foundEntry.getKey())) {
-                    VisibleContent content = foundEntry.getValue();
-                    final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(content.getContent());
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Extracted {} keywords from {} view.", keywords.size(), viewName);
+                if (viewName.endsWith("*")) {
+                    final String truncatedName = viewName.substring(0, viewName.length() - 1);
+                    if (foundEntry.getKey().startsWith(truncatedName)) {
+                        results = extractKeywordsFromVisibleContent(viewName, foundEntry.getValue());
                     }
-                    if (!keywords.isEmpty()) {
-                        results = new KeywordResults(source, viewName, language, content.getVisibility(), keywords);
-                        break;
-                    }
+                } else if (viewName.equals(foundEntry.getKey())) {
+                    results = extractKeywordsFromVisibleContent(viewName, foundEntry.getValue());
+                }
+
+                if (results != EMPTY_RESULTS) {
+                    return results;
                 }
             }
         }
-        return results;
+        return EMPTY_RESULTS;
+    }
+
+    @Nonnull
+    private KeywordResults extractKeywordsFromVisibleContent(String viewName, VisibleContent content) {
+        final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(content.getContent());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Extracted {} keywords from {} view.", keywords.size(), viewName);
+        }
+        return keywords.isEmpty() ? EMPTY_RESULTS : new KeywordResults(source, viewName, language, content.getVisibility(), keywords);
     }
 }
