@@ -187,9 +187,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
+    public void close() throws IOException, InterruptedException {
         this.recordWriter.close(null);
     }
 

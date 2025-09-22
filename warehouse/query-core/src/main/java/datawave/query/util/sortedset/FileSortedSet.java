@@ -762,12 +762,6 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             throw new UnsupportedOperationException("Iterator.remove() not supported.");
         }
 
-        @Override
-        protected void finalize() throws Throwable {
-            cleanup();
-            super.finalize();
-        }
-
     }
 
     /**
