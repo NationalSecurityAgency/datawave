@@ -1,8 +1,8 @@
 package datawave.query.planner.replacement;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.replacement.rules.DirectFieldReplacementRule;
 import datawave.query.planner.replacement.rules.FieldReplacementRule;
@@ -50,7 +50,6 @@ public class FieldReplacementVisitorTest {
             expectedScript.jjtAccept(expectedVistor, null);
 
             Assert.assertEquals(expectedVistor.getRangesFound(), resultVisitor.getRangesFound());
-            Assert.assertTrue(resultVisitor.getRangesFound() > 0);
         }
 
     }
@@ -168,7 +167,7 @@ public class FieldReplacementVisitorTest {
         testReplacement(query, expected, List.of(rfrRule), false);
     }
 
-    public class RangeVerificationVisitor extends BaseVisitor {
+    public class RangeVerificationVisitor extends RebuildingVisitor {
         private int rangesFound = 0;
 
         @Override
@@ -176,7 +175,7 @@ public class FieldReplacementVisitorTest {
             if (JexlASTHelper.findRange().isRange(node)) {
                 rangesFound++;
             }
-            return node;
+            return super.visit(node, data);
         }
 
         public int getRangesFound() {

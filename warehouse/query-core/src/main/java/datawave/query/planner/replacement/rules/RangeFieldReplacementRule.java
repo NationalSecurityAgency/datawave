@@ -1,10 +1,10 @@
 package datawave.query.planner.replacement.rules;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.RebuildingVisitor;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
@@ -12,18 +12,18 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 
 public class RangeFieldReplacementRule implements FieldReplacementRule {
-    private Map<String, String> fieldMap = new HashMap<>();
+    private Map<String,String> fieldMap = new HashMap<>();
 
-    public RangeFieldReplacementRule() {
-    }
+    public RangeFieldReplacementRule() {}
 
-    public RangeFieldReplacementRule(Map<String, String> fieldMap) {
+    public RangeFieldReplacementRule(Map<String,String> fieldMap) {
         this.fieldMap = fieldMap;
     }
 
@@ -75,11 +75,11 @@ public class RangeFieldReplacementRule implements FieldReplacementRule {
         }
     }
 
-    public void setFieldMap(Map<String, String> fieldMap) {
+    public void setFieldMap(Map<String,String> fieldMap) {
         this.fieldMap = fieldMap;
     }
 
-    public Map<String, String> getFieldMap() {
+    public Map<String,String> getFieldMap() {
         return fieldMap;
     }
 }
