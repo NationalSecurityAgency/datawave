@@ -81,6 +81,7 @@ services:
       - TCP_PORTS=15672, 5672
       - RABBITMQ_ERLANG_COOKIE="mycookie"
     ports:
+      - "5672:5672"
       - "15672:15672"
     networks:
       - demo

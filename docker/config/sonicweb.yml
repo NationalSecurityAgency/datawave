@@ -1,0 +1,21 @@
+# Authorization requires a client certificate
+server:
+  ssl:
+    client-auth: NEED
+  port: 8648
+  non-secure-port: 8680
+
+app:
+  packages: datawave.microservice
+
+datawave:
+  authorization:
+    uri: "https://localhost:8343/authorization/v1/authorize"
+  swagger:
+    title: "Sonicweb Service"
+    description: "REST API provided by the Sonicweb Service"
+  metadata:
+    all-metadata-auths:
+      - PRIVATE,PUBLIC
+    type-substitutions:
+      "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
