@@ -42,6 +42,14 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
 
+            // do not bother running the scan if the timeout threshold is zero
+            if (config.getMaxIndexScanTimeMillis() == 0) {
+                indexLookupMap.put(field, "");
+                indexLookupMap.get(field).setThresholdExceeded();
+                latch.countDown();
+                return;
+            }
+
             execService.submit(() -> {
                 String tableName = getTableName();
                 try (var scanner = config.getClient().createScanner(tableName, config.getAuthorizations().iterator().next())) {
@@ -67,6 +75,7 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
                         if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                             exceededTimeoutThreshold.set(true);
                             indexLookupMap.setTimeoutExceeded(true);
+                            indexLookupMap.put(field, "");
                             indexLookupMap.get(field).setThresholdExceeded();
                             break;
                         }
