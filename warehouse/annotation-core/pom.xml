@@ -10,7 +10,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
-        <version.protobuf>3.16.3</version.protobuf>
+        <version.protobuf>3.25.5</version.protobuf>
     </properties>
     <dependencies>
         <dependency>
