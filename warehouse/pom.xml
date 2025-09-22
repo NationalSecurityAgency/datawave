@@ -11,6 +11,7 @@
     <name>${project.artifactId}</name>
     <modules>
         <module>accumulo-extensions</module>
+        <module>annotation-core</module>
         <module>common</module>
         <module>core</module>
         <module>age-off</module>
