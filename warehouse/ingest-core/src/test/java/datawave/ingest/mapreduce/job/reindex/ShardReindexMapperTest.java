@@ -76,8 +76,8 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.query.iterator.SortedListKeyValueIterator;
-import datawave.util.accumulo.RFileUtil;
 import datawave.query.model.DateFrequencyMap;
+import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexMapperTest extends EasyMockSupport {
     private Configuration conf;

@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
@@ -21,10 +20,7 @@ import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
-import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
-import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.microservice.query.Query;
@@ -64,7 +60,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
     @SuppressWarnings("unchecked")
     public static Set<String> getNonIngestedFields(MetadataHelper helper, ASTJexlScript script, Set<String> datatypes, Set<String> specialFields,
-                                                   Query querySettings) {
+                    Query querySettings) {
         FieldMissingFromDateRangeVisitor visitor = new FieldMissingFromDateRangeVisitor(helper, datatypes, specialFields, querySettings);
         // Maintain insertion order.
         return (Set<String>) script.jjtAccept(visitor, new LinkedHashSet<>());
@@ -77,9 +73,9 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
      *            The set of names which we have determined do not exist
      * @return the updated set of names which do not exist
      */
-    protected Object ingestDateOrNodeVisit(JexlNode node, Object data) {
+    private Object findMissingFields(ASTOrNode node, Object data) {
         @SuppressWarnings("unchecked")
-        Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
+        Set<String> nonExistentFieldNames = (null == data) ? new LinkedHashSet<>() : (Set<String>) data;
         Set<String> fieldNamesToTestDateRange = new HashSet<>();
         List<ASTIdentifier> identifiers;
 
@@ -108,7 +104,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
         }
 
         Map<String,Long> occurrences = helper.getCountsForFieldsInDateRange(fieldNamesToTestDateRange, this.datatypeFilter, this.queryBeginDate,
-                this.queryEndDate);
+                        this.queryEndDate);
         if (occurrences.values().stream().mapToLong(Long::longValue).sum() < 1) {
             return nonExistentFieldNames.addAll(fieldNamesToTestDateRange);
         } else {
@@ -123,7 +119,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
      *            The set of names which we have determined do not exist
      * @return the updated set of names which do not exist
      */
-    protected Object genericIngestDateVisit(JexlNode node, Object data) {
+    private Object findMissingFields(JexlNode node, Object data) {
         @SuppressWarnings("unchecked")
         Set<String> nonIngestedFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
         List<ASTIdentifier> identifiers;
@@ -154,42 +150,42 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return genericIngestDateVisit(node, data);
+        return findMissingFields(node, data);
     }
 
     @Override
@@ -219,31 +215,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     }
 
     @Override
-    public Object visit(ASTAndNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTNotNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReferenceExpression node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
     public Object visit(ASTOrNode node, Object data) {
-        return ingestDateOrNodeVisit(node, data);
+        return findMissingFields(node, data);
     }
 }
