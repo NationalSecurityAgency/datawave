@@ -1,5 +1,8 @@
 package datawave.core.query.remote;
 
+/**
+ * RuntimeException to be thrown in place of a checked RemoteTimeoutQueryException
+ */
 public class RemoteTimeoutQueryRuntimeException extends RuntimeException {
     public RemoteTimeoutQueryRuntimeException() {
         super();

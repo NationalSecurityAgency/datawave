@@ -39,7 +39,7 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
         // GenericQueryConfiguration copy first
         super(other);
 
-        configs = other.configs;
+        configs = new HashMap<>(other.configs);
         allMustInitialize = other.allMustInitialize;
         shortCircuitExecution = other.shortCircuitExecution;
         resultsPollTimeout = other.resultsPollTimeout;

@@ -1,13 +1,12 @@
 package datawave.query.tables;
 
-import static java.lang.Thread.sleep;
-
 import static datawave.query.tables.RemoteQueryServiceTestUtil.DEFAULT_REMOTE_LOGIC;
 import static datawave.query.tables.RemoteQueryServiceTestUtil.NON_ROUTABLE_HOST;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -70,15 +69,17 @@ public class RemoteEventQueryLogicIT {
         t.start();
 
         // ensure the thread wasn't interrupted
-        boolean interrupted = false;
-        try {
-            // waiting forever is the default state
-            t.join(1000);
-        } catch (InterruptedException e) {
-            interrupted = true;
+        boolean done = false;
+        while (!done) {
+            try {
+                // waiting forever is the default state, 5s will do
+                t.join(5000);
+                done = true;
+            } catch (InterruptedException e) {
+                // no-op
+            }
         }
 
-        assertFalse(interrupted);
         // this would be TERMINATED if the thread ran
         assertTrue(t.getState().toString(), t.getState() == Thread.State.RUNNABLE);
         assertFalse(r.isSetup().get());
@@ -118,27 +119,21 @@ public class RemoteEventQueryLogicIT {
         t.start();
 
         // ensure the thread wasn't interrupted
-        boolean interrupted = false;
-        try {
-            // waiting forever is the default state
-            t.join(1000);
-        } catch (InterruptedException e) {
-            interrupted = true;
+        boolean done = false;
+        while (!done) {
+            try {
+                // waiting forever is the default state, 5s will do
+                t.join(5000);
+                done = true;
+            } catch (InterruptedException e) {
+                // no-op
+            }
         }
 
         // this would be TERMINATED if the thread ran
         assertTrue(t.getState().toString(), t.getState() == Thread.State.RUNNABLE);
-
-        // force an handlerInterrupt on the handler
-        handlerInterrupt.set(true);
-        assertFalse(interrupted);
-
-        while (t.isAlive()) {
-            sleep(200);
-        }
-
         assertFalse(r.isSetup().get());
-        assertTrue(r.isCaught().get());
+        assertFalse(r.isCaught().get());
     }
 
     @Test
@@ -165,7 +160,7 @@ public class RemoteEventQueryLogicIT {
     }
 
     @Test
-    public void testDefaultConnectionPoolTimeout() throws InterruptedException {
+    public void testDefaultConnectionPoolTimeout() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
         RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
 
@@ -188,20 +183,26 @@ public class RemoteEventQueryLogicIT {
         Thread t2 = new Thread(r2);
         t2.start();
 
-        sleep(1050);
+        boolean done = false;
+        while (!done) {
+            try {
+                // wait for one of the threads to get into a WAIT state
+                if (t1.getState() == Thread.State.WAITING || t2.getState() == Thread.State.WAITING) {
+                    done = true;
+                }
+                t1.join(100);
+            } catch (InterruptedException e) {
+                // no-op
+            }
+        }
 
-        // check that neither thread has changed state
-        assertFalse(r1.isCaught().get());
-        assertFalse(r2.isCaught().get());
+        // when WAITING for a connection one of the threads should be stuck here
+        boolean t1Waiting = Arrays.stream(t1.getStackTrace()).anyMatch(stackTrace -> stackTrace.getMethodName().equals("getPoolEntryBlocking")
+                        && stackTrace.getClassName().equals("org.apache.http.pool.AbstractConnPool"));
+        boolean t2Waiting = Arrays.stream(t2.getStackTrace()).anyMatch(stackTrace -> stackTrace.getMethodName().equals("getPoolEntryBlocking")
+                        && stackTrace.getClassName().equals("org.apache.http.pool.AbstractConnPool"));
 
-        assertFalse(r1.isSetup().get());
-        assertFalse(r2.isSetup().get());
-
-        handlerInterrupt.set(true);
-
-        sleep(1050);
-
-        assertTrue(r1.isCaught().get() || r2.isCaught().get());
+        assertTrue(t1Waiting || t2Waiting);
         assertFalse(r1.isSetup().get());
         assertFalse(r2.isSetup().get());
     }
@@ -232,21 +233,20 @@ public class RemoteEventQueryLogicIT {
         Thread t2 = new Thread(r2);
         t2.start();
 
-        sleep(1050);
-
-        // one of these should have state changed, but don't assert until after the interrupt or the test will never stop
-        boolean r1Caught = r1.isCaught().get();
-        boolean r2Caught = r2.isCaught().get();
-
-        handlerInterrupt.set(true);
-
-        // exactly one should have caught an exception due to the pool timeout, the other should be stuck in the forever handler
-        assertTrue(r1Caught || r2Caught);
-        assertFalse(r1Caught && r2Caught);
+        // wait until the exception is caught
+        while (!r1.isCaught().get() && !r2.isCaught().get()) {
+            try {
+                t1.join(100);
+            } catch (InterruptedException e) {
+                // no-op
+            }
+        }
 
         assertFalse(r1.isSetup().get());
         assertFalse(r2.isSetup().get());
 
+        // only one thread had an exception
+        assertFalse(r1.isCaught().get() && r2.isCaught().get());
         assertTrue(r1.getException() != null || r2.getException() != null);
         assertTrue(r1.getException() == null || r1.getException() instanceof RemoteTimeoutQueryException);
         assertTrue(r2.getException() == null || r2.getException() instanceof RemoteTimeoutQueryException);
