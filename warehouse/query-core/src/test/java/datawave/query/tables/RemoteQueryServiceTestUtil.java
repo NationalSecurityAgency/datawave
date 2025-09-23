@@ -1,6 +1,5 @@
 package datawave.query.tables;
 
-import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import static org.junit.Assert.assertEquals;
@@ -11,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -50,9 +48,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashMultimap;
-import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
@@ -66,6 +62,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.json.DefaultMapperDecorator;
+import datawave.webservice.common.remote.RemoteServiceUtil;
 import datawave.webservice.common.remote.TestJSSESecurityDomain;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -75,20 +72,17 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 
-public class RemoteQueryServiceTestUtil {
-    public static final String NON_ROUTABLE_HOST = "10.255.255.255";
+public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
     public static final String COMMON_NAME = "cn=www.test.us";
     public static final String DEFAULT_REMOTE_LOGIC = "TestQuery";
 
     private static final int keysize = 2048;
     private static final String alias = "tomcat";
     private static final char[] keyPass = "changeit".toCharArray();
-    private static final int PORT = 0;
 
     private final UUID uuid;
     private final int totalNext;
 
-    private HttpServer server;
     private PrivateKey privateKey;
     private X509Certificate[] chain;
 
@@ -106,10 +100,17 @@ public class RemoteQueryServiceTestUtil {
         this.totalNext = totalNext;
     }
 
-    public void initialize() throws NoSuchAlgorithmException, OperatorCreationException, CertificateException, IOException {
+    public void initialize() throws IOException {
+        super.initialize();
+
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
         System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
-        KeyPairGenerator generater = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator generater = null;
+        try {
+            generater = KeyPairGenerator.getInstance("RSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
         generater.initialize(keysize);
         KeyPair keypair = generater.generateKeyPair();
         privateKey = keypair.getPrivate();
@@ -121,16 +122,21 @@ public class RemoteQueryServiceTestUtil {
         X509v3CertificateBuilder builder = new X509v3CertificateBuilder(x500Name, new BigInteger(10, new SecureRandom()), // Choose something better for real
                         // use
                         start, until, x500Name, subPubKeyInfo);
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSA").setProvider(new BouncyCastleProvider()).build(keypair.getPrivate());
+        ContentSigner signer = null;
+        try {
+            signer = new JcaContentSignerBuilder("SHA256WithRSA").setProvider(new BouncyCastleProvider()).build(keypair.getPrivate());
+        } catch (OperatorCreationException e) {
+            throw new RuntimeException(e);
+        }
         final X509CertificateHolder holder = builder.build(signer);
 
-        chain[0] = new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider()).getCertificate(holder);
+        try {
+            chain[0] = new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider()).getCertificate(holder);
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        }
 
-        server = HttpServer.create(new InetSocketAddress(PORT), 0);
-        server.setExecutor(null);
-        server.start();
-
-        GenericResponse<String> createResponse = new GenericResponse<String>();
+        GenericResponse<String> createResponse = new GenericResponse<>();
         createResponse.setResult(uuid.toString());
 
         HttpHandler createHandler = exchange -> {
@@ -175,19 +181,14 @@ public class RemoteQueryServiceTestUtil {
             exchange.close();
         };
 
-        server.createContext("/DataWave/Query/" + remoteLogic + "/create", createHandler);
-        server.createContext("/DataWave/Query/" + remoteLogic + "/plan", createHandler);
-        server.createContext("/DataWave/Query/" + uuid + "/next", nextHandler);
-        server.createContext("/DataWave/Query/" + uuid + "/close", closeHandler);
-    }
-
-    public void updateRoute(String route, HttpHandler handler) {
-        server.removeContext(route);
-        server.createContext(route, handler);
+        addRoute("/DataWave/Query/" + remoteLogic + "/create", createHandler);
+        addRoute("/DataWave/Query/" + remoteLogic + "/plan", createHandler);
+        addRoute("/DataWave/Query/" + uuid + "/next", nextHandler);
+        addRoute("/DataWave/Query/" + uuid + "/close", closeHandler);
     }
 
     public RemoteQueryService getRemoteService() {
-        if (server == null) {
+        if (!isInitialized()) {
             throw new IllegalStateException("must call initialize() first");
         }
 
@@ -195,19 +196,13 @@ public class RemoteQueryServiceTestUtil {
         remote.setQueryServiceURI("/DataWave/Query/");
         remote.setQueryServiceScheme("http");
         remote.setQueryServiceHost("localhost");
-        remote.setQueryServicePort(server.getAddress().getPort());
+        remote.setQueryServicePort(getPort());
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
         remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privateKey, keyPass, chain));
 
         return remote;
-    }
-
-    public void stop() {
-        if (server != null) {
-            server.stop(1);
-        }
     }
 
     private void setQuery(InputStream content) throws IOException {
@@ -230,28 +225,6 @@ public class RemoteQueryServiceTestUtil {
 
     public String getQuery() {
         return query;
-    }
-
-    public static class ForeverHandler implements HttpHandler {
-        private AtomicBoolean interrupt = new AtomicBoolean(false);
-
-        public ForeverHandler(AtomicBoolean interrupt) {
-            this.interrupt = interrupt;
-        }
-
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            while (true) {
-                try {
-                    sleep(50);
-                    if (interrupt.get()) {
-                        throw new InterruptedException();
-                    }
-                } catch (InterruptedException e) {
-                    throw new IOException(e);
-                }
-            }
-        }
     }
 
     public static class QueryRunnable implements Runnable {

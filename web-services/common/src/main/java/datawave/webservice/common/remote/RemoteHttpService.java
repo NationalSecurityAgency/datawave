@@ -572,6 +572,30 @@ public abstract class RemoteHttpService {
         config.setUnavailableRetryDelay(unavailableRetryDelay);
     }
 
+    public void setSocketTimeout(int socketTimeout) {
+        getConfig().setSocketTimeout(socketTimeout);
+    }
+
+    public int getSocketTimeout() {
+        return getConfig().getSocketTimeout();
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        getConfig().setConnectTimeout(connectTimeout);
+    }
+
+    public int getConnectTimeout() {
+        return getConfig().getConnectTimeout();
+    }
+
+    public void setConnectionPoolTimeout(int connectionPoolTimeout) {
+        getConfig().setConnectionPoolTimeout(connectionPoolTimeout);
+    }
+
+    public int getConnectionPoolTimeout() {
+        return getConfig().getConnectionPoolTimeout();
+    }
+
     public ResponseObjectFactory getResponseObjectFactory() {
         return responseObjectFactory;
     }

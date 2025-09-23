@@ -4,11 +4,13 @@ import static datawave.query.tables.RemoteQueryServiceTestUtil.DEFAULT_REMOTE_LO
 import static datawave.query.tables.RemoteQueryServiceTestUtil.NON_ROUTABLE_HOST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -20,8 +22,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import com.google.common.collect.Sets;
 import com.sun.net.httpserver.HttpHandler;
 
+import datawave.authorization.remote.RemoteAuthorizationException;
 import datawave.common.test.integration.IntegrationTest;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.composite.CompositeLogicException;
@@ -31,8 +35,17 @@ import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
+import datawave.query.tables.remote.RemoteQueryLogic;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
+import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
+import datawave.webservice.result.GenericResponse;
 
 @Category(IntegrationTest.class)
 public class RemoteTimeoutInterceptingQueryLogicIT {
@@ -387,5 +400,108 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         assertFalse(r.isCaught().get());
         assertEquals("1: " + RemoteTimeoutInterceptingQueryLogic.REMOTE_TIMEOUT_PLAN, r.getPlan());
+    }
+
+    @Test(expected = RemoteAuthorizationException.class)
+    public void testListEffectiveAuthorizations() throws AuthorizationException {
+        ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
+
+        logic.getUserOperations().listEffectiveAuthorizations(null);
+    }
+
+    @Test
+    public void testListEffectiveAuthorizationsSuppressed() throws AuthorizationException {
+        logic.setSuppressTimeout(true);
+
+        ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
+
+        SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
+        DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(), null, null, -1L);
+        DatawavePrincipal datawavePrincipal = new DatawavePrincipal(Collections.singleton(user));
+
+        logic.getUserOperations().listEffectiveAuthorizations(datawavePrincipal);
+    }
+
+    @Test(expected = RemoteAuthorizationException.class)
+    public void testFlushCachedCredentials() throws AuthorizationException {
+        ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
+
+        logic.getUserOperations().flushCachedCredentials(null);
+    }
+
+    @Test
+    public void testFlushCachedCredentialsSuppressed() throws AuthorizationException {
+        logic.setSuppressTimeout(true);
+
+        ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
+
+        logic.getUserOperations().flushCachedCredentials(null);
+    }
+
+    @Test
+    public void testCompositeListEffectAuths() {
+        ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
+
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
+
+        testUtil.updateRoute("/DataWave/Query/" + DEFAULT_REMOTE_LOGIC + "/plan", foreverHandler);
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+
+        logics.put("RemoteLogic", logic);
+
+        CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
+        compositeLogic.setMaxPageSize(1);
+        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
+        compositeLogic.setQueryLogics(logics);
+        compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        RemoteQueryServiceTestUtil.QueryRunnable r = new RemoteQueryServiceTestUtil.QueryRunnable(compositeLogic);
+        r.run();
+
+        assertTrue(r.isCaught().get());
+        assertNotNull(r.getException());
+        assertTrue(r.getException().getCause() instanceof AuthorizationException);
+    }
+
+    @Test
+    public void testCompositeListEffectAuthsSuppressed() {
+        logic.setSuppressTimeout(true);
+
+        ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
+
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+
+        logics.put("RemoteLogic", logic);
+
+        CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
+        compositeLogic.setMaxPageSize(1);
+        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
+        compositeLogic.setQueryLogics(logics);
+        compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        RemoteQueryServiceTestUtil.QueryRunnable r = new RemoteQueryServiceTestUtil.QueryRunnable(compositeLogic, 0, QUERY, testUtil);
+        r.run();
+
+        assertFalse(r.isCaught().get());
+    }
+
+    // RemoteUserOperationsImpl is in web-services/security which is outside the scope of this package, so simulate this
+    private static class AlwaysRemoteAuthorizationExceptionUserOperations implements UserOperations {
+        @Override
+        public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
+            throw new RemoteAuthorizationException("test listEffectiveAuthorizations", null);
+        }
+
+        @Override
+        public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) throws AuthorizationException {
+            throw new RemoteAuthorizationException("test flushCachedCredentials", null);
+        }
     }
 }

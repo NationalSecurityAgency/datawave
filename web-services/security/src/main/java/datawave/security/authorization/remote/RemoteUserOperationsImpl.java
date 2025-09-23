@@ -1,9 +1,14 @@
 package datawave.security.authorization.remote;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
+
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.http.conn.ConnectTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -11,6 +16,7 @@ import org.springframework.cache.annotation.EnableCaching;
 
 import com.fasterxml.jackson.databind.ObjectReader;
 
+import datawave.authorization.remote.RemoteAuthorizationException;
 import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -65,15 +71,23 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         log.info("Cache fault: Retrieving effective auths for " + principal.getPrimaryUser().getDn());
         final String suffix = LIST_EFFECTIVE_AUTHS;
         // includeRemoteServices=false to avoid any loops
-        return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
-            uriBuilder.addParameter(INCLUDE_REMOTE_SERVICES, "false");
-        }, httpGet -> {
-            httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
-            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
-        }, entity -> {
-            return readResponse(entity, authResponseReader);
-        }, () -> suffix);
+        try {
+            return executeGetMethod(suffix, uriBuilder -> {
+                uriBuilder.addParameter(INCLUDE_REMOTE_SERVICES, "false");
+            }, httpGet -> {
+                httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+                httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
+            }, entity -> {
+                return readResponse(entity, authResponseReader);
+            }, () -> suffix);
+        } catch (SocketTimeoutException | ConnectTimeoutException e) {
+            // also covers ConnectionPoolTimeoutException as a subclass of ConnectTimeoutException
+            throw new RemoteAuthorizationException("RemoteQueryService timed out", e);
+        } catch (URISyntaxException | IOException e) {
+            // this mimics what happens up inside RemoteQueryService
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -82,15 +96,23 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         final String suffix = FLUSH_CREDS;
         // includeRemoteServices=false to avoid any loops
-        return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
-            uriBuilder.addParameter(INCLUDE_REMOTE_SERVICES, "false");
-        }, httpGet -> {
-            httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
-            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
-        }, entity -> {
-            return readResponse(entity, genericResponseReader);
-        }, () -> suffix);
+        try {
+            return executeGetMethod(suffix, uriBuilder -> {
+                uriBuilder.addParameter(INCLUDE_REMOTE_SERVICES, "false");
+            }, httpGet -> {
+                httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+                httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
+            }, entity -> {
+                return readResponse(entity, genericResponseReader);
+            }, () -> suffix);
+        } catch (SocketTimeoutException | ConnectTimeoutException e) {
+            // also covers ConnectionPoolTimeoutException as a subclass of ConnectTimeoutException
+            throw new RemoteAuthorizationException("RemoteQueryService timed out", e);
+        } catch (URISyntaxException | IOException e) {
+            // this mimics what happens up inside RemoteQueryService
+            throw new RuntimeException(e);
+        }
     }
 
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {

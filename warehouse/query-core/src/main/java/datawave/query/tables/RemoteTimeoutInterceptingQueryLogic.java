@@ -9,6 +9,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
+import datawave.authorization.remote.RemoteAuthorizationException;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.DelegatingQueryLogic;
@@ -16,6 +17,12 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.microservice.query.Query;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.ProxiedUserDetails;
+import datawave.security.authorization.UserOperations;
+import datawave.user.AuthorizationsListBase;
+import datawave.user.DefaultAuthorizationsList;
+import datawave.webservice.result.GenericResponse;
 
 /**
  * This QueryLogic will intercept RemoteTimeoutException and RemoteTimeoutQueryRuntimeException and optionally suppress them. Calls made after a suppressed
@@ -53,13 +60,15 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
-        try {
-            return super.initialize(connection, settings, runtimeQueryAuthorizations);
-        } catch (RemoteTimeoutQueryException e) {
-            if (!suppressTimeout) {
-                throw e;
+        if (!timedOut) {
+            try {
+                return super.initialize(connection, settings, runtimeQueryAuthorizations);
+            } catch (RemoteTimeoutQueryException e) {
+                if (!suppressTimeout) {
+                    throw e;
+                }
+                timedOut = true;
             }
-            timedOut = true;
         }
 
         // op didn't complete
@@ -91,6 +100,15 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
+        if (timedOut) {
+            return new TransformIterator() {
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+            };
+        }
+
         final TransformIterator delegate = super.getTransformIterator(settings);
 
         // wrap the existing TransformIterator and catch timeouts
@@ -167,6 +185,50 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
             @Override
             public Object next() {
                 return delegateIterator.next();
+            }
+        };
+    }
+
+    @Override
+    public UserOperations getUserOperations() {
+        final UserOperations base = super.getUserOperations();
+
+        if (base == null) {
+            return base;
+        }
+
+        return new UserOperations() {
+            @Override
+            public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
+                try {
+                    return base.listEffectiveAuthorizations(callerObject);
+                } catch (RemoteAuthorizationException e) {
+                    if (!suppressTimeout) {
+                        throw e;
+                    }
+                    timedOut = true;
+                    // default this to empty since it timed out
+                    DefaultAuthorizationsList blankAuths = new DefaultAuthorizationsList();
+                    blankAuths.setUserAuths(callerObject.getPrimaryUser().getDn().subjectDN(), callerObject.getPrimaryUser().getDn().issuerDN(),
+                                    Collections.emptyList());
+                    blankAuths.addMessage("Remote list effective authorizations timed out");
+                    return blankAuths;
+                }
+            }
+
+            @Override
+            public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) throws AuthorizationException {
+                try {
+                    return base.flushCachedCredentials(callerObject);
+                } catch (RemoteAuthorizationException e) {
+                    if (!suppressTimeout) {
+                        throw e;
+                    }
+                    timedOut = true;
+                    GenericResponse<String> response = new GenericResponse<>();
+                    response.addMessage("Remote flush credentials timed out");
+                    return response;
+                }
             }
         };
     }

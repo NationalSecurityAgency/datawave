@@ -2,6 +2,7 @@ package datawave.query.tables;
 
 import static datawave.query.tables.RemoteQueryServiceTestUtil.DEFAULT_REMOTE_LOGIC;
 import static datawave.query.tables.RemoteQueryServiceTestUtil.NON_ROUTABLE_HOST;
+import static datawave.webservice.common.remote.RemoteServiceUtil.ForeverHandler;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -20,7 +21,6 @@ import com.sun.net.httpserver.HttpHandler;
 import datawave.common.test.integration.IntegrationTest;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
-import datawave.query.tables.RemoteQueryServiceTestUtil.ForeverHandler;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
@@ -208,7 +208,7 @@ public class RemoteEventQueryLogicIT {
     }
 
     @Test
-    public void testConnectionPoolTimeout() throws InterruptedException {
+    public void testConnectionPoolTimeout() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
         RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
 
