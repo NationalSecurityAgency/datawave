@@ -29,7 +29,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 
-import datawave.core.common.connection.AccumuloClientPool;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.http.converter.html.BannerProvider;
@@ -55,7 +55,6 @@ import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
-import datawave.query.util.TypeMetadataHelper;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -99,16 +98,16 @@ public class QueryMetricHandlerConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ShardTableQueryMetricHandler shardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
-                    @Qualifier("warehouse") AccumuloClientPool accumuloClientPool, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
+                    AccumuloConnectionFactory connectionFactory, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
                     MarkingFunctions markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
                     ResponseObjectFactory responseObjectFactory, WebClient.Builder webClientBuilder,
                     @Autowired(required = false) JWTTokenHandler jwtTokenHandler, DnUtils dnUtils, QueryMetricResponseFactory queryMetricResponseFactory) {
         ShardTableQueryMetricHandler handler;
         if (queryMetricHandlerProperties.isUseRemoteQuery()) {
-            handler = new RemoteShardTableQueryMetricHandler(queryMetricHandlerProperties, accumuloClientPool, logicFactory, metricFactory, markingFunctions,
+            handler = new RemoteShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
                             queryMetricCombiner, luceneToJexlQueryParser, responseObjectFactory, webClientBuilder, jwtTokenHandler, dnUtils);
         } else {
-            handler = new LocalShardTableQueryMetricHandler(queryMetricHandlerProperties, accumuloClientPool, logicFactory, metricFactory, markingFunctions,
+            handler = new LocalShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
                             queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
         }
         handler.setQueryMetricResponseFactory(queryMetricResponseFactory);

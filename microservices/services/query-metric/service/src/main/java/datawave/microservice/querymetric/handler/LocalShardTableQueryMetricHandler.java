@@ -15,14 +15,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import datawave.core.common.connection.AccumuloClientPool;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -50,10 +47,11 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
 
     protected ExecutorService executorService;
 
-    public LocalShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, @Qualifier("warehouse") AccumuloClientPool clientPool,
+    public LocalShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
                     QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions markingFunctions,
                     QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, DnUtils dnUtils) {
-        super(queryMetricHandlerProperties, clientPool, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
+        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser,
+                        dnUtils);
 
         this.datawaveQueryMetricFactory = metricFactory;
 
@@ -81,8 +79,8 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
                 cachedQueryMap.put(queryId, cachedQuery);
 
                 QueryLogic<?> queryLogic = logicFactory.getObject();
-                Map<String,String> trackingMap = AccumuloClientTracking.getTrackingMap(Thread.currentThread().getStackTrace());
-                accumuloClient = accumuloClientPool.borrowObject(trackingMap);
+                Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+                accumuloClient = connectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
 
                 cachedQuery.setAccumuloClient(accumuloClient);
 
@@ -145,7 +143,11 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
         try {
             CachedQuery cachedQuery = cachedQueryMap.remove(queryId);
             if (cachedQuery.getAccumuloClient() != null) {
-                this.accumuloClientPool.returnObject(cachedQuery.getAccumuloClient());
+                try {
+                    this.connectionFactory.returnClient(cachedQuery.getAccumuloClient());
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
