@@ -21,8 +21,7 @@
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-text>1.9</version.commons-text>
-        <version.datawave>7.25.0</version.datawave>
-        <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
+        <version.datawave>7.30.0</version.datawave>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.glassfish>2.3.6</version.glassfish>
@@ -55,7 +54,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave.accumulo-utils}</version>
+                <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
