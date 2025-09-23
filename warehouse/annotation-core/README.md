@@ -47,7 +47,7 @@ The source code for the generated source code in `src/main/java/datawave/annotat
 
 ### Prerequisites 
 
-* **Protoc**: We used `protoc` from `libprotoc 3.16.3` from [the GitHub protobuf releases page](https://github.com/protocolbuffers/protobuf/releases/tag/v3.16.3).
+* **Protoc**: We used `protoc` from `libprotoc 3.16.3` from [the GitHub protobuf releases page](s).
   * Follow the instructions to install this into `/usr/local/bin`.
 * **Google APIs**:`SegmentV1.proto` imports `field_mask` and `timestamp` from [fuchsia.googlesource.com](https://fuchsia.googlesource.com/third_party/googleapis).
   * These get installed into `/usr/local/include`
