@@ -35,10 +35,10 @@
         <version.protobuf-java>3.16.3</version.protobuf-java>
         <version.slf4j>2.0.12</version.slf4j>
         <version.validation-api>2.0.2</version.validation-api>
-        <version.webjars.bootstrap>4.3.1</version.webjars.bootstrap>
-        <version.webjars.jquery>3.4.1</version.webjars.jquery>
-        <version.webjars.leaflet>1.5.1</version.webjars.leaflet>
-        <version.webjars.locator-core>0.35</version.webjars.locator-core>
+        <version.webjars.bootstrap>5.3.8</version.webjars.bootstrap>
+        <version.webjars.jquery>3.7.1</version.webjars.jquery>
+        <version.webjars.leaflet>1.8.0</version.webjars.leaflet>
+        <version.webjars.locator-core>0.59</version.webjars.locator-core>
     </properties>
     <dependencyManagement>
         <dependencies>
