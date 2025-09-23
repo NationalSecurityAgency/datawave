@@ -120,7 +120,7 @@ public class ReloadFilesFromLoadedJob {
 
         Configuration conf = new Configuration();
         conf.set("reload.files.error.on.not.found", args[2]);
-        if(args.length >=  4) {
+        if(args.length >= 4) {
             conf.set("reload.files.hdfs.base.dir", args[3]);
         }
 
