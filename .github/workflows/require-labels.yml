@@ -1,0 +1,26 @@
+name: Require PR Labels
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize, reopened]
+
+jobs:
+  require-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const requiredLabels = ["Integration Tested", "no-downstream-affects"];
+            const labels = context.payload.pull_request.labels.map(label => label.name);
+
+            const hasRequired = requiredLabels.some(l => labels.includes(l));
+
+            if (!hasRequired) {
+              core.setFailed(
+                `This PR must have at least one of the required labels: ${requiredLabels.join(", ")}`
+              );
+            } else {
+              core.info("PR has at least one required label ✅");
+            }

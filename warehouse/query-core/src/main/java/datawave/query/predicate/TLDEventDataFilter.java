@@ -30,7 +30,7 @@ import datawave.query.tld.TLD;
  */
 public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
-    public static final byte[] FI_CF = new Text("fi").getBytes();
+    public static final byte[] FI_CF = Constants.FI_PREFIX.getBytes();
     public static final byte[] TF_CF = Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes();
 
     private final long maxFieldsBeforeSeek;
@@ -53,6 +53,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     // track recently parsed key for fast(er) evaluation
     private ParseInfo lastParseInfo;
+
+    private final RootPointerPredicate isRootPointer = new RootPointerPredicate();
 
     /**
      * track count limits per field, _ANYFIELD_ implies a constraint on all fields
@@ -143,6 +145,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     @Override
     public void startNewDocument(Key document) {
         super.startNewDocument(document);
+        isRootPointer.startNewDocument(document);
         // clear the parse info so a length comparison can't be made against a new document
         lastParseInfo = null;
         // reset the seek index so the first call to getListSeek() will return the first field
@@ -237,10 +240,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
                     root = false;
                 } else {
                     // the filter is being used again at the beginning of the document and state needs to be reset
-                    root = isRootPointer(current);
+                    root = isRootPointer.test(current);
                 }
             } else {
-                root = isRootPointer(current);
+                root = isRootPointer.test(current);
             }
             parseInfo.setRoot(root);
             parseInfo.setField(getCurrentField(current));
@@ -269,72 +272,6 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         ByteSequence cf = k.getColumnFamilyData();
         return (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) != 0)
                         && (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) != 0);
-    }
-
-    public static boolean isRootPointer(Key k) {
-        ByteSequence cf = k.getColumnFamilyData();
-
-        if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
-            ByteSequence seq = k.getColumnQualifierData();
-            int i = seq.length() - 19;
-            for (; i >= 0; i--) {
-
-                if (seq.byteAt(i) == '.') {
-                    return false;
-                } else if (seq.byteAt(i) == 0x00) {
-                    break;
-                }
-            }
-
-            for (i += 20; i < seq.length(); i++) {
-                if (seq.byteAt(i) == '.') {
-                    return false;
-                }
-            }
-            return true;
-
-        } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
-            ByteSequence seq = k.getColumnQualifierData();
-
-            // work front to back, just in case the TF value includes a null byte
-            boolean foundStart = false;
-            int dotCount = 0;
-            for (int i = 0; i < seq.length(); i++) {
-                if (!foundStart && seq.byteAt(i) == 0x00) {
-                    foundStart = true;
-                } else if (foundStart && seq.byteAt(i) == 0x00) {
-                    // end of uid, got here, is root
-                    return true;
-                } else if (foundStart && seq.byteAt(i) == '.') {
-                    dotCount++;
-                    if (dotCount > 2) {
-                        return false;
-                    }
-                }
-            }
-
-            // can't parse
-            return false;
-        } else {
-            int i = 0;
-            for (i = 0; i < cf.length(); i++) {
-
-                if (cf.byteAt(i) == 0x00) {
-                    break;
-                }
-            }
-
-            for (i += 20; i < cf.length(); i++) {
-
-                if (cf.byteAt(i) == '.') {
-                    return false;
-                } else if (cf.byteAt(i) == 0x00) {
-                    return true;
-                }
-            }
-            return true;
-        }
-
     }
 
     /**

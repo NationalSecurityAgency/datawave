@@ -81,7 +81,7 @@ public interface QueryMetricModelFormat {
             List<BaseQueryMetric.Prediction> predictionsList = new ArrayList<>(predictions);
             Collections.sort(predictionsList);
             for (BaseQueryMetric.Prediction p : predictionsList) {
-                builder.append(delimiter).append(p.getName()).append(" = ").append(p.getPrediction());
+                builder.append(delimiter).append(p.getName()).append(" = ").append(p.getPrediction()).append(":").append(p.getConfidence());
                 delimiter = "<br>";
             }
         } else {

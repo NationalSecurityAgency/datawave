@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package datawave.annotation.protobuf.v1;
+
+option java_package = "datawave.annotation.protobuf.v1";
+option java_multiple_files = true;
+
+import "google/protobuf/field_mask.proto"; // used for updates
+import "google/protobuf/timestamp.proto"; // used for timestamps
+import "google/api/annotations.proto"; // used for grpc-http transcoding
+
+// segment boundary types
+message All { } // annotations on the entire object
+message Point { double x = 1; double y = 2; string label = 3; } // annotations on a point
+message PointList { repeated Point point = 1; } // a list of points, can be a bounding box, polygon or multiple point features.
+message TimeSpanSeconds { double startSeconds = 1; double endSeconds = 2; } // annotations on a span of time
+message TextSpanChars { int64 startCharacter = 1; int64 endCharacter = 2; } // annotations on a span of characters
+
+// segment value, e.g. a label, confidence and source
+message SegmentValue {
+    string value = 1; // e.g., label
+    double score = 2; // e.g., confidence
+    optional string extension = 3; // type-specific data
+}
+
+// segment wrapping, consisting of a boundary and one or more associated values.
+message Segment {
+    string annotationId = 1; // the annotation this segment is associated with.
+    string segmentId = 2; // the segment id in this annotation.
+
+    google.protobuf.Timestamp createTime = 3; // segment creation time
+    google.protobuf.Timestamp updateTime = 4; // segment update time
+
+    // Used for optimistic concurrency across JSON and gRPC
+    string eTag = 5;
+
+    // Multiple values associated with this segment.
+    repeated SegmentValue segmentValue = 6;
+
+    // arbitrary, optional metadata
+    map<string, string> metadata = 7;
+
+    // used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
+    string boundaryType = 10;
+
+    // Each segment has a specific boundary that the values are relevant to.
+    oneof boundary {
+        All all = 20;
+        PointList pointList = 21;
+        TimeSpanSeconds time = 22;
+        TextSpanChars characters = 23;
+        // add future segment types here
+    }
+
+    reserved 100 to 199; // for future growth
+    // reserved "remove_this_field" - add this if we decide to remove a field.
+}
+
+message Annotation {
+    string shard = 1;
+    string dataType = 2;
+    string uid = 3;
+    string annotationType = 4;
+    string annotationId = 5;
+    map<string, string> metadata = 7;
+    repeated Segment segments = 8;
+}
+
+// ------------ Requests / Responses ------------
+
+// Embed-able list/element wrappers that are JSON-friendly.
+message SegmentList {
+    repeated Segment segments = 1;
+    string nextPageToken = 2;
+}
+
+message AnnotationList {
+    repeated Annotation annotations = 1;
+    string nextPageToken = 2;
+}
+
+// Annotations
+message GetAnnotationRequest { string idType = 1; string annotationId = 2; }
+
+message CreateAnnotationRequest {
+    Annotation annotation = 2; // ignore client-sent id/create_time/update_time/etag
+}
+
+message UpdateAnnotationRequest {
+    Annotation annotation = 1; // must include id
+    google.protobuf.FieldMask updateMask = 2; // e.g. "label,confidence,time"
+    // If set, require etag to match for optimistic concurrency.
+    bool allowMissing = 3; // optional UPSERT behavior
+}
+
+message DeleteAnnotationRequest {
+    string annotationId = 1;
+    // Optional: require matching etag to delete
+    string eTag = 3;
+}
+
+message ListAnnotationsRequest {
+    int32 pageSize = 1;
+    string pageToken = 2;
+    string filter = 3; // Optional filters (label, type, time ranges, etc.)
+}
+
+// Segments
+message GetSegmentRequest { string annotationId = 1; string segmentId = 2; }
+
+message CreateSegmentRequest {
+    Segment segment = 2; // ignore client-sent id/create_time/update_time/etag
+}
+
+message UpdateSegmentRequest {
+    Segment segment = 1; // must include id
+    google.protobuf.FieldMask updateMask = 2; // e.g. "label,confidence,time"
+    // If set, require etag to match for optimistic concurrency.
+    bool allowMissing = 3; // optional UPSERT behavior
+}
+
+message DeleteSegmentRequest {
+    string annotationId = 1;
+    string segmentId = 2;
+    // Optional: require matching etag to delete
+    string eTag = 3;
+}
+
+message ListSegmentsRequest {
+    int32 pageSize = 1;
+    string pageToken = 2;
+    string filter = 3; // Optional filters (label, type, time ranges, etc.)
+}
+
+// ------------ Service (gRPC + REST via http annotations) ------------
+
+service SegmentService {
+    rpc GetSegment(GetSegmentRequest) returns (Segment) {
+        option (google.api.http) = { get: "/v1/segments/{id}" };
+    }
+
+    rpc ListSegments(ListSegmentsRequest) returns (SegmentList) {
+        option (google.api.http) = { get: "/v1/segments" };
+    }
+
+    rpc CreateSegment(CreateSegmentRequest) returns (Segment) {
+        option (google.api.http) = {
+            post: "/v1/segments"
+            body: "segment"
+        };
+    }
+
+    // PATCH with update_mask supports partial updates cleanly in JSON.
+    rpc UpdateSegment(UpdateSegmentRequest) returns (Segment) {
+        option (google.api.http) = {
+            patch: "/v1/segments/{segment.id}"
+            body: "segment"
+        };
+    }
+
+    rpc DeleteSegment(DeleteSegmentRequest) returns (Segment) {
+        option (google.api.http) = { delete: "/v1/segments/{id}" };
+    }
+}
