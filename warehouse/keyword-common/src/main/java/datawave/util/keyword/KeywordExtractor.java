@@ -103,11 +103,11 @@ public class KeywordExtractor {
     }
 
     /**
-     * Extract keywords from the <code>foundContent</code> field in priority order based on the list of views in <code>preferredViews</code> field. Will return
-     * a KeywordResults object populated with the keywords extracted from the first view in <code>preferredViews</code> that is found to contain content. If no
-     * keywords can be extracted from all preferred views, returns an empty <code>KeywordResults</code> object.
+     * Extract keywords from the {@code foundContent} field in priority order based on the list of views in {@code preferredViews} field. Will return
+     * a KeywordResults object populated with the keywords extracted from the first view in {@code preferredViews} that is found to contain content. If no
+     * keywords can be extracted from all preferred views, returns an empty {@code KeywordResults} object.
      *
-     * @return a KeywordResults object containing keywords from the first of the <code>preferredViews</code> found in <code>foundContent</code> that yields a
+     * @return a KeywordResults object containing keywords from the first of the {@code preferredViews} found in {@code foundContent} that yields a
      *         non-empty set of keywords or an empty KeywordResults object if no keywords can be extracted.
      */
     @Nonnull
@@ -142,7 +142,7 @@ public class KeywordExtractor {
      *            the view name we're extracting from.
      * @param content
      *            the content associated with that view.
-     * @return a KeywordResult object containing keywords extracted from the provided content, or the canonical <code>EMPTY_RESULTS</code> KeywordResults object
+     * @return a KeywordResult object containing keywords extracted from the provided content, or the canonical {@code EMPTY_RESULTS} KeywordResults object
      *         if no keywords could be extracted.
      */
     @Nonnull

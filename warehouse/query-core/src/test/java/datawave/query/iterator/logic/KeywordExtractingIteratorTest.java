@@ -61,16 +61,22 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
     private static final String email987654321Content2 = "The remainder of this article is structured as follows Section 2 offers a comprehensive overview of related research Section 3 defines the architecture of YAKE Section 4 describes the experimental setup Section 5 discusses the obtained results Section 6 provides a detailed analysis on feature importance Finally Section 7 summarizes the article and concludes with some final remarks";
     private static final String pdf111222333Content = "YAKE is a lightweight unsupervised automatic keyword extraction method that uses text statistical features to select the most important keywords from a document It requires no training external corpus or dictionaries and works across multiple languages and domains regardless of text size ";
 
+    /**
+     * Set up our data source before the tests begin.
+     */
     @BeforeClass
     public static void beforeClass() throws IOException {
         givenData("email", "123.456.789", "CONTENT1", email123456789Content1);
         givenData("email", "987.654.321", "CONTENT1", email987654321Content1);
         givenData("email", "987.654.321", "CONTENT2", email987654321Content2);
         givenData("pdf", "111.222.333", "CONTENT", pdf111222333Content);
-        givenData("pdf", "111.222.333", "CONTENT31", "test content wildcard matching one");
-        givenData("pdf", "111.222.333", "CONTENT32", "test content wildcard matching two");
     }
 
+    /**
+     * For the data given to this function, add a key to the data source that contains the given information. <br>
+     * For these tests, 'd' column keys are created with the specified data type, uid, content name, and the content to
+     * be gzipped and base64 encoded.
+     */
     private static void givenData(String datatype, String uid, String contentName, String content) throws IOException {
         Text colq = new Text(datatype + Constants.NULL + uid + Constants.NULL + contentName);
         Key key = new Key(row, colf, colq, new ColumnVisibility("ALL"), new Date().getTime());
@@ -86,20 +92,33 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         source.add(entry);
     }
 
+
+    /**
+     * Clear the iterator options after every test.
+     */
     @After
     public void tearDown() {
         options.clear();
     }
 
+    /**
+     * Add the passed in values to their respective options to be used in the iterator for the test.
+     */
     private void givenOptions(String viewNames, Map<String,String> languagemap) {
         options.put(VIEW_NAMES, viewNames);
         options.put(DOCUMENT_LANGUAGES, new Gson().toJson(languagemap));
     }
 
+    /**
+     * Initializes an iterator on the data source with the options set by calling {@code givenOptions()}
+     */
     private void initIterator() throws IOException {
         iterator.init(new SortedListKeyValueIterator(source), options, env);
     }
 
+    /**
+     * We expect the iterator to not return anything when the specified content is not found.
+     */
     @Test
     public void testNoContentFound() throws IOException {
         String uid = "i dont exist";
@@ -122,6 +141,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertFalse(iterator.hasTop());
     }
 
+    /**
+     * We expect the iterator to not return anything when the {@code KeywordExtractor} does not produce keywords for the found content.
+     */
     @Test
     public void testNoKeywordsGenerated() throws IOException {
         String uid = "123.456.789";
@@ -144,6 +166,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertFalse(iterator.hasTop());
     }
 
+    /**
+     * Test that we find content when searching with the "all" range (TLD and all children).
+     */
     @Test
     public void testMatchAll() throws IOException {
         String uid = "987.654.321";
@@ -175,6 +200,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
     }
 
+    /**
+     * Test that we find content when using the range to only return the TLD ({@code PARENT_ONLY}).
+     */
     @Test
     public void testMatchTLD() throws IOException {
         String uid = "987.654.321";
@@ -206,6 +234,10 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
     }
 
+    /**
+     * Test that the wild card matching works as expected.<br>
+     * It should generate keywords for the first view found that matches the term when iterating through the keys.
+     */
     @Test
     public void testMatchWildcard() throws IOException {
         String uid = "987.654.321";
@@ -237,6 +269,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
     }
 
+    /**
+     * Test that we extract keywords based on the first matched content from the prioritized list.
+     */
     @Test
     public void testPrioritizedList() throws IOException {
         String uid = "987.654.321";
@@ -268,6 +303,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
     }
 
+    /**
+     * Test that if we do not specify our own list of prioritized views, that the default list will be used.
+     */
     @Test
     public void testMatchDefaultContent() throws IOException {
         String uid = "111.222.333";
