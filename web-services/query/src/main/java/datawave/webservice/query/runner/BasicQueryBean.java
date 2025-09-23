@@ -342,7 +342,7 @@ public class BasicQueryBean {
         GenericResponse<String> createResponse;
         QueryWizardStep3Response queryWizardStep3Response = new QueryWizardStep3Response();
         try {
-            createResponse = queryExecutor.createQuery(logicName, queryParameters, httpHeaders);
+            createResponse = queryExecutor.createQuery(logicName, null, queryParameters, httpHeaders);
         } catch (Exception e) {
             queryWizardStep3Response.setErrorMessage(e.getMessage());
             return queryWizardStep3Response;
