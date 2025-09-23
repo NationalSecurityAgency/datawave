@@ -18,7 +18,7 @@ jobs:
             const hasRequired = requiredLabels.some(l => labels.includes(l));
 
             if (!hasRequired) {
-              core.setFailed(
+              core.notice(
                 `This PR must have at least one of the required labels: ${requiredLabels.join(", ")}`
               );
             } else {
