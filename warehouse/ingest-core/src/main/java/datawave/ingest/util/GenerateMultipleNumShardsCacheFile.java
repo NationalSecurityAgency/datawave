@@ -8,7 +8,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
@@ -21,16 +21,17 @@ public class GenerateMultipleNumShardsCacheFile {
 
     public static final String MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE = "ns";
     public static final String CONFIG_DIRECTORY_LOCATION_OVERRIDE = "cd";
-    public static final String CONFIG_SUFFIEX_OVERRIDE = "cs";
+    public static final String CONFIG_SUFFIX_OVERRIDE = "cs";
 
     @SuppressWarnings("static-access")
     public static void main(String[] args) throws ParseException, AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         AccumuloCliOptions accumuloOptions = new AccumuloCliOptions();
         Options options = accumuloOptions.getOptions();
-        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Config directory path").create(CONFIG_DIRECTORY_LOCATION_OVERRIDE));
-        options.addOption(OptionBuilder.isRequired(false).hasArg().withDescription("Config file suffix").create(CONFIG_SUFFIEX_OVERRIDE));
-        options.addOption(OptionBuilder.isRequired(false).hasArg().withDescription("Multiple numShards cache file path")
-                        .create(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE));
+        options.addOption(Option.builder(CONFIG_DIRECTORY_LOCATION_OVERRIDE).argName("Config Directory Path").hasArg().required().desc("Config directory path")
+                        .build());
+        options.addOption(Option.builder(CONFIG_SUFFIX_OVERRIDE).argName("Config Suffix").hasArg().desc("Config file suffix").build());
+        options.addOption(Option.builder(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE).argName("Multiple NumShards Cache File Path").hasArg()
+                        .desc("Multiple numShards cache file path").build());
         Configuration conf = accumuloOptions.getConf(args, true);
         CommandLine cl;
         String configDirectory = null;
@@ -47,8 +48,8 @@ public class GenerateMultipleNumShardsCacheFile {
             if (cl.hasOption(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE)) {
                 conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, cl.getOptionValue(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE));
             }
-            if (cl.hasOption(CONFIG_SUFFIEX_OVERRIDE)) {
-                configSuffix = cl.getOptionValue(CONFIG_SUFFIEX_OVERRIDE);
+            if (cl.hasOption(CONFIG_SUFFIX_OVERRIDE)) {
+                configSuffix = cl.getOptionValue(CONFIG_SUFFIX_OVERRIDE);
             } else {
                 configSuffix = "config.xml";
             }

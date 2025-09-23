@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.util.StringUtils;
+import datawave.util.CompositeTimestamp;
 
 /**
  * This class provides an abstract base class to be extended to filter based on matching a STRING to the {@code Strings} tokens that represents some portion of
@@ -69,7 +69,7 @@ public abstract class TokenFilterBase extends AppliedRule {
             dtFlag = true;
         } else {
             if (hasToken(k, v, patternBytes)) {
-                long timeStamp = k.getTimestamp();
+                long timeStamp = CompositeTimestamp.getAgeOffDate(k.getTimestamp());
                 dtFlag = timeStamp > period.getCutOffMilliseconds();
                 if (log.isTraceEnabled()) {
                     log.trace("timeStamp = " + timeStamp);
@@ -121,7 +121,7 @@ public abstract class TokenFilterBase extends AppliedRule {
         }
 
         if (options.getOption(AgeOffConfigParams.MATCHPATTERN) != null) {
-            String[] patternStrs = StringUtils.split(options.getOption(AgeOffConfigParams.MATCHPATTERN), ',');
+            String[] patternStrs = options.getOption(AgeOffConfigParams.MATCHPATTERN).split(",");
             patternBytes = new byte[patternStrs.length][];
             for (int i = 0; i < patternStrs.length; i++) {
                 patternBytes[i] = patternStrs[i].trim().getBytes();

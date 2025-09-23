@@ -19,7 +19,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.conf.ClientProperty;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -56,7 +57,7 @@ public class ScannerFactory {
     protected Map<String,ScannerBase.ConsistencyLevel> consistencyLevelMap = new HashMap<>();
     protected Map<String,Map<String,String>> executionHintMap = new HashMap<>();
 
-    private static final Logger log = Logger.getLogger(ScannerFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(ScannerFactory.class);
 
     /**
      * Preferred constructor, builds scanner factory from configs
@@ -135,7 +136,7 @@ public class ScannerFactory {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Created ScannerFactory " + System.identityHashCode(this) + " is wrapped ? " + (client instanceof WrappedConnector));
+            log.debug("Created ScannerFactory {}, wrapped={}", System.identityHashCode(this), (client instanceof WrappedConnector));
         }
     }
 
@@ -145,9 +146,9 @@ public class ScannerFactory {
 
             applyConfigs(bs, tableName);
 
-            log.debug("Created scanner " + System.identityHashCode(bs));
+            log.debug("Created scanner {}", System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
-                log.trace("Adding instance " + bs.hashCode());
+                log.trace("Adding instance {}", bs.hashCode());
             }
 
             synchronized (open) {
@@ -206,9 +207,9 @@ public class ScannerFactory {
 
             applyConfigs(bs, hintKey, tableName);
 
-            log.debug("Created scanner " + System.identityHashCode(bs));
+            log.debug("Created scanner {}", System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
-                log.trace("Adding instance " + bs.hashCode());
+                log.trace("Adding instance {}", bs.hashCode());
             }
             synchronized (open) {
                 if (open.get()) {
@@ -230,9 +231,9 @@ public class ScannerFactory {
 
             applyConfigs(bs, tableName);
 
-            log.debug("Created scanner " + System.identityHashCode(bs));
+            log.debug("Created scanner {}", System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
-                log.trace("Adding instance " + bs.hashCode());
+                log.trace("Adding instance {}", bs.hashCode());
             }
             synchronized (open) {
                 if (open.get()) {
@@ -358,7 +359,7 @@ public class ScannerFactory {
         Preconditions.checkNotNull(wrapper);
         Preconditions.checkArgument(open.get(), "Factory has been locked. No New scanners can be created");
 
-        log.debug("Creating limited scanner whose max threads is is " + scanQueue.getCapacity() + " and max capacity is " + maxQueue);
+        log.debug("Creating limited scanner whose max threads is {} and max capacity is {}", scanQueue.getCapacity(), maxQueue);
 
         ScanSessionStats stats = null;
         if (accrueStats) {
@@ -375,9 +376,9 @@ public class ScannerFactory {
 
         applyConfigs(session, hintKey, tableName);
 
-        log.debug("Created session " + System.identityHashCode(session));
+        log.debug("Created session {}", System.identityHashCode(session));
         if (log.isTraceEnabled()) {
-            log.trace("Adding instance " + session.hashCode());
+            log.trace("Adding instance {}", session.hashCode());
         }
         synchronized (open) {
             if (open.get()) {
@@ -414,7 +415,7 @@ public class ScannerFactory {
 
     public boolean close(ScannerBase bs) {
         try {
-            log.debug("Closed scanner " + System.identityHashCode(bs));
+            log.debug("Closed scanner {}", System.identityHashCode(bs));
             if (instances.remove(bs)) {
                 if (log.isTraceEnabled()) {
                     log.trace("Closing instance " + bs.hashCode());
@@ -460,16 +461,16 @@ public class ScannerFactory {
 
     public void close(ScannerSession bs) {
         try {
-            log.debug("Closed session " + System.identityHashCode(bs));
+            log.debug("Closed session {}", System.identityHashCode(bs));
             if (sessionInstances.remove(bs)) {
                 if (log.isTraceEnabled()) {
-                    log.trace("Closing instance " + bs.hashCode());
+                    log.trace("Closing instance {}", bs.hashCode());
                 }
                 bs.close();
             }
         } catch (Exception e) {
             // ANY EXCEPTION HERE CAN SAFELY BE IGNORED
-            log.trace("Exception closing ScannerSession, can be safely ignored: {}", e);
+            log.trace("Exception closing ScannerSession, can be safely ignored:", e);
         }
     }
 
@@ -538,14 +539,14 @@ public class ScannerFactory {
      */
     public void applyConfigs(ScannerBase scannerBase, String hintKey, String tableName) {
 
-        if (consistencyLevelMap != null && !consistencyLevelMap.isEmpty()) {
-            String key = consistencyLevelMap.containsKey(hintKey) ? hintKey : tableName;
-            scannerBase.setConsistencyLevel(consistencyLevelMap.get(key));
+        ScannerBase.ConsistencyLevel level = getConsistencyLevel(hintKey, tableName);
+        if (level != null) {
+            scannerBase.setConsistencyLevel(level);
         }
 
-        if (executionHintMap != null && !executionHintMap.isEmpty()) {
-            String key = executionHintMap.containsKey(hintKey) ? hintKey : tableName;
-            scannerBase.setExecutionHints(executionHintMap.get(key));
+        Map<String,String> hint = getExecutionHint(hintKey, tableName);
+        if (hint != null && !hint.isEmpty()) {
+            scannerBase.setExecutionHints(hint);
         }
     }
 
@@ -562,22 +563,72 @@ public class ScannerFactory {
     protected void applyConfigs(ScannerSession scannerSession, String hintKey, String tableName) {
         SessionOptions options = scannerSession.getOptions();
 
-        if (consistencyLevelMap != null && !consistencyLevelMap.isEmpty()) {
-            String key = consistencyLevelMap.containsKey(hintKey) ? hintKey : tableName;
-
-            if (consistencyLevelMap.containsKey(key)) {
-                options.setConsistencyLevel(consistencyLevelMap.get(key));
-            }
+        ScannerBase.ConsistencyLevel level = getConsistencyLevel(hintKey, tableName);
+        if (level != null) {
+            options.setConsistencyLevel(level);
         }
 
-        if (executionHintMap != null && !executionHintMap.isEmpty()) {
-            String key = executionHintMap.containsKey(hintKey) ? hintKey : tableName;
-
-            if (executionHintMap.containsKey(key)) {
-                options.setExecutionHints(executionHintMap.get(key));
-            }
+        Map<String,String> hint = getExecutionHint(hintKey, tableName);
+        if (hint != null && !hint.isEmpty()) {
+            options.setExecutionHints(hint);
         }
 
         scannerSession.setOptions(options);
+    }
+
+    /**
+     * Get a consistency level using the provided hint key, falling back to the table name if no consistency level is found
+     *
+     * @param hintKey
+     *            the hint key
+     * @param tableName
+     *            the table name, used as a fallback key
+     * @return the consistency level, or null if no consistency level exists
+     */
+    private ScannerBase.ConsistencyLevel getConsistencyLevel(String hintKey, String tableName) {
+
+        if (consistencyLevelMap == null || consistencyLevelMap.isEmpty()) {
+            return null;
+        }
+
+        ScannerBase.ConsistencyLevel level = consistencyLevelMap.get(hintKey);
+        if (level == null) {
+            level = consistencyLevelMap.get(tableName);
+        }
+
+        if (level == null) {
+            log.trace("no consistency level found for table: {} key: {}", tableName, hintKey);
+            return null;
+        }
+
+        return level;
+    }
+
+    /**
+     * Get execution hints using the provided hint key, falling back to the table name if no hint is found
+     *
+     * @param hintKey
+     *            the hint key
+     * @param tableName
+     *            the table name, used as fallback key
+     * @return the execution hint, or null if no hint exists
+     */
+    private Map<String,String> getExecutionHint(String hintKey, String tableName) {
+
+        if (executionHintMap == null || executionHintMap.isEmpty()) {
+            return null;
+        }
+
+        Map<String,String> hint = executionHintMap.get(hintKey);
+        if (hint == null) {
+            hint = executionHintMap.get(tableName);
+        }
+
+        if (hint == null) {
+            log.trace("no execution hint found for table: {} key: {} ", tableName, hintKey);
+            return null;
+        }
+
+        return hint;
     }
 }

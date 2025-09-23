@@ -11,7 +11,6 @@ import java.util.List;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.WordlistLoader;
 import org.apache.lucene.util.IOUtils;
-import org.apache.lucene.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,7 +191,7 @@ public interface TokenSearch {
             try {
                 CharArraySet stopSet = new CharArraySet(16, true /* ignore case */);
                 String pkg = Factory.class.getPackage().getName().replace('.', '/');
-                String resource = filename.indexOf("/") > -1 ? filename : (pkg + "/" + filename);
+                String resource = filename.indexOf('/') > -1 ? filename : (pkg + "/" + filename);
                 InputStream resourceStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
                 logger.info("Loading stopwords file " + filename + " from resource " + resource);
                 if (resourceStream == null) {

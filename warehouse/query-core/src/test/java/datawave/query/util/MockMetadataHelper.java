@@ -39,7 +39,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
-import datawave.query.model.FieldIndexHole;
+import datawave.query.model.IndexFieldHole;
 import datawave.query.model.QueryModel;
 import datawave.util.TableName;
 
@@ -50,6 +50,7 @@ public class MockMetadataHelper extends MetadataHelper {
     private Set<String> contentFields = new HashSet<>();
     private Set<String> riFields = new HashSet<>();
     private Set<String> nonEventFields = new HashSet<>();
+    private Multimap<String,String> compositeToFieldMap = HashMultimap.create();
     private Multimap<String,String> fieldsToDatatype = HashMultimap.create();
     protected Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     protected Map<String,Map<String,MetadataCardinalityCounts>> termCounts = new HashMap<>();
@@ -57,7 +58,7 @@ public class MockMetadataHelper extends MetadataHelper {
     protected Map<Map.Entry<String,String>,Map<String,Long>> cardinalityByDataTypeForFieldAndDate = Maps.newHashMap();
 
     private static final Logger log = Logger.getLogger(MockMetadataHelper.class);
-    protected Map<String,Map<String,FieldIndexHole>> fieldIndexHoles = Collections.emptyMap();
+    protected Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = Collections.emptyMap();
 
     Function<Type<?>,String> function = new Function<Type<?>,String>() {
         @Override
@@ -128,8 +129,8 @@ public class MockMetadataHelper extends MetadataHelper {
         getMetadata().allFields.addAll(fieldsToDatatype.keySet());
         for (Map.Entry<String,String> field : fieldsToDatatype.entries()) {
             try {
-                this.dataTypes.put(field.getKey(), Class.forName(field.getValue()).asSubclass(Type.class).newInstance());
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                this.dataTypes.put(field.getKey(), Class.forName(field.getValue()).asSubclass(Type.class).getDeclaredConstructor().newInstance());
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
                 this.fieldsToDatatype.putAll(fieldsToDatatype);
             }
         }
@@ -192,6 +193,19 @@ public class MockMetadataHelper extends MetadataHelper {
     @Override
     public boolean isReverseIndexed(String fieldName, Set<String> ingestTypeFilter) {
         return this.riFields.contains(fieldName);
+    }
+
+    @Override
+    public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) {
+        return this.riFields;
+    }
+
+    public void setCompositeToFieldMap(Multimap<String,String> compositeToFieldMap) {
+        this.compositeToFieldMap = compositeToFieldMap;
+    }
+
+    public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
+        return this.compositeToFieldMap;
     }
 
     @Override
@@ -345,7 +359,8 @@ public class MockMetadataHelper extends MetadataHelper {
             return 0L;
         }
 
-        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(), input -> datatypes.contains(input.getKey()));
+        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(),
+                        input -> datatypes.isEmpty() || datatypes.contains(input.getKey()));
 
         long sum = 0;
         for (Map.Entry<String,Long> entry : filteredByType) {
@@ -407,11 +422,11 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold) {
+    public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold) {
         return fieldIndexHoles;
     }
 
-    public void setFieldIndexHoles(Map<String,Map<String,FieldIndexHole>> fieldIndexHoles) {
+    public void setFieldIndexHoles(Map<String,Map<String,IndexFieldHole>> fieldIndexHoles) {
         this.fieldIndexHoles = fieldIndexHoles;
     }
 }

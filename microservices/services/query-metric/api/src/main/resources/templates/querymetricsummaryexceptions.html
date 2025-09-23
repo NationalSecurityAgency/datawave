@@ -1,0 +1,22 @@
+<html xmlns:th="http:/>/www.thymeleaf.org">
+<!--/*
+    The HTML page for QueryMetricSummaryResponse when there are exceptions
+*/-->
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DATAWAVE - Query Metrics Summary</title>
+    <link rel="stylesheet" type="text/css" href="${basePath + '/css/screen.css'}" media="screen">
+</head>
+<body>
+    <div th:utext="${header}"></div>
+    <h1>Query Metrics Summary</h1>
+    <b>EXCEPTIONS:</b>
+    <br>
+    <div th:each="exception : ${exceptions}">
+        <span th:text="${exception} + ', ' + ${schema}"></span>
+        <br>
+    </div>
+    <br/>
+    <div th:utext="${footer}"></div>
+</body>
+</html>

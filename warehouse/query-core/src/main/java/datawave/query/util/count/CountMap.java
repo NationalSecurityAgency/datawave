@@ -14,11 +14,10 @@ import com.esotericsoftware.kryo.io.Output;
  * Wrapper around a HashMap that supports Kryo serialization
  */
 public class CountMap implements KryoSerializable {
-
     private final Map<String,Long> counts;
 
     public CountMap() {
-        counts = new HashMap<>();
+        this.counts = new HashMap<>();
     }
 
     public Long put(String key, Long value) {
@@ -52,20 +51,20 @@ public class CountMap implements KryoSerializable {
     @Override
     public void read(Kryo kryo, Input input) {
         counts.clear();
-        int size = input.readInt();
+        int size = input.readInt(true);
         for (int i = 0; i < size; i++) {
             String key = input.readString();
-            Long value = input.readLong();
+            Long value = input.readLong(true);
             put(key, value);
         }
     }
 
     @Override
     public void write(Kryo kryo, Output output) {
-        output.writeInt(keySet().size());
+        output.writeInt(keySet().size(), true);
         for (Entry<String,Long> entry : entrySet()) {
             output.writeString(entry.getKey());
-            output.writeLong(entry.getValue());
+            output.writeLong(entry.getValue(), true);
         }
     }
 

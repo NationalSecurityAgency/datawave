@@ -130,7 +130,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
                     @SuppressWarnings("unchecked")
                     Class<? extends Type<?>> clazz = (Class<? extends Type<?>>) Class.forName(colq.substring(idx + 1));
 
-                    Type<?> normalizer = clazz.newInstance();
+                    Type<?> normalizer = clazz.getDeclaredConstructor().newInstance();
 
                     typedNormalizers.put(type, normalizer);
 

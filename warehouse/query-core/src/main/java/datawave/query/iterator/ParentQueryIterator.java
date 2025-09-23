@@ -59,10 +59,10 @@ public class ParentQueryIterator extends QueryIterator {
 
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
-        if (evaluationFilter == null && script != null) {
+        if (evaluationFilter == null && getScript() != null) {
 
             AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             this.evaluationFilter = new ParentEventDataFilter(expressionFilters);
         }
@@ -103,7 +103,8 @@ public class ParentQueryIterator extends QueryIterator {
         Aggregation aggregation = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
                         this.includeRecordId, this.parentDisableIndexOnlyDocuments, null);
 
-        KeyToDocumentData k2d = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(), null,
+        SortedKeyValueIterator<Key,Value> docMapperSource = getSourceDeepCopy("map document - key to document");
+        KeyToDocumentData k2d = new KeyToDocumentData(docMapperSource, this.myEnvironment, this.documentOptions, getEquality(), null,
                         this.includeHierarchyFields, this.includeHierarchyFields);
         k2d.withRangeProvider(getRangeProvider());
         k2d.withAggregationThreshold(getDocAggregationThresholdMs());

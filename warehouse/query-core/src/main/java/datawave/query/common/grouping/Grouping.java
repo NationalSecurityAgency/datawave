@@ -11,6 +11,7 @@ import java.util.function.Predicate;
  * calculating the hashcode each time a search operation is performed on the keys of the maps.
  */
 public class Grouping extends HashSet<GroupingAttribute<?>> {
+    private static final long serialVersionUID = -1820281938223279240L;
 
     public static final Grouping EMPTY_GROUPING = new Grouping(Collections.emptySet());
 

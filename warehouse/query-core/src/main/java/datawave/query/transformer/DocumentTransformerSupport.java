@@ -45,8 +45,9 @@ import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.util.StringUtils;
+import datawave.util.CompositeTimestamp;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -158,7 +159,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         Key key = origKey;
         if (key != null) {
             String colFam = key.getColumnFamily().toString();
-            String[] colFamParts = StringUtils.split(colFam, '\0');
+            String[] colFamParts = colFam.split("\0");
             if (colFamParts.length == 3) {
                 // skip part 0 and return a key with parts 1 & 2 as the colFam
                 key = new Key(key.getRow(), new Text(colFamParts[1] + '\0' + colFamParts[2]), key.getColumnQualifier(), key.getColumnVisibility(),
@@ -258,8 +259,10 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                     log.info(sb.toString());
                 }
             }
-            if (dictionary.size() == 1) {
-                // this document contained only timing metadata
+            boolean metadata = dictionary.containsKey(LogTiming.TIMING_METADATA);
+            boolean waitWindowOverrun = dictionary.containsKey(WaitWindowObserver.WAIT_WINDOW_OVERRUN);
+            if ((dictionary.size() == 1 && metadata) || waitWindowOverrun) {
+                // this document contained only timing metadata or contains the WAIT_WINDOW_OVERRUN marker
                 throw new EmptyObjectException();
             }
         }
@@ -386,7 +389,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                 log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey + " - computed dataDate from row: " + dataDate);
             }
         } else {
-            dataDate = new Date(timestamp);
+            dataDate = new Date(CompositeTimestamp.getEventDate(timestamp));
         }
 
         resultCardinalityDocumentDate.addEntry(valueMap, eventId, dataType, dataDate);

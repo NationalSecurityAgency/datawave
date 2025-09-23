@@ -81,6 +81,7 @@ public class SortedKeyValueIteratorToIterator implements Iterator<Map.Entry<Key,
     }
 
     public static class IteratorException extends RuntimeException implements Serializable {
+        private static final long serialVersionUID = 619736246732484920L;
 
         public IteratorException() {
             super();

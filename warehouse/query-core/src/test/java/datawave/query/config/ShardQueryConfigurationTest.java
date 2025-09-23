@@ -34,14 +34,18 @@ import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
@@ -51,7 +55,7 @@ import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
+    public static final Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -178,8 +182,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
         updatedValues.put("reduceTypeMetadataPerShard", true);
-        defaultValues.put("sequentialScheduler", false);
-        updatedValues.put("sequentialScheduler", true);
         defaultValues.put("collectTimingDetails", false);
         updatedValues.put("collectTimingDetails", true);
         defaultValues.put("logTimingDetails", false);
@@ -268,8 +270,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFilters", true);
         defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
         updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
-        defaultValues.put("indexHoles", Lists.newArrayList());
-        updatedValues.put("indexHoles", Lists.newArrayList(new IndexHole()));
+        defaultValues.put("fieldRuleClassName", null);
+        updatedValues.put("fieldRuleClassName", "proj.datawave.query.planner.rule.someFieldRuleClass");
+        defaultValues.put("indexValueHoles", Lists.newArrayList());
+        updatedValues.put("indexValueHoles", Lists.newArrayList(new IndexValueHole()));
         defaultValues.put("indexedFields", Sets.newHashSet());
         updatedValues.put("indexedFields", Sets.newHashSet("FIELD_C", "FIELD_D"));
         defaultValues.put("reverseIndexedFields", Sets.newHashSet());
@@ -312,6 +316,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hitList", true);
         defaultValues.put("dateIndexTimeTravel", false);
         updatedValues.put("dateIndexTimeTravel", true);
+        defaultValues.put("dateIndexIterator", false);
+        updatedValues.put("dateIndexIterator", true);
         defaultValues.put("beginDateCap", -1L);
         updatedValues.put("beginDateCap", 1000L);
         defaultValues.put("failOutsideValidDateRange", true);
@@ -394,6 +400,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hdfsFileCompressionCodec", "sunny");
         defaultValues.put("zookeeperConfig", null);
         updatedValues.put("zookeeperConfig", "file://etc/zookeeper/conf");
+        defaultValues.put("localIvaratorCacheDirConfigs", Collections.emptyList());
+        updatedValues.put("localIvaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("file:///tmp/ivarators")));
         defaultValues.put("ivaratorCacheDirConfigs", Collections.emptyList());
         updatedValues.put("ivaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("hdfs://instance-a/ivarators")));
         defaultValues.put("ivaratorFstHdfsBaseURIs", null);
@@ -404,6 +412,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("ivaratorCacheScanPersistThreshold", 1040L);
         defaultValues.put("ivaratorCacheScanTimeout", 3600000L);
         updatedValues.put("ivaratorCacheScanTimeout", 3600L);
+        defaultValues.put("excludeUnfieldedTypes", Collections.emptyList());
+        updatedValues.put("excludeUnfieldedTypes", Lists.newArrayList(new NumberType()));
         defaultValues.put("maxFieldIndexRangeSplit", 11);
         updatedValues.put("maxFieldIndexRangeSplit", 20);
         defaultValues.put("ivaratorMaxOpenFiles", 100);
@@ -443,8 +453,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("indexOnlyFilterFunctionsEnabled", true);
         defaultValues.put("compositeFilterFunctionsEnabled", false);
         updatedValues.put("compositeFilterFunctionsEnabled", true);
+        defaultValues.put("disableIteratorUniqueFields", false);
+        updatedValues.put("disableIteratorUniqueFields", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
+        defaultValues.put("uniqueCacheBufferSize", 100);
+        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -469,6 +483,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("excerptFields", ExcerptFields.from("FIELD_E/10,FIELD_F/11"));
         defaultValues.put("excerptIterator", TermFrequencyExcerptIterator.class);
         updatedValues.put("excerptIterator", TermFrequencyIndexIterator.class);
+        defaultValues.put("summaryOptions", new SummaryOptions());
+        updatedValues.put("summaryOptions", SummaryOptions.from(String.valueOf(SummaryOptions.DEFAULT_SIZE)));
+        defaultValues.put("summaryIterator", ContentSummaryIterator.class);
+        updatedValues.put("summaryIterator", ContentSummaryIterator.class);
+        defaultValues.put("summaryFieldName", null);
+        updatedValues.put("summaryFieldName", "SUMMARY");
         defaultValues.put("fiFieldSeek", -1);
         updatedValues.put("fiFieldSeek", 10);
         defaultValues.put("fiNextSeek", -1);
@@ -524,7 +544,7 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("datatypeFilter", Sets.newHashSet());
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
-        defaultValues.put("datatypeFilterAsString", "");
+        defaultValues.put("datatypeFilterAsString", "*");
         updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");
         alreadySet.add("datatypeFilterAsString");
 
@@ -537,8 +557,8 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("renameFields", Sets.newHashSet());
         updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
 
-        defaultValues.put("fieldIndexHoleMinThreshold", 1.0d);
-        updatedValues.put("fieldIndexHoleMinThreshold", 0.5d);
+        defaultValues.put("indexFieldHoleMinThreshold", 1.0d);
+        updatedValues.put("indexFieldHoleMinThreshold", 0.5d);
 
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
@@ -589,6 +609,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("sortQueryPostIndexWithTermCounts", true);
         defaultValues.put("sortQueryPostIndexWithFieldCounts", false);
         updatedValues.put("sortQueryPostIndexWithFieldCounts", true);
+        defaultValues.put("cardinalityThreshold", 0);
+        updatedValues.put("cardinalityThreshold", 25);
         defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
@@ -598,6 +620,19 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+
+        defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
+        updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
+
+        defaultValues.put("useDocumentScheduler", false);
+        updatedValues.put("useDocumentScheduler", true);
+
+        DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
+        defaultValues.put("documentScannerConfig", null);
+        updatedValues.put("documentScannerConfig", documentScannerConfig);
+
+        defaultValues.put("maxLinesToPrint", -1);
+        updatedValues.put("maxLinesToPrint", 150);
     }
 
     private Query createQuery(String query) {

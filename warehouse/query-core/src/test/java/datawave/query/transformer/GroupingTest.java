@@ -42,6 +42,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.cache.CacheManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -83,6 +84,12 @@ public abstract class GroupingTest {
     @RunWith(Arquillian.class)
     public static class ShardRange extends GroupingTest {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected String getRange() {
             return "SHARD";
@@ -91,6 +98,12 @@ public abstract class GroupingTest {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends GroupingTest {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected String getRange() {
@@ -238,7 +251,7 @@ public abstract class GroupingTest {
     }
 
     private static final String COUNT_FIELD = "COUNT";
-    private static final Set<String> FIELDS_OF_INTEREST = ImmutableSet.of("GENDER", "GEN", "BIRTHDAY", "AGE", "AG", "RECORD");
+    private static final Set<String> FIELDS_OF_INTEREST = ImmutableSet.of("GENDER", "GEN", "BIRTHDAY", "AGE", "AG", "RECORD", "BIRTH_DATE");
     private static final Logger log = Logger.getLogger(GroupingTest.class);
     private static final String COLVIS_MARKING = "columnVisibility";
     private static final String REDUCED_COLVIS = "ALL&E&I";
@@ -246,6 +259,10 @@ public abstract class GroupingTest {
     private static final EnumSet<RebuildingScannerTestHelper.TEARDOWN> TEARDOWNS = EnumSet.allOf(RebuildingScannerTestHelper.TEARDOWN.class);
     private static final EnumSet<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = EnumSet.allOf(RebuildingScannerTestHelper.INTERRUPT.class);
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
+
+    @Inject
+    @SpringBean(name = "metadataHelperCacheManager")
+    private CacheManager cacheManager;
 
     @Inject
     @SpringBean(name = "EventQuery")
@@ -287,6 +304,9 @@ public abstract class GroupingTest {
         this.deserializer = new KryoDocumentDeserializer();
         this.startDate = format.parse("20091231");
         this.endDate = format.parse("20150101");
+
+        // clear any cache updates from previous tests
+        cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
     }
 
     @After
@@ -678,6 +698,37 @@ public abstract class GroupingTest {
     }
 
     /**
+     * Verify that specifying a single field via the lucene function works correctly.
+     */
+    @Test
+    public void testGroupBySingleField() throws Exception {
+        givenNonModelData();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY(AGE)");
+        givenQueryParameter(QueryParameters.RETURN_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.HIT_LIST, "true");
+        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=100");
+        givenQueryParameter(QueryOptions.REDUCED_RESPONSE, "true");
+        logic.setCollectTimingDetails(true);
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("16").withCount(1));
+        expectGroup(Group.of("18").withCount(2));
+        expectGroup(Group.of("20").withCount(2));
+        expectGroup(Group.of("22").withCount(2));
+        expectGroup(Group.of("24").withCount(1));
+        expectGroup(Group.of("30").withCount(1));
+        expectGroup(Group.of("34").withCount(1));
+        expectGroup(Group.of("40").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
      * Verify that specifying group fields via a LUCENE function works correctly.
      */
     @Test
@@ -1050,6 +1101,75 @@ public abstract class GroupingTest {
         expectGroup(Group.of("MALE").withCount(2).withAggregate(Aggregate.of("AG").withCount("2").withMax("40").withMin("24").withSum("64").withAverage("32")));
         expectGroup(Group.of("FEMALE").withCount(1)
                         .withAggregate(Aggregate.of("AG").withCount("1").withMax("18").withMin("18").withSum("18").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that when specifying that a field should be truncated to year when grouping via a Lucene function, that the correct grouping is performed.
+     */
+    @Test
+    public void testGroupingWhileTruncatingToYearViaLucene() throws Exception {
+        givenNonModelData();
+
+        givenQuery("(UUID:CORLEONE) and #GROUPBY('GENDER','BIRTH_DATE[YEAR]')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
+        expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that when specifying that a field should be truncated to year when grouping via a Jexl function, that the correct grouping is performed.
+     */
+    @Test
+    public void testGroupingWhileTruncatingToYearViaJexl() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ 'CORLEONE' && f:groupby('GENDER','BIRTH_DATE[YEAR]')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
+        expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that when specifying that a field should be truncated to year when grouping via a query parameter, that the correct grouping is performed.
+     */
+    @Test
+    public void testGroupingWhileTruncatingToYearViaQueryParameter() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ 'CORLEONE'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER,BIRTH_DATE[YEAR]");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
+        expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(3));
 
         // Run the test queries and collect their results.
         collectQueryResults();

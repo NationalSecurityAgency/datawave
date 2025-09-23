@@ -5,7 +5,8 @@ import java.util.concurrent.Callable;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 
@@ -16,7 +17,7 @@ import datawave.util.flag.InputFile.TrackedDir;
  */
 public class SimpleMover implements Callable<InputFile> {
 
-    private static final Logger log = Logger.getLogger(SimpleMover.class);
+    private static final Logger log = LoggerFactory.getLogger(SimpleMover.class);
 
     final InputFile entry;
     final TrackedDir target;
@@ -38,7 +39,9 @@ public class SimpleMover implements Callable<InputFile> {
         if (entry.getCurrentDir() == dst || (!fs.exists(dst) && fs.rename(entry.getCurrentDir(), dst))) {
             entry.updateCurrentDir(this.target);
         } else {
-            log.error("Unable to move file " + entry.getCurrentDir().toUri() + " to " + dst.toUri() + ", skipping");
+            if (log.isErrorEnabled()) {
+                log.error("Unable to move file {} to {}, skipping", entry.getCurrentDir().toUri(), dst.toUri());
+            }
         }
 
         return entry;
@@ -50,7 +53,7 @@ public class SimpleMover implements Callable<InputFile> {
             if (fs.mkdirs(parent)) {
                 directoryCache.put(parent, parent);
             } else {
-                log.warn("unable to create directory (" + parent + ")");
+                log.warn("unable to create directory ( {} )", parent);
             }
         }
         return path;

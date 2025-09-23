@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -24,17 +23,16 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -55,7 +53,7 @@ import datawave.query.util.MetadataHelper;
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
  */
 public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(RegexIndexExpansionVisitor.class);
 
     protected boolean expandUnfieldedNegations;
 
@@ -85,15 +83,12 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
         if (config.isLimitTermExpansionToModel()) {
-            try {
-                QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
-                this.onlyUseThese = queryModel.getForwardQueryMapping().values();
-            } catch (ExecutionException e) {
-                this.onlyUseThese = null;
-            }
+            QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
+            this.onlyUseThese = queryModel.getForwardQueryMapping().values();
         } else {
             this.onlyUseThese = null;
         }
+        this.stage = "regex";
     }
 
     /**
@@ -210,7 +205,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 // already did this expansion
                 return node;
             } else if (!nonEvent && evalOnly) {
-                // no need to expand its going to come out of the event
+                // no need to expand it is going to come out of the event
                 return node;
             }
         }
@@ -238,12 +233,12 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             // expand this regex because it would be more efficient to do so
             if (!shouldProcessRegexFromCost(node)) {
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Determined we don't need to process regex node:");
+                if (log.isTraceEnabled()) {
+                    log.trace("Determined we don't need to process regex node:");
                     for (String line : PrintingVisitor.formattedQueryStringList(node)) {
-                        log.debug(line);
+                        log.trace(line);
                     }
-                    log.debug("");
+                    log.trace("");
                 }
                 if (markedParents != null) {
                     for (JexlNode markedParent : markedParents) {
@@ -255,17 +250,14 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 return QueryPropertyMarker.create(node, DELAYED); // wrap in a delayed predicate to avoid using in RangeStream
             }
         } else {
-            if (config.getMaxIndexScanTimeMillis() != Long.MAX_VALUE)
-                log.debug("Skipping cost estimation since we have a timeout ");
+            if (config.getMaxIndexScanTimeMillis() != Long.MAX_VALUE) {
+                log.trace("Skipping cost estimation because there is a timeout configured for index expansion");
+            }
         }
 
         try {
             if (!helper.isIndexed(fieldName, config.getDatatypeFilter())) {
-                log.debug("Not expanding regular expression node as the field is not indexed");
-                for (String logLine : PrintingVisitor.formattedQueryStringList(node)) {
-                    log.info(logLine);
-                }
-
+                log.debug("Not expanding regex [{}] because the field is not indexed", JexlStringBuildingVisitor.buildQuery(node));
                 return node;
             }
         } catch (TableNotFoundException e) {
@@ -295,19 +287,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
     }
 
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        ASTReference ref = (ASTReference) super.visit(node, data);
-        if (ref.jjtGetNumChildren() == 0) {
-            return null;
-        } else {
-            return ref;
-        }
-    }
-
     /**
      * Determines if we should expand a regular expression given the current AST.
-     *
+     * <p>
      * A regex doesn't have to be expanded if we can work out the logic such that we can satisfy the query with term equality only. The simple case is when the
      * ERNode and an EQNode share an AND parent. There are more complicated variants involving grand parents and OR nodes that are considered.
      *
@@ -345,7 +327,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     /**
      * Walks up an AST and evaluates subtrees as needed. This method will fail fast if we determine we do not have to process a regex, otherwise the entire tree
      * will be evaluated.
-     *
+     * <p>
      * This method recurses upwards, searching for an AND or OR node in the lineage. Once of those nodes is found, then the subtree rooted at that node is
      * evaluated. The visit map is used to cache already evaluated subtrees, so moving to a parent will not cause a subtree to be evaluated along with its
      * unevaluated siblings.
@@ -378,13 +360,16 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     /**
      * Evaluates a subtree to see if it can prevent the expansion of a regular expression.
-     *
+     * <p>
      * This method recurses down under three conditions:
-     *
-     * 1) An OR is encountered. In this case the result of recursing down the subtrees rooted at each child is OR'd together and returned. 2) An AND is
-     * encountered. In this case the result of recursing down the subtrees rooted at each child is AND'd together and returned. 3) Any node that is not an EQ
-     * node and has only 1 child. If there are multiple children, this method returns true, indicating that the subtree cannot defeat a regex expansion.
-     *
+     * <p>
+     * 1) An OR is encountered. In this case the result of recursing down the subtrees rooted at each child is OR'd together and returned.
+     * <p>
+     * 2) An AND is encountered. In this case the result of recursing down the subtrees rooted at each child is AND'd together and returned.
+     * <p>
+     * 3) Any node that is not an EQ node and has only 1 child. If there are multiple children, this method returns true, indicating that the subtree cannot
+     * defeat a regex expansion.
+     * <p>
      * If an EQ node is encountered, we check if it can defeat an expansion by returning the value of a call to `doesNodeSupportRegexExpansion` on the node.
      *
      * @param node
@@ -492,8 +477,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     protected IndexLookup createLookup(JexlNode node) {
         String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName,
-                        config.getQueryFieldsDatatypes().get(fieldName), helper, executor);
+        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName, helper, executor);
     }
 
     /**
@@ -634,13 +618,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             Cost childCost = costAnalysis.computeCostForSubtree(child);
 
             if (log.isDebugEnabled()) {
-                log.debug("Computed cost of " + childCost + " for:");
-                for (String logLine : PrintingVisitor.formattedQueryStringList(child)) {
-                    log.debug(logLine);
-                }
+                log.debug("cost for term [{}] is {}", JexlStringBuildingVisitor.buildQuery(child), childCost);
             }
 
-            // Use this child's cost if we have no current cost or it's less than the current cost
+            // Use this child's cost if we have no current cost, or it's less than the current cost
             if (0 != childCost.getOtherCost()) {
                 if (0 != c.getOtherCost()) {
                     if (childCost.getOtherCost() < c.getOtherCost()) {
@@ -687,7 +668,13 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
 
+        if (log.isDebugEnabled()) {
+            logResult(currentNode, fieldsToTerms);
+        }
+
         if (futureJexlNode.isIgnoreComposites()) {
+            // composites should be removed prior to building the index expansion iterators
+            // and should never be returned to the webservice
             removeCompositeFields(fieldsToTerms);
         }
 
@@ -695,22 +682,15 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         // If we have no children, it's impossible to find any records, so this query returns no results
         if (fieldsToTerms.isEmpty()) {
-            if (log.isDebugEnabled()) {
-                try {
-                    log.debug("Failed to expand _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(currentNode) + "\"}");
-                } catch (Exception ex) {
-                    // it's just a debug statement
-                }
-            }
-
-            // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
-            // the query against the document
-            for (ASTIdentifier id : JexlASTHelper.getIdentifiers(currentNode)) {
+            // if there was no field expansion then replace _ANYFIELD_ with _NOFIELD_, the RangeStream will drop
+            // this term from the query
+            JexlNode copy = copy(currentNode);
+            for (ASTIdentifier id : JexlASTHelper.getIdentifiers(copy)) {
                 if (!futureJexlNode.isKeepOriginalNode() && Constants.ANY_FIELD.equals(id.getName())) {
                     JexlNodes.setIdentifier(id, Constants.NO_FIELD);
                 }
             }
-            newNode = currentNode;
+            newNode = copy;
         } else {
             onlyRetainFieldNamesInTheModelForwardMapping(fieldsToTerms);
             if (isNegativeNode(currentNode)) {

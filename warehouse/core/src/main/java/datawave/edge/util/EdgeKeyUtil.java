@@ -15,7 +15,6 @@ import org.apache.hadoop.io.Text;
 
 import datawave.data.type.Type;
 import datawave.edge.model.EdgeModelFields.FieldKey;
-import datawave.util.StringUtils;
 
 /**
  * Utility class for generating regular expressions to scan various formats of the edge table.
@@ -91,7 +90,7 @@ public class EdgeKeyUtil {
         String colFam = key.getColumnFamily().toString();
         String colQual = key.getColumnQualifier().toString();
 
-        String[] rowParts = StringUtils.split(row, '\0');
+        String[] rowParts = row.split("\0");
 
         if (rowParts.length == 2) {
             value.put(FieldKey.EDGE_SOURCE, StringEscapeUtils.unescapeJava(rowParts[0]));

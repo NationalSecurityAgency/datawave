@@ -35,7 +35,6 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
     private static final Logger log = Logger.getLogger(CSVRecordReader.class);
 
     private static final IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
-    private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
 
     protected String csvEventId;
     private final Multimap<String,Object> metadataForValidation = ArrayListMultimap.create(100, 1);
@@ -128,7 +127,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         if (null != this.securityMarkings && !this.securityMarkings.isEmpty()) {
             event.setSecurityMarkings(securityMarkings);
             try {
-                event.setVisibility(markingFunctions.translateToColumnVisibility(securityMarkings));
+                event.setVisibility(MarkingFunctionsFactory.createMarkingFunctions().translateToColumnVisibility(securityMarkings));
             } catch (MarkingFunctions.Exception e) {
                 log.error("Could not set default ColumnVisibility for the event", e);
                 throw new RuntimeException(e);
@@ -202,7 +201,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
             }
         }
         // if we set the date with id, don't overwrite it
-        if (!(fieldName.equals(eventDateFieldName) && event.getDate() > Long.MIN_VALUE)) {
+        if (!(fieldName.equals(eventDateFieldName) && event.isTimestampSet())) {
             super.checkField(fieldName, fieldValue);
         }
 

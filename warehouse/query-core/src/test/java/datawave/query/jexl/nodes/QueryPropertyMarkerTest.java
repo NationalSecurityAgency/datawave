@@ -31,10 +31,30 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 public class QueryPropertyMarkerTest {
+
+    @Test
+    public void nestedAndTest() throws ParseException {
+        String fieldName = "_ANYFIELD_";
+        String term = ".*ica";
+        JexlNode node = JexlNodeFactory.buildERNode(fieldName, term);
+        String normTerm = ".*ica";
+        JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
+        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term), EVALUATION_ONLY);
+        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {evalOnly, normalizedNode}));
+
+        String queryString = JexlStringBuildingVisitor.buildQuery(combined);
+
+        JexlNode combined2 = JexlASTHelper.parseAndFlattenJexlQuery(queryString);
+
+        String queryString2 = JexlStringBuildingVisitor.buildQuery(combined2);
+
+        assertEquals(queryString, queryString2);
+    }
 
     @Test
     public void testFindInstance() throws ParseException {

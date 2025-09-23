@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +30,9 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
@@ -70,9 +73,8 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
@@ -176,7 +178,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMarkingFunctions(new Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        logic.setQueryPlanner(new FederatedQueryPlanner());
+        logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         logic.setCollectTimingDetails(true);
@@ -356,6 +358,21 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected Collection<String> getExpectedKeyResponse(final String query) {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         return getExpectedKeyResponse(query, startEndDate[0], startEndDate[1]);
+    }
+
+    protected List<Map<String,String>> getExpectedEvents(final String query, final Collection<String> fields) {
+        List<Map<String,String>> events = new ArrayList<>();
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        QueryJexl jexl = new QueryJexl(query, this.dataManager, startEndDate[0], startEndDate[1]);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        for (Map<String,String> data : allData) {
+            Map<String,String> requestedData = new LinkedHashMap<>();
+            for (String field : fields) {
+                requestedData.put(field, data.get(field.toLowerCase()));
+            }
+            events.add(requestedData);
+        }
+        return events;
     }
 
     /**
@@ -548,7 +565,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
 
         RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal,
                         new QueryMetricFactoryImpl());
-        TransformIterator it = runner.getTransformIterator();
+        TransformIterator<?,?> it = runner.getTransformIterator();
         ShardQueryCountTableTransformer ctt = (ShardQueryCountTableTransformer) it.getTransformer();
         EventQueryResponseBase resp = (EventQueryResponseBase) ctt.createResponse(runner.next());
 
@@ -559,7 +576,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         EventBase<?,?> event = events.get(0);
         List<?> fields = event.getFields();
         Assert.assertEquals(1, fields.size());
-        FieldBase<?> count = (FieldBase) fields.get(0);
+        FieldBase<?> count = (FieldBase<?>) fields.get(0);
         String val = count.getValueString();
         if (log.isDebugEnabled()) {
             log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");
@@ -700,10 +717,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return;
         }
 
-        ASTJexlScript expectedTree = JexlASTHelper.parseJexlQuery(expected);
-        expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
-        queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
+        ASTJexlScript expectedTree = JexlASTHelper.parseAndFlattenJexlQuery(expected);
+        ASTJexlScript queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
         if (!comparison.isEqual()) {
             throw new ComparisonFailure(comparison.getReason(), expected, query);
@@ -711,29 +726,30 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     }
 
     protected Multimap<String,KeyValue> removeMetadataEntries(Set<String> fields, Text cf)
-                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException, TableExistsException {
         Multimap<String,KeyValue> metadataEntries = HashMultimap.create();
+        Map<String,String> config = client.tableOperations().getConfiguration(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().create(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", new NewTableConfiguration().setProperties(config));
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
-        BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
-        for (String field : fields) {
-            Mutation mutation = new Mutation(new Text(field));
+        try (BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME + "_new")) {
             Scanner scanner = client.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations());
-            scanner.fetchColumnFamily(cf);
-            scanner.setRange(new Range(new Text(field)));
-            boolean foundEntries = false;
+            scanner.setRange(new Range());
             for (Map.Entry<Key,Value> entry : scanner) {
-                foundEntries = true;
-                metadataEntries.put(field, new KeyValue(entry.getKey(), entry.getValue()));
-                mutation.putDelete(entry.getKey().getColumnFamily(), entry.getKey().getColumnQualifier(), entry.getKey().getColumnVisibilityParsed(),
-                                entry.getKey().getTimestamp() + 1000);
+                Key key = entry.getKey();
+                String field = key.getRow().toString();
+                Value value = entry.getValue();
+                if (fields.contains(field) && key.getColumnFamily().equals(cf)) {
+                    metadataEntries.put(field, new KeyValue(key, value));
+                } else {
+                    Mutation mutation = new Mutation(new Text(field));
+                    mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1000, value);
+                    writer.addMutation(mutation);
+                }
             }
-            scanner.close();
-            if (foundEntries) {
-                writer.addMutation(mutation);
-            }
+            writer.flush();
         }
-        writer.close();
-        client.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
+        client.tableOperations().delete(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().rename(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", QueryTestTableHelper.METADATA_TABLE_NAME);
         return metadataEntries;
     }
 
