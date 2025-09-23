@@ -30,7 +30,9 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
@@ -724,29 +726,30 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     }
 
     protected Multimap<String,KeyValue> removeMetadataEntries(Set<String> fields, Text cf)
-                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException, TableExistsException {
         Multimap<String,KeyValue> metadataEntries = HashMultimap.create();
+        Map<String,String> config = client.tableOperations().getConfiguration(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().create(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", new NewTableConfiguration().setProperties(config));
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
-        BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
-        for (String field : fields) {
-            Mutation mutation = new Mutation(new Text(field));
+        try (BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME + "_new")) {
             Scanner scanner = client.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations());
-            scanner.fetchColumnFamily(cf);
-            scanner.setRange(new Range(new Text(field)));
-            boolean foundEntries = false;
+            scanner.setRange(new Range());
             for (Map.Entry<Key,Value> entry : scanner) {
-                foundEntries = true;
-                metadataEntries.put(field, new KeyValue(entry.getKey(), entry.getValue()));
-                mutation.putDelete(entry.getKey().getColumnFamily(), entry.getKey().getColumnQualifier(), entry.getKey().getColumnVisibilityParsed(),
-                                entry.getKey().getTimestamp() + 1000);
+                Key key = entry.getKey();
+                String field = key.getRow().toString();
+                Value value = entry.getValue();
+                if (fields.contains(field) && key.getColumnFamily().equals(cf)) {
+                    metadataEntries.put(field, new KeyValue(key, value));
+                } else {
+                    Mutation mutation = new Mutation(new Text(field));
+                    mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1000, value);
+                    writer.addMutation(mutation);
+                }
             }
-            scanner.close();
-            if (foundEntries) {
-                writer.addMutation(mutation);
-            }
+            writer.flush();
         }
-        writer.close();
-        client.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
+        client.tableOperations().delete(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().rename(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", QueryTestTableHelper.METADATA_TABLE_NAME);
         return metadataEntries;
     }
 
