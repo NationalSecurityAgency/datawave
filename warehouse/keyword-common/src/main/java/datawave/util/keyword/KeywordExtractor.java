@@ -103,12 +103,12 @@ public class KeywordExtractor {
     }
 
     /**
-     * Extract keywords from the {@code foundContent} field in priority order based on the list of views in {@code preferredViews} field. Will return
-     * a KeywordResults object populated with the keywords extracted from the first view in {@code preferredViews} that is found to contain content. If no
+     * Extract keywords from the {@code foundContent} field in priority order based on the list of views in {@code preferredViews} field. Will return a
+     * KeywordResults object populated with the keywords extracted from the first view in {@code preferredViews} that is found to contain content. If no
      * keywords can be extracted from all preferred views, returns an empty {@code KeywordResults} object.
      *
-     * @return a KeywordResults object containing keywords from the first of the {@code preferredViews} found in {@code foundContent} that yields a
-     *         non-empty set of keywords or an empty KeywordResults object if no keywords can be extracted.
+     * @return a KeywordResults object containing keywords from the first of the {@code preferredViews} found in {@code foundContent} that yields a non-empty
+     *         set of keywords or an empty KeywordResults object if no keywords can be extracted.
      */
     @Nonnull
     public KeywordResults extractKeywords() {
@@ -142,8 +142,8 @@ public class KeywordExtractor {
      *            the view name we're extracting from.
      * @param content
      *            the content associated with that view.
-     * @return a KeywordResult object containing keywords extracted from the provided content, or the canonical {@code EMPTY_RESULTS} KeywordResults object
-     *         if no keywords could be extracted.
+     * @return a KeywordResult object containing keywords extracted from the provided content, or the canonical {@code EMPTY_RESULTS} KeywordResults object if
+     *         no keywords could be extracted.
      */
     @Nonnull
     private KeywordResults extractKeywordsFromVisibleContent(String viewName, VisibleContent content) {

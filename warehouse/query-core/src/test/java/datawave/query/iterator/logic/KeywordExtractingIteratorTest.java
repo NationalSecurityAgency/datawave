@@ -74,8 +74,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
 
     /**
      * For the data given to this function, add a key to the data source that contains the given information. <br>
-     * For these tests, 'd' column keys are created with the specified data type, uid, content name, and the content to
-     * be gzipped and base64 encoded.
+     * For these tests, 'd' column keys are created with the specified data type, uid, content name, and the content to be gzipped and base64 encoded.
      */
     private static void givenData(String datatype, String uid, String contentName, String content) throws IOException {
         Text colq = new Text(datatype + Constants.NULL + uid + Constants.NULL + contentName);
@@ -91,7 +90,6 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         Map.Entry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
         source.add(entry);
     }
-
 
     /**
      * Clear the iterator options after every test.
