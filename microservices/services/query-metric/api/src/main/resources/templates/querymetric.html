@@ -66,6 +66,15 @@
         }
     </script>
 
+    <div th:if="${#lists.isEmpty(metricList) and #lists.isEmpty(exceptionList)}">
+        <h3>Metric not found</h3>
+    </div>
+    <div th:if="${not #lists.isEmpty(exceptionList)}">
+        <h3>Error retrieving metric</h3>
+        <div th:each="exception,exceptionIter : ${exceptionList}">
+            <p th:text="${exception.message}"></p>
+        </div>
+    </div>
 
     <div th:each="metric,metricIter : ${metricList}">
         <h3 th:text="${metric.queryId}"/>
