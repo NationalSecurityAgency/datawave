@@ -17,7 +17,11 @@ import org.apache.commons.lang3.math.NumberUtils;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
- * A visitor that fetches all fields found in the query that have a numeric value or a string value that represents a valid number.
+ * Visitor that collects fields that compare against numeric values, or string values that are numeric.
+ * <p>
+ * This visitor is used for scenarios where any numeric literal usage is of interest (equality and range operators). For range-only use cases, prefer
+ * {@link FieldsWithNumericRangeValuesVisitor}.
+ * </p>
  */
 public class FieldsWithNumericValuesVisitor extends ShortCircuitBaseVisitor {
 
