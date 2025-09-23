@@ -42,6 +42,15 @@ public interface RawRecordContainer {
     void setDataType(Type dataType);
 
     /**
+     * Gets the previoulsy assigned shardId if present. This is only used for non-standard flows such as re-processing.
+     *
+     * @return Previously assigned shardId or null if one does not exist
+     */
+    default String getShardId() {
+        return null;
+    }
+
+    /**
      * Gets the primary date associated with the record, a.k.a the "event date"
      *
      * @return the date for this raw record

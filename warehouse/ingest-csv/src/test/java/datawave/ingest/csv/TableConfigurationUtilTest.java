@@ -107,7 +107,7 @@ public class TableConfigurationUtilTest {
 
         Assert.assertEquals(0, tempCacheFile.length());
         tcu.updateCacheFile();
-        Assert.assertEquals(7868, tempCacheFile.length());
+        Assert.assertEquals(7485, tempCacheFile.length());
 
         tcu.serializeTableConfgurationIntoConf(conf);
 
@@ -271,7 +271,7 @@ public class TableConfigurationUtilTest {
         Assert.assertEquals(10, shardIndexProps.size());
 
         Map<String,String> metaProps = tcu.getTableProperties("datawave.metadata");
-        Assert.assertEquals(23, metaProps.size());
+        Assert.assertEquals(18, metaProps.size());
 
         tcu.setTableItersPrioritiesAndOpts();
 
@@ -285,9 +285,12 @@ public class TableConfigurationUtilTest {
 
         Map<Integer,Map<String,String>> metaCombiners = tcu.getTableCombiners("datawave.metadata");
         Assert.assertEquals(5, metaCombiners.size());
-        Assert.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner", metaCombiners.get(10).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
-        Assert.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner", metaCombiners.get(11).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
-        Assert.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner", metaCombiners.get(12).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        Assert.assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
+                        metaCombiners.get(10).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        Assert.assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
+                        metaCombiners.get(11).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        Assert.assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
+                        metaCombiners.get(12).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
         Assert.assertEquals("datawave.iterators.CountMetadataCombiner", metaCombiners.get(15).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
         Assert.assertEquals("datawave.iterators.EdgeMetadataCombiner", metaCombiners.get(19).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
 

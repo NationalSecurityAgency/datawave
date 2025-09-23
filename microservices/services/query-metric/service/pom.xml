@@ -8,7 +8,7 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-service</artifactId>
-    <version>4.1.6-SNAPSHOT</version>
+    <version>4.1.7-SNAPSHOT</version>
     <description>DATAWAVE Query Metric Microservice</description>
     <url>https://code.nsa.gov/datawave-query-metric-service</url>
     <scm>
@@ -20,25 +20,25 @@
     <properties>
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <start-class>datawave.microservice.querymetric.QueryMetricService</start-class>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.cache-api>1.1.1</version.cache-api>
-        <version.datawave>7.26.1</version.datawave>
+        <version.datawave>7.30.0</version.datawave>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
-        <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
         <version.datawave.query-metric-api>4.1.1</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.5</version.datawave.starter>
-        <version.datawave.starter-datawave-query-metric>3.0.3</version.datawave.starter-datawave-query-metric>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
+        <version.datawave.starter-metrics>3.0.3</version.datawave.starter-metrics>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
-        <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
         <version.protobuf-java>3.16.3</version.protobuf-java>
+        <version.slf4j>2.0.12</version.slf4j>
         <version.validation-api>2.0.2</version.validation-api>
-        <version.webjars.bootstrap>4.3.1</version.webjars.bootstrap>
-        <version.webjars.jquery>3.4.1</version.webjars.jquery>
-        <version.webjars.leaflet>1.5.1</version.webjars.leaflet>
-        <version.webjars.locator-core>0.35</version.webjars.locator-core>
-        <version.zookeeper>3.8.3</version.zookeeper>
+        <version.webjars.bootstrap>5.3.8</version.webjars.bootstrap>
+        <version.webjars.jquery>3.7.1</version.webjars.jquery>
+        <version.webjars.leaflet>1.8.0</version.webjars.leaflet>
+        <version.webjars.locator-core>0.59</version.webjars.locator-core>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -167,7 +167,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave.accumulo-utils}</version>
+                <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -212,7 +212,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-slf4j-impl</artifactId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -224,7 +224,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-query-metric</artifactId>
-                <version>${version.datawave.starter-datawave-query-metric}</version>
+                <version>${version.datawave.starter-metrics}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
@@ -263,9 +263,23 @@
                 <version>${version.cache-api}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-core</artifactId>
+                <version>${version.accumulo}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-server-base</artifactId>
+                <version>${version.accumulo}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-start</artifactId>
+                <version>${version.accumulo}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>ch.qos.logback</groupId>
@@ -355,6 +369,11 @@
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

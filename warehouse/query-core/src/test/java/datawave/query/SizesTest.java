@@ -160,6 +160,12 @@ public abstract class SizesTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testAllSizesAndGroupByColorShapeSize() throws Exception {
+        withQuery("(SIZE == 'small' || SIZE == 'medium' || SIZE == 'large') && f:groupby(COLOR,SHAPE,SIZE)");
+        planAndExecuteQuery();
+    }
+
+    @Test
     public void testSizeMedium() throws Exception {
         withQuery("SIZE == 'medium'");
         planAndExecuteQuery();

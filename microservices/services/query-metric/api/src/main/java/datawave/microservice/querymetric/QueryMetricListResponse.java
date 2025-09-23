@@ -36,25 +36,28 @@ public class QueryMetricListResponse extends BaseQueryMetricListResponse<QueryMe
 
         TreeMap<Date,QueryMetric> metricMap = new TreeMap<>(Collections.reverseOrder());
 
-        for (QueryMetric metric : this.getResult()) {
-            metricMap.put(metric.getCreateDate(), metric);
-        }
-
-        List<QueryMetricModel> metricModelList = new ArrayList<>();
-
-        for (QueryMetric metric : metricMap.values()) {
-            QueryMetricModel metricModel = new QueryMetricModel(metric, basePath);
-            for (PageMetric p : metric.getPageTimes()) {
-                metricModel.totalPageTime += p.getReturnTime();
-                metricModel.totalPageCallTime += (p.getCallTime()) == -1 ? 0 : p.getCallTime();
-                metricModel.totalSerializationTime += (p.getSerializationTime()) == -1 ? 0 : p.getSerializationTime();
-                metricModel.totalBytesSent += (p.getBytesWritten()) == -1 ? 0 : p.getBytesWritten();
+        if (this.getResult() != null && !this.getResult().isEmpty()) {
+            for (QueryMetric metric : this.getResult()) {
+                metricMap.put(metric.getCreateDate(), metric);
             }
-            metricModelList.add(metricModel);
+
+            List<QueryMetricModel> metricModelList = new ArrayList<>();
+
+            for (QueryMetric metric : metricMap.values()) {
+                QueryMetricModel metricModel = new QueryMetricModel(metric, basePath);
+                for (PageMetric p : metric.getPageTimes()) {
+                    metricModel.totalPageTime += p.getReturnTime();
+                    metricModel.totalPageCallTime += (p.getCallTime()) == -1 ? 0 : p.getCallTime();
+                    metricModel.totalSerializationTime += (p.getSerializationTime()) == -1 ? 0 : p.getSerializationTime();
+                    metricModel.totalBytesSent += (p.getBytesWritten()) == -1 ? 0 : p.getBytesWritten();
+                }
+                metricModelList.add(metricModel);
+            }
+            mav.addObject("metricList", metricModelList);
         }
+        mav.addObject("exceptionList", getExceptions());
         mav.addObject("basePath", this.basePath);
         mav.addObject("isGeoQuery", this.isGeoQuery());
-        mav.addObject("metricList", metricModelList);
         mav.addObject("header", header);
         mav.addObject("footer", footer);
         return mav;

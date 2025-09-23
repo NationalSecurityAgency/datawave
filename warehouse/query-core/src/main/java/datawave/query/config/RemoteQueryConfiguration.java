@@ -63,7 +63,7 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
 
     @Override
     public RemoteQueryConfiguration checkpoint() {
-        return new RemoteQueryConfiguration(this, Collections.EMPTY_LIST);
+        return new RemoteQueryConfiguration(this, Collections.emptyList());
     }
 
     /**

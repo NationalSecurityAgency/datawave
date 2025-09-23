@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -34,7 +33,6 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -702,13 +700,13 @@ public class MetadataHelperTableTest {
     public void testGetCountsByFieldForDaysWithIngestTypeFilter() {
         // range of single day
         assertThrows(NullPointerException.class, () -> helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), null));
-        assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Collections.emptySet()));
+        assertEquals(23L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Collections.emptySet()));
         assertEquals(23L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Set.of("datatype-b")));
 
         // full range
         assertThrows(NullPointerException.class, () -> helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), null));
-        assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Collections.emptySet()));
+        assertEquals(559L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Collections.emptySet()));
         // 559 is wrong. Full count is 658.
         assertEquals(559L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Set.of("datatype-b")));
@@ -723,7 +721,7 @@ public class MetadataHelperTableTest {
     @Test
     public void testGetCountsByFieldInDayWithTypes() {
         assertThrows(NullPointerException.class, () -> helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", null));
-        assertEquals(0L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Collections.emptySet()));
+        assertEquals(23L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Collections.emptySet()));
         assertEquals(23L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240315", Set.of("datatype-a")));
     }
@@ -907,21 +905,21 @@ public class MetadataHelperTableTest {
     }
 
     @Test
-    public void testGetQueryModel() throws TableNotFoundException, ExecutionException {
+    public void testGetQueryModel() throws TableNotFoundException {
         QueryModel queryModel = helper.getQueryModel(METADATA_TABLE_NAME, "TEST_MODEL");
 
         // Assert the forward mappings.
         Multimap<String,String> forwardMappings = queryModel.getForwardQueryMapping();
-        Assertions.assertTrue(forwardMappings.containsEntry("start-time", "EVENT_DATE"));
-        Assertions.assertTrue(forwardMappings.containsEntry("unique-id", "UUID"));
-        Assertions.assertTrue(forwardMappings.containsEntry("title", "TITLE"));
-        Assertions.assertTrue(forwardMappings.containsEntry("title", "HEADER"));
-        Assertions.assertTrue(forwardMappings.containsEntry("title", "DESIGNATION"));
+        assertTrue(forwardMappings.containsEntry("start-time", "EVENT_DATE"));
+        assertTrue(forwardMappings.containsEntry("unique-id", "UUID"));
+        assertTrue(forwardMappings.containsEntry("title", "TITLE"));
+        assertTrue(forwardMappings.containsEntry("title", "HEADER"));
+        assertTrue(forwardMappings.containsEntry("title", "DESIGNATION"));
 
         // Assert the reverse mappings.
         Map<String,String> reverseMappings = queryModel.getReverseQueryMapping();
-        Assertions.assertEquals(reverseMappings.get("EVENT_DATE"), "start-time");
-        Assertions.assertEquals(reverseMappings.get("UUID"), "unique-id");
+        assertEquals("start-time", reverseMappings.get("EVENT_DATE"));
+        assertEquals("unique-id", reverseMappings.get("UUID"));
     }
 
     /**
