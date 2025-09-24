@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -121,7 +122,6 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.UniversalSet;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -140,7 +140,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected SourceManager source;
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
-    protected Collection<String> includeReferences = UniversalSet.instance();
+    protected Set<String> includeReferences = new HashSet<>();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;
@@ -194,7 +194,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected Class<? extends IteratorBuilder> iteratorBuilderClass = IndexIteratorBuilder.class;
 
-    private Collection<String> unindexedFields = Lists.newArrayList();
+    private final Collection<String> unindexedFields = Lists.newArrayList();
 
     protected boolean disableFiEval = false;
 
@@ -637,8 +637,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
-        if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                        && !excludeReferences.contains(builder.getField())) {
+        //  @formatter:off
+        if (!iterators.hasSeen(builder.getField(), builder.getValue()) &&
+                (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField())) &&
+                !excludeReferences.contains(builder.getField())) {
+            //  @formatter:on
 
             // do not perform a deep copy of the source if this iterator has not been seen yet
             builder.setQueryId(queryId);
@@ -707,7 +710,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
-            final boolean inclusionReference = includeReferences.contains(builder.getField());
+            final boolean inclusionReference = includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField());
             final boolean notExcluded = !excludeReferences.contains(builder.getField());
 
             if (isNew && inclusionReference && notExcluded) {
@@ -979,7 +982,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
-            final boolean inclusionReference = includeReferences.contains(builder.getField());
+            final boolean inclusionReference = includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField());
             final boolean notExcluded = !excludeReferences.contains(builder.getField());
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
@@ -1519,7 +1522,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
-            if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
+            if (!iterators.hasSeen(builder.getField(), builder.getValue())
+                            && (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField()))
                             && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
@@ -1872,7 +1876,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     public IteratorBuildingVisitor setIncludes(Collection<String> includes) {
-        this.includeReferences = Sets.newHashSet(includes);
+        this.includeReferences.addAll(includes);
         this.includeReferences.add(Constants.ANY_FIELD);
         return this;
     }

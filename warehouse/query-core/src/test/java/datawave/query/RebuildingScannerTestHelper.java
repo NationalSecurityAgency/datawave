@@ -39,6 +39,7 @@ import datawave.accumulo.inmemory.InMemoryScanner;
 import datawave.accumulo.inmemory.InMemoryScannerBase;
 import datawave.accumulo.inmemory.ScannerRebuilder;
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.InvalidDocumentHeader;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 
@@ -389,12 +390,17 @@ public class RebuildingScannerTestHelper {
                                                         + " interrupted: " + interruptCount);
                                     }
                                 } else if (!next.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
-                                    final Document rebuildDocument = deserializer.apply(rebuildNext).getValue();
-                                    final Document lastDocument = deserializer.apply(lastKey).getValue();
-                                    // if the keys don't match but are returning the previous document and using a new key this is okay
-                                    if (!lastDocument.get("RECORD_ID").getData().toString().equals(rebuildDocument.get("RECORD_ID").getData().toString())
-                                                    && !lastKey.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
-                                        throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
+                                    // note that we only will have documents if we have shard table keys
+                                    try {
+                                        final Document rebuildDocument = deserializer.apply(rebuildNext).getValue();
+                                        final Document lastDocument = deserializer.apply(lastKey).getValue();
+                                        // if the keys don't match but are returning the previous document and using a new key this is okay
+                                        if (!lastDocument.get("RECORD_ID").getData().toString().equals(rebuildDocument.get("RECORD_ID").getData().toString())
+                                                        && !lastKey.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
+                                            throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
+                                        }
+                                    } catch (InvalidDocumentHeader e) {
+                                        // no worries... probably not the shard table
                                     }
                                 }
                             }
