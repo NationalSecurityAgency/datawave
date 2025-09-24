@@ -126,14 +126,6 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
         }
     }
 
-    // ==================================
-    // data manager info
-    private static final RawDataManager manager = new IpAddressDataManager();
-
-    public static RawDataManager getManager() {
-        return manager;
-    }
-
     /**
      * Creates an ip address datatype entry with all of the key/value configuration settings.
      *
@@ -165,7 +157,7 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
      *             ingest file name error
      */
     public IpAddressDataType(final String datatype, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
-        super(datatype, ingestFile, config, manager);
+        super(datatype, ingestFile, config, IpAddressDataManager.getInstance());
 
         // NOTE: see super for default settings
         // set datatype settings

@@ -1,0 +1,57 @@
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
+server:
+  port: 0
+  non-secure-port: 0
+  ssl:
+    client-auth: WANT
+    trust-store: classpath:testCA.p12
+    trust-store-type: PKCS12
+    trust-store-password: ChangeIt
+    key-store: classpath:testServer.p12
+    key-store-type: PKCS12
+    key-store-password: ChangeIt
+  outbound-ssl:
+    trust-store: ${server.ssl.trust-store}
+    trust-store-type: ${server.ssl.trust-store-type}
+    trust-store-password: ${server.ssl.trust-store-password}
+    key-store: ${server.ssl.key-store}
+    key-store-type: ${server.ssl.key-store-type}
+    key-store-password: ${server.ssl.key-store-password}
+
+---
+
+spring:
+  config.activate.on-profile: 'converterTest'
+  security:
+    datawave:
+      jwt:
+        enabled: false
+
+---
+
+spring:
+  config.activate.on-profile: 'exceptionMapperTest'
+  security:
+    datawave:
+      enforce-allowed-callers: false
+      jwt:
+        enabled: false
+
+server:
+  servlet:
+    context-path: /${spring.application.name}
+
+---
+
+spring:
+  config.activate.on-profile: 'federatedAuthorizationServiceTest'
+
+datawave:
+  authorization:
+    federation:
+      services:
+        FederatedAuthorizationService:
+          federatedAuthorizationUri: "https://authorization:8443/authorization/v2"

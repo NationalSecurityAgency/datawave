@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -94,6 +95,7 @@ import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.logic.RangeFilterIterator;
 import datawave.query.iterator.logic.RegexFilterIterator;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DatawaveJexlEngine;
@@ -120,7 +122,6 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.UniversalSet;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -139,7 +140,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected SourceManager source;
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
-    protected Collection<String> includeReferences = UniversalSet.instance();
+    protected Set<String> includeReferences = new HashSet<>();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;
@@ -150,6 +151,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     protected String queryId;
     protected String scanId;
+    protected WaitWindowObserver waitWindowObserver;
     protected String ivaratorCacheSubDirPrefix = "";
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
@@ -192,7 +194,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected Class<? extends IteratorBuilder> iteratorBuilderClass = IndexIteratorBuilder.class;
 
-    private Collection<String> unindexedFields = Lists.newArrayList();
+    private final Collection<String> unindexedFields = Lists.newArrayList();
 
     protected boolean disableFiEval = false;
 
@@ -256,9 +258,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (subNode instanceof ASTEQNode) {
                     delayedEqNodes.add(subNode);
                 }
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
                 log.trace("Will not process ASTDelayedPredicate.");
             }
             return null;
@@ -372,9 +372,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         iterators.addInclude(nested);
                     }
                 } else {
-                    if (isQueryFullySatisfied) {
-                        log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                    }
+                    checkForSatisfactionError();
                     // if there is no parent
                     if (root == null && data == null) {
                         // make this nested the root node
@@ -391,12 +389,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // Create an AndIterator and recursively add the children
             AbstractIteratorBuilder andItr = new AndIteratorBuilder();
             andItr.negateAsNeeded(data);
+            andItr.setWaitWindowObserver(this.waitWindowObserver);
             and.childrenAccept(this, andItr);
 
             // If there is no parent
             if (data == null) {
                 // Make this AndIterator the root node
                 if (!andItr.includes().isEmpty()) {
+                    // TODO: if the query is a single marker node an AndIterator is still built with a single source.
+                    // This isn't functionally incorrect, it could be better.
                     root = andItr.build();
                 }
             } else {
@@ -488,7 +489,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setField(identifier);
 
             NestedIterator<Key> tfIterator = builder.build();
-            return new OrIterator<>(Arrays.asList(tfIterator, eventFieldIterator));
+            return new OrIterator<>(Arrays.asList(tfIterator, eventFieldIterator), null, waitWindowObserver);
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "buildExceededFromTermFrequency"));
             throw new DatawaveFatalQueryException(qe);
@@ -539,6 +540,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             // Create an OrIterator and recursively add the children
             AbstractIteratorBuilder orItr = new OrIteratorBuilder();
+            orItr.setWaitWindowObserver(waitWindowObserver);
             orItr.setSortedUIDs(sortedUIDs);
             orItr.negateAsNeeded(data);
             or.childrenAccept(this, orItr);
@@ -616,9 +618,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // verify that the field exists and is indexed
         if (builder.getField() == null || isUnindexed(builder.getField())) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -630,24 +630,23 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 throw new DatawaveFatalQueryException(qe);
             }
 
-            // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied) {
-                // note: this is different from the ASTEQ method...
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            // FIELD != null should have set satisfied to false
+            checkForSatisfactionError();
             return null;
         }
 
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
-        if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                        && !excludeReferences.contains(builder.getField())) {
+        //  @formatter:off
+        if (!iterators.hasSeen(builder.getField(), builder.getValue()) &&
+                (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField())) &&
+                !excludeReferences.contains(builder.getField())) {
+            //  @formatter:on
 
             // do not perform a deep copy of the source if this iterator has not been seen yet
             builder.setQueryId(queryId);
             builder.setSource(deepCopySource());
             builder.setTypeMetadata(typeMetadata);
-            builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
             builder.setDatatypeFilter(getDatatypeFilter());
             builder.setKeyTransform(getFiAggregator());
@@ -657,9 +656,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             iterators.addExclude(builder.build());
         } else {
             // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
         }
 
         return null;
@@ -679,9 +676,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // verify that field exists and is indexed
         if (builder.getField() == null || isUnindexed(builder.getField())) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -715,16 +710,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
-            final boolean inclusionReference = includeReferences.contains(builder.getField());
+            final boolean inclusionReference = includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField());
             final boolean notExcluded = !excludeReferences.contains(builder.getField());
 
             if (isNew && inclusionReference && notExcluded) {
                 loadBuilder(builder, data, node);
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
         }
 
@@ -755,11 +748,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         builder.setNode(node);
     }
 
@@ -934,7 +926,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setField(identifier);
         builder.setTimeFilter(TimeFilter.alwaysTrue());
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
@@ -950,9 +941,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -964,7 +953,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setQueryId(queryId);
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
@@ -974,9 +962,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -996,14 +982,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
-            final boolean inclusionReference = includeReferences.contains(builder.getField());
+            final boolean inclusionReference = includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField());
             final boolean notExcluded = !excludeReferences.contains(builder.getField());
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
         }
 
@@ -1027,9 +1011,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
         }
 
         return null;
@@ -1057,6 +1039,33 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return null;
     }
 
+    public String getDocument(Range range) {
+        // if the range has the same document in the start and end key, then return the document name.
+        // This is used to create unique ivarator directories for the DelayedNonEventSubTreeVisitor
+        if (range != null && range.getStartKey() != null && range.getEndKey() != null) {
+            String cf1 = range.getStartKey().getColumnFamily().toString();
+            String cf2 = range.getEndKey().getColumnFamily().toString();
+            StringBuilder builder = new StringBuilder();
+            int minLen = Math.min(cf1.length(), cf2.length());
+            for (int i = 0; i < minLen; i++) {
+                char c1 = cf1.charAt(i);
+                char c2 = cf2.charAt(i);
+                if (c1 == c2) {
+                    if (c1 == NULL_DELIMETER.charAt(0)) {
+                        c1 = '_';
+                    }
+                    builder.append(c1);
+                } else {
+                    break;
+                }
+            }
+            if (builder.length() > 0) {
+                return builder.toString();
+            }
+        }
+        return null;
+    }
+
     /**
      * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      *
@@ -1064,11 +1073,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @throws IOException
      *             for issues with read/write
      */
-    private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
+    public List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber, Range rangeLimiter, String field, String value) throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
 
-        // first lets increment the count for a unique subdirectory
-        String subdirectory = ivaratorCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
+        // use the ivaratorCount / term number to create a unique subdirectory
+        String subdirectory = ivaratorCacheSubDirPrefix + "_term_" + termNumber + "_field_" + field + "_valueHash_" + value.hashCode();
+        String document = getDocument(rangeLimiter);
+        if (document != null) {
+            subdirectory = subdirectory + "_doc_" + document;
+        }
 
         if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
             for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
@@ -1118,7 +1131,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         builder.negateAsNeeded(data);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         ivarate(builder, rootNode, sourceNode, data);
     }
 
@@ -1173,6 +1186,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
                                         hdfsFileSystem.getFileSystem(fstUri));
                     }
+                    listIterBuilder.setValue(fstUri.toString());
                     listIterBuilder.setFst(fst);
 
                     // cache this fst for use during JexlEvaluation.
@@ -1191,7 +1205,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         builder.negateAsNeeded(data);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
 
         ivarate(builder, rootNode, sourceNode, data);
     }
@@ -1253,7 +1267,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
             throw new DatawaveFatalQueryException(qe);
         }
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         ivarate(builder, rootNode, sourceNode, data);
     }
 
@@ -1462,16 +1477,19 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      *             for issues with read/write
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
+        this.ivaratorCount++;
         builder.setQueryId(queryId);
+        builder.setScanId(scanId);
+        builder.setWaitWindowObserver(waitWindowObserver);
         builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
         builder.setCompositeMetadata(compositeMetadata);
         builder.setCompositeSeekThreshold(compositeSeekThreshold);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
-        builder.setIvaratorCacheDirs(getIvaratorCacheDirs());
+        builder.setIvaratorCacheDirs(getIvaratorCacheDirs(this.ivaratorCount, rangeLimiter, builder.getField(), builder.getValue()));
+        builder.setTermNumber(this.ivaratorCount);
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
         builder.setQueryLock(queryLock);
         builder.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
@@ -1504,14 +1522,39 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
-            if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
+            if (!iterators.hasSeen(builder.getField(), builder.getValue())
+                            && (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField()))
                             && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
+        }
+    }
+
+    /**
+     * A document should be aggregated if this is a shard range query and the field index fully satisfies the query, OR if the field is in the list of fields to
+     * aggregate (typically index only or non-event fields).
+     *
+     * @return true if documents need to be built
+     */
+    protected boolean shouldBuildDocument(String field) {
+        if (field == null) {
+            throw new IllegalStateException("Must specify a field in order to determine if documents are built");
+        }
+
+        // historically this check always ran first
+        if (!limitLookup && this.isQueryFullySatisfied) {
+            return true;
+        }
+
+        // historically this check was a fail-safe
+        return fieldsToAggregate != null && fieldsToAggregate.contains(field);
+    }
+
+    protected void checkForSatisfactionError() {
+        if (isQueryFullySatisfied) {
+            log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
         }
     }
 
@@ -1767,6 +1810,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
 
+    public IteratorBuildingVisitor setWaitWindowObserver(WaitWindowObserver waitWindowObserver) {
+        this.waitWindowObserver = waitWindowObserver;
+        return this;
+    }
+
     public IteratorBuildingVisitor setIvaratorCacheSubDirPrefix(String ivaratorCacheSubDirPrefix) {
         this.ivaratorCacheSubDirPrefix = (ivaratorCacheSubDirPrefix == null ? "" : ivaratorCacheSubDirPrefix);
         return this;
@@ -1828,7 +1876,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     public IteratorBuildingVisitor setIncludes(Collection<String> includes) {
-        this.includeReferences = Sets.newHashSet(includes);
+        this.includeReferences.addAll(includes);
         this.includeReferences.add(Constants.ANY_FIELD);
         return this;
     }

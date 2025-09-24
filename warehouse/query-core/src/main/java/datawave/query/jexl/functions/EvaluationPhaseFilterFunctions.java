@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -54,6 +53,8 @@ public class EvaluationPhaseFilterFunctions {
      * This regex matches against regex strings that contain case-insensitive flags, e.g. {@code (?i).*(?-i)}.
      */
     public static final String CASE_INSENSITIVE = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
+
+    public static final Object LOCK = new Object();
 
     private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
 
@@ -381,7 +382,8 @@ public class EvaluationPhaseFilterFunctions {
                 }
             }
         }
-        return Collections.EMPTY_LIST.stream();
+
+        return Stream.empty();
     }
 
     /**
@@ -1551,7 +1553,7 @@ public class EvaluationPhaseFilterFunctions {
      *             if the value failed to be parsed using the supplied format
      */
     public static long getTime(Object value, DateFormat format) throws ParseException {
-        synchronized (format) {
+        synchronized (LOCK) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
     }

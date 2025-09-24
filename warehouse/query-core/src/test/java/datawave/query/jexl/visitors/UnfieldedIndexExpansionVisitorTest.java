@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -456,7 +455,7 @@ public class UnfieldedIndexExpansionVisitorTest {
 
         // assume that all reverse fields are indexed, for the purposes of this test
         @Override
-        public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) {
             return reverseFields;
         }
     }

@@ -38,7 +38,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-import org.springframework.beans.FatalBeanException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CharMatcher;
@@ -52,6 +51,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
@@ -103,7 +103,6 @@ import datawave.query.util.count.CountMap;
 import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
-import datawave.util.UniversalSet;
 
 /**
  * QueryOptions are set on the iterators.
@@ -160,6 +159,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String START_TIME = "start.time";
     public static final String END_TIME = "end.time";
     public static final String YIELD_THRESHOLD_MS = "yield.threshold.ms";
+    public static final String MAX_YIELDS = "max.yields";
 
     public static final String FILTER_MASKED_VALUES = "filter.masked.values";
     public static final String INCLUDE_DATATYPE = "include.datatype";
@@ -199,8 +199,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String POSTPROCESSING_OPTIONS = "postprocessing.options";
 
     public static final String NON_INDEXED_DATATYPES = "non.indexed.dataTypes";
-
-    public static final String EVERYTHING = "*";
 
     public static final String CONTAINS_INDEX_ONLY_TERMS = "contains.index.only.terms";
 
@@ -271,6 +269,8 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String SUMMARY_ITERATOR = "summary.iterator.class";
 
+    public static final String SUMMARY_FIELD_NAME = "summary.field.name";
+
     // field and next thresholds before a seek is issued
     public static final String FI_FIELD_SEEK = "fi.field.seek";
     public static final String FI_NEXT_SEEK = "fi.next.seek";
@@ -289,6 +289,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_COUNTS = "term.counts";
     public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
     public static final String IVARATOR_CONFIG = "ivarator.config";
+
+    public static final Object LOCK = new Object();
 
     protected Map<String,String> options;
 
@@ -383,6 +385,7 @@ public class QueryOptions implements OptionDescriber {
     protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
     protected long yieldThresholdMs = Long.MAX_VALUE;
+    protected long maxYields = 10;
 
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
     protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
@@ -438,6 +441,8 @@ public class QueryOptions implements OptionDescriber {
     protected SummaryOptions summaryOptions;
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
+
+    protected String summaryFieldname;
 
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
@@ -526,6 +531,7 @@ public class QueryOptions implements OptionDescriber {
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
 
         this.yieldThresholdMs = other.yieldThresholdMs;
+        this.maxYields = other.maxYields;
 
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
@@ -556,6 +562,7 @@ public class QueryOptions implements OptionDescriber {
         this.excerptIterator = other.excerptIterator;
         this.summaryOptions = other.summaryOptions;
         this.summaryIterator = other.summaryIterator;
+        this.summaryFieldname = other.summaryFieldname;
 
         this.fiFieldSeek = other.fiFieldSeek;
         this.fiNextSeek = other.fiNextSeek;
@@ -740,8 +747,8 @@ public class QueryOptions implements OptionDescriber {
                         throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e);
                     } catch (NoSuchMethodException e) {
                         try {
-                            list.add(clazz.newInstance());
-                        } catch (InstantiationException | IllegalAccessException e2) {
+                            list.add(clazz.getDeclaredConstructor().newInstance());
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e2) {
                             log.error("Unable to construct " + classname + " as a DocumentPermutation", e2);
                             throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e2);
                         }
@@ -761,7 +768,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setDocumentPermutationClasses(String documentPermutationClassesStr) {
-        setDocumentPermutationClasses(Arrays.asList(StringUtils.split(documentPermutationClassesStr, ',')));
+        setDocumentPermutationClasses(Arrays.asList(documentPermutationClassesStr.split(",")));
     }
 
     public boolean isIncludeRecordId() {
@@ -832,7 +839,7 @@ public class QueryOptions implements OptionDescriber {
      */
     public EventDataQueryFilter getEventFilter() {
 
-        if (!useAllowListedFields || allowListedFields instanceof UniversalSet || !isSeekingEventAggregation()) {
+        if (!useAllowListedFields || !isSeekingEventAggregation()) {
             return null;
         }
 
@@ -1307,6 +1314,14 @@ public class QueryOptions implements OptionDescriber {
         this.summaryIterator = summaryIterator;
     }
 
+    public String getSummaryFieldName() {
+        return summaryFieldname;
+    }
+
+    public void setSummaryFieldName(String summaryFieldname) {
+        this.summaryFieldname = summaryFieldname;
+    }
+
     public long getResultTimeout() {
         return resultTimeout;
     }
@@ -1386,6 +1401,7 @@ public class QueryOptions implements OptionDescriber {
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
                         "The threshold in milliseconds that the query iterator will evaluate consecutive documents to false before yielding the scan.");
+        options.put(MAX_YIELDS, "The maximum number of times to yield on the same startKey without making progress.");
         options.put(COMPRESS_SERVER_SIDE_RESULTS, "GZIP compress the serialized Documents before returning to the webserver");
         options.put(MAX_EVALUATION_PIPELINES, "The max number of evaluation pipelines");
         options.put(SERIAL_EVALUATION_PIPELINE, "Forces us to use the serial pipeline. Allows us to still have a single thread for evaluation");
@@ -1410,6 +1426,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
         options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.ContentSummaryIterator");
+        options.put(SUMMARY_FIELD_NAME, "The name of the field we want to write a requested summary to");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
         options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
@@ -1518,13 +1535,11 @@ public class QueryOptions implements OptionDescriber {
             this.projectResults = true;
             this.useAllowListedFields = true;
 
-            String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(fieldList)) {
-                this.allowListedFields = UniversalSet.instance();
-            } else if (fieldList != null && !fieldList.trim().equals("")) {
-                this.allowListedFields = new HashSet<>();
-                Collections.addAll(this.allowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+            String option = options.get(PROJECTION_FIELDS);
+            if (option != null) {
+                this.allowListedFields = new HashSet<>(Splitter.on(',').splitToList(option));
             }
+
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
                 this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
@@ -1642,9 +1657,10 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(DATATYPE_FILTER)) {
-            String filterCsv = options.get(DATATYPE_FILTER);
-            if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+            String option = options.get(DATATYPE_FILTER);
+            if (option != null && !option.isEmpty()) {
+                TypeFilter filter = TypeFilter.fromString(option);
+                HashSet<String> set = Sets.newHashSet(filter.getElements());
 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
 
@@ -1880,6 +1896,10 @@ public class QueryOptions implements OptionDescriber {
             this.setYieldThresholdMs(Long.parseLong(options.get(YIELD_THRESHOLD_MS)));
         }
 
+        if (options.containsKey(MAX_YIELDS)) {
+            this.setMaxYields(Long.parseLong(options.get(MAX_YIELDS)));
+        }
+
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
             this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
         }
@@ -1944,6 +1964,10 @@ public class QueryOptions implements OptionDescriber {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(SUMMARY_ITERATOR), e);
             }
+        }
+
+        if (options.containsKey(SUMMARY_FIELD_NAME)) {
+            setSummaryFieldName(options.get(SUMMARY_FIELD_NAME));
         }
 
         return true;
@@ -2031,14 +2055,14 @@ public class QueryOptions implements OptionDescriber {
         Map<String,Set<String>> mapping = new HashMap<>();
 
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
                 } else {
-                    String[] values = StringUtils.split(entrySplits[1], ',');
+                    String[] values = entrySplits[1].split(",");
                     HashSet<String> dataTypes = new HashSet<>();
 
                     Collections.addAll(dataTypes, values);
@@ -2058,9 +2082,9 @@ public class QueryOptions implements OptionDescriber {
     public static Set<String> fetchDataTypeKeys(String data) {
         Set<String> keys = Sets.newHashSet();
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
@@ -2175,7 +2199,7 @@ public class QueryOptions implements OptionDescriber {
 
     public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
-        for (String field : StringUtils.split(fieldStr, ',')) {
+        for (String field : fieldStr.split(",")) {
             if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
                 fields.add(field);
             }
@@ -2209,7 +2233,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {
-        return Sets.newHashSet(StringUtils.split(colFams, ','));
+        return Sets.newHashSet(colFams.split(","));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -2322,7 +2346,7 @@ public class QueryOptions implements OptionDescriber {
     public QueryStatsDClient getStatsdClient() {
         if (statsdHostAndPort != null && queryId != null) {
             if (statsdClient == null) {
-                synchronized (queryId) {
+                synchronized (LOCK) {
                     if (statsdClient == null) {
                         setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort),
                                         getStatsdMaxQueueSize()));
@@ -2373,6 +2397,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setYieldThresholdMs(long yieldThresholdMs) {
         this.yieldThresholdMs = yieldThresholdMs;
+    }
+
+    public long getMaxYields() {
+        return maxYields;
+    }
+
+    public void setMaxYields(long maxYields) {
+        this.maxYields = maxYields;
     }
 
     public int getFiFieldSeek() {

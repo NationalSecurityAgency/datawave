@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -23,14 +24,27 @@ import datawave.query.tables.ScannerFactory;
 public abstract class AsyncIndexLookup extends IndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(AsyncIndexLookup.class);
 
-    protected boolean unfieldedLookup;
-
     protected ExecutorService execService;
+
+    // specific lookups may use this threshold
+    protected final int maxUnfieldedExpansionThreshold;
+    protected final int maxValueExpansionThreshold;
+
+    // flag for unfielded lookups
+    protected final boolean unfieldedLookup;
+
+    // track state for common index expansion failures
+    protected final AtomicBoolean exceededTimeoutThreshold = new AtomicBoolean(false);
+    protected final AtomicBoolean exceededValueThreshold = new AtomicBoolean(false);
+    protected final AtomicBoolean exceptionSeen = new AtomicBoolean(false);
 
     public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
         this.unfieldedLookup = unfieldedLookup;
         this.execService = execService;
+
+        this.maxUnfieldedExpansionThreshold = config.getMaxUnfieldedExpansionThreshold();
+        this.maxValueExpansionThreshold = config.getMaxValueExpansionThreshold();
     }
 
     /**
@@ -49,6 +63,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             try {
                 startedLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new UnsupportedOperationException("Interrupted while waiting for IndexLookup to start", e);
             }
         } else {
@@ -81,7 +96,10 @@ public abstract class AsyncIndexLookup extends IndexLookup {
                 break;
             }
 
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } catch (TimeoutException | CancellationException e) {
             future.cancel(true);
@@ -89,6 +107,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             try {
                 stoppedLatch.await();
             } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
                 log.error("Interrupted waiting for canceled AsyncIndexLookup to complete.");
                 throw new RuntimeException(ex);
             }

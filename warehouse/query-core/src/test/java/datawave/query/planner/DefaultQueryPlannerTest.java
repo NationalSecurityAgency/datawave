@@ -11,17 +11,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import datawave.data.type.DateType;
+import datawave.data.type.LcNoDiacriticsListType;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockDateIndexHelper;
+import datawave.query.util.TypeMetadata;
 import datawave.test.JexlNodeAssert;
 import datawave.util.time.DateHelper;
 
@@ -67,8 +74,8 @@ class DefaultQueryPlannerTest {
 
             ASTJexlScript actual = addDateFilters();
 
+            // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertFalse(config.isShardsAndDaysHintAllowed());
             Assertions.assertEquals(beginDate, config.getBeginDate());
             Assertions.assertEquals(endDate, config.getEndDate());
         }
@@ -89,12 +96,17 @@ class DefaultQueryPlannerTest {
             config.setEndDate(endDate);
 
             settings.addParameter(QueryParameters.DATE_RANGE_TYPE, "SPECIAL_EVENT");
+            dateIndexHelper.addEntry("20241201", "SPECIAL_EVENT", "wiki", "FOO", "20240101_shard");
+            dateIndexHelper.addEntry("20250101", "SPECIAL_EVENT", "wiki", "FOO", "20250101_shard");
 
             ASTJexlScript actual = addDateFilters();
 
-            JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertFalse(config.isShardsAndDaysHintAllowed());
-            Assertions.assertEquals(beginDate, config.getBeginDate());
+            // no hints but the date filter is still used
+            JexlNodeAssert.assertThat(actual).isEqualTo(
+                            "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
+            // begin date is not pushed farther back
+            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241001"), config.getBeginDate());
+            // end date not pushed farther back either
             Assertions.assertEquals(endDate, config.getEndDate());
         }
 
@@ -115,8 +127,8 @@ class DefaultQueryPlannerTest {
 
             ASTJexlScript actual = addDateFilters();
 
+            // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertTrue(config.isShardsAndDaysHintAllowed());
             Assertions.assertEquals(beginDate, config.getBeginDate());
             Assertions.assertEquals(endDate, config.getEndDate());
         }
@@ -139,10 +151,11 @@ class DefaultQueryPlannerTest {
 
             ASTJexlScript actual = addDateFilters();
 
+            // hints and date filter used in this case
             JexlNodeAssert.assertThat(actual).hasExactQueryString(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
-            Assertions.assertTrue(config.isShardsAndDaysHintAllowed());
-            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241010"), config.getBeginDate());
+            // only the end date is adjusted
+            Assertions.assertEquals(beginDate, config.getBeginDate());
             Assertions.assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
         }
 
@@ -163,8 +176,8 @@ class DefaultQueryPlannerTest {
 
             ASTJexlScript actual = addDateFilters();
 
+            // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertTrue(config.isShardsAndDaysHintAllowed());
             Assertions.assertEquals(beginDate, config.getBeginDate());
             Assertions.assertEquals(endDate, config.getEndDate());
         }
@@ -189,15 +202,87 @@ class DefaultQueryPlannerTest {
 
             ASTJexlScript actual = addDateFilters();
 
+            // hints and date filter used in this case
             JexlNodeAssert.assertThat(actual).hasExactQueryString(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
-            Assertions.assertTrue(config.isShardsAndDaysHintAllowed());
             Assertions.assertEquals(DateIndexUtil.getBeginDate("20241010"), config.getBeginDate());
             Assertions.assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
         }
 
         private ASTJexlScript addDateFilters() throws TableNotFoundException, DatawaveQueryException {
             return planner.addDateFilters(queryTree, null, null, dateIndexHelper, config, settings);
+        }
+
+        /**
+         * Verify that no exception is thrown when validating a {@link UniqueFields} instance with temporal granularities for datetime fields.
+         */
+        @Test
+        void testValidateUniqueFieldsGivenValidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            UniqueFields uniqueFields = new UniqueFields();
+            uniqueFields.put("NAME", TemporalGranularity.ALL);
+            uniqueFields.put("ROLE", TemporalGranularity.ALL);
+            uniqueFields.put("HIRE_DATE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+
+            planner.validateUniqueFields(uniqueFields);
+        }
+
+        /**
+         * Verify that an exception is thrown when validating a {@link UniqueFields} instance with temporal granularities for non-datetime fields.
+         */
+        @Test
+        void testValidateUniqueFieldsGivenInvalidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            UniqueFields uniqueFields = new UniqueFields();
+            uniqueFields.put("NAME", TemporalGranularity.ALL);
+            uniqueFields.put("ROLE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+            uniqueFields.put("HIRE_DATE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+
+            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateUniqueFields(uniqueFields),
+                            "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: ROLE");
+        }
+
+        /**
+         * Verify that no exception is thrown when validating a {@link GroupFields} instance with temporal granularities for datetime fields.
+         */
+        @Test
+        void testValidateGroupFieldsGivenValidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            GroupFields groupFields = GroupFields.from("NAME,ROLE,HIRE_DATE[DAY]");
+
+            planner.validateGroupFields(groupFields);
+        }
+
+        /**
+         * Verify that an exception is thrown when validating a {@link GroupFields} instance with temporal granularities for non-datetime fields.
+         */
+        @Test
+        void testValidateGroupFieldsGivenInvalidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            GroupFields groupFields = GroupFields.from("NAME,ROLE[DAY],HIRE_DATE[DAY]");
+
+            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateGroupFields(groupFields),
+                            "The following group-by fields are not date fields and cannot be used with temporal truncation: ROLE");
         }
     }
 }

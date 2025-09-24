@@ -8,12 +8,14 @@ import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
+import org.apache.commons.lang.NotImplementedException;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
 
@@ -26,6 +28,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    @Deprecated
     public AccumuloConfiguration getConfig() {
         return conf;
     }
@@ -46,6 +49,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    @Deprecated
     public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
         throw new UnsupportedOperationException();
     }
@@ -71,12 +75,14 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    @Deprecated
     public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
+    @Deprecated
     public ServiceEnvironment getServiceEnv() {
         return null;
     }
@@ -84,6 +90,11 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     @Override
     public PluginEnvironment getPluginEnv() {
         return null;
+    }
+
+    @Override
+    public TableId getTableId() {
+        throw new NotImplementedException();
     }
 
 }

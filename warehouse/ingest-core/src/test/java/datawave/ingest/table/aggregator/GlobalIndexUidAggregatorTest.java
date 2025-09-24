@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -933,7 +932,7 @@ public class GlobalIndexUidAggregatorTest {
 
         // get an iterator of these key/value pairs (sorted)
         SortedKeyValueIterator<Key,Value> iterator = new SortedMultiMapIterator(keyValues);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("key"), null), Collections.emptySet(), false);
 
         // get a unique list of the keys (sorted
         Iterator<Key> keys = keyValues.keySet().iterator();
@@ -1019,7 +1018,7 @@ public class GlobalIndexUidAggregatorTest {
 
         // get an iterator of these key/value pairs (sorted)
         SortedKeyValueIterator<Key,Value> iterator = new SortedMultiMapIterator(keyValues);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("key"), null), Collections.emptySet(), false);
 
         // get a unique list of the keys (sorted)
         Iterator<Key> keys = expectedKeyValues.keySet().iterator();

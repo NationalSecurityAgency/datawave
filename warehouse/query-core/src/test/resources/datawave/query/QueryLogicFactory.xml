@@ -29,6 +29,14 @@
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Rename"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMillisecond"/>
+        <bean class="datawave.query.language.functions.jexl.GroupBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByHour"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByDay"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByYear"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
@@ -184,12 +192,16 @@
         <property name="name" value="Check for Unfielded Terms That Could Be Quoted"/>
     </bean>
 
+    <bean id="GroupedInterpretationRule" scope="prototype" class="datawave.query.rules.GroupedInterpretationRule">
+        <property name="name" value="Interpret Grouped Phrases"/>
+    </bean>
+
     <bean id="IncludeExcludeArgsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeArgsRule">
         <property name="name" value="Validate Args of #INCLUDE and #EXCLUDE"/>
     </bean>
 
-    <bean id="IncludeExcludeIndexFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexFieldsRule">
-        <property name="name" value="Check #INCLUDE and #EXCLUDE for Indexed Fields"/>
+    <bean id="IncludeExcludeIndexOnlyFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexOnlyFieldsRule">
+        <property name="name" value="Check #INCLUDE and #EXCLUDE for Index Only Fields"/>
     </bean>
 
     <bean id="InvalidQuoteRule" scope="prototype" class="datawave.query.rules.InvalidQuoteRule">
@@ -266,6 +278,7 @@
         <property name="reverseIndexTableName" value="shardReverseIndex" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
+        <property name="dateIndexIterator" value="true"/>
         <property name="queryThreads" value="5" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="includeDataTypeAsField" value="false" />
@@ -290,6 +303,14 @@
                 <value>datawave.query.enrich.DatawaveTermFrequencyEnricher</value>
             </list>
         </property>
+
+        <property name="excludeUnfieldedTypes">
+            <list value-type="datawave.data.type.Type">
+                <bean class="datawave.data.type.NumberType" />
+                <bean class="datawave.data.type.NumberListType" />
+            </list>
+        </property>
+
         <property name="useFilters" value="false" />
         <property name="filterClassNames" value=""/>
 
@@ -312,6 +333,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
+        <property name="localIvaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${local.ivarator.cache.dir.config} -->
         <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />
@@ -355,6 +377,7 @@
         <property name="numRangesToBuffer" value="15" />
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
+        <property name="maxLinesToPrint" value="-1"/>
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
         <!--   variables that control when a seek is issued     -->
         <property name="fiFieldSeek" value="-1" />
@@ -386,6 +409,9 @@
         <property name="sortQueryPostIndexWithFieldCounts" value="true" />
         <!-- cardinality threshold enables running ivarators as filter iterators -->
         <property name="cardinalityThreshold" value="50"/>
+        <property name="disableIteratorUniqueFields" value="false"/>
+        <property name="useDocumentScheduler" value="false"/>
+        <property name="documentScannerConfig" ref="DocumentScannerConfig"/>
         <property name="validationRules">
             <list value-type="datawave.query.rules.QueryRule">
                 <ref bean="InvalidQuoteRule"/>
@@ -394,12 +420,13 @@
                 <ref bean="AmbiguousNotRule"/>
                 <ref bean="AmbiguousOrPhrasesRule"/>
                 <ref bean="AmbiguousUnquotedPhrasesRule"/>
+                <ref bean="GroupedInterpretationRule"/>
                 <ref bean="MinimumSlopProximityRule"/>
                 <ref bean="IncludeExcludeArgsRule"/>
                 <ref bean="FieldExistenceRule"/>
                 <ref bean="UnescapedSpecialCharsRule"/>
                 <ref bean="FieldPatternPresenceRule"/>
-                <ref bean="IncludeExcludeIndexFieldsRule"/>
+                <ref bean="IncludeExcludeIndexOnlyFieldsRule"/>
                 <ref bean="NumericValueRule"/>
                 <ref bean="TimeFunctionRule"/>
             </list>
@@ -480,9 +507,25 @@
         <value>[0-9a-zA-Z]{0,2}[.?*]+</value>
     </util:list>
 
+    <util:set id="evalOnlyFieldPatterns" value-type="datawave.query.planner.rules.FieldPattern">
+        <bean class="datawave.query.planner.rules.FieldPattern">
+            <property name="field" value="FIELD_A"/>
+            <property name="pattern" value="abc.*"/>
+        </bean>
+        <bean class="datawave.query.planner.rules.FieldPattern">
+            <property name="field" value="FIELD_B"/>
+            <property name="pattern" value="xyz.*"/>
+        </bean>
+    </util:set>
+
     <util:list id="transformRuleList" value-type="datawave.query.planner.rules.NodeTransformRule">
+        <bean scope="prototype" class="datawave.query.planner.rules.RegexSimplifierTransformRule"/>
+        <bean scope="prototype" class="datawave.query.planner.rules.RegexDotallTransformRule" />
         <bean scope="prototype" class="datawave.query.planner.rules.RegexPushdownTransformRule">
             <property name="regexPatterns" ref="pushdownRegexPatterns"/>
+        </bean>
+        <bean scope="prototype" class="datawave.query.planner.rules.EvaluationOnlyPushdownRule">
+            <property name="fieldPatterns" ref="evalOnlyFieldPatterns"/>
         </bean>
     </util:list>
 
@@ -492,8 +535,8 @@
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
-        <property name="debugEnabled" value="false"/>
-        <property name="validateAst" value="false"/>
+        <property name="debugEnabled" value="true"/>
+        <property name="validateAst" value="true"/>
         <property name="validator" ref="AstValidator"/>
     </bean>
 
@@ -505,6 +548,60 @@
         <property name="validateQueryPropertyMarkers" value="true"/>
     </bean>
 
+    <bean id="DocumentScannerConfig" scope="prototype" class="datawave.next.scanner.DocumentScannerConfig">
+        <!-- configure queue capacities, thread pool sizes, and max tasks per thread pool-->
+        <property name="candidateQueueCapacity" value="25"/>
+        <property name="resultQueueCapacity" value="25"/>
+        <property name="searchThreads" value="5"/>
+        <property name="retrievalThreads" value="5"/>
+        <!--    BatchScannerSession max runnable: 25 max batches: 125    -->
+        <property name="maxSearchTasks" value="125"/>
+        <property name="maxRetrievalTasks" value="125"/>
+        <property name="sortedCandidateQueue" value="true"/>
+        <property name="candidateBatchSize" value="25"/>
+        <property name="candidateQueueOfferTimeMillis" value="25"/>
+        <property name="candidateQueuePollTimeMillis" value="25"/>
+        <property name="resultQueueOfferTimeMillis" value="25"/>
+        <property name="resultQueuePollTimeMillis" value="5"/>
+        <property name="scanTimeoutMillis" value="10000"/>
+        <property name="allowPartialIntersections" value="true" />
+        <property name="useQueryIterator" value="false" />
+        <!-- execution hints and consistency levels -->
+        <property name="searchScanHintTable" value="shard"/>
+        <property name="searchScanHintPool" value="shardTablePool"/>
+        <property name="retrievalScanHintTable" value="shard"/>
+        <property name="retrievalScanHintPool" value="shardTablePool"/>
+        <property name="searchConsistencyLevel" value="IMMEDIATE"/>
+        <property name="retrievalConsistencyLevel" value="IMMEDIATE"/>
+    </bean>
+
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
     </util:list>
+
+    <!-- Query Logic that returns document content -->
+    <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
+        <property name="tableName" value="shard" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns a document given the document identifier" />
+    </bean>
+
+    <!-- Query Logic that returns document term frequency information -->
+    <bean id="TermFrequencyQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.term.TermFrequencyQueryTable">
+        <property name="tableName" value="shard" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns data from the term frequency query table" />
+    </bean>
+
+    <!-- Query Logic that returns returnd document keywords -->
+    <bean id="KeywordQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.keyword.KeywordQueryLogic">
+        <property name="tableName" value="shard" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns keywords from content" />
+    </bean>
 </beans>

@@ -7,7 +7,6 @@ import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.StringReader;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,7 +29,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlException;
-import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.Parser;
@@ -384,7 +383,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
-            script = parser.parse(null, jexlFeatures(), queryString, null);
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("configureRanges");
+            script = parser.parse(jexlInfo, jexlFeatures(), queryString, null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
@@ -713,7 +713,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * Takes in a batch scanner and returns an iterator over the DiscoveredThing objects contained in the value.
      *
      * @param scanner
-     * @return
+     *            the batch scanner
+     * @param queryData
+     *            the query data
+     * @return the transform iterator
      */
     public static Iterator<Entry<Key,Value>> transformScanner(final BatchScanner scanner, final QueryData queryData) {
         return transform(scanner.iterator(), new Function<Entry<Key,Value>,Entry<Key,Value>>() {
@@ -795,6 +798,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      *            the QueryData for the query logic to be configured
      * @param priority
      *            the priority for the first of iterator filters
+     *
+     * @throws Exception
+     *             when unable to add custom filter
      */
     protected void addCustomFilters(QueryData data, int priority) throws Exception {}
 

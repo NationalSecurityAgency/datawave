@@ -23,7 +23,6 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.parser.JavaRegexAnalyzer;
 
@@ -69,7 +68,7 @@ public class RegexFilterIterator implements NestedIterator<Key>, Comparable<Inde
 
     @Override
     public void seek(Range range, Collection<ByteSequence> collection, boolean b) throws IOException {
-        source.seek(range, collection, b);
+        // no-op
     }
 
     @Override

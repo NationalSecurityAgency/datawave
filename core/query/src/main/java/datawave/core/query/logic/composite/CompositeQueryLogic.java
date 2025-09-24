@@ -13,9 +13,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,7 @@ import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
+import datawave.webservice.result.QueryValidationResponse;
 
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel unless configured to be sequential.
@@ -150,6 +153,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                             log.debug("{}: Got null result", Thread.currentThread().getName());
                         }
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // if this was on purpose, then just log and the loop will naturally exit
                         if (interrupted) {
                             log.warn("QueryLogic thread interrupted", e);
@@ -326,7 +330,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
             // if results is already set, then we were merely adding a new query logic to the mix
             if (this.results == null) {
-                this.results = new CompositeQueryLogicResults(this, Math.min(settings.getPagesize() * 2, 1000));
+                this.results = new CompositeQueryLogicResults(this, Math.min(settings.getPagesize() * 2, 1000), getResultsPollTimeout(),
+                                getResultsPollTimeoutTimeUnit());
             }
 
             if (log.isDebugEnabled()) {
@@ -484,6 +489,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             try {
                 holder.join();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 log.error("Error joining query logic thread", e);
                 throw new RuntimeException("Error joining query logic thread", e);
             }
@@ -704,6 +710,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      * Setting the current user is called after the logic is created. Pass this on to the children.
      *
      * @param user
+     *            the proxied user
      */
     @Override
     public void setCurrentUser(ProxiedUserDetails user) {
@@ -717,6 +724,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      * /** Setting the server user is called after the logic is created. Pass this on to the children.
      *
      * @param user
+     *            the proxied user
      */
     @Override
     public void setServerUser(ProxiedUserDetails user) {
@@ -724,6 +732,34 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         for (QueryLogic<?> logic : getQueryLogics().values()) {
             logic.setServerUser(user);
         }
+    }
+
+    @Override
+    public Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+        // see if we can find a query logic that supports this method
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            try {
+                return logic.validateQuery(client, query, auths);
+            } catch (UnsupportedOperationException uoe) {
+                // try the next one
+            }
+        }
+        // ok, call the super method to throw the exception
+        return super.validateQuery(client, query, auths);
+    }
+
+    @Override
+    public Transformer<Object,QueryValidationResponse> getQueryValidationResponseTransformer() {
+        // see if we can find a query logic that supports this method
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            try {
+                return logic.getQueryValidationResponseTransformer();
+            } catch (UnsupportedOperationException uoe) {
+                // try the next one
+            }
+        }
+        // ok, call the super method to throw the exception
+        return super.getQueryValidationResponseTransformer();
     }
 
     /**
@@ -780,5 +816,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     public CountDownLatch getCompletionLatch() {
         return completionLatch;
+    }
+
+    public void setResultsPollTimeout(long resultsPollTimeout) {
+        getConfig().setResultsPollTimeout(resultsPollTimeout);
+    }
+
+    public long getResultsPollTimeout() {
+        return getConfig().getResultsPollTimeout();
+    }
+
+    public void setResultsPollTimeoutTimeUnit(TimeUnit timeUnit) {
+        getConfig().setResultsPollTimeoutTimeUnit(timeUnit);
+    }
+
+    public TimeUnit getResultsPollTimeoutTimeUnit() {
+        return getConfig().getResultsPollTimeoutTimeUnit();
     }
 }

@@ -4,11 +4,17 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>7.16.0-SNAPSHOT</version>
+        <version>7.31.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <!-- jkube kubernetes-maven-plugin only has access to project properties so we redefine them to properly render the Dockerfile-->
+        <project.version>${project.version}</project.version>
+        <!--   used for image ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${version.accumulo}     -->
+        <version.accumulo>2.1.3</version.accumulo>
+    </properties>
     <dependencies>
         <!-- To ensure a consistent version is loaded -->
         <dependency>
@@ -94,6 +100,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-keyword-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
         </dependency>
         <dependency>
@@ -119,6 +130,12 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -150,7 +167,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -237,23 +254,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <!-- Activate the assert-properties plugin -->
-                        <groupId>gov.nsa.datawave.plugins</groupId>
-                        <artifactId>assert-properties</artifactId>
-                        <executions>
-                            <execution>
-                                <id>assert-properties</id>
-                                <goals>
-                                    <goal>assert-properties</goal>
-                                </goals>
-                                <phase>initialize</phase>
-                                <configuration>
-                                    <expectedPropertyNames>${project.basedir}/assert/expected-properties.txt</expectedPropertyNames>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <executions>
                             <execution>
@@ -272,16 +272,32 @@
                             </execution>
                         </executions>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>assemble-and-docker-prep</id>
+            <activation>
+                <property>
+                    <name>!skipPrep</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
                     <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <version>2.4.1</version>
+                        <!-- Activate the assert-properties plugin -->
+                        <groupId>gov.nsa.datawave.plugins</groupId>
+                        <artifactId>assert-properties</artifactId>
                         <executions>
                             <execution>
-                                <id>auto-clean</id>
+                                <id>assert-properties</id>
                                 <goals>
-                                    <goal>clean</goal>
+                                    <goal>assert-properties</goal>
                                 </goals>
                                 <phase>initialize</phase>
+                                <configuration>
+                                    <expectedPropertyNames>${project.basedir}/assert/expected-properties.txt</expectedPropertyNames>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -422,38 +438,6 @@
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>copy-rpm</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>verify</phase>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.directory}/rpm/datawave-dw-${build.env}/RPMS/noarch/</directory>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-dockerfile</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>verify</phase>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/main/docker</directory>
-                                            <filtering>true</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <id>copy-additional-env</id>
                                 <goals>
                                     <goal>copy-resources</goal>
@@ -483,32 +467,57 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <version>1.1.1</version>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
+                        <version>1.18.1</version>
                         <configuration>
-                            <imageName>${docker.image.prefix}datawave/ingest-${build.env}</imageName>
-                            <forceTags>true</forceTags>
-                            <imageTags>
-                                <imageTag>latest</imageTag>
-                                <imageTag>${project.version}</imageTag>
-                            </imageTags>
-                            <dockerDirectory>${project.build.directory}/docker</dockerDirectory>
-                            <resources>
-                                <resource>
-                                    <targetPath>/</targetPath>
-                                    <directory>${project.build.directory}</directory>
-                                    <include>rpm/RPMS/noarch/${project.build.finalName}-${build.env}.rpm</include>
-                                </resource>
-                            </resources>
+                            <verbose>true</verbose>
+                            <pushRegistry>${container.registry}</pushRegistry>
+                            <images>
+                                <image>
+                                    <name>${registry.namespace}${image.prefix}ingest-${build.env}:${project.version}</name>
+                                    <build>
+                                        <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
+                                        <contextDir>.</contextDir>
+                                        <buildOptions>
+                                            <memory>8589934592</memory>
+                                        </buildOptions>
+                                        <assembly>
+                                            <name>/</name>
+                                            <layers>
+                                                <layer>
+                                                    <id>rpm</id>
+                                                    <fileSets>
+                                                        <fileSet>
+                                                            <directory>${project.build.directory}/rpm/datawave-dw-${build.env}/RPMS/noarch/</directory>
+                                                            <!-- target/docker/<image path>/build -->
+                                                            <outputDirectory>.</outputDirectory>
+                                                            <includes>datawave-dw-${build.env}-*.rpm</includes>
+                                                            <fileMode>0640</fileMode>
+                                                            <directoryMode>0750</directoryMode>
+                                                        </fileSet>
+                                                    </fileSets>
+                                                </layer>
+                                            </layers>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
                         </configuration>
                         <executions>
                             <execution>
-                                <id>tag-image</id>
+                                <id>build</id>
                                 <goals>
                                     <goal>build</goal>
                                 </goals>
                                 <phase>install</phase>
+                            </execution>
+                            <execution>
+                                <id>push</id>
+                                <goals>
+                                    <goal>push</goal>
+                                </goals>
+                                <phase>deploy</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -524,6 +533,11 @@
 				assembly plugins to share the same configuration, so this information must be duplicated.
 			-->
             <id>rpm</id>
+            <activation>
+                <property>
+                    <name>docker-release</name>
+                </property>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -548,7 +562,6 @@
                         <configuration>
                             <name>datawave-dw-${build.env}</name>
                             <group>Applications/File</group>
-                            <copyright>TODO.org</copyright>
                             <autoRequires>false</autoRequires>
                             <defaultDirmode>0755</defaultDirmode>
                             <defaultFilemode>0444</defaultFilemode>
@@ -679,21 +692,23 @@
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>${project.groupId}:datawave-ingest-ssdeep</include>
+                                            <include>${project.groupId}:datawave-keyword-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                                             <include>gov.nsa.datawave.core:datawave-core-query</include>
-                                            <include>gov.nsa.datawave.microservice:accumulo-utils</include>
-                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
-                                            <include>gov.nsa.datawave.microservice:type-utils</include>
-                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
-                                            <include>gov.nsa.datawave.microservice:common-utils</include>
+                                            <include>gov.nsa.datawave.core:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.core:metadata-utils</include>
+                                            <include>gov.nsa.datawave.core:type-utils</include>
+                                            <include>gov.nsa.datawave.core:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.core:common-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
                                             <include>org.javatuples:javatuples</include>
                                             <include>com.google.code.gson:gson</include>
+                                            <include>com.ibm.icu:icu4j</include>
                                             <include>com.clearspring.analytics:stream</include>
                                             <include>org.apache.lucene:lucene-core</include>
                                             <include>com.timgroup:java-statsd-client</include>
@@ -732,11 +747,11 @@
                                             <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>
-                                            <include>gov.nsa.datawave.microservice:accumulo-utils</include>
-                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
-                                            <include>gov.nsa.datawave.microservice:type-utils</include>
-                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
-                                            <include>gov.nsa.datawave.microservice:common-utils</include>
+                                            <include>gov.nsa.datawave.core:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.core:metadata-utils</include>
+                                            <include>gov.nsa.datawave.core:type-utils</include>
+                                            <include>gov.nsa.datawave.core:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.core:common-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>com.google.code.gson:gson</include>
@@ -758,6 +773,7 @@
                                 <goals>
                                     <goal>rpm</goal>
                                 </goals>
+                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>
