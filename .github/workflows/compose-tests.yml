@@ -46,7 +46,7 @@ jobs:
       - name: Set owner of working dir and m2 dir recursively
         #Needed because compose can leave around files owned by root.
         run: |
-          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
             sudo chown -R $(whoami) . ~/.m2 || true   
           fi
       - name: Checkout Code
@@ -78,7 +78,7 @@ jobs:
         if: ${{ inputs.allow-snapshots }}
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
             export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
           fi
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
@@ -86,7 +86,7 @@ jobs:
       - name: Docker Compose Build
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
             export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
           fi
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
@@ -98,7 +98,7 @@ jobs:
           # free up some space so that we don't run out
           docker system prune -f
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
             export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
           fi          
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
@@ -166,6 +166,6 @@ jobs:
         run: |
           cd docker
           docker compose logs quickstart
-          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
             sudo chown -R $(whoami) . ~/.m2 || true   
           fi

@@ -78,13 +78,13 @@ jobs:
     - name: Build and Run Unit Tests
       run: |
         cd microservices
-        if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+        if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
           export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
         fi
         mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipITs -DskipFormat
     - name: Run Integration Tests
       run: |
-        if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+        if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
           export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
         fi
         cd microservices
