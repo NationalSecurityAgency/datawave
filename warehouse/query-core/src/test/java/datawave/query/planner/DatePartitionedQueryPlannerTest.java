@@ -381,23 +381,25 @@ public abstract class DatePartitionedQueryPlannerTest {
         }
     }
 
+    private enum ExpectedSuccess {
+        ALL, SOME, NONE
+    }
+
     private AccumuloClient assertQueryResults() throws Exception {
-        return assertQueryResults(false, false);
+        return assertQueryResults(ExpectedSuccess.ALL);
     }
 
     /**
      * Assert the query results
      *
-     * @param fullTableScanRequired
-     *            This denotes that to get all results, full table scan will be required
-     * @param partialSuccessExpected
-     *            This denotes that with full table scan disabled, success is expected anyway (at least one date range will succeed).
+     * @param successMode
+     *            This denotes whether the subplans will success all, some, or not at all
      * @return The accumulo client used
      * @throws Exception
      */
-    private AccumuloClient assertQueryResults(boolean fullTableScanRequired, boolean partialSuccessExpected) throws Exception {
-        // setup the full table scan enabled flag
-        this.logic.setFullTableScanEnabled(fullTableScanRequired);
+    private AccumuloClient assertQueryResults(ExpectedSuccess successMode) throws Exception {
+        // setup the full table scan enabled flag to get all of the plans and events
+        this.logic.setFullTableScanEnabled(successMode != ExpectedSuccess.ALL);
 
         // Initialize the query settings.
         QueryImpl settings = new QueryImpl();
@@ -444,16 +446,16 @@ public abstract class DatePartitionedQueryPlannerTest {
         assertPlanEquals(expectedFinalPlans, actualPlans);
 
         // verify that the full table scan was actually required
-        if (fullTableScanRequired) {
+        if (successMode != ExpectedSuccess.ALL) {
             try {
                 logic.setFullTableScanEnabled(false);
                 logic.initialize(client, settings, authSet);
-                if (!partialSuccessExpected) {
-                    Assert.fail("Expected full table scan to be required");
+                if (successMode == ExpectedSuccess.NONE) {
+                    Assert.fail("Expected full table scan to be required for any success");
                 }
             } catch (DatawaveQueryException e) {
-                if (partialSuccessExpected) {
-                    Assert.fail("Expected success even with failed date ranges");
+                if (successMode == ExpectedSuccess.SOME) {
+                    Assert.fail("Expected some success even with failed date ranges");
                 }
             }
         }
@@ -610,7 +612,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     /**
@@ -638,7 +640,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     /**
@@ -714,7 +716,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     /**
@@ -746,7 +748,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     /**
@@ -775,7 +777,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     /**
@@ -804,7 +806,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     @Test
@@ -833,7 +835,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     /**
@@ -892,7 +894,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, true));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.SOME));
     }
 
     /**
@@ -922,7 +924,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
         expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults(true, false));
+        assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.NONE));
     }
 
 }
