@@ -2,7 +2,6 @@ package datawave.query.config;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -13,19 +12,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.util.sortedset.FileSortedSet;
 
 /**
  * Configuration for ivarator-based field index evaluation.
  *
- * Purpose: encapsulates all ivarator configuration in a single object to simplify
- * serialization and transfer of settings between the webservice and tablet servers.
+ * Purpose: encapsulates all ivarator configuration in a single object to simplify serialization and transfer of settings between the webservice and tablet
+ * servers.
  *
  * JSON: Jackson-based. Single-element arrays may be written unwrapped and read back.
  *
  * Thread-safety: not thread-safe. Create per request or copy.
  *
  * Example:
+ *
  * <pre>
  * IvaratorConfig cfg = new IvaratorConfig()
  *     .setIvaratorCacheDirConfigs(Arrays.asList(new IvaratorCacheDirConfig(...)))

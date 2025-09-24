@@ -1581,7 +1581,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return localIvaratorCacheDirConfigs;
     }
 
-
     @JsonIgnore
     public String getIvaratorFstHdfsBaseURIs() {
         return ivaratorConfig.getIvaratorFstHdfsBaseURIs();
