@@ -110,7 +110,7 @@ public class ReloadFilesFromLoadedJob {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 3) {
+        if (args.length < 3 || args.length > 4 ) {
             System.err.println("Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map> <error on file not found> [<hdfs base dir defaults to /data>]");
             System.err.println("NOTE: FLAG MAKERS MUST BE STOPPED WHILE RUNNING");
             System.err.println(
