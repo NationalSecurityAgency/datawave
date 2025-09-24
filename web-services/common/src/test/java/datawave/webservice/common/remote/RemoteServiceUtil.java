@@ -11,7 +11,8 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 public class RemoteServiceUtil {
-    public static final String NON_ROUTABLE_HOST = "10.255.255.255";
+    // special IP from the TEST-NET-1 ip range 192.0.2.0/24 that should never be assigned
+    public static final String NON_ROUTABLE_HOST = "192.0.2.255";
 
     // system picks
     private static final int PORT = 0;
