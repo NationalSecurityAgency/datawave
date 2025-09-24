@@ -106,6 +106,8 @@ public class LookupUUIDUtil {
 
     private int maxAllowedBatchLookupUUIDs = LookupUUIDConstants.DEFAULT_BATCH_LOOKUP_UPPER_LIMIT;
 
+    private int maxAllowedTagCloudLookupUUIDs = LookupUUIDConstants.DEFAULT_TAG_CLOUD_LOOKUP_UPPER_LIMIT;
+
     private final QueryExecutor queryExecutor;
 
     private final UserOperations userOperations;
@@ -180,6 +182,14 @@ public class LookupUUIDUtil {
         this.maxAllowedBatchLookupUUIDs = lookupUUIDConfiguration.getBatchLookupUpperLimit();
         if (this.maxAllowedBatchLookupUUIDs <= 0) {
             this.maxAllowedBatchLookupUUIDs = -1;
+        }
+
+        // Assign the maximum number of UUIDs allowed for tag cloud batch lookup which may be different
+        // from the default limit because tag clouds summarize results. A zero or negative
+        // value is interpreted as unlimited, which is automatically adjusted to -1.
+        this.maxAllowedTagCloudLookupUUIDs = lookupUUIDConfiguration.getTagCloudLookupUpperLimit();
+        if (this.maxAllowedTagCloudLookupUUIDs <= 0) {
+            this.maxAllowedTagCloudLookupUUIDs = -1;
         }
 
         this.defaultOptionalParams = lookupUUIDConfiguration.optionalParamsToMap();
@@ -345,7 +355,7 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
 
         // Validate the lookup criteria and get its HTTP headers, which may be null
-        final AbstractUUIDLookupCriteria validatedCriteria = this.validateLookupCriteria(unvalidatedCriteria, true);
+        final AbstractUUIDLookupCriteria validatedCriteria = this.validateLookupCriteria(unvalidatedCriteria, true, this.maxAllowedBatchLookupUUIDs);
         final HttpHeaders headers = validatedCriteria.getStreamingOutputHeaders();
 
         // If the criteria is intended for content lookup and contains only UIDQuery "event" types, allow
@@ -706,7 +716,7 @@ public class LookupUUIDUtil {
         // Perform criteria validation if paging through next results
         final AbstractUUIDLookupCriteria validatedCriteria;
         if (criteria instanceof NextContentCriteria) {
-            validatedCriteria = this.validateLookupCriteria(criteria, false);
+            validatedCriteria = this.validateLookupCriteria(criteria, false, this.maxAllowedBatchLookupUUIDs);
         } else {
             validatedCriteria = criteria;
         }
@@ -740,7 +750,7 @@ public class LookupUUIDUtil {
     @SuppressWarnings("unchecked")
     public <T> T generateTagCloud(final AbstractUUIDLookupCriteria unvalidatedCriteria) {
 
-        final AbstractUUIDLookupCriteria validatedCriteria = validateLookupCriteria(unvalidatedCriteria, true);
+        final AbstractUUIDLookupCriteria validatedCriteria = validateLookupCriteria(unvalidatedCriteria, true, this.maxAllowedTagCloudLookupUUIDs);
         final String queryString = validatedCriteria.getRawQueryString();
 
         // Initialize the return values
@@ -750,55 +760,66 @@ public class LookupUUIDUtil {
         // Set up the parameters.
         final MultivaluedMap<String,String> queryParameters = getContentParameters(validatedCriteria, queryString);
 
+        // if no page size is set explicitly for tag clouds, we want to set it to something larger than the default of
+        // 10. This effectively controls the maximum number of documents per tag cloud, ensuring that this is larger
+        // than the number of lookup uuid's we can do at once has the effect of always generating a single tag cloud.
+        if (!queryParameters.containsKey("pagesize")) {
+            queryParameters.putSingle("pagesize", "10000");
+        }
+
         // Prepare to handle the query and responses.
         final GenericResponse<String> createResponse = this.queryExecutor.createQuery(KEYWORD_QUERY, queryParameters);
         final String keywordQueryId = createResponse.getResult();
 
         BaseQueryResponse lastResponse = null;
 
-        do {
-            try {
-                // Get the first/next results
-                BaseQueryResponse response = this.queryExecutor.next(keywordQueryId);
-                lastResponse = response;
+        try {
+            do {
+                try {
+                    // Get the first/next results
+                    BaseQueryResponse response = this.queryExecutor.next(keywordQueryId);
+                    lastResponse = response;
 
-                if (TagCloudResponseBase.class.isAssignableFrom(response.getClass())) {
-                    // merge tag cloud responses
-                    final TagCloudResponseBase tagCloudResponse = (TagCloudResponseBase) response;
-                    if (mergedResponse == null) {
-                        mergedResponse = tagCloudResponse;
+                    if (TagCloudResponseBase.class.isAssignableFrom(response.getClass())) {
+                        // merge tag cloud responses
+                        final TagCloudResponseBase tagCloudResponse = (TagCloudResponseBase) response;
+                        if (mergedResponse == null) {
+                            mergedResponse = tagCloudResponse;
+                        } else {
+                            final String queryId = mergedResponse.getQueryId();
+                            mergedResponse.merge(tagCloudResponse);
+                            mergedResponse.setQueryId(queryId);
+                        }
                     } else {
-                        final String queryId = mergedResponse.getQueryId();
-                        mergedResponse.merge(tagCloudResponse);
-                        mergedResponse.setQueryId(queryId);
+                        final EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
+                        er.addMessage("Unhandled response type " + response + " from KeywordQuery");
+                        throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS,
+                                        "Expected " + TagCloudResponseBase.class + " but got " + response.getClass()), er);
                     }
-                } else {
-                    final EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
-                    er.addMessage("Unhandled response type " + response + " from KeywordQuery");
-                    throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS,
-                                    "Expected " + TagCloudResponseBase.class + " but got " + response.getClass()), er);
-                }
-            } catch (final NoResultsException e) {
-                lastResponse = null;
-                noResultsException = e;
-            } catch (final EJBException e) {
-                // This used to be the case. Don't know when the executor started
-                // directly throwing a NoResultsException, but this is kept just
-                // in case.
-                final Throwable cause = e.getCause();
-                if (cause instanceof DatawaveWebApplicationException) {
-                    DatawaveWebApplicationException nwae = (DatawaveWebApplicationException) cause;
-                    if (nwae instanceof NoResultsException) {
-                        lastResponse = null;
-                        noResultsException = nwae;
-                    } else {
-                        throw nwae;
+                } catch (final NoResultsException e) {
+                    lastResponse = null;
+                    noResultsException = e;
+                } catch (final EJBException e) {
+                    // This used to be the case. Don't know when the executor started
+                    // directly throwing a NoResultsException, but this is kept just
+                    // in case.
+                    final Throwable cause = e.getCause();
+                    if (cause instanceof DatawaveWebApplicationException) {
+                        DatawaveWebApplicationException nwae = (DatawaveWebApplicationException) cause;
+                        if (nwae instanceof NoResultsException) {
+                            lastResponse = null;
+                            noResultsException = nwae;
+                        } else {
+                            throw nwae;
+                        }
                     }
                 }
             }
+            // Loop if more results are available
+            while (lastResponse != null);
+        } finally {
+            this.queryExecutor.close(keywordQueryId);
         }
-        // Loop if more results are available
-        while (lastResponse != null);
 
         // Conditionally throw a NoResultsException
         if (mergedResponse == null && noResultsException != null) {
@@ -1021,7 +1042,8 @@ public class LookupUUIDUtil {
         return guttedEvents;
     }
 
-    private AbstractUUIDLookupCriteria validateLookupCriteria(final AbstractUUIDLookupCriteria criteria, boolean validateUUIDTerms) {
+    private AbstractUUIDLookupCriteria validateLookupCriteria(final AbstractUUIDLookupCriteria criteria, boolean validateUUIDTerms,
+                    int maxAllowedBatchLookupUUIDs) {
         // Initialize the validated logic name, which is only necessary for UUID lookup and
         // OK to be a null value when paging through content results.
         String logicName = null;

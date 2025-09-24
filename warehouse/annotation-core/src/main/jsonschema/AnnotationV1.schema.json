@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation",
+  "$defs": {
+    ".datawave.annotation.protobuf.v1.All": {
+      "properties": {},
+      "type": "object",
+      "description": "segment boundary types"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation": {
+      "properties": {
+        "shard": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.shard"
+        },
+        "dataType": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.dataType"
+        },
+        "uid": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.uid"
+        },
+        "annotationType": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.annotationType"
+        },
+        "annotationId": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.annotationId"
+        },
+        "metadata": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.metadata"
+        },
+        "segments": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.segments"
+        }
+      },
+      "type": "object",
+      "required": [
+        "shard",
+        "dataType",
+        "uid",
+        "annotationType",
+        "annotationId"
+      ]
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.annotationId": {
+      "type": "string"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.annotationType": {
+      "type": "string"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.dataType": {
+      "type": "string"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.metadata": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.segments": {
+      "items": {
+        "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment"
+      },
+      "type": "array"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.shard": {
+      "type": "string"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.uid": {
+      "type": "string"
+    },
+    ".datawave.annotation.protobuf.v1.Point": {
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Point.x"
+        },
+        "y": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Point.y"
+        },
+        "label": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Point.label"
+        }
+      },
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "label"
+      ]
+    },
+    ".datawave.annotation.protobuf.v1.Point.label": {
+      "type": "string"
+    },
+    ".datawave.annotation.protobuf.v1.Point.x": {
+      "type": "number"
+    },
+    ".datawave.annotation.protobuf.v1.Point.y": {
+      "type": "number"
+    },
+    ".datawave.annotation.protobuf.v1.PointList": {
+      "properties": {
+        "point": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.PointList.point"
+        }
+      },
+      "type": "object"
+    },
+    ".datawave.annotation.protobuf.v1.PointList.point": {
+      "items": {
+        "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Point"
+      },
+      "type": "array"
+    },
+    ".datawave.annotation.protobuf.v1.Segment": {
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "all"
+              ]
+            },
+            {
+              "required": [
+                "pointList"
+              ]
+            },
+            {
+              "required": [
+                "time"
+              ]
+            },
+            {
+              "required": [
+                "characters"
+              ]
+            },
+            {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "all"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "pointList"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "time"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "characters"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "annotationId": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.annotationId"
+        },
+        "segmentId": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.segmentId"
+        },
+        "createTime": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.createTime"
+        },
+        "updateTime": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.updateTime"
+        },
+        "eTag": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.eTag"
+        },
+        "segmentValue": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.segmentValue"
+        },
+        "metadata": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.metadata"
+        },
+        "boundaryType": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.boundaryType"
+        },
+        "all": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.all"
+            }
+          ]
+        },
+        "pointList": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.pointList"
+            }
+          ]
+        },
+        "time": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.time"
+            }
+          ]
+        },
+        "characters": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Segment.characters"
+            }
+          ]
+        }
+      },
+      "type": "object",
+      "required": [
+        "annotationId",
+        "segmentId",
+        "createTime",
+        "updateTime",
+        "eTag",
+        "boundaryType"
+      ],
+      "description": "segment wrapping, consisting of a boundary and one or more associated values."
+    },
+    ".datawave.annotation.protobuf.v1.Segment.all": {
+      "$ref": "#/$defs/.datawave.annotation.protobuf.v1.All"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.annotationId": {
+      "type": "string",
+      "description": "the annotation this segment is associated with."
+    },
+    ".datawave.annotation.protobuf.v1.Segment.boundaryType": {
+      "type": "string",
+      "description": "used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.characters": {
+      "$ref": "#/$defs/.datawave.annotation.protobuf.v1.TextSpanChars",
+      "description": "add future segment types here"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.createTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "segment creation time"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.eTag": {
+      "type": "string",
+      "description": "Used for optimistic concurrency across JSON and gRPC"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.metadata": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object",
+      "description": "arbitrary, optional metadata"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.pointList": {
+      "$ref": "#/$defs/.datawave.annotation.protobuf.v1.PointList"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.segmentId": {
+      "type": "string",
+      "description": "the segment id in this annotation."
+    },
+    ".datawave.annotation.protobuf.v1.Segment.segmentValue": {
+      "items": {
+        "$ref": "#/$defs/.datawave.annotation.protobuf.v1.SegmentValue",
+        "description": "Multiple values associated with this segment."
+      },
+      "type": "array",
+      "description": "Multiple values associated with this segment."
+    },
+    ".datawave.annotation.protobuf.v1.Segment.time": {
+      "$ref": "#/$defs/.datawave.annotation.protobuf.v1.TimeSpanSeconds"
+    },
+    ".datawave.annotation.protobuf.v1.Segment.updateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "segment update time"
+    },
+    ".datawave.annotation.protobuf.v1.SegmentValue": {
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "extension"
+              ]
+            },
+            {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "extension"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.SegmentValue.value"
+        },
+        "score": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.SegmentValue.score"
+        },
+        "extension": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.datawave.annotation.protobuf.v1.SegmentValue.extension"
+            }
+          ]
+        }
+      },
+      "type": "object",
+      "required": [
+        "value",
+        "score"
+      ],
+      "description": "segment value, e.g. a label, confidence and source"
+    },
+    ".datawave.annotation.protobuf.v1.SegmentValue.extension": {
+      "type": "string",
+      "description": "type-specific data"
+    },
+    ".datawave.annotation.protobuf.v1.SegmentValue.score": {
+      "type": "number",
+      "description": "e.g., confidence"
+    },
+    ".datawave.annotation.protobuf.v1.SegmentValue.value": {
+      "type": "string",
+      "description": "e.g., label"
+    },
+    ".datawave.annotation.protobuf.v1.TextSpanChars": {
+      "properties": {
+        "startCharacter": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.TextSpanChars.startCharacter"
+        },
+        "endCharacter": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.TextSpanChars.endCharacter"
+        }
+      },
+      "type": "object",
+      "required": [
+        "startCharacter",
+        "endCharacter"
+      ]
+    },
+    ".datawave.annotation.protobuf.v1.TextSpanChars.endCharacter": {
+      "type": "integer"
+    },
+    ".datawave.annotation.protobuf.v1.TextSpanChars.startCharacter": {
+      "type": "integer"
+    },
+    ".datawave.annotation.protobuf.v1.TimeSpanSeconds": {
+      "properties": {
+        "startSeconds": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.TimeSpanSeconds.startSeconds"
+        },
+        "endSeconds": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.TimeSpanSeconds.endSeconds"
+        }
+      },
+      "type": "object",
+      "required": [
+        "startSeconds",
+        "endSeconds"
+      ]
+    },
+    ".datawave.annotation.protobuf.v1.TimeSpanSeconds.endSeconds": {
+      "type": "number"
+    },
+    ".datawave.annotation.protobuf.v1.TimeSpanSeconds.startSeconds": {
+      "type": "number"
+    }
+  },
+  "type": "object"
+}

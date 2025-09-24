@@ -24,8 +24,10 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
+import datawave.query.util.ValueSerializerType;
 
 public class EntryParserTest {
+    private final static ValueSerializerType SERIALIZER_TYPE = ValueSerializerType.WRITABLE;
 
     private static void addToExpected(Collection<IndexMatch> expected, String prefix, Iterable<String> docIds, JexlNode node) {
         for (String docId : docIds)
@@ -52,9 +54,9 @@ public class EntryParserTest {
 
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
 
-        EntryParser parser = new EntryParser("hello", "world", true);
+        EntryParser parser = new EntryParser("hello", "world", true, SERIALIZER_TYPE);
         Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
         assertTrue(iterator.hasTop());
@@ -86,10 +88,10 @@ public class EntryParserTest {
 
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
 
-        EntryParser parser = new EntryParser("hello", "world", false);
+        EntryParser parser = new EntryParser("hello", "world", false, SERIALIZER_TYPE);
         Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
 
@@ -118,10 +120,10 @@ public class EntryParserTest {
 
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key("row", "cf"), null), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
 
-        EntryParser parser = new EntryParser("hello", "world", false);
+        EntryParser parser = new EntryParser("hello", "world", false, SERIALIZER_TYPE);
         Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
 

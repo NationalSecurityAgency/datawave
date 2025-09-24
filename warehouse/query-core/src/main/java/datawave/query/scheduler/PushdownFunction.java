@@ -74,7 +74,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         for (Range range : qd.getRanges()) {
 
             SessionOptions options = new SessionOptions();
-            options.setQueryConfig(this.config);
+            options.setQueryConfiguration(this.config);
 
             // fetch column families
             for (String cf : qd.getColumnFamilies()) {
@@ -112,5 +112,9 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
             chunks.add(new ScannerChunk(options, Collections.singleton(range), qd, ""));
         }
         return chunks;
+    }
+
+    protected ShardQueryConfiguration getConfig() {
+        return config;
     }
 }

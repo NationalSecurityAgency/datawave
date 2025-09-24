@@ -14,7 +14,9 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.util.ConfigurationImpl;
+import org.apache.commons.lang.NotImplementedException;
 
 public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
@@ -51,8 +53,19 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    public TableId getTableId() {
+        throw new NotImplementedException();
+    }
+
+    @Override
     public IteratorUtil.IteratorScope getIteratorScope() {
         return scope;
+    }
+
+    @Override
+    @Deprecated
+    public ServiceEnvironment getServiceEnv() {
+        return null;
     }
 
     @Override

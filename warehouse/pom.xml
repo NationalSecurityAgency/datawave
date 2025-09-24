@@ -4,13 +4,14 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.24.0-SNAPSHOT</version>
+        <version>7.31.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
         <module>accumulo-extensions</module>
+        <module>annotation-core</module>
         <module>common</module>
         <module>core</module>
         <module>age-off</module>
@@ -187,6 +188,12 @@
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>${version.dropwizard-metrics}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>net.sf.json-lib</groupId>

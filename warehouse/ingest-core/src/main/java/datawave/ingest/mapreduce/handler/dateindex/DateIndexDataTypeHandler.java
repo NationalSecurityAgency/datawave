@@ -38,7 +38,6 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.aggregator.DateIndexDateAggregator;
 import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -170,7 +169,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
             typeToFieldsSet.addAll(conf.getTrimmedStringCollection(dataType.typeName() + DATEINDEX_TYPE_TO_FIELDS));
             Multimap<String,String> typeToFields = HashMultimap.create();
             for (String typeToField : typeToFieldsSet) {
-                String[] parts = StringUtils.split(typeToField, '=');
+                String[] parts = typeToField.split("=");
                 if (parts.length != 2) {
                     throw new IllegalStateException("Improper date index type to field configuration: " + typeToField);
                 }

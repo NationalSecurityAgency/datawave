@@ -17,10 +17,10 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Sets;
 
@@ -36,13 +36,9 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
 
     private static final Logger log = Logger.getLogger(MetadataCacheLoader.class);
     protected AccumuloClient client;
-    protected String defaultBasePath;
 
-    private static final String HDFS_BASE = "hdfs://";
-
-    public MetadataCacheLoader(AccumuloClient client, String defaultBasePath) {
+    public MetadataCacheLoader(AccumuloClient client) {
         this.client = client;
-        this.defaultBasePath = defaultBasePath;
     }
 
     @Override
@@ -71,7 +67,6 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
 
         RowIterator rowIter = new RowIterator(scanner);
 
-        String baseLocation = defaultBasePath + MultiRfileInputformat.tableStr + tableId + Path.SEPARATOR;
         try {
 
             while (rowIter.hasNext()) {
@@ -88,8 +83,8 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
 
                     if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME)) {
                         String fileLocation = entry.getKey().getColumnQualifier().toString();
-                        if (!fileLocation.contains(HDFS_BASE))
-                            fileLocation = baseLocation.concat(entry.getKey().getColumnQualifier().toString());
+                        // A fully qualified URI should contain a ":" character
+                        Preconditions.checkState(fileLocation.contains(":"), "%s is not a fully qualified path", fileLocation);
                         fileLocations.add(fileLocation);
                     }
 

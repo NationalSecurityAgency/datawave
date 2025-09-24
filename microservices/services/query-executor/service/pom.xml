@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.1</version>
+        <version>5.0.7</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-executor-service</artifactId>
@@ -12,14 +12,14 @@
     <description>DATAWAVE Query Executor Service</description>
     <url>https://github.com/NationalSecurityAgency/datawave-query-executor-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.curator>5.2.0</version.curator>
         <version.datawave>7.3.0</version.datawave>
         <version.datawave.query-executor-api>1.0.7</version.datawave.query-executor-api>
