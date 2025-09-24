@@ -85,6 +85,12 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
 
         @Override
         public boolean accept(Key k, Value v) {
+            if (k == null) {
+                // when using a TimeoutExceptionIterator with a Filter and a timeout of zero no top key is ever set
+                // this leads to an unfortunate series of events where a null pointer exception is thrown instead
+                // of gracefully returning false
+                return false;
+            }
             return range.contains(k);
         }
     }
