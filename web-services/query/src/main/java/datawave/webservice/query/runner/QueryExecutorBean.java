@@ -397,7 +397,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Override
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public GenericResponse<String> defineQuery(@Required("logicName") String queryLogicName, MultivaluedMap<String,String> queryParameters) {
-        return defineQuery(queryLogicName, queryParameters, null);
+        return defineQuery(queryLogicName, null, queryParameters, null);
     }
 
     /**
@@ -455,11 +455,13 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the http headers
      * @param queryParameters
      *            the query parameters
+     * @param uriInfo
+     *            the uri info
      * @param queryLogicName
      *            the logic name
      * @return QueryData
      */
-    private QueryData validateQueryParameters(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
+    private QueryData validateQueryParameters(String queryLogicName, UriInfo uriInfo, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
 
         // Parameter 'logicName' is required and passed in prior to this call. Add to the queryParameters now.
         if (!queryParameters.containsKey(QueryParameters.QUERY_LOGIC_NAME)) {
@@ -471,6 +473,18 @@ public class QueryExecutorBean implements QueryExecutor {
         log.debug(queryParameters);
         qp.clear();
         qp.setRequestHeaders(httpHeaders != null ? MapUtils.toMultiValueMap(httpHeaders.getRequestHeaders()) : null);
+
+        // Pull the uri query parameters into the mix, also checking for the incorrect page size parameter
+        // URI query parameters will override those in the post body
+        if (uriInfo != null) {
+            for (Map.Entry<String,List<String>> pm : uriInfo.getQueryParameters().entrySet()) {
+                if (pm.getKey().equals(INVALID_PAGESIZE)) {
+                    handleIncorrectPageSize();
+                } else {
+                    queryParameters.put(pm.getKey(), pm.getValue());
+                }
+            }
+        }
 
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
@@ -608,6 +622,8 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * @param queryLogicName
      *            the logic name
+     * @param uriInfo
+     *            the uri info
      * @param queryParameters
      *            the query parameters
      * @param httpHeaders
@@ -623,11 +639,11 @@ public class QueryExecutorBean implements QueryExecutor {
     @EnrichQueryMetrics(methodType = MethodType.CREATE)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.query.defineQuery", absolute = true)
-    public GenericResponse<String> defineQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+    public GenericResponse<String> defineQuery(@Required("logicName") @PathParam("logicName") String queryLogicName, @Context UriInfo uriInfo,
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, httpHeaders);
+        QueryData qd = validateQueryParameters(queryLogicName, uriInfo, queryParameters, httpHeaders);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -667,12 +683,14 @@ public class QueryExecutorBean implements QueryExecutor {
     @Override
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public GenericResponse<String> createQuery(@Required("logicName") String queryLogicName, MultivaluedMap<String,String> queryParameters) {
-        return createQuery(queryLogicName, queryParameters, null);
+        return createQuery(queryLogicName, null, queryParameters, null);
     }
 
     /**
      * @param queryLogicName
      *            the logic name
+     * @param uriInfo
+     *            the uri info
      * @param queryParameters
      *            the query parameters
      * @param httpHeaders
@@ -688,11 +706,11 @@ public class QueryExecutorBean implements QueryExecutor {
     @EnrichQueryMetrics(methodType = MethodType.CREATE)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.query.createQuery", absolute = true)
-    public GenericResponse<String> createQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+    public GenericResponse<String> createQuery(@Required("logicName") @PathParam("logicName") String queryLogicName, @Context UriInfo uriInfo,
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, httpHeaders);
+        QueryData qd = validateQueryParameters(queryLogicName, uriInfo, queryParameters, httpHeaders);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -845,6 +863,8 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * @param queryLogicName
      *            the logic name
+     * @param uriInfo
+     *            the uri info
      * @param queryParameters
      *            the query parameters
      * @return the generic response
@@ -855,9 +875,9 @@ public class QueryExecutorBean implements QueryExecutor {
     @Path("/{logicName}/plan")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.query.planQuery", absolute = true)
-    public GenericResponse<String> planQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+    public GenericResponse<String> planQuery(@Required("logicName") @PathParam("logicName") String queryLogicName, @Context UriInfo uriInfo,
                     MultivaluedMap<String,String> queryParameters) {
-        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, null);
+        QueryData qd = validateQueryParameters(queryLogicName, uriInfo, queryParameters, null);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -996,9 +1016,17 @@ public class QueryExecutorBean implements QueryExecutor {
         }
     }
 
+    @Override
+    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    public GenericResponse<String> predictQuery(@Required("logicName") String queryLogicName, MultivaluedMap<String,String> queryParameters) {
+        return predictQuery(queryLogicName, null, queryParameters);
+    }
+
     /**
      * @param queryLogicName
      *            the logic name
+     * @param uriInfo
+     *            the uri info
      * @param queryParameters
      *            the query parameters
      * @return query predictions
@@ -1009,12 +1037,12 @@ public class QueryExecutorBean implements QueryExecutor {
             "application/x-protostuff"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.query.predictQuery", absolute = true)
-    public GenericResponse<String> predictQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+    public GenericResponse<String> predictQuery(@Required("logicName") @PathParam("logicName") String queryLogicName, @Context UriInfo uriInfo,
                     MultivaluedMap<String,String> queryParameters) {
 
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, null);
+        QueryData qd = validateQueryParameters(queryLogicName, uriInfo, queryParameters, null);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -1357,7 +1385,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public BaseQueryResponse createQueryAndNext(String logicName, MultivaluedMap<String,String> queryParameters) {
-        return createQueryAndNext(logicName, queryParameters, null);
+        return createQueryAndNext(logicName, null, queryParameters, null);
     }
 
     /**
@@ -1365,6 +1393,8 @@ public class QueryExecutorBean implements QueryExecutor {
      *            headers
      * @param logicName
      *            the logic name
+     * @param uriInfo
+     *            the uri info
      * @param queryParameters
      *            the query parameters
      * @return BaseQueryResponse
@@ -1379,11 +1409,11 @@ public class QueryExecutorBean implements QueryExecutor {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     @Timed(name = "dw.query.createAndNext", absolute = true)
-    public BaseQueryResponse createQueryAndNext(@Required("logicName") @PathParam("logicName") String logicName, MultivaluedMap<String,String> queryParameters,
-                    @Context HttpHeaders httpHeaders) {
+    public BaseQueryResponse createQueryAndNext(@Required("logicName") @PathParam("logicName") String logicName, @Context UriInfo uriInfo,
+                    MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        GenericResponse<String> createResponse = createQuery(logicName, queryParameters, httpHeaders);
+        GenericResponse<String> createResponse = createQuery(logicName, uriInfo, queryParameters, httpHeaders);
         String queryId = createResponse.getResult();
         CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
         return next(queryId, false);
@@ -3079,6 +3109,8 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * @param queryLogicName
      *            the logic name
+     * @param uriInfo
+     *            the uri info
      * @param queryParameters
      *            the query parameters
      * @return the generic response
@@ -3089,9 +3121,9 @@ public class QueryExecutorBean implements QueryExecutor {
     @Path("/{logicName}/validate")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.query.validateQuery", absolute = true)
-    public QueryValidationResponse validateQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+    public QueryValidationResponse validateQuery(@Required("logicName") @PathParam("logicName") String queryLogicName, @Context UriInfo uriInfo,
                     MultivaluedMap<String,String> queryParameters) {
-        QueryData queryData = validateQueryParameters(queryLogicName, queryParameters, null);
+        QueryData queryData = validateQueryParameters(queryLogicName, uriInfo, queryParameters, null);
 
         QueryValidationResponse response = new QueryValidationResponse();
 
@@ -3396,6 +3428,37 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the logic name
      * @param queryParameters
      *            the parameters
+     * @param httpHeaders
+     *            the headers
+     *
+     * @return {@code datawave.webservice.result.GenericResponse<String>}
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
+     *                 query-session-id header in the request in a Cookie header or as a query parameter
+     * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
+     * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
+     *
+     * @HTTP 200 success
+     * @HTTP 204 success and no results
+     * @HTTP 400 invalid or missing parameter
+     * @HTTP 500 internal server error
+     */
+    @Override
+    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    public StreamingOutput execute(String logicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
+        return execute(logicName, null, queryParameters, httpHeaders);
+    }
+
+    /**
+     * @param logicName
+     *            the logic name
+     * @param uriInfo
+     *            the uri info
+     * @param queryParameters
+     *            the parameters
+     * @param httpHeaders
+     *            the headers
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -3416,9 +3479,9 @@ public class QueryExecutorBean implements QueryExecutor {
     @GZIP
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-    @Override
     @Timed(name = "dw.query.executeQuery", absolute = true)
-    public StreamingOutput execute(@PathParam("logicName") String logicName, MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
+    public StreamingOutput execute(@PathParam("logicName") String logicName, @Context UriInfo uriInfo, MultivaluedMap<String,String> queryParameters,
+                    @Context HttpHeaders httpHeaders) {
 
         /**
          * This method captures the metrics on the query instead of doing it in the QueryMetricsEnrichmentInterceptor. The ExecuteStreamingOutputResponse class
@@ -3515,7 +3578,7 @@ public class QueryExecutorBean implements QueryExecutor {
         GenericResponse<String> createResponse;
 
         try {
-            createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
+            createResponse = this.createQuery(logicName, uriInfo, queryParameters, httpHeaders);
         } catch (Throwable t) {
             if (t instanceof DatawaveWebApplicationException) {
                 QueryException qe = (QueryException) ((DatawaveWebApplicationException) t).getCause();

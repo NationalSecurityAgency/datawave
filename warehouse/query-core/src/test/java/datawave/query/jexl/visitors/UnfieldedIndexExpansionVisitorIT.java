@@ -251,6 +251,29 @@ public class UnfieldedIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         driveExpansion(query, expected);
     }
 
+    @Test
+    public void testLiteralExpansionZeroTimeout() throws Exception {
+        write("bar", "FIELD_A");
+        write("bar", "FIELD_B");
+        write("bar", "FIELD_C");
+        String query = "_ANYFIELD_ == 'bar'";
+        String expected = "FIELD_A == 'bar' || FIELD_B == 'bar' || FIELD_C == 'bar'";
+        // unfielded literal expansion does not use a timeout
+        config.setMaxIndexScanTimeMillis(0L);
+        driveExpansion(query, expected);
+    }
+
+    @Test
+    public void testRegexExpansionZeroTimeout() throws Exception {
+        write("bach", "FIELD_A");
+        write("bar", "FIELD_B");
+        write("baz", "FIELD_C");
+        String query = "_ANYFIELD_ =~ 'ba.*'";
+        String expected = "_NOFIELD_ =~ 'ba.*'";
+        config.setMaxIndexScanTimeMillis(0L);
+        driveExpansion(query, expected);
+    }
+
     @Override
     protected JexlNode expand(ASTJexlScript script) throws Exception {
         return UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, helper, script);

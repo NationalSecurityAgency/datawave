@@ -9,11 +9,12 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static org.apache.commons.jexl3.parser.JexlNodes.id;
 
-import java.util.Collection;
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -36,18 +37,23 @@ import com.google.common.collect.Maps;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.FieldedRegexIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredRangeDescription;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
 
 /**
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
@@ -57,7 +63,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     protected boolean expandUnfieldedNegations;
 
-    protected Collection<String> onlyUseThese;
+    protected Set<String> onlyUseThese;
+    protected Set<String> expansionFields;
+    protected Set<String> forwardIndexedFields;
+    protected Set<String> reverseIndexedFields;
 
     // This flag keeps track of whether we are in a negated portion of the tree.
     protected boolean negated = false;
@@ -84,10 +93,19 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         if (config.isLimitTermExpansionToModel()) {
             QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
-            this.onlyUseThese = queryModel.getForwardQueryMapping().values();
+            this.onlyUseThese = new HashSet<>(queryModel.getForwardQueryMapping().values());
         } else {
             this.onlyUseThese = null;
         }
+
+        this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
+        if (this.expansionFields == null) {
+            this.expansionFields = new HashSet<>();
+        }
+
+        forwardIndexedFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helper);
+        reverseIndexedFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, config.getDatatypeFilter(), helper);
+
         this.stage = "regex";
     }
 
@@ -264,7 +282,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             throw new DatawaveFatalQueryException(e);
         }
 
-        return buildIndexLookup(node, false, false, () -> createLookup(node));
+        return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
     }
 
     @Override
@@ -705,5 +723,54 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
 
         futureJexlNode.setRebuiltNode(newNode);
+    }
+
+    /**
+     * Create an {@link IndexLookup} for a fielded regex
+     *
+     * @param node
+     *            a JexlNode
+     * @return a {@link FieldedRegexIndexLookup}
+     */
+    protected IndexLookup createFieldedRegexIndexLookup(JexlNode node) {
+        String field = JexlASTHelper.getIdentifier(node);
+        String pattern = String.valueOf(JexlASTHelper.getLiteralValue(node));
+        validatePattern(pattern);
+
+        RefactoredRangeDescription description = getRegexRange(field, pattern);
+        return new FieldedRegexIndexLookup(config, scannerFactory, executor, field, pattern, description.range, description.isForReverseIndex);
+    }
+
+    /**
+     * Validate the provided pattern against the list of disallowed patterns
+     *
+     * @param pattern
+     *            the pattern
+     */
+    protected void validatePattern(String pattern) {
+        if (config.getDisallowedRegexPatterns().contains(pattern)) {
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
+                            MessageFormat.format("Pattern: {0}", pattern));
+            log.error(qe.getMessage(), qe);
+            throw new DoNotPerformOptimizedQueryException(qe);
+        }
+    }
+
+    /**
+     * Wrapper around {@link ShardIndexQueryTableStaticMethods#getRegexRange(Map.Entry, boolean, MetadataHelper, ShardQueryConfiguration)}.
+     *
+     * @param field
+     *            the field
+     * @param pattern
+     *            the pattern
+     * @return a range description
+     */
+    protected RefactoredRangeDescription getRegexRange(String field, String pattern) {
+        try {
+            return ShardIndexQueryTableStaticMethods.getRegexRange(field, pattern, config.getFullTableScanEnabled(), helper, config);
+        } catch (JavaRegexAnalyzer.JavaRegexParseException | TableNotFoundException | ExecutionException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }
