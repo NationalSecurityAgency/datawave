@@ -359,12 +359,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
-    // tserver side ivarator cache dir configs
-    private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     // webserver side ivarator cache dir configs (e.g. for unique transform on webserver)
     private List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs = Collections.emptyList();
-    private String ivaratorFstHdfsBaseURIs = null;
-    private int ivaratorCacheBufferSize = 10000;
 
     private IvaratorConfig ivaratorConfig = new IvaratorConfig();
 
