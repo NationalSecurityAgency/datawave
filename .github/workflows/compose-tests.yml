@@ -45,7 +45,10 @@ jobs:
     steps:
       - name: Set owner of working dir and m2 dir recursively
         #Needed because compose can leave around files owned by root.
-        run: sudo chown -R $(whoami) . ~/.m2
+        run: |
+          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+            sudo chown -R $(whoami) . ~/.m2 || true   
+          fi
       - name: Checkout Code
         uses: actions/checkout@v4
       # Clean up free space
@@ -163,4 +166,6 @@ jobs:
         run: |
           cd docker
           docker compose logs quickstart
-          sudo chown -R $(whoami) .
+          if [[ "${{ needs.configure-runner.outputs.runner }}" -eq "self-hosted" ]]; then
+            sudo chown -R $(whoami) . ~/.m2 || true   
+          fi
