@@ -40,7 +40,7 @@ jobs:
             echo "We have hit the true case"
             echo "cache_settings=-Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
           else
-            echo "We have reached the false case"
+            echo "runner is not self-hosted"
             echo cache_settings="" >> $GITHUB_OUTPUT
           fi
           echo $GITHUB_OUTPUT
