@@ -431,7 +431,6 @@ public class QueryOptionsTest {
             .put("childCountIndexPattern", QueryOptions.CHILD_COUNT_INDEX_PATTERN)
             .put("childCountIndexSkipThreshold", QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD)
             .put("postProcessingOptions", QueryOptions.POSTPROCESSING_OPTIONS)
-            .put("everything", QueryOptions.EVERYTHING)
             .put("ranges", QueryOptions.RANGES)
             .put("summaryOptions", QueryOptions.SUMMARY_OPTIONS)
             .put("summaryIterator", QueryOptions.SUMMARY_ITERATOR)
