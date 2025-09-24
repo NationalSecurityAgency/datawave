@@ -19,6 +19,10 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
     private int keyThreshold = -1;
     private int valueThreshold = -1;
 
+    // recorded state about the index lookup operation
+    private boolean exceptionSeen = false;
+    private boolean timeoutExceeded = false;
+
     public IndexLookupMap(int keyThreshold, int valueThreshold) {
         this.keyThreshold = keyThreshold;
         this.valueThreshold = valueThreshold;
@@ -194,5 +198,21 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
 
     public Set<String> getPatterns() {
         return this.patterns;
+    }
+
+    public boolean isExceptionSeen() {
+        return exceptionSeen;
+    }
+
+    public void setExceptionSeen(boolean exceptionSeen) {
+        this.exceptionSeen = exceptionSeen;
+    }
+
+    public boolean isTimeoutExceeded() {
+        return timeoutExceeded;
+    }
+
+    public void setTimeoutExceeded(boolean timeoutExceeded) {
+        this.timeoutExceeded = timeoutExceeded;
     }
 }

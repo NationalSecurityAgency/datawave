@@ -65,6 +65,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 @RunWith(Arquillian.class)
@@ -189,7 +190,8 @@ public class ShardQueryLogicQueryValidationTest {
     public void testNoRulesConfigured() {
         logic.setValidationRules(null);
 
-        Assert.assertThrows(UnsupportedOperationException.class, this::assertResult);
+        BadRequestQueryException exception = Assert.assertThrows(BadRequestQueryException.class, this::assertResult);
+        Assert.assertEquals("No query validation rules configured for the query logic.", exception.getMessage());
     }
 
     /**
