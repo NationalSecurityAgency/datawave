@@ -155,8 +155,7 @@ jobs:
               echo "Docker compose started successfully"
               break
             elif [ $attempt -eq $max_attempts ] ; then
-              echo "Failed to start docker c
-          export PATH=/opt/apache-maven-3.9.11/bin:$PATH    ompose"
+              echo "Failed to start docker compose"
               exit 1
             fi
           done
