@@ -21,6 +21,7 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -844,24 +845,51 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         return values;
     }
 
+    /**
+     * Write index key for the {@link TableName#SHARD_DAY_INDEX}
+     *
+     * <pre>
+     * yyyyMMdd-null-value FIELD:datatype bitset
+     * </pre>
+     *
+     * @param values
+     *            the multimap of bulk ingest keys to values
+     * @param event
+     *            the event
+     * @param field
+     *            the field
+     * @param value
+     *            the value
+     * @param visibility
+     *            the visibility bytes
+     * @param maskedVisibility
+     *            the masked visibility bytes
+     * @param maskedFieldHelper
+     *            the {@link MaskedFieldHelper}
+     * @param shardId
+     *            the shard id bytes
+     * @param direction
+     *            the direction
+     */
     public void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
         if (shardId != null && value != null && field != null && visibility != null) {
-            String row = new String(shardId) + '\u0000' + value;
+            String fullShard = new String(shardId);
+            String row = fullShard.substring(0, 8) + '\u0000' + value;
             String cq = event.getDataType().outputName();
             String viz = new String(visibility);
             long ts = getIndexTimestamp(event.getTimestamp());
 
             Key key = new Key(row, field, cq, viz, ts);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
-            Value bitSetValue = getValueForDayIndex(row);
+            Value bitSetValue = getValueForDayIndex(fullShard);
             values.put(bulkIngestKey, bitSetValue);
 
             if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
                 // write both the masked value and masked visibility
                 // and the original value at the masked visibility
                 String maskedValue = maskedFieldHelper.get(field);
-                String maskedRow = new String(shardId) + '\u0000' + maskedValue;
+                String maskedRow = fullShard.substring(0, 8) + '\u0000' + maskedValue;
                 String maskedViz = new String(maskedVisibility);
                 Key maskedKey = new Key(maskedRow, field, cq, maskedViz, ts);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), maskedKey);
@@ -889,11 +917,37 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public int getOffsetForDayIndex(String shard) {
         int underscoreIndex = shard.indexOf('_');
-        int nullByteIndex = shard.indexOf('\u0000');
-        String bucket = shard.substring(underscoreIndex + 1, nullByteIndex);
+        Preconditions.checkArgument(underscoreIndex > 0, "shard did not contain an underscore: " + shard);
+        String bucket = shard.substring(underscoreIndex + 1);
         return Integer.parseInt(bucket);
     }
 
+    /**
+     * Write index key for the {@link TableName#SHARD_YEAR_INDEX}
+     *
+     * <pre>
+     * yyyy-null-value FIELD:datatype bitset
+     * </pre>
+     *
+     * @param values
+     *            the multimap of bulk ingest keys to values
+     * @param event
+     *            the event
+     * @param field
+     *            the field
+     * @param value
+     *            the value
+     * @param visibility
+     *            the visibility bytes
+     * @param maskedVisibility
+     *            the masked visibility bytes
+     * @param maskedFieldHelper
+     *            the {@link MaskedFieldHelper}
+     * @param shardId
+     *            the shard id bytes
+     * @param direction
+     *            the direction
+     */
     public void writeShardYearIndexKeyBitSet(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
 

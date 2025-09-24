@@ -581,12 +581,12 @@ public class ShardedDataTypeHandlerTest {
     }
 
     private BulkIngestKey createExpectedBulkIngestKeyForDayIndex() {
-        Key key = new Key("20250606_23\0value", "FIELD", "wkt", "PUBLIC", getTimestamp());
+        Key key = new Key("20250606\0value", "FIELD", "wkt", "PUBLIC", getTimestamp());
         return new BulkIngestKey(new Text(TableName.SHARD_DAY_INDEX), key);
     }
 
     private BulkIngestKey createExpectedBulkIngestKeyForDayIndexMasked() {
-        Key key = new Key("20250606_23\0MASKED_VALUE", "FIELD", "wkt", "PRIVATE", getTimestamp());
+        Key key = new Key("20250606\0MASKED_VALUE", "FIELD", "wkt", "PRIVATE", getTimestamp());
         return new BulkIngestKey(new Text(TableName.SHARD_DAY_INDEX), key);
     }
 
