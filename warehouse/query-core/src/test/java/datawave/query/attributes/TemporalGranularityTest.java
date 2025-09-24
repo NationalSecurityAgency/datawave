@@ -29,7 +29,7 @@ public class TemporalGranularityTest {
         assertEquals("DAY", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY.getName());
         assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY.transform(null));
         assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY.transform("nonDateValue"));
-        assertEquals("2019-01-15", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY.transform("2019-01-15 12:30:15"));
+        assertEquals("2019-01-15T00:00:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY.transform("2019-01-15 12:30:15"));
     }
 
     @Test
@@ -37,7 +37,7 @@ public class TemporalGranularityTest {
         assertEquals("HOUR", TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR.getName());
         assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR.transform(null));
         assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR.transform("nonDateValue"));
-        assertEquals("2019-01-15T12", TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR.transform("2019-01-15 12:30:15"));
+        assertEquals("2019-01-15T12:00:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR.transform("2019-01-15 12:30:15"));
     }
 
     @Test
@@ -45,7 +45,7 @@ public class TemporalGranularityTest {
         assertEquals("MINUTE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName());
         assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform(null));
         assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("nonDateValue"));
-        assertEquals("2019-01-15T12:30", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:30:15"));
+        assertEquals("2019-01-15T12:30:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:30:15"));
     }
 
     @Test
@@ -53,7 +53,7 @@ public class TemporalGranularityTest {
         assertEquals("SECOND", TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND.getName());
         assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND.transform(null));
         assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND.transform("nonDateValue"));
-        assertEquals("2019-01-15T12:30:15", TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND.transform("2019-01-15 12:30:15"));
+        assertEquals("2019-01-15T12:30:15.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND.transform("2019-01-15 12:30:15"));
     }
 
     @Test
@@ -69,7 +69,15 @@ public class TemporalGranularityTest {
         assertEquals("MONTH", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MONTH.getName());
         assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform(null));
         assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform("nonDateValue"));
-        assertEquals("2019-01", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform("2019-01-15 12:30:15"));
+        assertEquals("2019-01-00T00:00:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform("2019-01-15 12:30:15"));
+    }
+
+    @Test
+    public void testTruncateTemporalToYear() {
+        assertEquals("YEAR", TemporalGranularity.TRUNCATE_TEMPORAL_TO_YEAR.getName());
+        assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_YEAR.transform(null));
+        assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_YEAR.transform("nonDateValue"));
+        assertEquals("2019-00-00T00:00:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_YEAR.transform("2019-01-15 12:30:15"));
     }
 
     @Test
@@ -77,7 +85,10 @@ public class TemporalGranularityTest {
         assertEquals("MINUTE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName());
         assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform(null));
         assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("nonDateValue"));
-        assertEquals("2019-01-15T12:30", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:30:15"));
+        assertEquals("2019-01-15T12:30:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:30:15"));
+        assertEquals("2022-11-03T12:30:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2022-11-03T12:30:00.976Z"));
+        assertEquals("2019-01-15T12:03:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:03:15"));
+        assertEquals("2022-11-03T12:03:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2022-11-03T12:03:00.976Z"));
     }
 
     @Test
@@ -85,8 +96,9 @@ public class TemporalGranularityTest {
         assertEquals("TENTH_OF_HOUR", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.getName());
         assertNull(TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform(null));
         assertEquals("nonDateValue", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("nonDateValue"));
-        assertEquals("2019-01-15T12:3", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 12:30:15"));
-        assertEquals("2019-01-15T03:1", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 3:10:15"));
+        assertEquals("2019-01-15T12:30:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 12:30:15"));
+        assertEquals("2019-01-15T12:00:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 12:03:15"));
+        assertEquals("2019-01-15T03:10:00.000", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 3:10:15"));
     }
 
     /**

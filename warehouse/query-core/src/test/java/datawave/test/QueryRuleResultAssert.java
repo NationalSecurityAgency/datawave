@@ -66,8 +66,23 @@ public class QueryRuleResultAssert extends AbstractAssert<QueryRuleResultAssert,
      */
     public QueryRuleResultAssert hasException(Exception exception) {
         isNotNull();
-        if (!Objects.equals(actual.getException(), exception)) {
-            failWithMessage("Expected exception to be %s but was %s", exception, actual.getException());
+        Exception actualException = actual.getException();
+        if (exception == null) {
+            if (actualException != null) {
+                failWithMessage("Expected exception to be null, but was %s", actualException);
+            }
+            return this;
+        }
+
+        if (actualException == null) {
+            failWithMessage("Expected exception of type %s with message \"%s\" but was null", exception.getClass().getName(), exception.getMessage());
+        }
+
+        boolean sameType = actualException.getClass().equals(exception.getClass());
+        boolean sameMessage = Objects.equals(actualException.getMessage(), exception.getMessage());
+        if (!sameType || !sameMessage) {
+            failWithMessage("Expected exception of type %s with message \"%s\" but was %s with message \"%s\"", exception.getClass().getName(),
+                            exception.getMessage(), actualException.getClass().getName(), actualException.getMessage());
         }
         return this;
     }
