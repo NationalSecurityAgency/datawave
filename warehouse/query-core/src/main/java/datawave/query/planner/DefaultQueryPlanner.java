@@ -643,7 +643,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         try {
-            config.setQueryTree(reprocessTree(config, metadataHelper, config.getTimers(), scannerFactory));
+            config.setQueryTree(expandPushdownPullup(config, metadataHelper, config.getTimers(), scannerFactory));
         } catch (StackOverflowError e) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + e);
@@ -1265,6 +1265,38 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
         }
 
+        // Now do all of the index expansion, pullup, pushdown logic to get us executability
+        // This part of the processing is pulled into a separate method so that it might be called
+        // from the reprocess logic used by the DatePartitionedQueryPlanner
+        expandPushdownPullup(config, metadataHelper, timers, scannerFactory);
+
+        if (validateBoundedRanges) {
+            // whether bounded ranges were expanded or not, validate all ranges
+            timedValidateBoundedRanges(timers, config.getQueryTree());
+        }
+
+        // fields may have been added or removed from the query, need to update the field to type map
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+
+        return config.getQueryTree();
+    }
+
+    /**
+     * This is used to reprocess a query plan to ensure it is executable. I may expand pulled up unexpanded regex or ranges if required.
+     *
+     * @param config
+     * @param metadataHelper
+     * @param timers
+     * @param scannerFactory
+     * @return An adjusted query tree.
+     * @throws DatawaveQueryException
+     * @see DatePartitionedQueryPlanner
+     */
+    protected ASTJexlScript expandPushdownPullup(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers,
+                    ScannerFactory scannerFactory) throws DatawaveQueryException {
+
+        TraceStopwatch stopwatch = null;
+
         if (!disableBoundedLookup) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
 
@@ -1344,87 +1376,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.debug("Bounded range and regex conversion has been disabled");
             }
         }
-
-        if (validateBoundedRanges) {
-            // whether bounded ranges were expanded or not, validate all ranges
-            timedValidateBoundedRanges(timers, config.getQueryTree());
-        }
-
-        // fields may have been added or removed from the query, need to update the field to type map
-        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
-
-        return config.getQueryTree();
-    }
-
-    /**
-     * This is used to reprocess a query plan to ensure it is executable. I may expand pulled up unexpanded regex or ranges if required.
-     *
-     * @param config
-     * @param metadataHelper
-     * @param timers
-     * @param scannerFactory
-     * @return An adjusted query tree.
-     * @throws DatawaveQueryException
-     * @see DatePartitionedQueryPlanner
-     */
-    protected ASTJexlScript reprocessTree(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers, ScannerFactory scannerFactory)
-                    throws DatawaveQueryException {
-
-        TraceStopwatch stopwatch = null;
-
-        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
-        Set<String> indexedFields = null;
-        Set<String> indexOnlyFields = null;
-        Set<String> nonEventFields = null;
-        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
-            indexedFields = getIndexedFields();
-            indexOnlyFields = getIndexOnlyFields();
-            nonEventFields = getNonEventFields();
-        }
-
-        LinkedList<String> debugOutput = null;
-        if (log.isDebugEnabled()) {
-            debugOutput = new LinkedList<>();
-        }
-
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pull, Expand, Push (reprocess)");
-
-        try {
-            // Unless config.isExpandAllTerms is true, this may set some of
-            // the terms to be delayed.
-            if (!ExecutableDeterminationVisitor.isExecutable(config.getQueryTree(), config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
-                            metadataHelper)) {
-
-                Map<String,IndexLookup> indexLookupMap = new HashMap<>();
-                // if we now have an unexecutable tree because of delayed
-                // predicates, then remove delayed predicates as needed and
-                // reexpand
-                config.setQueryTree(timedRemoveDelayedPredicates(timers, "Remove Delayed Predicates", config.getQueryTree(), config, metadataHelper,
-                                indexedFields, indexOnlyFields, nonEventFields, indexLookupMap, scannerFactory, metadataHelper, debugOutput));
-            }
-
-            // if we now have an unexecutable tree because of missing
-            // delayed predicates, then add delayed predicates where
-            // possible
-            config.setQueryTree(timedAddDelayedPredicates(timers, "Add Delayed Predicates", config.getQueryTree(), config, metadataHelper, indexedFields,
-                            indexOnlyFields, nonEventFields, debugOutput));
-        } catch (TableNotFoundException e) {
-            stopwatch.stop();
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException) {
-                throw (DoNotPerformOptimizedQueryException) e.getCause();
-            }
-            QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
-            throw new DatawaveFatalQueryException(qe);
-        }
-
-        if (reduceQuery) {
-            config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
-        }
-
-        stopwatch.stop();
 
         return config.getQueryTree();
     }
