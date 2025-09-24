@@ -19,6 +19,7 @@ import com.google.common.base.Joiner;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.UnfieldedRegexExpansionIterator;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
 
@@ -33,17 +34,23 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
     private final Set<String> fields;
 
+    // enforce limits for now
+    private final int keyThreshold;
+    private final int valueThreshold;
+
     public UnfieldedRegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, ExecutorService execService, String pattern, Range range,
                     boolean reverse, Set<String> fields) {
         super(config, scannerFactory, true, execService, pattern, range, reverse);
         this.fields = Objects.requireNonNullElse(fields, Collections.emptySet());
+        this.keyThreshold = config.getMaxUnfieldedExpansionThreshold();
+        this.valueThreshold = config.getMaxValueExpansionThreshold();
         log.info("Created UnfieldedRegexIndexLookup with pattern {}", pattern);
     }
 
     @Override
     public void submit() {
         if (indexLookupMap == null) {
-            indexLookupMap = new IndexLookupMap(Integer.MAX_VALUE, Integer.MAX_VALUE);
+            indexLookupMap = new IndexLookupMap(keyThreshold, valueThreshold);
 
             execService.submit(() -> {
                 String tableName = reverse ? config.getReverseIndexTableName() : config.getIndexTableName();
@@ -110,6 +117,9 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
     @Override
     public IndexLookupMap lookup() {
         await();
+        if (indexLookupMap.isTimeoutExceeded()) {
+            throw new DatawaveFatalQueryException("Unfielded regex expansion timed out");
+        }
         return indexLookupMap;
     }
 }

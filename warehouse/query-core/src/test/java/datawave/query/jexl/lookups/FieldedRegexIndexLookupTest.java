@@ -1,6 +1,7 @@
 package datawave.query.jexl.lookups;
 
 import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Set;
@@ -77,7 +78,7 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
         withQuery("FIELD_A =~ 'ba.*'");
         executeLookup();
         assertResultFields(Set.of("FIELD_A"));
-        assertResultValues("FIELD_A", Set.of("bar"));
+        assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Set.of("bar")));
         assertTimeoutExceeded();
     }
 
