@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.ingest.table.aggregator.CombinerConfiguration;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 import datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator;
@@ -27,6 +28,7 @@ import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
 import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
+import datawave.util.TableName;
 
 public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
@@ -163,11 +165,10 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
                 break;
             case GLOBAL_DAY_INDEX:
             case GLOBAL_YEAR_INDEX:
-                // do nothing for day or year index
+                configureBitSetTable(tops);
                 break;
             case DINDX:
                 configureDictionaryTable(tops);
-
                 break;
             default:
                 // Technically, this is dead code. If 'Configure' is called prior to 'Setup'
@@ -276,5 +277,42 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         setLocalityGroupConfigurationIfNecessary(tableName, localityGroups, tops, log);
 
+    }
+
+    /**
+     * Configure the {@link BitSetCombiner} on a bitset index table. Should only be applied to the {@link TableName#SHARD_DAY_INDEX} or
+     * {@link TableName#SHARD_YEAR_INDEX}
+     *
+     * @param tops
+     *            a {@link TableOperations} instance
+     * @throws AccumuloException
+     *             if something goes wrong with accumulo
+     * @throws AccumuloSecurityException
+     *             if the helper is not authorized to do the operation
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    protected void configureBitSetTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        for (IteratorScope scope : IteratorScope.values()) {
+            String aggregatorClass = BitSetCombiner.class.getName();
+
+            String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "bits");
+            setPropertyIfNecessary(tableName, stem, "19," + aggregatorClass, tops, log);
+
+            stem += ".opt.*";
+            setPropertyIfNecessary(tableName, stem, aggregatorClass, tops, log);
+
+            if (markingsSetupIteratorEnabled) {
+                // we want the markings setup iterator init method to be called up front
+                stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "MarkingsLoader");
+                setPropertyIfNecessary(tableName, stem, markingsSetupIteratorConfig, tops, log);
+            }
+        }
+
+        // Set up the bloom filters for faster queries on the index portion
+        if (enableBloomFilters) {
+            setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_KEY_FUNCTOR.getKey(), ShardIndexKeyFunctor.class.getName(), tops, log);
+        }
+        setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_ENABLED.getKey(), Boolean.toString(enableBloomFilters), tops, log);
     }
 }

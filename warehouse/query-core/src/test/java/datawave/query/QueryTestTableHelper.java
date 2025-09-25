@@ -95,7 +95,8 @@ public class QueryTestTableHelper {
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, TableName.SHARD_RINDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX);
+        // Don't print until there's something in there...otherwise you get an error about not specifying a column
+        // PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX);
     }
 
     protected void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
