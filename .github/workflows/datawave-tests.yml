@@ -60,7 +60,7 @@ jobs:
       #Needed because compose can leave around files owned by root.
       run: |
         if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-          sudo chown -R $(whoami) . ~/.m2
+          sudo chown -R $(whoami) . ~/.m2 || true
         fi
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -80,15 +80,9 @@ jobs:
         server-password: GITHUB_PASSWORD
     - name: Build and Run Unit Tests
       run: |
-          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-            export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
-          fi
           mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs  ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -DskipITs -DskipFormat
     - name: Run Integration Tests
       run: |
-          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-            export PATH=/opt/apache-maven-3.9.11/bin:$PATH    
-          fi
           mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" ${{ needs.configure-runner.outputs.cache_settings }}  -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
 
 
