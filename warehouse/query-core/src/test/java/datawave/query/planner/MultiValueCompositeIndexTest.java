@@ -228,7 +228,7 @@ public class MultiValueCompositeIndexTest {
             record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
-            record.setDate(formatter.parse(COMPOSITE_BEGIN_DATE).getTime());
+            record.setTimestamp(formatter.parse(COMPOSITE_BEGIN_DATE).getTime());
             record.setRawData(entry.toString().getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));

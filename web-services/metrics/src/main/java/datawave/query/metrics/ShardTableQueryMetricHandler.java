@@ -280,7 +280,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         RawRecordContainerImpl event = new RawRecordContainerImpl();
         event.setConf(this.conf);
         event.setDataType(type);
-        event.setDate(storedQueryMetric.getCreateDate().getTime());
+        event.setTimestamp(storedQueryMetric.getCreateDate().getTime());
         // get security markings from metric, otherwise default to PUBLIC
         Map<String,String> markings = updatedQueryMetric.getMarkings();
         if (markings == null || markings.isEmpty()) {
