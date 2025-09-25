@@ -60,7 +60,7 @@ jobs:
       #Needed because compose can leave around files owned by root.
       run: |
         if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-          sudo chown -R $(whoami) . ~/.m2
+          sudo chown -R $(whoami) . ~/.m2 || true
         fi
     - name: Checkout Code
       uses: actions/checkout@v4
