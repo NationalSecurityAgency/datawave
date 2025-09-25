@@ -2,7 +2,6 @@ package datawave.core.common.cache;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,7 +15,6 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
@@ -24,7 +22,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.slf4j.Logger;
@@ -248,11 +245,6 @@ public class BaseTableCache implements Serializable, TableCache {
 
     public void setupScanner(BatchScanner scanner) {
         scanner.setRanges(Lists.newArrayList(new Range()));
-        Map<String,String> options = new HashMap<>();
-        options.put(RegExFilter.COLF_REGEX, "^f$");
-        options.put("negate", "true");
-        IteratorSetting settings = new IteratorSetting(100, "skipFColumn", RegExFilter.class, options);
-        scanner.addScanIterator(settings);
     }
 
     @Override

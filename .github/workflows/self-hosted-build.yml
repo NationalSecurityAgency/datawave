@@ -56,7 +56,7 @@ jobs:
         export M2=$M2_HOME/bin
         export PATH=$M2:$PATH
         
-        mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipITs -DskipFormat
+        mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345 -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.save.enabled=true -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -Dservices -Dstarters -DskipITs -DskipFormat
 
 
 
