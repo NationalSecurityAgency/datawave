@@ -28,8 +28,7 @@ public class KeywordExtractor {
     public static final String MAX_SCORE = "max.score";
     public static final String MAX_CONTENT_CHARS = "max.content.chars";
 
-    private final List<String> preferredViews;
-    private final Map<String,VisibleContent> foundContent;
+    private final List<Map.Entry<String,VisibleContent>> orderedContent;
 
     public static final KeywordResults EMPTY_RESULTS = new KeywordResults();
 
@@ -56,10 +55,9 @@ public class KeywordExtractor {
 
     YakeKeywordExtractor yakeKeywordExtractor;
 
-    public KeywordExtractor(String source, List<String> preferredViews, Map<String,VisibleContent> foundContent, String language, Map<String,String> options) {
+    public KeywordExtractor(String source, List<Map.Entry<String,VisibleContent>> orderedContent, String language, Map<String,String> options) {
         this.source = source;
-        this.preferredViews = preferredViews;
-        this.foundContent = foundContent;
+        this.orderedContent = orderedContent;
 
         parseOptions(options);
 
@@ -103,54 +101,32 @@ public class KeywordExtractor {
     }
 
     /**
-     * Extract keywords from the {@code foundContent} field in priority order based on the list of views in {@code preferredViews} field. Will return a
-     * KeywordResults object populated with the keywords extracted from the first view in {@code preferredViews} that is found to contain content. If no
-     * keywords can be extracted from all preferred views, returns an empty {@code KeywordResults} object.
+     * Extract keywords from the {@code orderedContent} field. Will return a KeywordResults object populated with the keywords extracted from the first view in
+     * {@code orderedContent} that has a successful extraction. If no keywords can be extracted from all preferred views, returns an empty
+     * {@code KeywordResults} object.
      *
-     * @return a KeywordResults object containing keywords from the first of the {@code preferredViews} found in {@code foundContent} that yields a non-empty
-     *         set of keywords or an empty KeywordResults object if no keywords can be extracted.
+     * @return a KeywordResults object containing keywords from the first view found in {@code orderedContent} that yields a non-empty set of keywords or an
+     *         empty KeywordResults object if no keywords can be extracted.
      */
     @Nonnull
     public KeywordResults extractKeywords() {
-        if (foundContent.isEmpty()) {
+        if (orderedContent.isEmpty()) {
             return EMPTY_RESULTS;
         }
-        KeywordResults results = EMPTY_RESULTS;
-        for (String viewName : preferredViews) {
-            for (Map.Entry<String,VisibleContent> foundEntry : foundContent.entrySet()) {
-                if (viewName.endsWith("*")) {
-                    final String truncatedName = viewName.substring(0, viewName.length() - 1);
-                    if (foundEntry.getKey().startsWith(truncatedName)) {
-                        results = extractKeywordsFromVisibleContent(viewName, foundEntry.getValue());
-                    }
-                } else if (viewName.equals(foundEntry.getKey())) {
-                    results = extractKeywordsFromVisibleContent(viewName, foundEntry.getValue());
-                }
 
-                if (results != EMPTY_RESULTS) {
-                    return results;
-                }
+        for (Map.Entry<String,VisibleContent> entry : orderedContent) {
+            String view = entry.getKey();
+            VisibleContent content = entry.getValue();
+            // Attempts to extract keywords from VisibleContent object provided.
+            final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(content.getContent());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Extracted {} keywords from {} view.", keywords.size(), view);
+            }
+            if (!keywords.isEmpty()) {
+                return new KeywordResults(source, view, language, content.getVisibility(), keywords);
             }
         }
-        return EMPTY_RESULTS;
-    }
 
-    /**
-     * Attempts to extract keywords from VisibleContent object provided.
-     *
-     * @param viewName
-     *            the view name we're extracting from.
-     * @param content
-     *            the content associated with that view.
-     * @return a KeywordResult object containing keywords extracted from the provided content, or the canonical {@code EMPTY_RESULTS} KeywordResults object if
-     *         no keywords could be extracted.
-     */
-    @Nonnull
-    private KeywordResults extractKeywordsFromVisibleContent(String viewName, VisibleContent content) {
-        final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(content.getContent());
-        if (logger.isDebugEnabled()) {
-            logger.debug("Extracted {} keywords from {} view.", keywords.size(), viewName);
-        }
-        return keywords.isEmpty() ? EMPTY_RESULTS : new KeywordResults(source, viewName, language, content.getVisibility(), keywords);
+        return EMPTY_RESULTS;
     }
 }

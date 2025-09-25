@@ -226,10 +226,34 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
             source.next();
         }
 
-        // extract keywords from the found content.
+        // order the found content by priority
+        final List<Map.Entry<String,VisibleContent>> orderedContent = new ArrayList<>();
+        final List<String> entriesToRemove = new ArrayList<>();
+        for (String name : preferredViews) {
+            entriesToRemove.clear();
+            for (Map.Entry<String,VisibleContent> entry : foundContent.entrySet()) {
+                if (name.endsWith("*")) {
+                    final String truncatedName = name.substring(0, name.length() - 1);
+                    if (entry.getKey().startsWith(truncatedName)) {
+                        orderedContent.add(entry);
+                        entriesToRemove.add(entry.getKey());
+                    }
+                } else if (entry.getKey().equals(name)) {
+                    orderedContent.add(entry);
+                    entriesToRemove.add(entry.getKey());
+                }
+            }
+            if (!entriesToRemove.isEmpty()) {
+                for (String key : entriesToRemove) {
+                    foundContent.remove(key);
+                }
+            }
+        }
+
+        // extract keywords from the ordered content.
         String documentUid = getDocumentIdentifier(top.getRow().toString(), dtUid);
         String language = documentLanguageMap.get(documentUid);
-        KeywordExtractor keywordExtractor = new KeywordExtractor(documentUid, preferredViews, foundContent, language, iteratorOptions);
+        KeywordExtractor keywordExtractor = new KeywordExtractor(documentUid, orderedContent, language, iteratorOptions);
         KeywordResults results = keywordExtractor.extractKeywords();
 
         if (results != EMPTY_RESULTS) {
