@@ -137,7 +137,7 @@ public class IteratorThreadPoolManager {
                         String queryId = ivaratorRunnable.getQueryId();
                         Integer numTasks = queryToTaskMap.get(queryId);
                         if (numTasks == null) {
-                            numTasks = new Integer(0);
+                            numTasks = 0;
                         }
                         queryToTaskMap.put(queryId, numTasks + 1);
                     }
