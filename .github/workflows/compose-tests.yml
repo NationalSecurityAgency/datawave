@@ -134,6 +134,7 @@ jobs:
       - name: Docker Compose Web Start and Run Tests
         run: |
           cd docker
+          export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
           attempt=0
           max_attempts=20
