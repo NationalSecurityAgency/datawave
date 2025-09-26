@@ -73,8 +73,6 @@ public class DefaultMetadataFieldScanner {
     private BatchScanner createScanner() throws TableNotFoundException {
         BatchScanner scanner = ScannerHelper.createBatchScanner(connectionConfig.getAccumuloClient(), connectionConfig.getMetadataTable(),
                         connectionConfig.getAuths(), numThreads);
-        // Ensure rows for the same field are grouped into a single iterator entry.
-        // scanner.addScanIterator(new IteratorSetting(21, WholeRowIterator.class));
         // Do not limit the scanner based on ranges.
         scanner.setRanges(Collections.singletonList(new Range()));
         scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_E);
