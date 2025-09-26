@@ -99,8 +99,24 @@ jobs:
           cd docker
           export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
-          echo "Starting docker compose"
-          docker compose up -d --no-recreate
+          attempt=0
+          max_attempts=20
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
       - name: Docker Compose Ingest Tests
         run: |
           cd docker/scripts
@@ -110,19 +126,38 @@ jobs:
         run: |
           cd docker
           docker compose logs
-      - name: Docker Compose Web Start
+      - name: Docker Compose Reset for Web
+        run: |
+          cd docker
+          docker compose down
+          sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--ingest", "--web", "--test"\]/g' docker-compose.yml
+      - name: Docker Compose Web Start and Run Tests
         run: |
           cd docker
           export DW_HOST_IP=127.0.0.1
-          echo "Starting datawave web"
-          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebStart"
-      - name: Docker Compose Web Tests
+          ./bootstrap.sh
+          attempt=0
+          max_attempts=20
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+      - name: Docker Compose Web Test Logs
         run: |
           cd docker
-          export DW_HOST_IP=127.0.0.1
-          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebTest --blacklist-files QueryMetrics" || true
-      - name: Final Operations
-        run: |
+          docker compose logs quickstart
           if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
             sudo chown -R $(whoami) . ~/.m2 || true   
           fi
