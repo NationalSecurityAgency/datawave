@@ -17,6 +17,8 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
+import datawave.util.accumulo.RFileUtil;
+
 public class SplittableRFileRangeInputFormat extends InputFormat {
     public static void setSplitFiles(Job j, String files) {
         j.getConfiguration().set(SplittableRFileRangeInputFormat.class.getName() + ".splitFiles", files);

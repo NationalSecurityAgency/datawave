@@ -13,6 +13,7 @@ import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
  * Creats a transformable node from an AgeOffRuleLoader.RuleConfig
  */
 public class RuleConfigDocument extends DocumentImpl {
+    private static final long serialVersionUID = 8726547864456487943L;
     private static final String FILTER_CLASS_ELEMENT_NAME = "filterClass";
     private static final String MATCH_PATTERN_ELEMENT_NAME = "matchPattern";
     private static final String TTL_ELEMENT_NAME = "ttl";

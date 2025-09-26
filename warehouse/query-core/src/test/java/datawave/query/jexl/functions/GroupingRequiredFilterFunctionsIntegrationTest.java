@@ -56,6 +56,12 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
     @RunWith(Arquillian.class)
     public static class ShardRangeTest extends GroupingRequiredFilterFunctionsIntegrationTest {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected String getRange() {
             return "SHARD";
@@ -64,6 +70,12 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
 
     @RunWith(Arquillian.class)
     public static class DocumentRangeTest extends GroupingRequiredFilterFunctionsIntegrationTest {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
 
         @Override
         protected String getRange() {
@@ -77,7 +89,7 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
 
     @Inject
     @SpringBean(name = "EventQuery")
-    private ShardQueryLogic logic;
+    protected ShardQueryLogic logic;
 
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     private final Map<String,String> queryParameters = new HashMap<>();

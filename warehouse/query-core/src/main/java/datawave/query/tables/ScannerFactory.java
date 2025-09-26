@@ -539,30 +539,14 @@ public class ScannerFactory {
      */
     public void applyConfigs(ScannerBase scannerBase, String hintKey, String tableName) {
 
-        if (consistencyLevelMap != null && !consistencyLevelMap.isEmpty()) {
-            ScannerBase.ConsistencyLevel level = consistencyLevelMap.get(hintKey);
-            if (level == null) {
-                level = consistencyLevelMap.get(tableName);
-            }
-
-            if (level == null) {
-                log.trace("no consistency level found for table: {} key: {}", tableName, hintKey);
-            } else {
-                scannerBase.setConsistencyLevel(level);
-            }
+        ScannerBase.ConsistencyLevel level = getConsistencyLevel(hintKey, tableName);
+        if (level != null) {
+            scannerBase.setConsistencyLevel(level);
         }
 
-        if (executionHintMap != null && !executionHintMap.isEmpty()) {
-            Map<String,String> hint = executionHintMap.get(hintKey);
-            if (hint == null) {
-                hint = executionHintMap.get(tableName);
-            }
-
-            if (hint == null) {
-                log.trace("no execution hint found for table: {} key: {} ", tableName, hintKey);
-            } else {
-                scannerBase.setExecutionHints(hint);
-            }
+        Map<String,String> hint = getExecutionHint(hintKey, tableName);
+        if (hint != null && !hint.isEmpty()) {
+            scannerBase.setExecutionHints(hint);
         }
     }
 
@@ -579,32 +563,72 @@ public class ScannerFactory {
     protected void applyConfigs(ScannerSession scannerSession, String hintKey, String tableName) {
         SessionOptions options = scannerSession.getOptions();
 
-        if (consistencyLevelMap != null && !consistencyLevelMap.isEmpty()) {
-            ScannerBase.ConsistencyLevel level = consistencyLevelMap.get(hintKey);
-            if (level == null) {
-                level = consistencyLevelMap.get(tableName);
-            }
-
-            if (level == null) {
-                log.trace("no consistency level found for table: {} key: {}", tableName, hintKey);
-            } else {
-                options.setConsistencyLevel(level);
-            }
+        ScannerBase.ConsistencyLevel level = getConsistencyLevel(hintKey, tableName);
+        if (level != null) {
+            options.setConsistencyLevel(level);
         }
 
-        if (executionHintMap != null && !executionHintMap.isEmpty()) {
-            Map<String,String> hint = executionHintMap.get(hintKey);
-            if (hint == null) {
-                hint = executionHintMap.get(tableName);
-            }
-
-            if (hint == null) {
-                log.trace("no execution hint found for table: {} key: {} ", tableName, hintKey);
-            } else {
-                options.setExecutionHints(hint);
-            }
+        Map<String,String> hint = getExecutionHint(hintKey, tableName);
+        if (hint != null && !hint.isEmpty()) {
+            options.setExecutionHints(hint);
         }
 
         scannerSession.setOptions(options);
+    }
+
+    /**
+     * Get a consistency level using the provided hint key, falling back to the table name if no consistency level is found
+     *
+     * @param hintKey
+     *            the hint key
+     * @param tableName
+     *            the table name, used as a fallback key
+     * @return the consistency level, or null if no consistency level exists
+     */
+    private ScannerBase.ConsistencyLevel getConsistencyLevel(String hintKey, String tableName) {
+
+        if (consistencyLevelMap == null || consistencyLevelMap.isEmpty()) {
+            return null;
+        }
+
+        ScannerBase.ConsistencyLevel level = consistencyLevelMap.get(hintKey);
+        if (level == null) {
+            level = consistencyLevelMap.get(tableName);
+        }
+
+        if (level == null) {
+            log.trace("no consistency level found for table: {} key: {}", tableName, hintKey);
+            return null;
+        }
+
+        return level;
+    }
+
+    /**
+     * Get execution hints using the provided hint key, falling back to the table name if no hint is found
+     *
+     * @param hintKey
+     *            the hint key
+     * @param tableName
+     *            the table name, used as fallback key
+     * @return the execution hint, or null if no hint exists
+     */
+    private Map<String,String> getExecutionHint(String hintKey, String tableName) {
+
+        if (executionHintMap == null || executionHintMap.isEmpty()) {
+            return null;
+        }
+
+        Map<String,String> hint = executionHintMap.get(hintKey);
+        if (hint == null) {
+            hint = executionHintMap.get(tableName);
+        }
+
+        if (hint == null) {
+            log.trace("no execution hint found for table: {} key: {} ", tableName, hintKey);
+            return null;
+        }
+
+        return hint;
     }
 }

@@ -5,7 +5,6 @@ import java.util.BitSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
@@ -203,7 +202,7 @@ public class DateIndexDataTypeHandlerTest {
     }
 
     private static String getIndexedValue(String dataStr, int index) {
-        String[] data = StringUtils.split(dataStr, ',');
+        String[] data = dataStr.split(",");
         return (data.length > index ? data[index] : null);
     }
 

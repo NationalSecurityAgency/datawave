@@ -55,6 +55,12 @@ public abstract class NoExpansionTests {
     @RunWith(Arquillian.class)
     public static class ShardRange extends NoExpansionTests {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {
             return VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD;
@@ -63,6 +69,12 @@ public abstract class NoExpansionTests {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends NoExpansionTests {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {

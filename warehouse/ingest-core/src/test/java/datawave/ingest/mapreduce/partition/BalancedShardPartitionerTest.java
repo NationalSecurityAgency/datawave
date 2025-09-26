@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -30,9 +29,7 @@ import org.junit.rules.TemporaryFolder;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.ingest.util.GenerateSplitsFile;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 

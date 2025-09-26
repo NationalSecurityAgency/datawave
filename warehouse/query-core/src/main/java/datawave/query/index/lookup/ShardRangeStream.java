@@ -83,13 +83,7 @@ public class ShardRangeStream extends RangeStream {
                 Entry<Key,Value> peekKey = peeking.peek();
                 ErrorKey errorKey = ErrorKey.getErrorKey(peekKey.getKey());
                 if (errorKey != null) {
-                    switch (errorKey.getErrorType()) {
-                        case UNINDEXED_FIELD:
-                            this.context = StreamContext.UNINDEXED;
-                            break;
-                        case UNKNOWN:
-                            this.context = StreamContext.ABSENT;
-                    }
+                    this.context = StreamContext.ABSENT;
                 } else {
                     itr = Iterators.transform(peeking, new FieldIndexParser(node));
                     this.context = StreamContext.PRESENT;

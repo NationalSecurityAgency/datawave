@@ -6,6 +6,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -32,8 +33,8 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -45,6 +46,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -87,6 +89,7 @@ public abstract class ExecutableExpansionVisitorTest {
 
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
             client = qtth.client;
+            Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
@@ -94,6 +97,12 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
         }
 
         @Override
@@ -119,6 +128,12 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override
@@ -247,7 +262,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMixedIndexOnly");
         }
         String[] queryStrings = {"filter:isNull(LOCATION) || LOCATION == 'chicago'"};
         @SuppressWarnings("unchecked")
@@ -265,7 +280,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:isNull(MAGIC) || LOCATION == 'chicago')"};
         @SuppressWarnings("unchecked")
@@ -322,7 +337,16 @@ public abstract class ExecutableExpansionVisitorTest {
                         finalQuery);
 
         ASTJexlScript expectedQuery = JexlASTHelper.parseJexlQuery(
-                        "((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && GENDER == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')");
+                        "GENDER == 'male' && (NOME == 'that' || NOME == 'this') && (LOCATION == 'chicago' || LOCATION == 'newjersey' || LOCATION == 'newyork') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f200a80a80a80a80a' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888') && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && !filter:includeRegex(ETA, 'blah') && ((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000'))");
+        // "((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')
+        // && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') &&
+        // (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) ||
+        // (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') &&
+        // (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO
+        // == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && GENDER
+        // == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION
+        // == 'newjersey')");
+
         Assert.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
     }
 
@@ -333,7 +357,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testNestedOrExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || (filter:isNull(MAGIC) || LOCATION == 'chicago'))"};
         @SuppressWarnings("unchecked")
@@ -350,7 +374,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMethodNoExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( AGE.size() > 1 || AGE == '18')"};
         @SuppressWarnings("unchecked")
@@ -361,13 +385,129 @@ public abstract class ExecutableExpansionVisitorTest {
     }
 
     @Test
+    public void testNumericExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testNumericExpansion");
+        }
+        String[] queryStrings = {"BAIL=~'12340.*?'"};
+        @SuppressWarnings("unchecked")
+        // SOPRANO is the only one with a 0 after the 1234
+        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Eval_ = true) && (BAIL =~ '12340.*?'))";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
+    public void testNumericExpansionIndexOnly() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testNumericExpansionIndexOnly");
+        }
+        String[] queryStrings = {"SENTENCE_DAYS=~'4015\\.0*'"};
+        @SuppressWarnings("unchecked")
+        // SOPRANO is the only one with a 0 after the 1234
+        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "SENTENCE_DAYS == '+dE4.015'";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
+    public void testAnyfieldNumericExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+
+        logic.getConfig().setExcludeUnfieldedTypes(Collections.emptyList());
+
+        if (log.isDebugEnabled()) {
+            log.debug("testAnyfieldNumericExpansion");
+        }
+        String[] queryStrings = {"_ANYFIELD_ =~'12340.*?'"};
+        @SuppressWarnings("unchecked")
+        // SOPRANO is the only one with a 0 after the 1234
+        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Eval_ = true) && (_ANYFIELD_ =~ '12340.*?'))";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
+    public void testAnyfieldTypeExclusion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testAnyfieldNumericExpansion");
+        }
+        String[] queryStrings = {"_ANYFIELD_ =~'12340.*?'"};
+        // ANYFIELD numeric regex normalization is no longer used, so expect no results for this query
+        List<String> expectedLists = new ArrayList<>();
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists, queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        // No longer expect normalized numeric regexes for ANYFIELD
+        String expectedQueryStr = "_NOFIELD_ =~ '12340.*?'";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
+    public void testLeadingNumericExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testLeadingNumericExpansion");
+        }
+        String[] queryStrings = {"(UUID == 'capone' || UUID == 'soprano') && BAIL=~'.*?05'"};
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "(UUID == 'capone' || UUID == 'soprano') && ((_Eval_ = true) && (BAIL =~ '.*?05'))";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
     public void testMethodExpansion() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMethodExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( QUOTE.size() == 1 || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
@@ -384,7 +524,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testNonEventExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (QUOTE == 'kind'|| BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
@@ -401,7 +541,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testFilterExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
@@ -420,7 +560,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testDisableExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
@@ -437,7 +577,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testDelayedBridgeExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || !(filter:isNull(MAGIC) || LOCATION == 'chicago'))",
                 "UUID == 'capone' && ( LOCATION == 'newyork' || !filter:isNull(MAGIC) || LOCATION == 'chicago')"};
@@ -457,7 +597,7 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setIntermediateMaxTermThreshold(15);
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMultipleExpansionsRequired");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind') && (QUOTE == 'kind'|| BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
@@ -474,7 +614,7 @@ public abstract class ExecutableExpansionVisitorTest {
         extraParameters.put("hit.list", "true");
 
         if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
+            log.debug("testMinimumExpansion");
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
@@ -492,20 +632,16 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             Assert.assertFalse(JexlStringBuildingVisitor.buildQuery(queryTree).equals(JexlStringBuildingVisitor.buildQuery(newTree)));
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
@@ -521,22 +657,18 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             Object data = queryTree.jjtGetChild(0).childrenAccept(visitor, null);
-
-            EasyMock.verify(config, helper);
 
             Assert.assertFalse(data instanceof ExecutableExpansionVisitor.ExpansionTracker);
         }
@@ -550,23 +682,19 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
             rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
-
-            EasyMock.verify(config, helper);
 
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
             Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
@@ -581,23 +709,19 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
             rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
-
-            EasyMock.verify(config, helper);
 
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
             String expected = "(QUOTE == 'kind' && UUID == 'A') || (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555') && UUID == 'A') || (BIRTH_DATE == '234' && UUID == 'A')";
@@ -620,20 +744,16 @@ public abstract class ExecutableExpansionVisitorTest {
             // overwrite the old UUID==capone with the ExceededThreshold marker
             queryTree.jjtGetChild(0).jjtAddChild(child, 0);
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
@@ -672,20 +792,16 @@ public abstract class ExecutableExpansionVisitorTest {
         derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree),
@@ -729,20 +845,16 @@ public abstract class ExecutableExpansionVisitorTest {
         derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
             String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
@@ -776,20 +888,16 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             if (queryTree == origQueryTree) {
                 // included ExceededValueThresholdMarker before
@@ -818,25 +926,22 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
             Set<String> dataTypes = new HashSet<>();
             dataTypes.add("test");
             Set<String> nonEventFields = new HashSet<>();
             nonEventFields.add("QUOTE");
-            EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
-            EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(dataTypes).when(config).getDatatypeFilter();
+            Mockito.doReturn(nonEventFields).when(helper).getNonEventFields(dataTypes);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree)
@@ -860,26 +965,23 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
             Set<String> dataTypes = new HashSet<>();
             dataTypes.add("test");
             // QUOTE being delayed creates a query that is non-executable we cannot delay a field which is nonEvent
             Set<String> nonEventFields = new HashSet<>();
             nonEventFields.add("QUOTE");
-            EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
-            EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(dataTypes).when(config).getDatatypeFilter();
+            Mockito.doReturn(nonEventFields).when(helper).getNonEventFields(dataTypes);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree)
@@ -913,20 +1015,16 @@ public abstract class ExecutableExpansionVisitorTest {
             origOrNode.jjtGetParent().jjtAddChild(newOr, 0);
             newOr.jjtSetParent(origOrNode.jjtGetParent());
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // starts executable
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -960,20 +1058,16 @@ public abstract class ExecutableExpansionVisitorTest {
             queryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(newOr, 0);
             newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1));
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // starts executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -996,20 +1090,16 @@ public abstract class ExecutableExpansionVisitorTest {
             // strip reference/referenceExpressions
             queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // starts executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));

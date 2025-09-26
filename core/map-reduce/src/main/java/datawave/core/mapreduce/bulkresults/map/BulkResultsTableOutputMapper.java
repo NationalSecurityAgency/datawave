@@ -89,6 +89,9 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
                     m.put(key.getColumnFamily(), key.getColumnQualifier(), new ColumnVisibility(key.getColumnVisibility()), key.getTimestamp(), val);
                     context.write(this.tableName, m);
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
                 }
                 context.progress();

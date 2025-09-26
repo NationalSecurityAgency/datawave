@@ -25,7 +25,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryImplListResponse extends BaseResponse implements Message<QueryImplListResponse> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2118945918588194332L;
 
     @XmlElement
     private List<Query> query = null;
@@ -76,25 +76,25 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
             return true;
         }
 
+        @SuppressWarnings("unchecked")
         public void writeTo(Output output, QueryImplListResponse message) throws IOException {
-
             Class<? extends Query> clazz = null;
             Schema<Query> schema = null;
             if (message.numResults != 0)
                 output.writeUInt32(1, message.numResults, false);
 
             if (message.query != null) {
-                for (Query query : message.query) {
-                    if (query != null) {
+                for (Query messageQuery : message.query) {
+                    if (messageQuery != null) {
                         if (null == clazz) {
-                            clazz = (Class<? extends Query>) query.getClass();
+                            clazz = messageQuery.getClass();
                             output.writeString(6, clazz.getName(), false);
                         }
-                        if ((null == schema) && (query instanceof Message)) {
-                            Message<Query> m = (Message<Query>) query;
+                        if ((null == schema) && (messageQuery instanceof Message)) {
+                            Message<Query> m = (Message<Query>) messageQuery;
                             schema = m.cachedSchema();
                         }
-                        output.writeObject(2, query, schema, true);
+                        output.writeObject(2, messageQuery, schema, true);
                     }
                 }
             }
@@ -118,6 +118,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
             }
         }
 
+        @SuppressWarnings("unchecked")
         public void mergeFrom(Input input, QueryImplListResponse message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
             int number;
@@ -130,7 +131,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                         break;
                     case 2:
                         if (message.query == null) {
-                            message.query = new ArrayList<Query>();
+                            message.query = new ArrayList<>();
                         }
                         if (null == schema) {
                             Class<? extends Query> clazz = null;
@@ -155,7 +156,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                         break;
                     case 5:
                         if (exceptions == null)
-                            exceptions = new LinkedList<QueryExceptionType>();
+                            exceptions = new LinkedList<>();
                         exceptions.add(input.mergeObject(null, QueryExceptionType.getSchema()));
                         break;
                     case 6:
@@ -190,10 +191,10 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
 
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
-            return number == null ? 0 : number.intValue();
+            return number == null ? 0 : number;
         }
 
-        final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
+        final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<>();
         {
             fieldMap.put("numResults", 1);
             fieldMap.put("query", 2);

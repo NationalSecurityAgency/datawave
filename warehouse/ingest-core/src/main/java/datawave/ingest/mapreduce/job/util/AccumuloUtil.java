@@ -121,7 +121,7 @@ public class AccumuloUtil {
                 Text nextRow = next.getKey().getRow();
                 if (currentRow == null || !currentRow.equals(nextRow)) {
                     if (files != null) {
-                        String split = currentRow.toString().substring(currentRow.toString().indexOf(";") + 1);
+                        String split = currentRow.toString().substring(currentRow.toString().indexOf(';') + 1);
                         metadataFiles.add(new AbstractMap.SimpleEntry<>(split, files));
                     }
                     currentRow = nextRow;
@@ -133,9 +133,9 @@ public class AccumuloUtil {
 
             if (files != null && !files.isEmpty()) {
                 String fullRow = currentRow.toString();
-                int splitIndex = fullRow.indexOf(";");
+                int splitIndex = fullRow.indexOf(';');
                 if (splitIndex == -1) {
-                    splitIndex = fullRow.indexOf("<");
+                    splitIndex = fullRow.indexOf('<');
                 }
                 String split = fullRow;
                 if (splitIndex != -1) {

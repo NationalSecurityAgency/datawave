@@ -8,6 +8,9 @@ import java.util.regex.Pattern;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 
 public abstract class TokenSpecParser<B extends TokenSpecParser> {
+
+    private static final String UNEXPECTED_EOS_ERROR_MSG = "Unexpected end of string literal parsing escape code";
+
     /**
      * Add a new token with its TTL to the structure.
      *
@@ -28,6 +31,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      *
      * @return TokenSpecParser child object
      */
+    @SuppressWarnings("unchecked")
     public B parse(String configuration) {
         ParserState parser = new ParserState(configuration);
         parser.parseTo(this);
@@ -176,7 +180,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
          * @param builder
          *            token spec parser
          */
-        protected void parseTo(TokenSpecParser builder) {
+        protected void parseTo(TokenSpecParser<?> builder) {
             ParseToken initialToken;
             while ((initialToken = peek()) != null) {
                 String tokenStr = parseStrliteral();
@@ -221,7 +225,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                 } else {
                     charPos++;
                     if (charPos >= literalContent.length()) {
-                        throw error("Unexpected end of string literal parsing escape code", token.offset + charPos - 1);
+                        throw error(UNEXPECTED_EOS_ERROR_MSG, token.offset + charPos - 1);
                     }
                     c = literalContent.charAt(charPos);
                     switch (c) {
@@ -250,7 +254,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                             String ordTxt = literalContent.substring(charPos + 1, charPos + 5);
                             if (ordTxt.length() != 4) {
                                 if (charPos >= literalContent.length()) {
-                                    throw error("Unexpected end of string literal parsing escape code", token.offset + charPos - 1);
+                                    throw error(UNEXPECTED_EOS_ERROR_MSG, token.offset + charPos - 1);
                                 }
                             }
                             try {
@@ -265,7 +269,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                             String ordTxt = literalContent.substring(charPos + 1, charPos + 3);
                             if (ordTxt.length() != 2) {
                                 if (charPos >= literalContent.length()) {
-                                    throw error("Unexpected end of string literal parsing escape code", token.offset + charPos - 1);
+                                    throw error(UNEXPECTED_EOS_ERROR_MSG, token.offset + charPos - 1);
                                 }
                             }
                             try {

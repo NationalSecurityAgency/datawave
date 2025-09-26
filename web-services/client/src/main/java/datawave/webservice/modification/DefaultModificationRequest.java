@@ -31,7 +31,7 @@ import com.google.common.collect.Maps;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultModificationRequest extends ModificationRequestBase implements Serializable {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 7141501104717795992L;
 
     @XmlElementWrapper(name = "Events", required = true)
     @XmlElement(name = "Event", required = true)

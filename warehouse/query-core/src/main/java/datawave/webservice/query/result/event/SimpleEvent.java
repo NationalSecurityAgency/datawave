@@ -27,7 +27,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements Serializable, Message<SimpleEvent>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1963967131747306439L;
 
     @XmlElementWrapper(name = "Markings")
     private Map<String,String> markings;

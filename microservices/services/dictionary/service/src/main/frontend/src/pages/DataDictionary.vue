@@ -1,0 +1,469 @@
+<template>
+  <div v-if="banner?.enabled" :style="banner?.styleTop">
+      {{ banner?.messageTop }}
+  </div>
+  <div v-if="banner?.enabled" :style="banner?.styleBottom" style="margin-bottom: 0.50vh;">
+      {{ banner?.messageBottom }}
+  </div>
+  <main class="main col" style="height: 100vh">
+    <div
+      class="row"
+      style="
+        width: 60%;
+        height: 4%;
+        justify-content: center;
+        align-self: center;
+        margin-bottom:5px;"
+    >
+      <label class="title">Data Dictionary</label>
+      <q-img
+      class="icon"
+      :src="'icons/favicon-32x32.png'"
+      spinner-color="white"
+      />
+      <HelpMenu v-if="helpMenu" :menu="helpMenu" />
+    </div>
+    <div class="row" style="width: 100%; height: 80%">
+      <p class="information">
+        <br />
+        Cluster: {{ system?.systemName }} <br />
+        When a value is present in the forward index types, this means that a
+        field is indexed and informs you how your query terms will be treated
+        (e.g. text, number, IPv4 address, etc). The same applies for the reverse
+        index types with the caveat that you can also query these fields using
+        leading wildcards. Fields that are marked as 'Index only' will not
+        appear in a result set unless explicitly queried on. Index only fields
+        are typically composite fields, derived from actual data, created by the
+        software to make querying easier.
+      </p>
+      <q-table
+        ref="table"
+        :loading="loading"
+        :rows="rows"
+        :columns="columns"
+        :filter="filter"
+        v-model:pagination="paginationFront"
+        row-key="internalFieldName"
+        dense
+        style="font-size: smaller; height: 100%; width: 100%;"
+        class="datawave-dictionary-sticky-sass dark"
+        :rows-per-page-options="[]"
+      >
+        <template v-slot:top-left>
+          <q-btn
+            style="margin-right: 2px;"
+            size="12px"
+            color="cyan-8"
+            icon-right="archive"
+            label="Export"
+            no-caps
+            @click="exportTable()"
+          />
+          <q-btn
+            style="margin-left: 2px;"
+            size="12px"
+            padding="5px 5px"
+            color="cyan-8"
+            :icon="isDark ? 'bi-sun-fill' : 'bi-moon-fill'"
+            no-caps
+            @click="toggleDark(); $q.dark.toggle();"
+          />
+        </template>
+        <template v-slot:top-right>
+          <q-input
+            borderless
+            dense
+            v-model="changeFilter"
+            placeholder="Search"
+            @keydown.enter.prevent="queryTable"
+            style="margin-right: 1em;"
+          >
+          </q-input>
+          <q-btn
+                size="12px"
+                color="cyan-8"
+                icon="search"
+                dense
+                @click="queryTable"
+              />
+        </template>
+        <template v-slot:header="props">
+          <q-tr :props="props">
+            <q-th />
+            <q-th
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+            >
+              <div class="tooltip-wrapper row items-center no-wrap">
+                <span class="q-mr-xs">
+                  <span class="cursor-pointer">
+                    {{ col.label }}
+                    <q-tooltip
+                      class="tooltip-text"
+                      anchor="bottom middle"
+                      self="top middle"
+                      :offset="[0, 5]"
+                    >
+                      {{ Feature.toolTipGen(col.name) }}
+                    </q-tooltip>
+                  </span>
+                </span>
+                <template v-if="col.name === 'lastUpdated'">
+                  <q-btn
+                    size="7px"
+                    color="cyan-8"
+                    icon="bi-funnel-fill"
+                    style="padding: 2.5px; margin-bottom: 1.5px;"
+                    dense
+                    ref="buttonRef"
+                  >
+                    <q-menu
+                      anchor="bottom right"
+                      self="top right"
+                      :offset="[0, 5]"
+                    >
+                      <q-card
+                        style="max-width: 205px; padding: 5px; box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);"
+                        class="q-pa-sm"
+                      >
+                        <q-card-section class="text-center text-subtitle1" style="font-weight: 550;">
+                          FILTER DAYS
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-gutter-sm">
+                          <div class="row items-center q-col-gutter-sm">
+                            <q-input
+                              dense
+                              color="cyan-8"
+                              v-model="search"
+                              placeholder="30"
+                              @keyup.enter="queryTable(search)"
+                              style="width: 50px; margin-left: 15px;"
+                              input-class="text-center"
+                            />
+                            <q-item-label style="font-weight: 450;"> DAY(S) PRIOR</q-item-label>
+                          </div>
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-pt-none">
+                          <div class="row items-center q-gutter-sm" style="margin-top: 15px;">
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Apply"
+                              color="cyan-8"
+                              @click="queryTable(search)"
+                            />
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Clear Filter"
+                              color="cyan-8"
+                              @click="queryTable()"
+                            />
+                          </div>
+                        </q-card-section>
+                      </q-card>
+                    </q-menu>
+                  </q-btn>
+                </template>
+              </div>
+            </q-th>
+          </q-tr>
+        </template>
+        <template v-slot:body="props">
+          <q-tr
+            :props="props"
+            v-if="Formatters.buttonParse(props.row)"
+          >
+            <q-td class="cell-spacing">
+              <q-btn
+                size="9px"
+                color="cyan-8"
+                round
+                dense
+                @click="
+                  {
+                    props.expand = !props.expand;
+                    Formatters.toggleVisibility(props.row);
+                  }
+                "
+                :icon="props.row.isVisible.value ? 'remove' : 'add'"
+              />
+            </q-td>
+            <q-td
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              :class="{ 'text-bold': col.name === 'dataType'}"
+              style="font-size: 13px;"
+              @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+              >
+                <label style="cursor: pointer;">
+                  {{
+                    Formatters.maxSubstring(
+                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                    )
+                  }}
+                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                  </q-tooltip>
+                </label>
+              </q-td>
+          </q-tr>
+          <q-tr
+            :props="props"
+            v-if="Formatters.isVisible(props.row)"
+          >
+            <q-td class="cell-spacing">
+              <q-icon
+                  style="margin-left: 4px;"
+                  size="1rem"
+                  :name="'bi-arrow-right'"
+                  color="cyan-8"
+                  v-if="props.row.duplicate == 1"
+              />
+            </q-td>
+            <q-td
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              style="font-size: 13px;"
+              @click="Feature.copyLabel(col.name, col.value, null)"
+            >
+              <label style="cursor: pointer;">
+                {{
+                  Formatters.maxSubstring(
+                    Formatters.parseVal(col.name, col.value), col.name
+                  )
+                }}
+                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                  {{ Formatters.parseVal(col.name, col.value) }}
+                </q-tooltip>
+              </label>
+            </q-td>
+          </q-tr>
+        </template>
+      </q-table>
+    </div>
+  </main>
+  <div v-if="banner?.enabled" :style="banner?.styleTop" style="margin-top: 0.50vh;">
+      {{ banner?.messageTop }}
+  </div>
+  <div v-if="banner?.enabled" :style="banner?.styleBottom">
+      {{ banner?.messageBottom }}
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
+import { useToggle, useDark } from '@vueuse/core';
+import { api } from '../boot/axios';
+import { Banner, Menu, columns, System } from '../functions/components';
+import * as Formatters from '../functions/formatters';
+import * as Wrapper from '../functions/csvWrapper';
+import * as Feature from '../functions/features';
+import HelpMenu from './HelpMenu.vue';
+
+// Defines the Table References, loading for axios, search filter, and pagination to sort.
+const $q = useQuasar();
+const table = ref();
+const loading = ref(true);
+const filter = ref('');
+const route = useRoute();
+const router = useRouter();
+const changeFilter = ref<string>('');
+const banner = ref<Banner>();
+const system = ref<System>();
+const helpMenu = ref<Menu>();
+const search = ref('');
+let rows: QTableProps['rows'] = [];
+const paginationFront = ref({
+  rowsPerPage: 200,
+  sortBy: 'fieldName',
+});
+
+// API - Defines all the Nececssary API calls for the user, and filters.
+// Note that to run the endpoint in DEV mode, you must build the project at least once first.
+onMounted(() => {
+  let endpointData = '';
+  let bannerData = 'banner';
+  let systemData = 'system';
+  let helpMenuData = 'menu';
+  if (process.env.DEV) {
+    endpointData = 'data/v2/'
+    bannerData = 'data/v2/banner/'
+    systemData = 'data/v2/system/'
+    helpMenuData = 'data/v2/menu/'
+  }
+
+  api
+  .get(bannerData, undefined)
+  .then((response) => {
+    banner.value = response.data as Banner;
+  })
+  .catch((reason) => {
+    console.error('Could not fetch banner: ' + reason);
+  });
+
+  api.get(helpMenuData)
+  .then((response) => {
+    helpMenu.value = response.data as Menu;
+  })
+  .catch((reason) => {
+    console.error('Could not fetch help menu: ' + reason);
+  });
+
+  api
+  .get(systemData)
+  .then((response) => {
+    system.value = response.data as System;
+  })
+  .catch((reason) => {
+    console.error('Could not fetch system name: ' + reason);
+  });
+
+  api
+  .get(endpointData)
+  .then((response) => {
+    // Mini Filter to sort collapsable Rows
+    rows = response.data.MetadataFields.sort((a: any, b: any) => {
+      // Create a combined key for both fieldname and internalFieldName
+      const keyA = `${a.fieldname}_${a.internalFieldName}`;
+      const keyB = `${b.fieldname}_${b.internalFieldName}`;
+
+      // First compare the combined key alphabetically
+      if (keyA < keyB) {
+        return -1;
+      } else if (keyA > keyB) {
+        return 1;
+      } else {
+        // If the combined key is the same, compare lastUpdated in descending order
+        return b.lastUpdated - a.lastUpdated;
+      }
+    });
+    rows = changeFilter.value
+      ? Formatters.setVisibility(rows) // if searched through URL bar, it removes 30 day filter.
+      : Formatters.setVisibility(rows, 30); // default at 30 days when loaded without '?search=<val>' query.
+
+    loading.value = false;
+  })
+  .catch((reason) => {
+    console.log('Error fetching and formatting rows: ' + reason);
+  });
+
+  // This line is similar to the one in the watch() method below, but handles the search when initially set via the URL.
+  changeFilter.value = Formatters.filterSearch(route.query.search, changeFilter.value);
+
+  if (changeFilter.value) {
+    queryTable();
+  }
+});
+
+// This watch() handles a URL Change from a previous query.
+// Logic: Input + Table (reactive URL -> UI + Filters)
+watch(
+  () => route.query.search,
+  (searchVal) => {
+    // Converts the input into a valid string to be queried.
+    let searchValNew = Formatters.filterSearch(searchVal, '');
+
+    if (searchValNew !== changeFilter.value) {
+      changeFilter.value = searchValNew;
+      if (searchValNew) {
+        // Triggers a re-query if the user has changed to a new value.
+        queryTable();
+      } else {
+        // This retriggers back to the original state if user clears.
+        filter.value = '';
+        const originalRows = rows;
+        rows = Formatters.setVisibility(originalRows);
+      }
+    }
+  }
+);
+
+// Export - Attempts to Wrap the CSV and Download.
+function exportTable(this: any) {
+  const rowsToExport = table.value?.filteredSortedRows.filter(
+    Formatters.isVisible
+  );
+  const content = [columns!.map((col) => Wrapper.wrapCsvValue(col.label))]
+    .concat(
+      rowsToExport.map((row: any) =>
+        columns!
+          .map((col: any) =>
+            Wrapper.wrapCsvValue(
+              typeof col.field === 'function'
+                ? col.field(row)
+                : row[col.field === undefined ? col.name : col.field],
+              col.format,
+              row
+            )
+          )
+          .join(',')
+      )
+    )
+    .join('\r\n');
+
+  const status = exportFile('table-export.csv', content, 'text/csv');
+  if (status !== true) {
+    $q.notify({
+      message: 'Browser denied file download...',
+      color: 'negative',
+      icon: 'warning',
+    });
+  }
+}
+
+// Query - Runs through a Search Process as it waits for the user.
+async function queryTable(priorDays?: any) {
+  await waitUp();
+
+  // Handles the URL change to reflect when the user searches.
+  // Logic: Input -> URL (UI -> URL)
+  router.replace({
+    query: {
+      ...route.query,
+      search: changeFilter.value || undefined,
+    },
+  });
+
+  // 1 - Filter the Rows
+  const rowsToExport = table.value?.filteredSortedRows.filter(() => true);
+
+  // 2 - Define Refresh Trigger (By Pagination) and Orginial Rows Stored
+  const originalRows = rows;
+  const triggerRefresh = paginationFront.value.rowsPerPage;
+
+  // 3 - Set filtered rows with visibility flags updated
+  rows = Formatters.setVisibility(rowsToExport, priorDays);
+
+  // 4 - Refresh pagination to trigger table update
+  paginationFront.value.rowsPerPage = 100;
+  paginationFront.value.rowsPerPage = triggerRefresh;
+
+  // 5 - Restore original rows for next queries
+  rows = originalRows;
+}
+
+// Query 2 - Awaits for the user to change or add something.
+function waitUp() {
+  filter.value = changeFilter.value;
+}
+
+// Customization - Sets the Dark Mode Toggle for the User.
+const isDark = useDark();
+const toggleDark = useToggle(isDark);
+if (isDark.value) {
+  $q.dark.set(true);
+} else {
+  $q.dark.set(false);
+}
+
+</script>

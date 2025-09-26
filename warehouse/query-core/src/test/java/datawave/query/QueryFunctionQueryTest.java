@@ -88,6 +88,12 @@ public abstract class QueryFunctionQueryTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() {
+            super.setup();
+            eventQueryLogic.setCollapseUids(true);
+        }
+
         @AfterClass
         public static void teardown() {
             TypeRegistry.reset();
@@ -125,6 +131,12 @@ public abstract class QueryFunctionQueryTest {
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            eventQueryLogic.setCollapseUids(false);
         }
 
         @AfterClass

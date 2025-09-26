@@ -10,18 +10,28 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.easymock.PowerMock.expectLastCall;
+import static org.powermock.api.easymock.PowerMock.replayAll;
+import static org.powermock.api.easymock.PowerMock.verifyAll;
 
+import java.util.AbstractMap;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.geotools.util.Base64;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
+import org.powermock.api.easymock.annotation.Mock;
 
 import com.google.common.collect.Sets;
 
@@ -29,10 +39,16 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.query.QueryParameters;
 import datawave.query.config.ContentQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.DefaultField;
+import datawave.webservice.query.result.event.EventBase;
 
 public class ContentQueryLogicTest {
     private ContentQueryLogic contentQueryLogic;
@@ -40,7 +56,7 @@ public class ContentQueryLogicTest {
     private BatchScanner mockScanner;
     private GenericQueryConfiguration mockGenericConfig;
     private ContentQueryConfiguration mockContentConfig;
-    @org.powermock.api.easymock.annotation.Mock
+    @Mock
     Query query;
 
     @Before
@@ -100,7 +116,7 @@ public class ContentQueryLogicTest {
         int result1 = subject.getMaxPageSize();
         long result2 = subject.getPageByteTrigger();
         TransformIterator result3 = subject.getTransformIterator(this.query);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertEquals("Incorrect max page size", 0, result1);
@@ -136,6 +152,54 @@ public class ContentQueryLogicTest {
         assertFalse(logic.containsDNWithAccess(dns));
         assertFalse(logic.containsDNWithAccess(null));
         assertFalse(logic.containsDNWithAccess(Collections.emptySet()));
+    }
+
+    @Test
+    public void testDecodeViewParam() throws Exception {
+        AccumuloClient mockClient = PowerMock.createMock(AccumuloClient.class);
+        MarkingFunctions mockMarkingFunctions = PowerMock.createMock(MarkingFunctions.class);
+
+        ContentQueryLogic logic = new ContentQueryLogic();
+        logic.setMarkingFunctions(mockMarkingFunctions);
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        Authorizations auths = new Authorizations("A");
+
+        Query settings = new QueryImpl();
+        settings.setQuery("event:20241218_0/samplecsv/1.2.3");
+        settings.addParameter(QueryParameters.DECODE_VIEW, "true");
+        settings.setQueryAuthorizations("A");
+
+        Key dataKey = new Key("20241218_0", "d", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "someView", "A");
+        Value viewValue = new Value(Base64.encodeBytes("my happy message".getBytes()));
+        Map.Entry<Key,Value> entry = new AbstractMap.SimpleImmutableEntry<>(dataKey, viewValue);
+
+        mockMarkingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility("A"), auths);
+        expectLastCall().andReturn(Map.of("A", "A")).anyTimes();
+
+        replayAll();
+
+        // test with decode view
+        logic.initialize(mockClient, settings, Set.of(auths));
+        QueryLogicTransformer<Map.Entry<Key,Value>,EventBase> transformer = logic.getTransformer(settings);
+        EventBase base = transformer.transform(entry);
+
+        assertEquals(1, base.getFields().size());
+        DefaultField field = (DefaultField) base.getFields().get(0);
+        assertEquals("my happy message", field.getTypedValue().getValue());
+        assertEquals("xs:string", field.getTypedValue().getType());
+
+        // test without decode view
+        settings.removeParameter(QueryParameters.DECODE_VIEW);
+        logic.initialize(mockClient, settings, Set.of(auths));
+        transformer = logic.getTransformer(settings);
+        base = transformer.transform(entry);
+
+        assertEquals(1, base.getFields().size());
+        field = (DefaultField) base.getFields().get(0);
+        assertEquals("xs:base64Binary", field.getTypedValue().getType());
+
+        verifyAll();
     }
 
     private class TestContentQuery extends ContentQueryLogic {

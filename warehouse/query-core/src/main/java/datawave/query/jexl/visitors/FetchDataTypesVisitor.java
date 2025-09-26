@@ -211,7 +211,7 @@ public class FetchDataTypesVisitor extends BaseVisitor {
                 } else
                     dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
 
-                mm.putAll(field, dataTypesForField);
+                mm.putAll(fieldName, dataTypesForField);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 log.error(qe);

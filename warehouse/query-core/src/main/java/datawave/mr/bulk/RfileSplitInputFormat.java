@@ -58,6 +58,7 @@ public class RfileSplitInputFormat extends MultiRfileInputformat {
             try {
                 split.add(frSplit);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
 

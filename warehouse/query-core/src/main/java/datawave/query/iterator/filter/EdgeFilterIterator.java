@@ -14,12 +14,10 @@ import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.jexl3.internal.Engine;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
@@ -27,7 +25,6 @@ import com.google.common.collect.HashMultimap;
 import datawave.edge.model.EdgeModelFields.FieldKey;
 import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
 
 /**

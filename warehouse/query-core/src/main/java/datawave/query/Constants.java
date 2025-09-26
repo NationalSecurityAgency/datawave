@@ -40,6 +40,30 @@ public class Constants {
 
     public static final String PIPE = "|";
 
+    public static final String ASTERISK = "*";
+
+    public static final String QUOTE = "\"";
+
+    /**
+     * The UTF-16 representation of the opening smart quote ASCII-147.
+     */
+    public static final String UTF_16_SMART_QUOTE_LEFT = "\\u0093";
+
+    /**
+     * The UTF-16 representation of the ending smart quote ASCII-148.
+     */
+    public static final String UTF_16_SMART_QUOTE_RIGHT = "\\u0094";
+
+    /**
+     * The UTF-16 representation of the opening double quote.
+     */
+    public static final String UTF_16_DOUBLE_QUOTE_LEFT = "\\u201c";
+
+    /**
+     * The UTF-16 representation of the ending double quote.
+     */
+    public static final String UTF_16_DOUBLE_QUOTE_RIGHT = "\\u201d";
+
     public static final Text TEXT_NULL = new Text(NULL);
 
     public static final Text FI_PREFIX = new Text("fi");
@@ -79,6 +103,8 @@ public class Constants {
     // From ingest
     public static final Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");
 
+    public static final Text D_COLUMN_FAMILY = new Text("d");
+
     // content functions
     public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = ContentFunctions.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;
     public static final String CONTENT_FUNCTION_NAMESPACE = ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
@@ -95,4 +121,11 @@ public class Constants {
     public static final String END_DATE = "end.date";
 
     public static final String COLUMN_VISIBILITY = "columnVisibility";
+
+    public static final Character BACKSLASH_CHAR = '\\';
+    public static final Character ASTERISK_CHAR = '*';
+
+    public static final String JEXL = "JEXL";
+    public static final String LUCENE = "LUCENE";
+    public static final String LUCENE_UUID = "LUCENE-UUID";
 }

@@ -11,6 +11,7 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -41,6 +42,11 @@ public class IngestTypePruningVisitorTest {
         typeMetadata.put("C", "ingestType5", LcType.class.getTypeName());
 
         typeMetadata.put("123", "ingestType1", LcType.class.getTypeName());
+    }
+
+    @Before
+    public void beforeEach() {
+        validator.enableAll();
     }
 
     @Test
@@ -448,7 +454,7 @@ public class IngestTypePruningVisitorTest {
         test(query, "A == '1'");
 
         query = "A == '0' && (A == '1' || !((_Delayed_ = true) && (A == '2' && C == '3')))";
-        test(query, "A == '0' && (A == '1')");
+        test(query, "A == '0' && A == '1'");
     }
 
     @Test
@@ -485,7 +491,7 @@ public class IngestTypePruningVisitorTest {
         metadata.put("C", "ingestType4", LcType.class.getTypeName());
 
         String query = "A == '1' && (((_Delayed_ = true) && (B =~ 'b.*')) || ((_Delayed_ = true) && (C =~ 'c.*')))";
-        String expected = "A == '1' && (((_Delayed_ = true) && (B =~ 'b.*')))";
+        String expected = "A == '1' && ((_Delayed_ = true) && (B =~ 'b.*'))";
         test(query, expected, typeMetadata);
     }
 
@@ -746,7 +752,7 @@ public class IngestTypePruningVisitorTest {
 
         // not null exclusive term evaluates to false, can safely drop from a union
         query = "A == '1' && (B == '2' || !(C == null))";
-        test(query, "A == '1' && (B == '2')", metadata);
+        test(query, "A == '1' && B == '2'", metadata);
     }
 
     @Test
@@ -791,7 +797,7 @@ public class IngestTypePruningVisitorTest {
 
         // exclusive type evaluates to true, may be safely pruned
         query = "A == '1' || (A == '2' && C == null)";
-        test(query, "A == '1' || (A == '2')", metadata);
+        test(query, "A == '1' || A == '2'", metadata);
     }
 
     @Test
@@ -833,7 +839,7 @@ public class IngestTypePruningVisitorTest {
 
         // negated term for exclusive type evaluates to false, safely dropped from intersection
         query = "A == '1' || (A == '2' && !(C == '3'))";
-        test(query, "A == '1' || (A == '2')", metadata);
+        test(query, "A == '1' || A == '2'", metadata);
     }
 
     /**
@@ -852,7 +858,7 @@ public class IngestTypePruningVisitorTest {
         metadata.put("Z", "type-9", LcType.class.getTypeName());
 
         String query = "(A == '1' && (B == '2' || C == '3')) || (X == '7' && (Y == '8' || Z == '9'))";
-        String expected = "(A == '1' && (B == '2')) || (X == '7' && (Y == '8'))";
+        String expected = "(A == '1' && B == '2') || (X == '7' && Y == '8')";
         test(query, expected, metadata);
     }
 
@@ -875,6 +881,7 @@ public class IngestTypePruningVisitorTest {
     private ASTJexlScript testInternalPrune(String query, String expected, TypeMetadata metadata) {
         try {
             ASTJexlScript script = parseQuery(query);
+            validator.isValid(script, "Internal Prune: query");
             ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata);
 
             log.info("input   : " + query);
@@ -882,7 +889,7 @@ public class IngestTypePruningVisitorTest {
             log.info("expected: " + expected);
 
             // all pruned scripts must be valid
-            assertTrue(validator.isValid(pruned));
+            assertTrue(validator.isValid(pruned, "Internal Prune: result"));
 
             // we might be expecting nothing as a result
             if (expected == null) {
@@ -892,6 +899,7 @@ public class IngestTypePruningVisitorTest {
             }
 
             ASTJexlScript expectedScript = parseQuery(expected);
+            assertTrue(validator.isValid(expectedScript, "Internal Prune: expected"));
             verifyEquality(pruned, expectedScript);
             return pruned;
         } catch (Exception e) {
@@ -918,6 +926,7 @@ public class IngestTypePruningVisitorTest {
     private ASTJexlScript testExternalPrune(String query, String expected, TypeMetadata metadata, Set<String> ingestTypes) {
         try {
             ASTJexlScript script = parseQuery(query);
+            assertTrue(validator.isValid(script, "External Prune: query"));
 
             if (ingestTypes == null) {
                 ingestTypes = IngestTypeVisitor.getIngestTypes(script, metadata);
@@ -934,7 +943,7 @@ public class IngestTypePruningVisitorTest {
             log.info("expected: " + expected);
 
             // all pruned scripts must be valid
-            assertTrue(validator.isValid(pruned));
+            assertTrue(validator.isValid(pruned, "External Prune: result"));
 
             // we might be expecting nothing as a result
             if (expected == null) {
@@ -944,6 +953,7 @@ public class IngestTypePruningVisitorTest {
             }
 
             ASTJexlScript expectedScript = parseQuery(expected);
+            assertTrue(validator.isValid(expectedScript, "External Prune: expected"));
             verifyEquality(pruned, expectedScript);
             return pruned;
         } catch (Exception e) {

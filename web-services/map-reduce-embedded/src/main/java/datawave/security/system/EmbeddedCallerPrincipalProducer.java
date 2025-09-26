@@ -1,7 +1,6 @@
 package datawave.security.system;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 
 import javax.annotation.Priority;

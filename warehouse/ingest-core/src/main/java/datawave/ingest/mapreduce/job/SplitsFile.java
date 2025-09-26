@@ -19,8 +19,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Table;
-
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.time.DateHelper;

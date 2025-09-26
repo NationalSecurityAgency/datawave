@@ -113,6 +113,9 @@ public class JobSetupUtil {
             } else {
                 log.error("Hadoop process exited abnormally-- job may take a long time if system is saturated.");
             }
+        } catch (InterruptedException e) {
+            log.error("This job was interrupted.", e);
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             log.error("This job may take a while on a system running at full ingest load.", e);
         }

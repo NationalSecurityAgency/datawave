@@ -66,7 +66,6 @@ public class ResultCountingIterator extends WrappingIterator {
 
     private String threadName = null;
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-    private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     public ResultCountingIterator() {
         threadName = Thread.currentThread().getName();
@@ -210,7 +209,7 @@ public class ResultCountingIterator extends WrappingIterator {
         ColumnVisibility cv = null;
 
         try {
-            cv = markingFunctions.combine(columnVisibilities);
+            cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
         } catch (MarkingFunctions.Exception e) {
             log.error("Could not create combined columnVisibility for the count", e);
             return null;

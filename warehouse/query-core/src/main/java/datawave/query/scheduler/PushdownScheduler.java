@@ -15,7 +15,6 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
@@ -29,7 +28,6 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
@@ -136,11 +134,17 @@ public class PushdownScheduler extends Scheduler {
     }
 
     /**
-     * @return
+     * Concatenate Iterators
+     *
+     * @return the concatenated iterators
      * @throws ParseException
+     *             if there is an error parsing
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws AccumuloSecurityException
+     *             if there is a security issue with Accumulo
      * @throws AccumuloException
+     *             if there is a general Accumulo error
      */
     protected Iterator<Result> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
         boolean hasNext = config.getQueriesIter().hasNext();
@@ -148,18 +152,15 @@ public class PushdownScheduler extends Scheduler {
 
         Set<Authorizations> auths = config.getAuthorizations();
 
-        TabletLocator tl;
-
         AccumuloClient client = config.getClient();
         if (client instanceof InMemoryAccumuloClient) {
-            tl = new InMemoryTabletLocator();
             tableId = TableId.of(config.getTableName());
         } else {
             ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
             tableId = ctx.getTableId(tableName);
-            tl = TabletLocator.getLocator(ctx, tableId);
         }
-        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
+
+        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), getPushdownFunction());
 
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery()).setConfig(config);
@@ -185,11 +186,13 @@ public class PushdownScheduler extends Scheduler {
 
         session.setChunkIter(chunkIter);
 
-        session.setTabletLocator(tl);
-
         session.updateIdentifier(config.getQuery().getId().toString());
 
         return session;
+    }
+
+    protected PushdownFunction getPushdownFunction() {
+        return new PushdownFunction(config, settings, tableId);
     }
 
     protected Iterator<QueryData> getQueryDataIterator() {

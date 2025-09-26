@@ -2,6 +2,7 @@ package datawave.webservice.common.json;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 
 /**
@@ -20,7 +22,7 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
     public JacksonContextResolver() {
         mapper = new ObjectMapper();
@@ -28,6 +30,10 @@ public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
         mapper.setAnnotationIntrospector(
                         AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
         mapper.setSerializationInclusion(Include.NON_NULL);
+
+        final SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addDeserializer(MultivaluedMap.class, new MultivaluedMapDeserializer());
+        mapper.registerModule(simpleModule);
     }
 
     @Override

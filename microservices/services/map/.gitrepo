@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:NationalSecurityAgency/datawave-map-service.git
+	branch = main
+	commit = 473ec437082e661f51132a9254877b6bb27def84
+	parent = 5c0602ca7bd45115a71a4dbe022599a6ef1bdcad
+	method = merge
+	cmdver = 0.4.9

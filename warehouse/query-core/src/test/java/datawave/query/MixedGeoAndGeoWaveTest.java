@@ -1,5 +1,7 @@
 package datawave.query;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.microservice.query.QueryParameters.QUERY_END;
@@ -99,7 +101,7 @@ public class MixedGeoAndGeoWaveTest {
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private static final int NUM_CIRCLE_POINTS = 60;
-    private static final int NUM_SHARDS = 100;
+    private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "MixedGeo";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
@@ -224,7 +226,7 @@ public class MixedGeoAndGeoWaveTest {
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(ingestDate).getTime());
-            record.setRawData((fieldName + data[i]).getBytes("UTF8"));
+            record.setRawData((fieldName + data[i]).getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
 
@@ -284,6 +286,9 @@ public class MixedGeoAndGeoWaveTest {
     private static void writeKeyValues(AccumuloClient client, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
         final TableOperations tops = client.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
+
+        Set<String> loadedShards = new HashSet<>();
+
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
             if (!tops.exists(tableName))
@@ -295,8 +300,17 @@ public class MixedGeoAndGeoWaveTest {
                 mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(),
                                 biKey.getKey().getTimestamp(), val);
                 writer.addMutation(mutation);
+                if (biKey.getTableName().toString().equals("shard")) {
+                    loadedShards.add(biKey.getKey().getRow().toString());
+                }
             }
             writer.close();
+        }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_" + NUM_SHARDS, new Value());
+            bw.addMutation(m);
         }
     }
 
@@ -378,9 +392,8 @@ public class MixedGeoAndGeoWaveTest {
 
     @Test
     public void intersectsSmallBoundingBoxEvaluationOnlyTest() throws Exception {
-        String query = "geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
+        String query = "geowave:intersects(" + GEO_FIELD + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))') && ((_Eval_ = true) && geowave:intersects("
+                        + GEO_FIELD + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(2, events.size());
@@ -485,7 +498,7 @@ public class MixedGeoAndGeoWaveTest {
     @Test
     public void intersectsLargeBoundingBoxEvaluationOnlyTest() throws Exception {
         String query = "geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
+                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && ((_Eval_ = true) && geowave:intersects(" + GEO_FIELD
                         + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))'))";
 
         List<DefaultEvent> events = getQueryResults(query);
@@ -590,8 +603,8 @@ public class MixedGeoAndGeoWaveTest {
 
     @Test
     public void intersectsLargeCircleEvaluationOnlyTest() throws Exception {
-        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "') && ((ASTEvaluationOnly = true) && geowave:intersects("
-                        + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "'))";
+        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "') && ((_Eval_ = true) && geowave:intersects(" + GEO_FIELD
+                        + ", '" + createCircle(0, 0, 90).toText() + "'))";
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(12, events.size());

@@ -579,7 +579,9 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     break;
                 default:
-                    throw new IllegalArgumentException("Found unexpected content function with name: " + visitor.name());
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                                    MessageFormat.format("Found unexpected content function with name: {0}", visitor.name()));
+                    throw new IllegalArgumentException(qe);
             }
 
             List<JexlNode> updated = new LinkedList<>();

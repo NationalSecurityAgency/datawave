@@ -108,7 +108,7 @@ public class DocumentProjectionTest {
 
         assertEquals(11, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(0, result.getValue().size());
+        assertEquals(11, result.getValue().size());
     }
 
     @Test
@@ -117,7 +117,7 @@ public class DocumentProjectionTest {
 
         assertEquals(11, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(0, result.getValue().size());
+        assertEquals(11, result.getValue().size());
     }
 
     @Deprecated

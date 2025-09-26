@@ -23,7 +23,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.util.RFileUtil;
+import datawave.util.accumulo.RFileUtil;
 
 /**
  * ContextWriter that supports spilling data to a work dir as an rfile, then on cleanup reads and commits all rfiles to the context in sorted order. Spills will

@@ -1,7 +1,6 @@
 package datawave.query.jexl;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
 import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
 
 import java.math.BigDecimal;

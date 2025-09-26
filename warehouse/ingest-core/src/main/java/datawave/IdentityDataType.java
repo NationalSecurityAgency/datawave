@@ -2,6 +2,10 @@ package datawave;
 
 import java.util.Collection;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 import datawave.data.type.Type;
 
 public class IdentityDataType implements Type<String> {
@@ -25,7 +29,7 @@ public class IdentityDataType implements Type<String> {
         throw new UnsupportedOperationException();
     }
 
-    // @Override
+    @Override
     public boolean normalizedRegexIsLossy(String in) {
         throw new UnsupportedOperationException();
     }
@@ -87,6 +91,16 @@ public class IdentityDataType implements Type<String> {
 
     @Override
     public int compareTo(Type<String> o) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void write(Kryo kryo, Output output) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
         throw new UnsupportedOperationException();
     }
 }

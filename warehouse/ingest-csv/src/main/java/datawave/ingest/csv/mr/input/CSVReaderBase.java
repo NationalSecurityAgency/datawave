@@ -104,6 +104,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         try {
             totalSize = genericSplit.getLength() * 4l;
         } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             throw new IOException("Interrupted Exception thrown while attempting to get split length", ex);
         }
     }

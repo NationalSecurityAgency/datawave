@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -46,10 +45,11 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      */
     private final Groups groups;
 
-    /**
-     * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
-     */
-    private final List<Key> keys = new ArrayList<>();
+    // the most recent key seen, used to track where we left off
+    private Key mostRecentKey = null;
+
+    // track the number of documents seen by this iterator
+    private long documentCount = 0L;
 
     private final MarkingFunctions markingFunctions;
 
@@ -78,18 +78,20 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 Map.Entry<Key,Document> entry = previousIterators.next();
                 if (entry != null) {
                     log.trace("t-server get list key counts for: {}", entry);
-                    keys.add(entry.getKey());
+                    documentCount++;
+                    mostRecentKey = entry.getKey();
                     DocumentGrouper.group(entry, groupFields, groups);
                 }
             } else if (yieldCallback != null && yieldCallback.hasYielded()) {
                 log.trace("hasNext is false because yield was called");
                 if (!groups.isEmpty()) {
                     // reset the yield and use its key in the flattened document prepared below
-                    keys.add(yieldCallback.getPositionAndReset());
+                    mostRecentKey = yieldCallback.getPositionAndReset();
                 }
                 break;
             } else {
                 // in.hasNext() was false and there was no yield
+                log.trace("GroupingIterator saw {} documents producing {} groups", documentCount, groups.getGroups().size());
                 break;
             }
         }
@@ -100,16 +102,17 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
 
         if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
-                documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
+                documents.add(GroupingUtils.createDocument(group, mostRecentKey, markingFunctions,
+                                GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
             }
             document = flatten(documents);
         }
 
         if (document != null) {
             Key key;
-            if (keys.size() > 0) {
+            if (mostRecentKey != null) {
                 // use the last (most recent) key so a new iterator will know where to start
-                key = keys.get(keys.size() - 1);
+                key = mostRecentKey;
             } else {
                 key = document.getMetadata();
             }
@@ -194,7 +197,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
                 // Call copy() on the GroupingTypeAttribute to get a plain TypeAttribute instead of a GroupingTypeAttribute that is package protected and won't
                 // serialize.
-                flattened.put(entry.getKey() + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
+                flattened.put(entry.getKey() + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true);
             }
             // Increment the context by one.
             context++;

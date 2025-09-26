@@ -43,6 +43,14 @@ public class ASTValidator {
         // empty constructor
     }
 
+    public void enableAll() {
+        validateLineage = true;
+        validateFlatten = true;
+        validateJunctions = true;
+        validateReferenceExpressions = true;
+        validateQueryPropertyMarkers = true;
+    }
+
     /**
      * Determines if the provided AST meets all basic assumptions. Intended to be called outside of normal visitor validation
      *

@@ -19,7 +19,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ResultFile implements Serializable, Message<ResultFile> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1404821574289348296L;
     @XmlAttribute(name = "fileName")
     private String fileName;
     @XmlAttribute(name = "length")

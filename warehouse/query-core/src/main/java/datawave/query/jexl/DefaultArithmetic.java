@@ -324,8 +324,12 @@ public class DefaultArithmetic extends DatawaveArithmetic {
                 try {
                     return Long.parseLong((String) val);
                 } catch (NumberFormatException e) {
-                    Double d = Double.parseDouble((String) val);
-                    return d.longValue();
+                    try {
+                        Double d = Double.parseDouble((String) val);
+                        return d.longValue();
+                    } catch (NumberFormatException e1) {
+                        // we tried to handle the values as numerics, but were unsuccessful.
+                    }
                 }
             }
         } else if (val instanceof Boolean) {

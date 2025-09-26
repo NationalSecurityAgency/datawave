@@ -25,10 +25,12 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Sets;
 
 public class CardinalityRecord implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8860541286933451615L;
     private Set<String> resultCardinalityValueFields = null;
     private HashMultimap<Integer,DateFieldValueCardinalityRecord> cardinalityMap = HashMultimap.create();
     private static Logger log = Logger.getLogger(CardinalityRecord.class);
+
+    private static final Object LOCK = new Object();
 
     public enum DateType {
         DOCUMENT, CURRENT
@@ -236,7 +238,7 @@ public class CardinalityRecord implements Serializable {
         if (!cardinalityRecord.getCardinalityMap().isEmpty()) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
-                synchronized (file) {
+                synchronized (LOCK) {
                     ObjectOutputStream oos = null;
                     try {
                         FileOutputStream fos = new FileOutputStream(file);
@@ -246,7 +248,7 @@ public class CardinalityRecord implements Serializable {
                         log.error(e.getMessage(), e);
                     } finally {
                         IOUtils.closeQuietly(oos);
-                        file.notify();
+                        file.notifyAll();
                     }
                 }
             });
@@ -272,6 +274,10 @@ public class CardinalityRecord implements Serializable {
     public void merge(File file) {
 
         CardinalityRecord cardinalityRecord = CardinalityRecord.readFromDisk(file);
+
+        if (cardinalityRecord == null) {
+            throw new IllegalArgumentException("ResultsCardinalityRecords have different resultCardinalityValueFields");
+        }
 
         int intersectionSize = Sets.intersection(this.resultCardinalityValueFields, cardinalityRecord.resultCardinalityValueFields).size();
         if (intersectionSize != this.resultCardinalityValueFields.size() || intersectionSize != cardinalityRecord.resultCardinalityValueFields.size()) {

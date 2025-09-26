@@ -252,6 +252,7 @@ public class QueryMetricsBean {
      * @deprecated use /summary/all instead
      */
     @GET
+    @Deprecated
     @Path("/summary")
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
@@ -279,6 +280,7 @@ public class QueryMetricsBean {
      * @deprecated use /summary/all instead
      */
     @GET
+    @Deprecated
     @Path("/summaryCounts")
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
@@ -335,6 +337,7 @@ public class QueryMetricsBean {
      * @deprecated use /summary/user instead
      */
     @GET
+    @Deprecated
     @Path("/summaryCounts/user")
     @Interceptors(ResponseInterceptor.class)
     public Object getQueryMetricsUserSummaryDeprecated(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,

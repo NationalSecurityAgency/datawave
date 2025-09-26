@@ -1,0 +1,165 @@
+spring:
+
+  application:
+    name: accumulo-test
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
+  security:
+    user.password: passwordNotUsed
+    datawave:
+      jwt.ttl: 3600
+      issuers-required: true
+      allowed-callers:
+        - "cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us<cn=testcorp ca, ou=security, o=testcorp, c=us>"
+
+server:
+  port: 0
+  non-secure-port: 0
+  servlet.context-path: /accumulo
+  ssl:
+    client-auth: NEED
+    trust-store: classpath:ssl/rootCA.p12
+    trust-store-type: PKCS12
+    trust-store-password: LetMeIn
+    key-store: classpath:ssl/host.p12
+    key-store-type: PKCS12
+    key-store-password: LetMeIn
+  outbound-ssl:
+    key-store: ${server.ssl.key-store}
+    key-store-password: ${server.ssl.key-store-password}
+    key-store-type: ${server.ssl.key-store-type}
+    trust-store: ${server.ssl.trust-store}
+    trust-store-password: ${server.ssl.trust-store-password}
+    trust-store-type: ${server.ssl.trust-store-type}
+
+management:
+  endpoints:
+    web:
+      base-path: "/mgmt"
+
+# Silencing error logging for intentionally triggered exceptions in the admin,
+# stats, and lookup service tests (i.e., in datawave.microservice.accumulo.*)
+
+logging:
+  level:
+    datawave.microservice.accumulo: FATAL
+    io.undertow.request: FATAL
+    org.apache.hadoop.util: ERROR
+    org.apache.curator.utils: ERROR
+
+audit-client:
+  discovery:
+    enabled: false
+
+---
+
+spring.config.activate.on-profile: 'mock'
+
+# Mock accumulo setup
+
+warehouse-cluster:
+  accumulo:
+    zookeepers: 'test'
+    instanceName: 'test'
+    username: 'test'
+    password: 'test'
+
+---
+
+spring.config.activate.on-profile: lookup-with-audit-disabled
+
+audit-client:
+  enabled: false
+
+accumulo:
+  admin:
+    enabled: false
+  stats:
+    enabled: false
+  lookup:
+    numQueryThreads: 1
+
+---
+
+spring.config.activate.on-profile: lookup-with-audit-enabled
+
+audit-client:
+  uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
+
+accumulo:
+  admin:
+    enabled: false
+  stats:
+    enabled: false
+  lookup:
+    numQueryThreads: 1
+    audit:
+      defaultAuditType: 'NONE'
+      tableConfig:
+
+        - tableRegex: 'w.*e'
+          rowRegex: 'row1'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'ACTIVE'
+
+        - tableRegex: 'warehouseTestTable'
+          rowRegex: 'r.*2'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'PASSIVE'
+
+        - tableRegex: '.*Table'
+          rowRegex: 'r.*3'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'ACTIVE'
+
+        - tableRegex: 'local[Oo]nly.*'
+          rowRegex: '.*1'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'LOCALONLY'
+
+---
+
+spring.config.activate.on-profile: all-services-disabled
+
+audit-client:
+  enabled: false
+
+accumulo:
+  admin:
+    enabled: false
+  stats:
+    enabled: false
+  lookup:
+    enabled: false
+
+---
+
+spring.config.activate.on-profile: admin-service-enabled
+
+audit-client:
+  enabled: false
+
+accumulo:
+  stats:
+    enabled: false
+  lookup:
+    enabled: false
+
+---
+
+spring.config.activate.on-profile: stats-service-enabled
+
+audit-client:
+  enabled: false
+
+accumulo:
+  admin:
+    enabled: false
+  lookup:
+    enabled: false

@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.audit.SelectorExtractor;
@@ -21,6 +22,7 @@ import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.QueryValidationResponse;
 
 /**
  * A delegating query logic that simply passes through to a delegate query logic. Intended to simplify extending classes.
@@ -89,6 +91,11 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     @Override
     public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
         return delegate.getEnrichedTransformer(settings);
+    }
+
+    @Override
+    public ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration config) {
+        return delegate.getResultPostprocessor(config);
     }
 
     @Override
@@ -366,6 +373,16 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     @Override
     public void setServerUser(ProxiedUserDetails serverUser) {
         delegate.setServerUser(serverUser);
+    }
+
+    @Override
+    public Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+        return delegate.validateQuery(client, query, auths);
+    }
+
+    @Override
+    public Transformer<Object,QueryValidationResponse> getQueryValidationResponseTransformer() {
+        return delegate.getQueryValidationResponseTransformer();
     }
 
     @Override

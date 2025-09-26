@@ -14,16 +14,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
@@ -37,20 +43,32 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.cache.ClassCache;
 import datawave.util.time.DateHelper;
 
 public class Document extends AttributeBag<Document> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -377226620954754934L;
 
     private static final Logger log = Logger.getLogger(Document.class);
 
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
 
+    private static final ClassCache classCache = new ClassCache();
+
+    //  @formatter:off
+    private static final LoadingCache<Text, Long> timestampCache = CacheBuilder.newBuilder()
+            .maximumSize(128)
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .build(new CacheLoader<>() {
+                @Override
+                public Long load(Text row) {
+                    return DateHelper.parseWithGMT(row.toString()).getTime();
+                }
+            });
+    //  @formatter:on
+
     private int _count = 0;
     long _bytes = 0;
-    private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
-    private static final long ONE_M = 1024L * 1000;
-    private static final long FIVE_HUNDRED_K = 1024L * 500;
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
 
     /**
@@ -114,6 +132,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return Collections.unmodifiableCollection(this.dict.values());
     }
 
+    /**
+     * Access the raw values similar to {@link #getAttributes()} but without a collection copy
+     *
+     * @return the raw values
+     */
+    @Override
+    protected Collection<Attribute<? extends Comparable<?>>> getRawAttributes() {
+        return this.dict.values();
+    }
+
     public Map<String,Attribute<? extends Comparable<?>>> getDictionary() {
         return Collections.unmodifiableMap(this.dict);
     }
@@ -160,8 +188,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
-            this.shardTimestamp = DateHelper.parseWithGMT(docKey.getRow().toString()).getTime();
-        } catch (DateTimeParseException e) {
+            this.shardTimestamp = timestampCache.get(docKey.getRow());
+        } catch (DateTimeParseException | ExecutionException e) {
             log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
             this.shardTimestamp = Long.MAX_VALUE;
@@ -238,7 +266,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     }
 
     public void put(String key, Attribute<?> value) {
-        put(key, value, false, false);
+        put(key, value, false);
     }
 
     /**
@@ -250,10 +278,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
      *            a value
      * @param includeGroupingContext
      *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
      */
-    public void replace(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
+    public void replace(String key, Attribute<?> value, Boolean includeGroupingContext) {
         dict.put(key, value);
     }
 
@@ -268,10 +294,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
      *            the attribute value
      * @param includeGroupingContext
      *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
      */
-    public void put(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
+    public void put(String key, Attribute<?> value, Boolean includeGroupingContext) {
 
         if (0 == value.size()) {
             if (log.isTraceEnabled()) {
@@ -383,25 +407,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext) {
         // No grouping context in the document.
-        this.put(entry.getKey(), entry.getValue(), includeGroupingContext, false);
-    }
-
-    public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext, boolean reducedResponse) {
-        // No grouping context in the document.
-        this.put(entry.getKey(), entry.getValue(), includeGroupingContext, reducedResponse);
+        this.put(entry.getKey(), entry.getValue(), includeGroupingContext);
     }
 
     public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext) {
-        putAll(iterator, includeGroupingContext, false);
-    }
-
-    public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext, boolean reducedResponse) {
         if (null == iterator) {
             return;
         }
 
         while (iterator.hasNext()) {
-            put(iterator.next(), includeGroupingContext, reducedResponse);
+            put(iterator.next(), includeGroupingContext);
         }
     }
 
@@ -546,11 +561,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
         out.writeBoolean(trackSizes);
         WritableUtils.writeVLong(out, _bytes);
@@ -782,11 +792,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
         output.writeBoolean(trackSizes);
         output.writeLong(this._bytes, true);
@@ -800,8 +805,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
             output.writeString(entry.getKey());
 
             Attribute<?> attribute = entry.getValue();
-            output.writeString(attribute.getClass().getName());
-            attribute.write(kryo, output, reducedResponse);
+            int index = DatawaveAttributeIndex.getAttributeIndex(attribute.getClass().getTypeName());
+            output.writeInt(index, true);
+
+            if (index == 0) {
+                output.writeString(attribute.getClass().getName());
+            }
+
+            attribute.write(kryo, output);
         }
 
         output.writeLong(this.shardTimestamp);
@@ -821,30 +832,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
             // Get the fieldName
             String fieldName = input.readString();
 
-            // Get the class name for the concrete Attribute
-            String attrClassName = input.readString();
-            Class<?> clz;
-
-            // Get the Class for the name of the class of the concrete Attribute
-            try {
-                clz = Class.forName(attrClassName);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-
-            Attribute<?> attr;
-            if (Attribute.class.isAssignableFrom(clz)) {
-                // Get an instance of the concrete Attribute
-                try {
-                    attr = (Attribute<?>) clz.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-
+            String clazzName;
+            int index = input.readInt(true);
+            if (index == 0) {
+                clazzName = input.readString();
             } else {
-                throw new ClassCastException("Found class that was not an instance of Attribute");
+                clazzName = DatawaveAttributeIndex.getAttributeClassName(index);
             }
-            // Reload the attribute
+
+            // create the attribute and populate from the input
+            Attribute<?> attr = createAttributeFromClassName(clazzName);
             attr.read(kryo, input);
 
             // Add the attribute back to the Map
@@ -854,6 +851,36 @@ public class Document extends AttributeBag<Document> implements Serializable {
         this.shardTimestamp = input.readLong();
 
         this.invalidateMetadata();
+    }
+
+    /**
+     * Create the attribute from the provided class name, using the class cache as appropriate
+     *
+     * @param clazzName
+     *            the class name
+     * @return the attribute
+     */
+    private Attribute<?> createAttributeFromClassName(String clazzName) {
+        Class<?> clz;
+        try {
+            // Get the Class for the name of the class of the concrete Attribute
+            clz = classCache.get(clazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        Attribute<?> attr;
+        if (Attribute.class.isAssignableFrom(clz)) {
+            // Get an instance of the concrete Attribute
+            try {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new ClassCastException("Found class that was not an instance of Attribute");
+        }
+        return attr;
     }
 
     @Override

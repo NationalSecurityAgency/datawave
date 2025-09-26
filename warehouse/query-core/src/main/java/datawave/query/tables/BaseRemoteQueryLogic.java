@@ -19,7 +19,6 @@ import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
-import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;

@@ -1,5 +1,7 @@
 package datawave.webservice.common.remote;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -214,6 +216,7 @@ public abstract class RemoteHttpService {
                 try {
                     Thread.sleep(1000L);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     break;
                 }
                 totalWait = System.currentTimeMillis() - waitStart;
@@ -372,7 +375,7 @@ public abstract class RemoteHttpService {
 
     public String getContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
-        InputStreamReader reader = new InputStreamReader(content, "UTF8");
+        InputStreamReader reader = new InputStreamReader(content, UTF_8);
         char[] buffer = new char[1024];
         int chars = reader.read(buffer);
         while (chars >= 0) {
@@ -623,6 +626,7 @@ public abstract class RemoteHttpService {
                         }
                         Thread.sleep(unavailableRetryDelay);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // Ignore -- we'll just end up retrying a little too fast
                     }
                 }

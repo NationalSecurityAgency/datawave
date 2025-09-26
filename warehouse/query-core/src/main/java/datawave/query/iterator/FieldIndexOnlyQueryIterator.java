@@ -44,7 +44,6 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.predicate.TimeFilter;
-import datawave.util.StringUtils;
 
 /**
  *
@@ -140,7 +139,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+                HashSet<String> set = Sets.newHashSet(filterCsv.split(","));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
                 if (options.containsKey(FI_NEXT_SEEK)) {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());

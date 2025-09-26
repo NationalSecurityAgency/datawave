@@ -101,6 +101,10 @@ public class ModelBean {
     @ConfigProperty(name = "dw.cdn.dataTables.uri", defaultValue = "/jquery.dataTables.min.js")
     private String dataTablesUri;
 
+    @Inject
+    @ConfigProperty(name = "cluster.name", defaultValue = "unknown")
+    private String systemName;
+
     @EJB
     private AccumuloConnectionFactory connectionFactory;
 
@@ -133,7 +137,7 @@ public class ModelBean {
             modelTableName = defaultModelTableName;
         }
 
-        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
+        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName, systemName);
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -167,8 +171,8 @@ public class ModelBean {
             }
 
         } catch (Exception e) {
+            log.error(String.format("Exception when listing models from table %s : %s", modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_NAME_LIST_ERROR, e);
-            log.error(qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -337,7 +341,7 @@ public class ModelBean {
             modelTableName = defaultModelTableName;
         }
 
-        datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri);
+        datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri, systemName);
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -366,8 +370,8 @@ public class ModelBean {
                 }
             }
         } catch (Exception e) {
+            log.error(String.format("Exception when getting model %s from table %s : %s", name, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_FETCH_ERROR, e);
-            log.error(qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -421,6 +425,7 @@ public class ModelBean {
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
+        DatawaveWebApplicationException exception = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
@@ -431,7 +436,8 @@ public class ModelBean {
                 writer.addMutation(m);
             }
         } catch (Exception e) {
-            log.error("Could not insert mapping.", e);
+            String modelName = model == null ? null : model.getName();
+            log.error(String.format("Exception when inserting model %s into table %s : %s", modelName, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.INSERT_MAPPING_ERROR, e);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
@@ -443,7 +449,7 @@ public class ModelBean {
                     QueryException qe = new QueryException(DatawaveErrorCode.WRITER_CLOSE_ERROR, e1);
                     log.error(qe);
                     response.addException(qe);
-                    throw new DatawaveWebApplicationException(qe, response);
+                    exception = new DatawaveWebApplicationException(qe, response);
                 }
             }
             if (null != client) {
@@ -453,6 +459,9 @@ public class ModelBean {
                     log.error("Error returning connection to factory", e);
                 }
             }
+        }
+        if (null != exception) {
+            throw exception;
         }
         cache.reloadTableCache(tableName);
         return response;
@@ -494,6 +503,7 @@ public class ModelBean {
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
+        DatawaveWebApplicationException exception = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
@@ -504,7 +514,8 @@ public class ModelBean {
                 writer.addMutation(m);
             }
         } catch (Exception e) {
-            log.error("Could not delete mapping.", e);
+            String modelName = model == null ? null : model.getName();
+            log.error(String.format("Exception when deleting model %s from table %s : %s", modelName, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MAPPING_DELETION_ERROR, e);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
@@ -516,7 +527,7 @@ public class ModelBean {
                     QueryException qe = new QueryException(DatawaveErrorCode.WRITER_CLOSE_ERROR, e1);
                     log.error(qe);
                     response.addException(qe);
-                    throw new DatawaveWebApplicationException(qe, response);
+                    exception = new DatawaveWebApplicationException(qe, response);
                 }
             }
             if (null != client) {
@@ -527,6 +538,10 @@ public class ModelBean {
                 }
             }
         }
+        if (null != exception) {
+            throw exception;
+        }
+
         if (reloadCache)
             cache.reloadTableCache(tableName);
         return response;

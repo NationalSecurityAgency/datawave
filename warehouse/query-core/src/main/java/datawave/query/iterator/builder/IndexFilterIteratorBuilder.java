@@ -80,6 +80,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withMaxResults(maxIvaratorResults)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withTermNumber(termNumber)
                         .withNumRetries(ivaratorNumRetries)
                         .withPersistOptions(ivaratorPersistOptions)
                         .withQueryLock(queryLock)
@@ -91,6 +92,9 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withTypeMetadata(typeMetadata)
                         .withIteratorEnv(env)
                         .withIvaratorSourcePool(ivaratorSourcePool)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver)
                         .build();
                 // @formatter:on
 

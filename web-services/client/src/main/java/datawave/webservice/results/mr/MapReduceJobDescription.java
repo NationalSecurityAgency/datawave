@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class MapReduceJobDescription implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2391223350542795223L;
 
     @XmlAttribute(name = "name", required = true)
     protected String name = null;

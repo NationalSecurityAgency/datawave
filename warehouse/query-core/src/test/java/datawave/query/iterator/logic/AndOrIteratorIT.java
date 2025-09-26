@@ -108,9 +108,6 @@ class AndOrIteratorIT {
         NestedIterator<Key> exclude = IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsEven, true);
         OrIterator union = new OrIterator(Collections.singleton(include), Collections.singleton(exclude));
 
-        OrIteratorIT.seekIterators(Collections.singleton(include));
-        OrIteratorIT.seekIterators(Collections.singleton(exclude));
-
         Set<NestedIterator<Key>> includes = new HashSet<>();
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsPrime, true));
         includes.add(union);
@@ -135,8 +132,6 @@ class AndOrIteratorIT {
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsOdd));
         OrIterator union = new OrIterator(includes);
 
-        OrIteratorIT.seekIterators(includes);
-
         NestedIterator<Key> include = IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsAll);
 
         // uids built using DeMorgan's Law
@@ -160,10 +155,6 @@ class AndOrIteratorIT {
         rightIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsAll));
         OrIterator rightUnion = new OrIterator(rightIncludes);
 
-        // init unions
-        OrIteratorIT.seekIterators(leftIncludes);
-        OrIteratorIT.seekIterators(rightIncludes);
-
         AndIterator itr = new AndIterator(Sets.newHashSet(leftUnion, rightUnion));
         driveIterator(itr, uidsAll);
     }
@@ -179,8 +170,6 @@ class AndOrIteratorIT {
         unionIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_B", uidsB));
         unionIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsC));
         OrIterator union = new OrIterator(unionIncludes);
-
-        OrIteratorIT.seekIterators(unionIncludes);
 
         Set<NestedIterator<Key>> includes = new HashSet<>();
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsA));
@@ -363,9 +352,6 @@ class AndOrIteratorIT {
         Set<NestedIterator<Key>> unionExcludes = new HashSet<>();
         unionExcludes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_C", uidsAll, true, 4));
 
-        OrIteratorIT.seekIterators(unionIncludes);
-        OrIteratorIT.seekIterators(unionExcludes);
-
         OrIterator union = new OrIterator(unionIncludes, unionExcludes);
 
         Set<NestedIterator<Key>> includes = new HashSet<>();
@@ -374,7 +360,6 @@ class AndOrIteratorIT {
 
         Map<String,Integer> indexOnlyCounts = new HashMap<>();
         indexOnlyCounts.put("FIELD_A", 1);
-        // indexOnlyCounts.put("FIELD_B", 2);
 
         AndIterator itr = new AndIterator(includes);
         assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uidsAll, indexOnlyCounts));
@@ -388,8 +373,6 @@ class AndOrIteratorIT {
         unionIncludes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_B", uidsOdd, true, 4));
         unionIncludes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_C", uidsOdd, true, 4));
         OrIterator union = new OrIterator(unionIncludes);
-
-        OrIteratorIT.seekIterators(unionIncludes);
 
         Set<NestedIterator<Key>> includes = new HashSet<>();
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsAll, true));
@@ -488,8 +471,6 @@ class AndOrIteratorIT {
         unionIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsC, true));
         OrIterator union = new OrIterator(unionIncludes);
 
-        OrIteratorIT.seekIterators(unionIncludes);
-
         Set<NestedIterator<Key>> includes = new HashSet<>();
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsA, true));
         includes.add(union);
@@ -509,9 +490,6 @@ class AndOrIteratorIT {
 
         OrIterator union = new OrIterator(unionIncludes, unionExcludes);
 
-        OrIteratorIT.seekIterators(unionIncludes);
-        OrIteratorIT.seekIterators(unionExcludes);
-
         Set<NestedIterator<Key>> includes = new HashSet<>();
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsA, true));
         includes.add(union);
@@ -528,7 +506,6 @@ class AndOrIteratorIT {
         unionIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsC, true));
 
         OrIterator union = new OrIterator(unionIncludes);
-        OrIteratorIT.seekIterators(unionIncludes);
         Set<NestedIterator<Key>> excludes = Collections.singleton(union);
 
         Set<NestedIterator<Key>> includes = new HashSet<>();
@@ -583,9 +560,6 @@ class AndOrIteratorIT {
         unionExcludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsC, true));
 
         OrIterator union = new OrIterator(unionIncludes, unionExcludes);
-
-        OrIteratorIT.seekIterators(unionIncludes);
-        OrIteratorIT.seekIterators(unionExcludes);
 
         Set<NestedIterator<Key>> includes = new HashSet<>();
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsA, true));
@@ -809,8 +783,8 @@ class AndOrIteratorIT {
             log.warn("unexpected uids were found: " + unexpectedUids);
         }
 
-        assertTrue(uids.isEmpty(), "expected uids were not found");
-        assertTrue(unexpectedUids.isEmpty(), "unexpected uids found");
+        assertTrue(uids.isEmpty(), "expected uids were not found: " + uids);
+        assertTrue(unexpectedUids.isEmpty(), "unexpected uids found: " + unexpectedUids);
     }
 
     private void assertDocumentUids(Document d, String uid) {

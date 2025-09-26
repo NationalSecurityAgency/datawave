@@ -12,7 +12,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.io.Text;
 
-import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.function.LogTiming;
 import datawave.query.iterator.Util;
@@ -24,19 +23,13 @@ public class FinalDocumentTrackingIterator implements Iterator<Entry<Key,Documen
     private boolean statsEntryReturned;
     private Key lastKey = null;
 
-    private static final Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
-    private static final ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
+    public static final Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
+    public static final ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
 
     private final Range seekRange;
     private final QuerySpanCollector querySpanCollector;
     private final QuerySpan querySpan;
     private final YieldCallback yield;
-
-    @Deprecated
-    public FinalDocumentTrackingIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, Range seekRange, Iterator<Entry<Key,Document>> itr,
-                    DocumentSerialization.ReturnType returnType, boolean isReducedResponse, boolean isCompressResults, YieldCallback<Key> yield) {
-        this(querySpanCollector, querySpan, seekRange, itr, yield);
-    }
 
     public FinalDocumentTrackingIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, Range seekRange, Iterator<Entry<Key,Document>> itr,
                     YieldCallback<Key> yield) {
@@ -77,7 +70,7 @@ public class FinalDocumentTrackingIterator implements Iterator<Entry<Key,Documen
 
         HashMap<Key,Document> documentMap = new HashMap<>();
 
-        QuerySpan combinedQuerySpan = querySpanCollector.getCombinedQuerySpan(this.querySpan);
+        QuerySpan combinedQuerySpan = querySpanCollector.getCombinedQuerySpan(this.querySpan, true);
         if (combinedQuerySpan != null) {
             Document document = new Document();
             LogTiming.addTimingMetadata(document, combinedQuerySpan);

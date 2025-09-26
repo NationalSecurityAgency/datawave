@@ -842,7 +842,7 @@ public class RangeStreamTest {
 
         RangeStream rangeStream = getRangeStream(helper);
         rangeStream.streamPlans(script);
-        assertEquals(IndexStream.StreamContext.UNINDEXED, rangeStream.context());
+        assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
         assertEquals(Collections.emptyIterator(), rangeStream.iterator());
     }
 

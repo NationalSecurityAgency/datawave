@@ -11,7 +11,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.Counters;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
@@ -21,7 +22,7 @@ import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
  */
 public class FlagMetrics {
 
-    private static final Logger log = Logger.getLogger(FlagMetrics.class);
+    private static final Logger log = LoggerFactory.getLogger(FlagMetrics.class);
 
     private static final CompressionCodec cc = new GzipCodec();
     private static final SequenceFile.CompressionType ct = SequenceFile.CompressionType.BLOCK;
@@ -72,14 +73,14 @@ public class FlagMetrics {
         Path src = new Path(fileName + ".working");
         if (!fs.exists(finishedMetricsFile.getParent())) {
             if (!fs.mkdirs(finishedMetricsFile.getParent())) {
-                log.warn("unable to create directory (" + finishedMetricsFile.getParent() + ") metrics write terminated");
+                log.warn("unable to create directory ( {} ) metrics write terminated", finishedMetricsFile.getParent());
                 return;
             }
         }
 
         if (!fs.exists(src.getParent())) {
             if (!fs.mkdirs(src.getParent())) {
-                log.warn("unable to create directory (" + src.getParent() + ") metrics write terminated");
+                log.warn("unable to create directory ( {} ) metrics write terminated", src.getParent());
                 return;
             }
         }
@@ -99,7 +100,7 @@ public class FlagMetrics {
                 break;
             // delete src - it will be recreated by while statement
             if (fs.delete(src, false)) {
-                log.warn("unable to delete metrics file (" + src + ")");
+                log.warn("unable to delete metrics file ( {} )", src);
             }
         }
 

@@ -18,7 +18,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ModificationEvent extends ModificationEventBase<ModificationOperationImpl> implements Serializable {
 
-    private static final long serialVersionUID = 6L;
+    private static final long serialVersionUID = -2624449421249547670L;
 
     @XmlElement(name = "user", required = true)
     private String user = null;

@@ -1,5 +1,7 @@
 package datawave.query.jexl.nodes;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.microservice.query.QueryParameters.QUERY_END;
@@ -224,7 +226,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(beginDate).getTime());
-            record.setRawData((wktData[i]).getBytes("UTF8"));
+            record.setRawData((wktData[i]).getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
 
@@ -291,6 +293,12 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             writer.close();
         }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_1", new Value());
+            bw.addMutation(m);
+        }
     }
 
     @Test
@@ -307,14 +315,17 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeIvarators = 1;
         maxRangesPerRangeIvarator = 1;
 
-        List<String> queryRanges = getQueryRanges(query);
+        if (!logic.isUseDocumentScheduler()) {
+            // this call is not compatible with the document scheduler
+            List<String> queryRanges = getQueryRanges(query);
 
-        Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
-                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
-                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
-                        queryRanges.get(0));
+            Assert.assertEquals(1, queryRanges.size());
+            String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                            queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
+            Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
+                            + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
+                            queryRanges.get(0));
+        }
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(10, events.size());
@@ -352,15 +363,18 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeThreshold = 1;
         maxRangesPerRangeIvarator = 2;
 
-        List<String> queryRanges = getQueryRanges(query);
+        if (!logic.isUseDocumentScheduler()) {
+            // this call is not compatible with the document scheduler
+            List<String> queryRanges = getQueryRanges(query);
 
-        Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
-                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals("((_Value_ = true) && ((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '1f200364bda9c63d03' && " + GEO_QUERY_FIELD
-                        + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
-                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
-                        queryRanges.get(0));
+            Assert.assertEquals(1, queryRanges.size());
+            String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                            queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
+            Assert.assertEquals("((_Value_ = true) && ((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '1f200364bda9c63d03' && " + GEO_QUERY_FIELD
+                            + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
+                            + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
+                            queryRanges.get(0));
+        }
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(10, events.size());

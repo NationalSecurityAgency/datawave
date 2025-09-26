@@ -2,7 +2,6 @@ package datawave.query.language.functions.jexl;
 
 import java.util.ArrayList;
 
-import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.language.functions.QueryFunction;
 

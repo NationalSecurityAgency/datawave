@@ -21,9 +21,19 @@ import datawave.query.testframework.IpAddressDataType.IpAddrField;
 public class IpAddressDataManager extends AbstractDataManager {
 
     private static final Logger log = Logger.getLogger(IpAddressDataManager.class);
+    private static IpAddressDataManager INSTANCE = new IpAddressDataManager();
 
-    public IpAddressDataManager() {
+    private IpAddressDataManager() {
         super(IpAddrField.EVENT_ID.name(), IpAddrField.START_DATE.name(), IpAddrField.getFieldsMetadata());
+    }
+
+    public static IpAddressDataManager getInstance() {
+        return INSTANCE;
+    }
+
+    public static synchronized IpAddressDataManager newInstance() {
+        INSTANCE = new IpAddressDataManager();
+        return INSTANCE;
     }
 
     @Override

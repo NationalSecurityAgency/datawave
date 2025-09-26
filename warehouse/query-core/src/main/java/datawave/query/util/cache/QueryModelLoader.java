@@ -14,12 +14,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Maps;
-
 import datawave.query.model.FieldMapping;
 import datawave.query.model.ModelKeyParser;
 import datawave.query.model.QueryModel;
-import datawave.util.StringUtils;
 
 /**
  *

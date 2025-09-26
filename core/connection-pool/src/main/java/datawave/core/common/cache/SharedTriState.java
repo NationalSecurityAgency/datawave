@@ -13,7 +13,8 @@ import org.apache.curator.framework.recipes.shared.SharedValue;
 import org.apache.curator.framework.recipes.shared.SharedValueListener;
 import org.apache.curator.framework.recipes.shared.SharedValueReader;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -24,7 +25,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  */
 public class SharedTriState implements Closeable, SharedTriStateReader, Listenable<SharedTriStateListener> {
 
-    private static Logger log = Logger.getLogger(SharedTriState.class);
+    private static Logger log = LoggerFactory.getLogger(SharedTriState.class);
 
     public enum STATE {
         NEEDS_UPDATE(0), UPDATING(1), UPDATED(2);
@@ -59,19 +60,19 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
 
     public STATE getState() {
         if (log.isDebugEnabled()) {
-            log.debug("in getState, sharedValue has " + Arrays.toString(sharedValue.getValue()));
+            log.debug("in getState, sharedValue has {}", Arrays.toString(sharedValue.getValue()));
         }
         return fromBytes(this.sharedValue.getValue());
     }
 
     public void setState(STATE newState) throws Exception {
         this.sharedValue.setValue(toBytes(newState));
-        log.debug("setState(" + newState + ")");
+        log.debug("setState( {} )", newState);
     }
 
     public boolean trySetState(STATE newState) throws Exception {
         if (log.isDebugEnabled()) {
-            log.debug("trySetState(" + newState + ")");
+            log.debug("trySetState( {} )", newState);
         }
         return this.sharedValue.trySetValue(toBytes(newState));
     }
@@ -84,7 +85,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
         SharedValueListener valueListener = new SharedValueListener() {
             public void valueHasChanged(SharedValueReader sharedValue, byte[] newValue) throws Exception {
                 if (log.isDebugEnabled()) {
-                    log.debug("valueHasChanged in " + Arrays.toString(sharedValue.getValue()) + " to " + Arrays.toString(newValue));
+                    log.debug("valueHasChanged in {} to {}", Arrays.toString(sharedValue.getValue()), Arrays.toString(newValue));
                 }
 
                 listener.stateHasChanged(SharedTriState.this, SharedTriState.fromBytes(newValue));
@@ -116,7 +117,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
 
     private static STATE fromBytes(byte[] bytes) {
         if (log.isDebugEnabled()) {
-            log.debug("fromBytes(" + Arrays.toString(bytes) + ") and STATE:" + STATE.forValue((int) bytes[0]));
+            log.debug("fromBytes( {} ) and STATE: {}", Arrays.toString(bytes), STATE.forValue((int) bytes[0]));
         }
         return STATE.forValue((int) bytes[0]);
     }

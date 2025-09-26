@@ -15,7 +15,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extracted from datawave.edge.util.EdgeKey
@@ -24,7 +25,7 @@ import org.apache.log4j.Logger;
  * collection.
  */
 public class EdgeKeyDecoder {
-    private static final Logger log = Logger.getLogger(EdgeKeyDecoder.class);
+    private static final Logger log = LoggerFactory.getLogger(EdgeKeyDecoder.class);
     private static final int DATE_LEN = 8;
 
     private final Text textCf;
@@ -55,7 +56,7 @@ public class EdgeKeyDecoder {
 
         int nullPos = row.indexOf('\0');
 
-        if (nullPos < 0 && log.isTraceEnabled()) {
+        if (nullPos < 0) {
             log.trace("No null character found");
         }
 
@@ -71,7 +72,7 @@ public class EdgeKeyDecoder {
         String sink = (statsEdge || nullPos <= 0) ? null : row.substring(nullPos + 1);
 
         if (log.isTraceEnabled()) {
-            log.trace("Source is " + source + " sink is " + sink);
+            log.trace("Source is {} sink is {}", source, sink);
         }
         switch (builder.getFormat()) {
             case STANDARD:

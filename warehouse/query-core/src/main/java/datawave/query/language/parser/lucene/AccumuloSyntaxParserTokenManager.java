@@ -12,7 +12,7 @@ package datawave.query.language.parser.lucene;
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
-public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserConstants {
+public class AccumuloSyntaxParserTokenManager {
     public java.io.PrintStream debugStream = System.out;
 
     public void setDebugStream(java.io.PrintStream ds) {

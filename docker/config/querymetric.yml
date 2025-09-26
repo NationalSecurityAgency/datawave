@@ -41,6 +41,7 @@ datawave:
     description: "REST API provided by the Query Metric Service"
   query:
     metric:
+      system-name: "docker quick-start"
       handler:
         zookeepers: ${warehouse-cluster.accumulo.zookeepers}
         instanceName: ${warehouse-cluster.accumulo.instanceName}

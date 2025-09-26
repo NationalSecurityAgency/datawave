@@ -55,7 +55,7 @@ public class LoadDateFilter extends DateTypeFilter {
      * @throws IOException
      *             for issues with read/write
      */
-    private void initOptions(Map<String,String> options) throws IOException {
+    private void initializeOptions(Map<String,String> options) throws IOException {
 
         String e = options.get(ColumnRangeIterator.RANGE_NAME);
         if (e == null) {
@@ -67,7 +67,7 @@ public class LoadDateFilter extends DateTypeFilter {
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws java.io.IOException {
         super.init(source, options, env);
-        initOptions(options);
+        initializeOptions(options);
     }
 
     /**

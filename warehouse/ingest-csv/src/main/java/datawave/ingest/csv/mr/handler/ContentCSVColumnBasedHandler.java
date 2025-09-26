@@ -1,9 +1,5 @@
 package datawave.ingest.csv.mr.handler;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;

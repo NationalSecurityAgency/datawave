@@ -30,7 +30,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultFieldCardinality extends FieldCardinalityBase implements Serializable, Message<DefaultFieldCardinality> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 6744306517869679531L;
 
     @XmlAttribute(name = "field")
     private String field;

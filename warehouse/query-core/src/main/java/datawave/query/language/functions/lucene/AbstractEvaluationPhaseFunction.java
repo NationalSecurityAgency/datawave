@@ -4,8 +4,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 import datawave.query.Constants;

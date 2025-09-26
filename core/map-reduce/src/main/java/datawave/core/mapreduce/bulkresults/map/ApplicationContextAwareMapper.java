@@ -3,7 +3,8 @@ package datawave.core.mapreduce.bulkresults.map;
 import java.io.IOException;
 
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -12,7 +13,7 @@ import org.springframework.core.io.support.ResourcePropertySource;
 
 public class ApplicationContextAwareMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends Mapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
 
-    private static Logger log = Logger.getLogger(ApplicationContextAwareMapper.class);
+    private static Logger log = LoggerFactory.getLogger(ApplicationContextAwareMapper.class);
 
     public static final String SPRING_CONFIG_LOCATIONS = "spring.config.locations";
     public static final String SPRING_CONFIG_BASE_PACKAGES = "spring.config.base-packages";

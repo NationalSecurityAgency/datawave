@@ -16,7 +16,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -102,7 +103,7 @@ import datawave.marking.MarkingFunctions;
  */
 public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
                 implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
-    private static final Logger log = Logger.getLogger(ErrorShardedDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ErrorShardedDataTypeHandler.class);
 
     public static final String ERROR_PROP_PREFIX = "error.";
 
@@ -226,7 +227,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         // make a copy of the event to avoid side effects
         record = record.copy();
 
-        // set the event date to now to enable keeping track of when this error occurred (determines date for shard)
+        // set the event date to now enable keeping track of when this error occurred (determines date for shard)
         record.setDate(System.currentTimeMillis());
 
         // TODO: May want to check validity of record's security markings here and set defaults if necessary

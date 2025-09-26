@@ -8,7 +8,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * File System Watch
@@ -23,7 +24,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
 
     protected FileSystem fs;
 
-    private static final Logger log = Logger.getLogger(FileSystemWatcher.class);
+    private static final Logger log = LoggerFactory.getLogger(FileSystemWatcher.class);
 
     public FileSystemWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
         this.fs = fs;
@@ -67,8 +68,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
             // |= not necessary
 
             reload = (currentModTime - lastChange) > configuredDiff;
-            if (log.isDebugEnabled())
-                log.debug(currentModTime + " " + lastChange + " " + configuredDiff + " reload triggered?" + reload);
+            log.debug("{} {} {} reload triggered? {}", currentModTime, lastChange, configuredDiff, reload);
         } catch (IOException e) {
             reload = true;
         }
@@ -105,8 +105,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
         try {
 
             lastChange = fs.getFileStatus(filePath).getModificationTime();
-            if (log.isDebugEnabled())
-                log.debug("Reload called " + lastChange);
+            log.debug("Reload called {}", lastChange);
 
             FSDataInputStream in = fs.open(filePath);
             V result = loadContents(in);
@@ -114,7 +113,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
             return result;
 
         } catch (IOException e) {
-            log.error(e);
+            log.error("IOException: ", e);
         }
         return null;
     }

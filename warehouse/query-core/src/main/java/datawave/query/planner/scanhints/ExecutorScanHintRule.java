@@ -2,8 +2,6 @@ package datawave.query.planner.scanhints;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.config.ScanHintRule;
-
 /**
  * Scan hints that are used to select an executor in accumulo
  *

@@ -2,13 +2,8 @@ package datawave.query.index.lookup;
 
 import static datawave.query.index.lookup.IndexStream.StreamContext;
 import static datawave.query.index.lookup.IndexStream.StreamContext.ABSENT;
-import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED_FIELD;
-import static datawave.query.index.lookup.IndexStream.StreamContext.EXCEEDED_TERM_THRESHOLD;
-import static datawave.query.index.lookup.IndexStream.StreamContext.EXCEEDED_VALUE_THRESHOLD;
-import static datawave.query.index.lookup.IndexStream.StreamContext.IGNORED;
+import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED;
 import static datawave.query.index.lookup.IndexStream.StreamContext.PRESENT;
-import static datawave.query.index.lookup.IndexStream.StreamContext.UNINDEXED;
-import static datawave.query.index.lookup.IndexStream.StreamContext.UNKNOWN_FIELD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -40,11 +35,8 @@ public class IndexStreamComparatorTest {
     @Test
     public void testIntersectionOfScannerStreams() {
         test(s1(), s2(), s3()); // all present
-        test(s1(), s2(), ignored()); // present and ignored
-        test(s1(), s2(), unindexed()); // present and unindexed
         test(absent(), s1(), s2()); // present and absent -- shouldn't happen but record expected output
         test(s1(), s2(), delayed()); // present and delayed
-        test(s1(), s2(), unknown()); // present and unknown field
         test(s1(), s2(), exceededTerm()); // present and exceeded term threshold
         test(s1(), s2(), exceededValue()); // present and exceeded value threshold
     }
@@ -57,29 +49,20 @@ public class IndexStreamComparatorTest {
         test(s1(), union(s1(), s2()));
 
         // present and union(VARIABLE)
-        test(s1(), union(s1(), ignored()));
-        test(s1(), union(s1(), unindexed()));
         test(s1(), union(s1(), absent()));
         test(s1(), union(s1(), delayed()));
-        test(s1(), union(s1(), unknown()));
         test(s1(), union(s1(), exceededTerm()));
         test(s1(), union(s1(), exceededValue()));
 
         // present and union(DELAYED)
-        test(s1(), union(ignored(), ignored()));
-        test(s1(), union(unindexed(), unindexed()));
         test(union(absent(), absent()), s1());
         test(s1(), union(delayed(), delayed()));
-        test(s1(), union(unknown(), unknown()));
         test(s1(), union(exceededTerm(), exceededTerm()));
         test(s1(), union(exceededValue(), exceededValue()));
 
         // present and union(VARIABLE) and union(DELAYED)
-        test(s1(), union(s1(), ignored()), union(ignored(), ignored()));
-        test(s1(), union(s1(), unindexed()), union(unindexed(), unindexed()));
         test(union(absent(), absent()), s1(), union(s1(), absent()));
         test(s1(), union(s1(), delayed()), union(delayed(), delayed()));
-        test(s1(), union(s1(), unknown()), union(unknown(), unknown()));
         test(s1(), union(s1(), exceededTerm()), union(exceededTerm(), exceededTerm()));
         test(s1(), union(s1(), exceededValue()), union(exceededValue(), exceededValue()));
     }
@@ -88,11 +71,8 @@ public class IndexStreamComparatorTest {
     @Test
     public void testIntersectionOfAllUnions() {
         // union(VARIABLE) and union(DELAYED)
-        test(union(s1(), ignored()), union(ignored(), ignored()));
-        test(union(s1(), unindexed()), union(unindexed(), unindexed()));
         test(union(absent(), absent()), union(s1(), absent()));
         test(union(s1(), delayed()), union(delayed(), delayed()));
-        test(union(s1(), unknown()), union(unknown(), unknown()));
         test(union(s1(), exceededTerm()), union(exceededTerm(), exceededTerm()));
         test(union(s1(), exceededValue()), union(exceededValue(), exceededValue()));
     }
@@ -154,32 +134,20 @@ public class IndexStreamComparatorTest {
         return buildScannerStream("F3", "c", PRESENT);
     }
 
-    private ScannerStream ignored() {
-        return buildScannerStream("F3", "c", IGNORED);
-    }
-
-    private ScannerStream unindexed() {
-        return buildScannerStream("F4", "d", UNINDEXED);
-    }
-
     private ScannerStream absent() {
         return buildScannerStream("F5", "e", ABSENT);
     }
 
     private ScannerStream delayed() {
-        return buildScannerStream("F6", "f", DELAYED_FIELD);
-    }
-
-    private ScannerStream unknown() {
-        return buildScannerStream("F7", "g", UNKNOWN_FIELD);
+        return buildScannerStream("F6", "f", DELAYED);
     }
 
     private ScannerStream exceededTerm() {
-        return buildScannerStream("F8", "h", EXCEEDED_TERM_THRESHOLD);
+        return buildScannerStream("F8", "h", DELAYED);
     }
 
     private ScannerStream exceededValue() {
-        return buildScannerStream("F9", "i", EXCEEDED_VALUE_THRESHOLD);
+        return buildScannerStream("F9", "i", PRESENT);
     }
 
     private ScannerStream buildScannerStream(String field, String value, StreamContext context) {
@@ -196,20 +164,10 @@ public class IndexStreamComparatorTest {
         switch (context) {
             case PRESENT:
                 return ScannerStream.withData(elements.iterator(), node);
-            case IGNORED:
-                return ScannerStream.ignored(node);
-            case UNINDEXED:
-                return ScannerStream.unindexed(node);
             case ABSENT:
                 return ScannerStream.noData(node);
-            case DELAYED_FIELD:
-                return ScannerStream.delayedExpression(node);
-            case UNKNOWN_FIELD:
-                return ScannerStream.unknownField(node);
-            case EXCEEDED_TERM_THRESHOLD:
-                return ScannerStream.exceededTermThreshold(node);
-            case EXCEEDED_VALUE_THRESHOLD:
-                return ScannerStream.exceededValueThreshold(elements.iterator(), node);
+            case DELAYED:
+                return ScannerStream.delayed(node);
             default:
                 throw new IllegalStateException("unknown context: " + context);
         }

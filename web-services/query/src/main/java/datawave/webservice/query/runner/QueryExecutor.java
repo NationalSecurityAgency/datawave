@@ -2,11 +2,13 @@ package datawave.webservice.query.runner;
 
 import java.util.Date;
 
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
+import datawave.annotation.Required;
 import datawave.microservice.query.QueryPersistence;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
@@ -169,6 +171,29 @@ public interface QueryExecutor {
      * @HTTP 500 internal server error
      */
     <T> T lookupUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
+
+    /**
+     *
+     * @param queryParameters
+     *            query parameters
+     * @param httpHeaders
+     *            headers
+     * @param <T>
+     *            type of content
+     * @return event results, either as a paged BaseQueryResponse or StreamingOutput
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
+     *                 query-session-id header in the request in a Cookie header or as a query parameter
+     * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
+     * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
+     *
+     * @HTTP 200 success
+     * @HTTP 204 success and no results
+     * @HTTP 400 invalid or missing parameter
+     * @HTTP 500 internal server error
+     */
+    <T> T generateTagCloud(MultivaluedMap<String,String> queryParameters, @Required("httpHeaders") @Context HttpHeaders httpHeaders);
 
     /**
      * Gets the plan from the query object. If the object is no longer alive, meaning that the current session has expired, then this will fail.

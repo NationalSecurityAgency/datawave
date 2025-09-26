@@ -203,7 +203,10 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
                         log.trace("KV iterator is " + (kv == null ? "null" : "not null"));
                     }
                 } while (null == kv);
-
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                IOUtils.cleanupWithLogger(null, this);
+                throw new RuntimeException(e);
             } catch (Exception e) {
                 IOUtils.cleanupWithLogger(null, this);
                 throw new RuntimeException(e);

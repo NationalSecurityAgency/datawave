@@ -62,12 +62,7 @@ public class Cardinality extends Attribute<Cardinality> {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, content.fieldName);
         WritableUtils.writeString(out, content.lower);
         WritableUtils.writeString(out, content.upper);
@@ -151,12 +146,7 @@ public class Cardinality extends Attribute<Cardinality> {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         output.writeString(this.content.fieldName);
         output.writeString(this.content.lower);
         output.writeString(this.content.upper);

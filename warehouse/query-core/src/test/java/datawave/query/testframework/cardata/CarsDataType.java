@@ -23,7 +23,6 @@ import datawave.ingest.input.reader.EventRecordReader;
 import datawave.marking.MarkingFunctions;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
 
 /**
@@ -181,14 +180,6 @@ public class CarsDataType extends AbstractDataTypeConfig {
         }
     }
 
-    // ==================================
-    // data manager info
-    private static final RawDataManager carManager = new CarDataManager();
-
-    public static RawDataManager getManager() {
-        return carManager;
-    }
-
     /**
      * Creates a cars datatype entry with all of the key/value configuration settings.
      *
@@ -220,7 +211,7 @@ public class CarsDataType extends AbstractDataTypeConfig {
      *             for URI Syntax exceptions
      */
     public CarsDataType(final String car, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
-        super(car, ingestFile, config, carManager);
+        super(car, ingestFile, config, CarDataManager.getInstance());
 
         // NOTE: see super for default settings
         // set datatype settings

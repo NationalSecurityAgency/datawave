@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ModificationConfigurationResponse implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3952841110683519734L;
 
     @XmlAttribute(name = "name", required = true)
     private String name = null;

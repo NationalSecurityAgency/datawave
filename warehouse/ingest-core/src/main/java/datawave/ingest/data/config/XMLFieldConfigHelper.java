@@ -14,8 +14,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.log4j.Logger;
-import org.apache.xerces.jaxp.SAXParserFactoryImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -28,10 +28,10 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 /** Helper class to read XML based Field Configurations */
 public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
-    private static final Logger log = Logger.getLogger(XMLFieldConfigHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(XMLFieldConfigHelper.class);
 
     /** be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser */
-    private static final SAXParserFactory parserFactory = SAXParserFactoryImpl.newInstance();
+    private static final SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 
     private boolean noMatchStored = true;
     private boolean noMatchIndexed = false;
@@ -42,6 +42,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
     private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
+
+    private static final String UNEXPECTED_ATTRIBUTE = "Unexpected attribute encountered in: ";
 
     public static class FieldInfo {
         boolean stored;
@@ -69,7 +71,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
         try (InputStream in = getAsStream(fieldConfigFile)) {
             if (in != null) {
-                log.info("Loading field configuration from configuration file: " + fieldConfigFile);
+                log.info("Loading field configuration from configuration file: {}", fieldConfigFile);
                 return new XMLFieldConfigHelper(in, baseIngestHelper);
             } else {
                 throw new IllegalArgumentException("Field config file '" + fieldConfigFile + "' not found!");
@@ -92,7 +94,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             try {
                 return uri.toURL().openStream();
             } catch (IOException e) {
-                log.error("Could not open config location: " + fieldConfigPath, e);
+                log.error("Could not open config location: {}", fieldConfigPath, e);
                 return null;
             }
         }
@@ -110,7 +112,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         SAXParser parser = parserFactory.newSAXParser();
         parser.parse(in, handler);
 
-        log.info("Loaded FieldConfigHelper: " + this);
+        log.info("Loaded FieldConfigHelper: {}", this);
     }
 
     public boolean addKnownField(String fieldName, FieldInfo info) {
@@ -339,7 +341,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                     this.defaultFieldType = lv;
                     seenAttr.remove(INDEX_TYPE);
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'default' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'default' tag: '" + qn + "'");
                 }
             }
 
@@ -381,7 +383,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                     }
                     seenAttr.remove(INDEX_TYPE);
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'nomatch' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'nomatch' tag: '" + qn + "'");
                 }
             }
 
@@ -426,7 +428,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 
@@ -440,7 +442,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 if (this.ingestHelper != null) {
                     this.ingestHelper.updateDatawaveTypes(name, fieldType);
                 } else if (fieldType.equals(this.defaultFieldType)) {
-                    log.warn("No BaseIngestHelper set, ignoring type information for " + name + " in configuration file");
+                    log.warn("No BaseIngestHelper set, ignoring type information for {} in configuration file", name);
                 }
             }
         }
@@ -481,7 +483,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 
@@ -496,7 +498,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 if (this.ingestHelper != null) {
                     this.ingestHelper.updateDatawaveTypes(pattern, fieldType);
                 } else if (!fieldType.equals(this.defaultFieldType)) {
-                    log.warn("No BaseIngestHelper set, ignoring type information for " + pattern + " in configuration file");
+                    log.warn("No BaseIngestHelper set, ignoring type information for {} in configuration file", pattern);
                 }
             }
         }

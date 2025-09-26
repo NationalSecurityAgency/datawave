@@ -37,6 +37,7 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
         public void initialize(Query settings, MarkingFunctions markingFunctions) {
             this.settings = settings;
             this.markingFunctions = markingFunctions;
+            this.queryExecutionForPageStartTime = System.currentTimeMillis();
         }
 
         @Override

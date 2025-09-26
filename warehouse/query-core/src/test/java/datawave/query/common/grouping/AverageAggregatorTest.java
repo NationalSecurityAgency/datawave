@@ -12,7 +12,6 @@ import org.junit.Test;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Content;
-import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TypeAttribute;
 
 /**

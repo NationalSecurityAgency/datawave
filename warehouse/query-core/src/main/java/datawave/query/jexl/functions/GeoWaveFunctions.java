@@ -12,6 +12,8 @@ import datawave.data.type.GeoType;
 import datawave.data.type.util.AbstractGeometry;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Provides functions for doing spatial queries, such as bounding boxes and circles of interest, as well as spatial relationships.
@@ -68,7 +70,9 @@ public class GeoWaveFunctions {
                 }
             }
             if (!successfullyParsedAValue) {
-                throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                "Did not find any properly encoded values to match against. " + parseException);
+                throw new RuntimeException(qe);
             }
         }
         return false;
@@ -98,7 +102,9 @@ public class GeoWaveFunctions {
         }
 
         if (geometry == null) {
-            throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                            "Field Value:" + fieldValue + " cannot be recognized as a geometry");
+            throw new IllegalArgumentException(qe);
         }
 
         return geometry;
@@ -113,7 +119,9 @@ public class GeoWaveFunctions {
         }
 
         if (geom == null) {
-            throw new IllegalArgumentException("Geom string:" + geomString + " cannot be recognized as a geometry");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                            "Geom string:" + geomString + " cannot be recognized as a geometry");
+            throw new IllegalArgumentException(qe);
         }
 
         return geom;
@@ -161,7 +169,9 @@ public class GeoWaveFunctions {
                 }
             }
             if (!successfullyParsedAValue) {
-                throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, parseException,
+                                "Did not find any properly encoded values to match against");
+                throw new RuntimeException(qe);
             }
         }
         return false;
@@ -194,7 +204,9 @@ public class GeoWaveFunctions {
                 }
             }
             if (!successfullyParsedAValue) {
-                throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, parseException,
+                                "Did not find any properly encoded values to match against");
+                throw new RuntimeException(qe);
             }
         }
         return false;
@@ -227,7 +239,9 @@ public class GeoWaveFunctions {
                 }
             }
             if (!successfullyParsedAValue) {
-                throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, parseException,
+                                "Did not find any properly encoded values to match against");
+                throw new RuntimeException(qe);
             }
         }
         return false;
@@ -260,7 +274,9 @@ public class GeoWaveFunctions {
                 }
             }
             if (!successfullyParsedAValue) {
-                throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, parseException,
+                                "Did not find any properly encoded values to match against");
+                throw new RuntimeException(qe);
             }
         }
         return false;
@@ -293,7 +309,9 @@ public class GeoWaveFunctions {
                 }
             }
             if (!successfullyParsedAValue) {
-                throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, parseException,
+                                "Did not find any properly encoded values to match against");
+                throw new RuntimeException(qe);
             }
         }
         return false;

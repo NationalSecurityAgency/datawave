@@ -16,7 +16,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class EventIdentifier implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3868831591782636261L;
 
     @XmlElement(name = "shardId", required = true)
     private String shardId = null;

@@ -8,6 +8,8 @@ import java.io.Serializable;
  * characters here. As a result this implementation is more performant than alternatives built into java like 'String.getBytes()'.
  */
 public class SSDeepEncoding implements Serializable {
+    private static final long serialVersionUID = -1307680264498524837L;
+
     public byte[] encode(String ngram) {
         return encodeToBytes(ngram, new byte[ngram.length()], 0);
     }

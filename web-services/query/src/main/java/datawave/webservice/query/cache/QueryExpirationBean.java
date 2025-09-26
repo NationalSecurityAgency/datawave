@@ -41,17 +41,17 @@ public class QueryExpirationBean {
     private static final Logger log = Logger.getLogger(QueryExpirationBean.class);
 
     @Inject
-    private QueryCache cache;
+    QueryCache cache;
 
     @Inject
     @SpringBean(refreshable = true)
-    private QueryExpirationProperties conf;
+    QueryExpirationProperties conf;
 
     @Inject
-    private AccumuloConnectionFactory connectionFactory;
+    AccumuloConnectionFactory connectionFactory;
 
     @Inject
-    private CreatedQueryLogicCacheBean qlCache;
+    CreatedQueryLogicCacheBean qlCache;
 
     @Inject
     private QueryMetricsBean metrics;

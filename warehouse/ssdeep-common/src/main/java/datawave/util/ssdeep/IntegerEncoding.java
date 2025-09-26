@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
  */
 public class IntegerEncoding implements Serializable {
 
+    private static final long serialVersionUID = -1535142886955396037L;
+
     // The number of distinct characters used for encoding
     final int base;
     // the target length of the encoding

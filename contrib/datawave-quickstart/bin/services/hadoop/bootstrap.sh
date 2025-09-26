@@ -1,14 +1,13 @@
 # Sourced by env.sh
 
-DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DW_HADOOP_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
-DW_HADOOP_VERSION="3.3.6"
-# You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-# DW_HADOOP_DIST_URI should, if possible, be using https. There are potential security risks by using http.
+# Get these vars from the pom so users not building the container image can stay up to date
+DW_HADOOP_VERSION="${DW_HADOOP_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.hadoop | tail -1)}"
+DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.hadoop | tail -1)}"
+
 DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://dlcdn.apache.org/hadoop/common/hadoop-${DW_HADOOP_VERSION}/hadoop-${DW_HADOOP_VERSION}.tar.gz}"
-# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-de3eaca2e0517e4b569a88b63c89fae19cb8ac6c01ff990f1ff8f0cc0f3128c8e8a23db01577ca562a0e0bb1b4a3889f8c74384e609cd55e537aada3dcaa9f8a}"
-DW_HADOOP_DIST="$( { downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "hadoop" "${DW_HADOOP_VERSION}" "${DW_HADOOP_SERVICE_DIR}"; } && echo "${tarball}" )"
+DW_HADOOP_DIST="$( basename "${DW_HADOOP_DIST_URI}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 
@@ -112,13 +111,25 @@ DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.
 DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
 DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
+function bootstrapHadoop() {
+    if [ ! -f "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_DIST}" ]; then
+        info "Hadoop distribution not detected. Attempting to bootstrap a dedicated install..."
+        downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "hadoop" "${DW_HADOOP_VERSION}" "${DW_HADOOP_SERVICE_DIR}" || \
+          ( fatal "failed to obtain Hadoop distribution" && return 1 )
+        DW_HADOOP_DIST="${tarball}"
+    else
+      info "Hadoop distribution detected. Using local file ${DW_HADOOP_DIST}"
+    fi
+}
+
 function hadoopIsRunning() {
     DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_HADOOP_PID_LIST}" ] && return 1 || return 0
 }
 
 function hadoopStart() {
-    hadoopIsRunning && echo "Hadoop is already running" || eval "${DW_HADOOP_CMD_START}"
+    hadoopIsRunning && echo "Hadoop is already running" || eval "${DW_HADOOP_CMD_START}" || return 1
     echo
     info "For detailed status visit 'http://localhost:9870/dfshealth.html#tab-overview' in your browser"
     # Wait for Hadoop to come out of safemode
@@ -207,6 +218,15 @@ function hadoopUninstall() {
 
 function hadoopInstall() {
   "${DW_HADOOP_SERVICE_DIR}"/install.sh
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "hadoop install.sh executed successfully."
+          return 0
+      else
+          echo "hadoop install.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function hadoopPrintenv() {

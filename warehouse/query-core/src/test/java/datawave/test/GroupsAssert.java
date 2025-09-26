@@ -1,10 +1,8 @@
 package datawave.test;
 
 import java.util.Arrays;
-import java.util.Set;
 
 import org.assertj.core.api.AbstractAssert;
-import org.assertj.core.util.Sets;
 
 import datawave.query.common.grouping.Grouping;
 import datawave.query.common.grouping.GroupingAttribute;

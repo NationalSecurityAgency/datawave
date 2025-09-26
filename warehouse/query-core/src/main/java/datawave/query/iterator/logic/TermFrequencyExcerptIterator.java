@@ -868,7 +868,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      *            the column families
      * @return a sorted set of column families as Strings
      */
-    private static SortedSet<String> getSortedCFs(Collection<ByteSequence> columnFamilies) {
+    protected static SortedSet<String> getSortedCFs(Collection<ByteSequence> columnFamilies) {
         return columnFamilies.stream().map(m -> {
             try {
                 return Text.decode(m.getBackingArray(), m.offset(), m.length());
@@ -916,7 +916,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      *            inclusive boolean flag
      * @return the start or end document (cq) for our tf scan range. Null if dt,uid does not exist in the event key
      */
-    private static String getDtUidFromEventKey(Key eventKey, boolean startKey, boolean inclusive) {
+    protected static String getDtUidFromEventKey(Key eventKey, boolean startKey, boolean inclusive) {
         // if an infinite end range, or unspecified end document, then no document to specify
         if (eventKey == null || eventKey.getColumnFamily() == null || eventKey.getColumnFamily().getLength() == 0) {
             return null;
@@ -941,7 +941,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     }
 
     // get the dt/uid from the beginning of a given string
-    private static String getDtUid(String str) {
+    protected static String getDtUid(String str) {
         int index = str.indexOf(Constants.NULL);
         index = str.indexOf(Constants.NULL, index + 1);
         return index == -1 ? str : str.substring(0, index);

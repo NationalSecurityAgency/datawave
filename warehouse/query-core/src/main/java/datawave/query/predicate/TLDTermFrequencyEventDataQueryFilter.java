@@ -1,7 +1,5 @@
 package datawave.query.predicate;
 
-import static java.util.AbstractMap.SimpleEntry;
-
 import java.util.Map;
 import java.util.Set;
 
@@ -20,6 +18,7 @@ public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilte
 
     private final Set<String> indexOnlyFields;
     private final Set<String> fields;
+    private final RootPointerPredicate isRootPointer = new RootPointerPredicate();
 
     public TLDTermFrequencyEventDataQueryFilter(Set<String> indexOnlyFields, Set<String> fields) {
         this.indexOnlyFields = indexOnlyFields;
@@ -28,7 +27,7 @@ public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilte
 
     @Override
     public void startNewDocument(Key documentKey) {
-        // no-op
+        isRootPointer.startNewDocument(documentKey);
     }
 
     @Override
@@ -53,7 +52,7 @@ public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilte
     @Override
     public boolean keep(Key k) {
         DatawaveKey key = new DatawaveKey(k);
-        return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName())) && fieldMatches(k);
+        return (!isRootPointer.test(k) || indexOnlyFields.contains(key.getFieldName())) && fieldMatches(k);
     }
 
     private boolean fieldMatches(Key key) {

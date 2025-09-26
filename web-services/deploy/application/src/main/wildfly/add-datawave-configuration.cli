@@ -9,7 +9,7 @@ batch
 embed-server --server-config=standalone-full.xml
 
 # Add the MySQL Connector as a module
-module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-java-${version.mysql-connector}.jar
+module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
 # Remove the Elytron security subsystem entirely. Our JAAS security setup doesn't work
 # with it due to some bugs (the RunAsLoginModule doesn't work -- WFLY-11892) so we'll

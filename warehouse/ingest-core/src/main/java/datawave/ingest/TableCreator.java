@@ -1,7 +1,8 @@
 package datawave.ingest;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 
@@ -9,7 +10,7 @@ public class TableCreator {
 
     private static final Configuration config = new Configuration();
 
-    private static final Logger log = Logger.getLogger(TableCreator.class);
+    private static final Logger log = LoggerFactory.getLogger(TableCreator.class);
 
     public static void main(String[] args) {
         Configuration conf = OptionsParser.parseArguments(args, config);

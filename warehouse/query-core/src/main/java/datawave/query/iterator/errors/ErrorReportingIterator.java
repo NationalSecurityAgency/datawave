@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -13,7 +12,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
-import datawave.query.Constants;
 import datawave.query.iterator.QueryInformationIterator;
 
 /**

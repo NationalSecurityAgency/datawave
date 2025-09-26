@@ -26,6 +26,11 @@ public class TLDQueryLogic extends ShardQueryLogic {
     }
 
     @Override
+    public boolean isUseDocumentScheduler() {
+        return false;
+    }
+
+    @Override
     public void setQueryPlanner(QueryPlanner planner) {
         super.setQueryPlanner(planner);
         setIter();

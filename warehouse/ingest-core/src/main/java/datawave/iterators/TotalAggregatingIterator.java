@@ -1,13 +1,24 @@
 package datawave.iterators;
 
+import org.apache.accumulo.core.data.Key;
+
+import datawave.ingest.table.aggregator.TruncatingTimestampIterator;
+
 /**
- * This iterator is a copy of org.apache.accumulo.core.iterators.AggregatingIterator. The difference is that this iterator does not need configuration. It will
- * aggregate all values with the same key (row, colf, colq, colVis.).
+ *
+ * This is a propogating iterator that will truncate the key timestamps down to the begininning of the day. Currently this iterator is only used on index
+ * tables.
  *
  */
 
 public class TotalAggregatingIterator extends PropogatingIterator {
     /**
-     * All functionality is kept within propogating iterator. this class is kept so we do not break any other implementations
+     * The only difference with this iterator is that the timestamps are truncated
      */
+
+    @Override
+    public Key getTopKey() {
+        return TruncatingTimestampIterator.getTruncatedTimestampKey(super.getTopKey());
+    }
+
 }

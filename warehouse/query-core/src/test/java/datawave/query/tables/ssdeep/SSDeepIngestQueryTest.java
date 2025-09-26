@@ -140,6 +140,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     @SuppressWarnings("rawtypes")
     @Test
     public void testSSDeepSimilarity() throws Exception {
+        similarityQueryLogic.getConfig().setDedupeSimilarityHashes(false);
         log.info("------ testSSDeepSimilarity ------");
         @SuppressWarnings("SpellCheckingInspection")
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
@@ -148,8 +149,20 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         EventQueryResponseBase response = runSSDeepQuery(query, similarityQueryLogic, 0);
 
         List<EventBase> events = response.getEvents();
-        Assert.assertEquals(1, events.size());
+        Assert.assertEquals(40, events.size());
+
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
+
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "40", expectedOverlaps, "100", observedEvents);
+
+        // now repeat with dedupe true
+        similarityQueryLogic.getConfig().setDedupeSimilarityHashes(true);
+        response = runSSDeepQuery(query, similarityQueryLogic, 0);
+
+        events = response.getEvents();
+        Assert.assertEquals(1, events.size());
+
+        observedEvents = extractObservedEvents(events);
 
         SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "40", expectedOverlaps, "100", observedEvents);
     }
@@ -182,16 +195,19 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testChainedSSDeepDiscovery() throws Exception {
+        ((FullSSDeepDiscoveryChainStrategy) this.similarityDiscoveryQueryLogic.getChainStrategy()).setBatchSize(1);
+
         log.info("------ testChainedSSDeepDiscovery ------");
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
+        String testSSDeep2 = "192:1s---FXYvPToUCpabe0qHEbM0NkaA80W---ixZzS7:1r4X6oU6ZHEbp1biW7";
         String targetSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
-        String query = "CHECKSUM_SSDEEP:" + testSSDeep;
+        String query = "CHECKSUM_SSDEEP:" + testSSDeep + " OR CHECKSUM_SSDEEP:" + testSSDeep2;
         String expectedOverlaps = "384:+u5QT4Z, 384:/fP9FmW, 384:2aTgSO+, 384:4ZE1PIV, 384:5QT4ZE1, 384:9FmWVMd, 384:Fj2aTgS, 384:FmWVMdR, 384:MdRFj2a, 384:O+u5QT4, 384:P9FmWVM, 384:QT4ZE1P, 384:RFj2aTg, 384:SO+u5QT, 384:T4ZE1PI, 384:TgSO+u5, 384:VMdRFj2, 384:WVMdRFj, 384:ZE1PIVS, 384:aTgSO+u, 384:dRFj2aT, 384:fP9FmWV, 384:gSO+u5Q, 384:j2aTgSO, 384:mWVMdRF, 384:nv/fP9F, 384:u5QT4ZE, 384:v/fP9Fm, 768:DmWOdRF, 768:FNTTs50, 768:NTTs504, 768:OdRFNTT, 768:RFNTTs5, 768:WOdRFNT, 768:dRFNTTs, 768:mWOdRFN, 768:nDmWOdR";
 
         EventQueryResponseBase response = runSSDeepQuery(query, similarityDiscoveryQueryLogic, 0);
 
         List<EventBase> events = response.getEvents();
-        Assert.assertEquals(1, events.size());
+        Assert.assertEquals(2, events.size());
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
 
         Map.Entry<String,Map<String,String>> result = observedEvents.entrySet().iterator().next();

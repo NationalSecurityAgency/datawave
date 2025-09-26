@@ -1,11 +1,16 @@
 package datawave.query.iterators;
 
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class FirstAndLastSeenDate extends Pair<String,String> {
-    public FirstAndLastSeenDate(String f, String s) {
-        super(f, s);
+
+    private final String first;
+    private final String last;
+
+    public FirstAndLastSeenDate(String first, String last) {
+        this.first = first;
+        this.last = last;
     }
 
     public FirstAndLastSeenDate(Value value) {
@@ -13,11 +18,26 @@ public class FirstAndLastSeenDate extends Pair<String,String> {
     }
 
     private FirstAndLastSeenDate(String[] split) {
-        super(split[0], split[1]);
+        this(split[0], split[1]);
+    }
+
+    @Override
+    public String getLeft() {
+        return first;
+    }
+
+    @Override
+    public String getRight() {
+        return last;
     }
 
     @Override
     public String toString() {
-        return getFirst() + "," + getSecond();
+        return getLeft() + "," + getRight();
+    }
+
+    @Override
+    public String setValue(String field) {
+        throw new UnsupportedOperationException();
     }
 }

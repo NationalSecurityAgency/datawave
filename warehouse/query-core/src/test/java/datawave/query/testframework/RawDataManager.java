@@ -88,7 +88,7 @@ public interface RawDataManager {
      *            name of header field
      * @return normalizer for valid field name
      */
-    Normalizer getNormalizer(String field);
+    Normalizer<?> getNormalizer(String field);
 
     /**
      * Converts part of a query using ANY_FIELD into an equivalent string that includes all of the indexed fields. This is performed before the JEXL expression

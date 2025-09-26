@@ -3,7 +3,8 @@ package datawave.mr.bulk.split;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
@@ -15,7 +16,7 @@ public abstract class LocationStrategy implements Funnel<RangeSplit> {
      */
     private static final long serialVersionUID = 5311164371626270099L;
 
-    private static final Logger log = Logger.getLogger(LocationStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(LocationStrategy.class);
 
     protected LocationStrategy() {
 
@@ -27,7 +28,7 @@ public abstract class LocationStrategy implements Funnel<RangeSplit> {
                 sink.putString(location.trim().toLowerCase(), StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
-            log.error(e);
+            log.error("IOException: ", e);
         }
     }
 
