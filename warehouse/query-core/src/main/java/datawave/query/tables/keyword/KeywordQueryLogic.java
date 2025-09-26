@@ -3,6 +3,7 @@ package datawave.query.tables.keyword;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -42,6 +43,7 @@ import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.TagCloudTransformer;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudUtils;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -67,6 +69,7 @@ import datawave.webservice.query.exception.QueryException;
  * The optional parameter content.view.names can be used provide a prioritized list of views to use to find content. This list of preferred views can also be
  * configured as a part of the logic configuration.
  */
+@SuppressWarnings("unused")
 public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
 
     /**
@@ -96,8 +99,8 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
      */
     public static final String LANGUAGE_TOKEN = "%LANGUAGE:";
 
-    private static final String PARENT_ONLY = "\1";
-    private static final String ALL = "\u10FFFF";
+    public static final String PARENT_ONLY = "\1";
+    public static final String ALL = "\u10FFFF";
 
     private int queryThreads = 100;
 
@@ -182,6 +185,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         } else {
             end = PARENT_ONLY;
         }
+
+        // copy utils instance into the state.
+        state.setTagCloudUtils(config.getTagCloudUtils());
 
         // tag cloud creation should default to true if the parameter is empty (e.g., is not set)
         String tagCloudCreateString = settings.findParameter(TAG_CLOUD_CREATE).getParameterValue().trim();
@@ -310,7 +316,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         final String valueIdentifier = fieldSeparation > 0 ? term.substring(fieldSeparation + 1) : term;
 
         // Remove the identifier if present - they are used later in the KeywordQueryTransformer
-        final int idSeparation = valueIdentifier.indexOf("!");
+        final int idSeparation = valueIdentifier.indexOf('!');
         final String value = idSeparation > 0 ? valueIdentifier.substring(0, idSeparation) : valueIdentifier;
 
         // Validate number of expected parts
@@ -441,6 +447,14 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         getConfig().setPreferredViews(preferredViews);
     }
 
+    public TagCloudUtils getTagCloudUtils() {
+        return getConfig().getTagCloudUtils();
+    }
+
+    public void setTagCloudUtils(TagCloudUtils tagCloudUtils) {
+        getConfig().setTagCloudUtils(tagCloudUtils);
+    }
+
     @Override
     public boolean isCheckpointable() {
         return getConfig().isCheckpointable();
@@ -459,7 +473,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
         // if we have started returning results, then capture the state of the query data objects
         if (this.iterator != null) {
-            List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
+            List<QueryCheckpoint> checkpoints = new LinkedList<>();
             for (Range range : getConfig().getState().getRanges()) {
                 checkpoints.add(new KeywordQueryCheckpoint(queryKey, Collections.singletonList(range)));
             }
@@ -518,7 +532,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             final String language = languageSeparation > 0 ? valueIdentifierLanguage.substring(languageSeparation + LANGUAGE_TOKEN.length()) : null;
 
             // trim off the identifier if there is one and preserve it.
-            final int identifierSeparation = valueIdentifier.indexOf("!");
+            final int identifierSeparation = valueIdentifier.indexOf('!');
             final String value = identifierSeparation > 0 ? valueIdentifier.substring(0, identifierSeparation) : valueIdentifier;
             final String identifier = identifierSeparation > 0 ? valueIdentifier.substring(identifierSeparation + 1) : null;
 

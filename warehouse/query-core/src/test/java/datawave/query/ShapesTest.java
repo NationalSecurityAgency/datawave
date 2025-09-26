@@ -1482,6 +1482,10 @@ public abstract class ShapesTest {
 
     @Test
     public void testNoHitTerms() {
+        if (logic.isUseDocumentScheduler()) {
+            // the document scheduler always uses hit terms by default
+            return;
+        }
         try {
             // disabling evaluation also disables hit term generation
             logic.setDisableEvaluation(true);

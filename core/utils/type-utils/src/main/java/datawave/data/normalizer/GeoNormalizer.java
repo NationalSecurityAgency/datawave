@@ -112,7 +112,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
      */
     @Override
     public String normalizeRegex(String fieldRegex) throws IllegalArgumentException {
-        throw new IllegalArgumentException("Cannot normalize a regex against a numeric field");
+        throw new IllegalArgumentException("Cannot normalize a regex against a geometry field");
     }
 
     @Override

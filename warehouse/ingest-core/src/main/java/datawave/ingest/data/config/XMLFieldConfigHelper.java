@@ -14,7 +14,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -27,7 +28,7 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 /** Helper class to read XML based Field Configurations */
 public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
-    private static final Logger log = Logger.getLogger(XMLFieldConfigHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(XMLFieldConfigHelper.class);
 
     /** be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser */
     private static final SAXParserFactory parserFactory = SAXParserFactory.newInstance();
@@ -70,7 +71,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
         try (InputStream in = getAsStream(fieldConfigFile)) {
             if (in != null) {
-                log.info("Loading field configuration from configuration file: " + fieldConfigFile);
+                log.info("Loading field configuration from configuration file: {}", fieldConfigFile);
                 return new XMLFieldConfigHelper(in, baseIngestHelper);
             } else {
                 throw new IllegalArgumentException("Field config file '" + fieldConfigFile + "' not found!");
@@ -93,7 +94,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             try {
                 return uri.toURL().openStream();
             } catch (IOException e) {
-                log.error("Could not open config location: " + fieldConfigPath, e);
+                log.error("Could not open config location: {}", fieldConfigPath, e);
                 return null;
             }
         }
@@ -111,7 +112,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         SAXParser parser = parserFactory.newSAXParser();
         parser.parse(in, handler);
 
-        log.info("Loaded FieldConfigHelper: " + this);
+        log.info("Loaded FieldConfigHelper: {}", this);
     }
 
     public boolean addKnownField(String fieldName, FieldInfo info) {
@@ -441,7 +442,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 if (this.ingestHelper != null) {
                     this.ingestHelper.updateDatawaveTypes(name, fieldType);
                 } else if (fieldType.equals(this.defaultFieldType)) {
-                    log.warn("No BaseIngestHelper set, ignoring type information for " + name + " in configuration file");
+                    log.warn("No BaseIngestHelper set, ignoring type information for {} in configuration file", name);
                 }
             }
         }
@@ -497,7 +498,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 if (this.ingestHelper != null) {
                     this.ingestHelper.updateDatawaveTypes(pattern, fieldType);
                 } else if (!fieldType.equals(this.defaultFieldType)) {
-                    log.warn("No BaseIngestHelper set, ignoring type information for " + pattern + " in configuration file");
+                    log.warn("No BaseIngestHelper set, ignoring type information for {} in configuration file", pattern);
                 }
             }
         }

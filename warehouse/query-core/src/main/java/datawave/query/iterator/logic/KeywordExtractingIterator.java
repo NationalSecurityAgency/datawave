@@ -1,13 +1,15 @@
 package datawave.query.iterator.logic;
 
+import static datawave.util.keyword.KeywordExtractor.EMPTY_RESULTS;
+
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -27,7 +29,6 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -35,6 +36,7 @@ import datawave.query.Constants;
 import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.util.keyword.KeywordExtractor;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.VisibleContent;
 
 /** An iterator that will execute the keyword extractor when given 'd' column ranges to scan for specific documents */
 public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
@@ -51,7 +53,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     private static final Map<String,String> defaultMapOptions;
 
     static {
-        defaultMapOptions = Maps.newHashMap();
+        defaultMapOptions = new HashMap<>();
         defaultMapOptions.put(KeywordExtractor.MIN_NGRAMS, "minimum number of words (ngrams) per keyword");
         defaultMapOptions.put(KeywordExtractor.MAX_NGRAMS, "maximum number of words (ngrams) per keyword");
         defaultMapOptions.put(KeywordExtractor.MAX_KEYWORDS, "maximum number of keywords to extract");
@@ -134,7 +136,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
 
         final String[] nameList = viewNames.split(Constants.COMMA);
         preferredViews.clear();
-        preferredViews.addAll(Arrays.asList(nameList));
+        preferredViews.addAll(List.of(nameList));
 
         // add entries passed in via iterator options to the document language map.
         if (iteratorOptions.containsKey(DOCUMENT_LANGUAGES)) {
@@ -197,7 +199,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         }
 
         // store the content that we'll use for keyword extraction.
-        final Map<String,String> foundContent = new HashMap<>();
+        final Map<String,VisibleContent> foundContent = new LinkedHashMap<>();
         Key top = source.getTopKey();
 
         // while we have d keys for the same document
@@ -205,16 +207,17 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
             top = source.getTopKey();
             Value value = source.getTopValue();
             String currentViewName = getViewName(top);
+            String visibility = getVisibility(top);
 
             for (String name : preferredViews) {
                 if (name.endsWith("*")) {
                     String truncatedName = name.substring(0, name.length() - 1);
                     if (currentViewName.startsWith(truncatedName)) {
-                        addFoundContent(foundContent, currentViewName, value.get());
+                        addFoundContent(foundContent, currentViewName, value.get(), visibility);
                     }
                 } else {
                     if (currentViewName.equals(name)) {
-                        addFoundContent(foundContent, currentViewName, value.get());
+                        addFoundContent(foundContent, currentViewName, value.get(), visibility);
                     }
                 }
             }
@@ -229,7 +232,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         KeywordExtractor keywordExtractor = new KeywordExtractor(documentUid, preferredViews, foundContent, language, iteratorOptions);
         KeywordResults results = keywordExtractor.extractKeywords();
 
-        if (results != null) {
+        if (results != EMPTY_RESULTS) {
             tk = top;
             tv = new Value(KeywordResults.serialize(results));
             return;
@@ -256,11 +259,11 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         return dtUid;
     }
 
-    private void addFoundContent(Map<String,String> foundContent, String currentViewName, byte[] encodedContent) {
+    private void addFoundContent(Map<String,VisibleContent> foundContent, String currentViewName, byte[] encodedContent, String visibility) {
         final byte[] decodedContent = ContentKeyValueFactory.decodeAndDecompressContent(encodedContent);
         final String decodedString = new String(decodedContent, StandardCharsets.UTF_8);
         final String input = decodedString.substring(0, Math.min(decodedString.length(), maxContentLength));
-        foundContent.put(currentViewName, input);
+        foundContent.put(currentViewName, new VisibleContent(visibility, input));
     }
 
     /**
@@ -286,14 +289,25 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     /**
      * Get the view name from the end of the column qualifier of the d key
      *
-     * @param dKey
+     * @param key
      *            the d key
      * @return the view name
      */
-    private static String getViewName(Key dKey) {
-        String cq = dKey.getColumnQualifier().toString();
+    protected String getViewName(Key key) {
+        String cq = key.getColumnQualifier().toString();
         int index = cq.lastIndexOf(Constants.NULL);
         return cq.substring(index + 1);
+    }
+
+    /**
+     * Get the visibility string from the key.
+     *
+     * @param key
+     *            the d key
+     * @return the view name
+     */
+    protected String getVisibility(Key key) {
+        return key.getColumnVisibility().toString();
     }
 
     /**
@@ -332,7 +346,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     }
 
     protected static String getDocumentIdentifier(String row, String dtUid) {
-        return row + "/" + dtUid.replaceAll("\0", "/");
+        return row + "/" + dtUid.replace("\0", "/");
     }
 
     @Override

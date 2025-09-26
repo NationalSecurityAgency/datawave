@@ -33,7 +33,7 @@ public class DatawaveCommonConfigPropertyProducer extends BaseConfigPropertyProd
         Map<String,AuditType> map = new LinkedHashMap<>();
         if (pairs != null) {
             for (String pair : pairs) {
-                String[] keyValue = StringUtils.split(pair, ";");
+                String[] keyValue = pair.split(";");
                 if (keyValue != null && keyValue.length == 2) {
                     map.put(keyValue[0], AuditType.valueOf(keyValue[1]));
                 } else {

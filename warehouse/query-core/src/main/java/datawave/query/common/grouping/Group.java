@@ -162,7 +162,7 @@ public class Group {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("attributes", grouping).append("attributeVisibilities", attributeVisibilities)
+        return new ToStringBuilder(this).append("grouping", grouping).append("attributeVisibilities", attributeVisibilities)
                         .append("documentVisibilities", documentVisibilities).append("count", count).append("aggregatedFields", fieldAggregator).toString();
     }
 }

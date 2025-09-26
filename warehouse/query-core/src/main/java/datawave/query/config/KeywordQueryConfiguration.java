@@ -12,6 +12,8 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.keyword.KeywordQueryLogic;
 import datawave.query.tables.keyword.KeywordQueryState;
+import datawave.util.keyword.DefaultTagCloudUtils;
+import datawave.util.keyword.TagCloudUtils;
 import datawave.util.keyword.YakeKeywordExtractor;
 
 /**
@@ -27,6 +29,8 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
     private float maxScore = YakeKeywordExtractor.DEFAULT_MAX_SCORE_THRESHOLD;
     private int maxContentChars = YakeKeywordExtractor.DEFAULT_MAX_CONTENT_LENGTH;
     private int maxCloudTags = 0; // no limit by default
+
+    private TagCloudUtils tagCloudUtils = new DefaultTagCloudUtils();
 
     private List<String> viewNameList = List.of(KeywordExtractingIterator.DEFAULT_VIEW_NAMES);
 
@@ -48,13 +52,15 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
 
     public void copyFrom(KeywordQueryConfiguration other) {
         super.copyFrom(other);
-
         this.setMinNgrams(other.minNgrams);
         this.setMaxNgrams(other.maxNgrams);
         this.setMaxKeywords(other.maxKeywords);
         this.setMaxScore(other.maxScore);
         this.setMaxContentChars(other.maxContentChars);
         this.setState(other.getState());
+        this.setTagCloudUtils(other.getTagCloudUtils());
+        this.setPreferredViews(other.getPreferredViews());
+        this.setMaxCloudTags(other.getMaxCloudTags());
     }
 
     public int getMaxContentChars() {
@@ -103,6 +109,14 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
 
     public void setState(KeywordQueryState state) {
         this.state = state;
+    }
+
+    public TagCloudUtils getTagCloudUtils() {
+        return tagCloudUtils;
+    }
+
+    public void setTagCloudUtils(TagCloudUtils tagCloudUtils) {
+        this.tagCloudUtils = tagCloudUtils;
     }
 
     public List<String> getPreferredViews() {

@@ -10,6 +10,7 @@
 # unique-ish key for its related documents may be registered in QLF.xml
 # for this purpose
 
+###############################################################
 # First, Extract wikipedia keywords by PAGE_ID
 
 TEST_UID_TYPE="PAGE_ID"
@@ -22,6 +23,20 @@ configureTest \
       ExtractKeywordsByPageId \
       "Performs keyword extraction based on the PAGE_ID field in our wiki data" \
       "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/generateTagCloud" \
+      "application/xml;charset=UTF-8" \
+      200
+
+runTest
+
+###############################################################
+# Next, Extract wikipedia keywords by PAGE_ID but use a json POST body
+
+JSON_DATA='{ "uuidPairs": "PAGE_ID:12", "content.view.names": "REVISION_TEXT" }'
+
+configureTest \
+      ExtractKeywordsByPageIdJSON \
+      "Performs keyword extraction based on the PAGE_ID field in our wiki data with json post data" \
+      "--header 'Content-Type: application/json' --data '${JSON_DATA}' -X POST ${URI_ROOT}/Query/generateTagCloud" \
       "application/xml;charset=UTF-8" \
       200
 

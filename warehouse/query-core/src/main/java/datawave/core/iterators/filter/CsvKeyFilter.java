@@ -13,8 +13,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import datawave.util.StringUtils;
-
 public class CsvKeyFilter extends Filter {
     private static Logger log = Logger.getLogger(CsvKeyFilter.class);
 
@@ -36,7 +34,7 @@ public class CsvKeyFilter extends Filter {
         String csv = options.get(ALLOWED_OPT);
         if (csv != null && !csv.isEmpty()) {
             allowed = new HashSet<>();
-            String[] vals = StringUtils.split(csv, ',');
+            String[] vals = csv.split(",");
             for (String val : vals) {
                 if (log.isTraceEnabled()) {
                     log.trace("Adding value " + val + " to filter.");

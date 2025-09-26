@@ -21,6 +21,7 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
@@ -35,6 +36,7 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
     @BeforeClass
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
+        CityDataManager.newInstance();
         accumuloSetup.setData(FileType.CSV, new CitiesDataType(CityEntry.generic, generic));
         client = accumuloSetup.loadTables(log);
     }

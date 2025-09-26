@@ -22,7 +22,7 @@ This section provides the installation details and outlines the steps to run Dat
     ```
     # Build the datawave project and produce images for each microservice:
 
-    mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist clean install -DskipTests -DskipITs -Dmaven.build.cache.enabled=false
+    mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist clean install -DskipTests -Djkube.container-image.tags.1=latest -Dmaven.build.cache.enabled=false
 
     # Spin up all the containers for the microservice after full datawave build:
 
@@ -45,7 +45,7 @@ This section provides the installation details and outlines the steps to run Dat
 
     cd /datawave/microservices/services/dictionary/
 
-    mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist clean install -DskipTests -DskipITs -Dmaven.build.cache.enabled=false
+    mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist clean install -DskipTests -Djkube.container-image.tags.1=latest -Dmaven.build.cache.enabled=false
 
     # Go back to the docker directory and spin up the containers again.
     cd /datawave/docker

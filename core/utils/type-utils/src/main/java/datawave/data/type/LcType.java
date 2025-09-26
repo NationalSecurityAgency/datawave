@@ -1,7 +1,14 @@
 package datawave.data.type;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 import datawave.data.normalizer.Normalizer;
 
+/**
+ * Note: there were no significant optimizations found with overriding the Kryo {@link #read(Kryo, Input)} and {@link #write(Kryo, Output)} methods
+ */
 public class LcType extends BaseType<String> {
 
     private static final long serialVersionUID = -5102714749195917406L;

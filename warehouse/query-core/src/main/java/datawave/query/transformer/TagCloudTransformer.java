@@ -102,13 +102,13 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
      */
     protected TagCloudResponseBase createIndividualCloudResponse(List<KeywordResults> resultList) {
         // collect the results for individual documents into individual word clouds.
-        List<TagCloud> wordCloudResults = new ArrayList<>();
+        List<TagCloud> tagCloudResults = new ArrayList<>();
         for (KeywordResults result : resultList) {
             final TagCloud.Builder builder = getTagCloudBuilder();
             builder.addResults(result);
-            wordCloudResults.addAll(builder.build());
+            tagCloudResults.addAll(builder.build());
         }
-        return generateTagCloudResponse(wordCloudResults);
+        return generateTagCloudResponse(tagCloudResults);
     }
 
     /**
@@ -131,10 +131,10 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
     /**
      * Get a configured tag cloud builder
      *
-     * @return a configured tag clud builder.
+     * @return a configured tag cloud builder.
      */
     protected TagCloud.Builder getTagCloudBuilder() {
-        final TagCloud.Builder builder = new TagCloud.Builder();
+        final TagCloud.Builder builder = new TagCloud.Builder().withTagCloudUtilities(state.getTagCloudUtils());
         if (state.getMaxCloudTags() > 0) {
             builder.withMaxTags(state.getMaxCloudTags());
         }
@@ -159,6 +159,9 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
             TagCloudBase tagCloud = responseObjectFactory.getTagCloud();
             if (!tagCloudResult.getName().isBlank()) {
                 tagCloud.setLanguage(tagCloudResult.getName());
+            }
+            if (!tagCloudResult.getVisibility().isEmpty()) {
+                tagCloud.setMarkings(tagCloudResult.getVisibility());
             }
             tagCloud.setTags(generateTagCloudEntries(tagCloudResult));
             tagClouds.add(tagCloud);

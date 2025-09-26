@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import datawave.data.normalizer.ZeroRegexStatus;
 import datawave.data.type.util.NumericalEncoder;
 
 class NumericRegexEncoderTest {
@@ -20,8 +21,8 @@ class NumericRegexEncoderTest {
 
     @BeforeAll
     static void beforeAll() {
-        letters.addAll(generateLetters('a', 'z'));
-        letters.addAll(generateLetters('A', 'Z'));
+        letters.addAll(generateLetters((char) 0x00, (char) 0x7f, ".{,}()<>*+=!?^$|[]-\\0123456789d"));
+        letters.addAll(generateLetters('Ѐ', 'ӿ')); // cyrillic characters (i.e. non-ascii)
     }
 
     /**
@@ -34,9 +35,24 @@ class NumericRegexEncoderTest {
      * @return a list of letters
      */
     private static List<String> generateLetters(char start, char end) {
+        return generateLetters(start, end, "");
+    }
+
+    /**
+     * Return an unmodifiable list of letters in order from the given starting letter to the given ending letter removing characters from the exceptions list.
+     *
+     * @param start
+     *            the starting letter
+     * @param end
+     *            the ending letter
+     * @param exceptions
+     *            characters to exclude
+     * @return a list of letters
+     */
+    private static List<String> generateLetters(char start, char end, String exceptions) {
         // @formatter:off
         return IntStream.rangeClosed(start, end)
-                                        .mapToObj(c -> "" + (char) c).collect(Collectors.toUnmodifiableList());
+                .mapToObj(c -> "" + (char) c).filter(c -> !exceptions.contains(c)).collect(Collectors.toUnmodifiableList());
         // @formatter:on
     }
 
@@ -53,8 +69,8 @@ class NumericRegexEncoderTest {
      */
     @Test
     void testRegexWithWhitespace() {
-        assertExceptionThrown(" 123 ", "Regex pattern may not contain any whitespace.");
-        assertExceptionThrown("123| 234", "Regex pattern may not contain any whitespace.");
+        assertExceptionThrown(" 123 ", "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
+        assertExceptionThrown("123| 234", "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
     }
 
     /**
@@ -99,11 +115,11 @@ class NumericRegexEncoderTest {
     void testRegexWithRestrictedLetters() {
         // Verify an exception is thrown for any non-escaped letter.
         for (String letter : letters) {
-            assertExceptionThrown(letter, "Regex pattern may not contain any letters other than \\d to indicate a member of the digit character class 0-9.");
+            assertExceptionThrown(letter, "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
         }
 
         // Verify an exception is thrown for '\D'.
-        assertExceptionThrown("\\D", "Regex pattern may not contain any letters other than \\d to indicate a member of the digit character class 0-9.");
+        assertExceptionThrown("\\D", "Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
     }
 
     /**
@@ -549,6 +565,27 @@ class NumericRegexEncoderTest {
         // @formatter:on
     }
 
+    @Test
+    void testZeroListBeforeAndAfterDecimal() {
+        // @formatter:off
+        assertRegex("123400.*").normalizesTo("\\+[f-z]E1\\.234(0{2})?.*")
+                .lossyMatchesAllOf("1234099", "12341234")
+                .matchesAllOf("123400", "1234001", "1234001234")
+                .matchesNoneOf("12340", "1123400", "1234.00");
+        assertRegex("1234\\.00.*").normalizesTo("\\+dE1\\.234(0{2})?.*")
+                .lossyMatchesAllOf("1234", "1234.0", "1234.01", "1234.1")
+                .matchesAllOf("1234.00123")
+                .matchesNoneOf("12340", "11234.001");
+        assertRegex("123400").normalizesTo("\\+fE1\\.234")
+                .matchesAllOf("123400")
+                .matchesNoneOf("12340", "1123400", "1234.00", "123409", "12341234");
+        assertRegex("1234\\.00").normalizesTo("\\+dE1\\.234")
+                .lossyMatchesAllOf("1234", "1234.0")
+                .matchesAllOf("1234.00")
+                .matchesNoneOf("12340", "1234.01", "11234.001");
+        // @formatter:on
+    }
+
     private void assertExceptionThrown(String pattern, String message) {
         assertThatThrownBy(() -> NumericRegexEncoder.encode(pattern)).hasMessage(message);
     }
@@ -572,8 +609,20 @@ class NumericRegexEncoderTest {
             return this;
         }
 
+        public RegexAssert lossyMatches(String number) {
+            assertMatchStatus(number, true, true);
+            return this;
+        }
+
         public RegexAssert matches(String number) {
-            assertMatchStatus(number, true);
+            assertMatchStatus(number, true, false);
+            return this;
+        }
+
+        public RegexAssert lossyMatchesAllOf(String... numbers) {
+            for (String number : numbers) {
+                lossyMatches(number);
+            }
             return this;
         }
 
@@ -585,7 +634,7 @@ class NumericRegexEncoderTest {
         }
 
         public RegexAssert doesNotMatch(String number) {
-            assertMatchStatus(number, false);
+            assertMatchStatus(number, false, false);
             return this;
         }
 
@@ -596,12 +645,29 @@ class NumericRegexEncoderTest {
             return this;
         }
 
-        private void assertMatchStatus(String number, boolean match) {
-            String matchStatus = match ? " matches " : " does not match ";
-            assertThat(original.matcher(number).matches()).as("Assert " + original + matchStatus + number).isEqualTo(match);
+        /**
+         * Assert a number matches the original regex and the normalized form matches the normalized regex. If lossy, then the expected results for the original
+         * regex will differ from the normalized.
+         *
+         * @param number
+         *            The number to test
+         * @param match
+         *            Are expecting to match or not match
+         * @param lossy
+         */
+        private void assertMatchStatus(String number, boolean match, boolean lossy) {
+            boolean matchOriginal = match && !lossy;
+            String matchStatus = matchOriginal ? " matches " : " does not match ";
+            assertThat(original.matcher(number).matches()).as("Assert " + original + matchStatus + number).isEqualTo(matchOriginal);
             String encodedNumber = NumericalEncoder.encode(number);
+            matchStatus = match ? " matches " : " does not match ";
             assertThat(normalized.matcher(encodedNumber).matches()).as("Assert " + normalized + matchStatus + encodedNumber + " (" + number + ")")
                             .isEqualTo(match);
+            if (lossy) {
+                ZeroRegexStatus status = NumericRegexEncoder.getZeroRegexStatus(original.toString());
+                assertThat(status.equals(ZeroRegexStatus.LEADING) || status.equals(ZeroRegexStatus.TRAILING)).as("Assert " + original + " is lossy")
+                                .isEqualTo(lossy);
+            }
         }
     }
 }

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.query.Constants;
 import datawave.query.data.parsers.ShardIndexKey;
 
@@ -66,7 +67,9 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
         }
 
         if (options.containsKey(DATATYPES)) {
-            datatypes = new TreeSet<>(Splitter.on(',').splitToList(options.get(DATATYPES)));
+            String option = options.get(DATATYPES);
+            TypeFilter filter = TypeFilter.fromString(option);
+            datatypes = new TreeSet<>(filter.getElements());
         }
 
         startDate = options.get(START_DATE);

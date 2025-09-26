@@ -11,6 +11,7 @@ import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.Tuple2;
 
 /**
  * This is for when the user has not requested include.grouping.context, but I added it in order to process matchesInGroup. Take out the unwanted grouping
@@ -20,21 +21,20 @@ public class RemoveGroupingContext implements Function<Entry<Key,Document>,Entry
 
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
-
-        Set<Entry<String,Attribute<? extends Comparable<?>>>> toRemove = Sets.newHashSet();
+        Set<Tuple2<String,Attribute<? extends Comparable<?>>>> toRemove = Sets.newHashSet();
         for (Entry<String,Attribute<? extends Comparable<?>>> attribute : entry.getValue().entrySet()) {
             String fieldName = attribute.getKey();
             if (JexlASTHelper.hasGroupingContext(fieldName)) {
-                toRemove.add(attribute);
+                toRemove.add(new Tuple2<>(attribute.getKey(), attribute.getValue()));
             }
         }
         // remove everyone with a grouping context
-        for (Entry<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
-            entry.getValue().removeAll(goner.getKey());
+        for (Tuple2<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
+            entry.getValue().removeAll(goner.first());
         }
         // put them all back without the grouping context
-        for (Entry<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
-            entry.getValue().put(goner.getKey(), goner.getValue(), false);
+        for (Tuple2<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
+            entry.getValue().put(goner.first(), goner.second(), false);
         }
         return entry;
     }

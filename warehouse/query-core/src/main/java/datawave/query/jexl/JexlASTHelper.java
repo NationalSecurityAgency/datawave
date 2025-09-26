@@ -699,7 +699,7 @@ public class JexlASTHelper {
                 }
             }
 
-            if (startIndex != 0 || stopLength != -1) {
+            if (startIndex != 0 || stopLength != fieldName.length()) {
                 fieldName = new String(fieldName.getBytes(), startIndex, stopLength);
             }
         }

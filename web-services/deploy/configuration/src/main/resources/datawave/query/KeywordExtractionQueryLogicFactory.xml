@@ -46,5 +46,8 @@
                 <value>REVISION_TEXT</value>
             </util:list>
         </property>
+        <property name="tagCloudUtils">
+            <bean class="datawave.util.keyword.DefaultTagCloudUtils"/>
+        </property>
     </bean>
 </beans>

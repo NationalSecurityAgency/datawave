@@ -26,6 +26,7 @@ import datawave.query.testframework.BaseRawData;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -52,6 +53,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             generic.addReverseIndexField(idx);
         }
 
+        CityDataManager.newInstance();
         for (CityEntry entry : TEST_DATATYPES) {
             dataTypes.add(new CitiesDataType(entry, generic));
         }

@@ -44,9 +44,8 @@ public class QueryOptionsSwitch {
                     config.setMatchingFieldSets(Sets.newHashSet(mfs));
                     break;
                 case QueryParameters.GROUP_FIELDS:
-                    String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setGroupByFields(Sets.newHashSet(groups));
+                    groupFields.setGroupByFieldMap(GroupFields.from(value).getGroupByFieldMap());
                     config.setGroupFields(groupFields);
                     // If there are any group-by fields, update the projection fields to include them.
                     if (groupFields.hasGroupByFields()) {

@@ -5,16 +5,17 @@ import static org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SE
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.util.ObjectFactory;
 
 public class TokenizationHelper {
 
-    private static final Logger log = Logger.getLogger(TokenizationHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(TokenizationHelper.class);
 
     /**
      * Used to track tokenization execution time. It's too expensive to perform a call to System.currentTimeMillis() each time we produce a new token, so spawn
@@ -23,7 +24,7 @@ public class TokenizationHelper {
      * The main thread will check the counter value each time it produces a new token and thus track the number of ticks that have elapsed.
      */
     public static class HeartBeatThread extends Thread {
-        private static final Logger log = Logger.getLogger(HeartBeatThread.class);
+        private static final Logger log = LoggerFactory.getLogger(HeartBeatThread.class);
 
         public static final long INTERVAL = 500; // half second resolution
         public static volatile int counter = 0;
@@ -48,12 +49,12 @@ public class TokenizationHelper {
                     throw new RuntimeException(e);
                 }
 
-                // verify that we're exeuting in a timely fashion
-                // ..if not warn.
+                // verify that we're executing in a timely fashion; if not then send out a warning.
+                // if not warn.
                 long currentRun = System.currentTimeMillis();
                 long delta = currentRun - lastRun;
                 if (delta > (INTERVAL * 1.5)) {
-                    log.warn("HeartBeatThread starved for cpu, " + "should execute every " + INTERVAL + " ms, " + "latest: " + delta + " ms.");
+                    log.warn("HeartBeatThread starved for cpu, should execute every {}ms, latest: {}ms.", INTERVAL, delta);
                 }
                 lastRun = currentRun;
                 counter++;

@@ -21,6 +21,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -31,7 +32,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
+    private static final Logger log = Logger.getLogger(MaxExpansionIndexOnlyQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {
@@ -40,6 +41,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         max.addIndexOnlyField(CitiesDataType.CityField.CITY.name());
         max.addIndexOnlyField(CitiesDataType.CityField.STATE.name());
 
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);

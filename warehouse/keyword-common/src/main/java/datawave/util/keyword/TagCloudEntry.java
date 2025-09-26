@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -96,11 +95,17 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
      * A builder for a tag cloud entry. Allows scores and sources for this keyword to be accumulated and the resulting entry produced with the build() call.
      */
     public static class Builder {
-        String keyword;
+        final String keyword;
         final SortedSet<ScoreTuple> sourceScores = new TreeSet<>();
+        TagCloudUtils utils = new DefaultTagCloudUtils();
 
         public Builder(String keyword) {
             this.keyword = keyword;
+        }
+
+        public Builder withUtilities(TagCloudUtils utils) {
+            this.utils = utils;
+            return this;
         }
 
         public void addSourceScore(String source, double score, String language) {
@@ -108,18 +113,10 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
         }
 
         public TagCloudEntry build() {
-            // todo: make this modular/pluggable?
-            //@formatter:off
-            final double score = sourceScores.stream()
-                    .map(ScoreTuple::getScore)
-                    .min(Double::compareTo)
-                    .orElse(1.0);
-
-            final Set<String> sources = sourceScores.stream()
-                    .map(ScoreTuple::getSource)
-                    .collect(Collectors.toSet());
-            //@formatter:on
-            return new TagCloudEntry(keyword, score, sourceScores.size(), sources);
+            final double score = utils.calculateScore(sourceScores);
+            final Set<String> sources = utils.calculateSources(sourceScores);
+            final int frequency = utils.calculateFrequency(sourceScores);
+            return new TagCloudEntry(keyword, score, frequency, sources);
         }
     }
 

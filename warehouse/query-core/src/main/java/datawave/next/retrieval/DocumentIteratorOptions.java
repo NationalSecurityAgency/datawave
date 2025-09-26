@@ -3,10 +3,13 @@ package datawave.next.retrieval;
 import static datawave.query.iterator.QueryOptions.COMPOSITE_METADATA;
 import static datawave.query.iterator.QueryOptions.DISALLOWLISTED_FIELDS;
 import static datawave.query.iterator.QueryOptions.END_TIME;
+import static datawave.query.iterator.QueryOptions.INCLUDE_GROUPING_CONTEXT;
+import static datawave.query.iterator.QueryOptions.INDEX_ONLY_FIELDS;
 import static datawave.query.iterator.QueryOptions.PROJECTION_FIELDS;
 import static datawave.query.iterator.QueryOptions.QUERY;
 import static datawave.query.iterator.QueryOptions.QUERY_MAPPING_COMPRESS;
 import static datawave.query.iterator.QueryOptions.START_TIME;
+import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
 import static datawave.query.iterator.QueryOptions.TYPE_METADATA;
 
 import java.io.ByteArrayInputStream;
@@ -31,13 +34,27 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.marking.MarkingFunctionsFactory;
 import datawave.next.LongRange;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.data.parsers.EventKey;
+import datawave.query.data.parsers.FieldIndexKey;
+import datawave.query.data.parsers.TermFrequencyKey;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -63,7 +80,30 @@ public class DocumentIteratorOptions implements OptionDescriber {
     protected LongRange timeFilter;
     protected Set<String> includeFields = null;
     protected Set<String> excludeFields = null;
+    protected Set<String> indexOnlyFields = null;
+    protected Set<String> termFrequencyFields = null;
     protected final List<String> candidates = new ArrayList<>();
+
+    // field values to aggregate
+    protected Multimap<String,String> indexOnlyFieldValues;
+    protected Multimap<String,String> termFrequencyFieldValues;
+
+    // composite aggregation
+    protected ValueToAttributes valueToAttributes;
+    protected AttributeFactory attributeFactory;
+
+    protected boolean includeGroupingContext = false;
+
+    protected final EventKey eventKeyParser = new EventKey();
+    protected final FieldIndexKey fiParser = new FieldIndexKey();
+    protected final TermFrequencyKey tfParser = new TermFrequencyKey();
+    protected final TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+
+    // evaluation stuff
+    protected final DatawaveJexlContext context = new DatawaveJexlContext();
+    protected JexlEvaluation evaluation;
+    protected ASTJexlScript queryTree;
+    protected Set<String> identifiers;
 
     //  @formatter:off
     protected static final Set<String> optionNames = Set.of(QUERY,
@@ -74,7 +114,10 @@ public class DocumentIteratorOptions implements OptionDescriber {
             COMPOSITE_METADATA,
             PROJECTION_FIELDS,
             DISALLOWLISTED_FIELDS,
-            CANDIDATES);
+            CANDIDATES,
+            INDEX_ONLY_FIELDS,
+            TERM_FREQUENCY_FIELDS,
+            INCLUDE_GROUPING_CONTEXT);
     //  @formatter:on
 
     public void deepCopy(DocumentIteratorOptions other) {
@@ -112,6 +155,9 @@ public class DocumentIteratorOptions implements OptionDescriber {
         options.put(END_TIME, "the end time");
         options.put(PROJECTION_FIELDS, "the set of fields to include");
         options.put(DISALLOWLISTED_FIELDS, "the set of fields to exclude");
+        options.put(INDEX_ONLY_FIELDS, "the set of index only fields to fetch from the field index");
+        options.put(TERM_FREQUENCY_FIELDS, "the set of tokenized fields to fetch from the term frequency column");
+        options.put(INCLUDE_GROUPING_CONTEXT, "flag that determines if a field's grouping context is retained");
         options.put(CANDIDATES, "the set of candidate record ids to fetch");
         return new IteratorOptions(getClass().getSimpleName(), "Retrieves documents", options, null);
     }
@@ -153,6 +199,10 @@ public class DocumentIteratorOptions implements OptionDescriber {
             throw new RuntimeException("Cannot execute query without TypeMetadata");
         }
 
+        if (typeMetadata != null) {
+            attributeFactory = new AttributeFactory(typeMetadata);
+        }
+
         if (options.containsKey(COMPOSITE_METADATA)) {
             // no exception is thrown if this key does not exist because CompositeMetadata is not strictly
             // required. However, evaluation may be adversely affected.
@@ -174,8 +224,7 @@ public class DocumentIteratorOptions implements OptionDescriber {
             // if the user requested everything with a star then leave include fields as null
             // this signifies that all fields are allowed
             if (!option.equals("*")) {
-                includeFields = new HashSet<>();
-                includeFields.addAll(Splitter.on(',').splitToList(option));
+                includeFields = parseOptionToSet(option);
             }
         }
 
@@ -183,11 +232,73 @@ public class DocumentIteratorOptions implements OptionDescriber {
         // options, that is the responsibility of the caller
         if (options.containsKey(QueryOptions.DISALLOWLISTED_FIELDS)) {
             String option = options.get(QueryOptions.DISALLOWLISTED_FIELDS);
-            excludeFields = new HashSet<>();
-            excludeFields.addAll(Splitter.on(',').splitToList(option));
+            excludeFields = parseOptionToSet(option);
+        }
+
+        if (options.containsKey(INDEX_ONLY_FIELDS)) {
+            String option = options.get(INDEX_ONLY_FIELDS);
+            indexOnlyFields = parseOptionToSet(option);
+        }
+
+        if (options.containsKey(TERM_FREQUENCY_FIELDS)) {
+            String option = options.get(TERM_FREQUENCY_FIELDS);
+            termFrequencyFields = parseOptionToSet(option);
+        }
+
+        // finally, setup context variables
+        evaluation = new JexlEvaluation(query, new HitListArithmetic());
+        queryTree = parse(query);
+        identifiers = JexlASTHelper.getIdentifierNames(queryTree);
+
+        // required to fully evaluate a document
+        if (indexOnlyFields != null || termFrequencyFields != null) {
+            IndexOnlyFragmentVisitor visitor = new IndexOnlyFragmentVisitor(indexOnlyFields, termFrequencyFields);
+            queryTree.jjtAccept(visitor, null);
+            indexOnlyFieldValues = visitor.getIndexOnlyFieldValues();
+            termFrequencyFieldValues = visitor.getTokenizedFieldValues();
+        }
+
+        if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
+            includeGroupingContext = Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT));
+        }
+
+        if (attributeFactory != null) {
+            // composite metadata is allowed to be null
+            valueToAttributes = new ValueToAttributes(attributeFactory, compositeMetadata, null, MarkingFunctionsFactory.createMarkingFunctions(), false);
+        } else {
+            throw new IllegalArgumentException("DocumentIterator requires TypeMetadata or CompositeMetadata");
         }
 
         return true;
+    }
+
+    /**
+     * Parse a query string to an {@link ASTJexlScript}
+     *
+     * @param query
+     *            the query
+     * @return a JexlScript
+     */
+    protected ASTJexlScript parse(String query) {
+        try {
+            return JexlASTHelper.parseAndFlattenJexlQuery(query);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse a comma-delimited option to a set
+     *
+     * @param option
+     *            the option
+     * @return the set, or null if the option is blank
+     */
+    protected Set<String> parseOptionToSet(String option) {
+        if (!option.isBlank()) {
+            return new HashSet<>(Splitter.on(',').omitEmptyStrings().splitToList(option));
+        }
+        return null;
     }
 
     /**

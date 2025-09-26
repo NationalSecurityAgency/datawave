@@ -23,6 +23,7 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -48,6 +49,7 @@ public class CountQueryTest extends AbstractFunctionalQuery {
         for (String idx : generic.getIndexFields()) {
             generic.addReverseIndexField(idx);
         }
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);

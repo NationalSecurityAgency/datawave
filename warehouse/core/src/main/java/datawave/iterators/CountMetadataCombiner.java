@@ -5,7 +5,8 @@ import java.util.Iterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.MetadataCardinalityCounts;
 
@@ -15,7 +16,7 @@ import datawave.data.MetadataCardinalityCounts;
  */
 public class CountMetadataCombiner extends Combiner {
 
-    private static final Logger log = Logger.getLogger(CountMetadataCombiner.class);
+    private static final Logger log = LoggerFactory.getLogger(CountMetadataCombiner.class);
 
     /**
      * Reduces a list of Values into a single Value.
@@ -42,17 +43,13 @@ public class CountMetadataCombiner extends Combiner {
                     counts = newCounts;
                     singletonValue = value;
                 } else {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Merging " + counts + " with " + newCounts);
-                    }
+                    log.trace("Merging {} with {}", counts, newCounts);
                     counts.merge(newCounts);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Resulted in " + counts);
-                    }
+                    log.trace("Resulted in {}", counts);
                     singletonValue = null;
                 }
             } catch (Exception e) {
-                log.error("Unable to decode counts from " + key + " / " + value);
+                log.error("Unable to decode counts from {} / {} ", key, value);
             }
         }
 

@@ -19,6 +19,7 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
+import datawave.query.testframework.GroupsDataManager;
 import datawave.query.testframework.GroupsDataType;
 import datawave.query.testframework.GroupsDataType.GroupField;
 import datawave.query.testframework.GroupsDataType.GroupsEntry;
@@ -35,6 +36,7 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig fields = new GroupsIndexConfiguration();
+        GroupsDataManager.newInstance();
         dataTypes.add(new GroupsDataType(GroupsEntry.cities, fields));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);

@@ -8,13 +8,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simply factory using reflection (i.e. Class.forname() and Constructor.newInstance) to create the specified object.
  */
 public class ObjectFactory {
-    private static final Logger logger = Logger.getLogger(ObjectFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(ObjectFactory.class);
 
     /**
      * Take away the public constructor
@@ -31,9 +32,7 @@ public class ObjectFactory {
      * @return the newly instantiated object
      */
     public static Object create(String className, Object... args) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("ObjectFactory.create1(" + className + "," + Arrays.toString(args) + ")");
-        }
+        logger.debug("ObjectFactory.create1( {}, {} )", className, Arrays.toString(args));
         try {
             Class<?> clazz = Class.forName(className);
             List<Class<?>> types = new ArrayList<>();
@@ -51,7 +50,7 @@ public class ObjectFactory {
             try {
                 constructor = clazz.getConstructor(types.toArray(new Class<?>[0]));
             } catch (NoSuchMethodException e) {
-                logger.debug("No constructor for [" + className + "] in ObjectFactory.create())");
+                logger.debug("No constructor for [ {} ] in ObjectFactory.create())", className, e);
             }
 
             // Look for assignable match if nothing exact was found
@@ -62,9 +61,9 @@ public class ObjectFactory {
                     Class<?>[] ctypes = c.getParameterTypes();
 
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Checking:" + className + ", " + clazz);
-                        logger.debug("   types   :" + Arrays.toString(ctypes));
-                        logger.debug("   numParms:" + ctypes.length + " =? " + types.size());
+                        logger.debug("Checking: {}, {}", className, clazz);
+                        logger.debug("   types   : {}", Arrays.toString(ctypes));
+                        logger.debug("   numParms: {} =? {}", ctypes.length, types.size());
                     }
 
                     if (ctypes.length != types.size()) {
@@ -81,13 +80,13 @@ public class ObjectFactory {
                         }
 
                         if (a.isAssignableFrom(b)) {
-                            logger.debug("   param=" + a + "  assignable " + b);
+                            logger.debug("   param={}  assignable {}", a, b);
                         } else {
                             b = getPrim(b);
                             if (a.isAssignableFrom(b)) {
-                                logger.debug("   param:" + a + "  assignable " + b);
+                                logger.debug("   param:{} assignable {}", a, b);
                             } else {
-                                logger.debug("   param:" + a + " !assignable " + b);
+                                logger.debug("   param:{} !assignable {}", a, b);
                                 constructor = null;
                                 break;
                             }
@@ -97,22 +96,22 @@ public class ObjectFactory {
             }
             Object newObject = null;
             if (constructor == null) {
-                logger.info("Failed to find constructor for args(" + args.length + ") types(" + types.size() + ") : " + types);
+                logger.info("Failed to find constructor for args( {} ) types( {} ) : {}", args.length, types.size(), types);
             } else {
                 newObject = constructor.newInstance(args);
             }
             return newObject;
         } catch (ClassNotFoundException e1) {
-            logger.error("Could not find class", e1);
+            logger.error("ClassNotFoundException: ", e1);
             throw new Error(e1);
         } catch (InstantiationException e3) {
-            logger.error("Could not instantiate", e3);
+            logger.error("InstantiationException: ", e3);
             throw new Error(e3);
         } catch (IllegalAccessException e4) {
-            logger.error("Could not call constructor", e4);
+            logger.error("IllegalAccessException: ", e4);
             throw new Error(e4);
         } catch (InvocationTargetException e5) {
-            logger.error("Constructor failed", e5);
+            logger.error("InvocationTargetException: ", e5);
             throw new Error(e5);
         } catch (Throwable t) {
             logger.error("Problem in factory", t);
@@ -170,7 +169,7 @@ public class ObjectFactory {
      */
     public static Object create(String className, Object[] args, String location) {
         if (logger.isDebugEnabled()) {
-            logger.debug("ObjectFactory.create(" + className + "," + Arrays.toString(args) + "," + location + ")");
+            logger.debug("ObjectFactory.create( {}, {}, {} )", className, Arrays.toString(args), location);
         }
         return create(className, args);
     }

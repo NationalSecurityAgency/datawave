@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -21,12 +22,25 @@ public class TagCloud {
     /** the 'name' of this cloud, usually a language name */
     final String name;
 
+    /** the 'visibility' of this cloud */
+    final Map<String,String> visibility;
+
     /** the sorted set of keywords in this cloud, including scores and sources */
     final SortedSet<TagCloudEntry> results;
 
-    /** Use the builder to create tag clouds */
-    protected TagCloud(String name, SortedSet<TagCloudEntry> results) {
+    /**
+     * Use the builder to create tag clouds
+     *
+     * @param name
+     *            the name of the cloud, typically used for language
+     * @param visibility
+     *            the visibility of the cloud, some form of visibility marking
+     * @param results
+     *            the entries that belong in the tag cloud.
+     */
+    protected TagCloud(String name, Map<String,String> visibility, SortedSet<TagCloudEntry> results) {
         this.name = name;
+        this.visibility = visibility;
         this.results = results;
     }
 
@@ -34,16 +48,30 @@ public class TagCloud {
         return name;
     }
 
+    public Map<String,String> getVisibility() {
+        return visibility;
+    }
+
     public Collection<TagCloudEntry> getResults() {
         return results;
     }
 
-    /** Serialize to JSON */
+    /**
+     * Serialize to JSON
+     *
+     * @return the json representation of the tag cloud.
+     */
     public String toString() {
         return gson.toJson(this);
     }
 
-    /** Deserialize from JSON */
+    /**
+     * Deserialize from JSON
+     *
+     * @param json
+     *            the json representation of the tag cloud.
+     * @return a deserialized tag clout
+     */
     public static TagCloud fromJson(String json) {
         return gson.fromJson(json, TagCloud.class);
     }
@@ -56,24 +84,37 @@ public class TagCloud {
         /** Holds the index of tuples we're capture while building this object, used to calculate the final set of results in the finish() method. */
         final transient Map<String,TagCloudEntry.Builder> index = new HashMap<>();
 
+        /** Holds the set of visibility strings we've seen so far - this will be used for generating the overall visibility string */
+        final transient Map<String,Set<String>> visibilities = new HashMap<>();
+
         /** The maximum number of tags to keep per cloud. Zero means unlimited */
         int maxTags = 0;
 
-        /** Whether to partition the tag clouds by language */
-        boolean partitionOnLanguage = false;
+        /** Whether we should partition tag clouds based on language */
+        boolean partitionOnLanguage;
 
         /** The comparator of tuples to keep */
         Comparator<TagCloudEntry> comparator = TagCloudEntry.ORDER_BY_SCORE;
+
+        TagCloudUtils utils = new DefaultTagCloudUtils();
 
         /** Add a set of keyword extraction results to the tag cloud to be built */
         public void addResults(KeywordResults results) {
             final String source = results.getSource();
             final String language = results.getLanguage();
+            final String visibility = results.getVisibility();
             final LinkedHashMap<String,Double> resultsMap = results.getKeywords();
-            for (Map.Entry<String,Double> e : resultsMap.entrySet()) {
-                String key = computeIndexKey(results, e.getKey());
-                TagCloudEntry.Builder b = index.computeIfAbsent(key, k -> new TagCloudEntry.Builder(e.getKey()));
+
+            for (final Map.Entry<String,Double> e : resultsMap.entrySet()) {
+                String key = utils.computeIndexKey(results, e.getKey(), partitionOnLanguage);
+                TagCloudEntry.Builder b = index.computeIfAbsent(key, k -> new TagCloudEntry.Builder(e.getKey()).withUtilities(utils));
                 b.addSourceScore(source, e.getValue(), language);
+            }
+
+            if (!visibility.isEmpty() && !resultsMap.isEmpty()) {
+                String key = utils.computeVisibilityKey(results, partitionOnLanguage);
+                Set<String> visibilityList = visibilities.computeIfAbsent(key, k -> new TreeSet<>());
+                visibilityList.add(visibility);
             }
         }
 
@@ -95,7 +136,7 @@ public class TagCloud {
          * the withMaxTags() method.
          *
          * @param comparator
-         *            the comparitor to use
+         *            the comparator to use
          * @return the builder.
          */
         public Builder withComparator(Comparator<TagCloudEntry> comparator) {
@@ -116,6 +157,14 @@ public class TagCloud {
         }
 
         /**
+         * Indicate that we should use a specific utilities instance.
+         */
+        public Builder withTagCloudUtilities(TagCloudUtils utils) {
+            this.utils = utils;
+            return this;
+        }
+
+        /**
          * Build one or more tag clouds using the KeywordResults introduced via addResults. Multiple clouds may be returned if the withLanguagePartitions method
          * was called with 'true' in which case we'll have one cloud per language.
          *
@@ -132,7 +181,7 @@ public class TagCloud {
 
             // partition the index of keyword results into one priority queue per partition.
             for (Map.Entry<String,TagCloudEntry.Builder> e : index.entrySet()) {
-                String partitionKey = computePartitionKey(e);
+                String partitionKey = utils.computePartitionKey(e, partitionOnLanguage);
                 PriorityQueue<TagCloudEntry> resultsQueue = queueMap.computeIfAbsent(partitionKey, k -> new PriorityQueue<>(queueComparator));
                 resultsQueue.add(e.getValue().build());
                 if (maxTags > 0 && resultsQueue.size() > maxTags) {
@@ -147,41 +196,12 @@ public class TagCloud {
             for (Map.Entry<String,PriorityQueue<TagCloudEntry>> e : queueMap.entrySet()) {
                 final SortedSet<TagCloudEntry> results = new TreeSet<>(comparator);
                 results.addAll(e.getValue());
-                tagClouds.add(new TagCloud(e.getKey(), results));
+                Map<String,String> visibility = utils.generateCombinedVisibility(visibilities.get(e.getKey()));
+                tagClouds.add(new TagCloud(e.getKey(), visibility, results));
             }
 
             return tagClouds;
         }
 
-        /**
-         * find the index key from the keyword results and keyword. Usually,the index key just the keyword, but when we're partitioning by language, we'll add
-         * the language at the beginning of the key and use this for dividing into multiple tag clouds later.
-         *
-         * @param results
-         *            the results to drive key creation
-         * @param keyword
-         *            the keyword to drive key creation
-         * @return the index key for the results entries.
-         */
-        public String computeIndexKey(KeywordResults results, String keyword) {
-            return (partitionOnLanguage ? results.getLanguage() + "%%" : "") + keyword;
-        }
-
-        /**
-         * find the partition key from the index entry. If we're partitioning by language this will be the language, otherwise this will return an empty string.
-         *
-         * @param entry
-         *            the entry to use to determine the partition key
-         * @return the partition key.
-         */
-        public String computePartitionKey(Map.Entry<String,TagCloudEntry.Builder> entry) {
-            final String key = entry.getKey();
-            final int pos = key.indexOf("%%");
-            if (pos > -1) {
-                return key.substring(0, pos);
-            } else {
-                return "";
-            }
-        }
     }
 }

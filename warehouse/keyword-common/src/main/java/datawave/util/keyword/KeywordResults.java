@@ -30,17 +30,21 @@ public class KeywordResults implements Writable {
     /** the language of the source document used for keyword extraction */
     String language;
 
+    /** a visibility expression for these keyword results */
+    String visibility;
+
     /** the keywords and scores produced by the extraction algorithm */
     final LinkedHashMap<String,Double> keywords;
 
     public KeywordResults() {
-        this("", "", "", new LinkedHashMap<>());
+        this("", "", "", "", new LinkedHashMap<>());
     }
 
-    public KeywordResults(String source, String view, String language, LinkedHashMap<String,Double> results) {
+    public KeywordResults(String source, String view, String language, String visibility, LinkedHashMap<String,Double> results) {
         this.source = source;
         this.view = view;
         this.language = language;
+        this.visibility = visibility;
         this.keywords = results;
     }
 
@@ -68,16 +72,20 @@ public class KeywordResults implements Writable {
         this.language = language;
     }
 
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
+
     public int getKeywordCount() {
         return keywords.size();
     }
 
     public LinkedHashMap<String,Double> getKeywords() {
         return keywords;
-    }
-
-    public String getKeywordsAsJson() {
-        return gson.toJson(keywords);
     }
 
     public String toJson() {
@@ -94,6 +102,7 @@ public class KeywordResults implements Writable {
         this.source = dataInput.readUTF();
         this.view = dataInput.readUTF();
         this.language = dataInput.readUTF();
+        this.visibility = dataInput.readUTF();
         for (int i = 0; i < sz; i++) {
             keywords.put(dataInput.readUTF(), dataInput.readDouble());
         }
@@ -105,6 +114,7 @@ public class KeywordResults implements Writable {
         dataOutput.writeUTF(source == null ? "" : source);
         dataOutput.writeUTF(view == null ? "" : view);
         dataOutput.writeUTF(language == null ? "" : language);
+        dataOutput.writeUTF(visibility == null ? "" : visibility);
         for (Map.Entry<String,Double> e : keywords.entrySet()) {
             dataOutput.writeUTF(e.getKey());
             dataOutput.writeDouble(e.getValue());

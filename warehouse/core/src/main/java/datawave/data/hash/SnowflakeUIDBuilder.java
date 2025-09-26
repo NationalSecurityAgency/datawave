@@ -9,7 +9,8 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.cli.Option;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Builds a sequence of SnowflakeUIDs for a particular "machine" instance, which is based on a unique combination of host, process, and process thread.
@@ -18,7 +19,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
 
     private static final BigInteger UNDEFINED_MACHINE_ID = BigInteger.valueOf(-1);
     private static final BigInteger UNDEFINED_SNOWFLAKE = BigInteger.valueOf(-1);
-    private static final Logger LOGGER = Logger.getLogger(SnowflakeUIDBuilder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SnowflakeUIDBuilder.class);
 
     private final BigInteger mid;
 
@@ -259,10 +260,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
             try {
                 hostId = Integer.parseInt(option.getValue());
             } catch (final Exception e) {
-                if (LOGGER.isDebugEnabled()) {
-                    final String message = "Invalid " + HOST_INDEX_OPT + ": " + option;
-                    LOGGER.warn(message, e);
-                }
+                LOGGER.warn("Invalid {}: {}", HOST_INDEX_OPT, option, e);
             }
         }
 
@@ -271,10 +269,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
             try {
                 processId = Integer.parseInt(option.getValue());
             } catch (final Exception e) {
-                if (LOGGER.isDebugEnabled()) {
-                    final String message = "Invalid " + PROCESS_INDEX_OPT + ": " + option;
-                    LOGGER.warn(message, e);
-                }
+                LOGGER.warn("Invalid {}: {}", PROCESS_INDEX_OPT, option, e);
             }
         }
 
@@ -283,20 +278,14 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
             try {
                 threadId = Integer.parseInt(option.getValue());
             } catch (final Exception e) {
-                if (LOGGER.isDebugEnabled()) {
-                    final String message = "Invalid " + THREAD_INDEX_OPT + ": " + option;
-                    LOGGER.warn(message, e);
-                }
+                LOGGER.warn("Invalid {}: {}", THREAD_INDEX_OPT, option, e);
             }
         }
 
         try {
             machineId = validateMachineIds(hostId, processId, threadId).intValue();
         } catch (Exception e) {
-            if (LOGGER.isDebugEnabled()) {
-                final String message = "Unable to generate Snowflake machine ID";
-                LOGGER.warn(message, e);
-            }
+            LOGGER.warn("Unable to generate Snowflake machine ID: {}", machineId, e);
         }
 
         return machineId;

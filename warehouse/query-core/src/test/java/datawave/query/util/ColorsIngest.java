@@ -42,11 +42,13 @@ public class ColorsIngest {
     private static final String startDay = "20250301";
     private static final String endDay = "20250331";
 
-    private static final int NUM_SHARDS = 1;
+    private static final int NUM_SHARDS = 10;
     private static final int NUM_DAYS = 31;
 
-    private static final int NEW_SHARDS = 2;
+    private static final int NEW_SHARDS = 20;
     private static final String NEW_SHARDS_START = "20250327";
+
+    private static final int EVENTS_PER_DAY = 1;
 
     private static final String datatype = "colors";
     private static final ColumnVisibility cv = new ColumnVisibility("ALL");
@@ -57,6 +59,7 @@ public class ColorsIngest {
     protected static String normalizerForField(String field) {
         switch (field) {
             case "COLOR":
+            case "ID":
             default:
                 return LcNoDiacriticsType.class.getName();
         }
@@ -212,6 +215,13 @@ public class ColorsIngest {
             // skipping F column for now
             m.put(ColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
             m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("COLOR")), EMPTY_VALUE);
+            bw.addMutation(m);
+
+            m = new Mutation("ID");
+            m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
+            // skipping F column for now
+            // skip I column
+            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("ID")), EMPTY_VALUE);
             bw.addMutation(m);
         }
 

@@ -20,6 +20,7 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -40,6 +41,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         generic.addIndexField(CityField.CODE.name());
         generic.addIndexOnlyField(CityField.CODE.name());
         generic.addReverseIndexField(CityField.CODE.name());
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);

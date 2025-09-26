@@ -66,8 +66,7 @@ class AmbiguousNotRuleTest extends ShardQueryRuleTest {
     void testNOTWithUnwrappedMultiplePrecedingTerms(String junction) throws Exception {
         givenQuery("FIELD1:abc " + junction + " FIELD2:def NOT FIELD:ghi");
 
-        expectMessage("Ambiguous usage of NOT detected with multiple unwrapped preceding terms: \"FIELD1:abc " + junction
-                        + " FIELD2:def NOT\" should be \"(FIELD1:abc " + junction + " FIELD2:def) NOT\".");
+        expectMessage("Ambiguous usage of NOT detected with multiple unwrapped preceding terms: the NOT clause will only be applied to \"FIELD2:def\".");
 
         assertResult();
     }
@@ -79,8 +78,7 @@ class AmbiguousNotRuleTest extends ShardQueryRuleTest {
     void testNOTWithUnwrappedAutomaticallyAndedPreceedingTerms() throws Exception {
         givenQuery("FIELD1:abc FIELD2:def NOT FIELD:ghi");
 
-        expectMessage("Ambiguous usage of NOT detected with multiple unwrapped preceding terms: \"FIELD1:abc AND FIELD2:def NOT\" should be "
-                        + "\"(FIELD1:abc AND FIELD2:def) NOT\".");
+        expectMessage("Ambiguous usage of NOT detected with multiple unwrapped preceding terms: the NOT clause will only be applied to \"FIELD2:def\".");
 
         assertResult();
     }
@@ -103,8 +101,7 @@ class AmbiguousNotRuleTest extends ShardQueryRuleTest {
     void testQueryWithTermThatIsNotPartOfNOT() throws Exception {
         givenQuery("FIELD1:abc OR (FIELD2:abc FIELD3:def NOT FIELD4:ghi)");
 
-        expectMessage("Ambiguous usage of NOT detected with multiple unwrapped preceding terms: \"FIELD2:abc AND FIELD3:def NOT\" should be "
-                        + "\"(FIELD2:abc AND FIELD3:def) NOT\".");
+        expectMessage("Ambiguous usage of NOT detected with multiple unwrapped preceding terms: the NOT clause will only be applied to \"FIELD3:def\".");
 
         assertResult();
     }

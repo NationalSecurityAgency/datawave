@@ -4,6 +4,10 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 import datawave.data.normalizer.Normalizer;
 import datawave.webservice.query.data.ObjectSizeOf;
 
@@ -171,5 +175,23 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
         }
         size += STATIC_SIZE + (2L * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
         return size;
+    }
+
+    @Override
+    public void write(Kryo kryo, Output output) {
+        output.writeString(getDelegateAsString());
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
+        String delegateString = input.readString();
+        try {
+            setDelegateFromString(delegateString);
+        } catch (Exception e) {
+            // if there was some problem with setting the delegate for the specific Type, then
+            // set the normalized value to the input string. This effectively mimics falling back
+            // to a NoOpType
+            setNormalizedValue(delegateString);
+        }
     }
 }

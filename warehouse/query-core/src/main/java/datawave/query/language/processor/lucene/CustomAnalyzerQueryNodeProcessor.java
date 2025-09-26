@@ -44,6 +44,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.TextableQueryNode;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorImpl;
 import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
 import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfigHandler.ConfigurationKeys;
+import org.apache.lucene.queryparser.flexible.standard.nodes.PrefixWildcardQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
@@ -201,7 +202,11 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
 
             if (WildcardQueryNode.class.isAssignableFrom(nodeClazz)) {
                 return node;
+            } else if (PrefixWildcardQueryNode.class.isAssignableFrom(nodeClazz)) {
+                return node;
             } else if (FuzzyQueryNode.class.isAssignableFrom(nodeClazz)) {
+                return node;
+            } else if (RegexpQueryNode.class.isAssignableFrom(nodeClazz)) {
                 return node;
             } else if (node.getParent() != null && TermRangeQueryNode.class.isAssignableFrom(node.getParent().getClass())) {
                 // Ignore children of TermReangeQueryNodes (for now)

@@ -24,6 +24,7 @@ import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -51,6 +52,7 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         // add two datatypes that contain different indexes - this will create an index hole
         FieldConfig noHoles = new NoHoleFields();
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, noHoles));
 
         // because the CODE field is not indexed the type must be specified in the configuration

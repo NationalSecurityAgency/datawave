@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -121,7 +122,6 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.UniversalSet;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -140,7 +140,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected SourceManager source;
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
-    protected Collection<String> includeReferences = UniversalSet.instance();
+    protected Set<String> includeReferences = new HashSet<>();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;
@@ -194,7 +194,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected Class<? extends IteratorBuilder> iteratorBuilderClass = IndexIteratorBuilder.class;
 
-    private Collection<String> unindexedFields = Lists.newArrayList();
+    private final Collection<String> unindexedFields = Lists.newArrayList();
 
     protected boolean disableFiEval = false;
 
@@ -637,8 +637,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
-        if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                        && !excludeReferences.contains(builder.getField())) {
+        //  @formatter:off
+        if (!iterators.hasSeen(builder.getField(), builder.getValue()) &&
+                (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField())) &&
+                !excludeReferences.contains(builder.getField())) {
+            //  @formatter:on
 
             // do not perform a deep copy of the source if this iterator has not been seen yet
             builder.setQueryId(queryId);
@@ -707,7 +710,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
-            final boolean inclusionReference = includeReferences.contains(builder.getField());
+            final boolean inclusionReference = includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField());
             final boolean notExcluded = !excludeReferences.contains(builder.getField());
 
             if (isNew && inclusionReference && notExcluded) {
@@ -979,7 +982,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
-            final boolean inclusionReference = includeReferences.contains(builder.getField());
+            final boolean inclusionReference = includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField());
             final boolean notExcluded = !excludeReferences.contains(builder.getField());
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
@@ -1036,6 +1039,33 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return null;
     }
 
+    public String getDocument(Range range) {
+        // if the range has the same document in the start and end key, then return the document name.
+        // This is used to create unique ivarator directories for the DelayedNonEventSubTreeVisitor
+        if (range != null && range.getStartKey() != null && range.getEndKey() != null) {
+            String cf1 = range.getStartKey().getColumnFamily().toString();
+            String cf2 = range.getEndKey().getColumnFamily().toString();
+            StringBuilder builder = new StringBuilder();
+            int minLen = Math.min(cf1.length(), cf2.length());
+            for (int i = 0; i < minLen; i++) {
+                char c1 = cf1.charAt(i);
+                char c2 = cf2.charAt(i);
+                if (c1 == c2) {
+                    if (c1 == NULL_DELIMETER.charAt(0)) {
+                        c1 = '_';
+                    }
+                    builder.append(c1);
+                } else {
+                    break;
+                }
+            }
+            if (builder.length() > 0) {
+                return builder.toString();
+            }
+        }
+        return null;
+    }
+
     /**
      * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      *
@@ -1043,11 +1073,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @throws IOException
      *             for issues with read/write
      */
-    private List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber) throws IOException {
+    public List<IvaratorCacheDir> getIvaratorCacheDirs(int termNumber, Range rangeLimiter, String field, String value) throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
 
         // use the ivaratorCount / term number to create a unique subdirectory
-        String subdirectory = ivaratorCacheSubDirPrefix + "term" + termNumber;
+        String subdirectory = ivaratorCacheSubDirPrefix + "_term_" + termNumber + "_field_" + field + "_valueHash_" + value.hashCode();
+        String document = getDocument(rangeLimiter);
+        if (document != null) {
+            subdirectory = subdirectory + "_doc_" + document;
+        }
 
         if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
             for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
@@ -1152,6 +1186,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
                                         hdfsFileSystem.getFileSystem(fstUri));
                     }
+                    listIterBuilder.setValue(fstUri.toString());
                     listIterBuilder.setFst(fst);
 
                     // cache this fst for use during JexlEvaluation.
@@ -1453,7 +1488,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCompositeSeekThreshold(compositeSeekThreshold);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
-        builder.setIvaratorCacheDirs(getIvaratorCacheDirs(this.ivaratorCount));
+        builder.setIvaratorCacheDirs(getIvaratorCacheDirs(this.ivaratorCount, rangeLimiter, builder.getField(), builder.getValue()));
         builder.setTermNumber(this.ivaratorCount);
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
         builder.setQueryLock(queryLock);
@@ -1487,7 +1522,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
-            if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
+            if (!iterators.hasSeen(builder.getField(), builder.getValue())
+                            && (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField()))
                             && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
@@ -1840,7 +1876,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     public IteratorBuildingVisitor setIncludes(Collection<String> includes) {
-        this.includeReferences = Sets.newHashSet(includes);
+        this.includeReferences.addAll(includes);
         this.includeReferences.add(Constants.ANY_FIELD);
         return this;
     }
