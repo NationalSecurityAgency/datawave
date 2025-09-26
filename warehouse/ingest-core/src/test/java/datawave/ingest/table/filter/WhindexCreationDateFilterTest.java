@@ -10,18 +10,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
@@ -66,6 +69,21 @@ public class WhindexCreationDateFilterTest {
         @Override
         public boolean isUserCompaction() {
             return isUser;
+        }
+
+        @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
+
+        @Override
+        public TableId getTableId() {
+            return null;
         }
 
         @Override
