@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -94,7 +95,7 @@ public class QueryMetricOperations {
     private AtomicBoolean timedCorrelationInProgress = new AtomicBoolean(false);
     private MetricUpdateEntryProcessorFactory entryProcessorFactory;
     private QueryMetricOperationsStats stats;
-    private static Set<String> inProcess = Collections.synchronizedSet(new HashSet<>());
+    private static Set<String> inProcess = ConcurrentHashMap.newKeySet();
 
     private final QueryMetricClient queryMetricClient;
     private final DnUtils dnUtils;
