@@ -936,7 +936,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     String jexlPrecondition) {
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(),
-                edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
+                        edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
 
         Set<Metadata> fwdMetaSet = eventMetadataRegistry.get(fwdMetaKey);
@@ -947,7 +947,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
         // Build the Protobuf for the value
         Metadata.Builder forwardBuilder = Metadata.newBuilder().setSource(edgeValue.getSource().getFieldName()).setSink(edgeValue.getSink().getFieldName())
-                .setDate(DateHelper.format(new Date(edgeValue.getEventDate())));
+                        .setDate(DateHelper.format(new Date(edgeValue.getEventDate())));
 
         if (enrichmentFieldName != null) {
             forwardBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
@@ -970,7 +970,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
             // Build the Protobuf for the value
             Metadata.Builder reverseBuilder = Metadata.newBuilder().setDate(DateHelper.format(new Date(edgeValue.getEventDate())))
-                    .setSource(edgeValue.getSink().getFieldName()).setSink(edgeValue.getSource().getFieldName());
+                            .setSource(edgeValue.getSink().getFieldName()).setSink(edgeValue.getSource().getFieldName());
 
             if (enrichmentFieldName != null) {
                 reverseBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
@@ -987,7 +987,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     private boolean isNullOrBidirectional(EdgeDirection direction) {
         return direction == null || direction.equals(EdgeDirection.BIDIRECTIONAL);
     }
-
 
     protected String getEnrichmentFieldName(EdgeDefinition edgeDef) {
         return (edgeDef.isEnrichmentEdge() ? edgeDef.getEnrichmentField() : null);
