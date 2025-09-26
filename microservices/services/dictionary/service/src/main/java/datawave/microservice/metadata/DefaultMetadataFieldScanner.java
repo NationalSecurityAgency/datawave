@@ -1,28 +1,21 @@
 package datawave.microservice.metadata;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +37,7 @@ public class DefaultMetadataFieldScanner {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultMetadataFieldScanner.class);
     private static final String TIMESTAMP_FORMAT = "yyyyMMddHHmmss";
+    private static final Value EMPTY_VALUE = new Value();
 
     private final MarkingFunctions markingFunctions;
     private final ResponseObjectFactory<DefaultDescription,?,DefaultMetadataField,?,?> responseObjectFactory;
@@ -79,8 +73,6 @@ public class DefaultMetadataFieldScanner {
     private BatchScanner createScanner() throws TableNotFoundException {
         BatchScanner scanner = ScannerHelper.createBatchScanner(connectionConfig.getAccumuloClient(), connectionConfig.getMetadataTable(),
                         connectionConfig.getAuths(), numThreads);
-        // Ensure rows for the same field are grouped into a single iterator entry.
-        scanner.addScanIterator(new IteratorSetting(21, WholeRowIterator.class));
         // Do not limit the scanner based on ranges.
         scanner.setRanges(Collections.singletonList(new Range()));
         scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_E);
@@ -123,33 +115,55 @@ public class DefaultMetadataFieldScanner {
          * @return the transformed fields
          */
         private Collection<DefaultMetadataField> transform() {
-            while (iterator.hasNext()) {
-                Map.Entry<Key,Value> entry = iterator.next();
-                try {
-                    // Handles a batch scanner bug where an entry with a null key and value may be in the iterator.
-                    if (entry.getKey() == null && entry.getValue() == null)
-                        // TODO - return an empty collection instead to avoid NPE?
-                        return null;
-                    // Check if either the key or value are null, and throw an exception if so.
-                    if (null == entry.getKey() || null == entry.getValue()) {
-                        throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
-                    }
-                    transformEntry(entry);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Unable to decode row " + entry.getKey());
-                } catch (MarkingFunctions.Exception e) {
-                    throw new IllegalStateException("Unable to decode visibility " + entry.getKey(), e);
+            Map<Key,Value> rowEntries = new HashMap<>();
+            Text row = null;
+            try {
+                while (iterator.hasNext()) {
+                    row = processEntry(row, iterator.next(), rowEntries);
                 }
+                if (!rowEntries.isEmpty()) {
+                    transformEntry(rowEntries);
+                }
+            } catch (MarkingFunctions.Exception e) {
+                throw new IllegalStateException("Unable to decode visibility", e);
             }
             // @formatter::off
             return fields.values().stream().map(Map::values).flatMap(Collection::stream).collect(Collectors.toCollection(LinkedList::new));
             // @formatter::on
         }
 
-        private void transformEntry(Map.Entry<Key,Value> currEntry) throws IOException, MarkingFunctions.Exception {
-            SortedMap<Key,Value> rowEntries = WholeRowIterator.decodeRow(currEntry.getKey(), currEntry.getValue());
+        private Text processEntry(Text row, Map.Entry<Key,Value> entry, Map<Key,Value> rowEntries) throws MarkingFunctions.Exception {
+            // Handles a batch scanner bug where an entry with a null key and value may be in the iterator.
+            if (entry.getKey() == null && entry.getValue() == null) {
+                return row;
+            }
+            // Check if either the key or value are null, and throw an exception if so.
+            if (null == entry.getKey() || null == entry.getValue()) {
+                throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
+            }
 
-            for (Map.Entry<Key,Value> entry : rowEntries.entrySet()) {
+            Text newRow = entry.getKey().getRow();
+
+            if (!rowEntries.isEmpty() && !newRow.equals(row)) {
+                transformEntry(rowEntries);
+                rowEntries.clear();
+            }
+            rowEntries.put(entry.getKey(), getValue(entry));
+
+            return newRow;
+        }
+
+        private Value getValue(Map.Entry<Key,Value> entry) {
+            // only keep values for the DESC family
+            if (entry.getKey().getColumnFamily().equals(ColumnFamilyConstants.COLF_DESC)) {
+                return entry.getValue();
+            } else {
+                return EMPTY_VALUE;
+            }
+        }
+
+        private void transformEntry(Map<Key,Value> currEntry) throws MarkingFunctions.Exception {
+            for (Map.Entry<Key,Value> entry : currEntry.entrySet()) {
                 setCurrentVars(entry);
 
                 // If this row is a hidden event, do not continue transforming it and ensure any
