@@ -110,7 +110,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
         if (document.containsKey(Document.DOCKEY_FIELD_NAME)) {
             Attribute<?> attr = document.get(Document.DOCKEY_FIELD_NAME);
             if (attr instanceof DocumentKey) {
-                eventIds.add((DocumentKey) document.get(Document.DOCKEY_FIELD_NAME));
+                eventIds.add((DocumentKey) attr);
             } else if (attr instanceof Attributes) {
                 // if the attr is an instanceof Attributes, then we need to find the one that best describes
                 // the root or TLD document which should be the one with the smallest CF (datatype\x00uid)
