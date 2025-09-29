@@ -937,50 +937,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(),
                         edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
+
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
-
-        Set<Metadata> fwdMetaSet = eventMetadataRegistry.get(fwdMetaKey);
-        if (null == fwdMetaSet) {
-            fwdMetaSet = new HashSet<>();
-            eventMetadataRegistry.put(fwdMetaKey, fwdMetaSet);
-        }
-
-        // Build the Protobuf for the value
-        Metadata.Builder forwardBuilder = Metadata.newBuilder().setSource(edgeValue.getSource().getFieldName()).setSink(edgeValue.getSink().getFieldName())
-                        .setDate(DateHelper.format(new Date(edgeValue.getEventDate())));
-
-        if (enrichmentFieldName != null) {
-            forwardBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
-        }
-
-        if (jexlPrecondition != null) {
-            forwardBuilder.setJexlPrecondition(jexlPrecondition);
-        }
-
-        fwdMetaSet.add(forwardBuilder.build());
+        addMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPrecondition, fwdMetaKey);
 
         if (isNullOrBidirectional(edgeValue.getEdgeDirection())) {
             Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
-
-            Set<Metadata> revMetaSet = eventMetadataRegistry.get(revMetaKey);
-            if (null == revMetaSet) {
-                revMetaSet = new HashSet<>();
-                eventMetadataRegistry.put(revMetaKey, revMetaSet);
-            }
-
-            // Build the Protobuf for the value
-            Metadata.Builder reverseBuilder = Metadata.newBuilder().setDate(DateHelper.format(new Date(edgeValue.getEventDate())))
-                            .setSource(edgeValue.getSink().getFieldName()).setSink(edgeValue.getSource().getFieldName());
-
-            if (enrichmentFieldName != null) {
-                reverseBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
-            }
-
-            if (jexlPrecondition != null) {
-                reverseBuilder.setJexlPrecondition(jexlPrecondition);
-            }
-
-            revMetaSet.add(reverseBuilder.build());
+            addMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPrecondition, revMetaKey);
         }
     }
 
