@@ -17,6 +17,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import datawave.query.attributes.Attribute;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -106,8 +107,22 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
      */
     private static ArrayList<DocumentKey> getEventIds(Document document) {
         ArrayList<DocumentKey> eventIds = new ArrayList<>();
-        if (document.containsKey("RECORD_ID")) {
-            eventIds.add((DocumentKey) document.get("RECORD_ID"));
+        if (document.containsKey(Document.DOCKEY_FIELD_NAME)) {
+            Attribute<?> attr = document.get(Document.DOCKEY_FIELD_NAME);
+            if(attr instanceof Attributes) {
+                // if the attr is an instanceof Attributes, then we need to find the one that best describes
+                // the root or TLD document which should be the one with the smallest CF (datatype\x00uid)
+                Attribute<?> smallest = null;
+                for (Attribute<?> child : ((Attributes) attr).getAttributes()) {
+                    if (smallest == null || child.getMetadata().getColumnFamily().getLength() < smallest.getMetadata().getColumnFamily().getLength()) {
+                        smallest = child;
+                    }
+                }
+                eventIds.add((DocumentKey) smallest);
+
+            } else if (attr instanceof DocumentKey) {
+                eventIds.add((DocumentKey) document.get(Document.DOCKEY_FIELD_NAME));
+            }
         } else {
             Key key = document.getMetadata();
             String[] cf = key.getColumnFamily().toString().split(Constants.NULL);
