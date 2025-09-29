@@ -93,6 +93,8 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.DayIndexIngest;
+import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -235,6 +237,12 @@ public class ContentFunctionQueryTest {
             }
             writer.close();
         }
+
+        Authorizations auths = new Authorizations("ALL");
+        DayIndexIngest dayIndexIngest = new DayIndexIngest();
+        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+        YearIndexIngest yearIndexIngest = new YearIndexIngest();
+        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
     }
 
     @Test
