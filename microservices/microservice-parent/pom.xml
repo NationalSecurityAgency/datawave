@@ -333,29 +333,25 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>net.revelc.code.formatter</groupId>
-                    <artifactId>formatter-maven-plugin</artifactId>
-                    <version>2.23.0</version>
+                    <!-- This was added to ensure project only uses public API -->
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.6.0</version>
                     <configuration>
-                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
-                        <lineEnding>LF</lineEnding>
-                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                        <configLocation>checkstyle.xml</configLocation>
+                        <failsOnError>true</failsOnError>
+                        <failOnViolation>false</failOnViolation>
+                        <consoleOutput>true</consoleOutput>
+                        <propertyExpansion>basedir=${maven.multiModuleProjectDirectory}</propertyExpansion>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>gov.nsa.datawave</groupId>
-                            <artifactId>datawave-code-style</artifactId>
-                            <version>1.0.1</version>
-                        </dependency>
-                    </dependencies>
                     <executions>
                         <execution>
+                            <id>check-style</id>
                             <goals>
-                                <goal>format</goal>
+                                <goal>check</goal>
                             </goals>
+                            <phase>compile</phase>
                         </execution>
                     </executions>
                 </plugin>
@@ -531,6 +527,10 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>

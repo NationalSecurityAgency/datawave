@@ -127,6 +127,29 @@
         </resources>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <!-- This was added to ensure project only uses public API -->
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.6.0</version>
+                    <configuration>
+                        <configLocation>checkstyle2.xml</configLocation>
+                        <failsOnError>true</failsOnError>
+                        <failOnViolation>false</failOnViolation>
+                        <consoleOutput>true</consoleOutput>
+                        <propertyExpansion>basedir=${maven.multiModuleProjectDirectory}</propertyExpansion>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>check-style</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>compile</phase>
+                        </execution>
+                    </executions>
+                </plugin>
                 <!-- Apply more sensible defaults for user projects -->
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
