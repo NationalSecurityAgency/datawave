@@ -6,6 +6,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
 import javax.ejb.Local;
@@ -27,6 +28,7 @@ import javax.ws.rs.Produces;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
@@ -199,6 +201,9 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
         return response;
     }
 
+    @PermitAll
+    // permit anyone to determine the availability
+    @JmxManaged
     @Override
     public boolean isAvailable() {
         return tableCache.isAvailable();
