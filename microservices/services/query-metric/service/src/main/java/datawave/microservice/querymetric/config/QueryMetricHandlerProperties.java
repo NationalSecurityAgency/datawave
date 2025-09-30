@@ -119,7 +119,7 @@ public class QueryMetricHandlerProperties {
             "USER",
             "YIELD_COUNT");
 
-    protected List<String> additionalIndexFields = Collections.EMPTY_LIST;
+    protected List<String> additionalIndexFields = Collections.emptyList();
 
     protected List<String> reverseIndexFields = Arrays.asList(
             "ERROR_CODE",
@@ -137,7 +137,7 @@ public class QueryMetricHandlerProperties {
             "QUERY_TYPE",
             "USER");
 
-    protected List<String> additionalReverseIndexFields = Collections.EMPTY_LIST;
+    protected List<String> additionalReverseIndexFields = Collections.emptyList();
 
     protected List<String> numericFields = Arrays.asList(
             "CREATE_CALL_TIME",
@@ -155,7 +155,7 @@ public class QueryMetricHandlerProperties {
             "NUM_UPDATES",
             "YIELD_COUNT");
 
-    protected List<String> additionalNumericFields = Collections.EMPTY_LIST;
+    protected List<String> additionalNumericFields = Collections.emptyList();
     //@formatter:on
 
     public Map<String,String> getProperties() {

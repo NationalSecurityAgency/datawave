@@ -210,6 +210,11 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     }
 
     @Override
+    public boolean isAvailable() {
+        return tableCache.isAvailable();
+    }
+
+    @Override
     public List<TableCacheDescription> getTableCaches() {
         return tableCache.getTableCaches();
     }

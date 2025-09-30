@@ -2549,8 +2549,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 false);
             }
 
-            String datatypeFilter = config.getDatatypeFilterAsString();
-            addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
+            // only serialize the filter if not empty
+            if (!config.getDatatypeFilter().isEmpty()) {
+                cfg.addOption(QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString());
+            }
 
             addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, getContentExpansionFields(), false);
 

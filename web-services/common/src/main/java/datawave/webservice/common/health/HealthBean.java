@@ -72,6 +72,9 @@ public class HealthBean {
     private AccumuloTableCache tableCache;
 
     @Inject
+    private AccumuloTableCache tableCache;
+
+    @Inject
     private AccumuloConnectionFactory accumuloConnectionFactoryBean;
 
     @Inject
