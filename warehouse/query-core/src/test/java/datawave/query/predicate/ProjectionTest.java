@@ -16,7 +16,7 @@ public class ProjectionTest {
         assertTrue(projection.apply("FIELD_A"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testNoConfiguration() {
         Projection projection = new Projection(null, Projection.ProjectionType.INCLUDES);
         assertTrue(projection.apply("FIELD_A"));

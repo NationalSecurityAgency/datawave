@@ -1,13 +1,15 @@
 package datawave.query.iterator.logic;
 
+import static datawave.util.keyword.KeywordExtractor.EMPTY_RESULTS;
+
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -27,7 +29,6 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -52,7 +53,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     private static final Map<String,String> defaultMapOptions;
 
     static {
-        defaultMapOptions = Maps.newHashMap();
+        defaultMapOptions = new HashMap<>();
         defaultMapOptions.put(KeywordExtractor.MIN_NGRAMS, "minimum number of words (ngrams) per keyword");
         defaultMapOptions.put(KeywordExtractor.MAX_NGRAMS, "maximum number of words (ngrams) per keyword");
         defaultMapOptions.put(KeywordExtractor.MAX_KEYWORDS, "maximum number of keywords to extract");
@@ -135,7 +136,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
 
         final String[] nameList = viewNames.split(Constants.COMMA);
         preferredViews.clear();
-        preferredViews.addAll(Arrays.asList(nameList));
+        preferredViews.addAll(List.of(nameList));
 
         // add entries passed in via iterator options to the document language map.
         if (iteratorOptions.containsKey(DOCUMENT_LANGUAGES)) {
@@ -198,7 +199,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         }
 
         // store the content that we'll use for keyword extraction.
-        final Map<String,VisibleContent> foundContent = new HashMap<>();
+        final Map<String,VisibleContent> foundContent = new LinkedHashMap<>();
         Key top = source.getTopKey();
 
         // while we have d keys for the same document
@@ -231,7 +232,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         KeywordExtractor keywordExtractor = new KeywordExtractor(documentUid, preferredViews, foundContent, language, iteratorOptions);
         KeywordResults results = keywordExtractor.extractKeywords();
 
-        if (results != null) {
+        if (results != EMPTY_RESULTS) {
             tk = top;
             tv = new Value(KeywordResults.serialize(results));
             return;
@@ -345,7 +346,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     }
 
     protected static String getDocumentIdentifier(String row, String dtUid) {
-        return row + "/" + dtUid.replaceAll("\0", "/");
+        return row + "/" + dtUid.replace("\0", "/");
     }
 
     @Override

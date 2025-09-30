@@ -261,7 +261,7 @@ public class GenerateShardSplits {
                         long currentBatchDelay = System.currentTimeMillis() - startAddSplits;
 
                         // Ensure at least half the tablets have balanced off the original tserver
-                        while ((tabletLocations.size() < reducedBatchSize * pctBatchBalanceRequired) || (currentBatchDelay < maxBalancerDelay)) {
+                        while ((tabletLocations.size() < reducedBatchSize * pctBatchBalanceRequired) && (currentBatchDelay < maxBalancerDelay)) {
                             tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
                             Thread.sleep(balancerDelay);
                             currentBatchDelay = currentBatchDelay + balancerDelay;

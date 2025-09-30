@@ -34,6 +34,7 @@ import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -411,6 +412,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("ivaratorCacheScanPersistThreshold", 1040L);
         defaultValues.put("ivaratorCacheScanTimeout", 3600000L);
         updatedValues.put("ivaratorCacheScanTimeout", 3600L);
+        defaultValues.put("excludeUnfieldedTypes", Collections.emptyList());
+        updatedValues.put("excludeUnfieldedTypes", Lists.newArrayList(new NumberType()));
         defaultValues.put("maxFieldIndexRangeSplit", 11);
         updatedValues.put("maxFieldIndexRangeSplit", 20);
         defaultValues.put("ivaratorMaxOpenFiles", 100);
@@ -541,7 +544,7 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("datatypeFilter", Sets.newHashSet());
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
-        defaultValues.put("datatypeFilterAsString", "");
+        defaultValues.put("datatypeFilterAsString", "*");
         updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");
         alreadySet.add("datatypeFilterAsString");
 
@@ -630,6 +633,15 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("maxLinesToPrint", -1);
         updatedValues.put("maxLinesToPrint", 150);
+
+        defaultValues.put("dayIndexTableName", TableName.SHARD_DAY_INDEX);
+        updatedValues.put("dayIndexTableName", "datawave." + TableName.SHARD_DAY_INDEX);
+        defaultValues.put("yearIndexTableName", TableName.SHARD_YEAR_INDEX);
+        updatedValues.put("yearIndexTableName", "datawave." + TableName.SHARD_YEAR_INDEX);
+        defaultValues.put("useShardedIndex", false);
+        updatedValues.put("useShardedIndex", true);
+        defaultValues.put("dayIndexThreshold", -1);
+        updatedValues.put("dayIndexThreshold", 31);
     }
 
     private Query createQuery(String query) {

@@ -68,7 +68,7 @@ public class ProtobufEdgeDeletePreconditionTest {
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:31:53Z"));
-        myEvent.setDate(i.toEpochMilli());
+        myEvent.setTimestamp(i.toEpochMilli());
 
         return myEvent;
     }

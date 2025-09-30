@@ -219,12 +219,16 @@
         <property name="name" value="Check for Unfielded Terms That Could Be Quoted"/>
     </bean>
 
+    <bean id="GroupedInterpretationRule" scope="prototype" class="datawave.query.rules.GroupedInterpretationRule">
+        <property name="name" value="Interpret Grouped Phrases"/>
+    </bean>
+
     <bean id="IncludeExcludeArgsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeArgsRule">
         <property name="name" value="Validate Args of #INCLUDE and #EXCLUDE"/>
     </bean>
 
-    <bean id="IncludeExcludeIndexFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexFieldsRule">
-        <property name="name" value="Check #INCLUDE and #EXCLUDE for Indexed Fields"/>
+    <bean id="IncludeExcludeIndexOnlyFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexOnlyFieldsRule">
+        <property name="name" value="Check #INCLUDE and #EXCLUDE for Index Only Fields"/>
     </bean>
 
     <bean id="InvalidQuoteRule" scope="prototype" class="datawave.query.rules.InvalidQuoteRule">
@@ -414,12 +418,13 @@
                 <ref bean="AmbiguousNotRule"/>
                 <ref bean="AmbiguousOrPhrasesRule"/>
                 <ref bean="AmbiguousUnquotedPhrasesRule"/>
+                <ref bean="GroupedInterpretationRule"/>
                 <ref bean="MinimumSlopProximityRule"/>
                 <ref bean="IncludeExcludeArgsRule"/>
                 <ref bean="FieldExistenceRule"/>
                 <ref bean="UnescapedSpecialCharsRule"/>
                 <ref bean="FieldPatternPresenceRule"/>
-                <ref bean="IncludeExcludeIndexFieldsRule"/>
+                <ref bean="IncludeExcludeIndexOnlyFieldsRule"/>
                 <ref bean="NumericValueRule"/>
                 <ref bean="TimeFunctionRule"/>
             </list>

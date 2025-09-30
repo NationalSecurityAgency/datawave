@@ -34,6 +34,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
@@ -65,7 +66,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
-import datawave.util.UniversalSet;
 
 /**
  * <p>
@@ -92,7 +92,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     // is this a tld query, explicitly default to false
     private boolean tldQuery = false;
-    private Map<String,String> filterOptions = new HashMap<>();
+    private final Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;
     private transient QueryStopwatch timers = new QueryStopwatch();
     private int maxScannerBatchSize = 1000;
@@ -204,6 +204,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String metadataTableName = TableName.METADATA;
     private String dateIndexTableName = TableName.DATE_INDEX;
     private String indexStatsTableName = TableName.INDEX_STATS;
+    private String dayIndexTableName = TableName.SHARD_DAY_INDEX;
+    private String yearIndexTableName = TableName.SHARD_YEAR_INDEX;
     private String defaultDateTypeName = "EVENT";
     // should we cleanup the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
@@ -237,7 +239,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Default to having no unevaluatedFields
     private Set<String> unevaluatedFields = Collections.emptySet();
     // Filter results on datatypes. Default to having no filters
-    private Set<String> datatypeFilter = UniversalSet.instance();
+    private Set<String> datatypeFilter = new HashSet<>();
     // A set of sorted index holes
     private List<IndexValueHole> indexValueHoles = new ArrayList<>();
     // a set of user specified mappings
@@ -409,6 +411,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     private List<String> contentFieldNames = Collections.emptyList();
 
+    private List<Type<?>> excludeUnfieldedTypes = Collections.emptyList();
+
     /**
      * The source to use as the active query log name for all query iterators in scans generated for the shard query logic. If the value
      * {@value #TABLE_NAME_SOURCE} is supplied, the shard table name will be used. If {@value #QUERY_LOGIC_NAME_SOURCE} is supplied, the name of the shard query
@@ -557,6 +561,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxLinesToPrint = -1;
 
     /**
+     * Flag that controls usage of the sharded index tables. These tables are sharded based on the year or day and shard offsets are tracked in a bitset.
+     */
+    private boolean useShardedIndex = false;
+
+    /**
+     * If the days in the query date range exceed this threshold, the year index is scanned first in an effort to reduce useless scans against the day index
+     */
+    private int dayIndexThreshold = -1;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -638,6 +652,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIgnoreNonExistentFields(other.getIgnoreNonExistentFields());
         this.setDateIndexTableName(other.getDateIndexTableName());
         this.setIndexStatsTableName(other.getIndexStatsTableName());
+        this.setDayIndexTableName(other.getDayIndexTableName());
+        this.setYearIndexTableName(other.getYearIndexTableName());
         this.setDefaultDateTypeName(other.getDefaultDateTypeName());
         this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
         this.setNumQueryThreads(other.getNumQueryThreads());
@@ -660,8 +676,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFieldRuleClassName(null == other.getIndexFilteringClassNames() ? null : other.getFieldRuleClassName());
         this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
-        this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
-                        : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
+        this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
         this.setIndexValueHoles(null == other.getIndexValueHoles() ? null : Lists.newArrayList(other.getIndexValueHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
@@ -736,6 +751,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
         this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
         this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+        this.setExcludeUnfieldedTypes(other.getExcludeUnfieldedTypes());
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         this.setIvaratorNumRetries(other.getIvaratorNumRetries());
@@ -810,6 +826,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setUseShardedIndex(other.isUseShardedIndex());
+        this.setDayIndexThreshold(other.getDayIndexThreshold());
     }
 
     /**
@@ -1103,7 +1121,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getDatatypeFilterAsString() {
-        return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
+        return new TypeFilter(datatypeFilter).toString();
     }
 
     private Set<String> deconstruct(Collection<String> fields) {
@@ -1313,7 +1331,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @SuppressWarnings("unchecked")
     public void setFilterClassNames(List<String> filterClassNames) {
-        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
+        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.emptyList()));
     }
 
     public String getFieldRuleClassName() {
@@ -1345,7 +1363,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     @SuppressWarnings("unchecked")
     public void setIndexFilteringClassNames(List<String> classNames) {
-        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.EMPTY_LIST));
+        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.emptyList()));
     }
 
     public Class<? extends Type<?>> getDefaultType() {
@@ -1621,6 +1639,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+    }
+
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return excludeUnfieldedTypes;
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        this.excludeUnfieldedTypes = excludeUnfieldedTypes;
     }
 
     public int getMaxFieldIndexRangeSplit() {
@@ -3021,6 +3047,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize() &&
                 getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold() &&
                 getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout() &&
+                getExcludeUnfieldedTypes() == that.getExcludeUnfieldedTypes() &&
                 getMaxFieldIndexRangeSplit() == that.getMaxFieldIndexRangeSplit() &&
                 getIvaratorMaxOpenFiles() == that.getIvaratorMaxOpenFiles() &&
                 getIvaratorNumRetries() == that.getIvaratorNumRetries() &&
@@ -3054,6 +3081,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getMetadataTableName(), that.getMetadataTableName()) &&
                 Objects.equals(getDateIndexTableName(), that.getDateIndexTableName()) &&
                 Objects.equals(getIndexStatsTableName(), that.getIndexStatsTableName()) &&
+                Objects.equals(getDayIndexTableName(), that.getDayIndexTableName()) &&
+                Objects.equals(getYearIndexTableName(), that.getYearIndexTableName()) &&
                 Objects.equals(getDefaultDateTypeName(), that.getDefaultDateTypeName()) &&
                 Objects.equals(getNumQueryThreads(), that.getNumQueryThreads()) &&
                 Objects.equals(numLookupThreads, that.numLookupThreads) &&
@@ -3135,8 +3164,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
-
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+                getDayIndexThreshold() == that.getDayIndexThreshold();
         // @formatter:on
     }
 
@@ -3196,6 +3225,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMetadataTableName(),
                 getDateIndexTableName(),
                 getIndexStatsTableName(),
+                getDayIndexTableName(),
+                getYearIndexTableName(),
                 getDefaultDateTypeName(),
                 isCleanupShardsAndDaysQueryHints(),
                 getNumQueryThreads(),
@@ -3291,6 +3322,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getIvaratorCacheBufferSize(),
                 getIvaratorCacheScanPersistThreshold(),
                 getIvaratorCacheScanTimeout(),
+                getExcludeUnfieldedTypes(),
                 getMaxFieldIndexRangeSplit(),
                 getIvaratorMaxOpenFiles(),
                 getIvaratorNumRetries(),
@@ -3345,8 +3377,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes()
-        );
+                getNoExpansionIfCurrentDateTypes(),
+                isUseShardedIndex(),
+                getDayIndexThreshold());
         // @formatter:on
     }
 
@@ -3411,5 +3444,37 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         this.maxLinesToPrint = maxLinesToPrint;
+    }
+
+    public String getDayIndexTableName() {
+        return dayIndexTableName;
+    }
+
+    public void setDayIndexTableName(String dayIndexTableName) {
+        this.dayIndexTableName = dayIndexTableName;
+    }
+
+    public String getYearIndexTableName() {
+        return yearIndexTableName;
+    }
+
+    public void setYearIndexTableName(String yearIndexTableName) {
+        this.yearIndexTableName = yearIndexTableName;
+    }
+
+    public boolean isUseShardedIndex() {
+        return useShardedIndex;
+    }
+
+    public void setUseShardedIndex(boolean useShardedIndex) {
+        this.useShardedIndex = useShardedIndex;
+    }
+
+    public int getDayIndexThreshold() {
+        return dayIndexThreshold;
+    }
+
+    public void setDayIndexThreshold(int dayIndexThreshold) {
+        this.dayIndexThreshold = dayIndexThreshold;
     }
 }

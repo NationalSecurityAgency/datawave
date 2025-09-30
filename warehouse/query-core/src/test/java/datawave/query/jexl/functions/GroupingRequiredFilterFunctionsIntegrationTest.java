@@ -44,6 +44,8 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.util.DayIndexIngest;
+import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -188,6 +190,13 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
     private AccumuloClient createClient(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
         AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).client;
         GroupingFiltersIngest.writeItAll(client, getRange());
+
+        DayIndexIngest dayIndexIngest = new DayIndexIngest();
+        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+        YearIndexIngest yearIndexIngest = new YearIndexIngest();
+        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);

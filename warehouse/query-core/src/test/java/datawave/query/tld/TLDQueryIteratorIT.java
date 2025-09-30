@@ -322,7 +322,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
 
         public TestTLDQueryIterator() {
             super();
-            this.waitWindowObserver = new TestWaitWindowObserver(5, 2);
+            this.waitWindowObserver = new TestWaitWindowObserver(5, 50);
         }
 
         public TestTLDQueryIterator(TestTLDQueryIterator other, IteratorEnvironment env) {
