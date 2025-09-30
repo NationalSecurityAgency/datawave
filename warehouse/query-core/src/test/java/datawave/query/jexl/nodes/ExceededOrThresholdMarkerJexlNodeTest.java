@@ -88,6 +88,8 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.DayIndexIngest;
+import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -299,6 +301,12 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             m.put("ns", "20000101_1", new Value());
             bw.addMutation(m);
         }
+
+        DayIndexIngest dayIndexIngest = new DayIndexIngest();
+        dayIndexIngest.convertToDayIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+        YearIndexIngest yearIndexIngest = new YearIndexIngest();
+        yearIndexIngest.convertToYearIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
     }
 
     @Test
@@ -438,8 +446,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     public void valueListTest() throws Exception {
         // @formatter:off
         String query = "(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
+                GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
 
         maxOrExpansionThreshold = 1;
@@ -451,8 +459,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(9, events.size());
 
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
 
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -485,8 +492,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(1, events.size());
 
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_13.split(";")));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_13.split(";")));
 
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -508,8 +514,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         // @formatter:off
         String query = "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "')) && " +
                 "not(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
+                GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
 
         maxOrExpansionThreshold = 1;

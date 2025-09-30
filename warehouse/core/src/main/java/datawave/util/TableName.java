@@ -21,5 +21,11 @@ public final class TableName {
     public static final String SHARD_INDEX = "shardIndex";
     public static final String SHARD_RINDEX = "shardReverseIndex";
 
+    // global primary index
+    public static final String SHARD_YEAR_INDEX = "shardYearIndex";
+
+    // global secondary index, partitioned by day
+    public static final String SHARD_DAY_INDEX = "shardDayIndex";
+
     private TableName() {}
 }
