@@ -68,10 +68,7 @@ public class HealthBean {
     private static String status = "ready";
     private volatile String lastHealthMsg = null;
 
-    @Inject
-    private AccumuloTableCache tableCache;
-
-    @Inject
+    @EJB
     private AccumuloTableCache tableCache;
 
     @Inject
@@ -114,7 +111,6 @@ public class HealthBean {
             return logHealth(Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build());
         } else if (shutdownInProgress) {
             health.details = "Shutdown in progress -- no new query connections allowed.";
-            LOG.debug(health.details);
             return logHealth(Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build());
         } else {
             health.details = "System healthy";
@@ -126,7 +122,7 @@ public class HealthBean {
      * Log the health response and pass it along
      */
     private Response logHealth(Response response) {
-        ServerHealth health = (ServerHealth)(response.getEntity());
+        ServerHealth health = (ServerHealth) (response.getEntity());
         String healthMsg = response.getStatusInfo() + ": " + health.details;
         if (!healthMsg.equals(lastHealthMsg)) {
             lastHealthMsg = healthMsg;
