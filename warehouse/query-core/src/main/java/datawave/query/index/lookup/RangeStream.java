@@ -107,7 +107,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 
-public class RangeStream extends BaseVisitor implements CloseableIterable<QueryPlan> {
+public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
     private static final int MAX_MEDIAN = 20;
 
@@ -178,6 +178,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
     }
 
+    @Override
     public CloseableIterable<QueryPlan> streamPlans(JexlNode script) {
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(script);
 

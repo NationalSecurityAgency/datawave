@@ -96,7 +96,9 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.index.lookup.IndexStream.StreamContext;
+import datawave.query.index.day.DayIndexStream;
+import datawave.query.index.lookup.IndexStream;
+import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -3119,21 +3121,22 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Begin stream of ranges from inverted index");
 
-            RangeStream stream = initializeRangeStream(config, scannerFactory, metadataHelper);
-
+            QueryPlanStream stream = getQueryPlanStream(config, scannerFactory, metadataHelper);
             ranges = stream.streamPlans(queryTree);
 
-            if (log.isTraceEnabled()) {
-                log.trace("query stream is " + stream.context());
-            }
+            if (stream instanceof RangeStream) {
+                RangeStream rangeStream = (RangeStream) stream;
 
-            // the context here doesn't actually matter because the range stream was initialized but the underlying scanners
-            // have not been started via the concurrent scanner initializer. This is just a quick check for known bad states
-            if (stream.context().equals(StreamContext.DELAYED)) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Full table scan required because query consists of only delayed expressions");
+                    log.debug("range stream context: " + rangeStream.context());
                 }
-                needsFullTable = true;
+
+                if (rangeStream.context().equals(IndexStream.StreamContext.DELAYED)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because query consists of only delayed expressions");
+                    }
+                    needsFullTable = true;
+                }
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
@@ -3189,6 +3192,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
+    private QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+
+        if (config.isUseShardedIndex()) {
+            return getDayIndexStream(config);
+        } else {
+            return initializeRangeStream(config, scannerFactory, metadataHelper);
+        }
+    }
+
     /**
      * Initializes the range stream, whether it is configured to be a different class than the Default Range stream or not.
      *
@@ -3219,6 +3231,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         | NoSuchMethodException | SecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Get a {@link DayIndexStream} built from the {@link ShardQueryConfiguration}.
+     *
+     * @param config
+     *            the ShardQueryConfiguration
+     * @return a DayIndexStream
+     */
+    private QueryPlanStream getDayIndexStream(ShardQueryConfiguration config) {
+        return new DayIndexStream(config);
     }
 
     public boolean isLimitScanners() {
