@@ -96,14 +96,14 @@ public class IvaratorRunnable implements Runnable {
 
     // Gracefully stop the Runnable and then throw any supplied Exception so that
     // it will be returned when the user calls get() on the IvaratorFuture
-    public void suspend(Exception suspendException) {
+    public void suspend(long duration, TimeUnit timeUnit, Exception suspendException) {
         if (this.running.get()) {
             this.suspendRequested.set(true);
             this.suspendException = suspendException;
             // The run method should call suspendNow(), see suspendedRequested == true, save state,
             // and exit. The state will be available to restart the IvaratorRunnable during a subsequent call
             // the duration is used to prevent the Thread from waiting indefinitely
-            waitUntilFinished(60, TimeUnit.SECONDS);
+            waitUntilFinished(duration, timeUnit);
         }
     }
 
@@ -225,6 +225,7 @@ public class IvaratorRunnable implements Runnable {
                             this.ivarator.toStringNoQueryId()));
         }
         Key nextSeekKey = null;
+        Key top = null;
         try {
             if (this.ivarator.getCollectTimingDetails() && this.source instanceof SourceTrackingIterator) {
                 this.querySpan = ((SourceTrackingIterator) this.source).getQuerySpan();
@@ -241,7 +242,7 @@ public class IvaratorRunnable implements Runnable {
                             : null;
 
             while (this.source.hasTop()) {
-                Key top = this.source.getTopKey();
+                top = this.source.getTopKey();
                 // if suspended, set the restartKey and exit the run method
                 if (suspendNow(top)) {
                     break;
@@ -342,19 +343,42 @@ public class IvaratorRunnable implements Runnable {
         } catch (Exception e) {
             // throw the exception up which will be available via the Future
             String timing = getTimingInfo();
-            if (this.suspendRequested.get()) {
+            if (this.suspendRequested.get() && this.suspendException == null) {
                 // this could happen if a suspend request timed out before suspendRequested could be checked due to a stuck scan
-                log.info(String.format("IvaratorRunnable Exception after suspend requested %s rangeHash:%s %s timing:%s matched %d of %d keys",
-                                getIvaratorInfo(), this.rangeHash, this.ivarator.toStringNoQueryId(), timing, this.matched, this.scanned), e);
+                if (top != null) {
+                    try {
+                        // if execution makes it to this point before the Ivarator is resumed, then we can still re-use the IvaratorRunnable
+                        // if the Ivarator is resumed first, then this IvaratorFuture and IvaratorRunnable will be removed
+                        suspendNow(top);
+                        log.info(String.format(
+                                        "Suspended IvaratorRunnable SUCCESS after Exception %s rangeHash:%s at key:%s %s timing:%s matched %d of %d keys",
+                                        getIvaratorInfo(), this.rangeHash, this.restartKey, this.ivarator.toStringNoQueryId(), timing, this.matched,
+                                        this.scanned));
+                    } catch (Exception e1) {
+                        // not expected since this.suspendException == null
+                        log.error(String.format("Suspend IvaratorRunnable FAILED after Exception %s %s rangeHash:%s %s timing:%s matched %d of %d keys",
+                                        e.getMessage(), getIvaratorInfo(), this.rangeHash, this.ivarator.toStringNoQueryId(), timing, this.matched,
+                                        this.scanned), e1);
+                        this.setStatus(Status.FAILED);
+                    }
+                } else {
+                    log.info(String.format(
+                                    "IvaratorRunnable Exception after suspend requested, but no topKey %s rangeHash:%s %s timing:%s matched %d of %d keys",
+                                    getIvaratorInfo(), this.rangeHash, this.ivarator.toStringNoQueryId(), timing, this.matched, this.scanned));
+                    this.setStatus(Status.FAILED);
+                }
             } else {
                 log.error(String.format("Failed IvaratorRunnable %s rangeHash:%s %s timing:%s matched %d of %d keys", getIvaratorInfo(), this.rangeHash,
                                 this.ivarator.toStringNoQueryId(), timing, this.matched, this.scanned), e);
+                this.setStatus(Status.FAILED);
             }
-            this.setStatus(Status.FAILED);
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(e);
+            // only rethrow the exception if we are in a FAILED state
+            if (this.getStatus().equals(Status.FAILED)) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
+                }
             }
         } finally {
             // return the ivarator source back to the pool.
