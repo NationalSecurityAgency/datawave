@@ -159,7 +159,7 @@ public class RemoteEventQueryLogicIT {
         assertTrue(r.getException() instanceof RemoteTimeoutQueryException);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testDefaultConnectionPoolTimeout() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
         RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
