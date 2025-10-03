@@ -1,11 +1,9 @@
 package datawave.query.jexl.visitors;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -30,26 +28,24 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
 
 /**
- * Class to check that each query node contains a field which exists in the schema.
+ * Class to check that each query node contains a field which exists in the schema for the given date range.
  *
  * <pre>
  * 1. If a datatype filter was specified, then the existence check is limited to only those datatypes
  * 2. If a datatype filter is NOT specified (null or empty), this implies ALL datatypes.
+ * 3. If querySettings is NOT specified (null), it will not report any missing fields. This is due to no begin or end date being provided.
  * </pre>
  */
 public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
     private final MetadataHelper helper;
     private final Set<String> datatypeFilter;
-    private final Date queryBeginDate;
-    private final Date queryEndDate;
+    private final Query querySettings;
     private final Set<String> specialFields;
 
     public FieldMissingFromDateRangeVisitor(MetadataHelper helper, Set<String> datatypeFilter, Set<String> specialFields, Query querySettings) {
         this.helper = helper;
-        // need to add null checks
-        this.queryBeginDate = querySettings.getBeginDate();
-        this.queryEndDate = querySettings.getEndDate();
+        this.querySettings = querySettings;
         this.specialFields = specialFields;
         // if given datatypeFilter is empty or null, assume that means ALL datatypes
         if (datatypeFilter == null) {
@@ -70,8 +66,8 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
      * @param node
      *            Jexl node
      * @param data
-     *            The set of names which we have determined do not exist
-     * @return the updated set of names which do not exist
+     *            The set of names which we have determined have not been ingested during the date range.
+     * @return the updated set of names which have not been ingested during the date range.
      */
     private Object findMissingFields(ASTOrNode node, Object data) {
         @SuppressWarnings("unchecked")
@@ -102,10 +98,10 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
                 fieldNamesToTestDateRange.add(fieldName);
             }
         }
-
-        Map<String,Long> occurrences = helper.getCountsForFieldsInDateRange(fieldNamesToTestDateRange, this.datatypeFilter, this.queryBeginDate,
-                        this.queryEndDate);
-        if (occurrences.values().stream().mapToLong(Long::longValue).sum() < 1) {
+        // Find the amount of times the fields have been ingested during the date range for all fields in the OR.
+        long occurrences = this.querySettings != null ? helper.getCountsForFieldsInDateRange(fieldNamesToTestDateRange, this.datatypeFilter,
+                        this.querySettings.getBeginDate(), this.querySettings.getEndDate()).values().stream().mapToLong(Long::longValue).sum() : 1;
+        if (occurrences < 1) {
             return nonExistentFieldNames.addAll(fieldNamesToTestDateRange);
         } else {
             return nonExistentFieldNames;
@@ -116,8 +112,8 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
      * @param node
      *            Jexl node
      * @param data
-     *            The set of names which we have determined do not exist
-     * @return the updated set of names which do not exist
+     *            The set of names which we have determined have not been ingested during the date range.
+     * @return the updated set of names which have not been ingested during the date range.
      */
     private Object findMissingFields(JexlNode node, Object data) {
         @SuppressWarnings("unchecked")
@@ -139,7 +135,9 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
         for (ASTIdentifier identifier : identifiers) {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
-            Long occurrences = helper.getCountsByFieldForDays(fieldName, this.queryBeginDate, this.queryEndDate, this.datatypeFilter);
+            long occurrences = this.querySettings != null
+                            ? helper.getCountsByFieldForDays(fieldName, this.querySettings.getBeginDate(), this.querySettings.getEndDate(), this.datatypeFilter)
+                            : 1;
             if (!specialFields.contains(fieldName) && occurrences < 1) {
                 nonIngestedFieldNames.add(fieldName);
             }
@@ -197,7 +195,9 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
         for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
             // deconstruct the identifier
             final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-            Long occurrences = helper.getCountsByFieldForDays(fieldName, this.queryBeginDate, this.queryEndDate, this.datatypeFilter);
+            long occurrences = this.querySettings != null
+                            ? helper.getCountsByFieldForDays(fieldName, this.querySettings.getBeginDate(), this.querySettings.getEndDate(), this.datatypeFilter)
+                            : 1;
             // changed to allow _ANYFIELD_ in functions
             if (!specialFields.contains(fieldName) && occurrences < 1) {
                 nonIngestedFieldNames.add(testFieldName);
