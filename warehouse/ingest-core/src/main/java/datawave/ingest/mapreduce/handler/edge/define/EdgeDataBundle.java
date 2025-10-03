@@ -109,6 +109,11 @@ public class EdgeDataBundle {
     public void clearNonEventFields() {
         this.source = null;
         this.sink = null;
+        this.hasMaskedSource = false;
+        this.hasMaskedSink = false;
+        this.sourceMaskedValue = null;
+        this.sinkMaskedValue = null;
+        this.forceMaskedVisibility = false;
     }
 
     private int getHour(long time) {

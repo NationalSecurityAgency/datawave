@@ -404,7 +404,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
                         }
                     }
-
+                    edgeDataBundle.clearNonEventFields();
                 }
             }
         }
@@ -443,7 +443,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
                             }
                         }
-
+                        edgeDataBundle.clearNonEventFields();
                     }
                 }
             }
@@ -493,6 +493,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         edgeDataBundle.setEdgeDefinition(edgeDef);
         edgeDataBundle.setSource(source);
         edgeDataBundle.setSink(sink);
+        edgeDataBundle.initFieldMasking(this.getHelper(event.getDataType()), event);
         edgeDataBundle.initMarkings(ifaceSource.getMarkings(), ifaceSink.getMarkings());
 
         // if the edgeDef is an enrichment definition, fill in the enrichedValue
@@ -500,10 +501,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             setEnrichmentInfo(edgeDef, edgeDataBundle, fieldUtil, sourceGroup, sourceSubGroup, sinkGroup, sinkSubGroup);
         }
 
-        if (edgeDataBundle.requiresMasking()) {
-            if (source.hasMaskedValue() || sink.hasMaskedValue()) {
-                maskEdge(edgeDataBundle, event);
-            }
+        if (event.isRequiresMasking()) {
+            maskEdge(edgeDataBundle, event);
         }
 
         // Validate the edge value
