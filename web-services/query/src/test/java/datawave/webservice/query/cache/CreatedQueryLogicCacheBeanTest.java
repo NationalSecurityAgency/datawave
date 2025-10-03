@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;

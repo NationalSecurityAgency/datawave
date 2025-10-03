@@ -67,7 +67,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
 
     private enum reason {
         // the reason a query tree failed validation
-        DOUBLE_PAREN, WRAPPED_SINGLE_CHILD
+        DOUBLE_PAREN, WRAPPED_SINGLE_CHILD, WRAPPED_SINGLETON
     }
 
     public static boolean validate(JexlNode node) {
@@ -132,6 +132,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
             if (isWrappedSingleTerm(child)) {
+                invalidate(node, reason.WRAPPED_SINGLETON);
                 return true;
             }
         }
@@ -139,7 +140,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
     }
 
     private boolean isWrappedSingleTerm(JexlNode node) {
-        if (node instanceof ASTReferenceExpression) {
+        if (node instanceof ASTReferenceExpression && !(node.jjtGetParent() instanceof ASTNotNode)) {
             boolean isMarkerNode = QueryPropertyMarkerVisitor.getInstance(node).isAnyType();
             if (!isMarkerNode) {
                 JexlNode unwrapped = JexlASTHelper.dereference(node);

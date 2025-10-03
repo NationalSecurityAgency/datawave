@@ -85,7 +85,7 @@ public class GroupingUtils {
      * @param group
      *            the group
      * @param key
-     *            the docment key
+     *            the document key
      * @param markingFunctions
      *            the marking functions to use when combining column visibilities
      * @param averageWriteFormat
@@ -120,10 +120,8 @@ public class GroupingUtils {
                 for (Aggregator<?> aggregator : entry.getValue().values()) {
                     String field = aggregator.getField();
                     // Do not include an entry for the aggregation if it is null (indicating that no entries were found to be aggregated). The exception to this
-                    // is
-                    // the #COUNT aggregation. This will return a non-null value of 0 if no entries were found to be aggregated, and can be included in the
-                    // final
-                    // output.
+                    // is the #COUNT aggregation. This will return a non-null value of 0 if no entries were found to be aggregated, and can be included in the
+                    // final output.
                     if (aggregator.getAggregation() != null) {
                         switch (aggregator.getOperation()) {
                             case SUM:

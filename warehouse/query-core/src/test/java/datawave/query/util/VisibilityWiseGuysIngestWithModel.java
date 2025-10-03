@@ -11,6 +11,7 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -48,6 +49,9 @@ public class VisibilityWiseGuysIngestWithModel {
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+
+    private static final DayIndexIngest dayIndexIngest = new DayIndexIngest();
+    private static final YearIndexIngest yearIndexIngest = new YearIndexIngest();
 
     protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
@@ -794,6 +798,18 @@ public class VisibilityWiseGuysIngestWithModel {
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
+            mutation = new Mutation("SOUP");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("FOOD");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            bw.addMutation(mutation);
+
         } finally {
             if (null != bw) {
                 bw.close();
@@ -903,6 +919,11 @@ public class VisibilityWiseGuysIngestWithModel {
                 bw.close();
             }
         }
+
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL", "E", "I");
+        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
     }
 
     private static Value getValueForBuilderFor(String... in) {

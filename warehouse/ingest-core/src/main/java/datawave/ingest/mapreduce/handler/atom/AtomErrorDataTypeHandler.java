@@ -91,8 +91,8 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         // make a copy of the event to avoid side effects
         record = record.copy();
 
-        // set the event date to now to enable keeping track of when this error occurred (determines date for shard)
-        record.setDate(System.currentTimeMillis());
+        // set the event timestamp to now to enable keeping track of when this error occurred (determines date for shard)
+        record.setTimestamp(System.currentTimeMillis());
 
         // set the default markings if needed
         if (record.hasError(RawDataErrorNames.MISSING_DATA_ERROR)) {

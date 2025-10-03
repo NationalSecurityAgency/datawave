@@ -18,7 +18,12 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.ImmutableSortedSet;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -349,8 +354,9 @@ public class IndexInfoTest {
         assertTrue(TreeEqualityVisitor.isEqual(expected, merged.getNode()));
     }
 
-    @Test
-    public void testFieldCountSerialization() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {"kryo", "writable"})
+    public void testFieldCountSerialization(String serializeAs) throws IOException {
 
         CountMap counts = new CountMap();
         counts.put("FIELD_A", 23L);
@@ -359,19 +365,38 @@ public class IndexInfoTest {
         IndexInfo indexInfo = new IndexInfo();
         indexInfo.setFieldCounts(counts);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream out = new DataOutputStream(baos);
-        indexInfo.write(out);
-        out.close();
+        IndexInfo otherInfo = new IndexInfo();
+        byte[] otherBytes;
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        DataInputStream in = new DataInputStream(bais);
+        switch (serializeAs) {
+            case "kryo":
+                Kryo kryo = new Kryo();
+                try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); Output output = new Output(bos)) {
+                    indexInfo.write(kryo, output);
+                    output.flush();
+                    otherBytes = bos.toByteArray();
+                }
+                try (ByteArrayInputStream bin = new ByteArrayInputStream(otherBytes); Input input = new Input(bin)) {
+                    otherInfo.read(kryo, input);
+                }
+                break;
+            case "writable":
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); DataOutputStream out = new DataOutputStream(baos)) {
+                    indexInfo.write(out);
+                    out.flush();
+                    otherBytes = baos.toByteArray();
+                }
 
-        IndexInfo other = new IndexInfo();
-        other.readFields(in);
-        bais.close();
+                try (ByteArrayInputStream bais = new ByteArrayInputStream(otherBytes); DataInputStream in = new DataInputStream(bais)) {
+                    otherInfo.readFields(in);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException("Unsupported serialization type: " + serializeAs);
+        }
 
-        assertEquals(counts, other.getFieldCounts());
+        assertEquals(indexInfo, otherInfo);
+        assertEquals(counts, otherInfo.getFieldCounts());
     }
 
     @Test

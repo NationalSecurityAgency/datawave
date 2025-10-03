@@ -8,4 +8,4 @@ environment variables USER_DN and ISSUER_DN are defined.
 In order to run this example, you must re-build and deploy the datawave ear
 with this example included. This can be done by building at the top level
 with both the examples profile and the client-login-example profile enabled
-(e.g., -Pdev,examples,client-login-example).
+(e.g., -Pexamples,client-login-example).

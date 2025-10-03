@@ -34,6 +34,9 @@ import datawave.query.iterator.waitwindow.WaitWindowObserver;
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
  */
 public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
+    // an id intended to be consistent across rebuilds
+    private final String id;
+
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, excludes, contextIncludes, contextExcludes;
 
@@ -85,6 +88,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 }
             }
         }
+        id = String.valueOf((long) includes.toString().hashCode() + excludes.toString().hashCode() + contextIncludes.toString().hashCode()
+                        + contextExcludes.toString().hashCode());
     }
 
     public void initialize() {
@@ -109,7 +114,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
                 } catch (WaitWindowOverrunException e) {
                     // excludes could be farther than the includes, so we don't want to use a yieldKey from the exception
-                    e.setYieldKey(Pair.of(null, "yield while calling initSubtree for excludes in AndIterator.initialize()"));
+                    e.setYieldKey(Pair.of(null, id + ": yield while calling initSubtree for excludes in AndIterator.initialize()"));
                     throw e;
                 }
             }
@@ -131,12 +136,12 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 // if prev != null then it's a match from the previous next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
                 // this shouldn't be possible during initialize
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, "prev in AndIterator.initialize()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, id + ": prev in AndIterator.initialize()"));
             } else if (next != null) {
                 // if next != null then it's a match from this next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
                 // this shouldn't be possible during initialize
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, "next in AndIterator.initialize()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, id + ": next in AndIterator.initialize()"));
             } else {
                 if (!includeHeads.isEmpty()) {
                     // if no keys were waiting to be returned, then our options are either the
@@ -195,7 +200,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 }
             } catch (WaitWindowOverrunException e) {
                 // contextExcludes could be farther than the includes, so we don't want to use a yieldKey from the exception
-                e.setYieldKey(Pair.of(null, "yield while advancing contextExcludes in AndIterator.applyContextRequired()"));
+                e.setYieldKey(Pair.of(null, id + ": yield while advancing contextExcludes in AndIterator.applyContextRequired()"));
                 throw e;
             }
         }
@@ -215,6 +220,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         }
         if (isContextRequired() && evaluationContext == null) {
             throw new IllegalStateException("evaluationContext must be set prior to calling next");
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
         }
 
         prev = next;
@@ -256,7 +265,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                         isFiltered = NegationFilter.isFiltered(lowest, excludeHeads, transformer);
                     } catch (WaitWindowOverrunException e) {
                         // excludeHeads could be farther than the includes, so we don't want to use a yieldKey from the exception
-                        e.setYieldKey(Pair.of(null, "yield while calling NegationFilter.isFiltered with lowest/excludeHeads in AndIterator.next()"));
+                        e.setYieldKey(Pair.of(null, id + ": yield while calling NegationFilter.isFiltered with lowest/excludeHeads in AndIterator.next()"));
                         throw e;
                     }
                     if (!isFiltered) {
@@ -289,7 +298,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     isFiltered = NegationFilter.isFiltered(evaluationContext, excludeHeads, transformer);
                 } catch (WaitWindowOverrunException e) {
                     // excludeHeads could be farther than the includes, so we don't want to use a yieldKey from the exception
-                    e.setYieldKey(Pair.of(null, "yield while calling NegationFilter.isFiltered with excludeHeads in AndIterator.next()"));
+                    e.setYieldKey(Pair.of(null, id + ": yield while calling NegationFilter.isFiltered with excludeHeads in AndIterator.next()"));
                     throw e;
                 }
                 if (!isFiltered) {
@@ -304,15 +313,15 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             if (prev != null) {
                 // if prev != null then it's a match from the previous next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, "prev in AndIterator.next()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, id + ": prev in AndIterator.next()"));
             } else if (next != null) {
                 // if next != null then it's a match from this next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, "next in AndIterator.next()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, id + ": next in AndIterator.next()"));
             } else {
                 // if no keys were waiting to be returned, then our options are either the
                 // highest key from includeHeads or the yieldKey that is in the exception
-                possibleYieldKey = this.waitWindowObserver.createYieldKey((Key) highest, true, "highest includeHead in AndIterator.next()");
+                possibleYieldKey = this.waitWindowObserver.createYieldKey((Key) highest, true, id + ": highest includeHead in AndIterator.next()");
             }
             // When comparing possible yield keys in the AndIterator, we choose the highest
             // key because the uids of the sources need to be equal to return a match
@@ -325,6 +334,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             next = null;
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
+        }
+
         return prev;
     }
 
@@ -332,12 +345,12 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         if (this.waitWindowObserver != null) {
             if (prev != null) {
                 // if prev != null then it's a match from the previous next() call that has not yet been returned
-                this.waitWindowObserver.checkWaitWindow((Key) prev, true, "prev in " + location);
+                this.waitWindowObserver.checkWaitWindow((Key) prev, true, id + ": prev in " + location);
             } else if (next != null) {
                 // if next != null then it's a match from this next() call that has not yet been returned
-                this.waitWindowObserver.checkWaitWindow((Key) next, true, "next in " + location);
+                this.waitWindowObserver.checkWaitWindow((Key) next, true, id + ": next in " + location);
             } else {
-                this.waitWindowObserver.checkWaitWindow((Key) key, true, keyDescription + " in " + location);
+                this.waitWindowObserver.checkWaitWindow((Key) key, true, id + ": " + keyDescription + " in " + location);
             }
         }
     }
@@ -356,6 +369,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": seeking to " + range);
+        }
+
         // seek all iterators. Drop those that fail, as long as we have at least one include left
         Iterator<NestedIterator<T>> include = includes.iterator();
         while (include.hasNext()) {
@@ -367,12 +384,13 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
                     throw e2;
                 } catch (WaitWindowOverrunException e) {
+                    log.warn(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                     throw e;
                 } catch (Exception e2) {
                     if (child.isNonEventField()) {
                         // dropping a non-event term from the query means that the accuracy of the query
                         // cannot be guaranteed. Thus, a fatal exception.
-                        log.error("Lookup of a non-event field failed, failing query");
+                        log.error(id + ": Lookup of a non-event field failed, failing query");
                         throw new DatawaveFatalQueryException("Lookup of non-event field failed", e2);
                     }
                     // otherwise we can safely drop this term from the intersection as the field will get re-introduced
@@ -382,6 +400,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     throw e2;
                 }
             } catch (WaitWindowOverrunException e) {
+                log.warn(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                 // When comparing possible yield keys in the AndIterator, we choose the highest
                 // key because the uids of the sources need to be equal to return a match
                 this.waitWindowObserver.propagateException(null, true, false, e);
@@ -393,7 +412,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 if (includes.isEmpty() || e instanceof DatawaveFatalQueryException) {
                     throw e;
                 } else {
-                    log.warn("Lookup of event field failed, precision of query reduced.");
+                    log.warn(id + ": Lookup of event field failed, precision of query reduced.");
                 }
             }
         }
@@ -408,7 +427,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             }
         } catch (WaitWindowOverrunException e) {
             // excludes could be farther than the includes, so we don't want to use a yieldKey from the exception
-            e.setYieldKey(Pair.of(null, "yield while calling seek on excludes in AndIterator.seek()"));
+            e.setYieldKey(Pair.of(null, id + ": yield while calling seek on excludes in AndIterator.seek()"));
             throw e;
         }
 
@@ -434,6 +453,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
         if (prev != null && prev.compareTo(minimum) >= 0) {
             throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + prev + ", movekey=" + minimum);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moving to " + minimum);
         }
 
         // test if the cached next is already beyond the minimum
@@ -484,7 +507,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      *            a key
      * @return a sorted map
      */
-    protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
+    private TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": advancing to " + key + ": " + includeHeads.keySet());
+        }
+
         boolean seenException = false;
         T highest = null;
         transforms.remove(key);
@@ -514,6 +541,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     highest = transform;
                 }
             } catch (WaitWindowOverrunException wwoe) {
+                log.warn(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
                 throw wwoe;
             } catch (IterationInterruptedException ie) {
                 // allow the QueryIterator to handle these exceptions
@@ -525,15 +553,19 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     // cannot be guaranteed. Thus, a fatal exception.
                     throw new DatawaveFatalQueryException("Lookup of non-event term failed", e);
                 } else {
-                    log.warn("Lookup of event field failed, precision of query reduced.");
+                    log.warn(id + ": Lookup of event field failed, precision of query reduced.");
                 }
             }
         }
 
         // only need to actually fail if we have nothing left in the AND clause
         if (seenException && includeHeads.isEmpty()) {
-            log.error("Failing query because all iterators within an intersection failed");
+            log.error(id + ": Failing query because all iterators within an intersection failed");
             throw new DatawaveFatalQueryException("Exception in underlying iterator was destructive");
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": advanced to " + key + ": " + includeHeads.keySet());
         }
 
         return includeHeads;
@@ -549,7 +581,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      *            the destination
      * @return a sorted map
      */
-    protected TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
+    private TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moving iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        }
         transforms.remove(key);
         for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
             T next = itr.move(to);
@@ -565,10 +600,16 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 }
             }
         }
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moved iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        }
         return includeHeads;
     }
 
-    protected TreeMultimap<T,NestedIterator<T>> moveIterators(SortedSet<T> toMove, T to) {
+    private TreeMultimap<T,NestedIterator<T>> moveIterators(SortedSet<T> toMove, T to) {
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moving iterators for " + toMove + " to " + to + ": " + includeHeads.keySet());
+        }
         T highest = null;
 
         // get the highest key of toMove since it is likely to be the lowest cardinality
@@ -596,6 +637,9 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             }
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moved iterators for " + toMove + " to " + to + ": " + includeHeads.keySet());
+        }
         return includeHeads;
     }
 
@@ -638,7 +682,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("AndIterator: ");
+        StringBuilder sb = new StringBuilder(id + ": AndIterator: ");
 
         sb.append("Includes: ");
         sb.append(includes);

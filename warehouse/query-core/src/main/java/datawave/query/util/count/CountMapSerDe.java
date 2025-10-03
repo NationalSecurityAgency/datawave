@@ -28,7 +28,7 @@ public class CountMapSerDe {
     public byte[] serialize(CountMap map) {
         baos.reset();
         Output output = new Output(baos);
-        kryo.writeObject(output, map);
+        map.write(kryo, output);
         output.close();
         return baos.toByteArray();
     }
@@ -38,14 +38,11 @@ public class CountMapSerDe {
     }
 
     public CountMap deserialize(byte[] data) {
-        Input input = new Input(data);
-        CountMap map = kryo.readObject(input, CountMap.class);
-        input.close();
-
-        if (map == null) {
-            throw new RuntimeException("Deserialized null CountMap");
+        CountMap map;
+        try (Input input = new Input(data)) {
+            map = new CountMap();
+            map.read(kryo, input);
         }
-
         return map;
     }
 }

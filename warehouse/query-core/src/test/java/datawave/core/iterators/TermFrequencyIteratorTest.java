@@ -21,7 +21,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.Test;
 
@@ -507,18 +506,18 @@ class TermFrequencyIteratorTest {
 
         // Full CQ
         String cq = "datatype\0uid\0fieldValue\0fieldName";
-        assertEquals("fieldValue", iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertEquals("fieldValue", iter.getValueFromParts(cq.split("\0")));
 
         // CQ less field name
         cq = "datatype\0uid\0fieldValue";
-        assertEquals("fieldValue", iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertEquals("fieldValue", iter.getValueFromParts(cq.split("\0")));
 
         // CQ just datatype and uid
         cq = "datatype\0uid";
-        assertNull(iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertNull(iter.getValueFromParts(cq.split("\0")));
 
         // CQ where value has multiple null bytes
         cq = "datatype\0uid\0fi\0eld\0Va\0lue\0fieldName";
-        assertEquals("fi\0eld\0Va\0lue", iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertEquals("fi\0eld\0Va\0lue", iter.getValueFromParts(cq.split("\0")));
     }
 }

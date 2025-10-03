@@ -424,6 +424,6 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
 
     private String fieldSplit(Map.Entry<Key,Value> entry, int part) {
         String cq = entry.getKey().getColumnQualifier().toString();
-        return StringUtils.split(cq, "\u0000")[part];
+        return cq.split("\u0000")[part];
     }
 }

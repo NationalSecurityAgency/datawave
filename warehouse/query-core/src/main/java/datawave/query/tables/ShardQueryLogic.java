@@ -43,6 +43,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
@@ -69,6 +70,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
+import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
@@ -124,6 +126,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -867,7 +870,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 this.setReducedResponse(false);
                 config.setReducedResponse(false);
                 // clear the content field names to prevent content field transformations (see DocumentTransformer)
-                this.setContentFieldNames(Collections.EMPTY_LIST);
+                this.setContentFieldNames(Collections.emptyList());
                 // clear the model name to avoid field name translations
                 this.setModelName(null);
                 config.setModelName(null);
@@ -948,7 +951,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();
         if (StringUtils.isNotBlank(transformContentStr)) {
             if (!Boolean.valueOf(transformContentStr)) {
-                setContentFieldNames(Collections.EMPTY_LIST);
+                setContentFieldNames(Collections.emptyList());
             }
         }
 
@@ -1009,12 +1012,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the GROUP_FIELDS parameter if given
         String groupFieldsParam = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(groupFieldsParam)) {
-            String[] groupFields = StringUtils.split(groupFieldsParam, Constants.PARAM_VALUE_SEP);
+            TreeMultimap<String,TemporalGranularity> groupByFieldMap = GroupFields.parseGroupByFields(groupFieldsParam);
 
             // Only set the group fields if we were actually given some.
-            if (groupFields.length > 0) {
+            if (!groupByFieldMap.isEmpty()) {
                 GroupFields groupByFields = config.getGroupFields();
-                groupByFields.setGroupByFields(Sets.newHashSet(groupFields));
+                groupByFields.setGroupByFieldMap(groupByFieldMap);
 
                 // Update the sum fields if given.
                 String sumFieldsParam = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
@@ -1490,10 +1493,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         }
 
-        // Delegate to the super class if no validation rules were configured.
+        // If no validation rules were configured, return no results.
         if (validationRules == null || validationRules.isEmpty()) {
-            log.trace("No validation rules configured");
-            return super.validateQuery(client, settings, auths);
+            throw new BadRequestQueryException(DatawaveErrorCode.NO_QUERY_VALIDATION_RULES_CONFIGURED);
         }
 
         // Set the connector and authorizations for the config object.
@@ -2185,6 +2187,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setIndexStatsTableName(indexStatsTableName);
     }
 
+    public String getDayIndexTableName() {
+        return getConfig().getDayIndexTableName();
+    }
+
+    public void setDayIndexTableName(String dayIndexTableName) {
+        getConfig().setDayIndexTableName(dayIndexTableName);
+    }
+
     public String getModelTableName() {
         return getConfig().getModelTableName();
     }
@@ -2279,6 +2289,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setFilterClassNames(List<String> filterClassNames) {
         getConfig().setFilterClassNames(filterClassNames);
+    }
+
+    public String getFieldRuleClassName() {
+        return getConfig().getFieldRuleClassName();
+    }
+
+    public void setFieldRuleClassName(String fieldRuleClassName) {
+        getConfig().setFieldRuleClassName(fieldRuleClassName);
     }
 
     public List<String> getIndexFilteringClassNames() {
@@ -2400,6 +2418,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setIvaratorCacheScanTimeoutMinutes(long hdfsCacheScanTimeoutMinutes) {
         getConfig().setIvaratorCacheScanTimeout(hdfsCacheScanTimeoutMinutes * 1000 * 60);
+    }
+
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return getConfig().getExcludeUnfieldedTypes();
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        getConfig().setExcludeUnfieldedTypes(excludeUnfieldedTypes);
     }
 
     public String getHdfsSiteConfigURLs() {
@@ -3474,5 +3500,29 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setDateIndexIterator(boolean dateIndexIterator) {
         getConfig().setDateIndexIterator(dateIndexIterator);
+    }
+
+    public int getMaxLinesToPrint() {
+        return getConfig().getMaxLinesToPrint();
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        getConfig().setMaxLinesToPrint(maxLinesToPrint);
+    }
+
+    public boolean isUseShardedIndex() {
+        return getConfig().isUseShardedIndex();
+    }
+
+    public void setUseShardedIndex(boolean useShardedIndex) {
+        getConfig().setUseShardedIndex(useShardedIndex);
+    }
+
+    public int getDayIndexThreshold() {
+        return getConfig().getDayIndexThreshold();
+    }
+
+    public void setDayIndexThreshold(int dayIndexThreshold) {
+        getConfig().setDayIndexThreshold(dayIndexThreshold);
     }
 }

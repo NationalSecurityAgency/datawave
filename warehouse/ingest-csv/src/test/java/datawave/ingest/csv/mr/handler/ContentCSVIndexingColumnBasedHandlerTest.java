@@ -42,7 +42,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
 
     private Configuration conf;
     private static final Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
+    private static final Logger log = Logger.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
     private static final Enumeration<?> rootAppenders = Logger.getRootLogger().getAllAppenders();
 
     @BeforeClass
@@ -108,6 +108,8 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, TableName.SHARD_DAY_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME, TableName.SHARD_YEAR_INDEX);
     }
 
     @Test

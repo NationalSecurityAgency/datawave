@@ -1,6 +1,5 @@
 package datawave.query.predicate;
 
-import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
@@ -25,7 +25,6 @@ import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
-import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
@@ -41,8 +40,6 @@ import datawave.query.util.TypeMetadata;
  */
 public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> {
     private static final Logger log = Logger.getLogger(ValueToAttributes.class);
-
-    private final Text holder = new Text();
 
     private final AttributeFactory attrFactory;
 
@@ -199,30 +196,32 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     }
 
     public Attribute<?> getFieldValue(String fieldName, Key k) {
-        k.getColumnQualifier(holder);
-        int index = holder.find(Constants.NULL);
+        int index = -1;
+        ByteSequence bytes = k.getColumnQualifierData();
+        for (int i = 0; i < bytes.length(); i++) {
+            if (bytes.byteAt(i) == 0x00) {
+                index = i;
+                break;
+            }
+        }
 
         if (0 > index) {
             throw new IllegalArgumentException("Could not find null-byte contained in columnqualifier for key: " + k);
         }
 
-        try {
-            String data = Text.decode(holder.getBytes(), index + 1, (holder.getLength() - (index + 1)));
+        String data = bytes.subSequence(index + 1, bytes.length()).toString();
 
-            Attribute<?> attr = this.attrFactory.create(fieldName, data, k, (attrFilter == null || attrFilter.keep(k)));
-            if (attrFilter != null) {
-                attr.setToKeep(attrFilter.keep(k));
-            }
-            attr.setFromIndex(fromIndex);
-
-            if (log.isTraceEnabled()) {
-                log.trace("Created " + attr.getClass().getName() + " for " + fieldName);
-            }
-
-            return attr;
-        } catch (CharacterCodingException e) {
-            throw new IllegalArgumentException(e);
+        Attribute<?> attr = this.attrFactory.create(fieldName, data, k, (attrFilter == null || attrFilter.keep(k)));
+        if (attrFilter != null) {
+            attr.setToKeep(attrFilter.keep(k));
         }
+        attr.setFromIndex(fromIndex);
+
+        if (log.isTraceEnabled()) {
+            log.trace("Created " + attr.getClass().getName() + " for " + fieldName);
+        }
+
+        return attr;
     }
 
     public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator) throws Exception {
@@ -326,9 +325,15 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     }
 
     protected String getDatatypeFromKey(Key key) {
-        String cf = key.getColumnFamily().toString();
-        int indexOfNull = cf.indexOf('\u0000');
-        return cf.substring(0, indexOfNull);
+        ByteSequence bytes = key.getColumnFamilyData();
+        int index = 0;
+        for (int i = 0; i < bytes.length(); i++) {
+            if (bytes.byteAt(i) == 0x00) {
+                index = i;
+                break;
+            }
+        }
+        return bytes.subSequence(0, index).toString();
     }
 
 }

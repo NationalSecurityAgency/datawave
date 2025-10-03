@@ -14,16 +14,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
@@ -49,11 +55,20 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     private static final ClassCache classCache = new ClassCache();
 
+    //  @formatter:off
+    private static final LoadingCache<Text, Long> timestampCache = CacheBuilder.newBuilder()
+            .maximumSize(128)
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .build(new CacheLoader<>() {
+                @Override
+                public Long load(Text row) {
+                    return DateHelper.parseWithGMT(row.toString()).getTime();
+                }
+            });
+    //  @formatter:on
+
     private int _count = 0;
     long _bytes = 0;
-    private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
-    private static final long ONE_M = 1024L * 1000;
-    private static final long FIVE_HUNDRED_K = 1024L * 500;
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
 
     /**
@@ -117,6 +132,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return Collections.unmodifiableCollection(this.dict.values());
     }
 
+    /**
+     * Access the raw values similar to {@link #getAttributes()} but without a collection copy
+     *
+     * @return the raw values
+     */
+    @Override
+    protected Collection<Attribute<? extends Comparable<?>>> getRawAttributes() {
+        return this.dict.values();
+    }
+
     public Map<String,Attribute<? extends Comparable<?>>> getDictionary() {
         return Collections.unmodifiableMap(this.dict);
     }
@@ -163,8 +188,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
-            this.shardTimestamp = DateHelper.parseWithGMT(docKey.getRow().toString()).getTime();
-        } catch (DateTimeParseException e) {
+            this.shardTimestamp = timestampCache.get(docKey.getRow());
+        } catch (DateTimeParseException | ExecutionException e) {
             log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
             this.shardTimestamp = Long.MAX_VALUE;

@@ -15,7 +15,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
@@ -81,7 +81,7 @@ public class QueryCacheBean {
         }
         // Iterate over queries that are in the init phase
         for (Entry<String,Pair<QueryLogic<?>,AccumuloClient>> entry : qlCache.snapshot().entrySet()) {
-            result.getQueries().add("Identifier: " + entry.getKey() + " Query Logic: " + entry.getValue().getFirst().getClass().getName() + "\n");
+            result.getQueries().add("Identifier: " + entry.getKey() + " Query Logic: " + entry.getValue().getLeft().getClass().getName() + "\n");
         }
         return result;
     }

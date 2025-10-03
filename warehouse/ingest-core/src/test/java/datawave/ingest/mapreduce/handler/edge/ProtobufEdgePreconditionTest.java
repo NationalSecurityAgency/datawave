@@ -81,7 +81,7 @@ public class ProtobufEdgePreconditionTest {
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:31:53Z"));
-        myEvent.setDate(i.toEpochMilli());
+        myEvent.setTimestamp(i.toEpochMilli());
 
         return myEvent;
     }
@@ -168,7 +168,7 @@ public class ProtobufEdgePreconditionTest {
         expectedKeys.add("tabby%00;salmon");
 
         RawRecordContainer myEvent = getEvent(conf);
-        myEvent.setDate(1666737913000L);
+        myEvent.setTimestamp(1666737913000L);
 
         // the count is doubled since activity < event date in this test. In this case, we add 2 edges each.
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 16, true, false);
@@ -232,7 +232,7 @@ public class ProtobufEdgePreconditionTest {
         expectedKeys.add("tabby%00;salmon");
 
         RawRecordContainer myEvent = getEvent(conf);
-        myEvent.setDate(0L);
+        myEvent.setTimestamp(0L);
 
         // the count is doubled since activity < event date in this test. In this case, we add 2 edges each.
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 16, true, false);

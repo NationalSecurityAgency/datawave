@@ -10,12 +10,9 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.type.NumberType;
-import datawave.query.jexl.visitors.FieldsWithNumericValuesVisitor;
+import datawave.query.jexl.visitors.FieldsWithNumericRangeValuesVisitor;
 import datawave.query.util.TypeMetadata;
 
-/**
- * Implementation of {@link QueryRule} that will verify that fields with numeric values are actually numeric fields.
- */
 public class NumericValueRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(NumericValueRule.class);
@@ -43,13 +40,18 @@ public class NumericValueRule extends ShardQueryRule {
 
         try {
             ASTJexlScript jexlScript = (ASTJexlScript) ruleConfig.getParsedQuery();
-            // Fetch the set of fields that have numeric values.
-            Set<String> fields = FieldsWithNumericValuesVisitor.getFields(jexlScript);
-            // If fields with numeric values were found, check the field types.
+
+            // Identify fields that participate in range comparisons (<, >, <=, >=), including those derived from Lucene ranges.
+            Set<String> fields = FieldsWithNumericRangeValuesVisitor.getFields(jexlScript);
+
+            // If no range fields were found, or no type metadata is available, nothing to validate.
+            TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
+            if (typeMetadata == null) {
+                throw new IllegalStateException("TypeMetadata should not be null.");
+            }
             if (!fields.isEmpty()) {
                 // A temporary cache to avoid unnecessary lookups via TypeMetadata if we see a field more than once.
                 Multimap<String,String> types = HashMultimap.create();
-                TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
                 // Maintain insertion order.
                 Set<String> nonNumericFields = new LinkedHashSet<>();
                 // Find any fields that are not a number type.
@@ -57,13 +59,15 @@ public class NumericValueRule extends ShardQueryRule {
                     if (!types.containsKey(field)) {
                         types.putAll(field, typeMetadata.getNormalizerNamesForField(field));
                     }
+
+                    // If the field does not have NumberType as one of its normalizers, flag it.
                     if (!types.containsEntry(field, NUMBER_TYPE)) {
                         nonNumericFields.add(field);
                     }
                 }
-                // If any non-numeric fields were specified with numeric values, add a message to the result.
+                // If any non-numeric fields were used in a range, add a message to the result.
                 if (!nonNumericFields.isEmpty()) {
-                    result.addMessage("Numeric values supplied for non-numeric field(s): " + String.join(", ", nonNumericFields));
+                    result.addMessage("Range values supplied for non-numeric field(s): " + String.join(", ", nonNumericFields));
                 }
             }
         } catch (Exception e) {

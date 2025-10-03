@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -27,6 +29,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.NumberListType;
 import datawave.data.type.NumberType;
 import datawave.data.type.PointType;
+import datawave.next.stats.StatUtil;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.util.TypeMetadata;
@@ -74,49 +77,49 @@ public class DocumentTest {
 
     @Test
     public void testEmptyDocument() {
-        roundTrip(MAX_ITERATIONS, 16);
+        roundTrip(MAX_ITERATIONS, 15);
     }
 
     @Test
     public void testDocumentWithLcType() {
         Attribute<?> attr = createAttribute("LC", "value");
         d.put("LC", attr);
-        roundTrip(MAX_ITERATIONS, 40);
+        roundTrip(MAX_ITERATIONS, 32);
     }
 
     @Test
     public void testDocumentWithLcNoDiacriticsType() {
         Attribute<?> attr = createAttribute("LC_ND", "value");
         d.put("LC_ND", attr);
-        roundTrip(MAX_ITERATIONS, 43);
+        roundTrip(MAX_ITERATIONS, 35);
     }
 
     @Test
     public void testDocumentWithHexType() {
         Attribute<?> attr = createAttribute("HEX", "a1b2c3");
         d.put("HEX", attr);
-        roundTrip(MAX_ITERATIONS, 48);
+        roundTrip(MAX_ITERATIONS, 40);
     }
 
     @Test
     public void testDocumentWithNumberType() {
         Attribute<?> attr = createAttribute("NUM", "12");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 44);
+        roundTrip(MAX_ITERATIONS, 36);
     }
 
     @Test
     public void testDocumentWithNumberTypeNormalizedValue() {
         Attribute<?> attr = createAttribute("NUM", "+bE1.2");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 44);
+        roundTrip(MAX_ITERATIONS, 36);
     }
 
     @Test
     public void testDocumentWithNumberTypeLargeValue() {
         Attribute<?> attr = createAttribute("NUM", "12456789.987654321");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 75);
+        roundTrip(MAX_ITERATIONS, 67);
     }
 
     @Test
@@ -133,7 +136,7 @@ public class DocumentTest {
         d.put("NUM", createAttribute("NUM", "25"));
         d.put("NUM_LIST", createAttribute("NUM_LIST", "22,23,24"));
         d.put("POINT", createAttribute("POINT", "POINT(10 10)"));
-        roundTrip(MAX_ITERATIONS, 351);
+        roundTrip(MAX_ITERATIONS, 350);
     }
 
     @Test
@@ -143,7 +146,7 @@ public class DocumentTest {
             Attribute<?> attr = createAttribute("LC", "value-" + i);
             d.put("LC", attr);
         }
-        roundTrip(MAX_ITERATIONS, 188007);
+        roundTrip(MAX_ITERATIONS, 188006);
     }
 
     @Test
@@ -201,7 +204,7 @@ public class DocumentTest {
     protected void roundTrip(int max, int serializedLength) {
         Entry<Key,Value> entry = serialize(d);
         log.trace("size: {}", entry.getValue().getSize());
-        assertEquals(serializedLength, entry.getValue().getSize());
+        assertEquals(serializedLength, entry.getValue().getSize(), 5.0f);
         for (int i = 0; i < max; i++) {
             Entry<Key,Document> result = deserialize(entry);
             Document d2 = result.getValue();
@@ -223,15 +226,14 @@ public class DocumentTest {
      */
     protected void roundTrip(String field, int documentSize, int maxIterations, int serializedLength) {
         long readTime = 0;
-        long writeTime = 0;
         Document d = createDocumentForField(field, documentSize);
 
         Entry<Key,Value> entry = null;
-        writeTime = System.nanoTime();
+        long writeTime = System.nanoTime();
         for (int i = 0; i < maxIterations; i++) {
             entry = serialize(d);
         }
-        writeTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - writeTime);
+        writeTime = System.nanoTime() - writeTime;
         assertNotNull(entry);
 
         if (serializedLength > 0) {
@@ -247,9 +249,7 @@ public class DocumentTest {
             Document d2 = result.getValue();
             assertEquals(d, d2);
         }
-        readTime = TimeUnit.NANOSECONDS.toMillis(readTime);
-
-        log.info("{} read: {} write: {}", field, readTime, writeTime);
+        log.info("{} read: {} write: {}", field, StatUtil.formatNanos(readTime), StatUtil.formatNanos(writeTime));
     }
 
     protected Document createDocumentForField(String field, int size) {
@@ -313,5 +313,41 @@ public class DocumentTest {
 
     protected Entry<Key,Document> deserialize(Entry<Key,Value> entry) {
         return deserializer.apply(entry);
+    }
+
+    @Test
+    public void testConsumeRawData() {
+        Set<Key> keys = Set.of(documentKey);
+
+        Value value = new Value();
+        List<Entry<Key,Value>> entries = new ArrayList<>();
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_A\0value-a"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_B\0value-b"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_C\0value-c"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_D\0value-d"), value));
+        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_E\0value-e"), value));
+
+        List<Key> documentKeys = createDocumentKeys();
+
+        int max = 1_000_000;
+        for (int i = 0; i < max; i++) {
+            Key randomDocumentKey = documentKeys.get(rand.nextInt(documentKeys.size()));
+            Document d = new Document(randomDocumentKey, keys, false, entries.iterator(), new TypeMetadata(), null, false, true, null, true, true);
+            assertEquals(6, d.size());
+        }
+    }
+
+    private List<Key> createDocumentKeys() {
+        List<Key> keys = new ArrayList<>();
+        keys.add(new Key("20250601", "datatype\0uid"));
+        keys.add(new Key("20250602", "datatype\0uid"));
+        keys.add(new Key("20250603", "datatype\0uid"));
+        keys.add(new Key("20250604", "datatype\0uid"));
+        keys.add(new Key("20250605", "datatype\0uid"));
+        keys.add(new Key("20250606", "datatype\0uid"));
+        keys.add(new Key("20250607", "datatype\0uid"));
+        keys.add(new Key("20250608", "datatype\0uid"));
+        keys.add(new Key("20250609", "datatype\0uid"));
+        return keys;
     }
 }

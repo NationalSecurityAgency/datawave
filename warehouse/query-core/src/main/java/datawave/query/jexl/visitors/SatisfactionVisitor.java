@@ -28,13 +28,10 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.util.UniversalSet;
 
 /**
  * A visitor that checks the query tree to determine if the query can be satisfied by only looking in the field index. The result of this is passed to the
@@ -45,10 +42,10 @@ public class SatisfactionVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(SatisfactionVisitor.class);
 
     protected Set<String> nonEventFields;
-    private Collection<String> unindexedFields = Lists.newArrayList();
+    private final Collection<String> unindexedFields = Collections.emptySet();
     protected boolean isQueryFullySatisfied;
-    protected Collection<String> includeReferences = UniversalSet.instance();
-    protected Collection<String> excludeReferences = Collections.emptyList();
+    protected Collection<String> includeReferences;
+    protected Collection<String> excludeReferences;
 
     public boolean isQueryFullySatisfied() {
         return isQueryFullySatisfied;
