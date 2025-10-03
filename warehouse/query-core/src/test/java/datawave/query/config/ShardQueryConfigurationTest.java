@@ -633,6 +633,15 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("maxLinesToPrint", -1);
         updatedValues.put("maxLinesToPrint", 150);
+
+        defaultValues.put("dayIndexTableName", TableName.SHARD_DAY_INDEX);
+        updatedValues.put("dayIndexTableName", "datawave." + TableName.SHARD_DAY_INDEX);
+        defaultValues.put("yearIndexTableName", TableName.SHARD_YEAR_INDEX);
+        updatedValues.put("yearIndexTableName", "datawave." + TableName.SHARD_YEAR_INDEX);
+        defaultValues.put("useShardedIndex", false);
+        updatedValues.put("useShardedIndex", true);
+        defaultValues.put("dayIndexThreshold", -1);
+        updatedValues.put("dayIndexThreshold", 31);
     }
 
     private Query createQuery(String query) {

@@ -1,7 +1,5 @@
 package datawave.query.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,9 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -36,7 +32,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -58,8 +53,11 @@ import com.google.common.collect.Sets;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.data.type.TypeFactory;
+import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeMetadataHelper;
+import datawave.query.model.DateFrequencyMap;
+import datawave.query.model.Frequency;
 import datawave.query.model.IndexFieldHole;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
@@ -851,30 +849,40 @@ public class AllFieldMetadataHelper {
         String date = identifier.getValue();
 
         final HashMap<String,Long> datatypeToCounts;
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
+
+        AccumuloClient clientToUse = accumuloClient;
+        if (clientToUse instanceof WrappedAccumuloClient) {
+            clientToUse = ((WrappedAccumuloClient) clientToUse).getReal();
+        }
+        try (Scanner scanner = ScannerHelper.createScanner(clientToUse, metadataTableName, auths)) {
             scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
             scanner.setRange(Range.exact(fieldName));
 
+            // It's possible to find rows with column qualifiers in the format <datatype> (aggregated entries) and/or <datatype>\0<date> (non-aggregated
+            // entries).
+            // Filter out any non-aggregated entries that does not have the date in the column qualifier.
             IteratorSetting cqRegex = new IteratorSetting(50, RegExFilter.class);
-            RegExFilter.setRegexs(cqRegex, null, null, ".*\u0000" + date, null, false);
+            // Allow any entries that do not contain the null byte delimiter, or contain it with the target date directly afterwards.
+            RegExFilter.setRegexs(cqRegex, null, null, "^(.*\u0000" + FrequencyMetadataAggregator.AGGREGATED + ")$|^(.*\u0000" + date + ")$", null, false);
             scanner.addScanIterator(cqRegex);
 
-            final Text holder = new Text();
             datatypeToCounts = Maps.newHashMap();
             for (Entry<Key,Value> countEntry : scanner) {
-                ByteArrayInputStream bais = new ByteArrayInputStream(countEntry.getValue().get());
-                DataInputStream inputStream = new DataInputStream(bais);
+                String colq = countEntry.getKey().getColumnQualifier().toString();
+                int offset = colq.indexOf(NULL_BYTE);
+                String datatype = colq.substring(0, offset);
 
-                Long sum = WritableUtils.readVLong(inputStream);
+                String remainder = colq.substring((offset + 1));
+                if (remainder.equals(FrequencyMetadataAggregator.AGGREGATED)) {
+                    DateFrequencyMap countMap = new DateFrequencyMap(countEntry.getValue().get());
+                    if (countMap.contains(date)) {
+                        long count = countMap.get(date).getValue();
+                        datatypeToCounts.merge(datatype, count, Long::sum);
+                    }
+                } else {
+                    datatypeToCounts.merge(datatype, MetadataHelper.readLongFromValue(countEntry.getValue()), Long::sum);
+                }
 
-                countEntry.getKey().getColumnQualifier(holder);
-                int offset = holder.find(NULL_BYTE);
-
-                Preconditions.checkArgument(-1 != offset, "Could not find nullbyte separator in column qualifier for: " + countEntry.getKey());
-
-                String datatype = Text.decode(holder.getBytes(), 0, offset);
-
-                datatypeToCounts.put(datatype, sum);
             }
         }
 
@@ -1250,50 +1258,10 @@ public class AllFieldMetadataHelper {
     }
 
     /**
-     * Fetches results from {@link #metadataTableName} and calculates the set of field index holes that exists for all indexed entries. The map consists of
-     * field names to datatypes to field index holes.
-     *
-     * @param fields
-     *            the fields to fetch field index holes for, an empty set will result in all fields being fetched
-     * @param datatypes
-     *            the datatypes to fetch field index holes for, an empty set will result in all datatypes being fetched
-     * @param minThreshold
-     *            the minimum percentage threshold required for an index row to be considered NOT a hole on a particular date, this should be a value in the
-     *            range 0.0 to 1.0
-     * @return a map of field names and datatype pairs to field index holes
-     */
-    public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
-                    throws TableNotFoundException, IOException {
-        return getFieldIndexHoles(ColumnFamilyConstants.COLF_I, fields, datatypes, minThreshold);
-    }
-
-    /**
-     * Fetches results from {@link #metadataTableName} and calculates the set of field index holes that exists for all reversed indexed entries. The map
-     * consists of field names to datatypes to field index holes.
-     *
-     * @param fields
-     *            the fields to fetch field index holes for, an empty set will result in all fields being fetched
-     * @param datatypes
-     *            the datatypes to fetch field index holes for, an empty set will result in all datatypes being fetched
-     * @param minThreshold
-     *            the minimum percentage threshold required for an index row to be considered NOT a hole on a particular date, this should be a value in the
-     *            range 0.0 to 1.0
-     * @return a map of field names and datatype pairs to field index holes
-     */
-    public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
-                    throws TableNotFoundException, IOException {
-        return getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, fields, datatypes, minThreshold);
-    }
-
-    /**
      * Get the field index holes for the provided fields and datatypes
      *
      * @param targetColumnFamily
      *            the target column family
-     * @param fields
-     *            a set of fields for which to get holes (can be empty to denote all)
-     * @param datatypes
-     *            a set of datatypes (can be empty to denote all)
      * @param minThreshold
      *            the minimum threshold
      * @return a map of index holes by datatype
@@ -1302,53 +1270,15 @@ public class AllFieldMetadataHelper {
      * @throws IOException
      *             if a value fails to deserialize
      */
-    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#fields,#datatypes,#minThreshold}",
+    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#minThreshold}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
-    protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> fields, Set<String> datatypes, double minThreshold)
+    protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, double minThreshold)
                     throws TableNotFoundException, IOException {
-        // create local copies to avoid side effects
-        fields = new HashSet<>(fields);
-        datatypes = new HashSet<>(datatypes);
-
-        // Handle null fields if given.
-        if (fields == null) {
-            fields = Collections.emptySet();
-        } else {
-            // Ensure null is not present as an entry.
-            fields.remove(null);
-        }
-
-        // Handle null datatypes if given.
-        if (datatypes == null) {
-            datatypes = Collections.emptySet();
-        } else {
-            // Ensure null is not present as an entry.
-            datatypes.remove(null);
-        }
-
+        log.debug("cache fault for getFieldIndexHoles({}, {}, {}, {})", this.auths, this.metadataTableName, targetColumnFamily, minThreshold);
         // remove fields that are not indexed at all by the specified datatypes
         Multimap<String,String> indexedFieldMap = (targetColumnFamily == ColumnFamilyConstants.COLF_I ? loadIndexedFields() : loadReverseIndexedFields());
         Set<String> indexedFields = new HashSet<>();
-        if (datatypes.isEmpty()) {
-            indexedFields.addAll(indexedFieldMap.values());
-        } else {
-            indexedFields = new HashSet<>();
-            for (String datatype : datatypes) {
-                indexedFields.addAll(indexedFieldMap.get(datatype));
-            }
-        }
-
-        // if the initial fields list is empty, then we want all possible holes
-        if (fields.isEmpty()) {
-            fields = indexedFields;
-        } else {
-            fields.retainAll(indexedFields);
-
-            // if we have removed all fields, then there are no fields for which we can generate holes
-            if (fields.isEmpty()) {
-                return new HashMap<>();
-            }
-        }
+        indexedFields.addAll(indexedFieldMap.values());
 
         // Ensure the minThreshold is a percentage in the range 0%-100%.
         if (minThreshold > 1.0d) {
@@ -1371,21 +1301,9 @@ public class AllFieldMetadataHelper {
             bs.fetchColumnFamily(targetColumnFamily);
 
             // Determine which range to use.
-            Range range;
-            if (fields.isEmpty()) {
-                // If no fields are specified, scan over all entries in the table.
-                range = new Range();
-            } else if (fields.size() == 1) {
-                // If just one field is specified, limit the range to where the row is the field.
-                range = new Range(new Text(fields.iterator().next()));
-            } else {
-                // If more than one field is specified, sort the fields and limit the range from the lowest to highest field (lexicographically).
-                SortedSet<String> sortedFields = new TreeSet<>(fields);
-                range = new Range(new Text(sortedFields.first()), new Text(sortedFields.last()));
-            }
-            bs.setRange(range);
+            bs.setRange(new Range());
 
-            FieldIndexHoleFinder finder = new FieldIndexHoleFinder(bs, minThreshold, fields, datatypes);
+            FieldIndexHoleFinder finder = new FieldIndexHoleFinder(bs, minThreshold, indexedFields, Collections.emptySet());
             indexHoles = finder.findHoles();
         }
         return indexHoles;
@@ -1504,7 +1422,7 @@ public class AllFieldMetadataHelper {
          *
          * @return the field index holes
          * @throws IOException
-         *             if a value fails to deserialize
+         *             if an exception occurs when deserializing a {@link Value}
          */
         Map<String,Map<String,IndexFieldHole>> findHoles() throws IOException {
             String prevFieldName = null;
@@ -1516,6 +1434,7 @@ public class AllFieldMetadataHelper {
             Date currDate;
             long currCount;
             BOUNDARY_TYPE currBoundaryType;
+            DateFrequencyMap currAggregatedCounts;
 
             for (Map.Entry<Key,Value> entry : scanner) {
 
@@ -1525,6 +1444,8 @@ public class AllFieldMetadataHelper {
                 currColumnFamily = key.getColumnFamily();
 
                 // avoid carrying over anything
+                currCount = 0L;
+                currAggregatedCounts = null;
                 currDatatype = null;
                 currDate = null;
                 currBoundaryType = BOUNDARY_TYPE.NONE;
@@ -1553,27 +1474,31 @@ public class AllFieldMetadataHelper {
                     }
 
                     String cqRemainder = cq.substring((offset + 1));
-                    // check for a marker of <dt>\0<date>\0true/false vs just <dt>\0<date>
-                    // where the boolean denotes that we can assume the field is indexed/no on and before this date
-                    offset = cqRemainder.indexOf(NULL_BYTE);
-                    if (offset >= 0) {
-                        currBoundaryType = Boolean.valueOf(cqRemainder.substring(offset + 1)) ? BOUNDARY_TYPE.MANUAL_INDEXED : BOUNDARY_TYPE.MANUAL_UNINDEXED;
-                        currDate = DateHelper.parse(cqRemainder.substring(0, offset));
-                        currCount = 0;
+                    // This is an aggregated entry.
+                    if (cqRemainder.equals(FrequencyMetadataAggregator.AGGREGATED)) {
+                        currAggregatedCounts = new DateFrequencyMap(entry.getValue().get());
                     } else {
-                        currBoundaryType = null;
-                        try {
-                            currDate = DateHelper.parse(cqRemainder);
-                            ByteArrayInputStream byteStream = new ByteArrayInputStream(entry.getValue().get());
-                            DataInputStream inputStream = new DataInputStream(byteStream);
-                            currCount = WritableUtils.readVLong(inputStream);
-                        } catch (DateTimeParseException e) {
-                            // probably the really old type classname format instead of a date.
-                            // we can treat this like an index marker but the ts of the entry denotes the boundary
-                            currDate = getPreviousDay(key.getTimestamp());
-                            log.warn("Found an index entry missing the date, treating as an index marker at " + currDate + " : " + key);
-                            currBoundaryType = BOUNDARY_TYPE.IMPLIED;
+                        // check for a marker of <dt>\0<date>\0true/false vs just <dt>\0<date>
+                        // where the boolean denotes that we can assume the field is indexed/no on and before this date
+                        offset = cqRemainder.indexOf(NULL_BYTE);
+                        if (offset >= 0) {
+                            currBoundaryType = Boolean.valueOf(cqRemainder.substring(offset + 1)) ? BOUNDARY_TYPE.MANUAL_INDEXED
+                                            : BOUNDARY_TYPE.MANUAL_UNINDEXED;
+                            currDate = DateHelper.parse(cqRemainder.substring(0, offset));
                             currCount = 0;
+                        } else {
+                            currBoundaryType = null;
+                            try {
+                                currDate = DateHelper.parse(cqRemainder);
+                                currCount = MetadataHelper.readLongFromValue(entry.getValue());
+                            } catch (DateTimeParseException e) {
+                                // probably the really old type classname format instead of a date.
+                                // we can treat this like an index marker but the ts of the entry denotes the boundary
+                                currDate = getPreviousDay(key.getTimestamp());
+                                log.warn("Found an index entry missing the date, treating as an index marker at " + currDate + " : " + key);
+                                currBoundaryType = BOUNDARY_TYPE.IMPLIED;
+                                currCount = 0;
+                            }
                         }
                     }
                 }
@@ -1594,8 +1519,7 @@ public class AllFieldMetadataHelper {
                 // In both cases, record the last entry, and begin collecting date ranges for the next batch of related rows.
                 if (!prevColumnFamily.equals(currColumnFamily)) {
                     // The column family is "f". We have collected the date ranges for all datatypes for the previous field name. Get the field index holes for
-                    // the
-                    // previously collected data.
+                    // the previously collected data.
                     if (currColumnFamily.equals(ColumnFamilyConstants.COLF_F)) {
                         // Find and add all field index holes for the current frequency and index entries.
                         findFieldIndexHoles(prevFieldName);
@@ -1609,7 +1533,11 @@ public class AllFieldMetadataHelper {
                     }
 
                     // Add the current entry to the target entry map.
-                    addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
+                    if (currAggregatedCounts != null) {
+                        addToTargetMap(currDatatype, currAggregatedCounts);
+                    } else {
+                        addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
+                    }
                 } else {
                     // The column family is the same. We have two possible scenarios:
                     // - A row with a field that is different to the previous field.
@@ -1622,10 +1550,18 @@ public class AllFieldMetadataHelper {
                         // Clear the entry maps.
                         clearEntryMaps();
                         // Add the current entry to the target entry map.
-                        addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
+                        if (currAggregatedCounts != null) {
+                            addToTargetMap(currDatatype, currAggregatedCounts);
+                        } else {
+                            addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
+                        }
                     } else {
                         // The current row has the same field. Add the current entry to the target map.
-                        addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
+                        if (currAggregatedCounts != null) {
+                            addToTargetMap(currDatatype, currAggregatedCounts);
+                        } else {
+                            addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
+                        }
                     }
                 }
 
@@ -1671,7 +1607,18 @@ public class AllFieldMetadataHelper {
         }
 
         /**
-         * Add the current date and count to the current target map for the current datatype.
+         * Add the current aggregated counts to the current target map for the given datatype.
+         */
+        private void addToTargetMap(String datatype, DateFrequencyMap aggregatedCounts) {
+            for (Entry<String,Frequency> entry : aggregatedCounts.entrySet()) {
+                Date date = DateHelper.parse(entry.getKey());
+                FieldCount fieldCount = getFieldCount(targetMap, datatype, date);
+                fieldCount.increment(entry.getValue().getValue());
+            }
+        }
+
+        /**
+         * Add the current date and count to the current target map for the given datatype.
          */
         private void addToTargetMap(String datatype, Date date, long count, BOUNDARY_TYPE boundaryType) {
             FieldCount fieldCount = getFieldCount(targetMap, datatype, date);

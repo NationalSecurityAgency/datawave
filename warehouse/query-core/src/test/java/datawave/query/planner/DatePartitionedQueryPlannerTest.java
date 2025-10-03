@@ -61,8 +61,10 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.util.DayIndexIngest;
 import datawave.query.util.IndexFieldHoleDataIngest;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.EventBase;
@@ -277,6 +279,13 @@ public abstract class DatePartitionedQueryPlannerTest {
     private AccumuloClient createClient() throws Exception {
         AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log).client;
         IndexFieldHoleDataIngest.writeItAll(client, getRange(), eventConfigs);
+
+        DayIndexIngest dayIndexIngest = new DayIndexIngest();
+        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+        YearIndexIngest yearIndexIngest = new YearIndexIngest();
+        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);

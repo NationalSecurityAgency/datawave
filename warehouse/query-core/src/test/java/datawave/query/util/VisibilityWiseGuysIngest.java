@@ -9,6 +9,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -39,11 +40,14 @@ public class VisibilityWiseGuysIngest {
     protected static final ColumnVisibility columnVisibilityEnglish = new ColumnVisibility("ALL&E");
     protected static final ColumnVisibility columnVisibilityItalian = new ColumnVisibility("ALL&I");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000l;
+    protected static final long timeStamp = 1356998400000L;
 
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
+
+    private static final DayIndexIngest dayIndexIngest = new DayIndexIngest();
+    private static final YearIndexIngest yearIndexIngest = new YearIndexIngest();
 
     public static void writeItAll(AccumuloClient client, String range) throws Exception {
         writeItAll(client, WhatKindaRange.valueOf(range));
@@ -440,6 +444,10 @@ public class VisibilityWiseGuysIngest {
             }
         }
 
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL", "E", "I");
+        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
     }
 
     private static Value getValueForBuilderFor(String... in) {

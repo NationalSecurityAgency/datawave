@@ -91,6 +91,8 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.DayIndexIngest;
+import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -250,7 +252,7 @@ public class CompositeIndexTest {
                 record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
                 record.setRawFileName("geodata_" + recNum + ".dat");
                 record.setRawRecordNumber(recNum++);
-                record.setDate(formatter.parse(beginDate).getTime() + dates[i]);
+                record.setTimestamp(formatter.parse(beginDate).getTime() + dates[i]);
                 record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : "")).getBytes(UTF_8));
                 record.generateId(null);
                 record.setVisibility(new ColumnVisibility(AUTHS));
@@ -289,6 +291,12 @@ public class CompositeIndexTest {
         writeKeyValues(client, keyValues);
 
         ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+
+        DayIndexIngest dayIndexIngest = new DayIndexIngest();
+        dayIndexIngest.convertToDayIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+        YearIndexIngest yearIndexIngest = new YearIndexIngest();
+        yearIndexIngest.convertToYearIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
     }
 
     public static void setupConfiguration(Configuration conf) {
@@ -361,10 +369,15 @@ public class CompositeIndexTest {
         ShardQueryLogic logic = getShardQueryLogic(false);
         logic.setIntermediateMaxTermThreshold(50);
         logic.setIndexedMaxTermThreshold(50);
+        logic.setFinalMaxTermThreshold(50);
 
         if (!logic.isUseDocumentScheduler()) {
             List<QueryData> queries = getQueryRanges(logic, query, false);
-            Assert.assertEquals(10, queries.size());
+            if (logic.isUseShardedIndex()) {
+                Assert.assertEquals(17, queries.size());
+            } else {
+                Assert.assertEquals(10, queries.size());
+            }
         }
 
         List<DefaultEvent> events = getQueryResults(logic, query, false);

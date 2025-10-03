@@ -13,8 +13,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  compose-build-and-test:
+  configure-runner:
     runs-on: ubuntu-latest
+    steps:
+      - id: set_output_step # at least one step is required in a job
+        run: |
+          echo "Determining runner to be ${{vars.RUNNER_TYPE}}"
+          echo "runner=${{vars.RUNNER_TYPE}}" >> $GITHUB_OUTPUT
+          if [[ "${{ vars.RUNNER_TYPE }}" == "self-hosted" ]]; then
+            echo "We have hit the true case"
+            echo "cache_settings=-Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
+          else
+            echo "We have reached the false case"
+            echo cache_settings="" >> $GITHUB_OUTPUT
+          fi
+          echo $GITHUB_OUTPUT
+    outputs:
+      runner:  ${{ steps.set_output_step.outputs.runner }}
+      cache_settings:  ${{ steps.set_output_step.outputs.cache_settings }}
+  compose-build-and-test:
+    needs: configure-runner
+    runs-on: ${{ needs.configure-runner.outputs.runner }}
     env:
       JAVA_VERSION: '11'
       JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -22,7 +41,14 @@ jobs:
       GITHUB_REGISTRY: ghcr.io
       GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
       GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+      DW_BUILD_CACHE_OPTIONS: ${{ needs.configure-runner.outputs.cache_settings }}
     steps:
+      - name: Set owner of working dir and m2 dir recursively
+        #Needed because compose can leave around files owned by root.
+        run: |
+          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
+            sudo chown -R $(whoami) . ~/.m2 || true   
+          fi
       - name: Checkout Code
         uses: actions/checkout@v4
       # Clean up free space
@@ -58,7 +84,7 @@ jobs:
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
-              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false \
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
               -Djkube.container-image.tags.1=latest \
               clean install
       - name: Docker Compose Clear Space
@@ -67,10 +93,11 @@ jobs:
           docker system prune -f
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
-              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+              -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
       - name: Docker Compose Accumulo Start
         run: |
           cd docker
+          export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
           attempt=0
           max_attempts=20
@@ -107,6 +134,7 @@ jobs:
       - name: Docker Compose Web Start and Run Tests
         run: |
           cd docker
+          export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
           attempt=0
           max_attempts=20
@@ -129,4 +157,7 @@ jobs:
       - name: Docker Compose Web Test Logs
         run: |
           cd docker
-          docker compose logs -f quickstart
+          docker compose logs quickstart
+          if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
+            sudo chown -R $(whoami) . ~/.m2 || true   
+          fi

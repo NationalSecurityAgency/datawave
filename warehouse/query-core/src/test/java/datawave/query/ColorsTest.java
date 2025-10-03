@@ -64,6 +64,8 @@ import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.ColorsIngest;
+import datawave.query.util.DayIndexIngest;
+import datawave.query.util.YearIndexIngest;
 import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -121,6 +123,13 @@ public abstract class ColorsTest {
             ColorsIngest.writeData(client, ColorsIngest.RangeType.SHARD);
 
             Authorizations auths = new Authorizations("ALL");
+
+            DayIndexIngest dayIndexIngest = new DayIndexIngest();
+            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+            YearIndexIngest yearIndexIngest = new YearIndexIngest();
+            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -144,6 +153,13 @@ public abstract class ColorsTest {
             ColorsIngest.writeData(client, ColorsIngest.RangeType.DOCUMENT);
 
             Authorizations auths = new Authorizations("ALL");
+
+            DayIndexIngest dayIndexIngest = new DayIndexIngest();
+            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+            YearIndexIngest yearIndexIngest = new YearIndexIngest();
+            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);

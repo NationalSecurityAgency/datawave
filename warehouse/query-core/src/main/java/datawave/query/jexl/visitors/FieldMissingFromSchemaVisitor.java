@@ -9,7 +9,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
@@ -21,9 +20,6 @@ import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
-import org.apache.commons.jexl3.parser.ASTNotNode;
-import org.apache.commons.jexl3.parser.ASTReference;
-import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
@@ -89,9 +85,9 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
      *            The set of names which we have determined do not exist
      * @return the updated set of names which do not exist
      */
-    protected Object genericVisit(JexlNode node, Object data) throws TableNotFoundException {
+    protected Object findMissingFields(JexlNode node, Object data) throws TableNotFoundException{
         @SuppressWarnings("unchecked")
-        Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
+        Set<String> nonExistentFieldNames = (null == data) ? new LinkedHashSet<>() : (Set<String>) data;
         List<ASTIdentifier> identifiers;
         Collection<String> modelFields = List.of();
 
@@ -127,7 +123,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTERNode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -136,7 +132,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTNRNode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -145,7 +141,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -154,7 +150,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTNENode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -163,7 +159,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTGENode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -172,7 +168,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTGTNode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -181,7 +177,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTLENode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -190,7 +186,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTLTNode node, Object data) {
         try {
-            return genericVisit(node, data);
+            return findMissingFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -203,30 +199,46 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
         Collection<String> modelFields = List.of();
 
-        for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
-            // deconstruct the identifier
-            final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-            // changed to allow _ANYFIELD_ in functions
-            if (this.queryConfiguration instanceof ShardQueryConfiguration) {
-                String modelName = ((ShardQueryConfiguration) this.queryConfiguration).getModelName();
-                String modelTableName = ((ShardQueryConfiguration) this.queryConfiguration).getModelTableName();
-                QueryModel queryModel;
-                try {
-                    queryModel = helper.getQueryModel(modelTableName, modelName);
-                } catch (TableNotFoundException e) {
-                    throw new RuntimeException(e);
-                }
-                modelFields = queryModel.getMappingsForAlias(fieldName);
-            }
-            try {
-                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)
-                                || (helper.isHidden(fieldName, this.datatypeFilter) && !modelFields.isEmpty())) {
+        if (desc != null) {
+            for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
+                // deconstruct the identifier
+                final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
+                // changed to allow _ANYFIELD_ in functions
+                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
                     nonExistentFieldNames.add(testFieldName);
                 }
-            } catch (TableNotFoundException e) {
-                throw new RuntimeException(e);
             }
+        } else if (log.isTraceEnabled()) {
+            String jexlFunction = JexlStringBuildingVisitor.buildQuery(node);
+            log.trace("Ignoring null argument descriptor for JEXL function: " + jexlFunction);
         }
+//        for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
+//            // deconstruct the identifier
+//            final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
+//            // changed to allow _ANYFIELD_ in functions
+//            if (this.queryConfiguration instanceof ShardQueryConfiguration) {
+//                String modelName = ((ShardQueryConfiguration) this.queryConfiguration).getModelName();
+//                String modelTableName = ((ShardQueryConfiguration) this.queryConfiguration).getModelTableName();
+//                QueryModel queryModel;
+//                try {
+//                    queryModel = helper.getQueryModel(modelTableName, modelName);
+//                } catch (TableNotFoundException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                modelFields = queryModel.getMappingsForAlias(fieldName);
+//            }
+//            try {
+//                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)
+//                        || (helper.isHidden(fieldName, this.datatypeFilter) && !modelFields.isEmpty())) {
+//                    nonExistentFieldNames.add(testFieldName);
+//                }
+//            } catch (TableNotFoundException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+//
+//        return nonExistentFieldNames;
+//    }
 
         return nonExistentFieldNames;
     }
@@ -237,29 +249,4 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         node.childrenAccept(this, data);
         return data;
     }
-
-    @Override
-    public Object visit(ASTAndNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTNotNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReferenceExpression node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
 }
