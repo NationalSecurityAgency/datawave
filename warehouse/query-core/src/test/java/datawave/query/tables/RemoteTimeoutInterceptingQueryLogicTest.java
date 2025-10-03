@@ -18,7 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.microservice.query.Query;
@@ -26,7 +26,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
     private RemoteTimeoutInterceptingQueryLogic logic;
-    private QueryLogic delegate;
+    private BaseQueryLogic delegate;
 
     private AccumuloClient client;
     private Query settings;
@@ -35,7 +35,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
     @Before
     public void setup() {
-        delegate = createMock(QueryLogic.class);
+        delegate = createMock(BaseQueryLogic.class);
 
         logic = new RemoteTimeoutInterceptingQueryLogic();
         logic.setDelegate(delegate);
@@ -72,10 +72,13 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         logic.setSuppressTimeout(true);
 
         expect(delegate.initialize(client, settings, auths)).andThrow(new RemoteTimeoutQueryException());
+        expect(delegate.getConfig()).andReturn(new GenericQueryConfiguration());
 
         replayAll();
 
         GenericQueryConfiguration config = logic.initialize(client, settings, auths);
+
+        assertEquals(REMOTE_TIMEOUT_PLAN, config.getQueryString());
 
         // this should not actually do anything
         logic.setupQuery(config);
@@ -269,6 +272,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         expect(delegate.getPlan(client, settings, auths, false, false)).andThrow(new RemoteTimeoutQueryException("exception"));
         expect(delegate.initialize(client, settings, auths)).andThrow(new RemoteTimeoutQueryException("second exception"));
+        expect(delegate.getConfig()).andReturn(new GenericQueryConfiguration());
 
         replayAll();
 

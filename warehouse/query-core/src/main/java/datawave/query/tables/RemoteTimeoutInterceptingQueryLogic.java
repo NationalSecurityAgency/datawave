@@ -8,8 +8,10 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Logger;
 
 import datawave.authorization.remote.RemoteAuthorizationException;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.DelegatingQueryLogic;
@@ -29,7 +31,8 @@ import datawave.webservice.result.GenericResponse;
  * timeout will be short-circuited.
  */
 public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic implements QueryLogic<Object> {
-    public static final String REMOTE_TIMEOUT_PLAN = "( error = 'RemoteTimeoutQueryException' )";
+    public static final String REMOTE_TIMEOUT_PLAN = "(RemoteTimeoutSuppressed = 'true')";
+    private static final Logger log = ThreadConfigurableLogger.getLogger(RemoteTimeoutInterceptingQueryLogic.class);
 
     private boolean suppressTimeout;
     private transient boolean timedOut;
@@ -49,6 +52,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
         try {
             return super.getPlan(connection, settings, runtimeQueryAuthorizations, expandFields, expandValues);
         } catch (RemoteTimeoutQueryException e) {
+            log.warn("remote timeout getting plan", e);
             if (!suppressTimeout) {
                 throw e;
             }
@@ -64,6 +68,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
             try {
                 return super.initialize(connection, settings, runtimeQueryAuthorizations);
             } catch (RemoteTimeoutQueryException e) {
+                log.warn("remote timeout initializing", e);
                 if (!suppressTimeout) {
                     throw e;
                 }
@@ -75,6 +80,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
         if (getDelegate() instanceof BaseQueryLogic) {
             GenericQueryConfiguration config = ((BaseQueryLogic<Object>) getDelegate()).getConfig();
             config.setQuery(settings);
+            config.setQueryString(REMOTE_TIMEOUT_PLAN);
             return config;
         }
 
@@ -91,6 +97,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
         try {
             super.setupQuery(configuration);
         } catch (RemoteTimeoutQueryException e) {
+            log.warn("remote timeout setupQuery", e);
             if (!suppressTimeout) {
                 throw e;
             }
@@ -122,6 +129,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
                 try {
                     return delegate.hasNext();
                 } catch (RemoteTimeoutQueryRuntimeException e) {
+                    log.warn("remote timeout transform", e);
                     if (!suppressTimeout) {
                         throw e;
                     }
@@ -174,6 +182,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
                 try {
                     return delegateIterator.hasNext();
                 } catch (RemoteTimeoutQueryRuntimeException e) {
+                    log.warn("remote timeout hasNext", e);
                     if (suppressTimeout) {
                         timedOut = true;
                         return false;
@@ -203,6 +212,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
                 try {
                     return base.listEffectiveAuthorizations(callerObject);
                 } catch (RemoteAuthorizationException e) {
+                    log.warn("remote timeout listEffectiveAuths", e);
                     if (!suppressTimeout) {
                         throw e;
                     }
@@ -221,6 +231,7 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
                 try {
                     return base.flushCachedCredentials(callerObject);
                 } catch (RemoteAuthorizationException e) {
+                    log.warn("remote timeout flushCreds", e);
                     if (!suppressTimeout) {
                         throw e;
                     }
