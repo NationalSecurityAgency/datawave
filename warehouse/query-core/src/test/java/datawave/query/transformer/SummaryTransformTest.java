@@ -1,14 +1,15 @@
 package datawave.query.transformer;
 
-import datawave.query.Constants;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.DocumentKey;
-import org.apache.accumulo.core.data.Key;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.apache.accumulo.core.data.Key;
+import org.junit.jupiter.api.Test;
+
+import datawave.query.Constants;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.DocumentKey;
 
 class SummaryTransformTest {
 
