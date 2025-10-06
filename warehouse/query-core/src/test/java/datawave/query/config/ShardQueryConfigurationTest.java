@@ -394,6 +394,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxOrExpansionFstThreshold", 500);
         defaultValues.put("yieldThresholdMs", Long.MAX_VALUE);
         updatedValues.put("yieldThresholdMs", 65535L);
+        defaultValues.put("maxYields", 20);
+        updatedValues.put("maxYields", 10);
         defaultValues.put("hdfsSiteConfigURLs", null);
         updatedValues.put("hdfsSiteConfigURLs", "file://etc/hadoop/hdfs_site.xml");
         defaultValues.put("hdfsFileCompressionCodec", null);

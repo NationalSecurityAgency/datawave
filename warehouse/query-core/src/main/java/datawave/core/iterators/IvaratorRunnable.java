@@ -198,6 +198,16 @@ public class IvaratorRunnable implements Runnable {
         return createdTime;
     }
 
+    private String getTimingInfo() {
+        long currentTime = System.currentTimeMillis() - currentStartTime;
+        this.totalTime += currentTime;
+        if (restarts == 0) {
+            return String.format("(total:%dms)", currentTime, this.totalTime);
+        } else {
+            return String.format("(restarts:%d current:%dms total:%dms)", restarts, currentTime, this.totalTime);
+        }
+    }
+
     @Override
     public void run() {
         synchronized (this.running) {
@@ -319,18 +329,11 @@ public class IvaratorRunnable implements Runnable {
                 }
                 this.source.next();
             }
-            long currentTime = System.currentTimeMillis() - currentStartTime;
-            this.totalTime += currentTime;
-            String timing;
-            if (restarts == 0) {
-                timing = String.format("(total:%dms)", currentTime, this.totalTime);
-            } else {
-                timing = String.format("(restarts:%d current:%dms total:%dms)", restarts, currentTime, this.totalTime);
-            }
+            String timing = getTimingInfo();
             // Status.SUSPENDED is set in suspendNow to ensure that a restartKey is set
             if (this.getStatus().equals(Status.SUSPENDED)) {
-                log.info(String.format("Suspended IvaratorRunnable %s rangeHash:%s at key:%s %s timing:%s", getIvaratorInfo(), this.rangeHash, this.restartKey,
-                                this.ivarator.toStringNoQueryId(), timing));
+                log.info(String.format("Suspended IvaratorRunnable %s rangeHash:%s at key:%s %s timing:%s matched %d of %d keys", getIvaratorInfo(),
+                                this.rangeHash, this.restartKey, this.ivarator.toStringNoQueryId(), timing, this.matched, this.scanned));
             } else {
                 log.info(String.format("Completed IvaratorRunnable %s rangeHash:%s range:%s %s timing:%s matched %d of %d keys", getIvaratorInfo(),
                                 this.rangeHash, this.boundingFiRange, this.ivarator.toStringNoQueryId(), timing, this.matched, this.scanned));
@@ -338,7 +341,15 @@ public class IvaratorRunnable implements Runnable {
             }
         } catch (Exception e) {
             // throw the exception up which will be available via the Future
-            log.error(String.format("Failed IvaratorRunnable %s rangeHash:%s %s", getIvaratorInfo(), this.rangeHash, this.ivarator.toStringNoQueryId()), e);
+            String timing = getTimingInfo();
+            if (this.suspendRequested.get()) {
+                // this could happen if a suspend request timed out before suspendRequested could be checked due to a stuck scan
+                log.info(String.format("IvaratorRunnable Exception after suspend requested %s rangeHash:%s %s timing:%s matched %d of %d keys",
+                                getIvaratorInfo(), this.rangeHash, this.ivarator.toStringNoQueryId(), timing, this.matched, this.scanned), e);
+            } else {
+                log.error(String.format("Failed IvaratorRunnable %s rangeHash:%s %s timing:%s matched %d of %d keys", getIvaratorInfo(), this.rangeHash,
+                                this.ivarator.toStringNoQueryId(), timing, this.matched, this.scanned), e);
+            }
             this.setStatus(Status.FAILED);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
