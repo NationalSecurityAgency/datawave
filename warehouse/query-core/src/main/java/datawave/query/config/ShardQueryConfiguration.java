@@ -357,6 +357,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxRangesPerRangeIvarator = 5;
     private int maxOrExpansionFstThreshold = 750;
     private long yieldThresholdMs = Long.MAX_VALUE;
+    private int maxYields = 20;
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
@@ -741,6 +742,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
         this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
         this.setYieldThresholdMs(other.getYieldThresholdMs());
+        this.setMaxYields(other.getMaxYields());
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
@@ -2561,6 +2563,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.yieldThresholdMs = yieldThresholdMs;
     }
 
+    public int getMaxYields() {
+        return maxYields;
+    }
+
+    public void setMaxYields(int maxYields) {
+        this.maxYields = maxYields;
+    }
+
     public boolean isTrackSizes() {
         return trackSizes;
     }
@@ -3044,6 +3054,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxRangesPerRangeIvarator() == that.getMaxRangesPerRangeIvarator() &&
                 getMaxOrExpansionFstThreshold() == that.getMaxOrExpansionFstThreshold() &&
                 getYieldThresholdMs() == that.getYieldThresholdMs() &&
+                getMaxYields() == that.getMaxYields() &&
                 getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize() &&
                 getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold() &&
                 getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout() &&
@@ -3313,6 +3324,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxRangesPerRangeIvarator(),
                 getMaxOrExpansionFstThreshold(),
                 getYieldThresholdMs(),
+                getMaxYields(),
                 getHdfsSiteConfigURLs(),
                 getHdfsFileCompressionCodec(),
                 getZookeeperConfig(),

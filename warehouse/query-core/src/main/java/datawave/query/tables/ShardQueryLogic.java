@@ -2139,6 +2139,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setYieldThresholdMs(yieldThresholdMs);
     }
 
+    public int getMaxYields() {
+        return getConfig().getMaxYields();
+    }
+
+    public void setMaxYields(int maxYields) {
+        getConfig().setMaxYields(maxYields);
+    }
+
     public boolean isCleanupShardsAndDaysQueryHints() {
         return getConfig().isCleanupShardsAndDaysQueryHints();
     }
