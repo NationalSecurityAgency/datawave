@@ -199,8 +199,8 @@ public abstract class SummaryTest {
 
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
-                    for (Attribute attr : ((Attributes) attribute).getAttributes()) {
-                        String toFind = fieldName + ":" + attr;
+                    for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
+                        String toFind = fieldName + ":" + attr.getData();
                         boolean found = goodResults.remove(toFind);
                         if (found)
                             log.debug("removed " + toFind);
@@ -210,7 +210,7 @@ public abstract class SummaryTest {
                     }
                 } else {
 
-                    String toFind = fieldName + ":" + attribute;
+                    String toFind = fieldName + ":" + attribute.getData();
 
                     boolean found = goodResults.remove(toFind);
                     if (found)
@@ -245,8 +245,8 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY()";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of(
-                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(
+                        Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -261,8 +261,8 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(/hello&%526++/@?Sy-;xtVrxHN;%)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of(
-                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(
+                        Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -277,7 +277,7 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(VIEWS:CONTENT/SIZE:50/ONLY)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gu"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -292,7 +292,7 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(SIZE:50/VIEWS:CONTENT)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gu"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -307,7 +307,7 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(SIZE:50)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gu"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -322,8 +322,8 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(SIZE:90000)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of(
-                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(
+                        Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -338,7 +338,7 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(SIZE:-50)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: Y: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: Y"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -381,8 +381,8 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(VIEWS:TEST1,TEST2)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of(
-                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(
+                        Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -426,7 +426,7 @@ public abstract class SummaryTest {
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gu"
-                        + "\nCONTENT2: A lawyer and his briefcase can steal more than ten: : [] 9223372036854775807 false"));
+                        + "\nCONTENT2: A lawyer and his briefcase can steal more than ten"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, eventLogic);
     }
@@ -441,8 +441,8 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:farther AND QUOTE:child #SUMMARY(gimme)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of(
-                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(
+                        Set.of("SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true, TLDLogic);
     }

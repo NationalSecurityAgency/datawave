@@ -105,7 +105,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
      *            the document
      * @return a list of the eventIds
      */
-    private static ArrayList<DocumentKey> getEventIds(Document document) {
+    protected static ArrayList<DocumentKey> getEventIds(Document document) {
         ArrayList<DocumentKey> eventIds = new ArrayList<>();
         if (document.containsKey(Document.DOCKEY_FIELD_NAME)) {
             Attribute<?> attr = document.get(Document.DOCKEY_FIELD_NAME);
