@@ -17,7 +17,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import datawave.query.attributes.Attribute;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -31,6 +30,7 @@ import com.google.common.collect.Iterators;
 
 import datawave.common.util.ArgumentChecker;
 import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;

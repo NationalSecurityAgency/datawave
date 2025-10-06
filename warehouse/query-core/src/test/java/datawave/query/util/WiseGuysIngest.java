@@ -153,8 +153,6 @@ public class WiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp + corleoneTimeStampDelta,
                             emptyValue);
             mutation.put(datatype + "\u0000" + corleoneChildUID, "ETA.0" + "\u0000" + "12", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeChildUID, "ETA.0" + "\u0000" + "13", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
-
             mutation.put(datatype + "\u0000" + corleoneChildUID, "BIRTH_DATE" + "\u0000" + "1930-12-28T00:00:05.000Z", columnVisibility,
                             timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneChildUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility,
@@ -308,10 +306,6 @@ public class WiseGuysIngest {
             mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneChildUID));
             bw.addMutation(mutation);
-            mutation = new Mutation(numberType.normalize("13"));
-            mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeChildUID));
-            bw.addMutation(mutation);
 
             // bail
             mutation = new Mutation(numberType.normalize("12345"));
@@ -420,10 +414,6 @@ public class WiseGuysIngest {
             mutation = new Mutation(numberType.normalize("12"));
             mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneChildUID));
-            bw.addMutation(mutation);
-            mutation = new Mutation(numberType.normalize("13"));
-            mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeChildUID));
             bw.addMutation(mutation);
 
             // geo
@@ -576,10 +566,6 @@ public class WiseGuysIngest {
             mutation = new Mutation(new StringBuilder(numberType.normalize("12")).reverse());
             mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneChildUID));
-            bw.addMutation(mutation);
-            mutation = new Mutation(new StringBuilder(numberType.normalize("13")).reverse());
-            mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeChildUID));
             bw.addMutation(mutation);
 
             // sopranos
@@ -757,8 +743,6 @@ public class WiseGuysIngest {
                             timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put("fi\u0000" + "ETA", numberType.normalize("12") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility,
                             timeStamp + corleoneTimeStampDelta, emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("13") + "\u0000" + datatype + "\u0000" + caponeChildUID, columnVisibility,
-                            timeStamp + caponeTimeStampDelta, emptyValue);
 
             // bail
             mutation.put("fi\u0000" + "BAIL", numberType.normalize("12345") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
