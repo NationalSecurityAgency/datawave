@@ -155,8 +155,6 @@ public abstract class SummaryTest {
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         log.setLevel(Level.TRACE);
-        eventLogic.setFullTableScanEnabled(true);
-        TLDLogic.setFullTableScanEnabled(true);
         deserializer = new KryoDocumentDeserializer();
     }
 
