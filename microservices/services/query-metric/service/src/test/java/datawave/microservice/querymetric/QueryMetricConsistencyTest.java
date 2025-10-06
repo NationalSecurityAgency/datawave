@@ -335,6 +335,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         QueryMetric storedQueryMetric = (QueryMetric) createMetric();
         storedQueryMetric.addPageTime(10, 500, 500000, 500000);
         QueryMetric updatedQueryMetric = (QueryMetric) storedQueryMetric.duplicate();
+        storedQueryMetric.getPredictions().clear();
         updatedQueryMetric.addPageTime(100, 1000, 5000, 10000);
         updatedQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
 
@@ -345,6 +346,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         metricAssertEquals("metric should not change", updatedQueryMetricCopy, updatedQueryMetricCopy);
         assertEquals(BaseQueryMetric.Lifecycle.CLOSED, combinedMetric.getLifecycle());
         assertEquals(2, combinedMetric.getNumPages());
+        assertEquals(1, combinedMetric.getPredictions().size());
     }
 
     @Test
