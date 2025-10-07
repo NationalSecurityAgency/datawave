@@ -55,6 +55,23 @@ public class KeywordExtractor {
 
     YakeKeywordExtractor yakeKeywordExtractor;
 
+    /**
+     * Creates a {@code KeywordExtractor}, a lightweight wrapper for {@link YakeKeywordExtractor} that handles selecting from multiple sources of content,
+     * choosing a language for keyword processing and property-based configuration.
+     *
+     * @param source
+     *            used to name the source for the content from which we'll extract keywords, carried forward into the results object potentially used for
+     *            display or grouping multiple keyword sets.
+     * @param orderedContent
+     *            an ordered list of content. The extractor will attempt to extract keywords from each item and will stop after the first item it successfully
+     *            extracts keywords from.
+     * @param language
+     *            the language to use when extracting content, if the language can't be found in the {@link YakeLanguage.Registry}, it will default to english.
+     *            This language will also be included in the results object.
+     * @param options
+     *            values for the options related to {@code MIN_NGRAMS}, {@code MAX_NGRAMS}, {@code MAX_KEYWORDS}, {@code MAX_SCORE} or
+     *            {@code MAX_CONTENT_CHARS}.
+     */
     public KeywordExtractor(String source, List<Map.Entry<String,VisibleContent>> orderedContent, String language, Map<String,String> options) {
         this.source = source;
         this.orderedContent = orderedContent;

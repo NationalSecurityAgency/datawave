@@ -228,24 +228,22 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
 
         // order the found content by priority
         final List<Map.Entry<String,VisibleContent>> orderedContent = new ArrayList<>();
-        final List<String> entriesToRemove = new ArrayList<>();
-        for (String name : preferredViews) {
-            entriesToRemove.clear();
-            for (Map.Entry<String,VisibleContent> entry : foundContent.entrySet()) {
-                if (name.endsWith("*")) {
-                    final String truncatedName = name.substring(0, name.length() - 1);
-                    if (entry.getKey().startsWith(truncatedName)) {
-                        orderedContent.add(entry);
-                        entriesToRemove.add(entry.getKey());
-                    }
-                } else if (entry.getKey().equals(name)) {
+        final List<Map.Entry<String,VisibleContent>> orderedContent = new ArrayList<>();
+        for (String view : preferredViews) {
+            final String truncatedView = view.endsWith("*") ? view.substring(0, view.length() - 1) : null;
+            final Iterator<Map.Entry<String,VisibleContent>> iterator = foundContent.entrySet().iterator();
+
+            while (iterator.hasNext()) {
+                final Map.Entry<String,VisibleContent> entry = iterator.next();
+                final String foundView = entry.getKey();
+
+                if (truncatedView != null && foundView.startsWith(truncatedView)) {
                     orderedContent.add(entry);
-                    entriesToRemove.add(entry.getKey());
-                }
-            }
-            if (!entriesToRemove.isEmpty()) {
-                for (String key : entriesToRemove) {
-                    foundContent.remove(key);
+                    iterator.remove();
+                } else if (foundView.equals(view)) {
+                    orderedContent.add(entry);
+                    iterator.remove();
+                    break;
                 }
             }
         }
