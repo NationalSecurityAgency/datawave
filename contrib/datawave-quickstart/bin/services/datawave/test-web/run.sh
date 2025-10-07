@@ -153,25 +153,27 @@ function configure() {
              PRETTY_PRINT=true
              ;;
           --help | -h)
-             usage && exit 0
+             usage
+             exit 0
              ;;
           *)
              fatal "Invalid argument passed to $( basename "$0" ): ${1}"
+             exit 1
        esac
        shift
     done
 
     # Misc....
 
-    datawaveWebIsInstalled || fatal "DataWave Web must be installed and running"
+    datawaveWebIsInstalled || ( fatal "DataWave Web must be installed and running" && exit 1 )
 
-    datawaveWebIsRunning || fatal "DataWave Web must be running"
+    datawaveWebIsRunning || ( fatal "DataWave Web must be running" && exit 1 )
 
-    CURL="$( which curl )" && [ -z "${CURL}" ] && fatal "Curl executable not found!"
+    CURL="$( which curl )" && [ -z "${CURL}" ] && fatal "Curl executable not found!" && exit 1
 
     TEST_COUNTER=0
 
-    configureUserIdentity || fatal "Failed to configure PKI"
+    configureUserIdentity || ( fatal "Failed to configure PKI" && exit 1 )
 }
 
 function cleanup() {
@@ -280,7 +282,7 @@ function runTest() {
 
     TEST_COMMAND="${CURL} ${CURL_ADDITIONAL_OPTS} --silent \
 --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
---insecure --cert '${DW_CURL_CERT}' --key '${DW_CURL_KEY_RSA}' --cacert '${DW_CURL_CA}' ${TEST_URL_OPTS}"
+--insecure --cert '${DW_CURL_CERT}' --keepalive-time 180 --key '${DW_CURL_KEY_RSA}' --cacert '${DW_CURL_CA}' ${TEST_URL_OPTS}"
 
     if [ "${LIST_TESTS}" == true ] ; then
         printCurrentTestInfo

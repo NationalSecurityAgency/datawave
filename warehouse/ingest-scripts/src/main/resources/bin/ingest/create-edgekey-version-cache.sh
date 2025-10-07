@@ -12,19 +12,16 @@ function usage
         \t--help\t print this message\n"
 }
 
-
-
-if [[ `uname` == "Darwin" ]]; then
-        THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-        THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
-THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
 
+THIS_DIR="${THIS_SCRIPT%/*}"
+cd $THIS_DIR || exit
 
 RUN_OPS=""
-
 
 #Parse the command line args
 while [ "$1" != "" ]; do
@@ -54,6 +51,6 @@ done
 . ./ingest-env.sh
 . ./ingest-libs.sh
 
-ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR,$THIS_DIR/$COMMON_UTIL_JAR,$THIS_DIR/$DATAWAVE_CORE_JAR,$THIS_DIR/$DATAWAVE_TYPE_UTILS_JAR,$THIS_DIR/$DATAWAVE_COMMON_UTILS_JAR
+ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR:$THIS_DIR/$COMMON_UTIL_JAR:$THIS_DIR/$DATAWAVE_CORE_JAR:$THIS_DIR/$DATAWAVE_TYPE_UTILS_JAR:$THIS_DIR/$DATAWAVE_COMMON_UTILS_JAR:$THIS_DIR/$COMMONS_LANG_JAR
 
-$WAREHOUSE_ACCUMULO_BIN/accumulo -add $ADDJARS datawave.ingest.util.GenerateEdgeKeyVersionCache -Dfs.default.name=file:/// $RUN_OPS $USERNAME $PASSWORD ${METADATA_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_BIN/accumulo datawave.ingest.util.GenerateEdgeKeyVersionCache -Dfs.default.name=file:/// $RUN_OPS $USERNAME $PASSWORD ${METADATA_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS

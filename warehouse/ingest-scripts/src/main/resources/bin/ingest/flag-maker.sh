@@ -1,18 +1,19 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
-	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-	THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 . ./ingest-env.sh
 . ./ingest-libs.sh
 
 HADOOP_NATIVE_LIB_DIR="$INGEST_HADOOP_HOME/lib/native"
-CLASSPATH=$CLASSPATH:`$HADOOP_HOME/bin/hadoop classpath`
+CLASSPATH=$CLASSPATH:$($HADOOP_HOME/bin/hadoop classpath)
 CLASSPATH=$CLASSPATH:../../config/log4j-flagmaker.xml
 JAVA_OPTS="${JAVA_OPTS} -Djava.library.path=${HADOOP_NATIVE_LIB_DIR}"
 export HADOOP_CLASSPATH=$CLASSPATH
@@ -44,11 +45,11 @@ stop() {
     fi
   done
   echo "Waiting for FlagMakers to shut down (Ctrl+c to cancel immediately)"
-  PID=`pgrep -f "app=FlagMaker" 2>/dev/null` 
+  PID=$(pgrep -f "app=FlagMaker" 2>/dev/null) 
   while kill -0 $PID >/dev/null 2>&1
   do
     sleep 1
-    PID=`pgrep -f "app=FlagMaker" 2>/dev/null` 
+    PID=$(pgrep -f "app=FlagMaker" 2>/dev/null) 
   done;
   echo "Flag Maker shut down"
 }

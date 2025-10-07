@@ -19,7 +19,7 @@ source "${BIN_DIR}/query.sh" # for urlencode function
 CURL="$( which curl )"
 
 TVMAZE_SHOWNAME="${1}"
-[ -z "${TVMAZE_SHOWNAME}" ] && fatal "TV show argument is required!"
+[ -z "${TVMAZE_SHOWNAME}" ] && fatal "TV show argument is required!" && exit 1
 
 PRETTY=false
 [ "${2}" == "-p" ] && PRETTY=true
@@ -30,7 +30,7 @@ CURL_CMD="${CURL} --silent --write-out 'HTTP_STATUS_CODE:%{http_code}' -X GET ${
 CURL_RESPONSE="$( eval "${CURL_CMD}" )"
 CURL_EXIT=$?
 
-[ "${CURL_EXIT}" != "0" ] && fatal "Curl command exited with non-zero status: ${CURL_EXIT}"
+[ "${CURL_EXIT}" != "0" ] && fatal "Curl command exited with non-zero status: ${CURL_EXIT}" && exit 1
 
 TVMAZE_RESPONSE_BODY=$( echo ${CURL_RESPONSE} | sed -e 's/HTTP_STATUS_CODE\:.*//g' )
 TVMAZE_RESPONSE_STATUS=$( echo ${CURL_RESPONSE} | tr -d '\n' | sed -e 's/.*HTTP_STATUS_CODE://' )
@@ -38,10 +38,11 @@ TVMAZE_RESPONSE_STATUS=$( echo ${CURL_RESPONSE} | tr -d '\n' | sed -e 's/.*HTTP_
 [ "${TVMAZE_RESPONSE_STATUS}" != "200" ] && error "api.tvmaze.com returned invalid response status: ${TVMAZE_RESPONSE_STATUS}" && exit 1
 [ -z "${TVMAZE_RESPONSE_BODY}" ] && error "Response body is empty!" && exit 1
 
+PY_CMD='from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
 if [ "${PRETTY}" == true ] ; then
-    echo "${TVMAZE_RESPONSE_BODY}" | python -c 'import sys,json;data=json.loads(sys.stdin.read()); print json.dumps(data, indent=2, sort_keys=True)'
+  echo "${TVMAZE_RESPONSE_BODY}" | ( python3 -c "${PY_CMD}" 2>/dev/null || python2 -c "${PY_CMD}" 2>/dev/null ) || ( warn "Unable to pretty print, Python not detected" && echo "${TVMAZE_RESPONSE_BODY}" )
 else
-    echo "${TVMAZE_RESPONSE_BODY}"
+  echo "${TVMAZE_RESPONSE_BODY}"
 fi
 
 exit 0

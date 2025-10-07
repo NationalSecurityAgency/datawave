@@ -2,6 +2,8 @@
 /* JavaCCOptions:KEEP_LINE_COL=null */
 package datawave.query.language.parser.lucene;
 
+import java.util.List;
+
 import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.messages.QueryParserMessages;
 import org.apache.lucene.queryparser.flexible.messages.Message;
@@ -14,61 +16,81 @@ import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
  * You can modify this class to customize your error reporting mechanisms so long as you retain the public fields.
  */
 public class ParseException extends QueryNodeParseException {
-    
+
     /**
      * The version identifier for this Serializable class. Increment only if the <i>serialized</i> form of the class changes.
      */
-    private static final long serialVersionUID = 1L;
-    
+    private static final long serialVersionUID = -1162628601053710719L;
+
     /**
      * This constructor is used by the method "generateParseException" in the generated parser. Calling this constructor generates a new object of this type
      * with the fields "currentToken", "expectedTokenSequences", and "tokenImage" set.
+     *
+     * @param expectedTokenSequencesVal
+     *            the expected token sequences
+     * @param currentTokenVal
+     *            the current token
+     * @param tokenImageVal
+     *            the token image
      */
-    public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, String[] tokenImageVal) {
+    public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, List<String> tokenImageVal) {
         super(new MessageImpl(QueryParserMessages.INVALID_SYNTAX, initialise(currentTokenVal, expectedTokenSequencesVal, tokenImageVal)));
         this.currentToken = currentTokenVal;
         this.expectedTokenSequences = expectedTokenSequencesVal;
         this.tokenImage = tokenImageVal;
     }
-    
+
     /**
      * The following constructors are for use by you for whatever purpose you can think of. Constructing the exception in this manner makes the exception behave
      * in the normal way - i.e., as documented in the class "Throwable". The fields "errorToken", "expectedTokenSequences", and "tokenImage" do not contain
      * relevant information. The JavaCC generated code does not use these constructors.
      */
-    
+
     public ParseException() {
         super(new MessageImpl(QueryParserMessages.INVALID_SYNTAX, "Error"));
     }
-    
-    /** Constructor with message. */
+
+    /**
+     * Constructor with message.
+     *
+     * @param message
+     *            the message
+     */
     public ParseException(Message message) {
         super(message);
     }
-    
+
     /**
      * This is the last token that has been consumed successfully. If this object has been created due to a parse error, the token followng this token will
      * (therefore) be the first error token.
      */
     public Token currentToken;
-    
+
     /**
      * Each entry in this array is an array of integers. Each array of integers represents a sequence of tokens (by their ordinal values) that is expected at
      * this point of the parse.
      */
     public int[][] expectedTokenSequences;
-    
+
     /**
      * This is a reference to the "tokenImage" array of the generated parser within which the parse error occurred. This array is defined in the generated
      * ...Constants interface.
      */
-    public String[] tokenImage;
-    
+    public List<String> tokenImage;
+
     /**
      * It uses "currentToken" and "expectedTokenSequences" to generate a parse error message and returns it. If this object has been created due to a parse
      * error, and you do not catch it (it gets thrown from the parser) the correct error message gets displayed.
+     *
+     * @param currentToken
+     *            the current token
+     * @param expectedTokenSequences
+     *            the expected token sequences
+     * @param tokenImage
+     *            the token image
+     * @return parse error message string
      */
-    private static String initialise(Token currentToken, int[][] expectedTokenSequences, String[] tokenImage) {
+    private static String initialise(Token currentToken, int[][] expectedTokenSequences, List<String> tokenImage) {
         String eol = System.getProperty("line.separator", "\n");
         StringBuilder expected = new StringBuilder();
         int maxSize = 0;
@@ -77,7 +99,7 @@ public class ParseException extends QueryNodeParseException {
                 maxSize = expectedTokenSequences[i].length;
             }
             for (int j = 0; j < expectedTokenSequences[i].length; j++) {
-                expected.append(tokenImage[expectedTokenSequences[i][j]]).append(' ');
+                expected.append(tokenImage.get(expectedTokenSequences[i][j])).append(' ');
             }
             if (expectedTokenSequences[i][expectedTokenSequences[i].length - 1] != 0) {
                 expected.append("...");
@@ -90,10 +112,10 @@ public class ParseException extends QueryNodeParseException {
             if (i != 0)
                 retval += " ";
             if (tok.kind == 0) {
-                retval += tokenImage[0];
+                retval += tokenImage.get(0);
                 break;
             }
-            retval += " " + tokenImage[tok.kind];
+            retval += " " + tokenImage.get(tok.kind);
             retval += " \"";
             retval += add_escapes(tok.image);
             retval += " \"";
@@ -109,14 +131,18 @@ public class ParseException extends QueryNodeParseException {
         retval += expected.toString();
         return retval;
     }
-    
+
     /**
      * The end of line string for this machine.
      */
     protected String eol = System.getProperty("line.separator", "\n");
-    
+
     /**
      * Used to convert raw characters to their escaped version when these raw version cannot be used as part of an ASCII string literal.
+     *
+     * @param str
+     *            the input string
+     * @return string with escapes added
      */
     static String add_escapes(String str) {
         StringBuilder retval = new StringBuilder();
@@ -161,6 +187,6 @@ public class ParseException extends QueryNodeParseException {
         }
         return retval.toString();
     }
-    
+
 }
 /* JavaCC - OriginalChecksum=4263a02db9988d7a863aa97ad2f6dc67 (do not edit this line) */

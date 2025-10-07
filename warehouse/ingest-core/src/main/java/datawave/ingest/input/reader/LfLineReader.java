@@ -19,33 +19,34 @@ public class LfLineReader implements LineReader {
     private int bufferPosn = 0;
     private InputStream in;
     private boolean newLineIncluded = false; // indicates in newline is included
-    
+
     /**
      * Create a line reader that reads from the given stream using the default buffer-size (64k).
-     * 
+     *
      * @param in
      *            The input stream
      */
     public LfLineReader(InputStream in) {
         this(in, DEFAULT_BUFFER_SIZE);
     }
-    
+
     /**
      * Create a line reader that reads from the given stream using the <code>io.file.buffer.size</code> specified in the given <code>Configuration</code>.
-     * 
+     *
      * @param in
      *            input stream
      * @param conf
      *            configuration
      * @throws IOException
+     *             if there is a problem pulling the configuration
      */
     public LfLineReader(InputStream in, Configuration conf) throws IOException {
         this(in, conf.getInt(Properties.IO_FILE_BUFFER_SIZE, DEFAULT_BUFFER_SIZE));
     }
-    
+
     /**
      * Create a line reader that reads from the given stream using the given buffer-size.
-     * 
+     *
      * @param in
      *            The input stream
      * @param bufferSize
@@ -55,23 +56,24 @@ public class LfLineReader implements LineReader {
         this.in = in;
         this.buffer = new byte[bufferSize];
     }
-    
+
     /**
      * Close the underlying stream.
-     * 
+     *
      * @throws IOException
+     *             if there is an issue closing the stream
      */
     public void close() throws IOException {
         in.close();
     }
-    
+
     public boolean isNewLineIncluded() {
         return newLineIncluded;
     }
-    
+
     /**
      * Read from the InputStream into the given Text.
-     * 
+     *
      * @param str
      *            the object to store the given line
      * @return the number of bytes read including the newline
@@ -81,10 +83,10 @@ public class LfLineReader implements LineReader {
     public int readLine(Text str) throws IOException {
         return readLine(str, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
-    
+
     /**
      * Read from the InputStream into the given Text.
-     * 
+     *
      * @param str
      *            the object to store the given line
      * @param maxLineLength
@@ -96,10 +98,10 @@ public class LfLineReader implements LineReader {
     public int readLine(Text str, int maxLineLength) throws IOException {
         return readLine(str, maxLineLength, Integer.MAX_VALUE);
     }
-    
+
     /**
      * Read one line from the InputStream into the given Text. A line can be terminated by '\n' (LF). EOF also terminates an otherwise unterminated line.
-     * 
+     *
      * @param str
      *            the object to store the given line (without newline)
      * @param maxLineLength
@@ -107,9 +109,9 @@ public class LfLineReader implements LineReader {
      * @param maxBytesToConsume
      *            the maximum number of bytes to consume in this call. This is only a hint, because if the line cross this threshold, we allow it to happen. It
      *            can overshoot potentially by as much as one buffer length.
-     * 
+     *
      * @return the number of bytes read including the (longest) newline found.
-     * 
+     *
      * @throws IOException
      *             if the underlying stream throws
      */
@@ -157,14 +159,14 @@ public class LfLineReader implements LineReader {
                 txtLength += appendLength;
             }
         } while (newlineLength == 0 && bytesConsumed < maxBytesToConsume);
-        
+
         if (bytesConsumed > Integer.MAX_VALUE)
             throw new IOException("Too many bytes before newline: " + bytesConsumed);
         return (int) bytesConsumed;
     }
-    
+
     public void setNewLineIncluded(boolean newLineIncluded) {
         this.newLineIncluded = newLineIncluded;
     }
-    
+
 }

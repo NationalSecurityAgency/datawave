@@ -1,13 +1,13 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
-	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-	THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
 
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 . ../ingest/ingest-env.sh
 
@@ -17,7 +17,7 @@ if [[ -z ${LOCK_FILE_DIR} ]]; then
 fi
 
 # If the paused file exists, then prevent startup unless forcing
-if [[ "$@" =~ ".*-force.*" || "$@" =~ "-force" ]]; then
+if [[ "$@" =~ .*-force.* || "$@" =~ "-force" ]]; then
     rm -f ${LOCK_FILE_DIR}/INGEST_STARTUP.LCK
     if [[ "$MAP_FILE_LOADER_SEPARATE_START" != "true" ]]; then
 	rm -f ${LOCK_FILE_DIR}/LOADER_STARTUP.LCK
@@ -30,7 +30,7 @@ if [ -e ${LOCK_FILE_DIR}/INGEST_STARTUP.LCK ]; then
     exit -1
 fi
 
-if [[ "$@" =~ ".*-skipCache.*" || "$@" =~ "-skipCache" ]]; then
+if [[ "$@" =~ .*-skipCache.* || "$@" =~ "-skipCache" ]]; then
     echo "Skipping job cache check and load"
 else
     ../ingest/check-job-cache.sh
@@ -47,12 +47,15 @@ START_INGEST_SERVERS_CMD=$THIS_DIR/start-ingest-servers.sh
 CLEAN_CMD=$THIS_DIR/start-cleaner.sh
 MAPFILE_LOADER_CMD=$THIS_DIR/start-loader.sh
 FLAG_MAKER_CMD=$THIS_DIR/start-flag-maker.sh
+GENERATE_CONFIG_CACHE=$THIS_DIR/generate-accumulo-config-cache.sh
+
+$GENERATE_CONFIG_CACHE
 
 $START_INGEST_SERVERS_CMD -type all
 
 sleep 1
 
-PID=`ps -wwef | egrep "python .*cleanup-server.py" | grep -v grep | awk {'print $2'}`
+PID=$(ps -wwef | egrep "python .*cleanup-server.py" | grep -v grep | awk {'print $2'})
 if [ -z $PID ]; then
         echo "starting cleanup server ..."
         $CLEAN_CMD &

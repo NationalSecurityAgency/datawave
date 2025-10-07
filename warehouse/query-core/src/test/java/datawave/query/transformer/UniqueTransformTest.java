@@ -1,29 +1,14 @@
 package datawave.query.transformer;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.DiacriticContent;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
-import datawave.query.function.LogTiming;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
-import datawave.query.jexl.JexlASTHelper;
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.collections4.Transformer;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.hadoop.io.Text;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,22 +21,51 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SortedSetMultimap;
+import com.google.common.collect.TreeMultimap;
+import com.google.common.primitives.Longs;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.DiacriticContent;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.DocumentKey;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.function.LogTiming;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.jexl.JexlASTHelper;
 
 public class UniqueTransformTest {
-    
-    private static final Random random = new Random(1000);
-    private static final List<String> randomValues = new ArrayList<>();
-    
-    private final List<Document> inputDocuments = new ArrayList<>();
-    private final List<Document> expectedUniqueDocuments = new ArrayList<>();
-    private final List<UniqueTransform.FieldSet> expectedOrderedFieldSets = new ArrayList<>();
-    private UniqueFields uniqueFields = new UniqueFields();
-    
+
+    protected static final Random random = new Random(1000);
+    private static final AtomicLong counter = new AtomicLong();
+
+    protected static final List<String> randomValues = new ArrayList<>();
+
+    protected final List<Document> inputDocuments = new ArrayList<>();
+    protected final List<Document> expectedUniqueDocuments = new ArrayList<>();
+    protected byte[] expectedOrderedFieldValues = null;
+    protected UniqueFields uniqueFields = new UniqueFields();
+
     @BeforeClass
     public static void setup() {
         for (int i = 0; i < 5; i++) {
@@ -59,49 +73,49 @@ public class UniqueTransformTest {
             randomValues.add(RandomStringUtils.randomAlphanumeric(length));
         }
     }
-    
+
     @After
     public void tearDown() throws Exception {
         inputDocuments.clear();
         expectedUniqueDocuments.clear();
         uniqueFields = new UniqueFields();
-        expectedOrderedFieldSets.clear();
+        expectedOrderedFieldValues = null;
     }
-    
+
     @Test
     public void testTransformingNullReturnsNull() {
-        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0");
-        
+        givenValueTransformerForFields(TemporalGranularity.ALL, "Attr0");
+
         UniqueTransform uniqueTransform = getUniqueTransform();
-        
+
         assertNull(uniqueTransform.apply(null));
     }
-    
+
     @Test
     public void testUniquenessWithRandomDocuments() {
         // Create 100 random documents.
         for (int i = 0; i < 100; i++) {
             givenInputDocument().withRandomKeyValues(10, 100, 50);
         }
-        
+
         // Choose three fields such that the number of unique document is less than half the number of documents but greater than 10.
         Set<String> fields = new HashSet<>();
         int expectedUniqueDocuments = inputDocuments.size();
         while (expectedUniqueDocuments > inputDocuments.size() / 2 || expectedUniqueDocuments < 10) {
             fields.clear();
             while (fields.size() < 3) {
-                fields.add("Attr" + random.nextInt(100));
+                fields.add("ATTR" + random.nextInt(100));
             }
             expectedUniqueDocuments = countUniqueness(inputDocuments, fields);
         }
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, fields.toArray(new String[0]));
-        
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, fields.toArray(new String[0]));
+
         List<Document> uniqueDocuments = getUniqueDocuments(inputDocuments);
         assertEquals(expectedUniqueDocuments, uniqueDocuments.size());
     }
-    
-    private int countUniqueness(List<Document> input, Set<String> fields) {
+
+    protected int countUniqueness(List<Document> input, Set<String> fields) {
         Set<String> uniqueValues = new HashSet<>();
         for (Document document : input) {
             Multimap<String,String> fieldValues = getFieldValues(document, fields);
@@ -109,8 +123,8 @@ public class UniqueTransformTest {
         }
         return uniqueValues.size();
     }
-    
-    private Multimap<String,String> getFieldValues(Document document, Set<String> fields) {
+
+    protected Multimap<String,String> getFieldValues(Document document, Set<String> fields) {
         Multimap<String,String> values = HashMultimap.create();
         for (String docField : document.getDictionary().keySet()) {
             for (String field : fields) {
@@ -126,8 +140,8 @@ public class UniqueTransformTest {
         }
         return values;
     }
-    
-    private String getString(Multimap<String,String> fieldValues) {
+
+    protected String getString(Multimap<String,String> fieldValues) {
         StringBuilder sb = new StringBuilder();
         fieldValues.keySet().stream().sorted().forEach((field) -> {
             if (sb.length() > 0) {
@@ -138,7 +152,7 @@ public class UniqueTransformTest {
         });
         return sb.toString();
     }
-    
+
     /**
      * Verify that field matching is case-insensitive. Query: #UNIQUE(attr0, Attr1, ATTR2)
      */
@@ -147,165 +161,165 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
-        givenInputDocument().withKeyValue("Attr1", randomValues.get(2)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr1", randomValues.get(2));
-        givenInputDocument().withKeyValue("attr2", randomValues.get(4)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("attr2", randomValues.get(4));
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, "attr0", "Attr1", "ATTR2");
-        
+        givenInputDocument().withKeyValue("ATTR1", randomValues.get(2)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR1", randomValues.get(3)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR1", randomValues.get(2));
+        givenInputDocument().withKeyValue("ATTR2", randomValues.get(4)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR2", randomValues.get(0)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR2", randomValues.get(4));
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify the DAY function will truncate date values to their day and determine uniqueness based on that when possible. Query: #UNIQUE(#DAY(Attr0))
      */
     @Test
     public void testUniquenessWithValueTransformer_DAY() {
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 12:40:15");
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 05:04:20");
-        givenInputDocument().withKeyValue("Attr0", "2001-03-12 05:04:20").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
-        
-        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
-        
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 12:40:15");
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 05:04:20");
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-12 05:04:20").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "nonDateValue").isExpectedToBeUnique();
+
+        givenValueTransformerForFields(TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify the HOUR function will truncate date values to their hour and determine uniqueness based on that when possible. Query: #UNIQUE(#HOUR(Attr0))
      */
     @Test
     public void testUniquenessWithValueTransformer_HOUR() {
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:40:15");
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 05:04:20").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 05:04:30");
-        givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
-        
-        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, "Attr0");
-        
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:40:15");
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 05:04:20").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 05:04:30");
+        givenInputDocument().withKeyValue("ATTR0", "nonDateValue").isExpectedToBeUnique();
+
+        givenValueTransformerForFields(TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR, "Attr0");
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify the MINUTE function will truncate date values to their minute and determine uniqueness based on that when possible. Query: #UNIQUE(#MINUTE(Attr0))
      */
     @Test
     public void testUniquenessWithValueTransformer_MINUTE() {
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:20");
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:04:20").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:04:15");
-        givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
-        
-        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr0");
-        
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:20");
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:04:20").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:04:15");
+        givenInputDocument().withKeyValue("ATTR0", "nonDateValue").isExpectedToBeUnique();
+
+        givenValueTransformerForFields(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr0");
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify mixed value transformers for different fields applies the transformers only to relevant fields. Query: #UNIQUE(#DAY(Attr0)) AND
      * #UNIQUE(#HOUR(Attr1)) and #UNIQUE(#MINUTE(Attr2))
      */
     @Test
     public void testUniquenessWithMixedValueTransformersForDifferentFields() {
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 12:40:15");
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 05:04:20");
-        givenInputDocument().withKeyValue("Attr0", "2001-03-12 05:04:20").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr1", "2001-03-10 10:15:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr1", "2001-03-10 10:40:15");
-        givenInputDocument().withKeyValue("Attr1", "2001-03-10 05:04:20").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr1", "2001-03-10 05:04:30");
-        givenInputDocument().withKeyValue("Attr2", "2001-03-10 10:15:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr2", "2001-03-10 10:15:20");
-        givenInputDocument().withKeyValue("Attr2", "2001-03-10 10:04:20").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr2", "2001-03-10 10:04:15");
-        
-        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
-        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, "Attr1");
-        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr2");
-        
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 12:40:15");
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 05:04:20");
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-12 05:04:20").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR1", "2001-03-10 10:15:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR1", "2001-03-10 10:40:15");
+        givenInputDocument().withKeyValue("ATTR1", "2001-03-10 05:04:20").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR1", "2001-03-10 05:04:30");
+        givenInputDocument().withKeyValue("ATTR2", "2001-03-10 10:15:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR2", "2001-03-10 10:15:20");
+        givenInputDocument().withKeyValue("ATTR2", "2001-03-10 10:04:20").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR2", "2001-03-10 10:04:15");
+
+        givenValueTransformerForFields(TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
+        givenValueTransformerForFields(TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR, "Attr1");
+        givenValueTransformerForFields(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr2");
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify that the ALL function finds more unique documents than MINUTE when they are provided for the same field. Query: #UNIQUE(Attr0) AND
      * #UNIQUE(#MINUTE(Attr0))
      */
     @Test
     public void testThatValueTransformer_ALL_Supersedes_MINUTE() {
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:01").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:02").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:03").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:04").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:04");
-        givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
-        
-        givenValueTransformersForField("Attr0", UniqueGranularity.ALL, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
-        
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:01").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:02").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:03").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:04").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:15:04");
+        givenInputDocument().withKeyValue("ATTR0", "nonDateValue").isExpectedToBeUnique();
+
+        givenValueTransformersForField("Attr0", TemporalGranularity.ALL, TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify that the MINUTE function finds more unique documents than HOUR when they are provided for the same field. Query: #UNIQUE(#MINUTE(Attr0)) AND
      * #UNIQUE(#HOUR(Attr0))
      */
     @Test
     public void testThatValueTransformer_MINUTE_Supersedes_HOUR() {
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:01:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:02:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:03:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:04:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:04:20");
-        givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
-        
-        givenValueTransformersForField("Attr0", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
-        
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:01:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:02:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:03:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:04:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:04:20");
+        givenInputDocument().withKeyValue("ATTR0", "nonDateValue").isExpectedToBeUnique();
+
+        givenValueTransformersForField("Attr0", TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify that the HOUR function finds more unique documents than DAY when they are provided for the same field. Query: #UNIQUE(#HOUR(Attr0)) AND
      * #UNIQUE(#DAY(Attr0))
      */
     @Test
     public void testThatValueTransformer_HOUR_Supersedes_DAY() {
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:01:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 11:01:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 12:01:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 13:01:15").isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr0", "2001-03-10 13:20:15");
-        givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
-        
-        givenValueTransformersForField("Attr0", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
-        
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 10:01:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 11:01:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 12:01:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 13:01:15").isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", "2001-03-10 13:20:15");
+        givenInputDocument().withKeyValue("ATTR0", "nonDateValue").isExpectedToBeUnique();
+
+        givenValueTransformersForField("Attr0", TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR, TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+
         assertUniqueDocuments();
     }
-    
+
     @Test
     public void testUniquenessWithTimingMetric() {
         List<Document> input = new ArrayList<>();
         List<Document> expected = new ArrayList<>();
-        
-        String MARKER_STRING = "\u2735FinalDocument\u2735";
+
+        String MARKER_STRING = FinalDocumentTrackingIterator.MARKER_TEXT.toString();
         TimingMetadata timingMetadata = new TimingMetadata();
         timingMetadata.setNextCount(5l);
-        
+
         givenInputDocument(MARKER_STRING).withKeyValue(LogTiming.TIMING_METADATA, timingMetadata.toString()).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR1", randomValues.get(1)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR1", randomValues.get(2));
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0");
-        
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "Attr0");
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Test that groups get placed into separate field sets
      */
@@ -316,27 +330,26 @@ public class UniqueTransformTest {
         // field2.group1
         // field1.group2
         // field2.group2
-        
+
         // @formatter:off
         givenInputDocument()
-                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                .withKeyValue("Attr1.0.1.1", randomValues.get(3));
+                .withKeyValue("ATTR0.0.0.0", randomValues.get(0))
+                .withKeyValue("ATTR1.0.1.0", randomValues.get(1))
+                .withKeyValue("ATTR0.0.0.1", randomValues.get(2))
+                .withKeyValue("ATTR1.0.1.1", randomValues.get(3));
 
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(0))
-                .withKeyValue("Attr1", randomValues.get(1));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(2))
-                .withKeyValue("Attr1", randomValues.get(3));
+        expectedOrderedFieldValues = givenExpectedOrderedFieldValues()
+                .withKeyValue("ATTR0", randomValues.get(0))
+                .withKeyValue("ATTR1", randomValues.get(1))
+                .withKeyValue("ATTR0", randomValues.get(2))
+                .withKeyValue("ATTR1", randomValues.get(3)).build();
         // @formatter:on
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1");
-        
-        assertOrderedFieldSets();
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "Attr0", "Attr1");
+
+        assertOrderedFieldValues();
     }
-    
+
     /**
      * Test that groups get placed into separate field sets combined with ungrouped attributes
      */
@@ -348,30 +361,28 @@ public class UniqueTransformTest {
         // field2.group1
         // field2.group2
         // field3
-        
+
         // @formatter:off
         givenInputDocument()
-                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                .withKeyValue("Attr1.0.1.1", randomValues.get(3))
-                .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("ATTR0.0.0.0", randomValues.get(0))
+                .withKeyValue("ATTR1.0.1.0", randomValues.get(1))
+                .withKeyValue("ATTR0.0.0.1", randomValues.get(2))
+                .withKeyValue("ATTR1.0.1.1", randomValues.get(3))
+                .withKeyValue("ATTR3", randomValues.get(4));
 
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(0))
-                .withKeyValue("Attr1", randomValues.get(1))
-                .withKeyValue("Attr3", randomValues.get(4));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(2))
-                .withKeyValue("Attr1", randomValues.get(3))
-                .withKeyValue("Attr3", randomValues.get(4));
+        expectedOrderedFieldValues = givenExpectedOrderedFieldValues()
+                .withKeyValue("ATTR0", randomValues.get(0))
+                .withKeyValue("ATTR1", randomValues.get(1))
+                .withKeyValue("ATTR0", randomValues.get(2))
+                .withKeyValue("ATTR1", randomValues.get(3))
+                .withKeyValue("ATTR3", randomValues.get(4)).build();
         // @formatter:on
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
-        
-        assertOrderedFieldSets();
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "Attr0", "Attr1", "Attr3");
+
+        assertOrderedFieldValues();
     }
-    
+
     /**
      * Test that groups get placed into separate field sets combined with a separately grouped attributes
      */
@@ -383,30 +394,28 @@ public class UniqueTransformTest {
         // field2.group1
         // field2.group2
         // field3.group3
-        
+
         // @formatter:off
         givenInputDocument()
-                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                .withKeyValue("Attr1.0.1.1", randomValues.get(3))
-                .withKeyValue("Attr3.1.0.0", randomValues.get(4));
+                .withKeyValue("ATTR0.0.0.0", randomValues.get(0))
+                .withKeyValue("ATTR1.0.1.0", randomValues.get(1))
+                .withKeyValue("ATTR0.0.0.1", randomValues.get(2))
+                .withKeyValue("ATTR1.0.1.1", randomValues.get(3))
+                .withKeyValue("ATTR3.1.0.0", randomValues.get(4));
 
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(0))
-                .withKeyValue("Attr1", randomValues.get(1))
-                .withKeyValue("Attr3", randomValues.get(4));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(2))
-                .withKeyValue("Attr1", randomValues.get(3))
-                .withKeyValue("Attr3", randomValues.get(4));
+        expectedOrderedFieldValues = givenExpectedOrderedFieldValues()
+                .withKeyValue("ATTR0", randomValues.get(0))
+                .withKeyValue("ATTR1", randomValues.get(1))
+                .withKeyValue("ATTR0", randomValues.get(2))
+                .withKeyValue("ATTR1", randomValues.get(3))
+                .withKeyValue("ATTR3", randomValues.get(4)).build();
         // @formatter:on
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
-        
-        assertOrderedFieldSets();
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "Attr0", "Attr1", "Attr3");
+
+        assertOrderedFieldValues();
     }
-    
+
     /**
      * Test that groups get placed into separate field sets combined with a separately grouped attributes
      */
@@ -419,39 +428,30 @@ public class UniqueTransformTest {
         // field2.group2
         // field3.group3
         // field3.group4
-        
+
         // @formatter:off
         givenInputDocument()
-                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                .withKeyValue("Attr1.0.1.1", randomValues.get(3))
-                .withKeyValue("Attr3.1.0.0", randomValues.get(4))
-                .withKeyValue("Attr3.1.0.1", randomValues.get(0));
+                .withKeyValue("ATTR0.0.0.0", randomValues.get(0))
+                .withKeyValue("ATTR1.0.1.0", randomValues.get(1))
+                .withKeyValue("ATTR0.0.0.1", randomValues.get(2))
+                .withKeyValue("ATTR1.0.1.1", randomValues.get(3))
+                .withKeyValue("ATTR3.1.0.0", randomValues.get(4))
+                .withKeyValue("ATTR3.1.0.1", randomValues.get(0));
 
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(0))
-                .withKeyValue("Attr1", randomValues.get(1))
-                .withKeyValue("Attr3", randomValues.get(4));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(2))
-                .withKeyValue("Attr1", randomValues.get(3))
-                .withKeyValue("Attr3", randomValues.get(4));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(0))
-                .withKeyValue("Attr1", randomValues.get(1))
-                .withKeyValue("Attr3", randomValues.get(0));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(2))
-                .withKeyValue("Attr1", randomValues.get(3))
-                .withKeyValue("Attr3", randomValues.get(0));
+        expectedOrderedFieldValues = givenExpectedOrderedFieldValues()
+                .withKeyValue("ATTR0", randomValues.get(0))
+                .withKeyValue("ATTR1", randomValues.get(1))
+                .withKeyValue("ATTR0", randomValues.get(2))
+                .withKeyValue("ATTR1", randomValues.get(3))
+                .withKeyValue("ATTR3", randomValues.get(4))
+                .withKeyValue("ATTR3", randomValues.get(0)).build();
         // @formatter:on
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
-        
-        assertOrderedFieldSets();
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "Attr0", "Attr1", "Attr3");
+
+        assertOrderedFieldValues();
     }
-    
+
     /**
      * Test that groups get placed into separate field sets combined with a separately grouped attributes
      */
@@ -462,106 +462,172 @@ public class UniqueTransformTest {
         // field1.group2
         // field2.group1 (note no field2.group2 created)
         // field3.group3
-        
+
         // @formatter:off
         givenInputDocument()
-                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                .withKeyValue("Attr3.1.0.0", randomValues.get(4))
-                .withKeyValue("Attr3.1.0.1", randomValues.get(0));
+                .withKeyValue("ATTR0.0.0.0", randomValues.get(0))
+                .withKeyValue("ATTR1.0.1.0", randomValues.get(1))
+                .withKeyValue("ATTR0.0.0.1", randomValues.get(2))
+                .withKeyValue("ATTR3.1.0.0", randomValues.get(4))
+                .withKeyValue("ATTR3.1.0.1", randomValues.get(0));
 
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(0))
-                .withKeyValue("Attr1", randomValues.get(1))
-                .withKeyValue("Attr3", randomValues.get(4));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(2))
-                .withKeyValue("Attr3", randomValues.get(4));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(0))
-                .withKeyValue("Attr1", randomValues.get(1))
-                .withKeyValue("Attr3", randomValues.get(0));
-        givenExpectedOrderedFieldSet()
-                .withKeyValue("Attr0", randomValues.get(2))
-                .withKeyValue("Attr3", randomValues.get(0));
+        expectedOrderedFieldValues = givenExpectedOrderedFieldValues()
+                .withKeyValue("ATTR0", randomValues.get(0))
+                .withKeyValue("ATTR1", randomValues.get(1))
+                .withKeyValue("ATTR0", randomValues.get(2))
+                .withKeyValue("ATTR3", randomValues.get(4))
+                .withKeyValue("ATTR3", randomValues.get(0)).build();
         // @formatter:on
-        
-        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
-        
-        assertOrderedFieldSets();
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "Attr0", "Attr1", "Attr3");
+
+        assertOrderedFieldValues();
     }
-    
-    private void assertUniqueDocuments() {
-        List<Document> actual = getUniqueDocuments(inputDocuments);
+
+    @Test
+    public void testFinalDocIgnored() {
+        SortedSetMultimap<String,TemporalGranularity> fieldMap = TreeMultimap.create();
+        fieldMap.put("FIELD", TemporalGranularity.ALL);
+        UniqueFields fields = new UniqueFields(fieldMap);
+        UniqueTransform transform = new UniqueTransform(fields, 10000000L);
+        Key key = new Key("shard", "dt\u0000uid", FinalDocumentTrackingIterator.MARKER_TEXT.toString());
+        Document doc = new Document();
+        Map.Entry<Key,Document> entry = new UnmodifiableMapEntry(key, doc);
+        for (int i = 0; i < 10; i++) {
+            assertTrue(entry == transform.apply(entry));
+        }
+    }
+
+    @Test
+    public void testIntermediateIgnored() {
+        SortedSetMultimap<String,TemporalGranularity> fieldMap = TreeMultimap.create();
+        fieldMap.put("FIELD", TemporalGranularity.ALL);
+        UniqueFields fields = new UniqueFields(fieldMap);
+        UniqueTransform transform = new UniqueTransform(fields, 10000000L);
+        Key key = new Key("shard", "dt\u0000uid");
+        Document doc = new Document();
+        doc.setIntermediateResult(true);
+        Map.Entry<Key,Document> entry = new UnmodifiableMapEntry(key, doc);
+        for (int i = 0; i < 10; i++) {
+            assertTrue(entry == transform.apply(entry));
+        }
+    }
+
+    protected void assertUniqueDocuments() {
+        List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
         Collections.sort(actual);
-        assertEquals("Unique documents do not match expected", expectedUniqueDocuments, actual);
+        assertEquals("Unique documents do not match expected", getIds(expectedUniqueDocuments), getIds(actual));
     }
-    
-    private List<Document> getUniqueDocuments(List<Document> documents) {
+
+    protected List<String> getIds(List<Document> docs) {
+        List<String> ids = new ArrayList<>();
+        for (Document d : docs) {
+            ids.add(d.getDictionary().get("RECORD_ID").getData().toString());
+        }
+        return ids;
+    }
+
+    protected List<Document> getUniqueDocuments(List<Document> documents) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
                         .map(Map.Entry::getValue).collect(Collectors.toList());
     }
-    
-    private void assertOrderedFieldSets() {
+
+    protected List<Document> getUniqueDocumentsWithUpdateConfigCalls(List<Document> documents) {
+        Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
+        TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        List<UniqueTransform.FieldSet> actual = inputDocuments.stream().map(uniqueTransform::getOrderedFieldSets).flatMap(List::stream).sorted()
-                        .collect(Collectors.toList());
-        Collections.sort(expectedOrderedFieldSets);
-        
-        assertEquals("Ordered field sets do not match expected", expectedOrderedFieldSets, actual);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
+        ArrayList<Document> docs = new ArrayList<>();
+        while (resultIterator.hasNext()) {
+            Map.Entry<Key,Document> next = resultIterator.next();
+            if (next != null) {
+                docs.add(next.getValue());
+                updateUniqueTransform(uniqueTransform);
+            }
+        }
+        return docs;
     }
-    
-    private void givenValueTransformerForFields(UniqueGranularity transformer, String... fields) {
+
+    protected void assertOrderedFieldValues() {
+        try {
+            UniqueTransform uniqueTransform = getUniqueTransform();
+            for (Document d : inputDocuments) {
+                assertEquals("Ordered field sets do not match expected", new String(expectedOrderedFieldValues, StandardCharsets.UTF_8),
+                                new String(uniqueTransform.getBytes(d), StandardCharsets.UTF_8));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void givenValueTransformerForFields(TemporalGranularity transformer, String... fields) {
         Arrays.stream(fields).forEach((field) -> uniqueFields.put(field, transformer));
     }
-    
-    private void givenValueTransformersForField(String field, UniqueGranularity... transformers) {
+
+    protected void givenValueTransformersForField(String field, TemporalGranularity... transformers) {
         Arrays.stream(transformers).forEach((transformer) -> uniqueFields.put(field, transformer));
     }
-    
-    private UniqueTransform getUniqueTransform() {
-        return new UniqueTransform(uniqueFields);
-    }
-    
-    private InputDocumentBuilder givenInputDocument() {
-        return new InputDocumentBuilder();
-    }
-    
-    private InputDocumentBuilder givenInputDocument(String docKey) {
-        return new InputDocumentBuilder(docKey);
-    }
-    
-    private ExpectedOrderedFieldSetBuilder givenExpectedOrderedFieldSet() {
-        return new ExpectedOrderedFieldSetBuilder();
-    }
-    
-    private class InputDocumentBuilder {
-        
-        private final Document document;
-        
-        InputDocumentBuilder() {
-            this.document = new Document();
-            inputDocuments.add(document);
+
+    protected UniqueTransform getUniqueTransform() {
+        try {
+            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(Long.MAX_VALUE).build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        
-        @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
-        InputDocumentBuilder(String docKey) {
-            
-            Text MARKER_TEXT = new Text(docKey);
-            ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
-            byte EMPTY_BYTES[] = new byte[0];
-            Key key = new Key(EMPTY_BYTES, EMPTY_BYTES, MARKER_SEQUENCE.subSequence(0, MARKER_SEQUENCE.length()).toArray());
+    }
+
+    protected void updateUniqueTransform(UniqueTransform uniqueTransform) {
+        uniqueTransform.updateConfig(uniqueFields);
+    }
+
+    protected InputDocumentBuilder givenInputDocument() {
+        return new InputDocumentBuilder("", 0);
+    }
+
+    protected InputDocumentBuilder givenInputDocument(String cq) {
+        return new InputDocumentBuilder(cq, 0);
+    }
+
+    protected InputDocumentBuilder givenInputDocument(long ts) {
+        return new InputDocumentBuilder("", ts);
+    }
+
+    protected InputDocumentBuilder givenInputDocument(String docKey, long ts) {
+        return new InputDocumentBuilder(docKey, ts);
+    }
+
+    protected ExpectedOrderedFieldValuesBuilder givenExpectedOrderedFieldValues() {
+        return new ExpectedOrderedFieldValuesBuilder();
+    }
+
+    protected class InputDocumentBuilder {
+
+        private final Document document;
+
+        InputDocumentBuilder(String cq, long ts) {
+            Key key = new Key("shardid", "datatype\u0000" + getUid(), cq, ts);
+            Key key2 = new Key("shardid", "datatype\u0000" + getUid() + ".1", cq, ts);
+            Key key3 = new Key("shardid", "datatype\u0000" + getUid() + ".5", cq, ts);
             this.document = new Document(key, true);
             inputDocuments.add(document);
             this.document.getMetadata().set(key);
+            Attribute<?> docKeyAttributes = new DocumentKey(key, true);
+            Attribute<?> docKeyAttributes2 = new DocumentKey(key2, true);
+            Attribute<?> docKeyAttributes3 = new DocumentKey(key3, true);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes2);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes3);
         }
-        
+
+        String getUid() {
+            return UUID.nameUUIDFromBytes(Longs.toByteArray(counter.incrementAndGet())).toString();
+        }
+
         @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
         InputDocumentBuilder withRandomKeyValues(int minKeys, int maxKeys, int maxMultiValueKeys) {
             // Create random key-values.
@@ -576,43 +642,78 @@ public class UniqueTransformTest {
             }
             return this;
         }
-        
+
         private String getRandomKey(int index) {
             StringBuilder sb = new StringBuilder();
             if (random.nextBoolean()) {
                 sb.append(JexlASTHelper.IDENTIFIER_PREFIX);
             }
-            return sb.append("Attr").append(index).toString();
+            return sb.append("ATTR").append(index).toString();
         }
-        
+
         private String getRandomValue() {
             return randomValues.get(random.nextInt(randomValues.size()));
         }
-        
+
         InputDocumentBuilder withKeyValue(String key, String value) {
-            document.put(key, new DiacriticContent(value, document.getMetadata(), true), true, false);
+            document.put(key, new DiacriticContent(value, document.getMetadata(), true), true);
             return this;
         }
-        
+
         @SuppressWarnings("UnusedReturnValue")
         InputDocumentBuilder isExpectedToBeUnique() {
             expectedUniqueDocuments.add(document);
             return this;
         }
     }
-    
-    private class ExpectedOrderedFieldSetBuilder {
-        
-        private final UniqueTransform.FieldSet fieldSet;
-        
-        ExpectedOrderedFieldSetBuilder() {
-            fieldSet = new UniqueTransform.FieldSet();
-            expectedOrderedFieldSets.add(fieldSet);
-        }
-        
-        ExpectedOrderedFieldSetBuilder withKeyValue(String key, String value) {
-            fieldSet.put(key, value);
+
+    protected class ExpectedOrderedFieldValuesBuilder {
+
+        private Multimap<String,String> fieldValues = TreeMultimap.create();
+
+        ExpectedOrderedFieldValuesBuilder() {}
+
+        ExpectedOrderedFieldValuesBuilder withKeyValue(String key, String value) {
+            fieldValues.put(key, value);
             return this;
         }
+
+        public byte[] build() {
+            try {
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                DataOutputStream output = new DataOutputStream(bytes);
+                for (String field : fieldValues.keySet()) {
+                    String separator = "f-" + field + ":";
+                    if (fieldValues.isEmpty()) {
+                        output.writeUTF(separator);
+                    } else {
+                        for (String value : fieldValues.get(field)) {
+                            output.writeUTF(separator);
+                            output.writeUTF(value);
+                            separator = ",";
+                        }
+                    }
+                }
+                output.flush();
+                return bytes.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
+
+    @Test
+    public void testRootDocKeyAttr() {
+        givenInputDocument();
+        givenInputDocument();
+        givenInputDocument();
+        givenInputDocument();
+        for (Document d : inputDocuments) {
+            Attribute a = UniqueTransform.getRootDocKeyAttr(d);
+            String cf = a.getMetadata().getColumnFamily().toString();
+            assertFalse(cf.contains("."));
+        }
+    }
+
 }

@@ -1,0 +1,10 @@
+spring:
+  security:
+    datawave:
+      use-trusted-subject-headers: true
+      jwt:
+        enabled: true
+
+server:
+  ssl:
+    enabled: false

@@ -7,35 +7,35 @@ import org.junit.Test;
  * Created on 10/13/16.
  */
 public class NowTest {
-    
+
     @Test
     public void testSingleton() {
         Now now = Now.getInstance();
         Now now2 = Now.getInstance();
         Assert.assertSame(now, now2);
     }
-    
+
     @Test
     public void testDelegate() {
         Now now = Now.getInstance();
         Now now2 = new Now();
         Assert.assertEquals(now, now2);
     }
-    
+
     @Test
     public void testDelegate2() {
         Now now = new Now();
         Now now2 = new Now();
         Assert.assertEquals(now, now2);
     }
-    
+
     @Test
     public void testDelegate3() {
         Now now = new Now();
         Now now2 = Now.getInstance();
         Assert.assertEquals(now, now2);
     }
-    
+
     @Test
     public void testNow() throws InterruptedException {
         Now now = Now.getInstance();

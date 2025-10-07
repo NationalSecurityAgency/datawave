@@ -1,0 +1,5 @@
+server:
+  outbound-ssl:
+    key-store: ${server.ssl.key-store}
+    key-store-password: ${server.ssl.key-store-password}
+    key-store-type: ${server.ssl.key-store-type}

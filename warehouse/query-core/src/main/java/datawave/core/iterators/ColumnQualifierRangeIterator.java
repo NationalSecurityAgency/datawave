@@ -10,34 +10,34 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
 /**
- * 
+ *
  * This class enables range queries based on Column Qualifiers
- * 
+ *
  */
 public class ColumnQualifierRangeIterator extends ColumnRangeIterator {
     public ColumnQualifierRangeIterator() {
         super();
     }
-    
+
     public ColumnQualifierRangeIterator(SortedKeyValueIterator<Key,Value> source) {
         super(source);
     }
-    
+
     public ColumnQualifierRangeIterator(SortedKeyValueIterator<Key,Value> source, Range columnFamilyRange) {
         super(source, columnFamilyRange);
     }
-    
+
     @Override
     protected void consumeImpl() throws IOException {
-        
+
         int count = 0;
         int limit = getSkipLimit();
-        
+
         while (getSource().hasTop()) {
             Key topColumnQual = new Key(getSource().getTopKey().getColumnQualifier());
-            
+
             if (getColumnRange().beforeStartKey(topColumnQual)) { // top key's CQ is before the desired range starts, need to skip some CQs...
-            
+
                 if (count < limit) {
                     advanceSource();
                     ++count;
@@ -45,7 +45,7 @@ public class ColumnQualifierRangeIterator extends ColumnRangeIterator {
                     Text row = getSource().getTopKey().getRow();
                     Text cf = getSource().getTopKey().getColumnFamily();
                     Text startColQual = getColumnStart();
-                    
+
                     Key nextKey = new Key(row, cf, startColQual);
                     reseek(nextKey);
                     count = 0;
@@ -58,7 +58,7 @@ public class ColumnQualifierRangeIterator extends ColumnRangeIterator {
                     Text row = getSource().getTopKey().getRow();
                     Text nextCF = new Text(followingArray(getSource().getTopKey().getColumnFamily().getBytes()));
                     Text startColQual = getColumnStart();
-                    
+
                     Key nextKey = new Key(row, nextCF, startColQual);
                     reseek(nextKey);
                     count = 0;
@@ -68,10 +68,10 @@ public class ColumnQualifierRangeIterator extends ColumnRangeIterator {
             }
         } // end while()
     } // end consume()
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new ColumnQualifierRangeIterator(getSource().deepCopy(env), getColumnRange());
     }
-    
+
 }

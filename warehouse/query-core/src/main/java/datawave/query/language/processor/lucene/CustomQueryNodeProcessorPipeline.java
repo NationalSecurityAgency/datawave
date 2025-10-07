@@ -17,7 +17,7 @@ import org.apache.lucene.queryparser.flexible.standard.processors.TermRangeQuery
 public class CustomQueryNodeProcessorPipeline extends QueryNodeProcessorPipeline {
     public CustomQueryNodeProcessorPipeline(QueryConfigHandler configHandler) {
         super(configHandler);
-        
+
         add(new CustomWildcardQueryNodeProcessor());
         add(new MultiFieldQueryNodeProcessor());
         add(new FuzzyQueryNodeProcessor());

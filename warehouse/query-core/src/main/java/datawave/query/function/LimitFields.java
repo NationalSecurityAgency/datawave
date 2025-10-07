@@ -1,230 +1,172 @@
 package datawave.query.function;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Function;
-import com.google.common.base.Splitter;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Maps;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import datawave.data.type.Type;
+
+import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.util.Tuple2;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+/**
+ * <p>
+ * LimitFields will reduce the attributes in a document given the limits specified for fields. Attributes that are in the set of hits for a document will never
+ * be dropped. Also matching field sets can be specified which will avoid dropping fields in the same group when the values match between the fields in a
+ * matching field set. For example given the following field/values:
+ * </p>
+ * <ul>
+ * <li>NAME.PERSON.1 = sam</li>
+ * <li>AGE.PERSON.1 = 10</li>
+ * <li>NAME.PERSON.2 = frank</li>
+ * <li>AGE.PERSON.2 = 11</li>
+ * <li>ACTOR.ACTOR.1 = sam</li>
+ * <li>FILM.ACTOR.1 = Johnny Goes Home</li>
+ * <li>ACTOR.ACTOR.2 = frank</li>
+ * <li>FILM.ACTOR.2 = Johnny Head</li>
+ * </ul>
+ * <ul>
+ * <li>and limit fields NAME=-1, AGE=-1, FILM=-1</li>
+ * <li>and a matching field set of NAME=ACTOR</li>
+ * <li>and a hit term of FILM.ACTOR.1=Johnny Goes Home</li>
+ * </ul>
+ * <p>
+ * In this case the following fields should be returned:
+ * </p>
+ * <ul>
+ * <li>ACTOR.ACTOR.1 = sam</li>
+ * <li>FILM.ACTOR.1 = Johnny Goes Home</li>
+ * <li>NAME.PERSON.1 = sam</li>
+ * <li>AGE.PERSON.1 = 10</li>
+ * </ul>
+ */
 public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Document>> {
-    
+
     private static final Logger log = Logger.getLogger(LimitFields.class);
-    
-    public static final String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
-    
-    private Map<String,Integer> limitFieldsMap;
-    
-    public LimitFields(Map<String,Integer> limitFieldsMap) {
+
+    public static final String ORIGINAL_COUNT_SUFFIX = "_ORIGINAL_COUNT";
+
+    // A map of fields and the number of values to limit the fields by.
+    private final Map<String,Integer> limitFieldsMap;
+
+    // A collection of field sets where if the values match then those values should not be dropped.
+    private final Set<Set<String>> matchingFieldSets;
+
+    /**
+     * Return the commonality (instance) and grouping context of the given key.
+     *
+     * @param key
+     *            the key
+     * @return the commonality and grouping context
+     */
+    static Tuple2<String,String> getCommonalityAndGroupingContext(String key) {
+        String[] splits = StringUtils.split(key, '.');
+        if (splits.length >= 3) {
+            // return the first group and last group (a.k.a the instance in the first group)
+            return new Tuple2<>(splits[1], splits[splits.length - 1]);
+        }
+        return null;
+    }
+
+    public LimitFields(Map<String,Integer> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
         this.limitFieldsMap = limitFieldsMap;
+        this.matchingFieldSets = matchingFieldSets;
         if (log.isTraceEnabled())
             log.trace("limitFieldsMap set to:" + limitFieldsMap);
     }
-    
+
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
-        // key is the limited field name with _ORIGINAL_COUNT appended,
-        // value will be set to the original count of that field in the document
-        Map<String,Integer> limitedFieldCounts = new HashMap<>();
         Document document = entry.getValue();
-        Map<String,String> hitTermMap = this.getHitTermMap(document);
-        
-        Multimap<String,Attribute<? extends Comparable<?>>> reducedMap = LinkedListMultimap.create();
-        Map<String,Integer> countForFieldMap = Maps.newHashMap();
-        
-        // maps from the key with NO grouping context to a multimap of
-        // key WITH grouping context to attributes:
-        // DIRECTION : [DIRECTION.1 : [over,under], DIRECTION.2 : [sideways,down]]
-        LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> hits = CacheBuilder.newBuilder().build(
-                        new CacheLoader<String,Multimap<String,Attribute<? extends Comparable<?>>>>() {
-                            public Multimap<String,Attribute<? extends Comparable<?>>> load(String key) {
-                                return LinkedListMultimap.create();
-                            }
-                        });
-        // maps from the key with NO grouping context to a multimap of
-        // key WITH grouping context to attributes:
-        // DIRECTION : [DIRECTION.1 : [over,under], DIRECTION.2 : [sideways,down]]
-        @SuppressWarnings("serial")
-        LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> misses = CacheBuilder.newBuilder().build(
-                        new CacheLoader<String,Multimap<String,Attribute<? extends Comparable<?>>>>() {
-                            public Multimap<String,Attribute<? extends Comparable<?>>> load(String key) {
-                                return LinkedListMultimap.create();
-                            }
-                        });
-        
+        LimitFieldsTracker tracker = new LimitFieldsTracker(matchingFieldSets);
+
+        findHits(document, tracker);
+        retainNonHitsForMatchingFieldSets(document, tracker);
+        retainNonHitsUpToLimit(document, tracker);
+        reduceDocument(document, tracker);
+
+        return entry;
+    }
+
+    /**
+     * Find all direct hits in the document.
+     *
+     * @param document
+     *            the document
+     * @param tracker
+     *            the tracker
+     */
+    private void findHits(Document document, LimitFieldsTracker tracker) {
+        Multimap<String,String> hitTermMap = getHitTermMap(document);
+        Set<Attribute<?>> hitTermAttributes = getHitTermAttributes(document);
+
+        // first pass is to set all of the hits to be kept, the misses to drop, and count em all
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
             String keyWithGrouping = de.getKey();
-            String keyNoGrouping = keyWithGrouping;
-            // if we have grouping context on, remove the grouping context
-            if (keyNoGrouping.indexOf('.') != -1) {
-                keyNoGrouping = keyNoGrouping.substring(0, keyNoGrouping.indexOf('.'));
-            }
+            String keyNoGrouping = removeGrouping(keyWithGrouping);
+
             // if there is an _ANYFIELD_ entry in the limitFieldsMap, then insert every key that is not yet in the map, using the
             // limit value for _ANYFIELD_
-            if (this.limitFieldsMap.containsKey("_ANYFIELD_") && this.limitFieldsMap.containsKey(keyNoGrouping) == false) {
-                this.limitFieldsMap.put(keyNoGrouping, this.limitFieldsMap.get("_ANYFIELD_"));
-                log.trace("added " + keyNoGrouping + " - " + this.limitFieldsMap.get(keyNoGrouping) + " to the limitFieldsMap because of the _ANYFIELD_ entry");
+            if (isLimited(Constants.ANY_FIELD) && !isLimited(keyNoGrouping)) {
+                limitField(keyNoGrouping, getLimit(Constants.ANY_FIELD));
+                log.trace("added " + keyNoGrouping + " - " + getLimit(keyNoGrouping) + " to the limitFieldsMap because of the _ANYFIELD_ entry");
             }
-            
-            if (this.limitFieldsMap.containsKey(keyNoGrouping)) { // look for the key without the grouping context
-                if (log.isTraceEnabled())
+
+            if (isLimited(keyNoGrouping)) { // look for the key without the grouping context
+                if (log.isTraceEnabled()) {
                     log.trace("limitFieldsMap contains " + keyNoGrouping);
+                }
+
                 Attribute<?> attr = de.getValue();
-                int limit = this.limitFieldsMap.get(keyNoGrouping); // used below if you un-comment to get all hits
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
-                        manageHitsAndMisses(keyWithGrouping, keyNoGrouping, value, hitTermMap, hits, misses, countForFieldMap);
-                    }
-                    
-                } else {
-                    manageHitsAndMisses(keyWithGrouping, keyNoGrouping, attr, hitTermMap, hits, misses, countForFieldMap);
-                }
-            }
-        }
-        for (String keyNoGrouping : countForFieldMap.keySet()) {
-            int limit = this.limitFieldsMap.get(keyNoGrouping);
-            Multimap<String,Attribute<? extends Comparable<?>>> hitMap = hits.getUnchecked(keyNoGrouping);
-            for (String keyWithGrouping : hitMap.keySet()) {
-                for (Attribute<? extends Comparable<?>> value : hitMap.get(keyWithGrouping)) {
-                    // if(limit <= 0) break; // comment this line if you want to get ALL hits even if the limit is exceeded
-                    reducedMap.put(keyWithGrouping, value);
-                    limit--;
-                }
-            }
-            Multimap<String,Attribute<? extends Comparable<?>>> missMap = misses.getUnchecked(keyNoGrouping);
-            for (String keyWithGrouping : missMap.keySet()) {
-                for (Attribute<? extends Comparable<?>> value : missMap.get(keyWithGrouping)) {
-                    if (limit <= 0)
-                        break;
-                    reducedMap.put(keyWithGrouping, value);
-                    limit--;
-                }
-            }
-            if (log.isTraceEnabled()) {
-                log.trace("reducedMap:" + reducedMap);
-                log.trace("mapOfHits:" + hits.asMap());
-                log.trace("mapOfMisses:" + misses.asMap());
-            }
-            
-            // only generate an original count if a field was reduced
-            if (countForFieldMap.get(keyNoGrouping) > this.limitFieldsMap.get(keyNoGrouping)) {
-                limitedFieldCounts.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, countForFieldMap.get(keyNoGrouping));
-            }
-            
-        }
-        
-        // mutate the document with the changes collected in the above loop
-        applyCounts(document, limitedFieldCounts);
-        Map<String,Multimap<String,Attribute<? extends Comparable<?>>>> toRemove = Maps.newLinkedHashMap();
-        toRemove.putAll(hits.asMap());
-        toRemove.putAll(misses.asMap());
-        makeReduction(document, toRemove, reducedMap);
-        return entry;
-    }
-    
-    private void manageHitsAndMisses(String keyWithGrouping, String keyNoGrouping, Attribute<?> attr, Map<String,String> hitTermMap,
-                    LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> mapOfHits,
-                    LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> mapOfMisses, Map<String,Integer> countForFieldMap) {
-        if (log.isTraceEnabled())
-            log.trace("in - manageHitsAndMisses(" + keyWithGrouping + "," + keyNoGrouping + "," + attr + "," + hitTermMap + "," + mapOfHits.asMap() + ","
-                            + mapOfMisses.asMap() + "," + countForFieldMap);
-        if (hitTermMap.containsKey(keyWithGrouping)) {
-            
-            Object s = attr.getData();
-            Class<?> clazz = attr.getData().getClass();
-            try {
-                Object hitValue = hitTermMap.get(keyWithGrouping);
-                if (Type.class.isAssignableFrom(clazz)) {
-                    Type<?> thing = (Type<?>) clazz.newInstance();
-                    thing.setDelegateFromString(hitTermMap.get(keyWithGrouping));
-                    hitValue = thing;
-                } // otherwise, s is not a Type, just compare to value in hitTermMap using 'equals'
-                if (s.equals(hitValue)) {
-                    mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
-                } else {
-                    mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
-                }
-            } catch (InstantiationException | IllegalAccessException e) {
-                log.error(e);
-            }
-        } else if (!hitTermMap.isEmpty() && limitFieldsMap.containsKey(keyNoGrouping)) {
-            
-            try {
-                String[] keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
-                if (keyTokens != null) {
-                    String keyWithGroupingCommonality = keyTokens[0];
-                    String keyWithGroupingSuffix = keyTokens[1];
-                    
-                    for (String key : hitTermMap.keySet()) {
-                        // get the commonality from the hit term key
-                        String[] commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
-                        if (commonalityAndGroupingContext != null) {
-                            String hitTermKeyCommonality = commonalityAndGroupingContext[0];
-                            if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && key.endsWith(keyWithGroupingSuffix)) {
-                                mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
-                            } else {
-                                mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
-                            }
-                        } else {
-                            mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
-                        }
+                        evaluateForHit(tracker, hitTermMap, hitTermAttributes, keyWithGrouping, keyNoGrouping, value);
                     }
                 } else {
-                    mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                    evaluateForHit(tracker, hitTermMap, hitTermAttributes, keyWithGrouping, keyNoGrouping, attr);
                 }
-                
-            } catch (Throwable ex) {
-                // if ANYTHING went wrong here, just put it into the misses
-                mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
             }
-        } else {
-            mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
         }
-        if (countForFieldMap.get(keyNoGrouping) == null) {
-            countForFieldMap.put(keyNoGrouping, 1);
-        } else {
-            countForFieldMap.put(keyNoGrouping, countForFieldMap.get(keyNoGrouping) + 1);
-        }
-        if (log.isTraceEnabled())
-            log.trace("out - manageHitsAndMisses(" + keyWithGrouping + "," + keyNoGrouping + "," + attr + "," + hitTermMap + "," + mapOfHits.asMap() + ","
-                            + mapOfMisses.asMap() + "," + countForFieldMap);
     }
-    
-    static String[] getCommonalityAndGroupingContext(String in) {
-        String[] splits = StringUtils.split(in, '.');
-        if (splits.length >= 3) {
-            return new String[] {splits[1], splits[splits.length - 1]};
-        }
-        return null;
-    }
-    
-    private Map<String,String> getHitTermMap(Document document) {
-        Map<String,String> attrMap = new HashMap<>();
+
+    /**
+     * Return a hit term map constructed from the document's {@value JexlEvaluation#HIT_TERM_FIELD} entry.
+     *
+     * @param document
+     *            the document
+     * @return the hit term map
+     */
+    private Multimap<String,String> getHitTermMap(Document document) {
+        Multimap<String,String> attrMap = HashMultimap.create();
         fillHitTermMap(document.get(JexlEvaluation.HIT_TERM_FIELD), attrMap);
         return attrMap;
     }
-    
-    private void fillHitTermMap(Attribute<?> attr, Map<String,String> attrMap) {
+
+    /**
+     * Fills the given map with hit terms extracted from the given attribute, recursively so if the attribute is an {@link Attributes}.
+     *
+     * @param attr
+     *            the attribute
+     * @param attrMap
+     *            the map
+     */
+    private void fillHitTermMap(Attribute<?> attr, Multimap<String,String> attrMap) {
         if (attr != null) {
             if (attr instanceof Attributes) {
                 Attributes attrs = (Attributes) attr;
@@ -235,53 +177,357 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 Content content = (Content) attr;
                 // split the content into its fieldname:value
                 String contentString = content.getContent();
-                attrMap.put(contentString.substring(0, contentString.indexOf(":")), contentString.substring(contentString.indexOf(":") + 1));
+                int colonPos = contentString.indexOf(Constants.COLON);
+                attrMap.put(contentString.substring(0, colonPos), contentString.substring(colonPos + 1));
             }
         }
     }
-    
+
     /**
-     * Adds new fields to the document to hold the original count of any fields that have been reduced by the limit.fields parameter. The new fields are named
-     * like this: {the.field.that.was.limited}_ORIGINAL_COUNT
-     * 
-     * @param doc
-     * @param limitedFieldCounts
-     */
-    private void applyCounts(Document doc, Map<String,Integer> limitedFieldCounts) {
-        if (!limitedFieldCounts.entrySet().isEmpty()) {
-            ColumnVisibility docVisibility = doc.getColumnVisibility();
-            for (Entry<String,Integer> limitedFieldCountEntry : limitedFieldCounts.entrySet()) {
-                doc.put(limitedFieldCountEntry.getKey(), new Numeric(limitedFieldCountEntry.getValue(), doc.getMetadata(), doc.isToKeep()), true, false);
-            }
-        }
-    }
-    
-    /**
-     * for any field that should be limited, change the document's collection of those fields by emptying it, then adding back the ones that should be kept. For
-     * example, if LOAD_DATE should be limited to 2, get the document's collection LOAD_DATE attribute, if it is an Attributes, then replace s, and replace it
-     * with the (smaller) collection in the reducedSetMap
-     * 
+     * Return the sets of singular attributes in the given document from the {@link JexlEvaluation#HIT_TERM_FIELD} entry.
+     *
      * @param document
+     *            the document
+     * @return the set of individual attributes
      */
-    private void makeReduction(Document document, Map<String,Multimap<String,Attribute<? extends Comparable<?>>>> toRemove,
-                    Multimap<String,Attribute<? extends Comparable<?>>> reducedMap) {
-        
-        if (log.isTraceEnabled())
-            log.trace("reducedMap:" + reducedMap);
-        if (log.isTraceEnabled())
-            log.trace("toRemove:" + toRemove);
-        for (Multimap<String,Attribute<? extends Comparable<?>>> toRemoveMultimap : toRemove.values()) {
-            for (Entry<String,Attribute<? extends Comparable<?>>> entry : toRemoveMultimap.entries()) {
-                document.remove(entry.getKey());
-                if (log.isTraceEnabled())
-                    log.trace("removed " + entry.getKey() + " and its value " + entry.getValue() + " from document");
+    private Set<Attribute<?>> getHitTermAttributes(Document document) {
+        Set<Attribute<?>> attributesSet = new HashSet<>();
+        Attribute<?> attributes = document.get(JexlEvaluation.HIT_TERM_FIELD);
+        fillHitTermSet(attributes, attributesSet);
+        return attributesSet;
+    }
+
+    /**
+     * Adds singular attributes to the given set, recursively so if the attribute is an {@link Attributes}.
+     *
+     * @param attr
+     *            the attribute
+     * @param attributesSet
+     *            the set
+     */
+    private void fillHitTermSet(Attribute<?> attr, Set<Attribute<?>> attributesSet) {
+        if (attr != null) {
+            if (attr instanceof Attributes) {
+                Attributes attrs = (Attributes) attr;
+                for (Attribute<?> at : attrs.getAttributes()) {
+                    fillHitTermSet(at, attributesSet);
+                }
+            } else if (attr instanceof Content) {
+                Content content = (Content) attr;
+                if (content.getSource() != null) {
+                    attributesSet.add(content.getSource());
+                }
             }
         }
-        
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : reducedMap.entries()) {
-            document.put(entry, true);
-            if (log.isTraceEnabled())
-                log.trace("put " + entry + " into document");
+    }
+
+    /**
+     * Evaluate the given key and attribute to see if it is a hit. Hits will be marked as a hit in the tracker. Non-hits will be marked in the tracker as both a
+     * non hit and a potential hit, and the attribute will be set as not to keep.
+     *
+     * @param tracker
+     *            the tracker
+     * @param hitTermMap
+     *            the hit term map
+     * @param hitTermAttributes
+     *            the hit term attributes
+     * @param keyWithGrouping
+     *            the key with the grouping context
+     * @param keyNoGrouping
+     *            the key without the grouping context
+     * @param value
+     *            the attribute
+     */
+    private void evaluateForHit(LimitFieldsTracker tracker, Multimap<String,String> hitTermMap, Set<Attribute<?>> hitTermAttributes, String keyWithGrouping,
+                    String keyNoGrouping, Attribute<? extends Comparable<?>> value) {
+        if (isHit(keyWithGrouping, value, hitTermMap, hitTermAttributes)) {
+            tracker.incrementHit(keyNoGrouping);
+            tracker.addHit(keyNoGrouping, value);
+        } else {
+            value.setToKeep(false);
+            tracker.incrementNonHit(keyNoGrouping);
+            tracker.incrementAttributesToDrop();
+            tracker.addPotential(keyNoGrouping, keyWithGrouping, value);
         }
+        tracker.incrementFieldCount(keyNoGrouping);
+    }
+
+    /**
+     * Determine whether this attribute is one of the hits. It is a hit if it has a matching value, or if another attribute in the same group has a hit. This
+     * allows us to keep all attributes that are part of the same group.
+     *
+     * @param keyWithGrouping
+     *            the string key
+     * @param attr
+     *            the attribute
+     * @param hitTermMap
+     *            the hit term map
+     * @param hitTermAttributes
+     *            hit term attributes from the document
+     * @return true if a hit
+     */
+    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap, Set<Attribute<?>> hitTermAttributes) {
+        if (hitTermMap.containsKey(keyWithGrouping) && isAttributeHitTerm(hitTermAttributes, attr)) {
+            return true;
+        }
+
+        // If not already returned as a value match, then lets include those that are
+        // part of the same group and instance as some other hit.
+        if (!hitTermMap.isEmpty()) {
+            Tuple2<String,String> keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
+            if (keyTokens != null) {
+                String keyWithGroupingCommonality = keyTokens.first();
+                String keyWithGroupingSuffix = keyTokens.second();
+
+                for (String key : hitTermMap.keySet()) {
+                    // Get the commonality from the hit term key.
+                    Tuple2<String,String> commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
+                    if (commonalityAndGroupingContext != null) {
+                        String hitTermKeyCommonality = commonalityAndGroupingContext.first();
+                        String hitTermGroup = commonalityAndGroupingContext.second();
+                        if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && keyWithGroupingSuffix.equals(hitTermGroup)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * This method is preferred over a simple <code>set.contains()</code> call because the attribute being compared may not be a TypeAttribute.
+     *
+     * @param hitTermAttributes
+     *            a set of hit term source attributes
+     * @param attr
+     *            the attribute being compared
+     * @return true if the attribute is also a hit term
+     */
+    private boolean isAttributeHitTerm(Set<Attribute<?>> hitTermAttributes, Attribute<?> attr) {
+        String data = getBackingData(attr);
+        for (Attribute<?> attribute : hitTermAttributes) {
+            // compare metadata just to be safe
+            if (attribute.getMetadata().equals(attr.getMetadata())) {
+                String hitData = getBackingData(attribute);
+                if (hitData.equals(data)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private String getBackingData(Attribute<?> attr) {
+        if (attr instanceof PreNormalizedAttribute) {
+            return ((PreNormalizedAttribute) attr).getValue();
+        }
+        if (attr instanceof TypeAttribute) {
+            return ((TypeAttribute<?>) attr).getType().getDelegateAsString();
+        }
+        return String.valueOf(attr.getData());
+    }
+
+    /**
+     * Retain all non-hits where a field is limited and has a matching group to the matching field sets.
+     *
+     * @param document
+     *            the document
+     * @param tracker
+     *            the tracker
+     */
+    private void retainNonHitsForMatchingFieldSets(Document document, LimitFieldsTracker tracker) {
+        // This pass is to process the limited fields that have matching groups
+        tracker.processMatches();
+        if (tracker.hasMatches()) {
+            for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
+                String keyWithGrouping = de.getKey();
+                String keyNoGrouping = removeGrouping(keyWithGrouping);
+
+                // if this was a limited field
+                if (isLimited(keyNoGrouping)) {
+
+                    // if we have matching group
+                    if (tracker.isMatchingGroup(keyWithGrouping)) {
+                        Attribute<?> attr = de.getValue();
+                        if (attr instanceof Attributes) {
+                            Attributes attrs = (Attributes) attr;
+                            Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
+
+                            for (Attribute<? extends Comparable<?>> value : attrSet) {
+                                // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
+                                if (!value.isToKeep()) {
+                                    markNonHitAsHit(keyNoGrouping, tracker, value);
+                                }
+                            }
+                        } else {
+                            // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
+                            if (!attr.isToKeep()) {
+                                markNonHitAsHit(keyNoGrouping, tracker, attr);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Retain non-hits up to the limits established for specified limited fields.
+     *
+     * @param document
+     *            the document
+     * @param tracker
+     *            the tracker
+     */
+    private void retainNonHitsUpToLimit(Document document, LimitFieldsTracker tracker) {
+        // Third pass is to set any misses back to be kept if the limit allows
+        for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
+            String keyWithGrouping = de.getKey();
+            String keyNoGrouping = removeGrouping(keyWithGrouping);
+
+            // Look for the key without the grouping context
+            if (isLimited(keyNoGrouping)) {
+                int limit = getLimit(keyNoGrouping);
+
+                // Short circuit if we are not actually limiting this field.
+                // This is keeping with the original logic where a negative limit means to keep only hits
+                if (limit <= 0) {
+                    continue;
+                }
+
+                int keepers = tracker.getTotalHits(keyNoGrouping);
+                int missesToSet = Math.min(limit - keepers, tracker.getTotalNonHits(keyNoGrouping));
+
+                // if we have misses yet to keep
+                if (missesToSet > 0) {
+                    Attribute<?> attr = de.getValue();
+                    if (attr instanceof Attributes) {
+                        Attributes attrs = (Attributes) attr;
+                        Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
+
+                        for (Attribute<? extends Comparable<?>> value : attrSet) {
+                            // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
+                            if (!value.isToKeep()) {
+                                markNonHitAsHit(keyNoGrouping, tracker, value);
+                                missesToSet--;
+                                if (missesToSet == 0) {
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
+                        if (!attr.isToKeep()) {
+                            markNonHitAsHit(keyNoGrouping, tracker, attr);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the given key without its grouping context.
+     *
+     * @param key
+     *            the key
+     * @return the key stripped of its grouping context
+     */
+    private String removeGrouping(String key) {
+        // if we have grouping context on, remove the grouping context
+        int index = key.indexOf('.');
+        if (index != -1) {
+            key = key.substring(0, index);
+        }
+        return key;
+    }
+
+    /**
+     * Mark the given attribute as to keep, and move a non-hit to a hit in the tracker.
+     *
+     * @param keyNoGrouping
+     *            the key without grouping context
+     * @param tracker
+     *            the tracker
+     * @param attribute
+     *            the attribute
+     */
+    private void markNonHitAsHit(String keyNoGrouping, LimitFieldsTracker tracker, Attribute<?> attribute) {
+        attribute.setToKeep(true);
+        tracker.incrementHit(keyNoGrouping);
+        tracker.decrementNonHit(keyNoGrouping);
+        tracker.decrementAttributesToDrop();
+    }
+
+    /**
+     * Reduce the document down, removing any attributes not marked as to keep, and add entries that note the original counts of any field entries that were
+     * subsequently removed.
+     *
+     * @param document
+     *            the document
+     * @param tracker
+     *            the tracker
+     */
+    private void reduceDocument(Document document, LimitFieldsTracker tracker) {
+        if (tracker.getAttributesToDrop() > 0) {
+            // Reduce the document to those to keep.
+            document.reduceToKeep();
+
+            // Generate fields for original counts.
+            for (String keyNoGrouping : tracker.getFields()) {
+                // only generate an original count if a field was reduced
+                int keepers = tracker.getTotalHits(keyNoGrouping);
+                int originalCount = tracker.getFieldCount(keyNoGrouping);
+                if (originalCount > keepers) {
+                    document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true);
+
+                    // Some sanity checks.
+                    int missesRemaining = tracker.getTotalNonHits(keyNoGrouping);
+                    int limit = getLimit(keyNoGrouping);
+                    int missesToSet = Math.min(limit - keepers, missesRemaining);
+                    if (missesToSet > 0) {
+                        log.error("Failed to limit fields correctly, " + missesToSet + " attributes failed to be included");
+                        throw new RuntimeException(
+                                        "Failed to limit fields correctly, " + missesToSet + ' ' + keyNoGrouping + " attributes failed to be included");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Return whether the given field is limited
+     *
+     * @param field
+     *            the field
+     * @return true if the field is limited, or false otherwise
+     */
+    private boolean isLimited(String field) {
+        return this.limitFieldsMap.containsKey(field);
+    }
+
+    /**
+     * Return the limit for the given field.
+     *
+     * @param field
+     *            the field
+     * @return the limit for the field
+     */
+    private int getLimit(String field) {
+        return this.limitFieldsMap.get(field);
+    }
+
+    /**
+     * Limit the field to the specified limit
+     *
+     * @param field
+     *            the field
+     * @param limit
+     *            the limit
+     */
+    private void limitField(String field, int limit) {
+        this.limitFieldsMap.put(field, limit);
     }
 }

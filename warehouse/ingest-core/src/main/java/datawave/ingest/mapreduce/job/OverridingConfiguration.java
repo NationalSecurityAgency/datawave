@@ -1,9 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
-import org.apache.hadoop.conf.Configuration;
-
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * A Hadoop configuration that "overrides" properties by removing the given prefix from any configurations that start with it.
@@ -15,7 +15,7 @@ import java.util.TreeMap;
 public class OverridingConfiguration extends Configuration {
     public OverridingConfiguration(String prefix, Configuration base) {
         Map<String,String> overrides = new TreeMap<>();
-        
+
         for (Map.Entry<String,String> property : base) {
             String k = property.getKey();
             if (k.startsWith(prefix + ".")) {
@@ -25,7 +25,7 @@ public class OverridingConfiguration extends Configuration {
                 set(k, property.getValue());
             }
         }
-        
+
         for (Map.Entry<String,String> entry : overrides.entrySet()) {
             set(entry.getKey(), entry.getValue());
         }

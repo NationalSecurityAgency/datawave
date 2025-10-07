@@ -9,8 +9,8 @@ import datawave.ingest.data.RawRecordContainer;
  */
 public interface RecordFilter {
     void initialize(Configuration conf);
-    
+
     boolean accept(RawRecordContainer e);
-    
+
     void close();
 }

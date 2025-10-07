@@ -8,9 +8,9 @@ package datawave.query.planner.rules;
 public class RegexSimplifierTransformRule extends RegexReplacementTransformRule {
     private static final String PATTERN = "(\\.\\*\\??){2,}";
     private static final String REPLACEMENT = ".*?";
-    
+
     public RegexSimplifierTransformRule() {
         super(PATTERN, REPLACEMENT);
     }
-    
+
 }

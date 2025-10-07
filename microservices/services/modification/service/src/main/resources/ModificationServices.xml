@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="ModificationConfiguration" class="datawave.modification.configuration.ModificationConfiguration">
+		<property name="tableName" value="${datawave.modification.data.tableName}" />
+        <property name="poolName" value="${datawave.modification.data.poolName}" />
+		<property name="configurations">
+			<map key-type="java.lang.String" value-type="datawave.modification.configuration.ModificationServiceConfiguration">
+				<entry key="MutableMetadataUUIDService">
+					<bean class="datawave.modification.MutableMetadataUUIDHandler">
+						<property name="authorizedRoles" ref="authorizedRoles" />
+						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
+						<property name="markingFunctions" ref="markingFunctions" />
+						<property name="eventTableName" value="${datawave.modification.handlers.eventTableName}" />
+						<property name="metadataTableName" value="${datawave.modification.handlers.metadataTableName}" />
+						<property name="indexTableName" value="${datawave.modification.handlers.indexTableName}" />
+						<property name="reverseIndexTableName" value="${datawave.modification.handlers.reverseIndexTableName}" />
+						<property name="requiresAudit" value="${datawave.modification.handlers.requiresAudit}" />
+						<property name="securityMarkingExemptFields" ref="securityMarkingExemptFields" />
+						<property name="indexOnlyMap" ref="indexOnlyMap" />
+						<property name="indexOnlySuffixes" ref="indexOnlySuffixes" />
+						<property name="contentFields" ref="contentFields" />
+					</bean>
+				</entry>
+				<entry key="MutableMetadataService">
+					<bean class="datawave.modification.MutableMetadataHandler">
+						<property name="authorizedRoles" ref="authorizedRoles" />
+						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
+						<property name="markingFunctions" ref="markingFunctions" />
+						<property name="eventTableName" value="${datawave.modification.handlers.eventTableName}" />
+						<property name="metadataTableName" value="${datawave.modification.handlers.metadataTableName}" />
+						<property name="indexTableName" value="${datawave.modification.handlers.indexTableName}" />
+						<property name="reverseIndexTableName" value="${datawave.modification.handlers.reverseIndexTableName}" />
+						<property name="requiresAudit" value="${datawave.modification.handlers.requiresAudit}" />
+						<property name="securityMarkingExemptFields" ref="securityMarkingExemptFields" />
+						<property name="indexOnlyMap" ref="indexOnlyMap" />
+						<property name="indexOnlySuffixes" ref="indexOnlySuffixes" />
+						<property name="contentFields" ref="contentFields" />
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+</beans>

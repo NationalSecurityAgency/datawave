@@ -11,27 +11,27 @@ public class StandaloneTaskAttemptContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
     public StandaloneTaskAttemptContext(Configuration conf, StatusReporter reporter) {
         this(conf, new TaskAttemptID(), reporter);
     }
-    
+
     public StandaloneTaskAttemptContext(Configuration conf, TaskAttemptID taskAttemptID, StatusReporter reporter) {
         super(conf, taskAttemptID, null, null, reporter);
     }
-    
+
     @Override
     public KEYIN getCurrentKey() throws IOException, InterruptedException {
         // not used
         return null;
     }
-    
+
     @Override
     public VALUEIN getCurrentValue() throws IOException, InterruptedException {
         // not used
         return null;
     }
-    
+
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         // not used
         return false;
     }
-    
+
 }

@@ -1,7 +1,6 @@
 package datawave.util.cli;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
@@ -9,7 +8,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 public class AccumuloArgsTest {
-    
+
     @Test
     public void testNewBuilder() {
         // @formatter:off
@@ -17,10 +16,10 @@ public class AccumuloArgsTest {
             .withDefaultTable("defaultTableName")
             .build();
         String[] argv = {
-                "-u", "Bob", 
-                "--password", "zekret", 
-                "-i", "instance", 
-                "-z", "localhost:2181", 
+                "-u", "Bob",
+                "--password", "zekret",
+                "-i", "instance",
+                "-z", "localhost:2181",
                 "-t", "testTable"
                 };
         JCommander.newBuilder()
@@ -28,14 +27,14 @@ public class AccumuloArgsTest {
             .build()
             .parse(argv);
         // @formatter:on
-        
-        assertThat(args.user(), is("Bob"));
-        assertThat(args.password(), is("zekret"));
-        assertThat(args.instance(), is("instance"));
-        assertThat(args.zookeepers(), is("localhost:2181"));
-        assertThat(args.table(), is("testTable"));
+
+        assertEquals(args.user(), "Bob");
+        assertEquals(args.password(), "zekret");
+        assertEquals(args.instance(), "instance");
+        assertEquals(args.zookeepers(), "localhost:2181");
+        assertEquals(args.table(), "testTable");
     }
-    
+
     @Test
     public void testNewBuilder_WithExtraOpts() {
         // @formatter:off
@@ -44,10 +43,10 @@ public class AccumuloArgsTest {
             .build();
         TestArg other = new TestArg();
         String[] argv = {
-                "--user", "Steve", 
-                "--password", "zekret", 
-                "--instance", "instance", 
-                "--zookeepers", "localhost:2181", 
+                "--user", "Steve",
+                "--password", "zekret",
+                "--instance", "instance",
+                "--zookeepers", "localhost:2181",
                 "--table", "testTable",
                 "--color", "magenta"
                 };
@@ -57,19 +56,19 @@ public class AccumuloArgsTest {
             .build()
             .parse(argv);
         // @formatter:on
-        
-        assertThat(args.user(), is("Steve"));
-        assertThat(args.password(), is("zekret"));
-        assertThat(args.instance(), is("instance"));
-        assertThat(args.zookeepers(), is("localhost:2181"));
-        assertThat(args.table(), is("testTable"));
+
+        assertEquals(args.user(), "Steve");
+        assertEquals(args.password(), "zekret");
+        assertEquals(args.instance(), "instance");
+        assertEquals(args.zookeepers(), "localhost:2181");
+        assertEquals(args.table(), "testTable");
         // make sure extra args are available
-        assertThat(other.color, is("magenta"));
+        assertEquals(other.color, "magenta");
     }
-    
+
     private static class TestArg {
         @Parameter(names = {"-c", "--color"})
         String color;
     }
-    
+
 }

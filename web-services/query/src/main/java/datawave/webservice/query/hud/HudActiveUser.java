@@ -1,22 +1,22 @@
 package datawave.webservice.query.hud;
 
 /**
- * 
+ *
  */
 public class HudActiveUser {
     private String sid;
-    
+
     public HudActiveUser(String sid) {
         this.sid = sid;
     }
-    
+
     /**
      * @return the sid
      */
     public String getSid() {
         return sid;
     }
-    
+
     /**
      * @param sid
      *            the sid to set
@@ -24,10 +24,10 @@ public class HudActiveUser {
     public void setSid(String sid) {
         this.sid = sid;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -37,10 +37,10 @@ public class HudActiveUser {
         result = prime * result + ((sid == null) ? 0 : sid.hashCode());
         return result;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -59,5 +59,5 @@ public class HudActiveUser {
             return false;
         return true;
     }
-    
+
 }

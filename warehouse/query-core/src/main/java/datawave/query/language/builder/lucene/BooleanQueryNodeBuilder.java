@@ -16,15 +16,9 @@ package datawave.query.language.builder.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import datawave.query.language.tree.HardAndNode;
-import datawave.query.language.tree.NotNode;
-import datawave.query.language.tree.OrNode;
-import datawave.query.language.tree.SoftAndNode;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -40,6 +34,11 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 
+import datawave.query.language.tree.HardAndNode;
+import datawave.query.language.tree.NotNode;
+import datawave.query.language.tree.OrNode;
+import datawave.query.language.tree.SoftAndNode;
+
 /**
  * Builds a {@link BooleanQuery} object from a {@link BooleanQueryNode} object. Every children in the {@link BooleanQueryNode} object must be already tagged
  * using {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} with a {@link Query} object. <br>
@@ -48,19 +47,19 @@ import org.apache.lucene.search.Query;
  */
 @Deprecated
 public class BooleanQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         BooleanQueryNode booleanNode = (BooleanQueryNode) queryNode;
-        
+
         datawave.query.language.tree.QueryNode bNode = null;
         List<QueryNode> children = booleanNode.getChildren();
-        
+
         if (children != null) {
             List<datawave.query.language.tree.QueryNode> childrenList = new ArrayList<>();
-            
+
             LinkedList<QueryNode> extraNodeList = new LinkedList<>();
             boolean isNegation = false;
-            
+
             for (QueryNode child : children) {
                 Object obj = child.getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
                 if (obj != null) {
@@ -68,21 +67,21 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
                     childrenList.add(query);
                 }
             }
-            
+
             datawave.query.language.tree.QueryNode[] childrenArray = new datawave.query.language.tree.QueryNode[childrenList.size()];
             childrenList.toArray(childrenArray);
-            
+
             bNode = createNode(queryNode, childrenArray, isNegation, extraNodeList);
         }
-        
+
         return bNode;
-        
+
     }
-    
+
     private datawave.query.language.tree.QueryNode createNode(QueryNode queryNode, datawave.query.language.tree.QueryNode[] childrenArray, boolean isNegation,
                     LinkedList<QueryNode> extraNodeList) throws QueryNodeException {
         datawave.query.language.tree.QueryNode bNode = null;
-        
+
         if (queryNode instanceof AndQueryNode) {
             bNode = new HardAndNode(childrenArray);
         } else if (queryNode instanceof OrQueryNode) {
@@ -96,8 +95,8 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new QueryNodeException(new MessageImpl("Unknown class: " + queryNode.getClass().getName()));
         }
-        
+
         return bNode;
     }
-    
+
 }

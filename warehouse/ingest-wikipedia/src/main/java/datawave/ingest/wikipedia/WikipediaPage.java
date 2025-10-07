@@ -10,7 +10,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 /**
- * 
+ *
  */
 public class WikipediaPage implements Writable {
     protected int id;
@@ -18,41 +18,41 @@ public class WikipediaPage implements Writable {
     protected long timestamp;
     protected String comments;
     protected String text;
-    
+
     public WikipediaPage(int id, String title, long timestamp, String comments, String text) {
         checkNotNull(id);
         checkNotNull(title);
         checkNotNull(timestamp);
         checkNotNull(comments);
         checkNotNull(text);
-        
+
         this.id = id;
         this.title = title;
         this.timestamp = timestamp;
         this.comments = comments;
         this.text = text;
     }
-    
+
     public int getId() {
         return this.id;
     }
-    
+
     public String getTitle() {
         return this.title;
     }
-    
+
     public String getComments() {
         return this.comments;
     }
-    
+
     public String getText() {
         return this.text;
     }
-    
+
     public long getTimestamp() {
         return this.timestamp;
     }
-    
+
     @Override
     public void readFields(DataInput in) throws IOException {
         this.id = in.readInt();
@@ -61,7 +61,7 @@ public class WikipediaPage implements Writable {
         this.comments = WritableUtils.readString(in);
         this.text = WritableUtils.readString(in);
     }
-    
+
     @Override
     public void write(DataOutput out) throws IOException {
         out.writeInt(this.id);

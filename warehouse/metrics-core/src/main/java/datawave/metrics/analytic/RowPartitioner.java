@@ -12,13 +12,13 @@ import org.apache.hadoop.mapreduce.Partitioner;
  */
 public class RowPartitioner extends Partitioner<Key,Value> {
     private Text row = new Text();
-    
+
     @Override
     public int getPartition(Key key, Value value, int numPartitions) {
         key.getRow(row);
         return (row.hashCode() >>> 1) % numPartitions;
     }
-    
+
     public static void configureJob(Job job) {
         job.setPartitionerClass(RowPartitioner.class);
     }

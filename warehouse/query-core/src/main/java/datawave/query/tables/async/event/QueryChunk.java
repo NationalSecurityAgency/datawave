@@ -10,25 +10,25 @@ import org.apache.accumulo.core.data.Value;
 import com.google.common.collect.Lists;
 
 /**
- * 
+ *
  */
 public class QueryChunk implements Iterator<Entry<Key,Value>> {
-    
+
     List<Entry<Key,Value>> kvList;
-    
+
     Iterator<Entry<Key,Value>> kvIter = null;
-    
+
     public QueryChunk(int size) {
         kvList = Lists.newArrayListWithCapacity(size);
     }
-    
+
     public boolean addResult(Entry<Key,Value> kv) {
         return kvList.add(kv);
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.Iterator#hasNext()
      */
     @Override
@@ -38,20 +38,20 @@ public class QueryChunk implements Iterator<Entry<Key,Value>> {
         }
         return kvIter.hasNext();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.Iterator#next()
      */
     @Override
     public Entry<Key,Value> next() {
         return kvIter.next();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.Iterator#remove()
      */
     @Override

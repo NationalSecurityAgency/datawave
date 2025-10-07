@@ -11,7 +11,7 @@ import java.util.zip.GZIPInputStream;
  * Determine if an input stream is gzip compressed or not.
  */
 public class GzipDetectionUtil {
-    
+
     /**
      * Determines whether or not the given File is GZIP compressed.
      *
@@ -19,14 +19,15 @@ public class GzipDetectionUtil {
      *            the file to check for GZIP Compression.
      * @return whether or not the given File is GZIP compressed.
      * @throws IOException
+     *             if there is an error reading the file
      */
     public static boolean isCompressed(final File file) throws IOException {
         final FileInputStream fis = new FileInputStream(file);
         boolean compressed = false;
-        
+
         try {
             final byte[] header = new byte[2];
-            
+
             if (fis.read(header) == 2) {
                 final int magic = ((int) header[0] & 0xff | ((header[1] << 8) & 0xff00));
                 compressed = (magic == GZIPInputStream.GZIP_MAGIC);
@@ -34,16 +35,19 @@ public class GzipDetectionUtil {
         } finally {
             fis.close();
         }
-        
+
         return compressed;
     }
-    
+
     /**
      * Given an input stream, test it to see if it's GZIP compressed, if so return a GZIPInputStream, otherwise return it as normal.
      *
      * @param inputStream
      *            the {@link InputStream} to check.
      * @return an {@link InputStream} to read from.
+     *
+     * @throws IOException
+     *             if there is an error reading the file
      */
     public static InputStream decompressTream(InputStream inputStream) throws IOException {
         PushbackInputStream pushBack = new PushbackInputStream(inputStream, 2); // need to check first two bytes

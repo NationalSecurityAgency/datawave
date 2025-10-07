@@ -8,12 +8,12 @@ import org.apache.deltaspike.core.api.config.PropertyFileConfig;
 @SuppressWarnings("UnusedDeclaration")
 public class DatawavePropertyFileConfigSource implements PropertyFileConfig {
     private static final String PROPERTY_FILE_NAME = "META-INF/datawave-configuration.properties";
-    
+
     @Override
     public String getPropertyFileName() {
         return PROPERTY_FILE_NAME;
     }
-    
+
     @Override
     public boolean isOptional() {
         return true;

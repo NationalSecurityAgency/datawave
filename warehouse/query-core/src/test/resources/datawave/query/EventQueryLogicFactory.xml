@@ -13,6 +13,8 @@
         isn't defined in Accumulo for whatever reason...
     -->
 
+    <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory"/>
+
     <!-- A list of lucene to jexl query functions -->
     <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
         <bean class="datawave.query.language.functions.jexl.IsNull"/>
@@ -43,10 +45,10 @@
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
     </bean>
-    
-    <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
-        <property name="roleManager" ref="easyRoleManager" />
+
+    <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
     
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
@@ -65,6 +67,8 @@
         <!-- property name="accumuloPassword" value="${accumulo.user.password}" />	 -->
         <property name="collapseUids" value="false" />	<!-- was ${query.collapse.uids} -->
         <property name="useEnrichers" value="true" />
+        <property name="useShardedIndex" value="true" />
+        <property name="dayIndexThreshold" value="17" />
         <property name="contentFieldNames">
             <list value-type="java.lang.String">
                 <value>CONTENT</value>
@@ -86,14 +90,13 @@
 
         <property name="auditType" value="ACTIVE" />
         <property name="logicDescription" value="Event query with rewritten logic" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="40000" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="4" />	<!-- ${beq.shardsPerDayThreshold} -->
+        <property name="reduceIngestTypes" value="true"/>
+        <property name="rebuildDatatypeFilter" value="true" />
+        <property name="rebuildDatatypeFilterPerShard" value="false" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
+        <property name="intermediateMaxTermThreshold" value="10" />
+        <property name="indexedMaxTermThreshold" value="10" />
         <!-- The max number of terms AFTER all expansions -->
         <property name="finalMaxTermThreshold" value="10" />	<!-- was ${beq.finalMaxTermThreshold} -->
         <!-- The max query depth -->
@@ -107,6 +110,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
+        <property name="localIvaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${local.ivarator.cache.dir.config} -->
         <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />
@@ -125,8 +129,24 @@
             </map>
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
+        <property name="maxLinesToPrint" value="100"/>
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
+        <!--   reduce type metadata     -->
+        <property name="reduceTypeMetadata" value="false" />
+        <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--   query sorting options     -->
+        <property name="sortQueryPreIndexWithImpliedCounts" value="true" />
+        <property name="sortQueryPreIndexWithFieldCounts" value="true" />
+        <property name="sortQueryPostIndexWithTermCounts" value="true" />
+        <property name="sortQueryPostIndexWithFieldCounts" value="true" />
+        <property name="eventFieldSeek" value="3" />
+        <!-- cardinality threshold enables running ivarators as filter iterators -->
+        <property name="cardinalityThreshold" value="50"/>
+        <property name="seekingEventAggregation" value="true"/>
+        <!-- alternate execution path -->
+        <property name="useDocumentScheduler" value="false"/>
+        <property name="documentScannerConfig" ref="DocumentScannerConfig"/>
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">
@@ -166,13 +186,48 @@
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
+        <property name="visitorManager" ref="TimedVisitorManager"/>
     </bean>
 
-    <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
-    
-    <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
+    <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
+        <property name="debugEnabled" value="true"/>
+        <property name="validateAst" value="true"/>
+        <property name="validator" ref="AstValidator"/>
+    </bean>
 
-    <!--<bean id="responseObjectFactory" class="datawave.query.DefaultResponseObjectFactory" />-->
+    <bean id="AstValidator" scope="prototype" class="datawave.query.jexl.visitors.validate.ASTValidator">
+        <property name="validateLineage" value="true"/>
+        <property name="validateFlatten" value="true"/>
+        <property name="validateJunctions" value="true"/>
+        <property name="validateReferenceExpressions" value="true"/>
+        <property name="validateQueryPropertyMarkers" value="true"/>
+    </bean>
 
+    <bean id="DocumentScannerConfig" scope="prototype" class="datawave.next.scanner.DocumentScannerConfig">
+        <!-- configure queue capacities, thread pool sizes, and max tasks per thread pool-->
+        <property name="candidateQueueCapacity" value="25"/>
+        <property name="resultQueueCapacity" value="25"/>
+        <property name="searchThreads" value="5"/>
+        <property name="retrievalThreads" value="5"/>
+        <!--    BatchScannerSession max runnable: 25 max batches: 125    -->
+        <property name="maxSearchTasks" value="125"/>
+        <property name="maxRetrievalTasks" value="125"/>
+        <property name="sortedCandidateQueue" value="true"/>
+        <property name="candidateBatchSize" value="25"/>
+        <property name="candidateQueueOfferTimeMillis" value="25"/>
+        <property name="candidateQueuePollTimeMillis" value="25"/>
+        <property name="resultQueueOfferTimeMillis" value="25"/>
+        <property name="resultQueuePollTimeMillis" value="5"/>
+        <property name="scanTimeoutMillis" value="10000"/>
+        <property name="allowPartialIntersections" value="true" />
+        <property name="useQueryIterator" value="false" />
+        <!-- execution hints and consistency levels -->
+        <property name="searchScanHintTable" value="shard"/>
+        <property name="searchScanHintPool" value="shardTablePool"/>
+        <property name="retrievalScanHintTable" value="shard"/>
+        <property name="retrievalScanHintPool" value="shardTablePool"/>
+        <property name="searchConsistencyLevel" value="IMMEDIATE"/>
+        <property name="retrievalConsistencyLevel" value="IMMEDIATE"/>
+    </bean>
 
 </beans>

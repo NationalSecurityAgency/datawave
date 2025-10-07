@@ -1,5 +1,12 @@
 package datawave.query.language.builder.jexl;
 
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.ModifierQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.search.Query;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,26 +23,18 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import datawave.query.language.parser.jexl.JexlNode;
-
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.ModifierQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.search.Query;
 
 /**
  * Builds no object, it only returns the {@link Query} object set on the {@link ModifierQueryNode} object using a
  * {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} tag.
  */
 public class ModifierQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         ModifierQueryNode modifierQueryNode = (ModifierQueryNode) queryNode;
-        
+
         return (JexlNode) modifierQueryNode.getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
     }
 }

@@ -15,9 +15,9 @@ import jline.internal.Log;
  * (U) Worker thread for moving ingest files from the native file system into the ingest directory for the specific ingest data type.
  */
 class IngestWorker implements Callable<Void> {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(IngestWorker.class);
-    
+
     @Override
     public Void call() throws InterruptedException {
         final IngestConfig cfg = IngestConfig.getInstance();
@@ -37,7 +37,7 @@ class IngestWorker implements Callable<Void> {
             final int waitDur = cfg.getRandomInterval();
             Thread.sleep(waitDur);
         }
-        
+
         logger.info("task thread(" + Thread.currentThread().getId() + ") completed");
         return null;
     }

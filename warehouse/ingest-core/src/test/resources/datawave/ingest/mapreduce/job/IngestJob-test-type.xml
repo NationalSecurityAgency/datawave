@@ -19,7 +19,6 @@
   <value>ingest-test</value>
   <description>This is the type of data being ingested.</description>
 </property>
-
 <property>
 	<name>ingest-test.ingest.helper.class</name>
 	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestIngestHelper</value>
@@ -34,7 +33,6 @@
 	<name>ingest-test.handler.classes</name>
 	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestAbstractColumnBasedHandler</value>
 </property>
-
 <property>
   <name>ingest-test.data.default.type.class</name>
   <value>datawave.data.type.LcNoDiacriticsType</value>

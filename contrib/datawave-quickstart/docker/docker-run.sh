@@ -58,7 +58,7 @@ VOLUMES="-v ${DATA}:${V_DATA} -v ${M2REPO}:${V_M2REPO} -v ${HLOGS}:${V_HLOGS} -v
 
 # Set port mapping
 
-PORTS="-p 8443:8443 -p 50070:50070 -p 9995:9995"
+PORTS="-p 8443:8443 -p 9870:9870 -p 9995:9995"
 
 # Interpret any remaining args as the CMD to pass in
 

@@ -33,13 +33,13 @@ import org.slf4j.LoggerFactory;
  * </pre>
  */
 public class FlagMakerLoad {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(FlagMakerLoad.class);
-    
+
     private static void usage() {
         logger.info("USAGE: " + FlagMakerLoad.class.getName() + " configFileName");
     }
-    
+
     public static void main(String[] args) throws IOException {
         // load json config file
         if (1 > args.length) {
@@ -49,11 +49,11 @@ public class FlagMakerLoad {
             tester.runTest();
         }
     }
-    
+
     private FlagMakerLoad(final String cfgFile) throws IOException {
         IngestConfig.create(cfgFile);
     }
-    
+
     /**
      * Creates worker threads to perform ingest and waits for worker threads to complete.
      */
@@ -61,7 +61,7 @@ public class FlagMakerLoad {
         final IngestConfig cfg = IngestConfig.getInstance();
         logger.info("test execution parameters: " + cfg.toJson());
         ExecutorService executor = Executors.newFixedThreadPool(cfg.getWorkers());
-        
+
         try {
             final List<Future<Void>> workers = new ArrayList<>();
             for (int w = 0; w < cfg.getWorkers(); w++) {
@@ -69,7 +69,7 @@ public class FlagMakerLoad {
                 final Future<Void> task = executor.submit(worker);
                 workers.add(task);
             }
-            
+
             logger.info("waiting for workers to complete");
             for (final Future<Void> worker : workers) {
                 try {

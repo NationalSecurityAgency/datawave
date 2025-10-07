@@ -9,7 +9,7 @@ public class RawMetaData {
     final String name;
     final Normalizer normalizer;
     final boolean multiValue;
-    
+
     /**
      *
      * @param fieldName
@@ -24,7 +24,7 @@ public class RawMetaData {
         this.normalizer = norm;
         this.multiValue = multi;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(this.getClass().getSimpleName());

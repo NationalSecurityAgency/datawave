@@ -1,9 +1,10 @@
 package datawave.security.authorization;
 
+import java.util.Collection;
+
 import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
 import javax.interceptor.Interceptor;
-import java.util.Collection;
 
 /**
  * Lookup bean implementation supplied just for Embedded mode (e.g., inside of MapReduce jars). This archive should not be included for normal web applications.

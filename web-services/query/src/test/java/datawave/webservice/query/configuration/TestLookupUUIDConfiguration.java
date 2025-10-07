@@ -1,29 +1,29 @@
 package datawave.webservice.query.configuration;
 
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import datawave.query.data.UUIDType;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import datawave.query.data.UUIDType;
 
 @RunWith(PowerMockRunner.class)
 public class TestLookupUUIDConfiguration {
-    
+
     @Test
     public void testSimpleCase() {
         // Run the test
         LookupUUIDConfiguration subject = new LookupUUIDConfiguration();
         subject.setBeginDate(SimpleDateFormat.getDateInstance().format(new Date()));
         subject.setColumnVisibility("A&B");
-        subject.setUuidTypes(Arrays.asList(new UUIDType()));
-        
+        subject.setUuidTypes(List.of(new UUIDType()));
+
         // Verify results
         assertNotNull("Test subject should not be null", subject);
         assertNotNull("Begin date should not be null", subject.getBeginDate());

@@ -20,36 +20,36 @@ public class IndexStatsSummingIterator implements SortedKeyValueIterator<Key,Val
     private SortedKeyValueIterator<Key,Value> src;
     private Key tk = null;
     private Value tv = null;
-    
+
     // optmization
     private final IndexStatsRecord tuple = new IndexStatsRecord();
     private final IndexStatsRecord summedValues = new IndexStatsRecord();
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         src = source;
     }
-    
+
     @Override
     public boolean hasTop() {
         return tk != null;
     }
-    
+
     @Override
     public void next() throws IOException {
         if (src.hasTop()) {
             Key srcTK = src.getTopKey();
             Text workingRow = srcTK.getRow();
             Text currentRow = srcTK.getRow();
-            
+
             long sumUnique = 0;
             long sumCount = 0;
-            
+
             while (workingRow.equals(currentRow)) {
                 tuple.readFields(new DataInputStream(new ByteArrayInputStream(src.getTopValue().get())));
                 sumUnique += tuple.getNumberOfUniqueWords().get();
                 sumCount += tuple.getWordCount().get();
-                
+
                 src.next();
                 if (src.hasTop()) {
                     srcTK = src.getTopKey();
@@ -69,23 +69,23 @@ public class IndexStatsSummingIterator implements SortedKeyValueIterator<Key,Val
             tv = null;
         }
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         src.seek(range, columnFamilies, inclusive);
         next();
     }
-    
+
     @Override
     public Key getTopKey() {
         return tk;
     }
-    
+
     @Override
     public Value getTopValue() {
         return tv;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         IndexStatsSummingIterator isci = new IndexStatsSummingIterator();

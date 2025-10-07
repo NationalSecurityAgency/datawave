@@ -15,7 +15,7 @@
 		<property name="restrictInputFormats" value="${mapReduce.inputFormat.restrict}" />
 		<property name="validInputFormats">
 			<list value-type="java.lang.Class">
-				<value>org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat</value>
+				<value>org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat</value>
 				<value>datawave.mr.bulk.BulkInputFormat</value>
 			</list>
 		</property>
@@ -48,7 +48,7 @@
 						<property name="requiredRuntimeParameters">
 							<map key-type="java.lang.String" value-type="java.lang.Class">
 								<entry key="queryId" value="java.lang.String" />
-								<entry key="format" value="datawave.webservice.mr.bulkresults.map.SerializationFormat" />
+								<entry key="format" value="datawave.microservice.mapreduce.bulkresults.map.SerializationFormat" />
 							</map>
 						</property>
 						<property name="optionalRuntimeParameters">

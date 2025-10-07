@@ -1,20 +1,20 @@
 package datawave.query.testframework;
 
-import datawave.ingest.json.util.JsonObjectFlattener;
-
 import java.util.List;
 import java.util.Map;
+
+import datawave.ingest.json.util.JsonObjectFlattener;
 
 /**
  * POJO for data related to test classes that use a JSON cityFlatten.
  */
 public class FlattenData extends ConfigData {
-    
+
     private final JsonObjectFlattener.FlattenMode mode;
-    
+
     /**
      * Creates a POJO of flatten data.
-     * 
+     *
      * @param dateFieldName
      *            name of the date field
      * @param eventName
@@ -31,7 +31,7 @@ public class FlattenData extends ConfigData {
         super(dateFieldName, eventName, headerValues, metadata);
         this.mode = flattenMode;
     }
-    
+
     public JsonObjectFlattener.FlattenMode getMode() {
         return mode;
     }

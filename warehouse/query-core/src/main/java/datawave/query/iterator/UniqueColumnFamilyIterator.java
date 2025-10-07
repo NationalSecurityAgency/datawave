@@ -22,14 +22,14 @@ public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterato
     private Collection<ByteSequence> cfs;
     private boolean inclusive;
     private static final Logger log = Logger.getLogger(UniqueColumnFamilyIterator.class);
-    
+
     @Override
     public UniqueColumnFamilyIterator deepCopy(IteratorEnvironment env) {
         UniqueColumnFamilyIterator i = new UniqueColumnFamilyIterator();
         i.setSource(this.getSource().deepCopy(env));
         return i;
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> cfs, boolean inclusive) throws IOException {
         this.scanRange = range;
@@ -37,7 +37,7 @@ public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterato
         this.inclusive = inclusive;
         super.seek(range, cfs, inclusive);
     }
-    
+
     @Override
     public void next() throws IOException {
         if (getSource().hasTop()) {
@@ -45,11 +45,24 @@ public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterato
             moveTo(next, getSource(), scanRange, cfs, inclusive);
         }
     }
-    
+
     /**
      * A bit of a hack, similar to the ColumnFamilySkippingIterator. This will call next a 32 times before finally seeking for the next {@code <row, colf>}.
-     * 
+     *
      * The source iterator may or may not have a top after this method returns, and there is no guarantee of another viable top key/value being set.
+     *
+     * @param key
+     *            a key
+     * @param iterator
+     *            an iterator
+     * @param cfs
+     *            column families
+     * @param scanRange
+     *            the scan range
+     * @param inclusive
+     *            whether the range is considered inclusive
+     * @throws IOException
+     *             for issues with read/write
      */
     public static void moveTo(Key key, SortedKeyValueIterator<Key,Value> iterator, Range scanRange, Collection<ByteSequence> cfs, boolean inclusive)
                     throws IOException {

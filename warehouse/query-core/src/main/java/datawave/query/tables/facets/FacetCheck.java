@@ -1,6 +1,13 @@
 package datawave.query.tables.facets;
 
+import java.text.MessageFormat;
+import java.util.NoSuchElementException;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl3.parser.JexlNode;
+
 import com.google.common.collect.Multimap;
+
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
@@ -10,11 +17,6 @@ import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.JexlNode;
-
-import java.text.MessageFormat;
-import java.util.NoSuchElementException;
 
 /**
  * This visitor examines a JEXL tree and verifies that it satisfies all of the following conditions:
@@ -28,9 +30,9 @@ import java.util.NoSuchElementException;
  * In the case where the tree fails to meet a condition, an exception will be thrown.
  */
 public class FacetCheck extends AllTermsIndexedVisitor {
-    
+
     Multimap<String,String> facetMultimap;
-    
+
     public FacetCheck(ShardQueryConfiguration config, FacetedConfiguration facetConfig, MetadataHelper helper) {
         super(config, helper);
         try {
@@ -39,7 +41,7 @@ public class FacetCheck extends AllTermsIndexedVisitor {
             throw new RuntimeException(e);
         }
     }
-    
+
     /**
      * Determine, for a binary equality node, if the field name is indexed
      *
@@ -56,22 +58,22 @@ public class FacetCheck extends AllTermsIndexedVisitor {
             fieldName = JexlASTHelper.getIdentifier(node);
         } catch (NoSuchElementException e) {
             // We only have literals
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.EQUALS_NODE_TWO_LITERALS, e, MessageFormat.format(
-                            "Node: {0}", PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.EQUALS_NODE_TWO_LITERALS, e,
+                            MessageFormat.format("Node: {0}", PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
-        
+
         if (Constants.ANY_FIELD.equals(fieldName) || Constants.NO_FIELD.equals(fieldName)) {
             return null;
         }
-        
+
         if (!facetMultimap.containsKey(fieldName)) {
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_NOT_INDEXED, MessageFormat.format(
-                            "Fieldname: {0}", fieldName));
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_NOT_INDEXED,
+                            MessageFormat.format("Fieldname: {0}", fieldName));
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
-        
+
         return copy(node);
     }
-    
+
 }

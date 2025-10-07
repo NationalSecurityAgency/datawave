@@ -1,0 +1,25 @@
+<html xmlns:th="http:/>/www.thymeleaf.org">
+<!--/*
+    The HTML page for QueryGeometryResponse
+*/-->
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DATAWAVE - Query Geometry</title>
+
+    <link rel="stylesheet" type="text/css" media="screen" th:href='${basePath + "/css/screen.css"}'>
+    <script type='text/javascript' th:src='${basePath + "/webjars/jquery/jquery.min.js"}'></script>
+    <link rel='stylesheet' type='text/css' th:href='${basePath + "/webjars/leaflet/leaflet.css"}'/>
+    <script type='text/javascript' th:src='${basePath + "/webjars/leaflet/leaflet.js"}'></script>
+    <link rel='stylesheet' type='text/css' th:href='${basePath + "/css/queryMap.css"}' />
+    <script type='text/javascript' th:src='${basePath + "/js/queryMap.js"}'></script>
+    <script type='text/javascript' th:utext="${geoJsonFeaturesScript}"></script>
+    <script type='text/javascript' th:utext="${basemapScript}"></script>
+</head>
+<body>
+    <div style='display: block' th:utext="${header}"></div>
+    <h1 th:text='${"Query Geometry - " + queryId}'></h1>
+    <div style='text-align: center'>
+        <div id='map' style='height: calc(100% - 85px); width: 100%; position: fixed; top: 86px; left: 0px;'></div>
+    </div>
+</body>
+</html>

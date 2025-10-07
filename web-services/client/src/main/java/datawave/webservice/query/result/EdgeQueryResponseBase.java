@@ -12,15 +12,19 @@ import datawave.webservice.result.BaseQueryResponse;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements HasMarkings {
-    
+
     protected Map<String,String> markings;
-    
+
+    private static final long serialVersionUID = 5957852042933196910L;
+
     public abstract void addEdge(EdgeBase edge);
-    
+
+    public abstract void setEdges(List<EdgeBase> edges);
+
     public abstract List<? extends EdgeBase> getEdges();
-    
+
     public abstract void setTotalResults(long totalResults);
-    
+
     public abstract long getTotalResults();
-    
+
 }

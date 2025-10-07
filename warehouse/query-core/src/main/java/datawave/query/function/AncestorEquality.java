@@ -1,8 +1,8 @@
 package datawave.query.function;
 
-import org.apache.accumulo.core.data.Key;
-
 import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+
+import org.apache.accumulo.core.data.Key;
 
 /**
  * A key equality implementation that compares key prefixes to determine ancestor equality.
@@ -10,7 +10,7 @@ import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
  * For example, given a parent key "h1.h2.h3.a.b.c" a valid ancestor would be key "h1.h2.h3.a.b.c.d.e"
  */
 public class AncestorEquality implements Equality {
-    
+
     /**
      * Determines if the first key is an ancestor of the other key by checking for a common prefix.
      *

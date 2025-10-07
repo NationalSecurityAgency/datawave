@@ -1,9 +1,13 @@
 package datawave.query.ancestor;
 
-import datawave.query.iterator.QueryIteratorIT;
+import java.io.IOException;
+
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.junit.Before;
 
-import java.io.IOException;
+import datawave.query.iterator.QueryIteratorIT;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.TestWaitWindowObserver;
 
 /**
  * AncestorQueryIterator integration tests. Ancestor Query should find any hits event query finds plus its own unique cases
@@ -12,17 +16,36 @@ public class AncestorQueryIteratorIT extends QueryIteratorIT {
     @Before
     public void setup() throws IOException {
         super.setup();
-        iterator = new AncestorQueryIterator();
+
+        // adding the HIT_LIST option tells the query iterator to use a HitListArithmetic
+        options.put(QueryOptions.HIT_LIST, "true");
     }
-    
+
+    protected Class getIteratorClass() {
+        return TestAncestorQueryIterator.class;
+    }
+
     /**
      * ancestor query will always use HitListArithmetic which will add the HIT_TERM field to all results regardless of the option, overload all test to expect
      * and include this
-     * 
-     * @return
+     *
+     * @return true
      */
     @Override
     protected boolean isExpectHitTerm() {
         return true;
+    }
+
+    public static class TestAncestorQueryIterator extends AncestorQueryIterator {
+
+        public TestAncestorQueryIterator() {
+            super();
+            this.waitWindowObserver = new TestWaitWindowObserver(5, 50);
+        }
+
+        public TestAncestorQueryIterator(TestAncestorQueryIterator other, IteratorEnvironment env) {
+            super(other, env);
+            this.waitWindowObserver = new TestWaitWindowObserver((TestWaitWindowObserver) other.waitWindowObserver);
+        }
     }
 }

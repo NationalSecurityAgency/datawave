@@ -28,6 +28,11 @@
   <value>${EVENT_DISCARD_INTERVAL}</value>
 </property>
 
+    <property>
+        <name>event.discard.future.interval</name>
+        <value>${EVENT_DISCARD_FUTURE_INTERVAL}</value>
+    </property>
+
 <property>
   <name>snowflake.zookeepers</name>
   <value>${SNOWFLAKE_ZOOKEEPERS}</value>
@@ -86,4 +91,24 @@
   <name>partitioner.default.delegate</name>
   <value>datawave.ingest.mapreduce.partition.MultiTableRRRangePartitioner</value>
 </property>
+
+<property>
+    <name>datawave.ingest.splits.cache.dir</name>
+    <value>${WAREHOUSE_HDFS_NAME_NODE}/data/splitsCache</value>
+</property>
+    
+<property>
+    <name>accumulo.config.cache.path</name>
+    <value>${WAREHOUSE_HDFS_NAME_NODE}/data/accumuloConfigCache/accConfCache.txt</value>
+</property>
+
+<property>
+    <name>ingest.bulk.import.mode</name>
+    <value>V2</value>
+    <description>
+        Must be one of [V1, V2]
+        (See BulkIngestMapFileLoader.ImportMode)
+    </description>
+</property>
+
 </configuration>

@@ -28,14 +28,16 @@ import javax.enterprise.inject.spi.PassivationCapable;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.enterprise.util.AnnotationLiteral;
 
-import com.google.common.collect.Sets;
-import datawave.configuration.ConfigurationEvent;
-import datawave.configuration.RefreshableScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.google.common.collect.Sets;
+
+import datawave.configuration.ConfigurationEvent;
+import datawave.configuration.RefreshableScope;
 
 /**
  * A portable CDI extension that exposes Spring Beans as CDI beans. This extension expects to find a beanRefContext.xml file on the classpath. This file should
@@ -47,11 +49,11 @@ public class SpringCDIExtension implements Extension {
     private ClassPathXmlApplicationContext springContext = null;
     private final ReadWriteLock springContextLock = new ReentrantReadWriteLock(true);
     private final HashMap<String,SpringCDIBean> springBeans = new HashMap<>();
-    
+
     @SuppressWarnings("unused")
     <T> void processInjectionTarget(@Observes ProcessInjectionTarget<T> pit, BeanManager bm) {
         log.trace("processInjectionTarget({},{})", pit, bm);
-        
+
         synchronized (springBeans) {
             Set<InjectionPoint> injectionPoints = pit.getInjectionTarget().getInjectionPoints();
             for (InjectionPoint ip : injectionPoints) {
@@ -59,7 +61,7 @@ public class SpringCDIExtension implements Extension {
                 // Skip primitives
                 if (!(type instanceof Class<?> || type instanceof ParameterizedType))
                     continue;
-                
+
                 SpringBean sb = ip.getAnnotated().getAnnotation(SpringBean.class);
                 if (sb != null) {
                     String key = sb.name() + ":" + type;
@@ -71,19 +73,19 @@ public class SpringCDIExtension implements Extension {
             }
         }
     }
-    
+
     @SuppressWarnings("unused")
     void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {}
-    
+
     @SuppressWarnings("unused")
     void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         log.trace("afterBeanDiscovery({},{})", abd, bm);
-        
+
         // Initialize the bean provider that is used by InjectCDIBeanPostProcessor. Do this before we create
         // the application context so that InjectCDIBeanPostProcessor can do its work when singleton beans
         // are created as part of context initialization.
         BeanProvider.initializeBeanProvider(bm);
-        
+
         String cdiSpringConfigs = System.getProperty("cdi.spring.configs");
         if (cdiSpringConfigs != null) {
             springContext = new ClassPathXmlApplicationContext(cdiSpringConfigs.split(","));
@@ -99,7 +101,7 @@ public class SpringCDIExtension implements Extension {
                 abd.addBean(sb);
             }
         }
-        
+
         AnnotatedType<ThreadSafeClassPathXmlApplicationContext> at = bm.createAnnotatedType(ThreadSafeClassPathXmlApplicationContext.class);
         final InjectionTarget<ThreadSafeClassPathXmlApplicationContext> it = bm.createInjectionTarget(at);
         abd.addBean(new Bean<ThreadSafeClassPathXmlApplicationContext>() {
@@ -107,47 +109,47 @@ public class SpringCDIExtension implements Extension {
             public Class<?> getBeanClass() {
                 return ThreadSafeClassPathXmlApplicationContext.class;
             }
-            
+
             @Override
             public Set<InjectionPoint> getInjectionPoints() {
                 return it.getInjectionPoints();
             }
-            
+
             @Override
             public boolean isNullable() {
                 return false;
             }
-            
+
             @Override
             public Set<Type> getTypes() {
                 return Sets.newHashSet(ApplicationContext.class, ConfigurableApplicationContext.class, Object.class);
             }
-            
+
             @Override
             public Set<Annotation> getQualifiers() {
                 return Sets.newHashSet(new AnnotationLiteral<Default>() {}, new AnnotationLiteral<Any>() {});
             }
-            
+
             @Override
             public Class<? extends Annotation> getScope() {
                 return Dependent.class;
             }
-            
+
             @Override
             public String getName() {
                 return "classPathXmlApplicationContext";
             }
-            
+
             @Override
             public Set<Class<? extends Annotation>> getStereotypes() {
                 return Collections.emptySet();
             }
-            
+
             @Override
             public boolean isAlternative() {
                 return false;
             }
-            
+
             @Override
             public ThreadSafeClassPathXmlApplicationContext create(CreationalContext<ThreadSafeClassPathXmlApplicationContext> creationalContext) {
                 ThreadSafeClassPathXmlApplicationContext instance = new ThreadSafeClassPathXmlApplicationContext(springContext, springContextLock);
@@ -155,15 +157,16 @@ public class SpringCDIExtension implements Extension {
                 it.postConstruct(instance);
                 return instance;
             }
-            
+
             @Override
-            public void destroy(ThreadSafeClassPathXmlApplicationContext instance, CreationalContext<ThreadSafeClassPathXmlApplicationContext> creationalContext) {
+            public void destroy(ThreadSafeClassPathXmlApplicationContext instance,
+                            CreationalContext<ThreadSafeClassPathXmlApplicationContext> creationalContext) {
                 it.preDestroy(instance);
                 creationalContext.release();
             }
         });
     }
-    
+
     @SuppressWarnings("unused")
     void onRefresh(@Observes ConfigurationEvent event, BeanManager bm) {
         if (springContext != null) {
@@ -176,7 +179,7 @@ public class SpringCDIExtension implements Extension {
             }
         }
     }
-    
+
     static class SpringCDIBean implements Bean<Object> {
         private ApplicationContext applicationContext;
         private ReadWriteLock applicationContextLock;
@@ -186,7 +189,7 @@ public class SpringCDIExtension implements Extension {
         private InjectionTarget<Object> injectionTarget;
         private String name;
         private static ConcurrentHashMap<Type,AtomicLong> nameMap = new ConcurrentHashMap<>();
-        
+
         public SpringCDIBean(SpringBean sb, Type targetType, BeanManager beanManager) {
             this.annotation = sb;
             this.targetType = targetType;
@@ -194,77 +197,77 @@ public class SpringCDIExtension implements Extension {
             if ("".equals(name.trim())) {
                 name = generateName();
             }
-            
+
             AnnotatedType<Object> at = beanManager.createAnnotatedType(Object.class);
             injectionTarget = beanManager.createInjectionTarget(at);
-            
+
             if (targetType instanceof ParameterizedType) {
                 rawType = (Class<?>) ((ParameterizedType) targetType).getRawType();
             } else {
                 rawType = (Class<?>) targetType;
             }
         }
-        
+
         public void setApplicationContext(ApplicationContext applicationContext, ReadWriteLock applicationContextLock) {
             this.applicationContext = applicationContext;
             this.applicationContextLock = applicationContextLock;
         }
-        
+
         @Override
         public Class<?> getBeanClass() {
             return rawType;
         }
-        
+
         @Override
         public Set<InjectionPoint> getInjectionPoints() {
             return injectionTarget.getInjectionPoints();
         }
-        
+
         @Override
         public boolean isNullable() {
             return !annotation.required();
         }
-        
+
         @Override
         public Set<Type> getTypes() {
             return Sets.newHashSet(targetType, Object.class);
         }
-        
+
         @Override
         public Set<Annotation> getQualifiers() {
             return Sets.newHashSet((Annotation) annotation);
         }
-        
+
         @Override
         public Class<? extends Annotation> getScope() {
             return Dependent.class;
         }
-        
+
         @Override
         public String getName() {
             return name;
         }
-        
+
         @Override
         public Set<Class<? extends Annotation>> getStereotypes() {
             return Collections.emptySet();
         }
-        
+
         @Override
         public boolean isAlternative() {
             return false;
         }
-        
+
         @Override
         public Object create(CreationalContext<Object> creationalContext) {
             if (applicationContext == null) {
                 throw new IllegalStateException("No ApplicationContext was available!");
             }
-            
+
             Object instance = null;
             try {
                 applicationContextLock.readLock().lock();
-                
+
                 // Only try to get the instance if the annotation is required or we think one exists if it's not required
                 if ("".equals(annotation.name().trim())) {
                     if (annotation.required() || applicationContext.getBeanNamesForType(rawType).length > 0)
@@ -280,12 +283,12 @@ public class SpringCDIExtension implements Extension {
             injectionTarget.inject(instance, creationalContext);
             return instance;
         }
-        
+
         @Override
         public void destroy(Object instance, CreationalContext<Object> creationalContext) {
             creationalContext.release();
         }
-        
+
         protected String generateName() {
             AtomicLong counter = nameMap.putIfAbsent(targetType, new AtomicLong(0L));
             if (counter == null)
@@ -293,18 +296,18 @@ public class SpringCDIExtension implements Extension {
             return targetType + "#" + counter.getAndIncrement();
         }
     }
-    
+
     static class RefreshableSpringCDIBean extends SpringCDIBean implements PassivationCapable {
-        
+
         public RefreshableSpringCDIBean(SpringBean sb, Type targetType, BeanManager beanManager) {
             super(sb, targetType, beanManager);
         }
-        
+
         @Override
         public Class<? extends Annotation> getScope() {
             return RefreshableScope.class;
         }
-        
+
         @Override
         public String getId() {
             String id = getName();

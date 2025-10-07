@@ -32,13 +32,13 @@ import datawave.webservice.result.MetadataQueryResponseBase;
  * You will probably need to modify the src/main/resource/jndi.properties file before build
  */
 public class StreamDumper {
-    
+
     private Context ic;
     private ConnectionFactory cf;
     private Connection connection;
     Session session;
     MessageConsumer consumer;
-    
+
     public StreamDumper() {
         try {
             ic = new InitialContext(); // reads from jndi.properties, so make sure it is correct
@@ -52,7 +52,7 @@ public class StreamDumper {
             e.printStackTrace();
         }
     }
-    
+
     public void streamQueueToStdout(String destination) {
         try {
             Queue queue = getQueue(destination);
@@ -84,7 +84,7 @@ public class StreamDumper {
             e.printStackTrace();
         }
     }
-    
+
     public static void main(String args[]) {
         String destination_id = null;
         if (args.length == 0) {
@@ -94,12 +94,12 @@ public class StreamDumper {
         } else {
             throw new IllegalArgumentException("You may only provide one queue id at a time");
         }
-        
+
         // if you are debugging remotely, start the breakpoint here or later
         StreamDumper sr = new StreamDumper();
         sr.streamQueueToStdout(destination_id);
     }
-    
+
     private Queue getQueue(String queueName) {
         try {
             return (Queue) ic.lookup("/queue/" + queueName);
@@ -108,24 +108,24 @@ public class StreamDumper {
             return null;
         }
     }
-    
+
     private MessageConsumer getConsumer(Queue queue) {
         try {
             if (null == consumer) {
                 consumer = session.createConsumer(queue);
                 connection.start();
             }
-            
+
         } catch (JMSException e) {
             e.printStackTrace();
         }
         return consumer;
     }
-    
+
     private ObjectMessage getMessage(MessageConsumer consumer) {
         return getMessage(consumer, 10000l); // 10 second timeout be default
     }
-    
+
     private ObjectMessage getMessage(MessageConsumer consumer, long timeout) {
         try {
             return (ObjectMessage) consumer.receive(timeout);
@@ -134,22 +134,22 @@ public class StreamDumper {
         }
         throw new RuntimeException("Getting message timed out, time was " + timeout + "ms");
     }
-    
+
     private static String getQueueIdFromUser() {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String destination_id = null;
         System.out.println("Enter the destination id (should be jms.queue.[UUID]):");
-        
+
         try {
             destination_id = br.readLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
+
         if (destination_id.equals("")) {
             throw new IllegalArgumentException("The destination id can not be null.  Try again");
         }
         return destination_id;
     }
-    
+
 }

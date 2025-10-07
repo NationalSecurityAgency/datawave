@@ -14,12 +14,12 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
  */
 public class InjectCDIBeanPostProcessor implements BeanPostProcessor {
     private Logger log = LoggerFactory.getLogger(getClass());
-    
+
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         return bean;
     }
-    
+
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         Object beanToInject = bean;

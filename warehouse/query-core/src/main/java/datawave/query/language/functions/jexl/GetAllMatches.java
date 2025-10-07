@@ -4,12 +4,12 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+
 import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.WildcardFieldedFilter;
-
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 /**
  * <pre>
@@ -20,11 +20,11 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
  */
 public class GetAllMatches extends JexlQueryFunction {
     WildcardFieldedFilter.BooleanType type = null;
-    
+
     public GetAllMatches() {
         super("get_all_matches", new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
@@ -35,15 +35,15 @@ public class GetAllMatches extends JexlQueryFunction {
                 String firstArg = this.parameterList.get(0);
                 type = WildcardFieldedFilter.BooleanType.valueOf(firstArg.toUpperCase());
             } catch (Exception e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", e,
-                                this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", e, this.name));
                 throw new IllegalArgumentException(qe);
             }
             x = 1;
             this.parameterList.remove(0);
         }
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 2) {
@@ -53,25 +53,27 @@ public class GetAllMatches extends JexlQueryFunction {
         String firstArg = this.parameterList.get(0);
         if (firstArg.equalsIgnoreCase("and") || firstArg.equalsIgnoreCase("or")) {
             if (this.parameterList.size() % 2 != 1) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         } else {
             if (this.parameterList.size() % 2 != 0) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         String operation = (this.type.equals(WildcardFieldedFilter.BooleanType.AND)) ? " && " : " || ";
-        
+
         if (parameterList.size() > 2) // do not wrap single terms
             sb.append("(");
-        
+
         int x = 0;
         while (x < parameterList.size()) {
             if (x >= 2) {
@@ -81,13 +83,13 @@ public class GetAllMatches extends JexlQueryFunction {
             String regex = parameterList.get(x++);
             sb.append("filter:getAllMatches(").append(field).append(", ").append(escapeString(regex)).append(")");
         }
-        
+
         if (parameterList.size() > 2)
             sb.append(")");
-        
+
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new GetAllMatches();

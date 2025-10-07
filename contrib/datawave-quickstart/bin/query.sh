@@ -55,7 +55,7 @@ function datawaveQuery() {
 
    local curlcmd="/usr/bin/curl \
     --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-    --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+    --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" --keepalive-time 180 \
     --header 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' --header 'Accept: application/json' \
     ${DW_REQUEST_HEADERS} ${DW_CURL_DATA} -X POST ${DW_QUERY_URI}/${DW_QUERY_LOGIC}/${DW_QUERY_CREATE_MODE}"
 
@@ -131,21 +131,8 @@ function setQueryIdFromResponse() {
 }
 
 function prettyPrintJson() {
-    local PY=$( which python )
-    if [ -n "${PY}" ] ; then
-        echo "${1}" | ${PY} -c 'import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
-        local exitStatus=$?
-        echo
-        if [ "${exitStatus}" != "0" ] ; then
-           printRawResponse "${1}"
-           warn "Python encountered error. Printed response without formatting"
-           echo
-        fi
-    else
-        printRawResponse "${1}"
-        warn "Couldn't find python in your environment. Json response was printed without formatting"
-        echo
-    fi
+    PY_CMD='from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
+    echo "${1}" | ( python3 -c "${PY_CMD}" 2>/dev/null || python2 -c "${PY_CMD}" 2>/dev/null ) || ( warn "Python encountered error. Printed response without formatting" && printRawResponse "${1}" )
 }
 
 function printRawResponse() {
@@ -211,6 +198,9 @@ function configureQuery() {
             ;;
          --use-execute | -E)
             DW_QUERY_CREATE_MODE="execute"
+            ;;
+         --validateQuery | -VQ)
+            DW_QUERY_CREATE_MODE="validate"
             ;;
          --next | -n)
             # Get the next page and bail out
@@ -302,6 +292,9 @@ function queryHelp() {
     echo " $( printGreen "-C" ) | $( printGreen "--create-only" )"
     echo "  Uses the 'Query/{logic}/create' endpoint, rather than the default, 'Query/{logic}/createAndNext' which creates query and gets first page w/ one request"
     echo
+    echo " $( printGreen "-VQ" ) | $( printGreen "--validate-query" )"
+    echo "  Uses the 'Query/{logic}/validate' endpoint, rather than the default, 'Query/{logic}/createAndNext' which validates the query and gets validation result"
+    echo
     echo " $( printGreen "-n" ) | $( printGreen "--next" ) <query-id> "
     echo "  Gets the next page of results for the specified query id. Response code 204 indicates end of result set"
     echo
@@ -333,7 +326,7 @@ function closeQuery() {
 
    local curlcmd="/usr/bin/curl \
    --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-   --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+   --insecure --cert ${DW_CURL_CERT} --key ${DW_CURL_KEY_RSA} --cacert ${DW_CURL_CA} --keepalive-time 180 \
    -X PUT ${DW_QUERY_URI}/${DW_QUERY_ID}/close"
 
    local response="$( eval "${curlcmd}" )"
@@ -368,7 +361,7 @@ function getNextPage() {
 
    local curlcmd="/usr/bin/curl \
    --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-   --insecure --header 'Accept: application/json' ${DW_REQUEST_HEADERS} --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+   --insecure --header 'Accept: application/json' ${DW_REQUEST_HEADERS} --cert ${DW_CURL_CERT} --key ${DW_CURL_KEY_RSA} --cacert ${DW_CURL_CA} --keepalive-time 180 \
    -X GET ${DW_QUERY_URI}/${DW_QUERY_ID}/next"
 
    local response="$( eval "${curlcmd}" )"
@@ -400,7 +393,7 @@ function getNextPage() {
 function parseQueryResponse() {
    DW_QUERY_RESPONSE_BODY=$( echo ${response} | sed -e 's/HTTP_STATUS_CODE\:.*//g' )
    DW_QUERY_RESPONSE_CODE=$( echo ${response} | tr -d '\n' | sed -e 's/.*HTTP_STATUS_CODE://' | sed -e 's/;TOTAL_TIME\:.*//' )
-   DW_QUERY_RESPONSE_TYPE=$( echo ${response} | tr -d '\n' | sed -e 's/.*CONTENT_TYPE://' )
+   DW_QUERY_RESPONSE_TYPE=$( echo ${response} | tr -d '\n' | sed -e 's/.*CONTENT_TYPE://' | sed -e 's/;.*//' )
    DW_QUERY_TOTAL_TIME=$( echo ${response} | tr -d '\n' | sed -e 's/.*TOTAL_TIME://' | sed -e 's/;CONTENT_TYPE\:.*//' )
 }
 
@@ -464,21 +457,28 @@ function configureUserIdentity() {
     info "Converting client certificate into more portable PKI materials. *Should* work no matter which versions you have of CURL, OpenSSL, NSS, etc"
 
     local OPENSSL="$( which openssl )" && [ -z "${OPENSSL}" ] && error "OpenSSL executable not found!" && return 1
+    local opensslVersion3="$( ${OPENSSL} version | awk '{ print $2}' | grep -E ^3\. )"
+
+    if [ -z "$opensslVersion3" ]; then
+	local params="" # Not version 3.x
+    else
+	local params="-provider legacy -provider default" # Version 3.x
+    fi
 
     [ ! -f "${DW_PKCS12_CLIENT_CERT}" ] && error "Source client certificate not found: ${DW_PKCS12_CLIENT_CERT}" && return 1
 
-    ! ${OPENSSL} pkcs12 -passin "pass:${DW_CLIENT_CERT_PASS}" -passout "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_KEY}" -nocerts > /dev/null 2>&1 && error "Key creation failed!" && return 1
+    ! ${OPENSSL} pkcs12 ${params} -passin "pass:${DW_CLIENT_CERT_PASS}" -passout "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_KEY}" -nocerts > /dev/null 2>&1 && error "Key creation failed!" && return 1
     ! ${OPENSSL} rsa -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_CURL_KEY}" -out "${DW_CURL_KEY_RSA}" > /dev/null 2>&1 && error "RSA key creation failed!" && return 1
-    ! ${OPENSSL} pkcs12 -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CERT}" -clcerts -nokeys > /dev/null 2>&1 && error "Certificate creation failed!" && return 1
-    ! ${OPENSSL} pkcs12 -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CA}" -cacerts -nokeys > /dev/null 2>&1 && error "CA creation failed!" && return 1
+    ! ${OPENSSL} pkcs12 ${params} -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CERT}" -clcerts -nokeys > /dev/null 2>&1 && error "Certificate creation failed!" && return 1
+    ! ${OPENSSL} pkcs12 ${params} -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CA}" -cacerts -nokeys > /dev/null 2>&1 && error "CA creation failed!" && return 1
 
     return 0
 }
 
 function reloadDataWaveTableCache() {
 
-    # For convenience, this allows you to force a refresh of certain metadata caches in Wildfly, such as those used to cache 
-    # DataWave's data element dictionary. Otherwise, you might be forced to bounce Wildfly or wait for the caches to reload 
+    # For convenience, this allows you to force a refresh of certain metadata caches in Wildfly, such as those used to cache
+    # DataWave's data element dictionary. Otherwise, you might be forced to bounce Wildfly or wait for the caches to reload
     # automatically at the configured refresh interval.
 
     # This is particularly useful when you want to issue queries for newly ingested data, and to search on new, never-before-seen

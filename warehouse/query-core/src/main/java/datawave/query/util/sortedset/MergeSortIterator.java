@@ -8,19 +8,21 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
 /**
  * This is an iterator that will return a sorted set of items (no dups) from an underlying set of sorted sets. This will support null contained in the
  * underlying sets iff the underlying sets use a comparator that can handle null values.
- * 
- * 
- * 
+ *
+ *
+ *
  * @param <T>
+ *            type for the iterator
  */
 public class MergeSortIterator<T> implements Iterator<T> {
-    
+
     private List<Iterator<T>> iterators = new ArrayList<>();
     private List<T> lastList = new ArrayList<>();
     private boolean[] finished = null;
@@ -28,7 +30,7 @@ public class MergeSortIterator<T> implements Iterator<T> {
     private boolean populated = false;
     private T next = null;
     private List<Iterator<T>> nextIterators = new ArrayList<>();
-    
+
     public MergeSortIterator(Collection<? extends SortedSet<T>> sets) {
         Comparator<? super T> comparator = null;
         for (SortedSet<T> set : sets) {
@@ -41,7 +43,7 @@ public class MergeSortIterator<T> implements Iterator<T> {
         this.set = new TreeSet<>(comparator);
         this.finished = new boolean[iterators.size()];
     }
-    
+
     @Override
     public boolean hasNext() {
         if (!set.isEmpty()) {
@@ -54,7 +56,7 @@ public class MergeSortIterator<T> implements Iterator<T> {
         }
         return false;
     }
-    
+
     @Override
     public T next() {
         populate();
@@ -64,7 +66,7 @@ public class MergeSortIterator<T> implements Iterator<T> {
         }
         return next;
     }
-    
+
     @Override
     public void remove() {
         if (!populated) {
@@ -85,9 +87,8 @@ public class MergeSortIterator<T> implements Iterator<T> {
             throw new UnsupportedOperationException("One or more of the underlying sets does not support this operation", e);
         }
     }
-    
-    /************ Some utility methods *********/
-    
+
+    /* Some utility methods */
     private boolean equals(T o1, T o2) {
         if (o1 == null) {
             return o2 == null;
@@ -101,10 +102,10 @@ public class MergeSortIterator<T> implements Iterator<T> {
             }
         }
     }
-    
+
     private void populate() {
         populated = false;
-        
+
         // update the last value for those iterators contributing to
         // the last returned value
         for (int i = 0; i < nextIterators.size(); i++) {
@@ -120,7 +121,7 @@ public class MergeSortIterator<T> implements Iterator<T> {
                 }
             }
         }
-        
+
         if (!set.isEmpty()) {
             next = set.first();
             set.remove(next);
@@ -136,7 +137,7 @@ public class MergeSortIterator<T> implements Iterator<T> {
             }
             populated = true;
         }
-        
+
     }
-    
+
 }

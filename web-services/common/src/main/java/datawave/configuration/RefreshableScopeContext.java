@@ -1,8 +1,8 @@
 package datawave.configuration;
 
-import org.jboss.weld.contexts.AbstractSharedContext;
-
 import java.lang.annotation.Annotation;
+
+import org.jboss.weld.contexts.AbstractSharedContext;
 
 /**
  * The context for storing beans marked as {@link RefreshableScope}. These beans are all grouped together in a context that is invalidated upon receipt of a
@@ -12,7 +12,7 @@ public class RefreshableScopeContext extends AbstractSharedContext {
     public RefreshableScopeContext() {
         super("STATIC_INSTANCE");
     }
-    
+
     @Override
     public Class<? extends Annotation> getScope() {
         return RefreshableScope.class;

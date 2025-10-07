@@ -7,15 +7,15 @@ package datawave.ingest.table.aggregator;
  * The intent of this iterator is to prevent accidental deletion of count only protobufs in case extra deletions occur.
  */
 public class KeepCountOnlyUidAggregator extends GlobalIndexUidAggregator {
-    
+
     public KeepCountOnlyUidAggregator(int max) {
         super(max);
     }
-    
+
     public KeepCountOnlyUidAggregator() {
         super();
     }
-    
+
     @Override
     public boolean propogateKey() {
         return isSeenIgnore() || super.propogateKey();

@@ -1,6 +1,8 @@
+syntax = "proto2";
+
 package datawave.webservice.query;
 
-option optimize_for = LITE_RUNTIME;
+option optimize_for = SPEED;
 option java_package = "datawave.webservice.query";
 
 message QueryImpl {
