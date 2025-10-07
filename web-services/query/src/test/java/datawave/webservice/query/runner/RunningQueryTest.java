@@ -16,9 +16,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -33,11 +35,16 @@ import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResponseEnricher;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
+import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.AuthorizationException;
@@ -48,6 +55,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
+import datawave.webservice.result.BaseQueryResponse;
 
 public class RunningQueryTest {
 
@@ -207,6 +215,211 @@ public class RunningQueryTest {
             RunningQuery query = new RunningQuery(client, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {
             Assert.fail("NullPointer encountered. This could be caused by configuration being null. Check logic.initialize() ");
+        }
+    }
+
+    // this shows that updates to the query plan will back propagate to the metric
+    @Test
+    public void testQueryStringUpdate() throws Exception {
+        InMemoryInstance instance = new InMemoryInstance("test instance");
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+
+        String[] auths = new String[] {"A", "B"};
+
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+
+        RotatingPlanQueryLogic logic = new RotatingPlanQueryLogic(3);
+        logic.setMaxPageSize(1);
+
+        settings.setQuery("FOO == 'bar'");
+        RunningQuery rq = new RunningQuery(client, connectionPriority, logic, settings, null, principal, new QueryMetricFactoryImpl());
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+        ResultsPage page = rq.next();
+        // transforms two pages, even though only returns one
+        assertEquals("((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))))", rq.getMetric().getPlan());
+        assertEquals(1, page.getResults().size());
+        page = rq.next();
+        // transforms the third page
+        assertEquals("((page = '3') && ((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))))",
+                        rq.getMetric().getPlan());
+        assertEquals(1, page.getResults().size());
+        page = rq.next();
+        // transforms nothing, but returns the third page
+        assertEquals("((page = '3') && ((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))))",
+                        rq.getMetric().getPlan());
+        assertEquals(1, page.getResults().size());
+        page = rq.next();
+        // neither transforms nor returns anything
+        assertEquals("((page = '3') && ((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))))",
+                        rq.getMetric().getPlan());
+        assertEquals(0, page.getResults().size());
+    }
+
+    @Test
+    public void testEmptyOrNullUpdate() throws Exception {
+        InMemoryInstance instance = new InMemoryInstance("test instance");
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+
+        String[] auths = new String[] {"A", "B"};
+
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+
+        // send back no change
+        RotatingPlanQueryLogic logic = new RotatingPlanQueryLogic(3, false);
+        logic.setMaxPageSize(1);
+        settings.setQuery("FOO == 'bar'");
+        RunningQuery rq = new RunningQuery(client, connectionPriority, logic, settings, null, principal, new QueryMetricFactoryImpl());
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+        rq.next();
+        rq.next();
+        rq.next();
+        rq.next();
+        // unchanged
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+
+        // set a null string
+        logic = new RotatingPlanQueryLogic(3, false, true, null);
+        logic.setMaxPageSize(1);
+        settings.setQuery("FOO == 'bar'");
+        rq = new RunningQuery(client, connectionPriority, logic, settings, null, principal, new QueryMetricFactoryImpl());
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+        rq.next();
+        rq.next();
+        rq.next();
+        rq.next();
+        // unchanged
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+
+        // set an empty string
+        logic = new RotatingPlanQueryLogic(3, false, true, "");
+        logic.setMaxPageSize(1);
+        settings.setQuery("FOO == 'bar'");
+        rq = new RunningQuery(client, connectionPriority, logic, settings, null, principal, new QueryMetricFactoryImpl());
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+        rq.next();
+        rq.next();
+        rq.next();
+        rq.next();
+        // unchanged
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+
+        // prove the overwrite works
+        logic = new RotatingPlanQueryLogic(3, false, true, "overwrite-works");
+        logic.setMaxPageSize(1);
+        settings.setQuery("FOO == 'bar'");
+        rq = new RunningQuery(client, connectionPriority, logic, settings, null, principal, new QueryMetricFactoryImpl());
+        assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
+        rq.next();
+        rq.next();
+        rq.next();
+        rq.next();
+        // unchanged
+        assertEquals("overwrite-works", rq.getMetric().getPlan());
+    }
+
+    private static class RotatingPlanQueryLogic extends BaseQueryLogic {
+        final private int pages;
+        final private boolean updatePages;
+        final private boolean usePageOverride;
+        final private String pageOverride;
+
+        private int count = 0;
+
+        public RotatingPlanQueryLogic(int pages) {
+            this(pages, true);
+        }
+
+        public RotatingPlanQueryLogic(int pages, boolean updatePages) {
+            this(pages, updatePages, false, null);
+        }
+
+        public RotatingPlanQueryLogic(int pages, boolean updatePages, boolean usePageOverride, String pageOverride) {
+            this.pages = pages;
+            this.updatePages = updatePages;
+            this.usePageOverride = usePageOverride;
+            this.pageOverride = pageOverride;
+        }
+
+        @Override
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set runtimeQueryAuthorizations) throws Exception {
+            getConfig().setQuery(settings);
+            getConfig().setQueryString("((initialize = 'true') && " + settings.getQuery() + ")");
+            return getConfig();
+        }
+
+        @Override
+        public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
+            String oldPlan = getConfig().getQueryString();
+            getConfig().setQueryString("((setup = 'true') && " + oldPlan + ")");
+            this.iterator = new Iterator() {
+                @Override
+                public boolean hasNext() {
+                    return count < pages;
+                }
+
+                @Override
+                public Object next() {
+                    count++;
+                    return new Object();
+                }
+            };
+        }
+
+        @Override
+        public Object clone() {
+            return new RotatingPlanQueryLogic(pages, updatePages, usePageOverride, pageOverride);
+        }
+
+        @Override
+        public AccumuloConnectionFactory.Priority getConnectionPriority() {
+            return null;
+        }
+
+        @Override
+        public QueryLogicTransformer getTransformer(Query settings) {
+            return new QueryLogicTransformer() {
+                @Override
+                public void setResponseEnricher(ResponseEnricher responseTransform) {
+
+                }
+
+                @Override
+                public BaseQueryResponse createResponse(ResultsPage resultList) {
+                    return null;
+                }
+
+                @Override
+                public Object transform(Object input) throws EmptyObjectException {
+                    if (updatePages) {
+                        getConfig().setQueryString("((page = '" + count + "') && " + getConfig().getQueryString() + ")");
+                    } else if (usePageOverride) {
+                        getConfig().setQueryString(pageOverride);
+                    }
+                    return new Object();
+                }
+
+                @Override
+                public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+
+                }
+            };
+        }
+
+        @Override
+        public Set<String> getOptionalQueryParameters() {
+            return Set.of();
+        }
+
+        @Override
+        public Set<String> getRequiredQueryParameters() {
+            return Set.of();
+        }
+
+        @Override
+        public Set<String> getExampleQueries() {
+            return Set.of();
         }
     }
 }
