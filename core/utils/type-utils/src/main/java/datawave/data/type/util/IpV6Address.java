@@ -1,7 +1,12 @@
 package datawave.data.type.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.datasketches.common.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -11,6 +16,9 @@ import com.google.common.collect.Iterables;
  *
  */
 public class IpV6Address extends IpAddress {
+
+    private static final Logger log = LoggerFactory.getLogger(IpV6Address.class);
+
     private static final long serialVersionUID = -1528748156190096213L;
     private final short[] ipaddress = new short[8];
 
@@ -98,10 +106,20 @@ public class IpV6Address extends IpAddress {
     }
 
     public static String toString(short[] address, boolean zeroPadded, boolean skipZeros) {
+        boolean orig = false;
+        if (orig) {
+            return origToString(address, zeroPadded, skipZeros);
+        } else {
+            return nextToString(address, zeroPadded, skipZeros);
+        }
+    }
+
+    public static String origToString(short[] address, boolean zeroPadded, boolean skipZeros) {
         StringBuilder builder = new StringBuilder(39);
         int startSkip = -1;
         int length = 0;
         if (skipZeros) {
+            // TODO: there must be multiple consecutive sequences of all zeroes in order to compress to '::'
             // find the longest sequence of zeros
             int count = 0;
             for (int i = 0; i < 8; i++) {
@@ -140,6 +158,71 @@ public class IpV6Address extends IpAddress {
             }
         }
         return builder.toString();
+    }
+
+    public static String nextToString(short[] address, boolean zeroPadded, boolean skipZeros) {
+
+        // first convert to list of strings
+        List<String> hextets = new ArrayList<>();
+        for (int i = 0; i < address.length; i++) {
+            StringBuilder sb = new StringBuilder();
+            String value = Integer.toString(0x00FFFF & address[i], 16);
+            if (zeroPadded) {
+                for (int j = value.length(); j < 4; j++) {
+                    sb.append('0');
+                }
+            }
+            sb.append(value);
+            hextets.add(sb.toString());
+        }
+
+        // now find the longest run of all-zero hextets, first find breaks ties
+        int zeroHextetStart = -1;
+        int zeroHextetLength = -1;
+        for (int i = 0; i < hextets.size(); i++) {
+            if (isHextetAllZeroes(hextets.get(i))) {
+                int len = 1;
+                for (int j = i + 1; j < hextets.size(); j++) {
+                    if (isHextetAllZeroes(hextets.get(j))) {
+                        len++;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (len >= 2 && len > zeroHextetLength) {
+                    zeroHextetStart = i;
+                    zeroHextetLength = len;
+                    log.debug("found sequence at index: {} length: {}", zeroHextetStart, zeroHextetLength);
+                }
+            }
+        }
+
+        // now build the final address, replacing the longest run of zeroes if necessary
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hextets.size(); i++) {
+            if (i == zeroHextetStart) {
+                sb.append("::");
+                i += (zeroHextetLength - 1);
+            } else {
+                sb.append(hextets.get(i));
+                if (i != hextets.size() - 1 && (i + 1 != zeroHextetStart)) {
+                    // append delimiter if not at start and not before an all zero start
+                    sb.append(":");
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private static boolean isHextetAllZeroes(String hextet) {
+        for (int i = 0; i < hextet.length(); i++) {
+            if (hextet.charAt(i) != '0') {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
