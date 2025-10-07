@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,7 +228,6 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
         }
 
         // order the found content by priority
-        final List<Map.Entry<String,VisibleContent>> orderedContent = new ArrayList<>();
         final List<Map.Entry<String,VisibleContent>> orderedContent = new ArrayList<>();
         for (String view : preferredViews) {
             final String truncatedView = view.endsWith("*") ? view.substring(0, view.length() - 1) : null;
