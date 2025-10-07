@@ -357,7 +357,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         assertEquals(BaseQueryMetric.Lifecycle.CLOSED, combinedMetric.getLifecycle());
         metricAssertEquals("The combined metrics should be identical", combinedMetric, combinedMetric2);
 
-        // Check that no side effects happen when the same metric is added combined
+        // Check that no side effects happen when the same metric is added/combined
         combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(updatedQueryMetric, updatedQueryMetricCopy, QueryMetricType.COMPLETE);
         metricAssertEquals("metric should not change", combinedMetric, updatedQueryMetric);
         combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(storedQueryMetric, storedQueryMetricCopy, QueryMetricType.COMPLETE);
