@@ -160,9 +160,13 @@ public class IpV6Address extends IpAddress {
 
     /**
      * Build the final IPv6 address. If a run of all-zero hextets was detected and skipping zeroes was requested then a compressed address will be built.
-     * @param hextets the list of address components
-     * @param zeroHextetStart the start index of the longest run of all-zero hextets
-     * @param zeroHextetLength the length of the longest run of all-zero hextets
+     *
+     * @param hextets
+     *            the list of address components
+     * @param zeroHextetStart
+     *            the start index of the longest run of all-zero hextets
+     * @param zeroHextetLength
+     *            the length of the longest run of all-zero hextets
      * @return an IPv6 address
      */
     private static String buildAddress(List<String> hextets, int zeroHextetStart, int zeroHextetLength) {
