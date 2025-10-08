@@ -20,22 +20,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.Credentials;
-import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
 import org.apache.accumulo.core.util.ByteBufferUtil;
 import org.apache.accumulo.core.util.TextUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.io.Text;
 
 /**
  * InMemory Accumulo provides an in memory implementation of the Accumulo client API. It is possible that the behavior of this implementation may differ subtly
@@ -48,7 +43,7 @@ import org.apache.hadoop.io.Text;
  * Accumulo.
  *
  */
-public class InMemoryInstance implements Instance {
+public class InMemoryInstance {
 
     static final String genericAddress = "localhost:1234";
     static final Map<String,InMemoryAccumulo> instances = new HashMap<>();
@@ -85,59 +80,28 @@ public class InMemoryInstance implements Instance {
         this.instanceName = instanceName;
     }
 
-    @Override
     public String getRootTabletLocation() {
         return genericAddress;
     }
 
-    @Override
     public List<String> getMasterLocations() {
         return Collections.singletonList(genericAddress);
     }
 
-    @Override
     public String getInstanceID() {
         return "mock-instance-id";
     }
 
-    @Override
     public String getInstanceName() {
         return instanceName;
     }
 
-    @Override
     public String getZooKeepers() {
         return "localhost";
     }
 
-    @Override
     public int getZooKeepersSessionTimeOut() {
         return 30 * 1000;
-    }
-
-    @Override
-    public Connector getConnector(String user, byte[] pass) throws AccumuloException, AccumuloSecurityException {
-        return getConnector(user, new PasswordToken(pass));
-    }
-
-    @Override
-    public Connector getConnector(String user, ByteBuffer pass) throws AccumuloException, AccumuloSecurityException {
-        return getConnector(user, ByteBufferUtil.toBytes(pass));
-    }
-
-    @Override
-    public Connector getConnector(String user, CharSequence pass) throws AccumuloException, AccumuloSecurityException {
-        return getConnector(user, TextUtil.getBytes(new Text(pass.toString())));
-    }
-
-    @Override
-    public Connector getConnector(String principal, AuthenticationToken token) throws AccumuloException, AccumuloSecurityException {
-        Connector conn = new InMemoryConnector(new Credentials(principal, token), acu, this);
-        if (!acu.users.containsKey(principal))
-            conn.securityOperations().createLocalUser(principal, (PasswordToken) token);
-        else if (!acu.users.get(principal).token.equals(token))
-            throw new AccumuloSecurityException(principal, SecurityErrorCode.BAD_CREDENTIALS);
-        return conn;
     }
 
     public static class CachedConfiguration {

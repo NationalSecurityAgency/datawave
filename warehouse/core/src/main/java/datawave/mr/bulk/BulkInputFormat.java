@@ -1064,9 +1064,11 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         String tableName = getTablename(conf);
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
+
+        // SETH NOTE : I can't find a way to remove the usages of ClientInfo, ClientConfConverter, and ClientContext here since TableLocator.getLocator is the only access to return a TableLocator and happens to require them.
+        // If we reallllllyyy want to gut it, we could remove this too but it's not on the dep list so I'm going to leave it as is.
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                        Threads.UEH);
+        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
         return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
 
@@ -1105,6 +1107,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     tl = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
+
+                    // SETH NOTE: Same thing here, TableLocator is the stopper from removing ClientInfo, ClientConfConverter and ClientContext
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
                     ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
                                     ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
