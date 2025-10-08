@@ -7,6 +7,7 @@ import org.apache.datasketches.common.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 
@@ -106,6 +107,7 @@ public class IpV6Address extends IpAddress {
 
     public static String toString(short[] address, boolean zeroPadded, boolean skipZeros) {
 
+        Preconditions.checkArgument(zeroPadded != skipZeros, "cannot zero pad address and skip zeros");
         // first convert to list of strings
         List<String> hextets = new ArrayList<>();
         StringBuilder sb = new StringBuilder();

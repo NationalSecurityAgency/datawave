@@ -1,6 +1,7 @@
 package datawave.data.type.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -14,9 +15,9 @@ public class IpV6AddressTypeTest {
     //  @formatter:off
     private final String[] inputs = { //
             "2001:0db8:0000:0000:0000:ff00:0042:8329", //
-            "2003:DEAD:BEEF:4DAD:23:46:bb:101", //
-            "2000:FFFF:EEEE:DD:CC:0000:0000:0000", //
-            "AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:2222:0", //
+            "2003:DEAD:BEEF:4DAD:0023:0046:00bb:0101", //
+            "2000:FFFF:EEEE:00DD:00CC:0000:0000:0000", //
+            "AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:2222:0000", //
             "ff02:0b00:0000:0000:0001:0000:0000:000a", //
             "0000:0000:0000:0000:0000:0000:0000:0001", //
             "0001:0000:0000:0000:0000:0000:0000:0000", //
@@ -102,6 +103,15 @@ public class IpV6AddressTypeTest {
         assertRoundTrip(original, expected);
     }
 
+    @Test
+    public void testInvalidToStringCall() {
+        String zeroAddress = "0000:0000:0000:0000:0000:0000:0000:0000";
+        IpV6Address address = IpV6Address.parse(zeroAddress);
+        short[] shorts = address.toShorts();
+        assertThrows(IllegalArgumentException.class, () -> IpV6Address.toString(shorts, true, true));
+        assertThrows(IllegalArgumentException.class, () -> IpV6Address.toString(shorts, false, false));
+    }
+
     private void assertRoundTrip(String original, String expected) {
         assertEquals(7, StringUtils.countMatches(original, ":"));
 
@@ -111,5 +121,8 @@ public class IpV6AddressTypeTest {
 
         IpV6Address deserialized = IpV6Address.parse(serialized);
         assertEquals(expected, deserialized.toString());
+
+        String zeroPadded = deserialized.toZeroPaddedString();
+        assertEquals(original.toUpperCase(), zeroPadded.toUpperCase());
     }
 }
