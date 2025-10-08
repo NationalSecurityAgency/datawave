@@ -329,6 +329,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         DatePartitionedQueryIterable results = new DatePartitionedQueryIterable();
         List<Exception> exceptions = new ArrayList<>();
 
+        // TODO: Lets attempt to process these pieces concurrently
         for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
             String subBeginDate = dateFormat.format(dateRange.getKey().getLeft());
             String subEndDate = dateFormat.format(dateRange.getKey().getRight());

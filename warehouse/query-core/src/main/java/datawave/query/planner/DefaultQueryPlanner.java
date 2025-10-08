@@ -444,6 +444,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return dateIndexHelper;
     }
 
+    /**
+     * This is the main processing endpoint for the planner. Basically the processing is split into 2 pieces: updateQueryTree which will do all of the planning,
+     * and startRangeProcessing which will create the iterable of query data objects that need to be executed.
+     *
+     * @param genericConfig
+     *            the query configuration config
+     * @param query
+     *            the query string
+     * @param settings
+     *            the query settings
+     * @param scannerFactory
+     *            the scanner factory
+     * @return the iterable of query data objects
+     * @throws DatawaveQueryException
+     */
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
@@ -464,7 +479,74 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveQueryException("Failed to mark query as started" + settings.getId(), e);
         }
 
-        return process(scannerFactory, getMetadataHelper(config), getDateIndexHelper(config), config, query, settings);
+        settingFuture = null;
+
+        IteratorSetting cfg = null;
+
+        if (preloadOptions) {
+            cfg = getQueryIterator(metadataHelper, config, "", false, true);
+        }
+
+        try {
+            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings));
+        } catch (StackOverflowError e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Stack trace for overflow " + e);
+            }
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
+            log.warn(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (NoResultsException e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Definitively determined that no results exist from the indexes");
+            }
+
+            return DefaultQueryPlanner.emptyCloseableIterator();
+        }
+
+        return startRangeProcessing(scannerFactory, metadataHelper, config, settings, cfg);
+    }
+
+    /**
+     * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
+     *
+     * @see DatePartitionedQueryPlanner
+     * @param config
+     * @param settings
+     * @param scannerFactory
+     * @return a range stream
+     * @throws DatawaveQueryException
+     */
+    public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
+
+        startConcurrentExecution(config);
+
+        settingFuture = null;
+
+        IteratorSetting cfg = null;
+
+        if (preloadOptions) {
+            cfg = getQueryIterator(metadataHelper, config, "", false, true);
+        }
+
+        try {
+            config.setQueryTree(expandPushdownPullup(config, metadataHelper, config.getTimers(), scannerFactory));
+        } catch (StackOverflowError e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Stack trace for overflow " + e);
+            }
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
+            log.warn(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (NoResultsException e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Definitively determined that no results exist from the indexes");
+            }
+
+            return DefaultQueryPlanner.emptyCloseableIterator();
+        }
+
+        return startRangeProcessing(scannerFactory, metadataHelper, config, settings, cfg);
     }
 
     /**
@@ -508,156 +590,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         ivaratorCacheDirFuture = executor.submit(ivaratorCacheDirCallable);
     }
 
-    protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
-        settingFuture = null;
-
-        IteratorSetting cfg = null;
-
-        if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, "", false, true);
-        }
-
-        try {
-            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings));
-        } catch (StackOverflowError e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Stack trace for overflow " + e);
-            }
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (NoResultsException e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Definitively determined that no results exist from the indexes");
-            }
-
-            return DefaultQueryPlanner.emptyCloseableIterator();
-        }
-
-        boolean isFullTable = false;
-        Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;
-
-        if (!config.isGeneratePlanOnly()) {
-            queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, config.getQueryTree());
-
-            // a full table scan is required if
-            isFullTable = queryRanges.second();
-
-            // abort if we cannot handle full table scans
-            if (isFullTable && !config.getFullTableScanEnabled()) {
-                PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
-                throw new FullTableScansDisallowedException(qe);
-            }
-        }
-
-        final QueryStopwatch timers = config.getTimers();
-
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
-
-        // Set the final query after we're done mucking with it
-        String newQueryString = JexlStringBuildingVisitor.buildQuery(config.getQueryTree());
-        if (log.isTraceEnabled())
-            log.trace("newQueryString is " + newQueryString);
-        if (StringUtils.isBlank(newQueryString)) {
-            stopwatch.stop();
-            QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
-            throw new DatawaveFatalQueryException(qe);
-        }
-
-        stopwatch.stop();
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
-
-        if (!config.isGeneratePlanOnly()) {
-            while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, "", false, false);
-            }
-            configureIterator(config, cfg, newQueryString, isFullTable);
-        }
-
-        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg));
-
-        stopwatch.stop();
-
-        this.plannedScript = newQueryString;
-        config.setQueryString(this.plannedScript);
-
-        if (logConcurrentStageExecution) {
-            logTimeSavedViaConcurrentExecution();
-        }
-
-        if (!config.isGeneratePlanOnly()) {
-            // add the geo query comparator to sort by geo range granularity if this is a geo query
-            List<Comparator<QueryPlan>> queryPlanComparators = null;
-            if (config.isSortGeoWaveQueryRanges()) {
-                List<String> geoFields = new ArrayList<>();
-                for (String fieldName : config.getIndexedFields()) {
-                    for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
-                        if (type instanceof AbstractGeometryType) {
-                            geoFields.add(fieldName);
-                            break;
-                        }
-                    }
-                }
-
-                if (!geoFields.isEmpty()) {
-                    queryPlanComparators = new ArrayList<>();
-                    queryPlanComparators.add(new GeoWaveQueryPlanComparator(geoFields));
-                    queryPlanComparators.add(new DefaultQueryPlanComparator());
-                }
-            }
-
-            // @formatter:off
-            return new ThreadedRangeBundler.Builder()
-                    .setOriginal(queryData)
-                    .setQueryTree(config.getQueryTree())
-                    .setRanges(queryRanges.first())
-                    .setMaxRanges(maxRangesPerQueryPiece())
-                    .setSettings(settings)
-                    .setQueryPlanComparators(queryPlanComparators)
-                    .build();
-            // @formatter:on
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
-     *
-     * @see DatePartitionedQueryPlanner
-     * @param config
-     * @param settings
-     * @param scannerFactory
-     * @return a range stream
-     * @throws DatawaveQueryException
-     */
-    public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
-
-        startConcurrentExecution(config);
-
-        settingFuture = null;
-        IteratorSetting cfg = null;
-        if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, "", false, true);
-        }
-
-        try {
-            config.setQueryTree(expandPushdownPullup(config, metadataHelper, config.getTimers(), scannerFactory));
-        } catch (StackOverflowError e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Stack trace for overflow " + e);
-            }
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (NoResultsException e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Definitively determined that no results exist from the indexes");
-            }
-
-            return DefaultQueryPlanner.emptyCloseableIterator();
-        }
+    protected CloseableIterable<QueryData> startRangeProcessing(ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config,
+                    Query settings, IteratorSetting cfg) throws DatawaveQueryException {
 
         boolean isFullTable = false;
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;
