@@ -3,7 +3,6 @@ package datawave.data.type.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.datasketches.common.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,66 +105,12 @@ public class IpV6Address extends IpAddress {
     }
 
     public static String toString(short[] address, boolean zeroPadded, boolean skipZeros) {
-        boolean orig = false;
-        if (orig) {
-            return origToString(address, zeroPadded, skipZeros);
-        } else {
-            return nextToString(address, zeroPadded, skipZeros);
-        }
-    }
-
-    public static String origToString(short[] address, boolean zeroPadded, boolean skipZeros) {
-        StringBuilder builder = new StringBuilder(39);
-        int startSkip = -1;
-        int length = 0;
-        if (skipZeros) {
-            // TODO: there must be multiple consecutive sequences of all zeroes in order to compress to '::'
-            // find the longest sequence of zeros
-            int count = 0;
-            for (int i = 0; i < 8; i++) {
-                if (address[i] == 0) {
-                    count++;
-                } else {
-                    if (count > length) {
-                        startSkip = i - count;
-                        length = count;
-                    }
-                    count = 0;
-                }
-            }
-            if (count > length) {
-                startSkip = 8 - count;
-                length = count;
-            }
-        }
-        for (int i = 0; i < address.length; i++) {
-            if (i == startSkip) {
-                builder.append(':');
-                i += length;
-            }
-            if (builder.length() > 0 && StringUtils.countMatches(builder.toString(), ":") < 7) {
-                // the countMatches test will prevent adding an extra : at the end and making it look like 9 tokens instead of the allowed max of 8
-                builder.append(':');
-            }
-            if (i < address.length) {
-                String value = Integer.toString(0x00FFFF & address[i], 16);
-                if (zeroPadded) {
-                    for (int j = value.length(); j < 4; j++) {
-                        builder.append('0');
-                    }
-                }
-                builder.append(value);
-            }
-        }
-        return builder.toString();
-    }
-
-    public static String nextToString(short[] address, boolean zeroPadded, boolean skipZeros) {
 
         // first convert to list of strings
         List<String> hextets = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < address.length; i++) {
-            StringBuilder sb = new StringBuilder();
+            sb.setLength(0);
             String value = Integer.toString(0x00FFFF & address[i], 16);
             if (zeroPadded) {
                 for (int j = value.length(); j < 4; j++) {
@@ -179,25 +124,48 @@ public class IpV6Address extends IpAddress {
         // now find the longest run of all-zero hextets, first find breaks ties
         int zeroHextetStart = -1;
         int zeroHextetLength = -1;
-        for (int i = 0; i < hextets.size(); i++) {
-            if (isHextetAllZeroes(hextets.get(i))) {
-                int len = 1;
-                for (int j = i + 1; j < hextets.size(); j++) {
-                    if (isHextetAllZeroes(hextets.get(j))) {
-                        len++;
-                    } else {
-                        break;
+        if (skipZeros) {
+            for (int i = 0; i < hextets.size(); i++) {
+                if (isHextetAllZeroes(hextets.get(i))) {
+                    int len = 1;
+                    for (int j = i + 1; j < hextets.size(); j++) {
+                        if (isHextetAllZeroes(hextets.get(j))) {
+                            len++;
+                        } else {
+                            break;
+                        }
                     }
-                }
 
-                if (len >= 2 && len > zeroHextetLength) {
-                    zeroHextetStart = i;
-                    zeroHextetLength = len;
-                    log.debug("found sequence at index: {} length: {}", zeroHextetStart, zeroHextetLength);
+                    if (len >= 2 && len > zeroHextetLength) {
+                        zeroHextetStart = i;
+                        zeroHextetLength = len;
+                        log.trace("found sequence at index: {} length: {}", zeroHextetStart, zeroHextetLength);
+                    }
                 }
             }
         }
 
+        // now build the final address, replacing the longest run of zeroes if necessary
+        return buildAddress(hextets, zeroHextetStart, zeroHextetLength);
+    }
+
+    private static boolean isHextetAllZeroes(String hextet) {
+        for (int i = 0; i < hextet.length(); i++) {
+            if (hextet.charAt(i) != '0') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Build the final IPv6 address. If a run of all-zero hextets was detected and skipping zeroes was requested then a compressed address will be built.
+     * @param hextets the list of address components
+     * @param zeroHextetStart the start index of the longest run of all-zero hextets
+     * @param zeroHextetLength the length of the longest run of all-zero hextets
+     * @return an IPv6 address
+     */
+    private static String buildAddress(List<String> hextets, int zeroHextetStart, int zeroHextetLength) {
         // now build the final address, replacing the longest run of zeroes if necessary
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < hextets.size(); i++) {
@@ -214,15 +182,6 @@ public class IpV6Address extends IpAddress {
         }
 
         return sb.toString();
-    }
-
-    private static boolean isHextetAllZeroes(String hextet) {
-        for (int i = 0; i < hextet.length(); i++) {
-            if (hextet.charAt(i) != '0') {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override
