@@ -126,10 +126,10 @@ public class IpV6Address extends IpAddress {
         int zeroHextetLength = -1;
         if (skipZeros) {
             for (int i = 0; i < hextets.size(); i++) {
-                if (isHextetAllZeroes(hextets.get(i))) {
+                if (hextets.get(i).equals("0")) {
                     int len = 1;
                     for (int j = i + 1; j < hextets.size(); j++) {
-                        if (isHextetAllZeroes(hextets.get(j))) {
+                        if (hextets.get(j).equals("0")) {
                             len++;
                         } else {
                             break;
@@ -140,6 +140,7 @@ public class IpV6Address extends IpAddress {
                         zeroHextetStart = i;
                         zeroHextetLength = len;
                         log.trace("found sequence at index: {} length: {}", zeroHextetStart, zeroHextetLength);
+                        i += (len - 1); // do not look at zero hextets that were already skipped
                     }
                 }
             }
@@ -147,15 +148,6 @@ public class IpV6Address extends IpAddress {
 
         // now build the final address, replacing the longest run of zeroes if necessary
         return buildAddress(hextets, zeroHextetStart, zeroHextetLength);
-    }
-
-    private static boolean isHextetAllZeroes(String hextet) {
-        for (int i = 0; i < hextet.length(); i++) {
-            if (hextet.charAt(i) != '0') {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
