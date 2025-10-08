@@ -8,13 +8,13 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-service</artifactId>
-    <version>4.1.7-SNAPSHOT</version>
+    <version>4.1.7</version>
     <description>DATAWAVE Query Metric Microservice</description>
     <url>https://code.nsa.gov/datawave-query-metric-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>microservices/services/query-metric/service-4.1.7</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
