@@ -131,7 +131,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         try {
             log.info("creating connector with username:" + queryMetricHandlerProperties.getUsername());
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            accumuloClient = connectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
+            accumuloClient = connectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             this.clientAuthorizations = accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami()).toString();
             reload();
 
