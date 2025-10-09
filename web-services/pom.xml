@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.33.0-SNAPSHOT</version>
+        <version>7.29.3</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -18,6 +18,9 @@
         <module>query</module>
         <module>client</module>
         <module>cached-results</module>
+        <module>map-reduce</module>
+        <module>map-reduce-status</module>
+        <module>map-reduce-embedded</module>
         <module>metrics</module>
         <module>atom</module>
         <module>query-websocket</module>
@@ -26,7 +29,6 @@
         <module>rest-api</module>
         <module>model</module>
         <module>dictionary</module>
-        <module>annotations</module>
     </modules>
     <properties>
         <accumulo.scope>provided</accumulo.scope>
@@ -117,11 +119,6 @@
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
                 <version>${version.dnsjava}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-annotation-core</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -559,7 +556,7 @@
                         <threadCountClasses>0</threadCountClasses>
                         <threadCountMethods>1</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
+                        <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
                             --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>

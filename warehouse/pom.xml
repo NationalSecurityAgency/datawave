@@ -4,14 +4,13 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.33.0-SNAPSHOT</version>
+        <version>7.29.3</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
         <module>accumulo-extensions</module>
-        <module>annotation-core</module>
         <module>common</module>
         <module>core</module>
         <module>age-off</module>
@@ -35,7 +34,6 @@
         <module>edge-model-configuration-core</module>
         <module>ssdeep-common</module>
         <module>ingest-ssdeep</module>
-        <module>ingest-annotation</module>
     </modules>
     <properties>
         <!-- set env property to its default value -->
@@ -151,11 +149,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
-                <artifactId>datawave-ws-annotations</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-client</artifactId>
                 <version>${project.version}</version>
                 <exclusions>
@@ -173,6 +166,11 @@
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-common-util</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-map-reduce</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
