@@ -1693,6 +1693,68 @@ public class MetadataHelper {
     }
 
     /**
+     * Determines if fields across the date range are missing by determining if a frequency row exists in the metadata table.
+     *
+     * @param fields
+     *            the fields
+     * @param datatypes
+     *            the datatypes
+     * @param beginDate
+     *            the start date
+     * @param endDate
+     *            the end date
+     * @return True/False if all fields are missing in the provided date range.
+     */
+    public boolean isMissingFields(Set<String> fields, Set<String> datatypes, String beginDate, String endDate) {
+
+        SortedSet<String> sortedDatatypes = new TreeSet<>(datatypes);
+        Set<Range> ranges = createFieldCountRanges(fields, sortedDatatypes, beginDate, endDate);
+        boolean isMissing = true;
+
+        AccumuloClient client = accumuloClient;
+        if (client instanceof WrappedAccumuloClient) {
+            client = ((WrappedAccumuloClient) client).getReal();
+        }
+
+        try (BatchScanner bs = ScannerHelper.createBatchScanner(client, getMetadataTableName(), getAuths(), fields.size())) {
+
+            bs.setRanges(ranges);
+            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+
+            IteratorSetting setting = new IteratorSetting(50, "MetadataFrequencySeekingIterator", MetadataFColumnSeekingFilter.class);
+            setting.addOption(MetadataFColumnSeekingFilter.DATATYPES_OPT, Joiner.on(',').join(sortedDatatypes));
+            setting.addOption(MetadataFColumnSeekingFilter.START_DATE, beginDate);
+            setting.addOption(MetadataFColumnSeekingFilter.END_DATE, endDate);
+            bs.addScanIterator(setting);
+
+            for (Entry<Key,Value> entry : bs) {
+                isMissing = false;
+                break;
+            }
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return isMissing;
+    }
+
+    /**
+     * Determines if the field is missing within the date range by looking if a frequency row exists in the metadata table.
+     *
+     * @param field
+     *            the field
+     * @param datatypes
+     *            the datatypes
+     * @param beginDate
+     *            the start date
+     * @param endDate
+     *            the end date
+     * @return True/False if the field is missing.
+     */
+    public boolean isMissingField(String field, Set<String> datatypes, String beginDate, String endDate) {
+        return isMissingFields(Set.of(field), datatypes, beginDate, endDate);
+    }
+
+    /**
      * Build ranges for the {@link #getCountsForFieldsInDateRange(Set, Set, String, String)} method.
      * <p>
      * The {@link MetadataFColumnSeekingFilter} can handle a field range, but providing datatypes enables more precise ranges.

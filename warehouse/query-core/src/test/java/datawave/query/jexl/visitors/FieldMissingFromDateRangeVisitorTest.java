@@ -94,7 +94,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet("num", "text"), Sets.newHashSet());
     }
@@ -108,7 +108,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet("num", "text", "attr"), Sets.newHashSet());
     }
@@ -122,7 +122,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet(), Sets.newHashSet());
     }
@@ -136,7 +136,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet(), Sets.newHashSet());
     }
@@ -192,7 +192,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet("num", "attr"), Sets.newHashSet("GENDER"));
     }
@@ -207,7 +207,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet("num"), Sets.newHashSet());
     }
@@ -222,7 +222,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet("foo"), Sets.newHashSet("AGE", "GENDER", "JOB"));
     }
@@ -236,7 +236,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet("text"), Sets.newHashSet());
     }
@@ -264,7 +264,7 @@ public class FieldMissingFromDateRangeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
-        Date end = new Date(17357760000000L); // 01/02/2025 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
 
         runCheck(script, begin, end, Sets.newHashSet("foo"), Sets.newHashSet("GENDER"));
     }

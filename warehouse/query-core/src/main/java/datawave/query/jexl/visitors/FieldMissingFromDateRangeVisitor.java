@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -73,6 +74,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new LinkedHashSet<>() : (Set<String>) data;
         Set<String> fieldNamesToTestDateRange = new HashSet<>();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         List<ASTIdentifier> identifiers;
 
         int numChildren = node.jjtGetNumChildren();
@@ -98,10 +100,9 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
                 fieldNamesToTestDateRange.add(fieldName);
             }
         }
-        // Find the amount of times the fields have been ingested during the date range for all fields in the OR.
-        long occurrences = this.querySettings != null ? helper.getCountsForFieldsInDateRange(fieldNamesToTestDateRange, this.datatypeFilter,
-                        this.querySettings.getBeginDate(), this.querySettings.getEndDate()).values().stream().mapToLong(Long::longValue).sum() : 1;
-        if (occurrences < 1) {
+
+        if (!specialFields.containsAll(fieldNamesToTestDateRange) && helper.isMissingFields(fieldNamesToTestDateRange, datatypeFilter, formatter.format(this.querySettings.getBeginDate()),
+                        formatter.format(this.querySettings.getEndDate()))) {
             return nonExistentFieldNames.addAll(fieldNamesToTestDateRange);
         } else {
             return nonExistentFieldNames;
@@ -119,6 +120,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
         @SuppressWarnings("unchecked")
         Set<String> nonIngestedFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
         List<ASTIdentifier> identifiers;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 
         // A node could be literal == literal in terms of an identityQuery
         try {
@@ -135,10 +137,8 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
         for (ASTIdentifier identifier : identifiers) {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
-            long occurrences = this.querySettings != null
-                            ? helper.getCountsByFieldForDays(fieldName, this.querySettings.getBeginDate(), this.querySettings.getEndDate(), this.datatypeFilter)
-                            : 1;
-            if (!specialFields.contains(fieldName) && occurrences < 1) {
+            if (!specialFields.contains(fieldName) && helper.isMissingField(fieldName, datatypeFilter, formatter.format(this.querySettings.getBeginDate()),
+                            formatter.format(this.querySettings.getEndDate()))) {
                 nonIngestedFieldNames.add(fieldName);
             }
         }
@@ -191,15 +191,14 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         @SuppressWarnings("unchecked")
         Set<String> nonIngestedFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 
         for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
             // deconstruct the identifier
             final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-            long occurrences = this.querySettings != null
-                            ? helper.getCountsByFieldForDays(fieldName, this.querySettings.getBeginDate(), this.querySettings.getEndDate(), this.datatypeFilter)
-                            : 1;
             // changed to allow _ANYFIELD_ in functions
-            if (!specialFields.contains(fieldName) && occurrences < 1) {
+            if (!specialFields.contains(fieldName) && helper.isMissingField(testFieldName, datatypeFilter, formatter.format(this.querySettings.getBeginDate()),
+                            formatter.format(this.querySettings.getEndDate()))) {
                 nonIngestedFieldNames.add(testFieldName);
             }
         }
