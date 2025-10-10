@@ -241,4 +241,14 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         }
         return tableCaches;
     }
+
+    @Override
+    public boolean isAvailable() {
+        for (Entry<String,TableCache> entry : details.entrySet()) {
+            if (!entry.getValue().isAvailable()) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
