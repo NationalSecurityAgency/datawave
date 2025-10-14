@@ -29,7 +29,7 @@ public class ShardedDayIndexKeyParser extends AbstractIndexKeyParser {
 
     @Override
     public Key convert() {
-        if (isShardedYearKey()) {
+        if (isShardedDayKey()) {
             return key; // pass-through
         }
 

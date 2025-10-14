@@ -42,21 +42,57 @@ public abstract class AbstractIndexKeyParser implements IndexKeyParser {
         this.bitset = null;
     }
 
+    /**
+     * Standard shard index keys take the form
+     *
+     * <pre>
+     *     value FIELD:yyyyMMdd_shard0x00datatype (uid list)
+     * </pre>
+     *
+     * @return true if the key is a standard shard index key
+     */
     @Override
     public boolean isStandardKey() {
         return cqUnderscoreIndex != -1 && cqNullIndex != -1;
     }
 
+    /**
+     * Truncated shard index keys take the form
+     *
+     * <pre>
+     *     value FIELD:yyyyMMdd0x00datatype (bitset of shard offsets)
+     * </pre>
+     *
+     * @return true if the key is a truncated shard index key
+     */
     @Override
     public boolean isTruncatedKey() {
         return cqUnderscoreIndex == -1 && cqNullIndex == 8;
     }
 
+    /**
+     * Sharded day index keys take the form
+     *
+     * <pre>
+     *     yyyyMMdd0x00value FIELD:datatype (bitset of shard offsets)
+     * </pre>
+     *
+     * @return true if the key is a sharded index key
+     */
     @Override
     public boolean isShardedDayKey() {
         return rowNullIndex == 8 && cqUnderscoreIndex == -1 && cqNullIndex == -1;
     }
 
+    /**
+     * Sharded year index keys take the form
+     *
+     * <pre>
+     *     yyyy0x00value FIELD:datatype (bitset of day offsets)
+     * </pre>
+     *
+     * @return true if the key is a sharded year index key
+     */
     @Override
     public boolean isShardedYearKey() {
         return rowNullIndex == 4 && cqUnderscoreIndex == -1 && cqNullIndex == -1;
@@ -117,6 +153,15 @@ public abstract class AbstractIndexKeyParser implements IndexKeyParser {
         }
     }
 
+    /**
+     * The column qualifier may or may not contain a null byte or underscore depending on the type of index key.
+     * <p>
+     * A standard index key's column qualifier will always contain a null byte and an underscore
+     * <p>
+     * A truncated index key's column qualifier will always contain a null byte and never contain an underscore
+     * <p>
+     * A sharded day or year index key's column qualifier will never contain a null byte or an underscore
+     */
     protected void parseColumnQualifier() {
         cq = key.getColumnQualifier().toString();
         char[] charArray = cq.toCharArray();
