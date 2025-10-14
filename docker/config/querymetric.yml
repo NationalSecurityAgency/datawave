@@ -39,6 +39,30 @@ datawave:
   swagger:
     title: "Query Metric Service"
     description: "REST API provided by the Query Metric Service"
+  table:
+    cache:
+      enabled: true
+      tableNames:
+        - datawave.queryMetrics_m
+      pool-name: "WAREHOUSE"
+      reloadInterval: 360000
+      evictionReaperIntervalInSeconds: 360
+      numLocks: 3
+      maxRetries: 3
+      zookeepers: '${warehouse-cluster.accumulo.zookeepers}'
+  connection:
+    factory:
+      defaultPool: "WAREHOUSE"
+      pools:
+        "WAREHOUSE":
+          zookeepers: '${warehouse-cluster.accumulo.zookeepers}'
+          instance: '${warehouse-cluster.accumulo.instanceName}'
+          username: '${warehouse-cluster.accumulo.username}'
+          password: '${warehouse-cluster.accumulo.password}'
+          lowPriorityPoolSize: 40
+          normalPriorityPoolSize: 40
+          highPriorityPoolSize: 40
+          adminPriorityPoolSize: 40
   query:
     metric:
       system-name: "docker quick-start"
@@ -47,7 +71,6 @@ datawave:
         instanceName: ${warehouse-cluster.accumulo.instanceName}
         username: ${warehouse-cluster.accumulo.username}
         password: ${warehouse-cluster.accumulo.password}
-        accumuloClientPoolSize: 16
         mapStoreWriteThreads: 1
         numShards: 10
         fieldLengthThreshold: 4049
@@ -63,8 +86,6 @@ datawave:
         enableBloomFilter: false
         queryVisibility: PUBLIC
         defaultMetricVisibility: PUBLIC
-        defaultMetricMarkings:
-          columnVisibility: PUBLIC
         baseMaps: "{}"
         queryPool: "pool1"
       timely:

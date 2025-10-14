@@ -107,6 +107,9 @@ public class ShapesIngest {
 
     private static final LongCombiner.VarLenEncoder encoder = new LongCombiner.VarLenEncoder();
 
+    private static final DayIndexIngest dayIndexIngest = new DayIndexIngest();
+    private static final YearIndexIngest yearIndexIngest = new YearIndexIngest();
+
     protected static String normalizerForField(String field) {
         switch (field) {
             case "SHAPE":
@@ -621,6 +624,11 @@ public class ShapesIngest {
             m.put("ns", "20240101_1", new Value());
             bw.addMutation(m);
         }
+
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL");
+        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
     }
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, RangeType type, String datatype, String uid)

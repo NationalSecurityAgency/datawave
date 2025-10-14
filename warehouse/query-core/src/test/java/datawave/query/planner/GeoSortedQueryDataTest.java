@@ -184,7 +184,7 @@ public class GeoSortedQueryDataTest {
             record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
-            record.setDate(formatter.parse(BEGIN_DATE).getTime() + dates[i]);
+            record.setTimestamp(formatter.parse(BEGIN_DATE).getTime() + dates[i]);
             record.setRawData(wktData[i].getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));

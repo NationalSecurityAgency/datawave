@@ -240,7 +240,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
         } else if (formatters != null) {
             for (SimpleDateFormat format : formatters) {
                 try {
-                    event.setDate(format.parse(DateNormalizer.convertMicroseconds(fieldValue, format.toPattern())).getTime());
+                    event.setTimestamp(format.parse(DateNormalizer.convertMicroseconds(fieldValue, format.toPattern())).getTime());
                     if (logger.isDebugEnabled()) {
                         logger.debug("Parsed date from {} using formatter {}", fieldName, format.toPattern());
                     }
@@ -260,7 +260,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
             }
         } else if (formatter != null) {
             try {
-                event.setDate(formatter.parse(DateNormalizer.convertMicroseconds(fieldValue, formatter.toPattern())).getTime());
+                event.setTimestamp(formatter.parse(DateNormalizer.convertMicroseconds(fieldValue, formatter.toPattern())).getTime());
             } catch (java.text.ParseException e) {
                 logger.error("Error parsing date from hash record", e);
             }

@@ -112,6 +112,12 @@ public class DataDictionaryControllerV2<DESC extends DescriptionBase<DESC>,DICT 
         return dataDictionaryControllerLogic.retrieveBanner();
     }
 
+    @GetMapping(value = "/menu", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Timed(name = "dw.dictionary.data.menu", absolute = true)
+    public DataDictionaryProperties.HelpMenu menu() {
+        return dataDictionaryControllerLogic.retrieveMenu();
+    }
+
     @GetMapping(value = "/system", produces = MediaType.APPLICATION_JSON_VALUE)
     @Timed(name = "dw.dictionary.system", absolute = true)
     public DictionaryServiceProperties.System system() {

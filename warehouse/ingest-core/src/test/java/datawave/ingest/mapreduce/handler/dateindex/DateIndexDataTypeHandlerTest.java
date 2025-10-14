@@ -192,7 +192,7 @@ public class DateIndexDataTypeHandlerTest {
         event.setDataType(TypeRegistry.getType("testdatatype"));
         event.setSecurityMarkings(null);
         event.setVisibility(new ColumnVisibility("A&B"));
-        event.setDate(getTime(data));
+        event.setTimestamp(getTime(data));
         event.setRawFileName("DateIndexDataTypeHandlerTest.data");
         event.setRawRecordNumber(1l);
         event.setRawData(data.getBytes());
