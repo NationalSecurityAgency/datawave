@@ -22,7 +22,7 @@
         <version.datawave>7.1.3</version.datawave>
         <version.datawave.modification-api>1.0.0</version.datawave.modification-api>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
-        <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
         <version.zookeeper>3.8.0</version.zookeeper>
     </properties>
     <dependencyManagement>

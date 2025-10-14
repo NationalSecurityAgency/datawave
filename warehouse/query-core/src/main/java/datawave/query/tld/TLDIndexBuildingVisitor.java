@@ -65,7 +65,8 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
 
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
-        if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
+        if (!iterators.hasSeen(builder.getField(), builder.getValue())
+                        && (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField()))
                         && !excludeReferences.contains(builder.getField())) {
             iterators.addExclude(builder.build());
         } else {
@@ -164,7 +165,8 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         } else {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
-            if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
+            if (!iterators.hasSeen(builder.getField(), builder.getValue())
+                            && (includeReferences == null || includeReferences.isEmpty() || includeReferences.contains(builder.getField()))
                             && !excludeReferences.contains(builder.getField())) {
                 loadBuilder(builder, data, node);
                 iterators.addInclude(builder.build());

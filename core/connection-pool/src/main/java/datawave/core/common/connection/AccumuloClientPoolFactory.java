@@ -32,11 +32,11 @@ public class AccumuloClientPoolFactory implements PooledObjectFactory<AccumuloCl
         return new DefaultPooledObject<>(c);
     }
 
-    String getUsername() {
+    public String getUsername() {
         return username;
     }
 
-    String getPassword() {
+    public String getPassword() {
         return password;
     }
 

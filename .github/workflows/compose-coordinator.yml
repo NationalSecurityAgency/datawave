@@ -1,0 +1,39 @@
+name: Compose Coordinator
+
+on:
+  push:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    branches:
+      - 'integration'
+      - 'release/version*'
+  pull_request:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  call-compose-tests:
+    uses: ./.github/workflows/compose-tests.yml
+    with:
+      allow-snapshots: false
+    secrets: inherit
+  call-compose-tests-with-snapshots:
+    uses: ./.github/workflows/compose-tests.yml
+    with:
+      allow-snapshots: true
+    secrets: inherit
+  compose-check-jobs:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [call-compose-tests, call-compose-tests-with-snapshots]
+    steps:
+      - name: Status message
+        run: |
+             echo "compose-tests: ${{ needs.call-compose-tests.result }}"
+             echo "compose-tests-with-snapshots: ${{ needs.call-compose-tests-with-snapshots.result }}"
+      - name: Check a condition and fail if not met
+        if: ${{ !contains(needs.*.result, 'success') }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setFailed('Neither compose jobs passed');
