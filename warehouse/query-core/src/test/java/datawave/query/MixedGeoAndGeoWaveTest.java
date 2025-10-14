@@ -89,6 +89,8 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.DayIndexIngest;
+import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -225,7 +227,7 @@ public class MixedGeoAndGeoWaveTest {
             record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
-            record.setDate(formatter.parse(ingestDate).getTime());
+            record.setTimestamp(formatter.parse(ingestDate).getTime());
             record.setRawData((fieldName + data[i]).getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
@@ -235,7 +237,7 @@ public class MixedGeoAndGeoWaveTest {
                 if (entry.getValue().getError() == null)
                     fields.put(entry.getKey(), entry.getValue());
 
-            Multimap kvPairs = dataTypeHandler.processBulk(new Text(), record, fields, new MockStatusReporter());
+            Multimap<BulkIngestKey,Value> kvPairs = dataTypeHandler.processBulk(new Text(), record, fields, new MockStatusReporter());
 
             keyValues.putAll(kvPairs);
 
@@ -248,6 +250,12 @@ public class MixedGeoAndGeoWaveTest {
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 
         writeKeyValues(client, keyValues);
+
+        DayIndexIngest dayIndexIngest = new DayIndexIngest();
+        dayIndexIngest.convertToDayIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
+
+        YearIndexIngest yearIndexIngest = new YearIndexIngest();
+        yearIndexIngest.convertToYearIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
 
         return recNum;
     }

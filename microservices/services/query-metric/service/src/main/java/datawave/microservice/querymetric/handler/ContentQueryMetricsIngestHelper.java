@@ -94,7 +94,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
     }
 
     public static class HelperDelegate<T extends BaseQueryMetric> {
-        private Collection<String> ignoredFields = Collections.EMPTY_LIST;
+        private Collection<String> ignoredFields = Collections.emptyList();
 
         public HelperDelegate() {}
 

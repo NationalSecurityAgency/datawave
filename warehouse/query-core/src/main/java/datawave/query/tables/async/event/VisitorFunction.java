@@ -37,6 +37,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.util.TypeFilter;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
@@ -584,7 +585,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         if (opt == null) {
             requestedDatatypes = Collections.emptySet();
         } else {
-            requestedDatatypes = new HashSet<>(Splitter.on(',').splitToList(opt));
+            TypeFilter filter = TypeFilter.fromString(opt);
+            requestedDatatypes = filter.getElements();
         }
 
         // get existing types from the query

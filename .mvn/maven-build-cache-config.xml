@@ -26,6 +26,9 @@
         <enabled>true</enabled>
         <hashAlgorithm>SHA-256</hashAlgorithm>
         <validateXml>true</validateXml>
+         <remote enabled="false" id="cache-remote-server">
+            <url>http://localhost:8080</url>
+        </remote>
         <local>
             <maxBuildsCached>30</maxBuildsCached>
         </local>
@@ -43,13 +46,33 @@
                 <include>config/</include>
             </includes>
             <excludes>
-                <exclude>pom.xml</exclude>
                 <exclude>/dev/null</exclude>
                 <exclude>target/</exclude>
                 <exclude>**/*.log</exclude>
             </excludes>
         </global>
         <plugins>
+            <!-- Global exclusions for all plugins -->
+            <plugin artifactId="*">
+                <effectivePom>
+                    <excludeProperties>
+                        <excludeProperty>user.dir</excludeProperty>
+                        <excludeProperty>user.home</excludeProperty>
+                        <excludeProperty>user.name</excludeProperty>
+                        <excludeProperty>java.home</excludeProperty>
+                        <excludeProperty>java.class.path</excludeProperty>
+                        <excludeProperty>basedir</excludeProperty>
+                        <excludeProperty>project.basedir</excludeProperty>
+                        <excludeProperty>maven.build.timestamp</excludeProperty>
+                        <excludeProperty>os.name</excludeProperty>
+                        <excludeProperty>os.arch</excludeProperty>
+                        <excludeProperty>os.version</excludeProperty>
+                        <excludeProperty>file.separator</excludeProperty>
+                        <excludeProperty>path.separator</excludeProperty>
+                        <excludeProperty>line.separator</excludeProperty>
+                    </excludeProperties>
+                </effectivePom>
+            </plugin>
             <plugin artifactId="maven-surefire-plugin">
                 <effectivePom>
                     <excludeProperties>
