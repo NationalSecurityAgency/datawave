@@ -21,6 +21,8 @@ public final class TableName {
     public static final String SHARD_INDEX = "shardIndex";
     public static final String SHARD_RINDEX = "shardReverseIndex";
 
+    public static final String TRUNCATED_SHARD_INDEX = "truncatedShardIndex";
+
     // global primary index
     public static final String SHARD_YEAR_INDEX = "shardYearIndex";
 

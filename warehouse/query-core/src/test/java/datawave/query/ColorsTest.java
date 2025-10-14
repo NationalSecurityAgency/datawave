@@ -58,14 +58,13 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.ColorsIngest;
-import datawave.query.util.DayIndexIngest;
-import datawave.query.util.YearIndexIngest;
 import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -111,6 +110,8 @@ public abstract class ColorsTest {
 
     private final HitTermAssertions assertHitTerms = new HitTermAssertions();
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @RunWith(Arquillian.class)
     public static class ShardRange extends ColorsTest {
         protected static AccumuloClient client = null;
@@ -124,11 +125,7 @@ public abstract class ColorsTest {
 
             Authorizations auths = new Authorizations("ALL");
 
-            DayIndexIngest dayIndexIngest = new DayIndexIngest();
-            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-
-            YearIndexIngest yearIndexIngest = new YearIndexIngest();
-            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+            ingestUtil.write(client, auths);
 
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
@@ -154,11 +151,7 @@ public abstract class ColorsTest {
 
             Authorizations auths = new Authorizations("ALL");
 
-            DayIndexIngest dayIndexIngest = new DayIndexIngest();
-            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-
-            YearIndexIngest yearIndexIngest = new YearIndexIngest();
-            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+            ingestUtil.write(client, auths);
 
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
