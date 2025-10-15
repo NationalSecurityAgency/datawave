@@ -493,8 +493,45 @@
         <property name="uuidTypes" ref="UUIDTypeList" />
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
-    <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
 
+    <util:map id="DefaultUUIDQueryLogics">
+        <entry key="default" value="LuceneUUIDEventQuery"/>
+    </util:map>
+
+    <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
+        <bean class="datawave.query.data.UUIDType">
+            <property name="fieldName" value="ID" />
+            <property name="queryLogics" ref="DefaultUUIDQueryLogics" />
+        </bean>
+        <bean class="datawave.query.data.UUIDType">
+            <property name="fieldName" value="EMBEDDED_CAST_PERSON_ID" />
+            <property name="queryLogics">
+              <util:map>
+                <entry key="default" value="LuceneUUIDEventQuery"/>
+              </util:map>
+            </property>
+        </bean>
+        <bean class="datawave.query.data.UUIDType">
+            <property name="fieldName" value="EVENT_ID" />
+            <property name="queryLogics" ref="DefaultUUIDQueryLogics" />
+            <property name="allowWildcardAfter" value="28" />
+        </bean>
+        <bean class="datawave.query.data.UUIDType">
+            <property name="fieldName" value="UUID" />
+            <property name="queryLogics" ref="DefaultUUIDQueryLogics" />
+        </bean>
+        <bean class="datawave.query.data.UUIDType">
+            <property name="fieldName" value="PARENT_UUID" />
+            <property name="queryLogics" ref="DefaultUUIDQueryLogics" />
+        </bean>
+        <bean class="datawave.query.data.UUIDType">
+            <property name="fieldName" value="PAGE_ID" />
+            <property name="queryLogics" ref="DefaultUUIDQueryLogics" />
+        </bean>
+        <bean class="datawave.query.data.UUIDType">
+            <property name="fieldName" value="PAGE_TITLE" />
+            <property name="queryLogics" ref="DefaultUUIDQueryLogics" />
+        </bean>
     </util:list>
 
     <!--<bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">-->

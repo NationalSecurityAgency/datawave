@@ -8,11 +8,13 @@ import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 
 /**
  * Configures JSON serialization via Jackson to honor JAXB annotations. This provider must be listed in the value of a {@code resteasy.providers} servlet
@@ -34,6 +36,9 @@ public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
         final SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(MultivaluedMap.class, new MultivaluedMapDeserializer());
         mapper.registerModule(simpleModule);
+
+        mapper.registerModule(new ProtobufModule());
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override
