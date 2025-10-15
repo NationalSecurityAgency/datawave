@@ -84,11 +84,11 @@ public class AnnotationManagerBean implements AnnotationManager {
     @SpringBean(name = "AnnotationManagerConfig")
     private AnnotationManagerConfig config;
 
-    // Stateful variables, managed locally.
-    Set<Authorizations> authorizations;
-    AccumuloClient client;
-    LookupUUIDService lookupUUIDService;
-    AnnotationDataAccess annotationDataAccess;
+    // Per-request stateful variables, managed internally.
+    private Set<Authorizations> authorizations;
+    private AccumuloClient client;
+    private LookupUUIDService lookupUUIDService;
+    private AnnotationDataAccess annotationDataAccess;
 
     @VisibleForTesting
     public void setEJBContext(EJBContext ctx) {
@@ -276,7 +276,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @POST
     @Path("/{idType}/{id}/annotation")
     @Produces("application/json")
-    // TODO: @RolesAllowed({"AnnotationWriter"})
+    @RolesAllowed({"AnnotationWriter"})
     @Override
     public Response addAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, String body) {
         try {
@@ -331,7 +331,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @PUT
     @Path("/{idType}/{id}/annotation/{annotationId}")
     @Produces("application/json")
-    // TODO: @RolesAllowed({"AnnotationWriter"})
+    @RolesAllowed({"AnnotationWriter"})
     @Override
     public Response updateAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     String body) {
@@ -491,15 +491,25 @@ public class AnnotationManagerBean implements AnnotationManager {
      *             if the id is malformed.
      */
     private Metadata lookupDocumentIdentifier(String idType, String id) throws QueryException {
-        // TODO: if the idType is CONTENT or DOCUMENT, assume that the id provided is an internal id, otherwise
-        if (idType.equals("DOCUMENT")) {
+        if (idType.equals("DOCUMENT") || idType.equals("RECORD_ID")) {
+            // If the idType is RECORD_ID or DOCUMENT treat the id provided is an internal id.
             return parseDocumentIdentifier(id);
         } else {
+            // Otherwise, perform a lookup to find the internal id.
             final LookupUUIDService lookup = initializeLookupUUIDService();
             return lookup.executeLookupUUIDQuery(idType, id);
         }
     }
 
+    /**
+     * Parse an identifier that is expected to be in the shardId/datatype/eventUID format into a Metadata object
+     *
+     * @param identifier
+     *            the identifier to parse
+     * @return the corresponding Metadata object
+     * @throws IllegalArgumentException
+     *             if the identifier is not in the expected shardId/datatype/eventUID format.
+     */
     private Metadata parseDocumentIdentifier(String identifier) {
         final String[] parts = identifier.split("/");
         if (parts.length != 3) {
