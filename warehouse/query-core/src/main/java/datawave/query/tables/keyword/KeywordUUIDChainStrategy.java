@@ -41,7 +41,7 @@ public class KeywordUUIDChainStrategy extends FullChainStrategy<Entry<Key,Value>
             public boolean hasNext() {
                 while (batchIterator == null || (!batchIterator.hasNext() && initialQueryResults.hasNext())) {
                     try {
-                        StatefulKeywordUUIDChainStrategy statefulChainStrategy = new StatefulKeywordUUIDChainStrategy(initialQuery);
+                        StatefulKeywordUUIDChainStrategy statefulChainStrategy = new StatefulKeywordUUIDChainStrategy(initialQuery, latterQueryLogic);
                         statefulChainStrategy.setBatchSize(batchSize);
                         batchIterator = statefulChainStrategy.runChainedQuery(client, initialQuery, auths, initialQueryResults, latterQueryLogic);
                     } catch (Exception e) {

@@ -1,8 +1,10 @@
 package datawave.query.tables.keyword;
 
+import static datawave.query.tables.keyword.KeywordQueryLogic.TAG_CLOUD_FIELDS;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.newCapture;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -10,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,6 +67,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         d.put("LANGUAGE", new TypeAttribute<>(new NoOpType(language), documentKey, true));
         d.put("HIT_TERM", new Content(identifier, documentKey, true));
+        d.put("FOO", new TypeAttribute<>(new NoOpType("x"), documentKey, true));
+        d.put("BAR", new TypeAttribute<>(new NoOpType("y"), documentKey, true));
 
         Entry<Key,Document> entry = Map.entry(documentKey, d);
 
@@ -88,7 +93,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
 
-        /* don't expect _anything_ to happen here */
+        mockLogic.setFieldedKeywordResults(new HashMap<>());
 
         replayAll();
 
@@ -117,6 +122,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+        mockLogic.setFieldedKeywordResults(new HashMap<>());
 
         replayAll();
 
@@ -169,6 +175,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+        mockLogic.setFieldedKeywordResults(new HashMap<>());
 
         replayAll();
 
@@ -234,6 +241,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+        mockLogic.setFieldedKeywordResults(new HashMap<>());
 
         replayAll();
 
@@ -267,6 +275,81 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
             assertEquals("ENGLISH", keywordResults.getLanguage());
             assertNotNull(keywordResults.getKeywords().get("bird"));
         }
+    }
+
+    @Test
+    public void singleFieldedTest() throws Exception {
+        settings.addParameter(TAG_CLOUD_FIELDS, "FOO,BAR");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"));
+
+        LinkedHashMap<String,Double> results = new LinkedHashMap<>();
+        results.put("cat", 0.2);
+        results.put("cat food", 0.3);
+        results.put("dog", 0.4);
+
+        List<Entry<Key,Value>> intermediateInput = List
+                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+        Capture<Query> intermediateSettings = Capture.newInstance();
+
+        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
+        mockLogic.setupQuery(eq(mockConfig));
+        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+
+        Capture<Map<String,List<KeywordResults>>> fieldedKeywordResultsMap = newCapture();
+        mockLogic.setFieldedKeywordResults(capture(fieldedKeywordResultsMap));
+
+        replayAll();
+
+        Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+
+        assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ENGLISH", intermediateSettings.getValue().getQuery());
+
+        assertTrue(result.hasNext());
+        Entry<Key,Value> next = result.next();
+
+        assertEquals("20250412 d:test%00;-cvy0gj.tlf59s.-duxzua%00;CONTENT [] 9223372036854775807 false", next.getKey().toString());
+
+        KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
+        assertEquals("PAGE_ID:12345", keywordResults.getSource());
+        assertEquals("CONTENT", keywordResults.getView());
+        assertEquals("ENGLISH", keywordResults.getLanguage());
+        assertEquals("PUBLIC", keywordResults.getVisibility());
+
+        assertNotNull(keywordResults.getKeywords().get("cat"));
+
+        assertFalse(result.hasNext());
+
+        Map<String,List<KeywordResults>> capturedMap = fieldedKeywordResultsMap.getValue();
+        assertNotNull(capturedMap);
+        assertEquals(2, capturedMap.keySet().size());
+        List<KeywordResults> fooResults = capturedMap.get("FOO");
+        List<KeywordResults> barResults = capturedMap.get("BAR");
+        assertNotNull(fooResults);
+        assertNotNull(barResults);
+        assertEquals(1, fooResults.size());
+        assertEquals(1, barResults.size());
+        assertEquals(1, fooResults.get(0).getKeywordCount());
+        assertEquals("event:FOO", fooResults.get(0).getView());
+        assertEquals("20250412/test/-cvy0gj.tlf59s.-duxzua", fooResults.get(0).getSource());
+        assertEquals("FOO", fooResults.get(0).getLanguage());
+        Map<String,Double> keywords = fooResults.get(0).getKeywords();
+        assertNotNull(keywords);
+        assertEquals(1, keywords.size());
+        assertEquals(Double.valueOf(1), keywords.get("x"));
+
+        assertEquals(1, barResults.get(0).getKeywordCount());
+        assertEquals("event:BAR", barResults.get(0).getView());
+        assertEquals("20250412/test/-cvy0gj.tlf59s.-duxzua", barResults.get(0).getSource());
+        assertEquals("BAR", barResults.get(0).getLanguage());
+        keywords = barResults.get(0).getKeywords();
+        assertNotNull(keywords);
+        assertEquals(1, keywords.size());
+        assertEquals(Double.valueOf(1), keywords.get("y"));
     }
 
 }
