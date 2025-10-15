@@ -37,7 +37,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.jboss.resteasy.annotations.GZIP;
@@ -46,7 +45,6 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.management.OperatingSystemMXBean;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.result.GenericResponse;
@@ -59,7 +57,6 @@ import datawave.webservice.result.GenericResponse;
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @MBean
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class HealthBean {
     private static final Logger LOG = LoggerFactory.getLogger(HealthBean.class);
     private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();

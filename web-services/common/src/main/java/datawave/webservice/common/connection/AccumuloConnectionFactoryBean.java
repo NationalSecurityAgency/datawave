@@ -29,13 +29,11 @@ import javax.ws.rs.Produces;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
@@ -62,7 +60,6 @@ import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration
 // transactions not supported directly by this bean
 @Lock(LockType.READ)
 @MBean
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory {
 
     private Logger log = Logger.getLogger(this.getClass());
