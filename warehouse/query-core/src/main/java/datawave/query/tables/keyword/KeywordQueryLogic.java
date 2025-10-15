@@ -1,9 +1,14 @@
 package datawave.query.tables.keyword;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+<<<<<<< HEAD
 import java.util.LinkedList;
+=======
+import java.util.Iterator;
+>>>>>>> 08ea60dba2 (WIP: first cut, push data to TagCloudTransformer)
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -102,12 +107,19 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     public static final String PARENT_ONLY = "\1";
     public static final String ALL = "\u10FFFF";
 
+    /**
+     * Fields that will be extracted from events for inclusion in the tag cloud, may be comma-delimited or null/empty
+     */
+    public static final String TAG_CLOUD_FIELDS = "tag.cloud.fields";
+
     private int queryThreads = 100;
 
     @VisibleForTesting
     protected ScannerFactory scannerFactory;
 
     private KeywordQueryConfiguration config;
+
+    private Map<String,List<KeywordResults>> fieldedKeywordResults;;
 
     public KeywordQueryLogic() {
         super();
@@ -243,7 +255,34 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                             config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
             scanner.addScanIterator(cfg);
 
-            this.iterator = scanner.iterator();
+            // TODO alternate tie in for the external fieldedKeywordResults, may be necessary to deal with empty results from the views, then its transparent to
+            // the TagCloudTransformer
+            // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
+            final Iterator<Entry<Key,Value>> scanIterator = scanner.iterator();
+            this.iterator = new Iterator<>() {
+                private boolean padResults = !scanIterator.hasNext();
+
+                @Override
+                public boolean hasNext() {
+                    return padResults || scanIterator.hasNext();
+                }
+
+                @Override
+                public Entry<Key,Value> next() {
+                    if (padResults) {
+                        padResults = false;
+                        try {
+                            return Map.entry(new Key(), new Value(KeywordResults.serialize(new KeywordResults())));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    return scanIterator.next();
+                }
+            };
+
+            // this.iterator = scanner.iterator();
             this.scanner = scanner;
 
         } catch (TableNotFoundException e) {
@@ -361,7 +400,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public QueryLogicTransformer<Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
-        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory);
+        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory, fieldedKeywordResults);
     }
 
     @Override
@@ -501,6 +540,14 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         scannerFactory = new ScannerFactory(client);
 
         setupQuery(contentQueryConfig);
+    }
+
+    public void setFieldedKeywordResults(Map<String,List<KeywordResults>> fieldedKeywordResults) {
+        this.fieldedKeywordResults = fieldedKeywordResults;
+    }
+
+    public Map<String,List<KeywordResults>> getFieldedKeywordResults() {
+        return this.fieldedKeywordResults;
     }
 
     /**

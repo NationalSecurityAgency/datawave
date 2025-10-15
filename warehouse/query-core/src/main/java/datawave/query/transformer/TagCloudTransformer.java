@@ -3,6 +3,7 @@ package datawave.query.transformer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -32,12 +33,15 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;
     protected final KeywordQueryState state;
+    private final Map<String,List<KeywordResults>> fieldedKeywordResults;
 
-    public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
+                    Map<String,List<KeywordResults>> fieldedKeywordResults) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
         this.state = state;
+        this.fieldedKeywordResults = fieldedKeywordResults;
     }
 
     /**
@@ -84,12 +88,34 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
      */
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
-        //@formatter:off
         final List<KeywordResults> keywordResultsList = resultList.stream().map(o -> (KeywordResults) o).collect(Collectors.toList());
-        return state.isGenerateCloud() ?
-                createMergedCloudResponse(keywordResultsList) :
-                createIndividualCloudResponse(keywordResultsList);
-        //@formatter:on
+        List<TagCloud> tagClouds = new ArrayList<>();
+        if (fieldedKeywordResults != null) {
+            for (String field : fieldedKeywordResults.keySet()) {
+                tagClouds.addAll(buildTagCloud(state.isGenerateCloud(), fieldedKeywordResults.get(field)));
+            }
+        }
+        tagClouds.addAll(buildTagCloud(state.isGenerateCloud(), keywordResultsList));
+
+        return generateTagCloudResponse(tagClouds);
+    }
+
+    private List<TagCloud> buildTagCloud(boolean merged, List<KeywordResults> resultList) {
+        List<TagCloud> results = new ArrayList<>();
+        TagCloud.Builder builder = getTagCloudBuilder().withComparator(TagCloudEntry.ORDER_BY_FREQUENCY);
+        for (KeywordResults result : resultList) {
+            builder.addResults(result);
+            if (!merged) {
+                results.addAll(builder.build());
+                builder = getTagCloudBuilder().withComparator(TagCloudEntry.ORDER_BY_FREQUENCY);
+            }
+        }
+
+        if (merged) {
+            results.addAll(builder.build());
+        }
+
+        return results;
     }
 
     /**

@@ -1,7 +1,14 @@
 package datawave.query.tables.keyword;
 
+import static datawave.query.jexl.JexlASTHelper.deconstructIdentifier;
+import static datawave.query.tables.keyword.KeywordQueryLogic.TAG_CLOUD_FIELDS;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.DocumentSerialization;
@@ -22,6 +30,8 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.tables.chained.strategy.FullChainStrategy;
+import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TokenScore;
 
 /**
  * Strategy for chaining UUID lookup and keyword extraction queries together. Grabs the results of the lookupUUID query and uses these to generate the query
@@ -33,9 +43,20 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
 
     private int batchSize = -1;
     protected DocumentDeserializer deserializer;
+    private final QueryLogic<Entry<Key,Value>> nextLogic;
 
-    public StatefulKeywordUUIDChainStrategy(Query settings) {
+    private final List<String> tagCloudFields;
+
+    public StatefulKeywordUUIDChainStrategy(Query settings, QueryLogic<Entry<Key,Value>> nextLogic) {
         this.deserializer = DocumentSerialization.getDocumentDeserializer(settings);
+        this.nextLogic = nextLogic;
+
+        tagCloudFields = new ArrayList<>();
+        QueryImpl.Parameter tagCloudFieldsParam = settings.findParameter(TAG_CLOUD_FIELDS);
+        if (tagCloudFieldsParam != null) {
+            String[] fields = tagCloudFieldsParam.getParameterValue().split(",");
+            tagCloudFields.addAll(Arrays.asList(fields));
+        }
     }
 
     public int getBatchSize() {
@@ -45,6 +66,17 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
     }
+
+    // @Override
+    // public Iterator<Entry<Key,Value>> runChainedQuery(AccumuloClient client, Query initialQuery, Set<Authorizations> auths,
+    // Iterator<Entry<Key,Value>> initialQueryResults, QueryLogic<Entry<Key,Value>> latterQueryLogic) throws Exception {
+    // // TODO maybe interface this? not sure we really have many use cases for this concept
+    // if (latterQueryLogic instanceof KeywordQueryLogic) {
+    // KeywordQueryLogic keywordQueryLogic = (KeywordQueryLogic) latterQueryLogic;
+    // keywordQueryLogic.setFieldedKeywordResults(fieldedKeywordResults);
+    // }
+    // return super.runChainedQuery(client, initialQuery, auths, initialQueryResults, latterQueryLogic);
+    // }
 
     @Override
     protected Query buildLatterQuery(Query initialQuery, Iterator<Entry<Key,Value>> initialQueryResults, String latterLogicName) {
@@ -98,6 +130,9 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
      */
     public String captureResultsAndBuildQuery(Iterator<Entry<Key,Value>> initialQueryResults, int batchSize) {
         int count = 0;
+
+        Map<String,List<KeywordResults>> fieldedKeywordResults = new HashMap<>();
+
         Set<String> queryTerms = new HashSet<>();
         while (initialQueryResults.hasNext() && (batchSize == -1 || count < batchSize)) {
             Entry<Key,Value> entry = initialQueryResults.next();
@@ -119,16 +154,36 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
 
             List<String> identifiers = null;
             List<String> languages = null;
+            String docId = row + "/" + dataType + "/" + uid;
 
+            Map<String,List<TokenScore>> fieldLabels = new HashMap<>();
             for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
                 if (data.getKey().equals("LANGUAGE")) {
                     languages = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
                 } else if (data.getKey().equals("HIT_TERM")) {
                     identifiers = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
+                } else {
+                    String baseField = deconstructIdentifier(data.getKey());
+                    if (tagCloudFields.contains(baseField)) {
+                        List<String> labels = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
+                        List<TokenScore> existing = fieldLabels.computeIfAbsent(baseField, k -> new ArrayList<>());
+
+                        // TODO pull a score (if configured) and remove anything below the threshold
+                        labels.forEach(label -> existing.add(new TokenScore(label, 1.0f)));
+                    }
                 }
             }
 
-            String queryTerm = "DOCUMENT:" + row + "/" + dataType + "/" + uid;
+            // build up the results for each field found
+            for (String field : fieldLabels.keySet()) {
+                List<TokenScore> labels = fieldLabels.get(field);
+                LinkedHashMap<String,Double> mapped = new LinkedHashMap<>();
+                labels.forEach(label -> mapped.put(label.getToken(), label.getScore()));
+                KeywordResults kr = new KeywordResults(docId, "event:" + field, field, entry.getKey().getColumnVisibility().toString(), mapped);
+                fieldedKeywordResults.computeIfAbsent(field, k -> new ArrayList<>()).add(kr);
+            }
+
+            String queryTerm = "DOCUMENT:" + docId;
             String language, identifier;
             if (((identifier = KeywordQueryUtil.chooseBestIdentifier(identifiers)) != null)) {
                 if (log.isTraceEnabled()) {
@@ -150,6 +205,11 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
 
             queryTerms.add(queryTerm);
             count++;
+        }
+
+        if (nextLogic instanceof KeywordQueryLogic) {
+            KeywordQueryLogic keywordQueryLogic = (KeywordQueryLogic) nextLogic;
+            keywordQueryLogic.setFieldedKeywordResults(fieldedKeywordResults);
         }
 
         return queryTerms.isEmpty() ? null : StringUtils.join(queryTerms, " ");
