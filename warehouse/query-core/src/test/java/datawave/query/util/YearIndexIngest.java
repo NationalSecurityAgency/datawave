@@ -37,7 +37,7 @@ import datawave.util.time.DateHelper;
  */
 public class YearIndexIngest extends AbstractIndexIngest {
 
-    private final static Logger log = LoggerFactory.getLogger(YearIndexIngest.class);
+    private static final Logger log = LoggerFactory.getLogger(YearIndexIngest.class);
 
     private final ShardIndexKey parser = new ShardIndexKey();
 

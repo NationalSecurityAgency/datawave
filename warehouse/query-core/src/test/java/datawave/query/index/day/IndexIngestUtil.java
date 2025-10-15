@@ -4,6 +4,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.query.util.DayIndexIngest;
+import datawave.query.util.NoUidIndexIngest;
+import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 
@@ -12,6 +14,7 @@ import datawave.util.TableName;
  */
 public class IndexIngestUtil {
 
+    private String noUidIndexTableName = TestIndexTableNames.NO_UID_INDEX;
     private String truncatedIndexTableName = TableName.TRUNCATED_SHARD_INDEX;
     private String shardedDayIndexTableName = TableName.SHARD_DAY_INDEX;
     private String shardedYearIndexTableName = TableName.SHARD_YEAR_INDEX;
@@ -25,13 +28,19 @@ public class IndexIngestUtil {
     }
 
     public void write(AccumuloClient client, Authorizations auths, String source) {
+        NoUidIndexIngest noUidIndex = new NoUidIndexIngest();
         TruncatedIndexIngest truncatedIndex = new TruncatedIndexIngest();
         DayIndexIngest shardedDayIndex = new DayIndexIngest();
         YearIndexIngest shardedYearIndex = new YearIndexIngest();
 
+        noUidIndex.convert(client, auths, source, noUidIndexTableName);
         truncatedIndex.convert(client, auths, source, truncatedIndexTableName);
         shardedDayIndex.convert(client, auths, source, shardedDayIndexTableName);
         shardedYearIndex.convert(client, auths, source, shardedYearIndexTableName);
+    }
+
+    public void setNoUidIndexTableName(String noUidIndexTableName) {
+        this.noUidIndexTableName = noUidIndexTableName;
     }
 
     public void setTruncatedIndexTableName(String truncatedIndexTableName) {

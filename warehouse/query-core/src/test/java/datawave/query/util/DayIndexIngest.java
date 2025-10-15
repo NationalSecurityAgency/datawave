@@ -34,7 +34,7 @@ import datawave.query.index.day.AbstractIndexIngest;
  */
 public class DayIndexIngest extends AbstractIndexIngest {
 
-    private final static Logger log = LoggerFactory.getLogger(DayIndexIngest.class);
+    private static final Logger log = LoggerFactory.getLogger(DayIndexIngest.class);
 
     private final ShardIndexKey parser = new ShardIndexKey();
 
