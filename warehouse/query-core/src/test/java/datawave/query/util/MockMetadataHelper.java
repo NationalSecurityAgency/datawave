@@ -73,6 +73,10 @@ public class MockMetadataHelper extends MetadataHelper {
                         Collections.emptySet());
     }
 
+    public MockMetadataHelper(Set<Authorizations> allMetadataAuths, Set<Authorizations> auths) {
+        super(createAllFieldMetadataHelper(getClient()), allMetadataAuths, getClient(), TableName.METADATA, auths, Collections.emptySet());
+    }
+
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
         final Set<Authorizations> allMetadataAuths = Collections.emptySet();
         final Set<Authorizations> auths = Collections.emptySet();
@@ -142,6 +146,10 @@ public class MockMetadataHelper extends MetadataHelper {
 
     public void addTermFrequencyFields(Collection<String> fields) {
         getMetadata().termFrequencyFields.addAll(fields);
+    }
+
+    public AccumuloClient getAccumuloClient() {
+        return this.accumuloClient;
     }
 
     @Override

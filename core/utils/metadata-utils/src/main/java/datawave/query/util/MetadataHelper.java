@@ -1693,7 +1693,7 @@ public class MetadataHelper {
     }
 
     /**
-     * Determines if fields across the date range are missing by determining if a frequency row exists in the metadata table.
+     * Get fields that have not been ingested within the date range (start and end dates are inclusive).
      *
      * @param fields
      *            the fields
@@ -1703,13 +1703,23 @@ public class MetadataHelper {
      *            the start date
      * @param endDate
      *            the end date
-     * @return True/False if all fields are missing in the provided date range.
+     * @return a set of missing fields from the given date range
      */
-    public boolean isMissingFields(Set<String> fields, Set<String> datatypes, String beginDate, String endDate) {
-
+    public Set<String> getMissingFieldsInDateRange(Set<String> fields, Set<String> datatypes, String beginDate, String endDate) throws TableNotFoundException {
         SortedSet<String> sortedDatatypes = new TreeSet<>(datatypes);
-        Set<Range> ranges = createFieldCountRanges(fields, sortedDatatypes, beginDate, endDate);
-        boolean isMissing = true;
+        Set<String> foundFields = new HashSet<>();
+        Set<Range> ranges = createExactFieldCountRanges(fields);
+        StringBuilder dataTypeRegex = new StringBuilder();
+
+        int index = 0;
+        for (String dataType : sortedDatatypes) {
+            if (index < sortedDatatypes.size() - 1) {
+                dataTypeRegex.append(dataType).append("\u0000.*").append("|");
+                index++;
+            } else {
+                dataTypeRegex.append(dataType).append("\u0000.*");
+            }
+        }
 
         AccumuloClient client = accumuloClient;
         if (client instanceof WrappedAccumuloClient) {
@@ -1717,41 +1727,28 @@ public class MetadataHelper {
         }
 
         try (BatchScanner bs = ScannerHelper.createBatchScanner(client, getMetadataTableName(), getAuths(), fields.size())) {
-
+            IteratorSetting regexIter = new IteratorSetting(50, "regexFilter", RegExFilter.class);
+            if (!dataTypeRegex.toString().isEmpty()) {
+                regexIter.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
+            }
             bs.setRanges(ranges);
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
-
-            IteratorSetting setting = new IteratorSetting(50, "MetadataFrequencySeekingIterator", MetadataFColumnSeekingFilter.class);
-            setting.addOption(MetadataFColumnSeekingFilter.DATATYPES_OPT, Joiner.on(',').join(sortedDatatypes));
-            setting.addOption(MetadataFColumnSeekingFilter.START_DATE, beginDate);
-            setting.addOption(MetadataFColumnSeekingFilter.END_DATE, endDate);
-            bs.addScanIterator(setting);
+            bs.addScanIterator(regexIter);
 
             for (Entry<Key,Value> entry : bs) {
-                isMissing = false;
-                break;
+                try {
+                    DateFrequencyMap map = new DateFrequencyMap(entry.getValue().get());
+                    if (!map.subMap(beginDate, endDate).isEmpty()) {
+                        foundFields.add(entry.getKey().getRow().toString());
+                    }
+                } catch (IOException e) {
+                    log.trace("Could not convert the Value to a DateFrequencyMap: {}", entry.getValue());
+                    log.error("Failed to convert Value to DateFrequencyMap", e);
+                }
             }
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
-        return isMissing;
-    }
-
-    /**
-     * Determines if the field is missing within the date range by looking if a frequency row exists in the metadata table.
-     *
-     * @param field
-     *            the field
-     * @param datatypes
-     *            the datatypes
-     * @param beginDate
-     *            the start date
-     * @param endDate
-     *            the end date
-     * @return True/False if the field is missing.
-     */
-    public boolean isMissingField(String field, Set<String> datatypes, String beginDate, String endDate) {
-        return isMissingFields(Set.of(field), datatypes, beginDate, endDate);
+        return Sets.difference(fields, foundFields);
     }
 
     /**
@@ -1782,6 +1779,21 @@ public class MetadataHelper {
                 Key end = new Key(field, "f", datatypes.last() + '\u0000' + endDate + '\u0000');
                 ranges.add(new Range(start, true, end, false));
             }
+        }
+        return ranges;
+    }
+
+    /**
+     * Build ranges for the {@link #getMissingFieldsInDateRange(Set, Set, String, String)} method.
+     *
+     * @param fields
+     *            the fields
+     * @return a set of exact ranges for the provided fields.
+     */
+    private Set<Range> createExactFieldCountRanges(Set<String> fields) {
+        Set<Range> ranges = new HashSet<>();
+        for (String field : fields) {
+            ranges.add(Range.exact(field, "f"));
         }
         return ranges;
     }

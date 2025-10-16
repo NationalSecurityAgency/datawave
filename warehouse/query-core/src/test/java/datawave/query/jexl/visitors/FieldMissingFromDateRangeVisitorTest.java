@@ -4,13 +4,11 @@ import static datawave.data.ColumnFamilyConstants.COLF_F;
 import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -20,69 +18,52 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
-import org.junit.jupiter.api.AfterEach;
+import org.apache.hadoop.io.WritableUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.query.Query;
-import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.AllFieldMetadataHelper;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.TypeMetadataHelper;
+import datawave.query.model.DateFrequencyMap;
+import datawave.query.util.MockMetadataHelper;
+import datawave.util.TableName;
 
 public class FieldMissingFromDateRangeVisitorTest {
-    private MetadataHelper helper;
-    private Query querySettings;
-    private AccumuloClient accumuloClient;
-
-    // Special fields required by visitor.
-    private final Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
-    private final List<Mutation> mutations = new ArrayList<>();
-
-    private static final String TABLE_METADATA = "metadata";
     private static final String[] AUTHS = {"FOO", "BAR"};
     private static final Set<Authorizations> AUTHS_SET = Collections.singleton(new Authorizations(AUTHS));
     private static final String NULL_BYTE = "\0";
+    private static final String AGGREGATED = "AGG";
+    private final MockMetadataHelper helper = new MockMetadataHelper(AUTHS_SET, AUTHS_SET);
+    private final List<Mutation> mutations = new ArrayList<>();
+    private Query querySettings;
+
+    // Special fields required by visitor.
+    private final Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
 
     @BeforeEach
     public void setUp() throws Exception {
-        File dir = new File(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource(".")).toURI());
-        File targetDir = dir.getParentFile();
-        System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
-
         querySettings = Mockito.mock(Query.class);
-        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance(FieldMissingFromDateRangeVisitorTest.class.toString()));
-        if (!accumuloClient.tableOperations().exists(TABLE_METADATA)) {
-            accumuloClient.tableOperations().create(TABLE_METADATA);
+        if (!helper.getAccumuloClient().tableOperations().exists(TableName.METADATA)) {
+            helper.getAccumuloClient().tableOperations().create(TableName.METADATA);
         }
-        helper = new MetadataHelper(createAllFieldMetadataHelper(accumuloClient), AUTHS_SET, accumuloClient, TABLE_METADATA, AUTHS_SET, AUTHS_SET);
 
-        givenNonAggregatedRow("AGE", COLF_F, "num", "FOO", 1500000004L, "20210101", 1L);
-        givenNonAggregatedRow("AGE", COLF_F, "lifetime", "FOO", 1500000004L, "20220101", 1L);
-        givenNonAggregatedRow("AGE", COLF_F, "var", "BAR", 1500000004L, "20230101", 1L);
-        givenNonAggregatedRow("GENDER", COLF_F, "text", "FOO", 1500000004L, "20240101", 1L);
-        givenNonAggregatedRow("JOB", COLF_F, "attr", "FOO", 1500000004L, "20250101", 1L);
+        givenAggregatedRow("AGE", COLF_F, "num", "FOO", 1499999999L, createDateFrequencyMap("20210101", 40L, "20210102", 15L, "20210103", 20L));
+        givenAggregatedRow("AGE", COLF_F, "lifetime", "FOO", 1499999999L, createDateFrequencyMap("20220101", 40L, "20220102", 15L, "20220103", 20L));
+        givenAggregatedRow("AGE", COLF_F, "var", "BAR", 1499999999L, createDateFrequencyMap("20230101", 40L, "20230102", 15L, "20230103", 20L));
+        givenAggregatedRow("GENDER", COLF_F, "text", "FOO", 1499999999L, createDateFrequencyMap("20240101", 40L, "20240102", 15L, "20240103", 20L));
+        givenAggregatedRow("JOB", COLF_F, "attr", "FOO", 1499999999L, createDateFrequencyMap("20250101", 40L, "20250102", 15L, "20250103", 20L));
 
-        writeMutations(accumuloClient, this.mutations);
-    }
+        writeMutations(helper.getAccumuloClient(), this.mutations);
 
-    @AfterEach
-    public void tearDown() throws Exception {
-        accumuloClient.tableOperations().deleteRows(TABLE_METADATA, null, null);
     }
 
     /**
@@ -276,8 +257,20 @@ public class FieldMissingFromDateRangeVisitorTest {
         Assertions.assertEquals(expected, actual);
     }
 
-    private void givenNonAggregatedRow(String row, Text colf, String datatype, String colv, long timestamp, String date, long count) {
-        givenMutation(row, colf, datatype + NULL_BYTE + date, colv, timestamp, new Value(LongCombiner.VAR_LEN_ENCODER.encode(count)));
+    public static DateFrequencyMap createDateFrequencyMap(Object... entries) {
+        DateFrequencyMap map = new DateFrequencyMap();
+        int lastEntry = entries.length - 1;
+        for (int i = 0; i < lastEntry; i++) {
+            String date = (String) entries[i];
+            i++;
+            long count = (Long) entries[i];
+            map.put(date, count);
+        }
+        return map;
+    }
+
+    private void givenAggregatedRow(String row, Text colf, String datatype, String colv, long timestamp, DateFrequencyMap map) {
+        givenMutation(row, colf, datatype + NULL_BYTE + AGGREGATED, colv, timestamp, new Value(WritableUtils.toByteArray(map)));
     }
 
     private void givenMutation(String row, Text colf, String colq, String colv, long timestamp, Value value) {
@@ -289,19 +282,11 @@ public class FieldMissingFromDateRangeVisitorTest {
     private void writeMutations(AccumuloClient client, Collection<Mutation> mutations) {
         BatchWriterConfig config = new BatchWriterConfig();
         config.setMaxMemory(0);
-        try (BatchWriter writer = client.createBatchWriter(TABLE_METADATA, config)) {
+        try (BatchWriter writer = client.createBatchWriter(TableName.METADATA, config)) {
             writer.addMutations(mutations);
             writer.flush();
         } catch (MutationsRejectedException | TableNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
-        final Set<Authorizations> allMetadataAuths = AUTHS_SET;
-        final Set<Authorizations> auths = AUTHS_SET;
-        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, client, TABLE_METADATA, auths, false);
-        CompositeMetadataHelper cmh = new CompositeMetadataHelper(client, TABLE_METADATA, auths);
-        return new AllFieldMetadataHelper(tmh, cmh, client, TABLE_METADATA, auths, allMetadataAuths);
     }
 }
