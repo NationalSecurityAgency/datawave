@@ -1,12 +1,8 @@
 package datawave.query;
 
-import static datawave.query.util.AbstractQueryTest.RangeType.DOCUMENT;
-import static datawave.query.util.AbstractQueryTest.RangeType.SHARD;
-
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -23,21 +19,26 @@ import org.slf4j.LoggerFactory;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
-import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.SizesIngest;
-import datawave.util.TableName;
+import datawave.query.util.TestIndexTableNames;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * This suite of tests exercises many random events over a small number of shards
  */
-public abstract class SizesTest extends AbstractQueryTest {
+@RunWith(Arquillian.class)
+public class SizesTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(SizesTest.class);
+
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
+    private static AccumuloClient clientForSetup;
 
     @Inject
     @SpringBean(name = "EventQuery")
@@ -46,56 +47,6 @@ public abstract class SizesTest extends AbstractQueryTest {
     @Override
     public ShardQueryLogic getLogic() {
         return logic;
-    }
-
-    @RunWith(Arquillian.class)
-    public static class ShardRangeTest extends SizesTest {
-
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(ShardRangeTest.class.getName());
-            client = new InMemoryAccumuloClient("", i);
-
-            SizesIngest ingest = new SizesIngest(client);
-            ingest.write(SHARD);
-
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, TableName.METADATA);
-        }
-
-        @Before
-        public void beforeEach() {
-            setClientForTest(client);
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRangeTest extends SizesTest {
-
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(DocumentRangeTest.class.getName());
-            client = new InMemoryAccumuloClient("", i);
-
-            SizesIngest ingest = new SizesIngest(client);
-            ingest.write(DOCUMENT);
-
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, TableName.METADATA);
-        }
-
-        @Before
-        public void beforeEach() {
-            setClientForTest(client);
-        }
     }
 
     @Deployment
@@ -113,20 +64,74 @@ public abstract class SizesTest extends AbstractQueryTest {
         //  @formatter:on
     }
 
-    public void planAndExecuteQuery() throws Exception {
-        planQuery();
-        executeQuery();
-        // TODO: assert based on test metadata
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        InMemoryInstance instance = new InMemoryInstance(SizesTest.class.getName());
+        clientForSetup = new InMemoryAccumuloClient("", instance);
+
+        SizesIngest ingest = new SizesIngest(clientForSetup);
+        ingest.write();
+
+        ingestUtil.write(clientForSetup, auths);
     }
 
     @Before
     public void setup() throws Exception {
         withDate("20250606", "20250606");
+        clientForTest = clientForSetup;
+        setClientForTest(clientForTest);
     }
 
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
+    }
+
+    /**
+     * Plans and executes a query against multiple versions of a shard index
+     *
+     * @throws Exception
+     *             if something goes wrong
+     */
+    @Override
+    public void planAndExecuteQuery() throws Exception {
+        for (String indexTableName : TestIndexTableNames.names()) {
+            logic.setIndexTableName(indexTableName);
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    logic.setUseTruncatedIndex(true);
+                    break;
+                case TestIndexTableNames.SHARDED_DAY_INDEX:
+                case TestIndexTableNames.SHARDED_YEAR_INDEX:
+                    logic.setUseShardedIndex(true);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name " + indexTableName);
+            }
+
+            log.debug("=== using index: {} ===", indexTableName);
+            planQuery();
+            executeQuery();
+            // TODO: assert based on test metadata
+
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    logic.setUseTruncatedIndex(false);
+                    break;
+                case TestIndexTableNames.SHARDED_DAY_INDEX:
+                case TestIndexTableNames.SHARDED_YEAR_INDEX:
+                    logic.setUseShardedIndex(false);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name " + indexTableName);
+            }
+        }
     }
 
     @Test
