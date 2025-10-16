@@ -137,6 +137,34 @@ public class FieldMissingFromDateRangeVisitorTest {
     }
 
     /**
+     * Test query with only special fields ANDed.
+     */
+    @Test
+    public void testAndWithOnlySpecialFields() throws ParseException {
+        String query = "_ANYFIELD_ == 'foo' && _NOFIELD_ == 'bar'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1704153600000L); // 01/02/2024 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet(), Sets.newHashSet());
+    }
+
+    /**
+     * Test query with only special fields ORd.
+     */
+    @Test
+    public void testOrWithOnlySpecialFields() throws ParseException {
+        String query = "_ANYFIELD_ == 'foo' || _NOFIELD_ == 'bar'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1704153600000L); // 01/02/2024 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet(), Sets.newHashSet());
+    }
+
+    /**
      * Test query with ORed fields but only some exist during the date range. Fields will only be returned as NonIngested if ALL ORed fields are not found.
      */
     @Test
@@ -179,6 +207,20 @@ public class FieldMissingFromDateRangeVisitorTest {
     }
 
     /**
+     * Test query with multiple ANDed fields where some will be missed due to the datatype filter. The special field will be excluded.
+     */
+    @Test
+    public void testOneMissingAndFieldBecauseOfDatatypeFilterWithSpecialField() throws ParseException {
+        String query = "AGE == 'foo' && GENDER == 'bar' && JOB == 'foo' && _ANYFIELD_ == 'test'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet("num", "attr"), Sets.newHashSet("GENDER"));
+    }
+
+    /**
      * Test query with multiple ORed fields where some will be missed due to the datatype filter. Fields will only be returned as NonIngested if ALL ORed fields
      * are not found.
      */
@@ -209,11 +251,40 @@ public class FieldMissingFromDateRangeVisitorTest {
     }
 
     /**
+     * Test query with multiple ORed fields where ALL will be missed due to the datatype filter. The special field will be excluded. Fields will only be
+     * returned as NonIngested if ALL ORed fields are not found.
+     */
+    @Test
+    public void testAllMissingORFieldBecauseOfDatatypeFilterWithSpecialField() throws ParseException {
+        String query = "AGE == 'foo' || GENDER == 'bar' || JOB == 'foo' || _ANYFIELD_ = 'abc'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet("foo"), Sets.newHashSet("AGE", "GENDER", "JOB"));
+    }
+
+    /**
      * Test query with function for a field that exists in the date range.
      */
     @Test
     public void testRegexFunctionWithFieldThatExists() throws ParseException {
         String query = "filter:includeRegex(GENDER, 'bar.*')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet("text"), Sets.newHashSet());
+    }
+
+    /**
+     * Test query with function for a special field.
+     */
+    @Test
+    public void testRegexFunctionWithSpecialField() throws ParseException {
+        String query = "filter:includeRegex(_ANYFIELD_, 'bar.*')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT

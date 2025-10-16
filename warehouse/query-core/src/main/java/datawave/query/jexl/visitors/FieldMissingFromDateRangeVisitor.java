@@ -98,12 +98,14 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
             for (ASTIdentifier identifier : identifiers) {
                 String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
-                fieldNamesToTestDateRange.add(fieldName);
+                if (!specialFields.contains(fieldName)) {
+                    fieldNamesToTestDateRange.add(fieldName);
+                }
             }
         }
         Set<String> missingFields = helper.getMissingFieldsInDateRange(fieldNamesToTestDateRange, datatypeFilter,
-                        formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate()));
-        if (!specialFields.containsAll(fieldNamesToTestDateRange) && missingFields.containsAll(fieldNamesToTestDateRange)) {
+                        formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate()), specialFields);
+        if (missingFields.containsAll(fieldNamesToTestDateRange)) {
             return nonExistentFieldNames.addAll(missingFields);
         } else {
             return nonExistentFieldNames;
@@ -140,7 +142,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
             if (!specialFields.contains(fieldName)) {
                 nonIngestedFieldNames.addAll(helper.getMissingFieldsInDateRange(Set.of(fieldName), datatypeFilter,
-                                formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate())));
+                                formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate()), specialFields));
             }
         }
         return nonIngestedFieldNames;
@@ -233,7 +235,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
             if (!specialFields.contains(fieldName)) {
                 try {
                     nonIngestedFieldNames.addAll(helper.getMissingFieldsInDateRange(Set.of(testFieldName), datatypeFilter,
-                                    formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate())));
+                                    formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate()), specialFields));
                 } catch (TableNotFoundException e) {
                     throw new RuntimeException(e);
                 }

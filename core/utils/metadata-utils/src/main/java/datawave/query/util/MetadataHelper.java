@@ -1703,13 +1703,21 @@ public class MetadataHelper {
      *            the start date
      * @param endDate
      *            the end date
+     * @param specialFields
+     *            special fields to exclude from search
      * @return a set of missing fields from the given date range
      */
-    public Set<String> getMissingFieldsInDateRange(Set<String> fields, Set<String> datatypes, String beginDate, String endDate) throws TableNotFoundException {
+    public Set<String> getMissingFieldsInDateRange(Set<String> fields, Set<String> datatypes, String beginDate, String endDate, Set<String> specialFields)
+                    throws TableNotFoundException {
         SortedSet<String> sortedDatatypes = new TreeSet<>(datatypes);
         Set<String> foundFields = new HashSet<>();
+        fields = Sets.difference(fields, specialFields);
         Set<Range> ranges = createExactFieldCountRanges(fields);
         StringBuilder dataTypeRegex = new StringBuilder();
+
+        if (ranges.isEmpty()) {
+            return Collections.emptySet();
+        }
 
         int index = 0;
         for (String dataType : sortedDatatypes) {
@@ -1784,7 +1792,7 @@ public class MetadataHelper {
     }
 
     /**
-     * Build ranges for the {@link #getMissingFieldsInDateRange(Set, Set, String, String)} method.
+     * Build ranges for the {@link #getMissingFieldsInDateRange(Set, Set, String, String, Set)} method.
      *
      * @param fields
      *            the fields
