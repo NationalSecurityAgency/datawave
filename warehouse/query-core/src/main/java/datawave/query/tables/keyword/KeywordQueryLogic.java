@@ -1,6 +1,7 @@
 package datawave.query.tables.keyword;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,6 +26,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.IteratorChain;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -255,39 +257,38 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                             config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
             scanner.addScanIterator(cfg);
 
-            // TODO alternate tie in for the external fieldedKeywordResults, may be necessary to deal with empty results from the views, then its transparent to
-            // the TagCloudTransformer
             // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
             final Iterator<Entry<Key,Value>> scanIterator = scanner.iterator();
-            this.iterator = new Iterator<>() {
-                private boolean padResults = !scanIterator.hasNext();
+            this.iterator = scanIterator;
+            if (fieldedKeywordResults != null) {
+                Iterator<Entry<Key,Value>> fieldedKeywordIterator = prepareFieldedIterator(fieldedKeywordResults);
+                this.iterator = new IteratorChain<>(scanIterator, fieldedKeywordIterator);
+            }
 
-                @Override
-                public boolean hasNext() {
-                    return padResults || scanIterator.hasNext();
-                }
-
-                @Override
-                public Entry<Key,Value> next() {
-                    if (padResults) {
-                        padResults = false;
-                        try {
-                            return Map.entry(new Key(), new Value(KeywordResults.serialize(new KeywordResults())));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-
-                    return scanIterator.next();
-                }
-            };
-
-            // this.iterator = scanner.iterator();
             this.scanner = scanner;
 
         } catch (TableNotFoundException e) {
             throw new RuntimeException("Table not found: " + this.getTableName(), e);
         }
+    }
+
+    private Iterator<Entry<Key,Value>> prepareFieldedIterator(Map<String,List<KeywordResults>> fieldedKeywordResults) throws IOException {
+        List<Entry<Key,Value>> convertedList = new ArrayList<>(fieldedKeywordResults.entrySet().size());
+
+        for (String field : fieldedKeywordResults.keySet()) {
+            for (KeywordResults result : fieldedKeywordResults.get(field)) {
+                String source = result.getSource();
+                String[] splits = source.split("/");
+                if (splits.length != 3) {
+                    throw new IllegalStateException("unknown source format: " + source);
+                }
+                Key key = new Key(splits[0], splits[1] + "\u0000" + splits[2], result.getLanguage());
+                convertedList.add(Map.entry(key, new Value(KeywordResults.serialize(result))));
+            }
+
+        }
+
+        return convertedList.iterator();
     }
 
     /**
@@ -400,7 +401,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public QueryLogicTransformer<Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
-        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory, fieldedKeywordResults);
+        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory);
     }
 
     @Override

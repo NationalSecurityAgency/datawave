@@ -3,7 +3,6 @@ package datawave.query.transformer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -33,15 +32,12 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;
     protected final KeywordQueryState state;
-    private final Map<String,List<KeywordResults>> fieldedKeywordResults;
 
-    public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    Map<String,List<KeywordResults>> fieldedKeywordResults) {
+    public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
         this.state = state;
-        this.fieldedKeywordResults = fieldedKeywordResults;
     }
 
     /**
@@ -90,16 +86,12 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
     public BaseQueryResponse createResponse(List<Object> resultList) {
         final List<KeywordResults> keywordResultsList = resultList.stream().map(o -> (KeywordResults) o).collect(Collectors.toList());
         List<TagCloud> tagClouds = new ArrayList<>();
-        if (fieldedKeywordResults != null) {
-            for (String field : fieldedKeywordResults.keySet()) {
-                tagClouds.addAll(buildTagCloud(state.isGenerateCloud(), fieldedKeywordResults.get(field)));
-            }
-        }
         tagClouds.addAll(buildTagCloud(state.isGenerateCloud(), keywordResultsList));
 
         return generateTagCloudResponse(tagClouds);
     }
 
+    // TODO document
     private List<TagCloud> buildTagCloud(boolean merged, List<KeywordResults> resultList) {
         List<TagCloud> results = new ArrayList<>();
         TagCloud.Builder builder = getTagCloudBuilder().withComparator(TagCloudEntry.ORDER_BY_FREQUENCY);
@@ -126,6 +118,7 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
      *            the results to add to the response that were created by the transform method
      * @return a tag cloud response that includes one or more tag clouds.
      */
+    // TODO delete
     protected TagCloudResponseBase createIndividualCloudResponse(List<KeywordResults> resultList) {
         // collect the results for individual documents into individual word clouds.
         List<TagCloud> tagCloudResults = new ArrayList<>();
@@ -145,6 +138,7 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
      *            the results to add to the response that were created by the transform method
      * @return a tag cloud response that includes one or more tag clouds.
      */
+    // TODO delete
     protected TagCloudResponseBase createMergedCloudResponse(List<KeywordResults> resultList) {
         // collect the keywords for individual documents into a single word cloud.
         final TagCloud.Builder builder = getTagCloudBuilder().withComparator(TagCloudEntry.ORDER_BY_FREQUENCY);
