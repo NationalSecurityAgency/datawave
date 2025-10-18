@@ -34,13 +34,13 @@ public class KeywordResults implements Writable {
     String visibility;
 
     /** the keywords and scores produced by the extraction algorithm */
-    final LinkedHashMap<String,Double> keywords;
+    final Map<String,Double> keywords;
 
     public KeywordResults() {
         this("", "", "", "", new LinkedHashMap<>());
     }
 
-    public KeywordResults(String source, String view, String language, String visibility, LinkedHashMap<String,Double> results) {
+    public KeywordResults(String source, String view, String language, String visibility, Map<String,Double> results) {
         this.source = source;
         this.view = view;
         this.language = language;
@@ -84,7 +84,7 @@ public class KeywordResults implements Writable {
         return keywords.size();
     }
 
-    public LinkedHashMap<String,Double> getKeywords() {
+    public Map<String,Double> getKeywords() {
         return keywords;
     }
 

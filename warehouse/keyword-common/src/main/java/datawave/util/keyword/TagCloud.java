@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -103,7 +102,7 @@ public class TagCloud {
             final String source = results.getSource();
             final String language = results.getLanguage();
             final String visibility = results.getVisibility();
-            final LinkedHashMap<String,Double> resultsMap = results.getKeywords();
+            final Map<String,Double> resultsMap = results.getKeywords();
 
             for (final Map.Entry<String,Double> e : resultsMap.entrySet()) {
                 String key = utils.computeIndexKey(results, e.getKey(), partitionOnLanguage);

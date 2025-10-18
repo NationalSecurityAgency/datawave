@@ -1,11 +1,16 @@
 package datawave.query.tables.keyword;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -16,7 +21,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -32,17 +36,21 @@ import org.junit.runner.RunWith;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.tables.ResponseQueryDriver;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.util.keyword.KeywordResults;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.result.keyword.DefaultTagCloud;
+import datawave.webservice.result.keyword.DefaultTagCloudEntry;
+import datawave.webservice.result.keyword.DefaultTagCloudResponse;
+import datawave.webservice.result.keyword.TagCloudBase;
 
 @RunWith(Arquillian.class)
 public class KeywordQueryLogicFunctionalTest {
@@ -57,7 +65,9 @@ public class KeywordQueryLogicFunctionalTest {
     protected KeywordQueryLogic logic;
 
     private final Map<String,String> extraParameters = new HashMap<>();
-    private final Set<String> expectedResults = new HashSet<>();
+    private final List<DefaultTagCloud> expectedResults = new ArrayList<>();
+
+    private ResponseQueryDriver<Entry<Key,Value>> queryDriver;
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -90,23 +100,100 @@ public class KeywordQueryLogicFunctionalTest {
     public void setup() throws ParseException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         log.setLevel(Level.TRACE);
+
+        queryDriver = new ResponseQueryDriver<>(logic);
     }
 
     @Test
     public void simpleTest() throws Exception {
-        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzua";
+        String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
+        String queryString = "DOCUMENT:" + docId;
 
-        addExpectedResult(
-                        "{\"source\":\"20130101_0/test/-cvy0gj.tlf59s.-duxzua\",\"view\":\"CONTENT\",\"language\":\"\",\"visibility\":\"ALL\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052,\"kind word alone\":0.4375,\"much farther\":0.5903,\"word\":0.2857,\"word alone\":0.534}}");
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(createTagCloudEntry("kind word", 0.2052, 1, List.of(docId)));
+        entries.add(createTagCloudEntry("kind", 0.2546, 1, List.of(docId)));
+        entries.add(createTagCloudEntry("word", 0.2857, 1, List.of(docId)));
+        entries.add(createTagCloudEntry("kind word alone", 0.4375, 1, List.of(docId)));
+        entries.add(createTagCloudEntry("word alone", 0.534, 1, List.of(docId)));
+        entries.add(createTagCloudEntry("get much", 0.5903, 1, List.of(docId)));
+        entries.add(createTagCloudEntry("much farther", 0.5903, 1, List.of(docId)));
+
+        DefaultTagCloud expectedCloud = new DefaultTagCloud();
+        expectedCloud.setMarkings(Map.of("visibility", "ALL"));
+        expectedCloud.setTags(entries);
+        expectedCloud.setIntermediateResult(false);
+        addExpectedTagCloud(expectedCloud);
 
         runTestQuery(queryString);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    protected void addExpectedResult(String keywords) {
-        if (StringUtils.isNotBlank(keywords)) {
-            expectedResults.add(keywords);
-        }
+    @Test
+    public void simpleWithOnlyExternalHitsTest() throws Exception {
+        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
+
+        List<KeywordResults> keywordResultsList = new ArrayList<>();
+        LinkedHashMap<String,Double> labels = new LinkedHashMap<>();
+        labels.put("x", .5d);
+        labels.put("y", .8d);
+        labels.put("z", 1d);
+        keywordResultsList.add(new KeywordResults("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "event:FOO", "FOO", "ALL", labels));
+        logic.setFieldedKeywordResults(Map.of("FOO", keywordResultsList));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        entries.add(createTagCloudEntry("y", .8, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        entries.add(createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        DefaultTagCloud expectedCloud = new DefaultTagCloud();
+        expectedCloud.setLanguage("FOO");
+        expectedCloud.setMarkings(Map.of("visibility", "ALL"));
+        expectedCloud.setTags(entries);
+        expectedCloud.setIntermediateResult(false);
+        addExpectedTagCloud(expectedCloud);
+
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void multipleExternalHitsTest() throws Exception {
+        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
+
+        List<KeywordResults> keywordResultsList = new ArrayList<>();
+        LinkedHashMap<String,Double> labels = new LinkedHashMap<>();
+        labels.put("x", .5d);
+        labels.put("y", .8d);
+        labels.put("z", 1d);
+        keywordResultsList.add(new KeywordResults("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "event:FOO", "FOO", "ALL", labels));
+        keywordResultsList.add(new KeywordResults("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "event:FOO", "FOO", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d)));
+        logic.setFieldedKeywordResults(Map.of("FOO", keywordResultsList));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        // TODO combining the tag clouds keeps the LOWEST score... not the highest score... may need to be able to adjust this in the TagCloudTransformer or maybe its fine
+        entries.add(createTagCloudEntry("x", .5, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
+        entries.add(createTagCloudEntry("y", .9, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
+        entries.add(createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        entries.add(createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
+        DefaultTagCloud expectedCloud = new DefaultTagCloud();
+        expectedCloud.setLanguage("FOO");
+        expectedCloud.setMarkings(Map.of("visibility", "ALL"));
+        expectedCloud.setTags(entries);
+        expectedCloud.setIntermediateResult(false);
+        addExpectedTagCloud(expectedCloud);
+
+        runTestQuery(queryString);
+    }
+
+    private void addExpectedTagCloud(DefaultTagCloud expected) {
+        expectedResults.add(expected);
+    }
+
+    private DefaultTagCloudEntry createTagCloudEntry(String term, double score, int frequency, List<String> sources) {
+        DefaultTagCloudEntry entry = new DefaultTagCloudEntry();
+        entry.setTerm(term);
+        entry.setScore(score);
+        entry.setFrequency(frequency);
+        entry.setSources(sources);
+
+        return entry;
     }
 
     protected void runTestQuery(String queryString) throws Exception {
@@ -123,20 +210,36 @@ public class KeywordQueryLogicFunctionalTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
 
-        QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> transformer = logic.getTransformer(config.getQuery());
-        Set<String> unexpectedFields = new HashSet<>();
+        DefaultTagCloudResponse response = (DefaultTagCloudResponse) queryDriver.drive(config);
+        assertEquals(expectedResults.size(), response.getTagClouds().size());
 
-        for (Map.Entry<Key,Value> entry : logic) {
-            KeywordResults kr = transformer.transform(entry);
-            String content = kr.toJson();
-            if (!expectedResults.remove(content)) {
-                unexpectedFields.add(content);
-            }
-
+        // check the response clouds are expected
+        for (TagCloudBase tagCloud : response.getTagClouds()) {
+            assertTrue(isExpectedTagCloud((DefaultTagCloud) tagCloud));
         }
 
-        assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
-        assertTrue(expectedResults + " was not empty", expectedResults.isEmpty());
+        // nothing still expected
+        assertEquals(0, expectedResults.size());
+    }
+
+    private boolean isExpectedTagCloud(DefaultTagCloud tagCloud) {
+        DefaultTagCloud expected = null;
+        for (DefaultTagCloud expectedCloud : expectedResults) {
+            if (Objects.equals(expectedCloud.getLanguage(), tagCloud.getLanguage())) {
+                List<DefaultTagCloudEntry> expectedTags = expectedCloud.getTags();
+                if (expectedTags.containsAll(tagCloud.getTags()) && tagCloud.getTags().containsAll(expectedTags)) {
+                    expected = expectedCloud;
+                    break;
+                }
+            }
+        }
+
+        if (expected != null) {
+            expectedResults.remove(expected);
+            return true;
+        }
+
+        return false;
     }
 
     @AfterClass
