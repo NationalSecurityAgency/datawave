@@ -1,0 +1,89 @@
+{
+  "shard": "20251017_0",
+  "dataType": "testDataType",
+  "uid": "123.abc.123",
+  "annotationType": "testAnnotationType",
+  "annotationId": "testAnnotationId",
+  "metadata": {
+    "visibility": "PUBLIC",
+    "created_date": "2025-10-17T10:30:00.0Z"
+  },
+  "segments": [
+    {
+      "segmentId": "testSegmentId1",
+      "createTime": "2025-10-17T11:30:00.0Z",
+      "eTag": "testETag1",
+      "segmentValue": [
+        {
+          "value": "test1a",
+          "score": -83737019.1792235
+        },
+        {
+          "value": "test1b",
+          "score": 47053589.7620008
+        },
+        {
+          "value": "test1c",
+          "score": 32235234.64713955
+        },
+        {
+          "value": "test1d",
+          "score": 77675558.93612546
+        },
+        {
+          "value": "test1e",
+          "score": 7012998.240006313
+        }
+      ],
+      "metadata": {
+      },
+      "boundaryType": "testBoundaryType1",
+      "pointList": {
+        "point": [
+          {
+            "x": -78087840.7337584,
+            "y": 56815415.1987268,
+            "label": "testPointLabel1"
+          }
+        ]
+      }
+    },
+    {
+      "segmentId": "testSegmentId2",
+      "eTag": "testETag2",
+      "boundaryType": "testBoundaryType2",
+      "pointList": {
+        "point": [
+          {
+            "label": "testPointLabel2a"
+          },
+          {
+            "label": "testPointLabel2b"
+          }
+        ]
+      }
+    },
+    {
+      "segmentId": "testSegmentId3",
+      "eTag": "testETag3",
+      "segmentValue": [],
+      "metadata": {
+        "testMetadataKey3": "testMetadataValue3"
+      },
+      "boundaryType": "testBoundaryType3",
+      "pointList": {
+      }
+    },
+    {
+      "segmentId": "testSegmentId3",
+      "eTag": "testETag3",
+      "segmentValue": [],
+      "metadata": {
+        "testMetadataKey4": "testMetadataValue4"
+      },
+      "boundaryType": "testBoundaryType4",
+      "pointList": {
+      }
+    }
+  ]
+}
