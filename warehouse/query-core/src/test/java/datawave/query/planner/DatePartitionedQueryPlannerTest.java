@@ -723,7 +723,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
-        givenInitialPlan("(GENDER == 'male' || GENERE == 'male') && (((_Delayed_ = true) && (UUID =~ 'c.*')) || ((_Delayed_ = true) && (UUID =~ 's.*')))");
+        givenInitialPlan("(GENDER == 'male' || GENERE == 'male') && (UUID =~ 'c.*' || UUID =~ 's.*')");
 
         // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
         expectPlan(start("20130101"), end("20130103"),

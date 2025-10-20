@@ -633,6 +633,9 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("maxLinesToPrint", -1);
         updatedValues.put("maxLinesToPrint", 150);
+
+        defaultValues.put("deferPushdownPullup", false);
+        updatedValues.put("deferPushdownPullup", true);
     }
 
     private Query createQuery(String query) {

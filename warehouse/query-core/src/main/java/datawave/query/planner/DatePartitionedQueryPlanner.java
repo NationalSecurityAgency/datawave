@@ -315,6 +315,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         planningConfig.setGeneratePlanOnly(true);
         boolean expandValues = planningConfig.isExpandValues();
         planningConfig.setExpandValues(false); // we do NOT want to expand any values yet as they may not be dependable
+        planningConfig.setDeferPushdownPullup(true);
 
         DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
         initialPlanner.process(planningConfig, query, settings, scannerFactory);
@@ -322,6 +323,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
         planningConfig.setGeneratePlanOnly(generatePlanOnly);
         planningConfig.setExpandValues(expandValues);
+        planningConfig.setDeferPushdownPullup(false);
 
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
         SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(planningConfig);
@@ -360,15 +362,18 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
                 // Update the planned script.
                 updatePlannedScript();
+                planningConfig.setQueryString(plannedScript);
             }
         }
 
         // if every plan failed, then pass an exception up
         if (exceptions.size() == dateRanges.size()) {
-            if (exceptions.size() == 1 && exceptions.get(0) instanceof DatawaveQueryException) {
+            if (exceptions.size() == 1 && exceptions.get(0) instanceof RuntimeException) {
+                throw (RuntimeException) (exceptions.get(0));
+            } else if (exceptions.size() == 1 && exceptions.get(0) instanceof DatawaveQueryException) {
                 throw (DatawaveQueryException) (exceptions.get(0));
             } else {
-                DatawaveQueryException e = new DatawaveQueryException("Query failed creation");
+                DatawaveFatalQueryException e = new DatawaveFatalQueryException("Query failed creation");
                 for (Exception reason : exceptions) {
                     e.addSuppressed(reason);
                 }

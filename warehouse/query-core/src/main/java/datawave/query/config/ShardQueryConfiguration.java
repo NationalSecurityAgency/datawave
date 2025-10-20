@@ -553,6 +553,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private DocumentScannerConfig documentScannerConfig;
 
     /**
+     * This property is used to avoid the pushdown/pullup portion of the planning. This is used by the DatePartitionedQueryPlanner as the pushdown/pullup is
+     * done by the reprocess planning method.
+     */
+    private boolean deferPushdownPullup = false;
+
+    /**
      * The maximum number of lines to print when streaming the query from the global index. Useful for limiting the logging footprint of large queries when
      * debug logging is enabled.
      */
@@ -812,6 +818,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setDeferPushdownPullup(other.isDeferPushdownPullup());
     }
 
     /**
@@ -3423,5 +3430,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         this.maxLinesToPrint = maxLinesToPrint;
+    }
+
+    public boolean isDeferPushdownPullup() {
+        return deferPushdownPullup;
+    }
+
+    public void setDeferPushdownPullup(boolean deferPushdownPullup) {
+        this.deferPushdownPullup = deferPushdownPullup;
     }
 }

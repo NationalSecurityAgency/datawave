@@ -927,8 +927,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         // Test the plan with all expansions
         String expect = "(" + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP
-                        + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio')" + JEXL_AND_OP
-                        + "((_Eval_ = true)" + JEXL_AND_OP + "(" + CityField.CITY.name() + " == 'rome'" + JEXL_AND_OP + CityField.STATE.name() + oPhrase + "))";
+                        + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio')";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
 
@@ -1347,7 +1346,11 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        if (logic.getQueryPlanner() instanceof DatePartitionedQueryPlanner) {
+            ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        } else if (logic.getQueryPlanner() instanceof DefaultQueryPlanner) {
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setTransformRules(Collections.singletonList(rule));
+        }
 
         // Test the plan with all expansions
         try {
@@ -1433,7 +1436,11 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        if (logic.getQueryPlanner() instanceof DatePartitionedQueryPlanner) {
+            ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        } else if (logic.getQueryPlanner() instanceof DefaultQueryPlanner) {
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setTransformRules(Collections.singletonList(rule));
+        }
 
         // Test the plan with all expansions
         String expect = "CITY == 'rome' && ((_Eval_ = true) && (COUNTRY =~ '.*y'))";

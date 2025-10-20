@@ -1213,8 +1213,13 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
 
             // don't descend into composite nodes, and don't copy them
             // this logic is dependent upon identifying composite nodes by their address
-            if (compositeNodes.containsKey(node)) {
+            if (compositeNodes.containsKey(node) || compositeNodes.containsKey(node.jjtGetParent())) {
                 return node;
+            }
+
+            // don't decend into bounded ranges, but copy them
+            if (QueryPropertyMarker.findInstance(node).isType(BOUNDED_RANGE)) {
+                return copy(node);
             }
 
             // check each child node to see how many of the desired andedNodes are present

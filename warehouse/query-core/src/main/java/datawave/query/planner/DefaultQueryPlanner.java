@@ -529,6 +529,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             cfg = getQueryIterator(metadataHelper, config, "", false, true);
         }
 
+        // in the rare case that we are generating a plan only, and we are not expanding fields but are expanding values,
+        // then it is possible we need to rerun the any-field expansion to get the expanded values at this point.
+        if (config.isGeneratePlanOnly() && !config.isExpandFields() && config.isExpandValues()) {
+            if (!disableAnyFieldLookup) {
+                final QueryStopwatch timers = config.getTimers();
+                config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
+                config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
+            }
+        }
+
         try {
             config.setQueryTree(expandPushdownPullup(config, metadataHelper, config.getTimers(), scannerFactory));
         } catch (StackOverflowError e) {
@@ -1003,28 +1013,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, timers, queryModel));
 
-        // ExpandCompositeTerms was here
-
-        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
-
-            // Figure out if the query contained any index only terms so we know
-            // if we have to force it down the field-index path with event-specific
-            // ranges
-            timedCheckForIndexOnlyFieldsInQuery(timers, "Check for Index-Only Fields", config.getQueryTree(), config, indexOnlyFields);
-        }
-
-        timedCheckForCompositeFields(timers, "Check for Composite Fields", config, metadataHelper);
-
-        timedCheckForSortedUids(timers, "Check for Sorted UIDs", config);
-
-        // check the query for any fields that are term frequencies
-        // if any exist, populate the shard query config with these fields
-        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config);
-
-        if (reduceQuery) {
-            config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
-        }
-
         timeScanHintRules(timers, "Apply scan hint rules", config);
 
         return config.getQueryTree();
@@ -1174,16 +1162,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedMarkIndexValueGaps(timers, config.getQueryTree(), config, metadataHelper));
         }
 
-        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
-        Set<String> indexedFields = null;
-        Set<String> indexOnlyFields = null;
-        Set<String> nonEventFields = null;
-        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
-            indexedFields = getIndexedFields();
-            indexOnlyFields = getIndexOnlyFields();
-            nonEventFields = getNonEventFields();
-        }
-
         // apply the node transform rules
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Pushdown/Pullup Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
@@ -1195,22 +1173,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(timedForceFieldToFieldComparison(timers, config.getQueryTree()));
 
-        if (!disableCompositeFields) {
-            config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
+        if (!config.isDeferPushdownPullup()) {
+            // Now do all of the index expansion, pullup, pushdown logic to get us executability
+            // This part of the processing is pulled into a separate method so that it might be called
+            // from the reprocess logic used by the DatePartitionedQueryPlanner
+            expandPushdownPullup(config, metadataHelper, timers, scannerFactory);
         }
-
-        // Now do all of the index expansion, pullup, pushdown logic to get us executability
-        // This part of the processing is pulled into a separate method so that it might be called
-        // from the reprocess logic used by the DatePartitionedQueryPlanner
-        expandPushdownPullup(config, metadataHelper, timers, scannerFactory);
-
-        if (validateBoundedRanges) {
-            // whether bounded ranges were expanded or not, validate all ranges
-            timedValidateBoundedRanges(timers, config.getQueryTree());
-        }
-
-        // fields may have been added or removed from the query, need to update the field to type map
-        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
 
         return config.getQueryTree();
     }
@@ -1231,6 +1199,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         TraceStopwatch stopwatch = null;
 
+        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
+        Set<String> indexedFields = null;
+        Set<String> indexOnlyFields = null;
+        Set<String> nonEventFields = null;
+        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
+            indexedFields = getIndexedFields();
+            indexOnlyFields = getIndexOnlyFields();
+            nonEventFields = getNonEventFields();
+        }
+
+        // Look for any composite fields to make. Doing this before the regex expansion as we can
+        // create composite fields where the second portion is a regex. This will not combine
+        // multiple regexes together into a composite field, and hence we call this visitor
+        // again below.
+        if (!disableCompositeFields) {
+            config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
+        }
+
         if (!disableBoundedLookup) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
 
@@ -1246,6 +1232,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                     timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), config, metadataHelper, scannerFactory, indexLookupMap));
                 }
 
+                // Recheck if we have any composite fields to add now that all regexes are expanded (may help with bounded ranges)
+                if (!disableCompositeFields) {
+                    config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
+                }
+
                 // Check if there are any bounded ranges to expand.
                 if (nodeCount.isPresent(BOUNDED_RANGE)) {
                     config.setQueryTree(timedExpandRanges(timers, "Expand Ranges", config.getQueryTree(), config, metadataHelper, scannerFactory));
@@ -1259,6 +1250,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
                 if (reduceQuery) {
                     config.setQueryTree(timedReduce(timers, "Reduce Query After Range Expansion", config.getQueryTree()));
+                }
+
+                // Recheck if we have any composite fields to add now that all regexes and ranges are expanded
+                if (!disableCompositeFields) {
+                    config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
                 }
 
                 // Check if there are functions that can be pushed into exceeded value ranges.
@@ -1310,6 +1306,34 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.debug("Bounded range and regex conversion has been disabled");
             }
         }
+
+        timedCheckForCompositeFields(timers, "Check for Composite Fields", config, metadataHelper);
+
+        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
+
+            // Figure out if the query contained any index only terms so we know
+            // if we have to force it down the field-index path with event-specific
+            // ranges
+            timedCheckForIndexOnlyFieldsInQuery(timers, "Check for Index-Only Fields", config.getQueryTree(), config, indexOnlyFields);
+        }
+
+        timedCheckForSortedUids(timers, "Check for Sorted UIDs", config);
+
+        // check the query for any fields that are term frequencies
+        // if any exist, populate the shard query config with these fields
+        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config);
+
+        if (reduceQuery) {
+            config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
+        }
+
+        if (validateBoundedRanges) {
+            // whether bounded ranges were expanded or not, validate all ranges
+            timedValidateBoundedRanges(timers, config.getQueryTree());
+        }
+
+        // fields may have been added or removed from the query, need to update the field to type map
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
 
         return config.getQueryTree();
     }
