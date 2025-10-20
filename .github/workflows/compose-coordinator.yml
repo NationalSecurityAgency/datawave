@@ -2,12 +2,10 @@ name: Compose Coordinator
 
 on:
   push:
-    paths-ignore: ['**/*.md', 'CODEOWNERS', 'LICENSE']
     branches:
       - 'integration'
       - 'release/version*'
   pull_request:
-    paths-ignore: ['**/*.md', 'CODEOWNERS', 'LICENSE']
   merge_group:
   workflow_dispatch:
 
@@ -31,8 +29,8 @@ jobs:
         run: |
              echo "compose-tests: ${{ needs.call-compose-tests.result }}"
              echo "compose-tests-with-snapshots: ${{ needs.call-compose-tests-with-snapshots.result }}"
-      - name: Check a condition and fail if not met
-        if: ${{ !contains(needs.*.result, 'success') }}
+      - name: Check a condition and fail if not met (success = 1 job succeeds or both are skipped)
+        if: ${{ !contains(needs.*.result, 'success') || (!contains(needs.call-compose-tests.result, 'skipped') && !contains(needs.call-compose-tests-with-snapshots.result, 'skipped')) }}
         uses: actions/github-script@v6
         with:
           script: |

@@ -2,12 +2,12 @@ name: Main Repo Tests
 
 on:
   push:
-    paths-ignore: ['**/*.md', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
     branches:
     - 'integration'
     - 'release/version*'
   pull_request:
-    paths-ignore: ['**/*.md', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
   merge_group:
   workflow_dispatch:
 

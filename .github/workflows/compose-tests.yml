@@ -2,7 +2,7 @@ name: Compose
 
 on:
   workflow_call:
-    paths-ignore: ['**/*.md', 'CODEOWNERS', 'LICENSE']
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
     inputs:
       allow-snapshots:
         description: 'Allow snapshots in the pom'
