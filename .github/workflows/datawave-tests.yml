@@ -2,12 +2,12 @@ name: Main Repo Tests
 
 on:
   push:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
     branches:
     - 'integration'
     - 'release/version*'
   pull_request:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
   merge_group:
   workflow_dispatch:
 
@@ -24,11 +24,6 @@ env:
   GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
-  # Runs the pom sorter and code formatter to ensure that the code
-  # is formatted and poms are sorted according to project rules. If changes are found,
-  # they are committed back to the branch
-
-  # Build the code and run the unit/integration tests.
   configure-runner:
     runs-on: ubuntu-latest
     steps:
@@ -47,11 +42,11 @@ jobs:
     outputs:
       runner:  ${{ steps.set_output_step.outputs.runner }}
       cache_settings:  ${{ steps.set_output_step.outputs.cache_settings }}
-  build-and-test-microservices:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Passing build
-      run: echo "This build executes solely so we can set branch protections on integration to look for build-and-test-microservices"
+  # Runs the pom sorter and code formatter to ensure that the code
+  # is formatted and poms are sorted according to project rules. If changes are found,
+  # they are committed back to the branch
+
+  # Build the code and run the unit/integration tests.
   build-and-test-main:
     needs: configure-runner
     runs-on: ${{ needs.configure-runner.outputs.runner }}
