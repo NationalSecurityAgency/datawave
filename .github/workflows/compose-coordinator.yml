@@ -2,10 +2,12 @@ name: Compose Coordinator
 
 on:
   push:
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
     branches:
       - 'integration'
       - 'release/version*'
   pull_request:
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
   merge_group:
   workflow_dispatch:
 
