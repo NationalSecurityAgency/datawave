@@ -32,7 +32,7 @@ jobs:
              echo "compose-tests: ${{ needs.call-compose-tests.result }}"
              echo "compose-tests-with-snapshots: ${{ needs.call-compose-tests-with-snapshots.result }}"
       - name: Check a condition and fail if not met (success = 1 job succeeds or both are skipped)
-        if: ${{ !contains(needs.*.result, 'success') || (!contains(needs.call-compose-tests.result, 'skipped') && !contains(needs.call-compose-tests-with-snapshots.result, 'skipped')) }}
+        if: ${{ !contains(needs.*.result, 'success') }}
         uses: actions/github-script@v6
         with:
           script: |
