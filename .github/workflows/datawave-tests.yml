@@ -47,6 +47,11 @@ jobs:
   # they are committed back to the branch
 
   # Build the code and run the unit/integration tests.
+  build-and-test-microservices:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Passing build
+      run: echo "This build executes solely so we can set branch protections on integration to look for build-and-test-microservices"
   build-and-test-main:
     needs: configure-runner
     runs-on: ${{ needs.configure-runner.outputs.runner }}
