@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1047,28 +1048,35 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         return new DefaultLocationStrategy();
     }
 
-    /**
-     * Initializes an Accumulo {@link TabletLocator} based on the configuration.
-     *
-     * @param conf
-     *            the Hadoop configuration object
-     * @return an accumulo tablet locator
-     * @throws TableNotFoundException
-     *             if the table name set on the configuration doesn't exist
-     * @throws IOException
-     *             if the input format is unable to read the password file from the FileSystem
-     */
-    protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
-        if (conf.getBoolean(MOCK, false))
-            return new InMemoryTabletLocator();
-        String tableName = getTablename(conf);
-        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
-                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
-        ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                        Threads.UEH);
-        return TabletLocator.getLocator(context, context.getTableId(tableName));
+//    /**
+//     * Initializes an Accumulo {@link TabletLocator} based on the configuration.
+//     *
+//     * @param conf
+//     *            the Hadoop configuration object
+//     * @return an accumulo tablet locator
+//     * @throws TableNotFoundException
+//     *             if the table name set on the configuration doesn't exist
+//     * @throws IOException
+//     *             if the input format is unable to read the password file from the FileSystem
+//     */
+//    protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
+//        if (conf.getBoolean(MOCK, false))
+//            return new InMemoryTabletLocator();
+//        String tableName = getTablename(conf);
+//        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
+//                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
+//        ClientInfo info = ClientInfo.from(props);
+//        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
+//                        Threads.UEH);
+//        return TabletLocator.getLocator(context, context.getTableId(tableName));
+//    }
+
+    public List<Range> binRanges(ClientContext context, List<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges)
+            throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
+        return Collections.emptyList();
     }
+
 
     /**
      * Read the metadata table to get tablets and match up ranges to them.
@@ -1090,7 +1098,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         // get the metadata information for these ranges
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        TabletLocator tl;
+//        TabletLocator tl;
         try {
             if (isOfflineScan(job.getConfiguration())) {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
@@ -1102,13 +1110,13 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     TableId tableId = null;
-                    tl = getTabletLocator(job.getConfiguration());
+//                    tl = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                    tl.invalidateCache();
+//                    tl.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
                     ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
                                     ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-                    while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
+                    while (!binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
                                 tableId = context.getTableId(tableName);
@@ -1120,7 +1128,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
                         TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                        tl.invalidateCache();
+//                        tl.invalidateCache();
                     }
 
                     clipRanges(binnedRanges);
