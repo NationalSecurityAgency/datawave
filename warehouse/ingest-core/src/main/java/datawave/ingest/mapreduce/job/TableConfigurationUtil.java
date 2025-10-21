@@ -50,6 +50,7 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.iterator.ReducingIterator;
 import datawave.iterators.PropogatingIterator;
+import datawave.util.TableName;
 
 /**
  * This class serves as the liaison between datawave job configuration and accumulo tables. Most of this was ripped out of IngestJob for more convenient reuse
@@ -573,6 +574,10 @@ public class TableConfigurationUtil {
                     continue;
                 }
                 for (Map.Entry<String,String> entry : tableProps.entrySet()) {
+
+                    if (entry.getKey().contains(TableName.SHARD_DAY_INDEX) || entry.getKey().contains(TableName.SHARD_YEAR_INDEX)) {
+                        continue;
+                    }
 
                     if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
 

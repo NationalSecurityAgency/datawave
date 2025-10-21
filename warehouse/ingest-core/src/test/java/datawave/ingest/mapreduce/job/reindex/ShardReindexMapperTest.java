@@ -2171,7 +2171,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
      */
     private String getShard(Date d, String uid) {
         RawRecordContainer event = new RawRecordContainerImpl();
-        event.setDate(d.getTime());
+        event.setTimestamp(d.getTime());
         event.setId(HashUID.parse(uid));
 
         return shardIdFactory.getShardId(event);

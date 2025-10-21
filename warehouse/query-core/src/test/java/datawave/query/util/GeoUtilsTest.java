@@ -1,6 +1,15 @@
 package datawave.query.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -108,5 +117,77 @@ public class GeoUtilsTest {
     @Test
     public void indexToGeometry() {
         Assert.assertEquals("POLYGON ((20 20, 20.00001 20, 20.00001 20.00001, 20 20.00001, 20 20))", GeoUtils.indexToGeometry("121000...0000000000").toText());
+    }
+
+    @Test
+    public void testLatLonToIndexBlockingThreads() throws ExecutionException, InterruptedException {
+        int threads = 100;
+        int iterations = 1_000;
+        testBlockingThreads(threads, iterations, "121000..0000000000", () -> GeoUtils.latLonToIndex(20, 20));
+    }
+
+    @Test
+    public void testPositionToIndexBlockingThreads() throws ExecutionException, InterruptedException {
+        int threads = 100;
+        int iterations = 1_000;
+        testBlockingThreads(threads, iterations, "121000..0000000000", () -> GeoUtils.positionToIndex(1210000000000000L));
+    }
+
+    private void testBlockingThreads(int threads, int iterations, String expected, ToIndex toIndex) throws ExecutionException, InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        List<Future<Integer>> tasks = new ArrayList<>();
+        for (int i = 0; i < threads; i++) {
+            Future<Integer> f = executor.submit(new ToIndexCallable(iterations, expected, toIndex));
+            tasks.add(f);
+        }
+
+        boolean working = true;
+        while (working) {
+            for (Future<Integer> f : tasks) {
+                if (!f.isDone()) {
+                    break;
+                } else {
+                    assertEquals(iterations, f.get());
+                }
+                working = false;
+            }
+        }
+    }
+
+    /**
+     * Callable for {@link GeoUtils#latLonToIndex(double, double)} and {@link GeoUtils#positionToIndex(long)}
+     */
+    private static class ToIndexCallable implements Callable<Integer> {
+
+        private int count = 0;
+        private final int iterations;
+        private final String expected;
+        private final ToIndex toIndex;
+
+        public ToIndexCallable(int iterations, String expected, ToIndex toIndex) {
+            this.iterations = iterations;
+            this.expected = expected;
+            this.toIndex = toIndex;
+        }
+
+        @Override
+        public Integer call() {
+            try {
+                for (int j = 0; j < iterations; j++) {
+                    String result = toIndex.apply();
+                    assertEquals(expected, result);
+                    count++;
+                }
+                return count;
+            } catch (Exception e) {
+                fail(e.getMessage(), e);
+            }
+            return count;
+        }
+    }
+
+    private interface ToIndex {
+        String apply();
     }
 }
