@@ -51,6 +51,7 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.JexlASTHelper;
@@ -454,7 +455,7 @@ public abstract class DatePartitionedQueryPlannerTest {
                 if (successMode == ExpectedSuccess.NONE) {
                     Assert.fail("Expected full table scan to be required for any success");
                 }
-            } catch (DatawaveQueryException e) {
+            } catch (DatawaveQueryException | DatawaveFatalQueryException e) {
                 if (successMode == ExpectedSuccess.SOME) {
                     Assert.fail("Expected some success even with failed date ranges");
                 }

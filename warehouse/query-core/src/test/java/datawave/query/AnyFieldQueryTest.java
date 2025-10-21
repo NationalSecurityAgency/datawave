@@ -865,8 +865,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         // Test the plan with all expansions
         String compositeField = CityField.CITY.name() + '_' + CityField.STATE.name();
-        String expect = "(" + compositeField + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP + compositeField + EQ_OP + "'rome"
-                        + CompositeIngest.DEFAULT_SEPARATOR + "ohio')";
+        String expect = CityField.CITY.name() + EQ_OP + "'rome'" + JEXL_AND_OP + "(" + CityField.STATE.name() + EQ_OP + "'lazio'" + JEXL_OR_OP
+                        + CityField.STATE.name() + EQ_OP + "'ohio')";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
 
@@ -926,8 +926,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + CityField.STATE.name() + oPhrase;
 
         // Test the plan with all expansions
-        String expect = "(" + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP
-                        + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio')";
+        String expect = CityField.CITY.name() + EQ_OP + "'rome'" + JEXL_AND_OP + "(" + CityField.STATE.name() + EQ_OP + "'lazio'" + JEXL_OR_OP
+                        + CityField.STATE.name() + EQ_OP + "'ohio'" + ")";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
 
@@ -955,7 +955,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + CityField.STATE.name() + oPhrase;
 
         // Test the plan with all expansions
-        String expect = CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio'";
+        String expect = CityField.CITY.name() + EQ_OP + "'rome'" + JEXL_AND_OP + CityField.STATE.name() + oPhrase;
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
 

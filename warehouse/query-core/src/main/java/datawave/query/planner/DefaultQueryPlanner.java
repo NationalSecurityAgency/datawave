@@ -1234,11 +1234,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                     timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), config, metadataHelper, scannerFactory, indexLookupMap));
                 }
 
-                // Recheck if we have any composite fields to add now that all regexes are expanded (may help with bounded ranges)
-                if (!disableCompositeFields) {
-                    config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
-                }
-
                 // Check if there are any bounded ranges to expand.
                 if (nodeCount.isPresent(BOUNDED_RANGE)) {
                     config.setQueryTree(timedExpandRanges(timers, "Expand Ranges", config.getQueryTree(), config, metadataHelper, scannerFactory));
@@ -1252,11 +1247,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
                 if (reduceQuery) {
                     config.setQueryTree(timedReduce(timers, "Reduce Query After Range Expansion", config.getQueryTree()));
-                }
-
-                // Recheck if we have any composite fields to add now that all regexes and ranges are expanded
-                if (!disableCompositeFields) {
-                    config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
                 }
 
                 // Check if there are functions that can be pushed into exceeded value ranges.
