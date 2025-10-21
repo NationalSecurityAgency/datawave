@@ -3503,6 +3503,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setDayIndexThreshold(int dayIndexThreshold) {
         this.dayIndexThreshold = dayIndexThreshold;
->>>>>>> integration
     }
 }
