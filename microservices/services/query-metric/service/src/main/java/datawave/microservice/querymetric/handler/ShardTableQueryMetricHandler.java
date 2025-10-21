@@ -77,7 +77,6 @@ import datawave.microservice.querymetric.config.QueryMetricHandlerProperties;
 import datawave.microservice.querymetric.factory.QueryMetricQueryLogicFactory;
 import datawave.microservice.security.util.DnUtils;
 import datawave.query.QueryParameters;
-import datawave.query.iterator.QueryOptions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.util.WSAuthorizationsUtil;
@@ -98,7 +97,6 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
 
     @SuppressWarnings("FieldCanBeLocal")
     protected final String JOB_ID = "job_201109071404_1";
-    protected static final String BLACKLISTED_FIELDS_DEPRECATED = "blacklisted.fields";
 
     protected final Configuration conf = new Configuration();
     protected final StatusReporter reporter = new MockStatusReporter();
@@ -505,11 +503,10 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         queryImpl.setPagesize(1000);
         queryImpl.setId(UUID.randomUUID());
         Map<String,String> parameters = new LinkedHashMap<>();
-        parameters.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
-        parameters.put(QueryOptions.DATATYPE_FILTER, "querymetrics");
+        parameters.put(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        parameters.put(QueryParameters.DATATYPE_FILTER_SET, "querymetrics");
         if (ignoredFields != null && !ignoredFields.isEmpty()) {
-            parameters.put(BLACKLISTED_FIELDS_DEPRECATED, StringUtils.join(ignoredFields, ","));
-            parameters.put(QueryOptions.DISALLOWLISTED_FIELDS, StringUtils.join(ignoredFields, ","));
+            parameters.put(QueryParameters.DISALLOWLISTED_FIELDS, StringUtils.join(ignoredFields, ","));
         }
         queryImpl.setParameters(parameters);
         return getQueryMetrics(queryImpl);
@@ -920,7 +917,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
             query.setUserDN(datawaveUserShortName);
             query.setId(UUID.randomUUID());
             Map<String,String> parameters = new LinkedHashMap<>();
-            parameters.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
+            parameters.put(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
             parameters.put(QueryParameters.DATATYPE_FILTER_SET, "querymetrics");
             query.setParameters(parameters);
 
