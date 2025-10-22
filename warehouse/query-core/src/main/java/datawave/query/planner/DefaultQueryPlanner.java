@@ -551,7 +551,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected CloseableIterable<QueryData> startRangeProcessing(ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config,
-                                                                Query settings, IteratorSetting cfg) throws DatawaveQueryException {
+                    Query settings, IteratorSetting cfg) throws DatawaveQueryException {
 
         boolean isFullTable = false;
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;

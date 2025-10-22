@@ -314,7 +314,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         boolean generatePlanOnly = planningConfig.isGeneratePlanOnly();
         planningConfig.setGeneratePlanOnly(true);
         boolean expandValues = planningConfig.isExpandValues();
-        planningConfig.setExpandValues(false); // we do NOT want to expand any values yet as they may not be dependable
+        // we do NOT want to expand any values yet as they may not be dependable
+        // note we are expanding unfielded values (different flag)
+        planningConfig.setExpandValues(false);
         planningConfig.setDeferPushdownPullup(true);
 
         DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();

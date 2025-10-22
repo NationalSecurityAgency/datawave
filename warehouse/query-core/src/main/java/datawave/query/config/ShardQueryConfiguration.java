@@ -350,6 +350,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean expandFields = true;
     private int maxUnfieldedExpansionThreshold = 500;
     private boolean expandValues = true;
+    private boolean expandUnfieldedValues = true;
     private int maxValueExpansionThreshold = 5000;
     private int maxOrExpansionThreshold = 500;
     private int maxOrRangeThreshold = 10;
@@ -742,6 +743,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExpandFields(other.isExpandFields());
         this.setMaxValueExpansionThreshold(other.getMaxValueExpansionThreshold());
         this.setExpandValues(other.isExpandValues());
+        this.setExpandUnfieldedValues(other.isExpandUnfieldedValues());
         this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
         this.setMaxOrRangeThreshold(other.getMaxOrRangeThreshold());
         this.setMaxOrRangeIvarators(other.getMaxOrRangeIvarators());
@@ -1502,6 +1504,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setExpandValues(boolean expandValues) {
         this.expandValues = expandValues;
+    }
+
+    public boolean isExpandUnfieldedValues() {
+        return expandUnfieldedValues;
+    }
+
+    public void setExpandUnfieldedValues(boolean expandUnfieldedValues) {
+        this.expandUnfieldedValues = expandUnfieldedValues;
     }
 
     public int getMaxValueExpansionThreshold() {

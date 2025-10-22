@@ -380,6 +380,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxUnfieldedExpansionThreshold", 507);
         defaultValues.put("expandValues", true);
         updatedValues.put("expandValues", false);
+        defaultValues.put("expandUnfieldedValues", true);
+        updatedValues.put("expandUnfieldedValues", false);
         defaultValues.put("maxValueExpansionThreshold", 5000);
         updatedValues.put("maxValueExpansionThreshold", 5060);
         defaultValues.put("maxOrExpansionThreshold", 500);
