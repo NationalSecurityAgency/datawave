@@ -550,60 +550,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         ivaratorCacheDirFuture = executor.submit(ivaratorCacheDirCallable);
     }
 
-    /**
-     * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
-     *
-     * @see DatePartitionedQueryPlanner
-     * @param config
-     * @param settings
-     * @param scannerFactory
-     * @return a range stream
-     * @throws DatawaveQueryException
-     */
-    public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
-
-        startConcurrentExecution(config);
-
-        settingFuture = null;
-
-        IteratorSetting cfg = null;
-
-        if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, "", false, true);
-        }
-
-        // in the rare case that we are generating a plan only, and we are not expanding fields but are expanding values,
-        // then it is possible we need to rerun the any-field expansion to get the expanded values at this point.
-        if (config.isGeneratePlanOnly() && !config.isExpandFields() && config.isExpandValues()) {
-            if (!disableAnyFieldLookup) {
-                final QueryStopwatch timers = config.getTimers();
-                config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
-                config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
-            }
-        }
-
-        try {
-            config.setQueryTree(expandPushdownPullup(config, metadataHelper, config.getTimers(), scannerFactory));
-        } catch (StackOverflowError e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Stack trace for overflow " + e);
-            }
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (NoResultsException e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Definitively determined that no results exist from the indexes");
-            }
-
-            return DefaultQueryPlanner.emptyCloseableIterator();
-        }
-
-        return startRangeProcessing(scannerFactory, metadataHelper, config, settings, cfg);
-    }
-
     protected CloseableIterable<QueryData> startRangeProcessing(ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config,
-                    Query settings, IteratorSetting cfg) throws DatawaveQueryException {
+                                                                Query settings, IteratorSetting cfg) throws DatawaveQueryException {
 
         boolean isFullTable = false;
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;
@@ -690,6 +638,58 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } else {
             return null;
         }
+    }
+
+    /**
+     * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
+     *
+     * @see DatePartitionedQueryPlanner
+     * @param config
+     * @param settings
+     * @param scannerFactory
+     * @return a range stream
+     * @throws DatawaveQueryException
+     */
+    public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
+
+        startConcurrentExecution(config);
+
+        settingFuture = null;
+
+        IteratorSetting cfg = null;
+
+        if (preloadOptions) {
+            cfg = getQueryIterator(metadataHelper, config, "", false, true);
+        }
+
+        // in the rare case that we are generating a plan only, and we are not expanding fields but are expanding values,
+        // then it is possible we need to rerun the any-field expansion to get the expanded values at this point.
+        if (config.isGeneratePlanOnly() && !config.isExpandFields() && config.isExpandValues()) {
+            if (!disableAnyFieldLookup) {
+                final QueryStopwatch timers = config.getTimers();
+                config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
+                config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
+            }
+        }
+
+        try {
+            config.setQueryTree(expandPushdownPullup(config, metadataHelper, config.getTimers(), scannerFactory));
+        } catch (StackOverflowError e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Stack trace for overflow " + e);
+            }
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
+            log.warn(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (NoResultsException e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Definitively determined that no results exist from the indexes");
+            }
+
+            return DefaultQueryPlanner.emptyCloseableIterator();
+        }
+
+        return startRangeProcessing(scannerFactory, metadataHelper, config, settings, cfg);
     }
 
     private void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
