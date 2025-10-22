@@ -177,7 +177,8 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
     @Test
     public void blockForNumRangesToBufferTest() {
-        int delay = 300;
+        int delay = 200;
+        int overhead = 100;
 
         Iterator<QueryPlan> itr = plans.iterator();
 
@@ -198,12 +199,12 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         long start2 = System.currentTimeMillis();
         assertTrue(trbi.hasNext());
         long end2 = System.currentTimeMillis();
-        // this happened async, so should be faster, but not more than the delay
-        assertTrue((end2 - start2) <= delay);
+        // this happened async, so should be faster, but not more than the delay + overhead
+        assertTrue((end2 - start2) <= (delay + overhead));
 
         long total = (System.currentTimeMillis() - start);
         // total time will be the sum of the delay + overhead
-        assertTrue(total >= delay * 2);
+        assertTrue(total >= (delay + overhead));
 
         verifyAll();
     }

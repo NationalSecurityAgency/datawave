@@ -510,6 +510,47 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
+     * This method starts a number of long-running tasks that can be done in parallel.
+     *
+     * @param config
+     *            the config
+     */
+    protected void startConcurrentExecution(ShardQueryConfiguration config) {
+        // iterator setting future + seven futures below make 8, add two for growth/extension
+        executor = Executors.newFixedThreadPool(10);
+
+        compositeMetadata = null;
+        typeMetadata = null;
+        contentExpansionFields = null;
+        serializedIvaratorDirs = null;
+        indexedFields = null;
+        indexOnlyFields = null;
+        nonEventFields = null;
+        termFrequencyFields = null;
+
+        // expensive operations are executed in parallel
+        compositeMetadataCallable = new FetchCompositeMetadata(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        typeMetadataCallable = new FetchTypeMetadata(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        contentExpansionFieldsCallable = new FetchContentExpansionFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        ivaratorCacheDirCallable = new SerializeIvaratorCacheDirs(futureStopWatch, this, config);
+        indexedFieldsCallable = new FetchIndexedFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        indexOnlyFieldsCallable = new FetchIndexOnlyFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        nonEventFieldsCallable = new FetchNonEventFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        termFrequencyFieldsCallable = new FetchTermFrequencyFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+
+        // field sets tend to be needed first, so submit those before others
+        indexOnlyFieldsFuture = executor.submit(indexOnlyFieldsCallable);
+        indexedFieldsFuture = executor.submit(indexedFieldsCallable);
+        nonEventFieldsFuture = executor.submit(nonEventFieldsCallable);
+        termFrequencyFieldsFuture = executor.submit(termFrequencyFieldsCallable);
+
+        compositeMetadataFuture = executor.submit(compositeMetadataCallable);
+        typeMetadataFuture = executor.submit(typeMetadataCallable);
+        contentExpansionFieldsFuture = executor.submit(contentExpansionFieldsCallable);
+        ivaratorCacheDirFuture = executor.submit(ivaratorCacheDirCallable);
+    }
+
+    /**
      * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
      *
      * @see DatePartitionedQueryPlanner
@@ -559,47 +600,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return startRangeProcessing(scannerFactory, metadataHelper, config, settings, cfg);
-    }
-
-    /**
-     * This method starts a number of long-running tasks that can be done in parallel.
-     *
-     * @param config
-     *            the config
-     */
-    protected void startConcurrentExecution(ShardQueryConfiguration config) {
-        // iterator setting future + seven futures below make 8, add two for growth/extension
-        executor = Executors.newFixedThreadPool(10);
-
-        compositeMetadata = null;
-        typeMetadata = null;
-        contentExpansionFields = null;
-        serializedIvaratorDirs = null;
-        indexedFields = null;
-        indexOnlyFields = null;
-        nonEventFields = null;
-        termFrequencyFields = null;
-
-        // expensive operations are executed in parallel
-        compositeMetadataCallable = new FetchCompositeMetadata(futureStopWatch, metadataHelper, config.getDatatypeFilter());
-        typeMetadataCallable = new FetchTypeMetadata(futureStopWatch, metadataHelper, config.getDatatypeFilter());
-        contentExpansionFieldsCallable = new FetchContentExpansionFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
-        ivaratorCacheDirCallable = new SerializeIvaratorCacheDirs(futureStopWatch, this, config);
-        indexedFieldsCallable = new FetchIndexedFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
-        indexOnlyFieldsCallable = new FetchIndexOnlyFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
-        nonEventFieldsCallable = new FetchNonEventFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
-        termFrequencyFieldsCallable = new FetchTermFrequencyFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
-
-        // field sets tend to be needed first, so submit those before others
-        indexOnlyFieldsFuture = executor.submit(indexOnlyFieldsCallable);
-        indexedFieldsFuture = executor.submit(indexedFieldsCallable);
-        nonEventFieldsFuture = executor.submit(nonEventFieldsCallable);
-        termFrequencyFieldsFuture = executor.submit(termFrequencyFieldsCallable);
-
-        compositeMetadataFuture = executor.submit(compositeMetadataCallable);
-        typeMetadataFuture = executor.submit(typeMetadataCallable);
-        contentExpansionFieldsFuture = executor.submit(contentExpansionFieldsCallable);
-        ivaratorCacheDirFuture = executor.submit(ivaratorCacheDirCallable);
     }
 
     protected CloseableIterable<QueryData> startRangeProcessing(ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config,

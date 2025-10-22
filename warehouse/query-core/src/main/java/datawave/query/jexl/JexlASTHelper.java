@@ -1189,11 +1189,9 @@ public class JexlASTHelper {
             return range;
         }
 
-        private LiteralRange<?> _getRange(JexlNode orgNode) {
-            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(orgNode);
+        private LiteralRange<?> _getRange(JexlNode node) {
+            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
             boolean marked = instance.isType(BOUNDED_RANGE);
-
-            JexlNode node = orgNode;
 
             // first unwrap any delayed expression except for a tag
             if (includeDelayed && !marked && instance.isAnyType()) {
