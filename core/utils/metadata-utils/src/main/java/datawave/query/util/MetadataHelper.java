@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -40,6 +41,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.FirstEntryInRowIterator;
 import org.apache.accumulo.core.iterators.ValueFormatException;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -1714,6 +1716,7 @@ public class MetadataHelper {
         fields = Sets.difference(fields, specialFields);
         Set<Range> ranges = createExactFieldCountRanges(fields);
         StringBuilder dataTypeRegex = new StringBuilder();
+        List<IteratorSetting> settings = new ArrayList<>();
 
         if (ranges.isEmpty()) {
             return Collections.emptySet();
@@ -1735,22 +1738,55 @@ public class MetadataHelper {
         }
 
         try (BatchScanner bs = ScannerHelper.createBatchScanner(client, getMetadataTableName(), getAuths(), fields.size())) {
-            IteratorSetting regexIter = new IteratorSetting(50, "regexFilter", RegExFilter.class);
+            settings.add(new IteratorSetting(51, "FirstEntryInRow", FirstEntryInRowIterator.class));
+            settings.add(new IteratorSetting(50, "regexFilter", RegExFilter.class));
             if (!dataTypeRegex.toString().isEmpty()) {
-                regexIter.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
+                for (IteratorSetting setting : settings) {
+                    if (setting.getName().equals("regexFilter")) {
+                        setting.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
+                        break;
+                    }
+                }
             }
             bs.setRanges(ranges);
-            bs.addScanIterator(regexIter);
+            for (IteratorSetting setting : settings) {
+                bs.addScanIterator(setting);
+            }
 
             for (Entry<Key,Value> entry : bs) {
+                Text colq = entry.getKey().getColumnQualifier();
+                int colqIndex = colq.find(NULL_BYTE);
+
+                String remainder;
                 try {
-                    DateFrequencyMap map = new DateFrequencyMap(entry.getValue().get());
-                    if (!map.subMap(beginDate, endDate).isEmpty()) {
-                        foundFields.add(entry.getKey().getRow().toString());
+                    remainder = Text.decode(colq.getBytes(), colqIndex + 1, colq.getLength() - (colqIndex + 1));
+                } catch (CharacterCodingException e) {
+                    log.warn("Could not deserialize colqual: {} ", entry.getKey());
+                    continue;
+                }
+                if (remainder.equals(FrequencyMetadataAggregator.AGGREGATED)) {
+                    // This is an aggregated entry.
+                    try {
+                        DateFrequencyMap map = new DateFrequencyMap(entry.getValue().get());
+                        if (!map.subMap(beginDate, endDate).isEmpty()) {
+                            foundFields.add(entry.getKey().getRow().toString());
+                        }
+                    } catch (IOException e) {
+                        log.error("Failed to convert Value to DateFrequencyMap", e);
                     }
-                } catch (IOException e) {
-                    log.trace("Could not convert the Value to a DateFrequencyMap: {}", entry.getValue());
-                    log.error("Failed to convert Value to DateFrequencyMap", e);
+                } else {
+                    // This is an entry with a count for a single date.
+                    try {
+                        Date date = DateHelper.parse(remainder);
+                        // Add the field if we fall within beginDate and endDate, inclusively.
+                        if (date.compareTo(DateHelper.parse(beginDate)) >= 0 && date.compareTo(DateHelper.parse(endDate)) <= 0) {
+                            foundFields.add(entry.getKey().getRow().toString());
+                        }
+                    } catch (ValueFormatException e) {
+                        log.warn("Could not convert the Value to a long: {}", entry.getValue());
+                    } catch (DateTimeParseException e) {
+                        log.warn("Could not convert date string: {}", remainder);
+                    }
                 }
             }
         } catch (TableNotFoundException e) {
