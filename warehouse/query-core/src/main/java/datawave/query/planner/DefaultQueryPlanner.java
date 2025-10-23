@@ -2535,6 +2535,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
                 addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
             }
+            addOption(cfg, QueryOptions.MAX_YIELDS, Integer.toString(config.getMaxYields()), false);
 
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 

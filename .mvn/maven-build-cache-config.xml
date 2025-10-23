@@ -118,6 +118,17 @@
                     </excludeProperties>
                 </effectivePom>
             </plugin>
+            <!-- Exclude volatile properties from RPM builds -->
+            <plugin artifactId="rpm-maven-plugin">
+                <effectivePom>
+                    <excludeProperties>
+                        <excludeProperty>maven.build.timestamp</excludeProperty>
+                        <excludeProperty>user.name</excludeProperty>
+                        <excludeProperty>user.dir</excludeProperty>
+                        <excludeProperty>user.home</excludeProperty>
+                    </excludeProperties>
+                </effectivePom>
+            </plugin>
         </plugins>
     </input>
     <executionControl>
@@ -136,9 +147,10 @@
                         <goal>push</goal>
                     </goals>
                 </goalsList>
-                <!-- Always run resource copying for proper configuration -->
+                <!-- Always run resource copying and processing for proper configuration -->
                 <goalsList artifactId="maven-resources-plugin">
                     <goals>
+                        <goal>resources</goal>
                         <goal>copy-resources</goal>
                     </goals>
                 </goalsList>
@@ -149,9 +161,10 @@
                         <goal>build-info</goal>
                     </goals>
                 </goalsList>
-                <!-- Always run Maven dependency plugin for artifact copying -->
+                <!-- Always run Maven dependency plugin for artifact copying and unpacking -->
                 <goalsList artifactId="maven-dependency-plugin">
                     <goals>
+                        <goal>unpack</goal>
                         <goal>copy</goal>
                         <goal>copy-dependencies</goal>
                     </goals>
@@ -166,6 +179,18 @@
                 <goalsList artifactId="maven-deploy-plugin">
                     <goals>
                         <goal>deploy</goal>
+                    </goals>
+                </goalsList>
+                <!-- Always run RPM builds when profile is active -->
+                <goalsList artifactId="rpm-maven-plugin">
+                    <goals>
+                        <goal>rpm</goal>
+                    </goals>
+                </goalsList>
+                <!-- Always run property reading for proper filtering -->
+                <goalsList artifactId="read-properties">
+                    <goals>
+                        <goal>read-properties</goal>
                     </goals>
                 </goalsList>
             </goalsLists>

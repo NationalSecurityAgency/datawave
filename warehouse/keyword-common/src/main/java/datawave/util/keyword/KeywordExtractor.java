@@ -28,8 +28,7 @@ public class KeywordExtractor {
     public static final String MAX_SCORE = "max.score";
     public static final String MAX_CONTENT_CHARS = "max.content.chars";
 
-    private final List<String> preferredViews;
-    private final Map<String,VisibleContent> foundContent;
+    private final List<Map.Entry<String,VisibleContent>> orderedContent;
 
     public static final KeywordResults EMPTY_RESULTS = new KeywordResults();
 
@@ -56,10 +55,26 @@ public class KeywordExtractor {
 
     YakeKeywordExtractor yakeKeywordExtractor;
 
-    public KeywordExtractor(String source, List<String> preferredViews, Map<String,VisibleContent> foundContent, String language, Map<String,String> options) {
+    /**
+     * Creates a {@code KeywordExtractor}, a lightweight wrapper for {@link YakeKeywordExtractor} that handles selecting from multiple sources of content,
+     * choosing a language for keyword processing and property-based configuration.
+     *
+     * @param source
+     *            used to name the source for the content from which we'll extract keywords, carried forward into the results object potentially used for
+     *            display or grouping multiple keyword sets.
+     * @param orderedContent
+     *            an ordered list of content. The extractor will attempt to extract keywords from each item and will stop after the first item it successfully
+     *            extracts keywords from.
+     * @param language
+     *            the language to use when extracting content, if the language can't be found in the {@link YakeLanguage.Registry}, it will default to english.
+     *            This language will also be included in the results object.
+     * @param options
+     *            values for the options related to {@code MIN_NGRAMS}, {@code MAX_NGRAMS}, {@code MAX_KEYWORDS}, {@code MAX_SCORE} or
+     *            {@code MAX_CONTENT_CHARS}.
+     */
+    public KeywordExtractor(String source, List<Map.Entry<String,VisibleContent>> orderedContent, String language, Map<String,String> options) {
         this.source = source;
-        this.preferredViews = preferredViews;
-        this.foundContent = foundContent;
+        this.orderedContent = orderedContent;
 
         parseOptions(options);
 
@@ -103,54 +118,32 @@ public class KeywordExtractor {
     }
 
     /**
-     * Extract keywords from the {@code foundContent} field in priority order based on the list of views in {@code preferredViews} field. Will return a
-     * KeywordResults object populated with the keywords extracted from the first view in {@code preferredViews} that is found to contain content. If no
-     * keywords can be extracted from all preferred views, returns an empty {@code KeywordResults} object.
+     * Extract keywords from the {@code orderedContent} field. Will return a KeywordResults object populated with the keywords extracted from the first view in
+     * {@code orderedContent} that has a successful extraction. If no keywords can be extracted from all preferred views, returns an empty
+     * {@code KeywordResults} object.
      *
-     * @return a KeywordResults object containing keywords from the first of the {@code preferredViews} found in {@code foundContent} that yields a non-empty
-     *         set of keywords or an empty KeywordResults object if no keywords can be extracted.
+     * @return a KeywordResults object containing keywords from the first view found in {@code orderedContent} that yields a non-empty set of keywords or an
+     *         empty KeywordResults object if no keywords can be extracted.
      */
     @Nonnull
     public KeywordResults extractKeywords() {
-        if (foundContent.isEmpty()) {
+        if (orderedContent.isEmpty()) {
             return EMPTY_RESULTS;
         }
-        KeywordResults results = EMPTY_RESULTS;
-        for (String viewName : preferredViews) {
-            for (Map.Entry<String,VisibleContent> foundEntry : foundContent.entrySet()) {
-                if (viewName.endsWith("*")) {
-                    final String truncatedName = viewName.substring(0, viewName.length() - 1);
-                    if (foundEntry.getKey().startsWith(truncatedName)) {
-                        results = extractKeywordsFromVisibleContent(viewName, foundEntry.getValue());
-                    }
-                } else if (viewName.equals(foundEntry.getKey())) {
-                    results = extractKeywordsFromVisibleContent(viewName, foundEntry.getValue());
-                }
 
-                if (results != EMPTY_RESULTS) {
-                    return results;
-                }
+        for (Map.Entry<String,VisibleContent> entry : orderedContent) {
+            String view = entry.getKey();
+            VisibleContent content = entry.getValue();
+            // Attempts to extract keywords from VisibleContent object provided.
+            final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(content.getContent());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Extracted {} keywords from {} view.", keywords.size(), view);
+            }
+            if (!keywords.isEmpty()) {
+                return new KeywordResults(source, view, language, content.getVisibility(), keywords);
             }
         }
-        return EMPTY_RESULTS;
-    }
 
-    /**
-     * Attempts to extract keywords from VisibleContent object provided.
-     *
-     * @param viewName
-     *            the view name we're extracting from.
-     * @param content
-     *            the content associated with that view.
-     * @return a KeywordResult object containing keywords extracted from the provided content, or the canonical {@code EMPTY_RESULTS} KeywordResults object if
-     *         no keywords could be extracted.
-     */
-    @Nonnull
-    private KeywordResults extractKeywordsFromVisibleContent(String viewName, VisibleContent content) {
-        final LinkedHashMap<String,Double> keywords = yakeKeywordExtractor.extractKeywords(content.getContent());
-        if (logger.isDebugEnabled()) {
-            logger.debug("Extracted {} keywords from {} view.", keywords.size(), viewName);
-        }
-        return keywords.isEmpty() ? EMPTY_RESULTS : new KeywordResults(source, viewName, language, content.getVisibility(), keywords);
+        return EMPTY_RESULTS;
     }
 }

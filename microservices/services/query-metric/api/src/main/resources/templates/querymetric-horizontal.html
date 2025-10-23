@@ -102,7 +102,7 @@
                 <td style="overflow-wrap:anywhere; min-width:300px;" th:utext="${metric.parametersStr}"></td>
                 <td style="overflow-wrap:anywhere; min-width:300px;" th:text="${metric.queryAuthorizationsStr}"></td>
                 <td th:text="${metric.host}"></td>
-                <td th:text="${metric.predictionsStr}"></td>
+                <td th:utext="${metric.predictionsStr}"></td>
                 <td th:text="${metric.loginTimeStr}"></td>
                 <td th:text="${metric.setupTimeStr}"></td>
                 <td th:text="${metric.createCallTimeStr}"></td>
