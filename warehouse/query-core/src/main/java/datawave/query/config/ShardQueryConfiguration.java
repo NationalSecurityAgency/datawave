@@ -3064,6 +3064,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isExpandFields() == that.isExpandFields() &&
                 getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold() &&
                 isExpandValues() == that.isExpandValues() &&
+                isExpandUnfieldedValues() == that.isExpandUnfieldedValues() &&
                 getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold() &&
                 getMaxOrExpansionThreshold() == that.getMaxOrExpansionThreshold() &&
                 getMaxOrRangeThreshold() == that.getMaxOrRangeThreshold() &&
@@ -3192,7 +3193,23 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
+                isDeferPushdownPullup() == that.isDeferPushdownPullup() &&
+                getIndexFieldHoleMinThreshold() == that.getIndexFieldHoleMinThreshold() &&
+                Objects.equals(getQueryTreeScanHintRules(), that.getQueryTreeScanHintRules()) &&
+                Objects.equals(getSummaryIterator(), that.getSummaryIterator()) &&
+                Objects.equals(getDisallowedRegexPatterns(), that.getDisallowedRegexPatterns()) &&
                 Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+                isDateIndexIterator() == that.isDateIndexIterator() &&
+                isUseDocumentScheduler() == that.isUseDocumentScheduler() &&
+                Objects.equals(getSummaryFieldName(), that.getSummaryFieldName()) &&
+                Objects.equals(getShardDateFormatter(), that.getShardDateFormatter()) &&
+                Objects.equals(getDocumentScannerConfig(), that.getDocumentScannerConfig()) &&
+                Objects.equals(getExcerptIterator(), that.getExcerptIterator()) &&
+                isUseQueryTreeScanHintRules() == that.isUseQueryTreeScanHintRules() &&
+                getMaxLinesToPrint() == that.getMaxLinesToPrint() &&
+                getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
+                isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
+                isUseShardedIndex() == that.isUseShardedIndex() &&
                 getDayIndexThreshold() == that.getDayIndexThreshold();
         // @formatter:on
     }
@@ -3270,6 +3287,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEnricherClassNames(),
                 getUseFilters(),
                 getFilterClassNames(),
+                getFieldRuleClassName(),
                 getIndexFilteringClassNames(),
                 getNonEventKeyPrefixes(),
                 getUnevaluatedFields(),
@@ -3334,6 +3352,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isExpandFields(),
                 getMaxUnfieldedExpansionThreshold(),
                 isExpandValues(),
+                isExpandUnfieldedValues(),
                 getMaxValueExpansionThreshold(),
                 getMaxOrExpansionThreshold(),
                 getMaxOrRangeThreshold(),
@@ -3407,6 +3426,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
                 getNoExpansionIfCurrentDateTypes(),
+                isDeferPushdownPullup(),
+                getIndexFieldHoleMinThreshold(),
+                getQueryTreeScanHintRules(),
+                getSummaryIterator(),
+                getDisallowedRegexPatterns(),
+                getNoExpansionIfCurrentDateTypes(),
+                isDateIndexIterator(),
+                isUseDocumentScheduler(),
+                getSummaryFieldName(),
+                getShardDateFormatter(),
+                getDocumentScannerConfig(),
+                getExcerptIterator(),
+                isUseQueryTreeScanHintRules(),
+                getMaxLinesToPrint(),
+                getMaxAnyFieldScanTimeMillis(),
+                isDisableIteratorUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold());
         // @formatter:on

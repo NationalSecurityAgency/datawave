@@ -3535,4 +3535,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public void setDayIndexThreshold(int dayIndexThreshold) {
         getConfig().setDayIndexThreshold(dayIndexThreshold);
     }
+
+    public boolean isExpandUnfieldedValues() {
+        return getConfig().isExpandUnfieldedValues();
+    }
+
+    public void setExpandUnfieldedValues(boolean expand) {
+        getConfig().setExpandUnfieldedValues(expand);
+    }
 }
