@@ -1745,8 +1745,7 @@ public class MetadataHelper {
             for (IteratorSetting setting : settings) {
                 if (setting.getName().equals("regexFilter")) {
                     setting.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
-                } else if (setting.getName().equals("firstEntryInRow")) {
-                    FirstEntryInRowIterator.setNumScansBeforeSeek(setting, 0);
+                    break;
                 }
             }
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
