@@ -1739,17 +1739,15 @@ public class MetadataHelper {
 
         try (BatchScanner bs = ScannerHelper.createBatchScanner(client, getMetadataTableName(), getAuths(), fields.size())) {
             if (!datatypes.isEmpty()) {
-                settings.add(new IteratorSetting(50, "regexFilter", RegExFilter.class));
+                IteratorSetting regexFilter = new IteratorSetting(50, "regexFilter", RegExFilter.class);
+                regexFilter.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
+                settings.add(regexFilter);
             }
+
             settings.add(new IteratorSetting(51, "firstEntryInRow", FirstEntryInRowIterator.class));
-            for (IteratorSetting setting : settings) {
-                if (setting.getName().equals("regexFilter")) {
-                    setting.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
-                    break;
-                }
-            }
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
             bs.setRanges(ranges);
+
             for (IteratorSetting setting : settings) {
                 bs.addScanIterator(setting);
             }
