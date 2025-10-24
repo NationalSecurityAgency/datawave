@@ -1738,16 +1738,18 @@ public class MetadataHelper {
         }
 
         try (BatchScanner bs = ScannerHelper.createBatchScanner(client, getMetadataTableName(), getAuths(), fields.size())) {
-            settings.add(new IteratorSetting(51, "FirstEntryInRow", FirstEntryInRowIterator.class));
-            settings.add(new IteratorSetting(50, "regexFilter", RegExFilter.class));
-            if (!dataTypeRegex.toString().isEmpty()) {
-                for (IteratorSetting setting : settings) {
-                    if (setting.getName().equals("regexFilter")) {
-                        setting.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
-                        break;
-                    }
+            if (!datatypes.isEmpty()) {
+                settings.add(new IteratorSetting(50, "regexFilter", RegExFilter.class));
+            }
+            settings.add(new IteratorSetting(51, "firstEntryInRow", FirstEntryInRowIterator.class));
+            for (IteratorSetting setting : settings) {
+                if (setting.getName().equals("regexFilter")) {
+                    setting.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
+                } else if (setting.getName().equals("firstEntryInRow")) {
+                    FirstEntryInRowIterator.setNumScansBeforeSeek(setting, 0);
                 }
             }
+            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
             bs.setRanges(ranges);
             for (IteratorSetting setting : settings) {
                 bs.addScanIterator(setting);
