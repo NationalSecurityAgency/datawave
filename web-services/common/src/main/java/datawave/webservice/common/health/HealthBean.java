@@ -66,7 +66,7 @@ public class HealthBean {
 
     private static boolean shutdownInProgress = false;
     private static String status = "ready";
-    private volatile String lastHealthMsg = null;
+    private static volatile String lastHealthMsg = null;
 
     @EJB
     private AccumuloTableCache tableCache;
