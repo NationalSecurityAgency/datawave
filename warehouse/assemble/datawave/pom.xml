@@ -28,12 +28,10 @@
         <dependency>
             <groupId>com.google.api.grpc</groupId>
             <artifactId>proto-google-common-protos</artifactId>
-            <version>${version.proto-google-common-protos}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java-util</artifactId>
-            <version>${version.protobuf-java-util}</version>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>

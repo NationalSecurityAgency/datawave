@@ -35,6 +35,7 @@
         <module>edge-model-configuration-core</module>
         <module>ssdeep-common</module>
         <module>ingest-ssdeep</module>
+        <module>ingest-annotation</module>
     </modules>
     <properties>
         <!-- set env property to its default value -->
