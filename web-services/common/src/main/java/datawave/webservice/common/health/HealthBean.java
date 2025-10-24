@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RunAs;
+import javax.ejb.EJB;
 import javax.ejb.LocalBean;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
@@ -46,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import com.sun.management.OperatingSystemMXBean;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.result.GenericResponse;
 
@@ -64,6 +66,10 @@ public class HealthBean {
 
     private static boolean shutdownInProgress = false;
     private static String status = "ready";
+    private volatile String lastHealthMsg = null;
+
+    @EJB
+    private AccumuloTableCache tableCache;
 
     @Inject
     private AccumuloConnectionFactory accumuloConnectionFactoryBean;
@@ -97,15 +103,32 @@ public class HealthBean {
         ServerHealth health = new ServerHealth();
         health.status = status;
         health.connectionUsagePercent = accumuloConnectionFactoryBean.getConnectionUsagePercent();
-        if (health.connectionUsagePercent >= maxUsedPercent) {
+        if (!tableCache.isAvailable()) {
+            health.details = "Accumulo table cache is not ready yet";
+            return logHealth(Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build());
+        } else if (health.connectionUsagePercent >= maxUsedPercent) {
             health.details = health.connectionUsagePercent + " of connections used [>= max of " + maxUsedPercent + " allowed]";
-            return Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build();
+            return logHealth(Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build());
         } else if (shutdownInProgress) {
             health.details = "Shutdown in progress -- no new query connections allowed.";
-            return Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build();
+            return logHealth(Response.status(Status.SERVICE_UNAVAILABLE).entity(health).build());
         } else {
-            return Response.ok().entity(health).build();
+            health.details = "System healthy";
+            return logHealth(Response.ok().entity(health).build());
         }
+    }
+
+    /**
+     * Log the health response and pass it along
+     */
+    private Response logHealth(Response response) {
+        ServerHealth health = (ServerHealth) (response.getEntity());
+        String healthMsg = response.getStatusInfo() + ": " + health.details;
+        if (!healthMsg.equals(lastHealthMsg)) {
+            lastHealthMsg = healthMsg;
+            LOG.info(healthMsg);
+        }
+        return response;
     }
 
     /**
