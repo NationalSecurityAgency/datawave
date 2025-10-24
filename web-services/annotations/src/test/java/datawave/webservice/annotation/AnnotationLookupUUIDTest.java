@@ -53,7 +53,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -98,7 +97,6 @@ public class AnnotationLookupUUIDTest {
                         "datawave.webservice.query.result.event"
                 )
                 .deleteClass(DefaultEdgeEventQueryLogic.class)
-                .deleteClass(RemoteEdgeDictionary.class)
                 .deleteClass(QueryMetricQueryLogic.class)
                 .addAsManifestResource(
                         new StringAsset(

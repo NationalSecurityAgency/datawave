@@ -65,7 +65,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
@@ -127,7 +126,6 @@ public class AnnotationManagerBeanFunctionalTest {
                 .addClass(AnnotationManagerBean.class)
                 .addClass(AccumuloConnectionRequestBean.class)
                 .deleteClass(DefaultEdgeEventQueryLogic.class)
-                .deleteClass(RemoteEdgeDictionary.class)
                 .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                 .addAsManifestResource(
                         new StringAsset(
