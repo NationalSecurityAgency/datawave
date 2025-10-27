@@ -9,19 +9,15 @@
     <artifactId>datawave-annotation-core</artifactId>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
-        <version.protobuf>3.16.3</version.protobuf>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.google.api.grpc</groupId>
             <artifactId>proto-google-common-protos</artifactId>
-            <version>${version.proto-google-common-protos}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>${version.protobuf}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -32,7 +28,6 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java-util</artifactId>
-            <version>${version.protobuf}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
