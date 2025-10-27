@@ -1045,7 +1045,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         return new DefaultLocationStrategy();
     }
 
-
     public List<Range> binRanges(ClientContext context, List<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
