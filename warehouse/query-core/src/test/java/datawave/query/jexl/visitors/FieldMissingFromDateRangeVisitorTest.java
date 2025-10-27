@@ -351,6 +351,68 @@ public class FieldMissingFromDateRangeVisitorTest {
         runCheck(script, begin, end, Sets.newHashSet("foo"), Sets.newHashSet("GENDER"), false);
     }
 
+    /**
+     * CHANGE.
+     */
+    @Test
+    public void testNestedIntersection() throws ParseException, AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException {
+        String query = "AGE == 'foo' || (GENDER == 'bar' && JOB == 'foo')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet("num"), Sets.newHashSet(), true);
+        runCheck(script, begin, end, Sets.newHashSet("num"), Sets.newHashSet(), false);
+    }
+
+    /**
+     * CHANGE.
+     */
+    @Test
+    public void testNestedUnion() throws ParseException, AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException {
+        String query = "AGE == 'foo' && (GENDER == 'bar' || JOB == 'foo')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet("num"), Sets.newHashSet("GENDER", "JOB"), true);
+        runCheck(script, begin, end, Sets.newHashSet("num"), Sets.newHashSet("GENDER", "JOB"), false);
+    }
+
+    /**
+     * CHANGE.
+     */
+    @Test
+    public void testDoubleNestedIntersection()
+                    throws ParseException, AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException {
+        String query = "(AGE == 'foo' && GENDER == 'foo') || (GENDER == 'bar' && JOB == 'foo')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet("num"), Sets.newHashSet(), true);
+        runCheck(script, begin, end, Sets.newHashSet("num"), Sets.newHashSet(), false);
+    }
+
+    /**
+     * CHANGE.
+     */
+    @Test
+    public void testDoubleNestedUnion() throws ParseException, AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException {
+        String query = "(AGE == 'foo' || GENDER == 'foo') && (NAME == 'bar' || JOB == 'foo')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        System.out.println();
+
+        Date begin = new Date(1609372800000L); // 12/31/2020 00:00:00 GMT
+        Date end = new Date(1735776000000L); // 01/02/2025 00:00:00 GMT
+
+        runCheck(script, begin, end, Sets.newHashSet("attr"), Sets.newHashSet(), true);
+        runCheck(script, begin, end, Sets.newHashSet("attr"), Sets.newHashSet(), false);
+    }
+
     private void runCheck(ASTJexlScript script, Date begin, Date end, Set<String> filter, Set<String> expected, boolean isAggregated)
                     throws AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException {
         if (helper.getAccumuloClient().tableOperations().exists(TableName.METADATA)) {
@@ -364,12 +426,14 @@ public class FieldMissingFromDateRangeVisitorTest {
             givenAggregatedRow("AGE", COLF_F, "var", "BAR", 1499999999L, createDateFrequencyMap("20230101", 40L, "20230102", 15L, "20230103", 20L));
             givenAggregatedRow("GENDER", COLF_F, "text", "FOO", 1499999999L, createDateFrequencyMap("20240101", 40L, "20240102", 15L, "20240103", 20L));
             givenAggregatedRow("JOB", COLF_F, "attr", "FOO", 1499999999L, createDateFrequencyMap("20250101", 40L, "20250102", 15L, "20250103", 20L));
+            givenAggregatedRow("NAME", COLF_F, "attr", "FOO", 1499999999L, createDateFrequencyMap("20250101", 40L, "20250102", 15L, "20250103", 20L));
         } else {
             givenNonAggregatedFrequencyRows("AGE", COLF_F, "num", "20210101", "20210103", 1L);
             givenNonAggregatedFrequencyRows("AGE", COLF_F, "lifetime", "20220101", "20220103", 1L);
             givenNonAggregatedFrequencyRows("AGE", COLF_F, "var", "20230101", "20230103", 1L);
             givenNonAggregatedFrequencyRows("GENDER", COLF_F, "text", "20240101", "20240103", 1L);
             givenNonAggregatedFrequencyRows("JOB", COLF_F, "attr", "20250101", "20250103", 1L);
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "attr", "20250101", "20250103", 1L);
         }
         writeMutations(helper.getAccumuloClient(), this.mutations);
         Mockito.doReturn(begin).when(querySettings).getBeginDate();

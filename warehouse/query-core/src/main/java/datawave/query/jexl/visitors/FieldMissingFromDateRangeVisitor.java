@@ -22,6 +22,8 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.microservice.query.Query;
 import datawave.query.jexl.JexlASTHelper;
@@ -39,6 +41,8 @@ import datawave.query.util.MetadataHelper;
  * </pre>
  */
 public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
+
+    private static final Logger log = LoggerFactory.getLogger(FieldMissingFromDateRangeVisitor.class);
 
     private final MetadataHelper helper;
     private final Set<String> datatypeFilter;
@@ -59,9 +63,32 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @SuppressWarnings("unchecked")
     public static Set<String> getNonIngestedFields(MetadataHelper helper, ASTJexlScript script, Set<String> datatypes, Set<String> specialFields,
                     Query querySettings) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         FieldMissingFromDateRangeVisitor visitor = new FieldMissingFromDateRangeVisitor(helper, datatypes, specialFields, querySettings);
-        // Maintain insertion order.
-        return (Set<String>) script.jjtAccept(visitor, new LinkedHashSet<>());
+        // Collect the fields
+        Set<String> collectedFields = (Set<String>) script.jjtAccept(visitor, new LinkedHashSet<>());
+        if (collectedFields != null && !collectedFields.isEmpty()) {
+            Set<String> missingFields = visitor.helper.getMissingFieldsInDateRange(collectedFields, visitor.datatypeFilter,
+                            formatter.format(visitor.querySettings.getBeginDate()), formatter.format(visitor.querySettings.getEndDate()),
+                            visitor.specialFields);
+            if (script.jjtGetChild(0) instanceof ASTOrNode) {
+                // If it is an OR node, check if all fields are missing.
+                if (missingFields.containsAll(collectedFields)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Found missing fields:  {}", missingFields);
+                    }
+                    return missingFields;
+                } else {
+                    // If only some are missing, we do not want to return any.
+                    return Collections.emptySet();
+                }
+            } else {
+                // Not an OR node, so return the missing fields we found.
+                return missingFields;
+            }
+        } else {
+            return Collections.emptySet();
+        }
     }
 
     /**
@@ -71,11 +98,9 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
      *            The set of names which we have determined have not been ingested during the date range.
      * @return the updated set of names which have not been ingested during the date range.
      */
-    private Object findMissingFields(ASTOrNode node, Object data) throws TableNotFoundException {
+    private Object collectFields(ASTOrNode node, Object data) throws TableNotFoundException {
         @SuppressWarnings("unchecked")
-        Set<String> nonExistentFieldNames = (null == data) ? new LinkedHashSet<>() : (Set<String>) data;
-        Set<String> fieldNamesToTestDateRange = new HashSet<>();
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        Set<String> collectedFieldNames = (Set<String>) data;
         List<ASTIdentifier> identifiers;
 
         int numChildren = node.jjtGetNumChildren();
@@ -87,29 +112,23 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
             try {
                 identifiers = JexlASTHelper.getIdentifiers(child);
             } catch (NoSuchElementException e) {
-                return nonExistentFieldNames;
+                return collectedFieldNames;
             }
 
             if (identifiers.isEmpty()) {
                 // Catch cases where we have two literals
                 // essentially everything but identifier op literal
-                return nonExistentFieldNames;
+                return collectedFieldNames;
             }
 
             for (ASTIdentifier identifier : identifiers) {
                 String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
                 if (!specialFields.contains(fieldName)) {
-                    fieldNamesToTestDateRange.add(fieldName);
+                    collectedFieldNames.add(fieldName);
                 }
             }
         }
-        Set<String> missingFields = helper.getMissingFieldsInDateRange(fieldNamesToTestDateRange, datatypeFilter,
-                        formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate()), specialFields);
-        if (missingFields.containsAll(fieldNamesToTestDateRange)) {
-            return nonExistentFieldNames.addAll(missingFields);
-        } else {
-            return nonExistentFieldNames;
-        }
+        return collectedFieldNames;
     }
 
     /**
@@ -119,40 +138,38 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
      *            The set of names which we have determined have not been ingested during the date range.
      * @return the updated set of names which have not been ingested during the date range.
      */
-    private Object findMissingFields(JexlNode node, Object data) throws TableNotFoundException {
+    private Object collectFields(JexlNode node, Object data) throws TableNotFoundException {
         @SuppressWarnings("unchecked")
-        Set<String> nonIngestedFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
+        Set<String> collectedFieldNames = (Set<String>) data;
         List<ASTIdentifier> identifiers;
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 
         // A node could be literal == literal in terms of an identityQuery
         try {
             identifiers = JexlASTHelper.getIdentifiers(node);
         } catch (NoSuchElementException e) {
-            return nonIngestedFieldNames;
+            return collectedFieldNames;
         }
 
         if (identifiers.isEmpty()) {
             // Catch cases where we have two literals
             // essentially everything but identifier op literal
-            return nonIngestedFieldNames;
+            return collectedFieldNames;
         }
 
         for (ASTIdentifier identifier : identifiers) {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
             if (!specialFields.contains(fieldName)) {
-                nonIngestedFieldNames.addAll(helper.getMissingFieldsInDateRange(Set.of(fieldName), datatypeFilter,
-                                formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate()), specialFields));
+                collectedFieldNames.add(fieldName);
             }
         }
-        return nonIngestedFieldNames;
+        return collectedFieldNames;
 
     }
 
     @Override
     public Object visit(ASTERNode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -161,7 +178,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTNRNode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -170,7 +187,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -179,7 +196,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTNENode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -188,7 +205,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTGENode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -197,7 +214,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTGTNode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -206,7 +223,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTLENode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -215,7 +232,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTLTNode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -225,23 +242,17 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         @SuppressWarnings("unchecked")
-        Set<String> nonIngestedFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        Set<String> collectedFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
 
         for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
             // deconstruct the identifier
             final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
             // changed to allow _ANYFIELD_ in functions
             if (!specialFields.contains(fieldName)) {
-                try {
-                    nonIngestedFieldNames.addAll(helper.getMissingFieldsInDateRange(Set.of(testFieldName), datatypeFilter,
-                                    formatter.format(this.querySettings.getBeginDate()), formatter.format(this.querySettings.getEndDate()), specialFields));
-                } catch (TableNotFoundException e) {
-                    throw new RuntimeException(e);
-                }
+                collectedFieldNames.add(fieldName);
             }
         }
-        return nonIngestedFieldNames;
+        return collectedFieldNames;
     }
 
     // Descend through these nodes
@@ -254,7 +265,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
         try {
-            return findMissingFields(node, data);
+            return collectFields(node, data);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }

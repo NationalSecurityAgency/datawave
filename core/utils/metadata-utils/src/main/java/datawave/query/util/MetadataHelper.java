@@ -1709,8 +1709,7 @@ public class MetadataHelper {
      *            special fields to exclude from search
      * @return a set of missing fields from the given date range
      */
-    public Set<String> getMissingFieldsInDateRange(Set<String> fields, Set<String> datatypes, String beginDate, String endDate, Set<String> specialFields)
-                    throws TableNotFoundException {
+    public Set<String> getMissingFieldsInDateRange(Set<String> fields, Set<String> datatypes, String beginDate, String endDate, Set<String> specialFields) {
         SortedSet<String> sortedDatatypes = new TreeSet<>(datatypes);
         Set<String> foundFields = new HashSet<>();
         fields = Sets.difference(fields, specialFields);
