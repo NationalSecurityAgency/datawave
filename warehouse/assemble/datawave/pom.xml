@@ -26,6 +26,14 @@
             <artifactId>minlog</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.api.grpc</groupId>
+            <artifactId>proto-google-common-protos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
         </dependency>
@@ -36,6 +44,11 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-accumulo-extensions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-annotation-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -60,6 +73,11 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-index-stats</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-annotation</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -694,6 +712,8 @@
                                             <include>${project.groupId}:datawave-data-dictionary-core</include>
                                             <include>${project.groupId}:datawave-edge-dictionary-core</include>
                                             <include>${project.groupId}:datawave-edge-model-configuration-core</include>
+                                            <include>${project.groupId}:datawave-annotation-core</include>
+                                            <include>${project.groupId}:datawave-ingest-annotation</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>${project.groupId}:datawave-ingest-ssdeep</include>

@@ -133,7 +133,9 @@
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
+        <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
+        <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>2.0.12</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
@@ -226,6 +228,11 @@
                 <version>${version.caffeine}</version>
             </dependency>
             <dependency>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>${version.proto-google-common-protos}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
                 <version>${version.googlecode-findbugs}</version>
@@ -245,6 +252,17 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${version.protobuf}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${version.protobuf}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.json-simple</groupId>
