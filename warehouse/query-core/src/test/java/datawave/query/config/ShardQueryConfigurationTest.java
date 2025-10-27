@@ -644,6 +644,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useShardedIndex", true);
         defaultValues.put("dayIndexThreshold", -1);
         updatedValues.put("dayIndexThreshold", 31);
+
+        defaultValues.put("useTruncatedIndex", false);
+        updatedValues.put("useTruncatedIndex", true);
+        defaultValues.put("truncatedIndexTableName", TableName.TRUNCATED_SHARD_INDEX);
+        updatedValues.put("truncatedIndexTableName", "datawave." + TableName.TRUNCATED_SHARD_INDEX);
     }
 
     private Query createQuery(String query) {

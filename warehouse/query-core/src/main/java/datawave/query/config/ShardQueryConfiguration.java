@@ -204,6 +204,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String metadataTableName = TableName.METADATA;
     private String dateIndexTableName = TableName.DATE_INDEX;
     private String indexStatsTableName = TableName.INDEX_STATS;
+    private String truncatedIndexTableName = TableName.TRUNCATED_SHARD_INDEX;
     private String dayIndexTableName = TableName.SHARD_DAY_INDEX;
     private String yearIndexTableName = TableName.SHARD_YEAR_INDEX;
     private String defaultDateTypeName = "EVENT";
@@ -562,6 +563,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxLinesToPrint = -1;
 
     /**
+     * Flag that controls usage of a truncated shard index. This table has a different key structure that requires different scanner configuration.
+     */
+    private boolean useTruncatedIndex = false;
+
+    /**
      * Flag that controls usage of the sharded index tables. These tables are sharded based on the year or day and shard offsets are tracked in a bitset.
      */
     private boolean useShardedIndex = false;
@@ -830,6 +836,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
         this.setUseShardedIndex(other.isUseShardedIndex());
         this.setDayIndexThreshold(other.getDayIndexThreshold());
+        this.setUseTruncatedIndex(other.isUseTruncatedIndex());
+        this.setTruncatedIndexTableName(other.getTruncatedIndexTableName());
     }
 
     /**
@@ -3176,7 +3184,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
                 Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
-                getDayIndexThreshold() == that.getDayIndexThreshold();
+                getDayIndexThreshold() == that.getDayIndexThreshold() &&
+                isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
+                getTruncatedIndexTableName() == that.getTruncatedIndexTableName();
         // @formatter:on
     }
 
@@ -3391,7 +3401,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getCardinalityThreshold(),
                 getNoExpansionIfCurrentDateTypes(),
                 isUseShardedIndex(),
-                getDayIndexThreshold());
+                getDayIndexThreshold(),
+                isUseTruncatedIndex(),
+                getTruncatedIndexTableName());
         // @formatter:on
     }
 
@@ -3488,5 +3500,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setDayIndexThreshold(int dayIndexThreshold) {
         this.dayIndexThreshold = dayIndexThreshold;
+    }
+
+    public boolean isUseTruncatedIndex() {
+        return useTruncatedIndex;
+    }
+
+    public void setUseTruncatedIndex(boolean useTruncatedIndex) {
+        this.useTruncatedIndex = useTruncatedIndex;
+    }
+
+    public String getTruncatedIndexTableName() {
+        return truncatedIndexTableName;
+    }
+
+    public void setTruncatedIndexTableName(String truncatedIndexTableName) {
+        this.truncatedIndexTableName = truncatedIndexTableName;
     }
 }
