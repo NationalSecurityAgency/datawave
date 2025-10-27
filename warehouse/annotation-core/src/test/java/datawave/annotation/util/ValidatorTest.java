@@ -25,9 +25,14 @@ public class ValidatorTest {
         testObject.start = LocalDate.parse("2020-10-10", dateFormat);
         testObject.end = LocalDate.parse("2025-05-05", dateFormat);
 
-        Validator<TestObject> validator = Validator.<TestObject> create().addCheck(o -> o.name != null && !o.name.isBlank(), "Name is required")
-                        .addCheck(o -> o.size > 0, "Size must be larger than zero").addCheck(o -> o.start != null, "Start date must be null")
-                        .addCheck(o -> o.end != null, "End date must be null").addCheck(o -> o.end.isAfter(o.start), "Start date must be prior to end date");
+        //@formatter:off
+        Validator<TestObject> validator = Validator.<TestObject>create()
+                .addCheck(o -> o.name != null && !o.name.isBlank(), "Name is required")
+                .addCheck(o -> o.size > 0, "Size must be larger than zero")
+                .addCheck(o -> o.start != null, "Start date must be null")
+                .addCheck(o -> o.end != null, "End date must be null")
+                .addCheck(o -> o.end.isAfter(o.start), "Start date must be prior to end date");
+        //@formatter:on
 
         assertTrue(validator.check(testObject).isValid());
     }

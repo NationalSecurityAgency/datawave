@@ -94,7 +94,9 @@
             datawave.webservice.mr.status.MapReduceStatusUpdateBean,
             <!-- From dictionary -->
             datawave.webservice.dictionary.DataDictionaryBean,
-            datawave.webservice.dictionary.EdgeDictionaryBean
+            datawave.webservice.dictionary.EdgeDictionaryBean,
+            <!-- From annotations -->
+            datawave.webservice.annotation.AnnotationManagerBean
         </param-value>
     </context-param>
 
@@ -227,7 +229,7 @@
         <web-resource-collection>
             <web-resource-name>HtmlAdaptor</web-resource-name>
             <description>A security config that only allows users with the
-                role AuthorizedUser to access the this web application
+                role AuthorizedUser to access to this web application
             </description>
             <url-pattern>/Atom/*</url-pattern>
         </web-resource-collection>
@@ -309,5 +311,9 @@
 
     <security-role>
         <role-name>AuthorizedQueryServer</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>AnnotationWriter</role-name>
     </security-role>
 </web-app>

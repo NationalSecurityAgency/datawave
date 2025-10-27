@@ -13,6 +13,7 @@
                 <value>classpath*:MetadataHelperContext.xml</value>
                 <value>classpath*:MetadataHelperCacheListenerContext.xml</value>
                 <value>classpath*:CacheContext.xml</value>
+                <value>classpath*:datawave/annotation/AnnotationManagerFactory.xml</value>
                 <value>classpath*:datawave/security/PrincipalFactory.xml</value>
                 <value>classpath*:datawave/query/QueryExpiration.xml</value>
                 <value>classpath*:datawave/query/QueryMetricsWriter.xml</value>
