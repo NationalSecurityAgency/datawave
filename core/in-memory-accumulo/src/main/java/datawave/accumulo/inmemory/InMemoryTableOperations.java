@@ -566,7 +566,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         return new LocationsImpl(binnedRanges);
     }
 
-    private List<Range> binRanges(ArrayList<Range> ranges, Map<String, Map<KeyExtent, List<Range>>> binnedRanges) {
+    private List<Range> binRanges(ArrayList<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
         binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
         return Collections.emptyList();
     }
