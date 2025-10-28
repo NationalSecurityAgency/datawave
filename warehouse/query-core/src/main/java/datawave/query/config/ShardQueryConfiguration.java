@@ -351,6 +351,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean expandFields = true;
     private int maxUnfieldedExpansionThreshold = 500;
     private boolean expandValues = true;
+    private boolean expandUnfieldedValues = true;
     private int maxValueExpansionThreshold = 5000;
     private int maxOrExpansionThreshold = 500;
     private int maxOrRangeThreshold = 10;
@@ -557,6 +558,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private DocumentScannerConfig documentScannerConfig;
 
     /**
+     * This property is used to avoid the pushdown/pullup portion of the planning. This is used by the DatePartitionedQueryPlanner as the pushdown/pullup is
+     * done by the reprocess planning method.
+     */
+    private boolean deferPushdownPullup = false;
+
+    /**
      * The maximum number of lines to print when streaming the query from the global index. Useful for limiting the logging footprint of large queries when
      * debug logging is enabled.
      */
@@ -742,6 +749,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExpandFields(other.isExpandFields());
         this.setMaxValueExpansionThreshold(other.getMaxValueExpansionThreshold());
         this.setExpandValues(other.isExpandValues());
+        this.setExpandUnfieldedValues(other.isExpandUnfieldedValues());
         this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
         this.setMaxOrRangeThreshold(other.getMaxOrRangeThreshold());
         this.setMaxOrRangeIvarators(other.getMaxOrRangeIvarators());
@@ -834,6 +842,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setDeferPushdownPullup(other.isDeferPushdownPullup());
         this.setUseShardedIndex(other.isUseShardedIndex());
         this.setDayIndexThreshold(other.getDayIndexThreshold());
         this.setUseTruncatedIndex(other.isUseTruncatedIndex());
@@ -1503,6 +1512,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setExpandValues(boolean expandValues) {
         this.expandValues = expandValues;
+    }
+
+    public boolean isExpandUnfieldedValues() {
+        return expandUnfieldedValues;
+    }
+
+    public void setExpandUnfieldedValues(boolean expandUnfieldedValues) {
+        this.expandUnfieldedValues = expandUnfieldedValues;
     }
 
     public int getMaxValueExpansionThreshold() {
@@ -3055,6 +3072,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isExpandFields() == that.isExpandFields() &&
                 getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold() &&
                 isExpandValues() == that.isExpandValues() &&
+                isExpandUnfieldedValues() == that.isExpandUnfieldedValues() &&
                 getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold() &&
                 getMaxOrExpansionThreshold() == that.getMaxOrExpansionThreshold() &&
                 getMaxOrRangeThreshold() == that.getMaxOrRangeThreshold() &&
@@ -3183,7 +3201,23 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
+                isDeferPushdownPullup() == that.isDeferPushdownPullup() &&
+                getIndexFieldHoleMinThreshold() == that.getIndexFieldHoleMinThreshold() &&
+                Objects.equals(getQueryTreeScanHintRules(), that.getQueryTreeScanHintRules()) &&
+                Objects.equals(getSummaryIterator(), that.getSummaryIterator()) &&
+                Objects.equals(getDisallowedRegexPatterns(), that.getDisallowedRegexPatterns()) &&
                 Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+                isDateIndexIterator() == that.isDateIndexIterator() &&
+                isUseDocumentScheduler() == that.isUseDocumentScheduler() &&
+                Objects.equals(getSummaryFieldName(), that.getSummaryFieldName()) &&
+                Objects.equals(getShardDateFormatter(), that.getShardDateFormatter()) &&
+                Objects.equals(getDocumentScannerConfig(), that.getDocumentScannerConfig()) &&
+                Objects.equals(getExcerptIterator(), that.getExcerptIterator()) &&
+                isUseQueryTreeScanHintRules() == that.isUseQueryTreeScanHintRules() &&
+                getMaxLinesToPrint() == that.getMaxLinesToPrint() &&
+                getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
+                isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
+                isUseShardedIndex() == that.isUseShardedIndex() &&
                 getDayIndexThreshold() == that.getDayIndexThreshold() &&
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
                 getTruncatedIndexTableName() == that.getTruncatedIndexTableName();
@@ -3263,6 +3297,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEnricherClassNames(),
                 getUseFilters(),
                 getFilterClassNames(),
+                getFieldRuleClassName(),
                 getIndexFilteringClassNames(),
                 getNonEventKeyPrefixes(),
                 getUnevaluatedFields(),
@@ -3327,6 +3362,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isExpandFields(),
                 getMaxUnfieldedExpansionThreshold(),
                 isExpandValues(),
+                isExpandUnfieldedValues(),
                 getMaxValueExpansionThreshold(),
                 getMaxOrExpansionThreshold(),
                 getMaxOrRangeThreshold(),
@@ -3400,6 +3436,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
                 getNoExpansionIfCurrentDateTypes(),
+                isDeferPushdownPullup(),
+                getIndexFieldHoleMinThreshold(),
+                getQueryTreeScanHintRules(),
+                getSummaryIterator(),
+                getDisallowedRegexPatterns(),
+                getNoExpansionIfCurrentDateTypes(),
+                isDateIndexIterator(),
+                isUseDocumentScheduler(),
+                getSummaryFieldName(),
+                getShardDateFormatter(),
+                getDocumentScannerConfig(),
+                getExcerptIterator(),
+                isUseQueryTreeScanHintRules(),
+                getMaxLinesToPrint(),
+                getMaxAnyFieldScanTimeMillis(),
+                isDisableIteratorUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold(),
                 isUseTruncatedIndex(),
@@ -3468,6 +3520,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         this.maxLinesToPrint = maxLinesToPrint;
+    }
+
+    public boolean isDeferPushdownPullup() {
+        return deferPushdownPullup;
+    }
+
+    public void setDeferPushdownPullup(boolean deferPushdownPullup) {
+        this.deferPushdownPullup = deferPushdownPullup;
     }
 
     public String getDayIndexTableName() {

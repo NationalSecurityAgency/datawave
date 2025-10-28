@@ -51,7 +51,14 @@ public abstract class BaseResponse implements Serializable {
     }
 
     public void setMessages(List<String> messages) {
-        this.messages = messages;
+        if (messages == null) {
+            this.messages = null;
+        } else if (this.messages == null) {
+            this.messages = new ArrayList<>(messages);
+        } else {
+            this.messages.clear();
+            this.messages.addAll(messages);
+        }
     }
 
     public void setExceptions(LinkedList<QueryExceptionType> exceptions) {
