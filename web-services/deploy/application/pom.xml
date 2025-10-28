@@ -78,6 +78,22 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-annotations</artifactId>
+            <version>${project.version}</version>
+            <type>ejb</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-common-util</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-atom</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
@@ -276,6 +292,10 @@
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-query</artifactId>
+                        </ejbModule>
+                        <ejbModule>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
+                            <artifactId>datawave-ws-annotations</artifactId>
                         </ejbModule>
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>

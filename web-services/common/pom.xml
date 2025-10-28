@@ -32,6 +32,10 @@
             <artifactId>json-simple</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.hubspot.jackson</groupId>
+            <artifactId>jackson-datatype-protobuf</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.spotify</groupId>
             <artifactId>dns</artifactId>
         </dependency>

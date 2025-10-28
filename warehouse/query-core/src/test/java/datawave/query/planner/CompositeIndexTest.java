@@ -87,12 +87,11 @@ import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
-import datawave.query.util.DayIndexIngest;
-import datawave.query.util.YearIndexIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -197,6 +196,8 @@ public class CompositeIndexTest {
 
     private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
@@ -292,11 +293,7 @@ public class CompositeIndexTest {
 
         ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
 
-        DayIndexIngest dayIndexIngest = new DayIndexIngest();
-        dayIndexIngest.convertToDayIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-
-        YearIndexIngest yearIndexIngest = new YearIndexIngest();
-        yearIndexIngest.convertToYearIndex(client, new Authorizations(AUTHS), TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+        ingestUtil.write(client, new Authorizations(AUTHS));
     }
 
     public static void setupConfiguration(Configuration conf) {
