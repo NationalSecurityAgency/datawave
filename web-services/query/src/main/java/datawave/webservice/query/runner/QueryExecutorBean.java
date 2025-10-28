@@ -74,7 +74,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -98,7 +97,6 @@ import datawave.annotation.ClearQuerySessionId;
 import datawave.annotation.DateFormat;
 import datawave.annotation.GenerateQuerySessionId;
 import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.audit.PrivateAuditConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -183,7 +181,6 @@ import io.protostuff.YamlIOUtil;
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryExecutorBean implements QueryExecutor {
 
     private static final Logger log = Logger.getLogger(QueryExecutorBean.class);

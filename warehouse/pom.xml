@@ -177,11 +177,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
-                <artifactId>datawave-ws-map-reduce</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-modification</artifactId>
                 <version>${project.version}</version>
             </dependency>
