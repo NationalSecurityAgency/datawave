@@ -317,6 +317,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // we do NOT want to expand any values yet as they may not be dependable
         // note we are expanding unfielded values (different flag)
         planningConfig.setExpandValues(false);
+        boolean deferPushdownPullup = planningConfig.isDeferPushdownPullup();
         planningConfig.setDeferPushdownPullup(true);
 
         DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
@@ -325,7 +326,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
         planningConfig.setGeneratePlanOnly(generatePlanOnly);
         planningConfig.setExpandValues(expandValues);
-        planningConfig.setDeferPushdownPullup(false);
+        planningConfig.setDeferPushdownPullup(deferPushdownPullup);
 
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
         SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(planningConfig);
