@@ -102,7 +102,7 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
         expectFoundFields("AGE", "GENDER");
         givenMissingFields("AGE", "GENDER");
 
-        expectMessage("All fields [AGE, GENDER] found in the query subset 'AGE == 'foo' || GENDER == 'bar'' were not ingested in the provided date range.");
+        expectMessage("Fields not ingested in the provided date range: [AGE, GENDER]");
 
         assertResult();
 
@@ -121,7 +121,7 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
         givenMissingFields("AGE", "GENDER");
 
         expectMessage("Fields not found in data dictionary: NAME");
-        expectMessage("All fields [AGE, GENDER] found in the query subset 'AGE == 'foo' || GENDER == 'bar'' were not ingested in the provided date range.");
+        expectMessage("Fields not ingested in the provided date range: [AGE, GENDER]");
 
         assertResult();
 

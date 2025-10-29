@@ -4,10 +4,9 @@ import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -36,16 +35,15 @@ public class FieldMissingFromDateRangeVisitorTest {
     private String query;
 
     private final Set<String> dataTypes = new HashSet<>();
-    private final Set<String> foundFields = new HashSet<>();
-    private final Set<String> missingFields = new HashSet<>();
-    private final List<FieldMissingFromDateRangeVisitor.ImmaterialNode> expectedNodes = new ArrayList<>();
+    private final Set<String> expectedImmaterialFields = new LinkedHashSet<>();
+
+    private boolean helperMocked = false;
 
     @AfterEach
     void tearDown() {
         this.query = null;
         this.dataTypes.clear();
-        this.foundFields.clear();
-        this.missingFields.clear();
+        this.expectedImmaterialFields.clear();
     }
 
     /**
@@ -54,7 +52,8 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testWithAndFieldsThatAllExist() throws ParseException {
         givenQuery("AGE == 'foo' && GENDER == 'bar'");
-        expectFieldsToBeFound("AGE", "GENDER");
+
+        expectHelperToBeCalled(Set.of("AGE", "GENDER"), Set.of());
 
         assertResult();
     }
@@ -65,7 +64,8 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testWithORFieldsThatAllExist() throws ParseException {
         givenQuery("AGE == 'foo' || GENDER == 'bar' || JOB == 'foo'");
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
+
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of());
 
         assertResult();
     }
@@ -76,10 +76,10 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testWithAndFieldsThatSomeExist() throws ParseException {
         givenQuery("AGE == 'foo' && GENDER == 'bar' && JOB == 'foo'");
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("JOB");
 
-        expectIrrelevantNode("JOB == 'foo'", Set.of("JOB"));
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("JOB"));
+
+        expectImmaterialFields("JOB");
 
         assertResult();
     }
@@ -92,10 +92,9 @@ public class FieldMissingFromDateRangeVisitorTest {
         givenQuery("AGE == 'foo' && GENDER == 'bar' && JOB == 'foo'");
         givenDataTypes("attr");
 
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("JOB");
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("JOB"));
 
-        expectIrrelevantNode("JOB == 'foo'", Set.of("JOB"));
+        expectImmaterialFields("JOB");
 
         assertResult();
     }
@@ -126,8 +125,8 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testWithOrFieldsThatSomeExist() throws ParseException {
         givenQuery("AGE == 'foo' || GENDER == 'bar' || JOB == 'foo'");
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("AGE", "GENDER");
+
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("AGE", "GENDER"));
 
         assertResult();
     }
@@ -138,10 +137,10 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testWithOrFieldsThatAllDoNotExist() throws ParseException {
         givenQuery("AGE == 'foo' || GENDER == 'bar' || JOB == 'foo'");
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("AGE", "GENDER", "JOB");
 
-        expectIrrelevantNode("AGE == 'foo' || GENDER == 'bar' || JOB == 'foo'", Set.of("AGE", "GENDER", "JOB"));
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("AGE", "GENDER", "JOB"));
+
+        expectImmaterialFields("AGE", "GENDER", "JOB");
 
         assertResult();
     }
@@ -152,7 +151,8 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testRegexFunctionWithFieldThatExists() throws ParseException {
         givenQuery("filter:includeRegex(GENDER, 'bar.*')");
-        expectFieldsToBeFound("GENDER");
+
+        expectHelperToBeCalled(Set.of("GENDER"), Set.of());
 
         assertResult();
     }
@@ -163,7 +163,6 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testRegexFunctionWithSpecialField() throws ParseException {
         givenQuery("filter:includeRegex(_ANYFIELD_, 'bar.*')");
-        expectFieldsToBeFound("_ANYFIELD_");
 
         assertResult();
     }
@@ -174,10 +173,10 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testRegexFunctionWithFieldThatDoesNotExist() throws ParseException {
         givenQuery("filter:includeRegex(JOB, 'bar.*')");
-        expectFieldsToBeFound("JOB");
-        givenMissingFields("JOB");
 
-        expectIrrelevantNode("filter:includeRegex(JOB, 'bar.*')", Set.of("JOB"));
+        expectHelperToBeCalled(Set.of("JOB"), Set.of("JOB"));
+
+        expectImmaterialFields("JOB");
 
         assertResult();
     }
@@ -185,10 +184,10 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     void testNestedFunction() throws ParseException {
         givenQuery("AGE == 'foo' && (NAME == 'bar' || filter:includeRegex(JOB, 'bar.*'))");
-        expectFieldsToBeFound("AGE", "NAME", "JOB");
-        givenMissingFields("NAME", "JOB");
 
-        expectIrrelevantNode("NAME == 'bar' || filter:includeRegex(JOB, 'bar.*')", Set.of("JOB", "NAME"));
+        expectHelperToBeCalled(Set.of("AGE", "NAME", "JOB"), Set.of("NAME", "JOB"));
+
+        expectImmaterialFields("JOB", "NAME");
 
         assertResult();
     }
@@ -196,8 +195,8 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testNestedIntersectionWithSomeMissingFields() throws ParseException {
         givenQuery("AGE == 'foo' || (GENDER == 'bar' && JOB == 'foo')");
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("GENDER", "JOB");
+
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("GENDER", "JOB"));
 
         assertResult();
     }
@@ -205,10 +204,10 @@ public class FieldMissingFromDateRangeVisitorTest {
     @Test
     public void testNestedUnion() throws ParseException {
         givenQuery("AGE == 'foo' && (GENDER == 'bar' || JOB == 'foo')");
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("GENDER", "JOB");
 
-        expectIrrelevantNode("GENDER == 'bar' || JOB == 'foo'", Set.of("GENDER", "JOB"));
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("GENDER", "JOB"));
+
+        expectImmaterialFields("GENDER", "JOB");
 
         assertResult();
     }
@@ -217,8 +216,7 @@ public class FieldMissingFromDateRangeVisitorTest {
     public void testDoubleNestedIntersectionWhereSomeMissing() throws ParseException {
         givenQuery("(AGE == 'foo' && GENDER == 'foo') || (GENDER == 'bar' && JOB == 'foo')");
 
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("AGE", "GENDER");
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("AGE", "GENDER"));
 
         assertResult();
     }
@@ -227,10 +225,9 @@ public class FieldMissingFromDateRangeVisitorTest {
     public void testDoubleNestedIntersectionWhereAllMissing() throws ParseException {
         givenQuery("(AGE == 'foo' && GENDER == 'foo') || (GENDER == 'bar' && JOB == 'foo')");
 
-        expectFieldsToBeFound("AGE", "GENDER", "JOB");
-        givenMissingFields("AGE", "GENDER", "JOB");
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "JOB"), Set.of("AGE", "GENDER", "JOB"));
 
-        expectIrrelevantNode("(AGE == 'foo' && GENDER == 'foo') || (GENDER == 'bar' && JOB == 'foo')", Set.of("AGE", "GENDER", "JOB"));
+        expectImmaterialFields("AGE", "GENDER", "JOB");
 
         assertResult();
     }
@@ -239,62 +236,42 @@ public class FieldMissingFromDateRangeVisitorTest {
     public void testDoubleNestedUnionWithSomeORsMissingAllFields() throws ParseException {
         givenQuery("(AGE == 'foo' || GENDER == 'foo') && (NAME == 'bar' || JOB == 'foo') && (ORG == 'hr' || NAME == 'hat')");
 
-        expectFieldsToBeFound("AGE", "GENDER", "NAME", "JOB", "ORG");
-        givenMissingFields("AGE", "GENDER", "NAME", "JOB");
+        expectHelperToBeCalled(Set.of("AGE", "GENDER", "NAME", "JOB", "ORG"), Set.of("AGE", "GENDER", "NAME", "JOB"));
 
-        expectIrrelevantNode("AGE == 'foo' || GENDER == 'foo'", Set.of("AGE", "GENDER"));
-        expectIrrelevantNode("NAME == 'bar' || JOB == 'foo'", Set.of("NAME", "JOB"));
+        expectImmaterialFields("AGE", "GENDER", "NAME", "JOB");
 
         assertResult();
     }
 
     private void assertResult() throws ParseException {
-        boolean helperMocked = false;
-
         // If we expect any fields to be found, mock up a call to the helper function.
-        if (!foundFields.isEmpty()) {
-            EasyMock.expect(this.helper.getMissingFieldsInDateRange(foundFields, dataTypes, beginDate, endDate, specialFields)).andReturn(missingFields);
-            EasyMock.replay(this.helper);
-            helperMocked = true;
-        }
-
-        // Fetch the nodes considered to be irrelevant.
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        List<FieldMissingFromDateRangeVisitor.ImmaterialNode> immaterialNodes = FieldMissingFromDateRangeVisitor.getNonIngestedFields(this.helper, script,
-                        dataTypes, specialFields, DateHelper.parse(beginDate), DateHelper.parse(endDate));
+        Set<String> actualImmaterialFields = FieldMissingFromDateRangeVisitor.getNonIngestedFields(this.helper, script, dataTypes, specialFields,
+                        DateHelper.parse(beginDate), DateHelper.parse(endDate));
 
         if (helperMocked) {
             // If the helper function was mocked, verify that the arguments to the function matched what we expected.
             EasyMock.verify(this.helper);
         }
 
-        assertThat(immaterialNodes).hasSameSizeAs(expectedNodes);
-
-        for (int i = 0; i < immaterialNodes.size(); i++) {
-            FieldMissingFromDateRangeVisitor.ImmaterialNode actual = immaterialNodes.get(i);
-            FieldMissingFromDateRangeVisitor.ImmaterialNode expected = expectedNodes.get(i);
-            assertThat(JexlStringBuildingVisitor.buildQuery(actual.getNode())).isEqualTo(JexlStringBuildingVisitor.buildQuery(expected.getNode()));
-            assertThat(actual.getFields()).containsExactlyInAnyOrderElementsOf(expected.getFields());
-        }
+        assertThat(actualImmaterialFields).isEqualTo(expectedImmaterialFields);
     }
 
     private void givenQuery(String query) {
         this.query = query;
     }
 
-    private void expectFieldsToBeFound(String... fields) {
-        this.foundFields.addAll(Arrays.asList(fields));
+    private void expectHelperToBeCalled(Set<String> foundFields, Set<String> missingFields) {
+        EasyMock.expect(this.helper.getMissingFieldsInDateRange(foundFields, dataTypes, beginDate, endDate, specialFields)).andReturn(missingFields);
+        EasyMock.replay(this.helper);
+        helperMocked = true;
     }
 
     private void givenDataTypes(String... dataTypes) {
         this.dataTypes.addAll(Arrays.asList(dataTypes));
     }
 
-    private void givenMissingFields(String... fields) {
-        this.missingFields.addAll(Arrays.asList(fields));
-    }
-
-    private void expectIrrelevantNode(String node, Set<String> fields) throws ParseException {
-        this.expectedNodes.add(new FieldMissingFromDateRangeVisitor.ImmaterialNode(JexlASTHelper.parseJexlQuery(node), fields));
+    private void expectImmaterialFields(String... fields) {
+        this.expectedImmaterialFields.addAll(Arrays.asList(fields));
     }
 }

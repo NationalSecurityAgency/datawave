@@ -54,7 +54,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<ImmaterialNode> getNonIngestedFields(MetadataHelper helper, ASTJexlScript script, Set<String> datatypes, Set<String> specialFields,
+    public static Set<String> getNonIngestedFields(MetadataHelper helper, ASTJexlScript script, Set<String> datatypes, Set<String> specialFields,
                     Date beginDate, Date endDate) {
         if (datatypes == null) {
             datatypes = Collections.emptySet();
@@ -62,44 +62,56 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
         // Collect the fields
         FieldMissingFromDateRangeVisitor visitor = new FieldMissingFromDateRangeVisitor(helper, datatypes);
-        List<CandidateNode> nodeData = (List<CandidateNode>) script.jjtAccept(visitor, new ArrayList<>());
+        List<Set<String>> fieldSets = (List<Set<String>>) script.jjtAccept(visitor, new ArrayList<>());
 
-        if (nodeData.isEmpty()) {
-            return Collections.emptyList();
+        if (fieldSets.isEmpty()) {
+            return Set.of();
         }
 
-        Set<String> allFields = nodeData.stream().map(CandidateNode::getFields).flatMap(Set::stream).collect(Collectors.toSet());
+        // @formatter:off
+        Set<String> allFields = fieldSets.stream()
+                        .flatMap(Set::stream)
+                        .collect(Collectors.toSet());
+        // @formatter:on
+
+        // If only special field were found, do not return any fields.
+        if (specialFields.containsAll(allFields)) {
+            return Set.of();
+        }
+
+        // Fetch all fields not found in the target date range.
         Set<String> missingFields = visitor.helper.getMissingFieldsInDateRange(allFields, datatypes, DateHelper.format(beginDate), DateHelper.format(endDate),
                         specialFields);
 
-        return nodeData.stream().filter((node) -> !node.fields.isEmpty()).filter((node) -> node.containsNoneOf(specialFields))
-                        .filter((node) -> node.allFieldsMissing(missingFields)).map(ImmaterialNode::new).collect(Collectors.toList());
+        // @formatter:off
+        return fieldSets.stream()
+                        .filter((set) -> !set.isEmpty())
+                        .filter((set) -> Sets.intersection(specialFields, set).isEmpty())
+                        .filter(missingFields::containsAll)
+                        .flatMap(Set::stream)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        // @formatter:on
     }
 
-    /**
-     * @param node
-     *            Jexl node
-     * @param data
-     *            The set of names which we have determined have not been ingested during the date range.
-     * @return the updated set of names which have not been ingested during the date range.
-     */
+    // Collect all field names in given node.
     private Object collectFields(JexlNode node, Object data) throws TableNotFoundException {
-        // If data is a CandidateNode, the node is a descendant of an OR node.
-        if (data instanceof CandidateNode) {
-            addFields(node, (CandidateNode) data);
+        // If data is a set, the node is a descendant of an OR node.
+        if (data instanceof Set) {
+            // noinspection unchecked
+            addFields(node, (Set<String>) data);
         } else {
-            // Otherwise it is a top-level node.
+            // Otherwise it is a top-level node. Create a new set and collect all fields into it.
             @SuppressWarnings("unchecked")
-            List<CandidateNode> list = (List<CandidateNode>) data;
-            CandidateNode candidateNode = new CandidateNode(node);
-            collectFields(node, candidateNode);
-            list.add(candidateNode);
+            List<Set<String>> fieldSets = (List<Set<String>>) data;
+            Set<String> fields = new LinkedHashSet<>();
+            collectFields(node, fields);
+            fieldSets.add(fields);
         }
         return data;
     }
 
     // All fields from the given node to the given candidate node.
-    private void addFields(JexlNode node, CandidateNode data) {
+    private void addFields(JexlNode node, Set<String> data) {
         List<ASTIdentifier> identifiers;
 
         // A node could be literal == literal in terms of an identityQuery
@@ -117,7 +129,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
         for (ASTIdentifier identifier : identifiers) {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
-            data.addField(fieldName);
+            data.add(fieldName);
         }
     }
 
@@ -195,27 +207,27 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        // If data is a CandidateNode, this function node is a descendant of an OR node.
-        if (data instanceof CandidateNode) {
-            CandidateNode candidateNode = (CandidateNode) data;
-            addFields(node, candidateNode);
+        // If data is a set, this function node is a descendant of an OR node.
+        if (data instanceof Set) {
+            // noinspection unchecked
+            addFields(node, (Set<String>) data);
         } else {
-            // Otherwise this is a top-level node. Create a new CandidateNode and collect all fields from the function node.
+            // Otherwise this is a top-level node. Create a new set of fields and collect all fields from the function node.
             @SuppressWarnings("unchecked")
-            List<CandidateNode> list = (List<CandidateNode>) data;
-            CandidateNode candidateNode = new CandidateNode(node);
-            addFields(node, candidateNode);
-            list.add(candidateNode);
+            List<Set<String>> fieldSets = (List<Set<String>>) data;
+            Set<String> fields = new LinkedHashSet<>();
+            addFields(node, fields);
+            fieldSets.add(fields);
         }
         return data;
     }
 
-    // Add all fields found within the given function node to the given candidate node.
-    private void addFields(ASTFunctionNode node, CandidateNode candidateNode) {
+    // Add all fields found within the given function node to the given set.
+    private void addFields(ASTFunctionNode node, Set<String> fields) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
             fieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-            candidateNode.addField(fieldName);
+            fields.add(fieldName);
         }
     }
 
@@ -228,87 +240,20 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        // If data is a CandidateNode, this OR node is nested within another OR node. Pass it along to its children.
-        if (data instanceof CandidateNode) {
+        // If data is a set, this OR node is nested within another OR node. Pass it along to its children.
+        if (data instanceof Set) {
             node.childrenAccept(this, data);
         } else {
-            // Otherwise this is a top-level OR node. Create a new CandidateNode and collect all fields from the node's children.
+            // Otherwise this is a top-level OR node. Create a new set and collect all fields from the node's children.
             @SuppressWarnings("unchecked")
-            List<CandidateNode> list = (List<CandidateNode>) data;
-            CandidateNode candidateNode = new CandidateNode(node);
-            node.childrenAccept(this, candidateNode);
-            if (!candidateNode.fields.isEmpty()) {
-                list.add(candidateNode);
+            List<Set<String>> fieldSets = (List<Set<String>>) data;
+            Set<String> fields = new LinkedHashSet<>();
+            node.childrenAccept(this, fields);
+            if (!fields.isEmpty()) {
+                fieldSets.add(fields);
             }
         }
         return data;
     }
 
-    /**
-     * Represents a node that may be a candidate to be an {@link ImmaterialNode}.
-     */
-    private static class CandidateNode {
-        private final JexlNode node;
-        private final Set<String> fields = new LinkedHashSet<>(); // Maintain insertion order.
-
-        public CandidateNode(JexlNode node) {
-            this.node = node;
-        }
-
-        public Set<String> getFields() {
-            return fields;
-        }
-
-        public void addField(String field) {
-            fields.add(field);
-        }
-
-        /**
-         * Return whether this candidate node contains none of the given fields.
-         *
-         * @param specialFields
-         *            the fields
-         * @return true if this candidate node has none of the given fields, or false otherwise
-         */
-        public boolean containsNoneOf(Set<String> specialFields) {
-            return Sets.intersection(specialFields, this.fields).isEmpty();
-        }
-
-        /**
-         * Return whether this candidate node's fields consist only of missing fields.
-         *
-         * @param missingFields
-         *            the missing fields
-         * @return true if this candidate node contains only missing fields, or false otherwise
-         */
-        public boolean allFieldsMissing(Set<String> missingFields) {
-            return missingFields.containsAll(this.fields);
-        }
-    }
-
-    /**
-     * Represents a node within a jexl query that is considered to be immaterial because it only contains fields that are missing within a query's date range.
-     */
-    public static class ImmaterialNode {
-
-        private final JexlNode node;
-        private final Set<String> fields;
-
-        public ImmaterialNode(JexlNode node, Set<String> fields) {
-            this.node = RebuildingVisitor.copy(node);
-            this.fields = fields == null ? Set.of() : Collections.unmodifiableSet(fields); // Maintain insertion order.
-        }
-
-        private ImmaterialNode(CandidateNode data) {
-            this(data.node, data.fields);
-        }
-
-        public JexlNode getNode() {
-            return node;
-        }
-
-        public Set<String> getFields() {
-            return fields;
-        }
-    }
 }

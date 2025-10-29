@@ -1,7 +1,6 @@
 package datawave.query.rules;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -13,7 +12,6 @@ import org.apache.log4j.Logger;
 import datawave.microservice.query.Query;
 import datawave.query.jexl.visitors.FieldMissingFromDateRangeVisitor;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * A {@link QueryRule} implementation that will check a query for any non-existent fields, i.e. not present in the data dictionary.
@@ -88,29 +86,17 @@ public class FieldExistenceRule extends ShardQueryRule {
 
             // Find all OR branches in the query that consist entirely of fields not present within the query's date range.
             Query settings = ruleConfig.getQuerySettings();
-            List<FieldMissingFromDateRangeVisitor.ImmaterialNode> irrelevantJunctions = FieldMissingFromDateRangeVisitor.getNonIngestedFields(
-                            ruleConfig.getMetadataHelper(), jexlQuery, Collections.emptySet(), getSpecialFields(), settings.getBeginDate(),
-                            settings.getEndDate());
-            // If any irrelevant branches were found, add a message for them.
-            irrelevantJunctions.stream().map(this::formatMessage).forEach(result::addMessage);
+            Set<String> missingFields = FieldMissingFromDateRangeVisitor.getNonIngestedFields(ruleConfig.getMetadataHelper(), jexlQuery, Collections.emptySet(),
+                            getSpecialFields(), settings.getBeginDate(), settings.getEndDate());
+            if (!missingFields.isEmpty()) {
+                result.addMessage("Fields not ingested in the provided date range: " + missingFields);
+            }
         } catch (Exception e) {
             // If an exception occurred, log and preserve it in the result.
             log.error("Error occurred when validating against instance '" + getName() + "' of " + getClass(), e);
             result.setException(e);
         }
         return result;
-    }
-
-    private String formatMessage(FieldMissingFromDateRangeVisitor.ImmaterialNode irrelevantJunction) {
-        // @formatter:off
-        return new StringBuilder()
-                        .append("Fields ")
-                        .append(irrelevantJunction.getFields())
-                        .append(" found in the query subset '")
-                        .append(JexlStringBuildingVisitor.buildQuery(irrelevantJunction.getNode()))
-                        .append("' were not ingested in the provided date range.")
-                        .toString();
-        // @formatter:on
     }
 
     @Override
