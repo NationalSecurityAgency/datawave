@@ -37,7 +37,6 @@ import datawave.util.time.DateHelper;
  * <pre>
  * 1. If a datatype filter was specified, then the existence check is limited to only those datatypes
  * 2. If a datatype filter is NOT specified (null or empty), this implies ALL datatypes.
- * 3. If querySettings is NOT specified (null), it will not report any missing fields. This is due to no begin or end date being provided.
  * </pre>
  */
 public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
@@ -85,7 +84,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
      * @return the updated set of names which have not been ingested during the date range.
      */
     private Object collectFields(JexlNode node, Object data) throws TableNotFoundException {
-        // If data is a CandidateNode, the node is a descendent of an OR node.
+        // If data is a CandidateNode, the node is a descendant of an OR node.
         if (data instanceof CandidateNode) {
             addFields(node, (CandidateNode) data);
         } else {
@@ -246,7 +245,7 @@ public class FieldMissingFromDateRangeVisitor extends ShortCircuitBaseVisitor {
     }
 
     /**
-     * Represents a node that may be a candidate to be an immaterial node.
+     * Represents a node that may be a candidate to be an {@link ImmaterialNode}.
      */
     private static class CandidateNode {
         private final JexlNode node;

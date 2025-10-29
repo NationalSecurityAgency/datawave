@@ -104,7 +104,7 @@ public class FieldExistenceRule extends ShardQueryRule {
     private String formatMessage(FieldMissingFromDateRangeVisitor.ImmaterialNode irrelevantJunction) {
         // @formatter:off
         return new StringBuilder()
-                        .append("All fields ")
+                        .append("Fields ")
                         .append(irrelevantJunction.getFields())
                         .append(" found in the query subset '")
                         .append(JexlStringBuildingVisitor.buildQuery(irrelevantJunction.getNode()))
