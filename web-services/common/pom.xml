@@ -32,16 +32,16 @@
             <artifactId>json-simple</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.hubspot.jackson</groupId>
-            <artifactId>jackson-datatype-protobuf</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.spotify</groupId>
             <artifactId>dns</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-annotation-core</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>

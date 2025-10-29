@@ -8,13 +8,18 @@ import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
+
+import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.util.v1.JacksonAnnotationDeserializer;
+import datawave.annotation.util.v1.JacksonAnnotationSerializer;
+import datawave.annotation.util.v1.JacksonSegmentDeserializer;
+import datawave.annotation.util.v1.JacksonSegmentSerializer;
 
 /**
  * Configures JSON serialization via Jackson to honor JAXB annotations. This provider must be listed in the value of a {@code resteasy.providers} servlet
@@ -35,10 +40,14 @@ public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
 
         final SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(MultivaluedMap.class, new MultivaluedMapDeserializer());
-        mapper.registerModule(simpleModule);
 
-        mapper.registerModule(new ProtobufModule());
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // Added for Annotation and Segment serialization and deserialization.
+        simpleModule.addDeserializer(Annotation.class, new JacksonAnnotationDeserializer());
+        simpleModule.addSerializer(Annotation.class, new JacksonAnnotationSerializer());
+        simpleModule.addDeserializer(Segment.class, new JacksonSegmentDeserializer());
+        simpleModule.addSerializer(Segment.class, new JacksonSegmentSerializer());
+
+        mapper.registerModule(simpleModule);
     }
 
     @Override
