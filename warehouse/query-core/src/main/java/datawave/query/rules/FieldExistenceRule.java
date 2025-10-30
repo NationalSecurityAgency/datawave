@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import datawave.microservice.query.Query;
 import datawave.query.jexl.visitors.FieldMissingFromDateRangeVisitor;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
+import datawave.util.time.DateHelper;
 
 /**
  * A {@link QueryRule} implementation that will check a query for any non-existent fields, i.e. not present in the data dictionary.
@@ -89,7 +90,8 @@ public class FieldExistenceRule extends ShardQueryRule {
             Set<String> missingFields = FieldMissingFromDateRangeVisitor.getNonIngestedFields(ruleConfig.getMetadataHelper(), jexlQuery, Collections.emptySet(),
                             getSpecialFields(), settings.getBeginDate(), settings.getEndDate());
             if (!missingFields.isEmpty()) {
-                result.addMessage("Fields not ingested in the provided date range: " + missingFields);
+                result.addMessage("There is no data in the following fields " + missingFields + " for the entire date range "
+                                + DateHelper.format(settings.getBeginDate()) + " to " + DateHelper.format(settings.getEndDate()) + ".");
             }
         } catch (Exception e) {
             // If an exception occurred, log and preserve it in the result.

@@ -135,8 +135,8 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
     @Override
     protected ShardQueryRule getNewRule() {
-        EasyMock.expect(settings.getBeginDate()).andReturn(DateHelper.parse(beginDate));
-        EasyMock.expect(settings.getEndDate()).andReturn(DateHelper.parse(endDate));
+        EasyMock.expect(settings.getBeginDate()).andReturn(DateHelper.parse(beginDate)).anyTimes();
+        EasyMock.expect(settings.getEndDate()).andReturn(DateHelper.parse(endDate)).anyTimes();
         givenQuerySettings(settings);
 
         try {
