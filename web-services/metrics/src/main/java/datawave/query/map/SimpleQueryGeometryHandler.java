@@ -12,10 +12,8 @@ import javax.inject.Inject;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.map.QueryGeometryHandler;
 import datawave.microservice.query.QueryImpl;
@@ -32,7 +30,6 @@ import datawave.query.metrics.ShardTableQueryMetricHandler;
  * This class is used to extract query geometries from the query metrics in an effort to provide those geometries for subsequent display to the user.
  */
 @ApplicationScoped
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
 

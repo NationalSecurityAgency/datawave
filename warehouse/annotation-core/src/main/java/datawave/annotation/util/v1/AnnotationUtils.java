@@ -16,7 +16,7 @@ import datawave.annotation.protobuf.v1.SegmentValue;
 
 public class AnnotationUtils {
     private static final JsonFormat.Printer PRINTER = JsonFormat.printer().preservingProtoFieldNames();
-    private static final JsonFormat.Parser PARSER = JsonFormat.parser().ignoringUnknownFields();
+    private static final JsonFormat.Parser PARSER = JsonFormat.parser();
 
     public static Annotation addSegmentBoundaryTypes(Annotation a) {
         Annotation.Builder b = a.toBuilder().clearSegments();

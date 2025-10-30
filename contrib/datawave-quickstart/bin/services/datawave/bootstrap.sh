@@ -172,8 +172,6 @@ function setBuildPropertyOverrides() {
 
    echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
-   echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
-   echo "bulkResults.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "jboss.log.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
 
    echo "lock.file.dir=${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" >> ${BUILD_PROPERTIES_FILE}
@@ -183,8 +181,6 @@ function setBuildPropertyOverrides() {
    echo "jboss.managed.executor.service.default.max.threads=${DW_WILDFLY_EE_DEFAULT_MAX_THREADS:-48}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.cluster.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.system.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
-   echo "mapReduce.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
-   echo "bulkResults.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "EVENT_DISCARD_INTERVAL=0" >> ${BUILD_PROPERTIES_FILE}
    echo "EVENT_DISCARD_FUTURE_INTERVAL=0" >> ${BUILD_PROPERTIES_FILE}
    echo "ingest.data.types=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES},${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}

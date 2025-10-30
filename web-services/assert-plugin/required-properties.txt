@@ -48,11 +48,6 @@ jboss.log.hdfs.dir, hdfs directory where the JBoss logs should be placed
 jboss.log.dir, log directory name on the local server
 lookup.uuid.beginDate,
 lookup.uuid.uuidTypes,
-mapReduce.hdfs.base.dir, Base directory name to use in HDFS for the MapReduce service results
-mapReduce.hdfs.uri, HDFS uri
-mapReduce.http.port,
-mapReduce.inputFormat.restrict, restrict input formats to the named input formats in the config file (true/false)
-mapReduce.job.tracker, MapReduce job tracker (host:port)
 mysql.dbname, dbname of the MySQL database for the CachedResults-ds.xml file
 mysql.host, hostname of the MySQL database for the CachedResults-ds.xml file
 mysql.pool.min.size, minimum number of connections to keep in the connection pool
