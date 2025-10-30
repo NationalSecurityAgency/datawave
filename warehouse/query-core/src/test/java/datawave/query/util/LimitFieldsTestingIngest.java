@@ -20,6 +20,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.util.TableName;
 
 /**
@@ -41,8 +42,7 @@ public class LimitFieldsTestingIngest {
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000L;
 
-    private static final DayIndexIngest dayIndexIngest = new DayIndexIngest();
-    private static final YearIndexIngest yearIndexIngest = new YearIndexIngest();
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
 
@@ -263,8 +263,7 @@ public class LimitFieldsTestingIngest {
 
         // this is hacky and highlights an opportunity to improve the test framework
         Authorizations auths = new Authorizations("ALL");
-        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+        ingestUtil.write(client, auths);
     }
 
     private static Value getValueForBuilderFor(String... in) {

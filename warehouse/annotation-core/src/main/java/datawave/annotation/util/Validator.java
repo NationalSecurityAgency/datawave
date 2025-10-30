@@ -91,7 +91,7 @@ public class Validator<T> {
      * @param target
      *            the target to check
      * @param failFast
-     *            wetheer to fail fast.
+     *            whether to fail fast.
      * @return the validation state.
      */
     public ValidationState<T> check(T target, boolean failFast) {
