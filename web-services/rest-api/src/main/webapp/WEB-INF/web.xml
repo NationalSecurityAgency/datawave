@@ -88,10 +88,6 @@
             datawave.webservice.modification.cache.ModificationCacheBean,
             <!-- From Model -->
             datawave.webservice.query.model.ModelBean,
-            <!-- From MapReduce -->
-            datawave.webservice.mr.MapReduceBean,
-            <!-- From MapReduceStatus -->
-            datawave.webservice.mr.status.MapReduceStatusUpdateBean,
             <!-- From dictionary -->
             datawave.webservice.dictionary.DataDictionaryBean,
             datawave.webservice.dictionary.EdgeDictionaryBean,
