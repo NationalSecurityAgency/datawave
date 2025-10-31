@@ -29,6 +29,8 @@ CONF_DIR=../../config
 DATAWAVE_INDEX_STATS_JAR=$(findJar datawave-index-stats)
 DATAWAVE_INGEST_CSV_JAR=$(findJar datawave-ingest-csv)
 DATAWAVE_INGEST_JSON_JAR=$(findJar datawave-ingest-json)
+DATAWAVE_ANNOTATION_CORE_JAR=$(findJar datawave-annotation-core)
+DATAWAVE_INGEST_ANNOTATION_JAR=$(findJar datawave-ingest-annotation)
 DATAWAVE_INGEST_WIKIPEDIA_JAR=$(findJar datawave-ingest-wikipedia)
 DATAWAVE_INGEST_NYCTLC_JAR=$(findJar datawave-ingest-nyctlc)
 DATAWAVE_INGEST_SSDEEP_JAR=$(findJar datawave-ingest-ssdeep)
@@ -115,6 +117,10 @@ OPENTELEMETRY_API_JAR=$(findJar opentelemetry-api)
 OPENTELEMETRY_CONTEXT_JAR=$(findJar opentelemetry-context)
 MICROMETER_CORE_JAR=$(findJar micrometer-core)
 MICROMETER_COMMONS_JAR=$(findJar micrometer-commons)
+
+#for annotation ingest
+PROTO_GOOGLE_COMMON_PROTOS_JAR=$(findJar proto-google-common-protos)
+PROTOBUF_JAVA_UTIL_JAR=$(findJar protobuf-java-util)
 
 #for geo hilbert curve processing
 JTS_CORE_JAR=$(findJar jts-core)

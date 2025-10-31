@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <!-- the AnnotationManager definition is only used for testing, this should not be included in a production configuration
+         because it will get discovered by CDI -->
+    <bean id="AnnotationManager" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerBean"/>
+
+    <bean id="AnnotationManagerConfig" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerConfig">
+        <property name="tableName" value="annotations"/>
+        <property name="connPoolName" value="WAREHOUSE" />
+        <property name="lookupUUIDQueryLogic">
+            <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+            </bean>
+        </property>
+        <property name="lookupUUIDServiceConfig">
+            <bean class="datawave.webservice.annotation.LookupUUIDServiceConfig"/>
+        </property>
+    </bean>
+</beans>

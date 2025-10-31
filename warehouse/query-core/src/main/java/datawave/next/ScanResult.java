@@ -152,7 +152,12 @@ public class ScanResult {
         return candidate.compareTo(min) < 0 || (candidate.compareTo(max) <= 0 && !otherResults.contains(candidate));
     }
 
-    private boolean isIntersectionPossible(ScanResult other) {
+    protected boolean isIntersectionPossible(ScanResult other) {
+        if (results.size() == 1 && other.results.size() != 1) {
+            // in the case where ScanResult is a singleton and the other is not we must call isIntersectionPossible using the other ScanResult
+            return other.isIntersectionPossible(this);
+        }
+
         boolean otherMinInBounds = withinBounds(other.getMin());
         boolean otherMaxInBounds = withinBounds(other.getMax());
         return otherMinInBounds || otherMaxInBounds;

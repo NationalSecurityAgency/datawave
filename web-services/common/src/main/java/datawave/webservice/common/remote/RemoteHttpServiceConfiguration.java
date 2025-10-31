@@ -3,6 +3,8 @@ package datawave.webservice.common.remote;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.http.client.config.RequestConfig;
+
 import com.codahale.metrics.Counter;
 
 public class RemoteHttpServiceConfiguration {
@@ -31,6 +33,27 @@ public class RemoteHttpServiceConfiguration {
     private Counter retryCounter = new Counter();
 
     private Counter failureCounter = new Counter();
+
+    /**
+     * The maximum time to wait for a resource to attempt a connection to a remote
+     *
+     * @see RequestConfig#getConnectionRequestTimeout()
+     */
+    private int connectionPoolTimeout = -1;
+
+    /**
+     * The maximum time to establish a connection to a remote
+     *
+     * @see RequestConfig#getConnectTimeout()
+     */
+    private int connectTimeout = -1;
+
+    /**
+     * The maximum time to wait to read data from a remote
+     *
+     * @see RequestConfig#getSocketTimeout()
+     */
+    private int socketTimeout = -1;
 
     public void setUseSrvDNS(boolean useSrvDNS) {
         this.useSrvDNS = useSrvDNS;
@@ -134,5 +157,29 @@ public class RemoteHttpServiceConfiguration {
 
     public void setFailureCounter(Counter failureCounter) {
         this.failureCounter = failureCounter;
+    }
+
+    public void setConnectionPoolTimeout(int connectionPoolTimeout) {
+        this.connectionPoolTimeout = connectionPoolTimeout;
+    }
+
+    public int getConnectionPoolTimeout() {
+        return this.connectionPoolTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
+    }
+
+    public int getSocketTimeout() {
+        return this.socketTimeout;
     }
 }

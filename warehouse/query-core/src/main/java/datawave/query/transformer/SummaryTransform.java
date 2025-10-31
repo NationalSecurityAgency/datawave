@@ -30,6 +30,7 @@ import com.google.common.collect.Iterators;
 
 import datawave.common.util.ArgumentChecker;
 import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
@@ -104,10 +105,23 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
      *            the document
      * @return a list of the eventIds
      */
-    private static ArrayList<DocumentKey> getEventIds(Document document) {
+    protected static ArrayList<DocumentKey> getEventIds(Document document) {
         ArrayList<DocumentKey> eventIds = new ArrayList<>();
-        if (document.containsKey("RECORD_ID")) {
-            eventIds.add((DocumentKey) document.get("RECORD_ID"));
+        if (document.containsKey(Document.DOCKEY_FIELD_NAME)) {
+            Attribute<?> attr = document.get(Document.DOCKEY_FIELD_NAME);
+            if (attr instanceof DocumentKey) {
+                eventIds.add((DocumentKey) attr);
+            } else if (attr instanceof Attributes) {
+                // if the attr is an instanceof Attributes, then we need to find the one that best describes
+                // the root or TLD document which should be the one with the smallest CF (datatype\x00uid)
+                Attribute<?> smallest = null;
+                for (Attribute<?> child : ((Attributes) attr).getAttributes()) {
+                    if (smallest == null || child.getMetadata().getColumnFamily().getLength() < smallest.getMetadata().getColumnFamily().getLength()) {
+                        smallest = child;
+                    }
+                }
+                eventIds.add((DocumentKey) smallest);
+            }
         } else {
             Key key = document.getMetadata();
             String[] cf = key.getColumnFamily().toString().split(Constants.NULL);

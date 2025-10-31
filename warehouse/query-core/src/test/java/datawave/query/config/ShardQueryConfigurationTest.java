@@ -30,6 +30,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.iterators.GlobalIndexFieldSummaryIterator;
 import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -380,6 +381,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxUnfieldedExpansionThreshold", 507);
         defaultValues.put("expandValues", true);
         updatedValues.put("expandValues", false);
+        defaultValues.put("expandUnfieldedValues", true);
+        updatedValues.put("expandUnfieldedValues", false);
         defaultValues.put("maxValueExpansionThreshold", 5000);
         updatedValues.put("maxValueExpansionThreshold", 5060);
         defaultValues.put("maxOrExpansionThreshold", 500);
@@ -394,6 +397,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxOrExpansionFstThreshold", 500);
         defaultValues.put("yieldThresholdMs", Long.MAX_VALUE);
         updatedValues.put("yieldThresholdMs", 65535L);
+        defaultValues.put("maxYields", 20);
+        updatedValues.put("maxYields", 10);
         defaultValues.put("hdfsSiteConfigURLs", null);
         updatedValues.put("hdfsSiteConfigURLs", "file://etc/hadoop/hdfs_site.xml");
         defaultValues.put("hdfsFileCompressionCodec", null);
@@ -486,7 +491,7 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("summaryOptions", new SummaryOptions());
         updatedValues.put("summaryOptions", SummaryOptions.from(String.valueOf(SummaryOptions.DEFAULT_SIZE)));
         defaultValues.put("summaryIterator", ContentSummaryIterator.class);
-        updatedValues.put("summaryIterator", ContentSummaryIterator.class);
+        updatedValues.put("summaryIterator", GlobalIndexFieldSummaryIterator.class);
         defaultValues.put("summaryFieldName", null);
         updatedValues.put("summaryFieldName", "SUMMARY");
         defaultValues.put("fiFieldSeek", -1);
@@ -614,7 +619,7 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
-        updatedValues.put("tableHints", Collections.emptyMap());
+        updatedValues.put("tableHints", Collections.singletonMap("A", Collections.singletonMap("B", "C")));
 
         defaultValues.put("useQueryTreeScanHintRules", false);
         updatedValues.put("useQueryTreeScanHintRules", true);
@@ -634,6 +639,9 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("maxLinesToPrint", -1);
         updatedValues.put("maxLinesToPrint", 150);
 
+        defaultValues.put("deferPushdownPullup", false);
+        updatedValues.put("deferPushdownPullup", true);
+
         defaultValues.put("dayIndexTableName", TableName.SHARD_DAY_INDEX);
         updatedValues.put("dayIndexTableName", "datawave." + TableName.SHARD_DAY_INDEX);
         defaultValues.put("yearIndexTableName", TableName.SHARD_YEAR_INDEX);
@@ -642,6 +650,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useShardedIndex", true);
         defaultValues.put("dayIndexThreshold", -1);
         updatedValues.put("dayIndexThreshold", 31);
+
+        defaultValues.put("useTruncatedIndex", false);
+        updatedValues.put("useTruncatedIndex", true);
+        defaultValues.put("truncatedIndexTableName", TableName.TRUNCATED_SHARD_INDEX);
+        updatedValues.put("truncatedIndexTableName", "datawave." + TableName.TRUNCATED_SHARD_INDEX);
     }
 
     private Query createQuery(String query) {
@@ -778,6 +791,42 @@ public class ShardQueryConfigurationTest {
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
 
         testValues(config, updatedValues, updatedPredicates);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() throws Exception {
+        ShardQueryConfiguration config = ShardQueryConfiguration.create();
+        ShardQueryConfiguration other = ShardQueryConfiguration.create();
+
+        Assert.assertEquals("Default shard configurations to not equal", config, other);
+
+        for (Map.Entry<String,Object> entry : updatedValues.entrySet()) {
+            if (!alreadySet.contains(entry.getKey())) {
+                other = ShardQueryConfiguration.create();
+                Assert.assertNotEquals("Updated value for " + entry.getKey() + " should be different than default", getValue(other, entry.getKey()),
+                                entry.getValue());
+                Assert.assertNotEquals("Updated hashvalue value for " + entry.getKey() + " should be different than default",
+                                hashCodeOf(getValue(other, entry.getKey())), hashCodeOf(entry.getValue().hashCode()));
+                setValue(other, entry.getKey(), entry.getValue());
+                Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.equals()", config, other);
+                Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.hashCode()", config.hashCode(), other.hashCode());
+            }
+        }
+
+        for (Map.Entry<String,Object> entry : extraValuesToSet.entrySet()) {
+            other = ShardQueryConfiguration.create();
+            Assert.assertNotEquals("Updated value for " + entry.getKey() + " should be different than default", getValue(other, entry.getKey()),
+                            entry.getValue());
+            Assert.assertNotEquals("Updated hashvalue value for " + entry.getKey() + " should be different than default",
+                            hashCodeOf(getValue(other, entry.getKey())), hashCodeOf(entry.getValue().hashCode()));
+            setValue(other, entry.getKey(), entry.getValue());
+            Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.equals()", config, other);
+            Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.hashCode()", config.hashCode(), other.hashCode());
+        }
+    }
+
+    private long hashCodeOf(Object value) {
+        return (value == null ? 0 : value.hashCode());
     }
 
     @Test

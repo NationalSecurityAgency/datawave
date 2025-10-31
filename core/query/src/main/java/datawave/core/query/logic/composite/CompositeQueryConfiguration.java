@@ -36,9 +36,13 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
      *            - another CompositeQueryConfiguration instance
      */
     public CompositeQueryConfiguration(CompositeQueryConfiguration other) {
-
         // GenericQueryConfiguration copy first
         super(other);
+
+        configs = new HashMap<>(other.configs);
+        allMustInitialize = other.allMustInitialize;
+        shortCircuitExecution = other.shortCircuitExecution;
+        resultsPollTimeout = other.resultsPollTimeout;
     }
 
     /**

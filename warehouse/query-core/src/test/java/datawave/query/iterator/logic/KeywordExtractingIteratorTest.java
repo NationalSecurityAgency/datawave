@@ -1,6 +1,5 @@
 package datawave.query.iterator.logic;
 
-import static datawave.query.iterator.logic.KeywordExtractingIterator.DEFAULT_VIEW_NAMES;
 import static datawave.query.iterator.logic.KeywordExtractingIterator.DOCUMENT_LANGUAGES;
 import static datawave.query.iterator.logic.KeywordExtractingIterator.VIEW_NAMES;
 import static datawave.query.tables.keyword.KeywordQueryLogic.ALL;
@@ -178,8 +177,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        Map<String,VisibleContent> expectedContentMap = Map.of("CONTENT1", new VisibleContent("ALL", email987654321Content1));
-        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, viewNames, expectedContentMap, "ENGLISH", options);
+        List<Map.Entry<String,VisibleContent>> orderedContent = List
+                        .of(new AbstractMap.SimpleEntry<>("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
+        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
 
@@ -212,8 +212,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        Map<String,VisibleContent> expectedContentMap = Map.of("CONTENT1", new VisibleContent("ALL", email987654321Content1));
-        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, viewNames, expectedContentMap, "ENGLISH", options);
+        List<Map.Entry<String,VisibleContent>> orderedContent = List
+                        .of(new AbstractMap.SimpleEntry<>("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
+        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
 
@@ -247,8 +248,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        Map<String,VisibleContent> expectedContentMap = Map.of("CONTENT1", new VisibleContent("ALL", email987654321Content1));
-        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, viewNames, expectedContentMap, "ENGLISH", options);
+        List<Map.Entry<String,VisibleContent>> orderedContent = List
+                        .of(new AbstractMap.SimpleEntry<>("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
+        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
 
@@ -281,8 +283,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        Map<String,VisibleContent> expectedContentMap = Map.of("CONTENT2", new VisibleContent("ALL", email987654321Content2));
-        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, viewNames, expectedContentMap, "ENGLISH", options);
+        List<Map.Entry<String,VisibleContent>> orderedContent = List
+                        .of(new AbstractMap.SimpleEntry<>("CONTENT2", new VisibleContent("ALL", email987654321Content2)));
+        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
 
@@ -314,9 +317,9 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         languagemap.put(rowDtUid, "ENGLISH");
         options.put(DOCUMENT_LANGUAGES, new Gson().toJson(languagemap));
 
-        Map<String,VisibleContent> expectedContentMap = Map.of("CONTENT", new VisibleContent("ALL", pdf111222333Content));
-        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, List.of(DEFAULT_VIEW_NAMES.split(Constants.COMMA)), expectedContentMap,
-                        "ENGLISH", options);
+        List<Map.Entry<String,VisibleContent>> orderedContent = List
+                        .of(new AbstractMap.SimpleEntry<>("CONTENT", new VisibleContent("ALL", pdf111222333Content)));
+        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
 
