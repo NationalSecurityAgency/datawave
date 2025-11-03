@@ -88,12 +88,17 @@ public class BalancedShardPartitionerTest {
     @Test
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
-        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("test-two-tables")).toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS,
-                        TableName.SHARD, TableName.ERROR_SHARD);
+        Path twoTablesDir = Files.createDirectory(temporaryFolder.resolve("test-two-tables"));
+        new TestShardGenerator(conf, twoTablesDir.toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD, TableName.ERROR_SHARD);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "errorShard,shard");
+        conf.set("datawave.ingest.splits.cache.dir", twoTablesDir.toString());
+        conf.set("datawave.ingest.splits.cache.file", "all-splits.txt");
+
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
 
         partitioner.setConf(conf);
-
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
         String today = formatDay(0);
@@ -217,7 +222,6 @@ public class BalancedShardPartitionerTest {
         SortedMap<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
         int tserverId = 1;
-
         for (int daysAgo = 0; daysAgo <= 2; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard = 0; currShard < SHARDS_PER_DAY; currShard++) {
@@ -243,9 +247,7 @@ public class BalancedShardPartitionerTest {
         SplitsCacheFactory.clearInstance();
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
 
-        // Reconfigure the partitioner loading from /simulated-diff/
         partitioner.setConf(conf);
-
         if (missingShardStrategy != null) {
             conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
         }
