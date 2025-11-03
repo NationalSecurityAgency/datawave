@@ -188,7 +188,7 @@ public class BalancedShardPartitionerTest {
         // hashing is the default implementation, so null is passed in
         String tableName = "shard3";
 
-        simulateDifferentNumberShardsPerDay(null, tableName);
+        simulateDifferentNumberShardsPerDay("hash", tableName);
 
         // 1 day ago should get SHARDS_PER_DAY partitions
         assertPartitionsForDay(partitioner, tableName, 1, SHARDS_PER_DAY);
@@ -236,6 +236,7 @@ public class BalancedShardPartitionerTest {
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, tableName);
         conf.set("datawave.ingest.splits.cache.dir", simulatedDiffDir.toString());
         conf.set("datawave.ingest.splits.cache.file", "all-splits.txt");
+        conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
 
         // Clear stale cache and force a reload
         TableSplitsCache.clear();
