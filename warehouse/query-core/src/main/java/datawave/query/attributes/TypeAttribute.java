@@ -18,13 +18,14 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.core.cache.CaffeineClassCache;
+import datawave.core.cache.ClassCache;
 import datawave.data.type.DatawaveTypeIndex;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.util.cache.ClassCache;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
@@ -33,7 +34,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
 
-    private static final ClassCache classCache = new ClassCache();
+    private static final ClassCache classCache = new CaffeineClassCache();
 
     private Type<T> datawaveType;
 

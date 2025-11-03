@@ -20,10 +20,11 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.core.cache.CaffeineClassCache;
+import datawave.core.cache.ClassCache;
 import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.util.cache.ClassCache;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
@@ -34,7 +35,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
 
-    private static final ClassCache classCache = new ClassCache();
+    private static final ClassCache classCache = new CaffeineClassCache();
 
     /**
      * Should sizes of documents be tracked
