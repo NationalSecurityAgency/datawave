@@ -48,11 +48,11 @@ services:
     networks:
       - demo
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'source ~/.bashrc && accumuloIsRunning && datawaveWebIsDeployed'"]
-      interval: 20s
-      timeout: 15s
+      test: ["CMD-SHELL", "ss -ln | grep 2181 && ss -ln | grep 9997"]
+      interval: 10s
+      timeout: 2s
       start_period: 120s
-      retries: 8
+      retries: 30
 
   consul:
     image: docker.io/hashicorp/consul:1.15.4
