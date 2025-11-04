@@ -1,6 +1,5 @@
 package datawave.webservice.annotation;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -52,21 +51,6 @@ public class Metadata {
         this.table = table;
     }
 
-    /** Format metadata for error messages, since it doesn't have a reasonable {@code toString} method */
-    static String format(Metadata metadata) {
-        return String.format("%s/%s/%s [%s]", metadata.getRow(), metadata.getDataType(), metadata.getInternalId(), metadata.getTable());
-    }
-
-    /** Format metadata for error messages, since it doesn't have a reasonable {@code toString} method */
-    static String format(List<Metadata> metadata) {
-        StringBuilder b = new StringBuilder().append("[");
-        for (Metadata md : metadata) {
-            b.append(format(md)).append("; ");
-        }
-        b.setLength(b.length() - 2);
-        return b.append("]").toString();
-    }
-
     public String getDataType() {
         return dataType;
     }
@@ -84,7 +68,7 @@ public class Metadata {
     }
 
     public String toString() {
-        return format(this);
+        return String.format("%s/%s/%s [%s]", row, dataType, internalId, table);
     }
 
     @Override
