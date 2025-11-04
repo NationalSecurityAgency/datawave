@@ -1577,7 +1577,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             }
 
                             // Validate the query against the rule's criteria.
-                            result.addRuleResult(rule.validate(validationConfig, config));
+                            result.addRuleResult(rule.validate(validationConfig));
                             // Remove the rule from the underlying list so that it is not executed again later.
                             ruleIter.remove();
                         } else {
@@ -1663,7 +1663,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                     }
 
                     // Validate the query against the rule's criteria.
-                    result.addRuleResult(rule.validate(validationConfig, config));
+                    result.addRuleResult(rule.validate(validationConfig));
                 } else {
                     if (log.isTraceEnabled()) {
                         log.trace("Rule '" + rule.getName() + "' does not support validating the query " + validationConfig.getQueryString());

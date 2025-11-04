@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
 
 /**
@@ -66,7 +65,7 @@ public class FieldExistenceRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration, GenericQueryConfiguration queryConfiguration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration) throws Exception {
         ShardQueryValidationConfiguration ruleConfig = (ShardQueryValidationConfiguration) ruleConfiguration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + ruleConfig);

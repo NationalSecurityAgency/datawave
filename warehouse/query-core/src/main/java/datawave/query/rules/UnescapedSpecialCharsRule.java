@@ -14,7 +14,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.SetMultimap;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.jexl.visitors.UnescapedSpecialCharactersVisitor;
 
 /**
@@ -138,7 +137,7 @@ public class UnescapedSpecialCharsRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration configuration, GenericQueryConfiguration queryConfiguration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration configuration) throws Exception {
         ShardQueryValidationConfiguration ruleConfig = (ShardQueryValidationConfiguration) configuration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + ruleConfig);

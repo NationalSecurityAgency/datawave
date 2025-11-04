@@ -12,7 +12,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.data.type.DateType;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
@@ -43,7 +42,7 @@ public class TimeFunctionRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration, GenericQueryConfiguration queryConfiguration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration) throws Exception {
         ShardQueryValidationConfiguration ruleConfig = (ShardQueryValidationConfiguration) ruleConfiguration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + ruleConfig);

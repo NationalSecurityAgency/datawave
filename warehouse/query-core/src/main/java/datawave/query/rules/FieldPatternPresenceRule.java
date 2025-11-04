@@ -12,7 +12,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.QueryPatternsVisitor;
 
@@ -92,7 +91,7 @@ public class FieldPatternPresenceRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration, GenericQueryConfiguration queryConfiguration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration) throws Exception {
         ShardQueryValidationConfiguration ruleConfig = (ShardQueryValidationConfiguration) ruleConfiguration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + ruleConfig);

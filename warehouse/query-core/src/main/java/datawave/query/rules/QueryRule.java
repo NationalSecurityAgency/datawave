@@ -1,7 +1,5 @@
 package datawave.query.rules;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-
 public interface QueryRule {
 
     /**
@@ -38,7 +36,7 @@ public interface QueryRule {
      * @throws Exception
      *             if any exception occurs
      */
-    QueryRuleResult validate(QueryValidationConfiguration configuration, GenericQueryConfiguration queryConfiguration) throws Exception;
+    QueryRuleResult validate(QueryValidationConfiguration configuration) throws Exception;
 
     /**
      * Returns a copy of this {@link QueryRule}.

@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
@@ -31,7 +30,7 @@ public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration configuration, GenericQueryConfiguration queryConfiguration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration configuration) throws Exception {
         ShardQueryValidationConfiguration config = (ShardQueryValidationConfiguration) configuration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + config);

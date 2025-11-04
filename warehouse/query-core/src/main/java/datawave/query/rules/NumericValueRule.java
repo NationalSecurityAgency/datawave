@@ -9,7 +9,6 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.data.type.NumberType;
 import datawave.query.jexl.visitors.FieldsWithNumericRangeValuesVisitor;
 import datawave.query.util.TypeMetadata;
@@ -32,7 +31,7 @@ public class NumericValueRule extends ShardQueryRule {
     }
 
     @Override
-    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration, GenericQueryConfiguration queryConfiguration) throws Exception {
+    public QueryRuleResult validate(QueryValidationConfiguration ruleConfiguration) throws Exception {
         ShardQueryValidationConfiguration ruleConfig = (ShardQueryValidationConfiguration) ruleConfiguration;
         if (log.isDebugEnabled()) {
             log.debug("Validating config against instance '" + getName() + "' of " + getClass() + ": " + ruleConfig);
