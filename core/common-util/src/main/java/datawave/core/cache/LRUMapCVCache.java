@@ -12,7 +12,15 @@ import org.apache.commons.collections4.map.LRUMap;
  */
 public class LRUMapCVCache implements CVCache {
 
-    private final Map<ByteSequence,ColumnVisibility> cache = Collections.synchronizedMap(new LRUMap<>(256));
+    private final Map<ByteSequence,ColumnVisibility> cache;
+
+    public LRUMapCVCache() {
+        this(DEFAULT_SIZE);
+    }
+
+    public LRUMapCVCache(int size) {
+        cache = Collections.synchronizedMap(new LRUMap<>(size));
+    }
 
     @Override
     public String name() {

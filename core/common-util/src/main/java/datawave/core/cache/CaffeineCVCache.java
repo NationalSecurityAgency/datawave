@@ -13,12 +13,20 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
  */
 public class CaffeineCVCache implements CVCache {
 
-    //  @formatter:off
-    private final LoadingCache<ByteSequence,ColumnVisibility> cache = Caffeine.newBuilder()
-            .maximumSize(128)
-            .expireAfterAccess(1, TimeUnit.HOURS)
-            .build(bytes -> new ColumnVisibility(bytes.toArray()));
-    //  @formatter:on
+    private final LoadingCache<ByteSequence,ColumnVisibility> cache;
+
+    public CaffeineCVCache() {
+        this(DEFAULT_SIZE);
+    }
+
+    public CaffeineCVCache(int size) {
+        //  @formatter:off
+        cache = Caffeine.newBuilder()
+                .maximumSize(size)
+                .expireAfterAccess(1, TimeUnit.HOURS)
+                .build(bytes -> new ColumnVisibility(bytes.toArray()));
+        //  @formatter:on
+    }
 
     @Override
     public String name() {

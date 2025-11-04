@@ -13,6 +13,11 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 public interface CVCache {
 
     /**
+     * The default cache size
+     */
+    int DEFAULT_SIZE = 256;
+
+    /**
      * The name of the cache implementation
      *
      * @return the name

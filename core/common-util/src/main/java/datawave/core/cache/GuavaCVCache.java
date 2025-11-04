@@ -15,17 +15,25 @@ import com.google.common.cache.LoadingCache;
  */
 public class GuavaCVCache implements CVCache {
 
-    //  @formatter:off
-    private final LoadingCache<ByteSequence,ColumnVisibility> cache = CacheBuilder.newBuilder()
-            .maximumSize(128)
-            .expireAfterWrite(1, TimeUnit.HOURS)
-            .build(new CacheLoader<>() {
-                @Override
-                public ColumnVisibility load(ByteSequence bytes) {
-                    return new ColumnVisibility(bytes.toArray());
-                }
-            });
-    //  @formatter:on
+    private final LoadingCache<ByteSequence,ColumnVisibility> cache;
+
+    public GuavaCVCache() {
+        this(DEFAULT_SIZE);
+    }
+
+    public GuavaCVCache(int size) {
+        //  @formatter:off
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(size)
+                .expireAfterWrite(1, TimeUnit.HOURS)
+                .build(new CacheLoader<>() {
+                    @Override
+                    public ColumnVisibility load(ByteSequence bytes) {
+                        return new ColumnVisibility(bytes.toArray());
+                    }
+                });
+        //  @formatter:on
+    }
 
     @Override
     public String name() {
