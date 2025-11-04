@@ -99,24 +99,8 @@ jobs:
           cd docker
           export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
-          attempt=0
-          max_attempts=20
-          while [ $attempt -lt $max_attempts ]; do
-            attempt=$((attempt+1))
-            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
-            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
-            sleep 60s
-            cat compose.out
-            # check to see if the query service is running
-            QUERY="$(docker compose ps --status running --services | grep query || true)"
-            if [ "$QUERY" == "query" ] ; then
-              echo "Docker compose started successfully"
-              break
-            elif [ $attempt -eq $max_attempts ] ; then
-              echo "Failed to start docker compose"
-              exit 1
-            fi
-          done
+          echo "Starting docker compose"
+          docker compose up -d --no-recreate
       - name: Docker Compose Ingest Tests
         run: |
           cd docker/scripts
@@ -136,24 +120,8 @@ jobs:
           cd docker
           export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
-          attempt=0
-          max_attempts=20
-          while [ $attempt -lt $max_attempts ]; do
-            attempt=$((attempt+1))
-            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
-            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
-            sleep 60s
-            cat compose.out
-            # check to see if the query service is running
-            QUERY="$(docker compose ps --status running --services | grep query || true)"
-            if [ "$QUERY" == "query" ] ; then
-              echo "Docker compose started successfully"
-              break
-            elif [ $attempt -eq $max_attempts ] ; then
-              echo "Failed to start docker compose"
-              exit 1
-            fi
-          done
+          echo "Starting docker compose"
+          docker compose up -d --no-recreate
       - name: Docker Compose Web Test Logs
         run: |
           cd docker
