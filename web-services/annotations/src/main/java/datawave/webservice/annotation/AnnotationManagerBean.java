@@ -191,7 +191,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 }
             }
             if (results.isEmpty()) {
-                return jsonNotFound("annotation types", idType, id, Metadata.format(metadata), null, null, null);
+                return jsonNotFound("annotation types", idType, id, metadata.toString(), null, null, null);
             }
             return jsonOk(results);
         } catch (Exception e) {
@@ -222,7 +222,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 }
             }
             if (results.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, Metadata.format(metadata), null, null, null);
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, null, null);
             }
             return jsonOk(results);
         } catch (Exception e) {
@@ -254,7 +254,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 }
             }
             if (results.isEmpty()) {
-                return jsonNotFound("annotations of type", idType, id, Metadata.format(metadata), annotationType, null, null);
+                return jsonNotFound("annotations of type", idType, id, metadata.toString(), annotationType, null, null);
             }
             return jsonOk(results);
         } catch (Exception e) {
@@ -282,7 +282,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 annotations.ifPresent(results::add);
             }
             if (results.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, Metadata.format(metadata), null, annotationId, null);
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
             }
             return jsonOk(results);
         } catch (Exception e) {
@@ -315,7 +315,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 return jsonNotFound(message);
             } else if (metadataList.size() > 1) {
                 final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
-                                id, Metadata.format(metadataList));
+                                id, metadataList);
                 log.info(message);
                 return jsonError(message);
             }
@@ -378,7 +378,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 return jsonNotFound(message);
             } else if (metadataList.size() > 1) {
                 final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
-                                id, Metadata.format(metadataList));
+                                id, metadataList);
                 log.info(message);
                 return jsonError(message);
             }
@@ -436,12 +436,12 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (annotationResults.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, Metadata.format(metadata), null, annotationId, segmentId);
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentId);
             }
 
             final Map<Metadata,Collection<Segment>> results = new HashMap<>();
             for (Map.Entry<Metadata,Annotation> entry : annotationResults.entrySet()) {
-                // now select only the segment that were requested.
+                // now select only the segments that were requested.
                 List<Segment> matchingSegments = new ArrayList<>();
                 for (Segment s : entry.getValue().getSegmentsList()) {
                     if (s.getSegmentId().equals(segmentId)) {
@@ -454,7 +454,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (results.isEmpty()) {
-                return jsonNotFound("segments", idType, id, Metadata.format(metadata), null, annotationId, segmentId);
+                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentId);
             }
             return jsonOk(results);
         } catch (QueryException e) {
@@ -481,7 +481,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 return jsonNotFound(message);
             } else if (metadataList.size() > 1) {
                 final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
-                                id, Metadata.format(metadataList));
+                                id, metadataList);
                 log.info(message);
                 return jsonError(message);
             }
