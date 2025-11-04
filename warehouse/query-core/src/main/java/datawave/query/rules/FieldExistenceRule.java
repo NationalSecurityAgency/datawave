@@ -77,7 +77,7 @@ public class FieldExistenceRule extends ShardQueryRule {
             // Fetch the set of non-existent fields.
             ASTJexlScript jexlQuery = (ASTJexlScript) ruleConfig.getParsedQuery();
             Set<String> nonExistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(ruleConfig.getMetadataHelper(), jexlQuery,
-                            Collections.emptySet(), getSpecialFields(), queryConfiguration);
+                            Collections.emptySet(), getSpecialFields());
             // If any non-existent fields were found, add them to the result.
             if (!nonExistentFields.isEmpty()) {
                 result.addMessage("Fields not found in data dictionary: " + String.join(", ", nonExistentFields));
