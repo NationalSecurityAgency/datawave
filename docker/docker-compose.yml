@@ -27,8 +27,12 @@ services:
       - "9864:9864"
       # jobhistory web ui
       - "8021:8021"
+      # zookeeper
+      - "2181:2181"
       # accumulo monitor
       - "9995:9995"
+      # accumulo tserver
+      - "9997:9997"
       # web server
       - "9443:8443"
       # web server debug port
@@ -44,7 +48,11 @@ services:
     networks:
       - demo
     healthcheck:
-      test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
+      test: ["CMD-SHELL", "ss -ln | grep 2181 && ss -ln | grep 9997"]
+      interval: 10s
+      timeout: 2s
+      start_period: 120s
+      retries: 30
 
   consul:
     image: docker.io/hashicorp/consul:1.15.4
@@ -379,12 +387,14 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/querymetric/mgmt/health
-      interval: 10s
+      interval: 5s
       timeout: 1s
-      start_period: 240s
-      retries: 12
+      start_period: 20s
+      retries: 8
     depends_on:
       authorization:
+        condition: service_healthy
+      quickstart:
         condition: service_healthy
 
   dictionary:

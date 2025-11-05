@@ -140,6 +140,12 @@
                         <goal>install</goal>
                     </goals>
                 </goalsList>
+                <!-- Always run Ant for compose setup -->
+                <goalsList artifactId="maven-antrun-plugin">
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                </goalsList>
                 <!-- Always run Docker/Kubernetes image builds for compose setup -->
                 <goalsList artifactId="kubernetes-maven-plugin">
                     <goals>
