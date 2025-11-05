@@ -121,10 +121,8 @@ jobs:
           cd docker
           export DW_HOST_IP=127.0.0.1
           docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebTest --blacklist-files QueryMetrics" || true
-      - name: Docker Compose Web Test Logs
+      - name: Final Operations
         run: |
-          cd docker
-          docker compose logs quickstart
           if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
             sudo chown -R $(whoami) . ~/.m2 || true   
           fi
