@@ -10,6 +10,11 @@ package datawave.core.cache;
 public interface ClassCache {
 
     /**
+     * The default cache size
+     */
+    int DEFAULT_SIZE = 128;
+
+    /**
      * The name of the cache implementation
      *
      * @return the name

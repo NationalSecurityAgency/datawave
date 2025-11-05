@@ -10,7 +10,15 @@ import org.apache.commons.collections4.map.LRUMap;
  */
 public class LRUMapClassCache implements ClassCache {
 
-    private final Map<String,Class<?>> cache = Collections.synchronizedMap(new LRUMap<>(256));
+    private final Map<String,Class<?>> cache;
+
+    public LRUMapClassCache() {
+        this(DEFAULT_SIZE);
+    }
+
+    public LRUMapClassCache(int size) {
+        cache = Collections.synchronizedMap(new LRUMap<>(size));
+    }
 
     @Override
     public String name() {

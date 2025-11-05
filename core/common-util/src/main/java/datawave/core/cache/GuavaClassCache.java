@@ -12,17 +12,25 @@ import com.google.common.cache.LoadingCache;
  */
 public class GuavaClassCache implements ClassCache {
 
-    //  @formatter:off
-    private final LoadingCache<String,Class<?>> cache = CacheBuilder.newBuilder()
-            .maximumSize(128)
-            .expireAfterWrite(1, TimeUnit.HOURS)
-            .build(new CacheLoader<>() {
-                @Override
-                public Class<?> load(String name)throws ClassNotFoundException {
-                    return Class.forName(name);
-                }
-            });
-    //  @formatter:on
+    private final LoadingCache<String,Class<?>> cache;
+
+    public GuavaClassCache() {
+        this(DEFAULT_SIZE);
+    }
+
+    public GuavaClassCache(int size) {
+        //  @formatter:off
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(size)
+                .expireAfterWrite(1, TimeUnit.HOURS)
+                .build(new CacheLoader<>() {
+                    @Override
+                    public Class<?> load(String name)throws ClassNotFoundException {
+                        return Class.forName(name);
+                    }
+                });
+        //  @formatter:on
+    }
 
     @Override
     public String name() {

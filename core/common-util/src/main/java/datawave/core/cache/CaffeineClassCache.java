@@ -11,12 +11,20 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
  */
 public class CaffeineClassCache implements ClassCache {
 
-    //  @formatter:off
-    private final LoadingCache<String,Class<?>> cache = Caffeine.newBuilder()
-            .maximumSize(128)
-            .expireAfterAccess(1, TimeUnit.HOURS)
-            .build(Class::forName);
-    //  @formatter:on
+    private final LoadingCache<String,Class<?>> cache;
+
+    public CaffeineClassCache() {
+        this(DEFAULT_SIZE);
+    }
+
+    public CaffeineClassCache(int size) {
+        //  @formatter:off
+        cache = Caffeine.newBuilder()
+                .maximumSize(size)
+                .expireAfterAccess(1, TimeUnit.HOURS)
+                .build(Class::forName);
+        //  @formatter:on
+    }
 
     @Override
     public String name() {
