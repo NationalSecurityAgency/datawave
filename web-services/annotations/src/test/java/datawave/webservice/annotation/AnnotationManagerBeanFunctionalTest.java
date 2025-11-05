@@ -6,14 +6,15 @@ import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateMultiTe
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -241,9 +242,13 @@ public class AnnotationManagerBeanFunctionalTest {
 
     @Test
     public void testGetAnnotationTypesInternalId() {
+        Metadata expectedMetadata = new Metadata("shard", "20250704_249", "testDataType", "abcde.fghij.klmno");
         Response response = annotationManager.getAnnotationTypes("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno");
         assertResponseStatus(200, response);
-        Set<String> annotationTypeList = assertExpectedEntity(Set.class, response);
+        Map<Metadata,Collection<String>> annotationTypeMap = assertExpectedEntity(HashMap.class, response);
+        assertEquals(1, annotationTypeMap.size());
+        Collection<String> annotationTypeList = annotationTypeMap.get(expectedMetadata);
+        assertNotNull(annotationTypeList);
         assertEquals(1, annotationTypeList.size());
         assertTrue(annotationTypeList.contains("testAnnotationType"));
     }
@@ -268,9 +273,13 @@ public class AnnotationManagerBeanFunctionalTest {
 
     @Test
     public void testGetAnnotationTypesExternalIdWithAnnotations() {
+        Metadata expectedMetadata = new Metadata("shard", "20130101_0", "test", "-d5uxna.msizfm.-oxy0iu");
         Response response = annotationManager.getAnnotationTypes("UUID", "CORLEONE");
         assertResponseStatus(200, response);
-        Set<String> annotationTypeList = assertExpectedEntity(Set.class, response);
+        HashMap<Metadata,Collection<String>> annotationTypeMap = assertExpectedEntity(HashMap.class, response);
+        assertEquals(1, annotationTypeMap.size());
+        Collection<String> annotationTypeList = annotationTypeMap.get(expectedMetadata);
+        assertNotNull(annotationTypeList);
         assertEquals(1, annotationTypeList.size());
         assertTrue(annotationTypeList.contains("corleoneAnnotationType"));
     }
@@ -382,9 +391,10 @@ public class AnnotationManagerBeanFunctionalTest {
         Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
         Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "a75beb9e");
         assertResponseStatus(200, response);
-        Optional<Annotation> annotationOptional = assertExpectedEntity(Optional.class, response);
-        assertFalse(annotationOptional.isEmpty());
-        assertAnnotationsEqual(expectedAnnotation, annotationOptional.get());
+        List<Annotation> annotationList = assertExpectedEntity(List.class, response);
+        assertFalse(annotationList.isEmpty());
+        assertEquals(1, annotationList.size());
+        assertAnnotationsEqual(expectedAnnotation, annotationList.iterator().next());
     }
 
     @Test
@@ -416,9 +426,10 @@ public class AnnotationManagerBeanFunctionalTest {
         Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
         Response response = annotationManager.getAnnotation("UUID", "CORLEONE", "2e8fbb3e");
         assertResponseStatus(200, response);
-        Optional<Annotation> annotationOptional = assertExpectedEntity(Optional.class, response);
-        assertFalse(annotationOptional.isEmpty());
-        assertAnnotationsEqual(expectedAnnotation, annotationOptional.get());
+        List<Annotation> annotationList = assertExpectedEntity(List.class, response);
+        assertFalse(annotationList.isEmpty());
+        assertEquals(1, annotationList.size());
+        assertAnnotationsEqual(expectedAnnotation, annotationList.iterator().next());
     }
 
     @Ignore
@@ -433,6 +444,7 @@ public class AnnotationManagerBeanFunctionalTest {
 
     @Test
     public void testGetAnnotationSegmentInternalId() {
+        Metadata expectedMetadata = new Metadata("shard", "20250704_249", "testDataType", "abcde.fghij.klmno");
         Annotation testAnnotation = generateTestAnnotation();
         Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
         //@formatter:off
@@ -444,9 +456,14 @@ public class AnnotationManagerBeanFunctionalTest {
         );
         //@formatter:on
         assertResponseStatus(200, response);
-        Optional<Segment> result = assertExpectedEntity(Optional.class, response);
+        Map<Metadata,Collection<Segment>> result = assertExpectedEntity(Map.class, response);
         assertFalse(result.isEmpty());
-        assertSegmentsEqual(expectedAnnotation.getSegmentsList(), List.of(result.get()));
+        assertEquals(1, result.size());
+        Collection<Segment> segmentsList = result.get(expectedMetadata);
+        assertNotNull(segmentsList);
+        assertFalse(segmentsList.isEmpty());
+        assertEquals(1, segmentsList.size());
+        assertSegmentsEqual(expectedAnnotation.getSegmentsList(), segmentsList);
     }
 
     @Test
