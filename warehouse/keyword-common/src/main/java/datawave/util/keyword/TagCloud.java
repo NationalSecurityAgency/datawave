@@ -97,23 +97,22 @@ public class TagCloud {
 
         TagCloudUtils utils = new DefaultTagCloudUtils();
 
-        /** Add a set of keyword extraction results to the tag cloud to be built */
-        public void addResults(KeywordResults results) {
-            final String source = results.getSource();
-            final String language = results.getLanguage();
-            final String visibility = results.getVisibility();
-            final Map<String,Double> resultsMap = results.getKeywords();
+        /** Add a set of partitions to the tag cloud to be built */
+        public void addInput(TagCloudPartition tagCloudPartition) {
+            final String partition = tagCloudPartition.getPartition();
+            for (TagCloudInput tagCloudInput : tagCloudPartition.getInputs()) {
+                for (final Map.Entry<String,Double> e : tagCloudInput.getEntities().entrySet()) {
+                    final String partitionKey = partition + "%%" + e.getKey();
+                    TagCloudEntry.Builder b = index.computeIfAbsent(partitionKey,
+                                    k -> new TagCloudEntry.Builder(e.getKey(), tagCloudPartition.getScoreType()).withUtilities(utils));
+                    // TODO-crwill9 probably okay to pass partition here, but not sure why its needed at all
+                    b.addSourceScore(tagCloudInput.getSource(), e.getValue(), partition);
+                }
 
-            for (final Map.Entry<String,Double> e : resultsMap.entrySet()) {
-                String key = utils.computeIndexKey(results, e.getKey(), partitionOnLanguage);
-                TagCloudEntry.Builder b = index.computeIfAbsent(key, k -> new TagCloudEntry.Builder(e.getKey()).withUtilities(utils));
-                b.addSourceScore(source, e.getValue(), language);
-            }
-
-            if (!visibility.isEmpty() && !resultsMap.isEmpty()) {
-                String key = utils.computeVisibilityKey(results, partitionOnLanguage);
-                Set<String> visibilityList = visibilities.computeIfAbsent(key, k -> new TreeSet<>());
-                visibilityList.add(visibility);
+                if (!tagCloudInput.getVisibility().isEmpty() && !tagCloudInput.getEntities().isEmpty()) {
+                    Set<String> visibilityList = visibilities.computeIfAbsent(partition, k -> new TreeSet<>());
+                    visibilityList.add(tagCloudInput.getVisibility());
+                }
             }
         }
 

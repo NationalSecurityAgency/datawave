@@ -1,6 +1,6 @@
 package datawave.query.tables.keyword;
 
-import static datawave.query.tables.keyword.KeywordQueryLogic.TAG_CLOUD_FIELDS;
+import static datawave.query.tables.keyword.KeywordUUIDChainStrategy.CATEGORY_PARAMETER;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -12,7 +12,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,7 +35,10 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.function.serializer.DocumentSerializer;
+import datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudInput;
+import datawave.util.keyword.TagCloudPartition;
 
 public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
@@ -61,7 +63,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
     public Entry<Key,Value> createDocument(String shard, String dt, String uid, String language, String identifier) {
         String colf = dt + "\0" + uid;
-        Key documentKey = new Key(shard, colf);
+        Key documentKey = new Key(shard, colf, "", "ALL");
 
         Document d = new Document();
 
@@ -93,7 +95,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
 
-        mockLogic.setFieldedKeywordResults(new HashMap<>());
+        mockLogic.setExternalTagCloudPartitions(List.of());
 
         replayAll();
 
@@ -122,7 +124,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setFieldedKeywordResults(new HashMap<>());
+        mockLogic.setExternalTagCloudPartitions(List.of());
 
         replayAll();
 
@@ -175,7 +177,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setFieldedKeywordResults(new HashMap<>());
+        mockLogic.setExternalTagCloudPartitions(List.of());
 
         replayAll();
 
@@ -241,7 +243,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setFieldedKeywordResults(new HashMap<>());
+        mockLogic.setExternalTagCloudPartitions(List.of());
 
         replayAll();
 
@@ -279,7 +281,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
     @Test
     public void singleFieldedTest() throws Exception {
-        settings.addParameter(TAG_CLOUD_FIELDS, "FOO,BAR");
+        settings.addParameter(CATEGORY_PARAMETER, "external,keyword");
 
         List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"));
 
@@ -292,14 +294,19 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
                         .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+        FieldedTagCloudInputExtractor fieldedExtractor = new FieldedTagCloudInputExtractor();
+        fieldedExtractor.setFields(List.of("FOO", "BAR"));
+        fieldedExtractor.setCategory("external");
+        strategy.setExtractors(List.of(fieldedExtractor));
+
         Capture<Query> intermediateSettings = Capture.newInstance();
 
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
 
-        Capture<Map<String,List<KeywordResults>>> fieldedKeywordResultsMap = newCapture();
-        mockLogic.setFieldedKeywordResults(capture(fieldedKeywordResultsMap));
+        Capture<List<TagCloudPartition>> externalPartitions = newCapture();
+        mockLogic.setExternalTagCloudPartitions(capture(externalPartitions));
 
         replayAll();
 
@@ -324,32 +331,21 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         assertFalse(result.hasNext());
 
-        Map<String,List<KeywordResults>> capturedMap = fieldedKeywordResultsMap.getValue();
-        assertNotNull(capturedMap);
-        assertEquals(2, capturedMap.keySet().size());
-        List<KeywordResults> fooResults = capturedMap.get("FOO");
-        List<KeywordResults> barResults = capturedMap.get("BAR");
-        assertNotNull(fooResults);
-        assertNotNull(barResults);
-        assertEquals(1, fooResults.size());
-        assertEquals(1, barResults.size());
-        assertEquals(1, fooResults.get(0).getKeywordCount());
-        assertEquals("event:FOO", fooResults.get(0).getView());
-        assertEquals("20250412/test/-cvy0gj.tlf59s.-duxzua", fooResults.get(0).getSource());
-        assertEquals("FOO", fooResults.get(0).getLanguage());
-        Map<String,Double> keywords = fooResults.get(0).getKeywords();
-        assertNotNull(keywords);
-        assertEquals(1, keywords.size());
-        assertEquals(Double.valueOf(1), keywords.get("x"));
-
-        assertEquals(1, barResults.get(0).getKeywordCount());
-        assertEquals("event:BAR", barResults.get(0).getView());
-        assertEquals("20250412/test/-cvy0gj.tlf59s.-duxzua", barResults.get(0).getSource());
-        assertEquals("BAR", barResults.get(0).getLanguage());
-        keywords = barResults.get(0).getKeywords();
-        assertNotNull(keywords);
-        assertEquals(1, keywords.size());
-        assertEquals(Double.valueOf(1), keywords.get("y"));
+        List<TagCloudPartition> tagCloudPartitions = externalPartitions.getValue();
+        assertNotNull(tagCloudPartitions);
+        assertEquals(1, tagCloudPartitions.size());
+        TagCloudPartition partition = tagCloudPartitions.get(0);
+        assertEquals("external", partition.getPartition());
+        assertEquals("external", partition.getLabel());
+        assertEquals(TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER, partition.getScoreType());
+        assertEquals(1, partition.getInputs().size());
+        TagCloudInput tagCloudInput = partition.getInputs().get(0);
+        assertNotNull(tagCloudInput);
+        assertEquals("20250412/test/-cvy0gj.tlf59s.-duxzua", tagCloudInput.getSource());
+        assertEquals("ALL", tagCloudInput.getVisibility());
+        assertEquals(2, tagCloudInput.getEntities().size());
+        Map<String,Double> expectedEntites = Map.of("x", 1d, "y", 1d);
+        assertEquals(expectedEntites, tagCloudInput.getEntities());
     }
 
 }

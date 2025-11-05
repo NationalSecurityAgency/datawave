@@ -14,7 +14,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
  * merge visibility strings, and calculate scores, source collections and frequencies of individual keywords based on observed results
  */
 public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
-
     private static final long serialVersionUID = 652771994052429009L;
 
     @Override
@@ -54,9 +53,17 @@ public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
 
     @Override
     public double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores) {
-        // for now, choose the best (smallest) scored version of the tag.
-        return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).min(Double::compareTo).orElse(1.0);
+        return calculateScore(sourceScores, TagCloudPartition.SCORE_TYPE.LOWER_IS_BETTER);
+    }
 
+    @Override
+    public double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, TagCloudPartition.SCORE_TYPE scoreType) {
+        // for now, choose the best (smallest) scored version of the tag.
+        if (scoreType == TagCloudPartition.SCORE_TYPE.LOWER_IS_BETTER) {
+            return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).min(Double::compareTo).orElse(1.0);
+        } else {
+            return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).max(Double::compareTo).orElse(0d);
+        }
     }
 
     @Override

@@ -96,11 +96,14 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
      */
     public static class Builder {
         final String keyword;
+        final TagCloudPartition.SCORE_TYPE scoreType;
+
         final SortedSet<ScoreTuple> sourceScores = new TreeSet<>();
         TagCloudUtils utils = new DefaultTagCloudUtils();
 
-        public Builder(String keyword) {
+        public Builder(String keyword, TagCloudPartition.SCORE_TYPE scoreType) {
             this.keyword = keyword;
+            this.scoreType = scoreType;
         }
 
         public Builder withUtilities(TagCloudUtils utils) {
@@ -113,7 +116,7 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
         }
 
         public TagCloudEntry build() {
-            final double score = utils.calculateScore(sourceScores);
+            final double score = utils.calculateScore(sourceScores, scoreType);
             final Set<String> sources = utils.calculateSources(sourceScores);
             final int frequency = utils.calculateFrequency(sourceScores);
             return new TagCloudEntry(keyword, score, frequency, sources);
@@ -124,6 +127,7 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
     public static class ScoreTuple implements Comparable<ScoreTuple> {
         final String source;
         final double score;
+        // TODO-crwill9 rename to partition
         final String language;
 
         public ScoreTuple(String source, double score, String language) {

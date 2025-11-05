@@ -9,51 +9,26 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import org.apache.hadoop.io.Writable;
-
-import com.google.gson.Gson;
+import java.util.Objects;
 
 /**
  * Encapsulates results from a keyword extraction algorithm for a single document and provides serialization and deserialization mechanism
  */
-public class KeywordResults implements Writable {
-
-    private static final Gson gson = new Gson();
-
-    /** the identifier for the source document */
-    String source;
-
+public class KeywordResults extends TagCloudInput {
     /** the name of the view from which the keywords were extracted */
     String view;
 
     /** the language of the source document used for keyword extraction */
     String language;
 
-    /** a visibility expression for these keyword results */
-    String visibility;
-
-    /** the keywords and scores produced by the extraction algorithm */
-    final Map<String,Double> keywords;
-
     public KeywordResults() {
         this("", "", "", "", new LinkedHashMap<>());
     }
 
     public KeywordResults(String source, String view, String language, String visibility, Map<String,Double> results) {
-        this.source = source;
+        super(source, visibility, results);
         this.view = view;
         this.language = language;
-        this.visibility = visibility;
-        this.keywords = results;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
     }
 
     public String getView() {
@@ -72,52 +47,59 @@ public class KeywordResults implements Writable {
         this.language = language;
     }
 
-    public String getVisibility() {
-        return visibility;
-    }
-
-    public void setVisibility(String visibility) {
-        this.visibility = visibility;
+    public Map<String,Double> getKeywords() {
+        return getEntities();
     }
 
     public int getKeywordCount() {
-        return keywords.size();
+        return getEntities().size();
     }
 
-    public Map<String,Double> getKeywords() {
-        return keywords;
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!super.equals(other)) {
+            return false;
+        }
+        if (!(other instanceof KeywordResults)) {
+            return false;
+        }
+
+        KeywordResults otherKeywordResults = (KeywordResults) other;
+        return Objects.equals(view, otherKeywordResults.view) && Objects.equals(language, otherKeywordResults.language);
     }
 
-    public String toJson() {
-        return gson.toJson(this);
-    }
-
-    public static KeywordResults fromJson(String json) {
-        return gson.fromJson(json, KeywordResults.class);
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), view, language);
     }
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
-        int sz = dataInput.readInt();
-        this.source = dataInput.readUTF();
+        String clazz = dataInput.readUTF();
+        if (!clazz.equals(KeywordResults.class.getCanonicalName())) {
+            throw new IllegalArgumentException("Incompatible DataInput");
+        }
+
+        super.readFields(dataInput);
         this.view = dataInput.readUTF();
         this.language = dataInput.readUTF();
-        this.visibility = dataInput.readUTF();
-        for (int i = 0; i < sz; i++) {
-            keywords.put(dataInput.readUTF(), dataInput.readDouble());
-        }
     }
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
-        dataOutput.writeInt(keywords.size());
-        dataOutput.writeUTF(source == null ? "" : source);
+        // write the class first
+        dataOutput.writeUTF(KeywordResults.class.getCanonicalName());
+        super.write(dataOutput);
         dataOutput.writeUTF(view == null ? "" : view);
         dataOutput.writeUTF(language == null ? "" : language);
-        dataOutput.writeUTF(visibility == null ? "" : visibility);
-        for (Map.Entry<String,Double> e : keywords.entrySet()) {
-            dataOutput.writeUTF(e.getKey());
-            dataOutput.writeDouble(e.getValue());
+    }
+
+    public static boolean canDeserialize(byte[] input) throws IOException {
+        try (ByteArrayInputStream in = new ByteArrayInputStream(input); DataInputStream dataInput = new DataInputStream(in)) {
+            return dataInput.readUTF().equals(KeywordResults.class.getCanonicalName());
         }
     }
 

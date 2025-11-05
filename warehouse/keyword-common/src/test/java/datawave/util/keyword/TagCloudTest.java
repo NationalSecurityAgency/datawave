@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -102,23 +101,24 @@ public class TagCloudTest {
 
     // -- utilities to set up test data.
 
-    public static KeywordResults[] createData() {
+    public static TagCloudPartition createData() {
         return createDataFromArrays(testData, testSources);
     }
 
-    public static KeywordResults[] createDataWithOverlaps() {
+    public static TagCloudPartition createDataWithOverlaps() {
         return createDataFromArrays(testDataWithOverlaps, testSourcesWithOverlaps);
     }
 
-    public static KeywordResults[] createDataFromArrays(String[] data, String[] sources) {
-        KeywordResults[] result = new KeywordResults[data.length];
+    public static TagCloudPartition createDataFromArrays(String[] data, String[] sources) {
+        TagCloudPartition partition = new TagCloudPartition();
         for (int i = 0; i < data.length; i++) {
             String content = data[i];
             LinkedHashMap<String,Double> parsedContent = parseContent(content);
             String source = sources[i];
-            result[i] = new KeywordResults(source, "content", "english", "visibility", parsedContent);
+            partition.addInput(new KeywordResults(source, "content", "english", "visibility", parsedContent));
         }
-        return result;
+
+        return partition;
     }
 
     public static LinkedHashMap<String,Double> parseContent(String content) {
@@ -136,9 +136,9 @@ public class TagCloudTest {
     @Test
     public void testSerializationLifecycle() {
         // validates serialization.
-        KeywordResults[] testInput = createData();
+        TagCloudPartition testInput = createData();
         TagCloud.Builder builder = new TagCloud.Builder();
-        Arrays.stream(testInput).forEach(builder::addResults);
+        builder.addInput(testInput);
 
         List<TagCloud> cloud = builder.build();
         assertEquals(1, cloud.size());
@@ -152,9 +152,9 @@ public class TagCloudTest {
 
     @Test
     public void testBuilderWithNoLimit() {
-        KeywordResults[] testInput = createData();
+        TagCloudPartition testInput = createData();
         TagCloud.Builder builder = new TagCloud.Builder();
-        Arrays.stream(testInput).forEach(builder::addResults);
+        builder.addInput(testInput);
         List<TagCloud> cloud = builder.build();
 
         assertEquals(1, cloud.size());
@@ -164,9 +164,9 @@ public class TagCloudTest {
 
     @Test
     public void testBuilderWithLimit() {
-        KeywordResults[] testInput = createData();
+        TagCloudPartition testInput = createData();
         TagCloud.Builder builder = new TagCloud.Builder().withMaxTags(10);
-        Arrays.stream(testInput).forEach(builder::addResults);
+        builder.addInput(testInput);
         List<TagCloud> cloud = builder.build();
 
         assertEquals(1, cloud.size());
@@ -178,9 +178,9 @@ public class TagCloudTest {
     public void testBuilderWithAlternateComparator() {
         final Comparator<TagCloudEntry> comparator = TagCloudEntry.ORDER_BY_FREQUENCY;
 
-        KeywordResults[] testInput = createDataWithOverlaps();
+        TagCloudPartition testInput = createDataWithOverlaps();
         TagCloud.Builder builder = new TagCloud.Builder().withComparator(comparator);
-        Arrays.stream(testInput).forEach(builder::addResults);
+        builder.addInput(testInput);
         List<TagCloud> cloud = builder.build();
 
         assertEquals(1, cloud.size());
@@ -191,14 +191,26 @@ public class TagCloudTest {
 
     @Test
     public void testBuilderWithLanguages() {
-        KeywordResults[] testInput = createDataWithOverlaps();
-        testInput[0].setLanguage("ONE");
-        testInput[1].setLanguage("TWO");
-        testInput[2].setLanguage("THREE");
-        testInput[3].setLanguage("ONE");
+        TagCloudPartition testInput = createDataWithOverlaps();
+        ((KeywordResults)testInput.getInputs().get(0)).setLanguage("ONE");
+        ((KeywordResults)testInput.getInputs().get(1)).setLanguage("TWO");
+        ((KeywordResults)testInput.getInputs().get(2)).setLanguage("THREE");
+        ((KeywordResults)testInput.getInputs().get(3)).setLanguage("ONE");
+
+        TagCloudPartition one = new TagCloudPartition("ONE");
+        one.addInput(testInput.getInputs().get(0));
+        one.addInput(testInput.getInputs().get(3));
+
+        TagCloudPartition two = new TagCloudPartition("TWO");
+        two.addInput(testInput.getInputs().get(1));
+
+        TagCloudPartition three = new TagCloudPartition("THREE");
+        three.addInput(testInput.getInputs().get(2));
 
         TagCloud.Builder builder = new TagCloud.Builder().withLanguagePartitions(true);
-        Arrays.stream(testInput).forEach(builder::addResults);
+        builder.addInput(one);
+        builder.addInput(two);
+        builder.addInput(three);
         List<TagCloud> cloud = builder.build();
 
         assertEquals(3, cloud.size());

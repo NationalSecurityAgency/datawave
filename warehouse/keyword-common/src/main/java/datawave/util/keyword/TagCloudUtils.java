@@ -66,6 +66,17 @@ public interface TagCloudUtils {
     double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores);
 
     /**
+     * given a set of ScoreTuples, calculate the resulting score for the keyword entry
+     *
+     * @param sourceScores
+     *            a list of scores
+     * @param scoreType
+     *            the orientation of the scores
+     * @return the final keyword score
+     */
+    double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, TagCloudPartition.SCORE_TYPE scoreType);
+
+    /**
      * given a set of ScoreTuples, calculate the resulting source set for the keyword entry
      *
      * @param sourceScores
