@@ -1,7 +1,6 @@
 package datawave.query.util;
 
 import static datawave.data.ColumnFamilyConstants.COLF_F;
-import static datawave.data.ColumnFamilyConstants.COLF_H;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 import static org.apache.accumulo.core.iterators.LongCombiner.VAR_LEN_ENCODER;
 
@@ -105,9 +104,10 @@ public class MetadataHelperTest {
         givenMutation(mutation);
     }
 
-    private void givenHiddenField(String row, Text colf, String datatype) {
+    private void givenHiddenField(String row, String datatype) {
+        Text h = new Text("h");
         Mutation mutation = new Mutation(row);
-        mutation.put(colf, new Text(datatype), new Value());
+        mutation.put(h, new Text(datatype), new Value());
         givenMutation(mutation);
     }
 
@@ -405,9 +405,9 @@ public class MetadataHelperTest {
      */
     @Test
     void testHiddenEntry() throws TableNotFoundException {
-        givenHiddenField("NAME", COLF_H, "csv");
-        givenHiddenField("NAME", COLF_H, "wiki");
-        givenHiddenField("EVENT_DATE", COLF_H, "maze");
+        givenHiddenField("NAME", "csv");
+        givenHiddenField("NAME", "wiki");
+        givenHiddenField("EVENT_DATE", "maze");
         writeMutations();
 
         Assertions.assertTrue(helper.isHidden("NAME", Set.of("csv")));

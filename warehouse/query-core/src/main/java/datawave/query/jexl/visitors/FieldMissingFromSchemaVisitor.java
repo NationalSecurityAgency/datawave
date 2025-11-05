@@ -74,7 +74,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
      *            The set of names which we have determined do not exist
      * @return the updated set of names which do not exist
      */
-    protected Object findMissingFields(JexlNode node, Object data) throws TableNotFoundException {
+    protected Object findMissingFields(JexlNode node, Object data) {
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new LinkedHashSet<>() : (Set<String>) data;
         List<ASTIdentifier> identifiers;
@@ -103,74 +103,42 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTERNode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTGENode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTLENode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        try {
-            return findMissingFields(node, data);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return findMissingFields(node, data);
     }
 
     @Override
@@ -184,13 +152,9 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
                 // deconstruct the identifier
                 final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
                 // changed to allow _ANYFIELD_ in functions
-                try {
-                    if ((!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName))
-                                    || this.helper.isHidden(fieldName, this.datatypeFilter)) {
-                        nonExistentFieldNames.add(testFieldName);
-                    }
-                } catch (TableNotFoundException e) {
-                    throw new RuntimeException(e);
+                if ((!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName))
+                                || this.helper.isHidden(fieldName, this.datatypeFilter)) {
+                    nonExistentFieldNames.add(testFieldName);
                 }
             }
         } else if (log.isTraceEnabled()) {

@@ -725,10 +725,8 @@ public class MetadataHelper {
      * @param ingestTypeFilter
      *            the ingest type filter
      * @return true if the field is hidden for the provided ingest types
-     * @throws TableNotFoundException
-     *             if the table does not exist
      */
-    public boolean isHidden(String fieldName, Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public boolean isHidden(String fieldName, Set<String> ingestTypeFilter) {
         Preconditions.checkNotNull(fieldName);
         Preconditions.checkNotNull(ingestTypeFilter);
 
@@ -736,7 +734,7 @@ public class MetadataHelper {
 
         try {
             return this.allFieldMetadataHelper.isIndexed(ColumnFamilyConstants.COLF_H, entry);
-        } catch (InstantiationException | ExecutionException e) {
+        } catch (InstantiationException | ExecutionException | TableNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
