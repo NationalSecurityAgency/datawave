@@ -18,6 +18,7 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,6 +48,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudPartition;
 import datawave.webservice.query.exception.QueryException;
 
 @SuppressWarnings("rawtypes")
@@ -201,12 +203,14 @@ public class KeywordQueryLogicTest {
         replayAll();
 
         logic.initialize(mockClient, settings, Set.of(auths));
-        QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> transformer = logic.getTransformer(settings);
-        KeywordResults base = transformer.transform(entry);
-        String json = base.toJson();
-        assertEquals("{\"source\":\"someSource\",\"view\":\"someView\",\"language\":\"someLanguage\",\"visibility\":\"someVisibility\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052}}",
-                        json);
+        QueryLogicTransformer<Map.Entry<Key,Value>,TagCloudPartition> transformer = logic.getTransformer(settings);
+        TagCloudPartition base = transformer.transform(entry);
+
         verifyAll();
+
+        TagCloudPartition expected = new TagCloudPartition("someLanguage", "keywords", List.of(new KeywordResults("someSource", "someView", "someLanguage",
+                        "someVisibility", Map.of("get much", 0.5903, "kind", 0.2546, "kind word", 0.2052))));
+        assertEquals(expected, base);
     }
 
     private static class TestKeywordQuery extends KeywordQueryLogic {
@@ -244,7 +248,7 @@ public class KeywordQueryLogicTest {
         }
 
         @Override
-        public QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
+        public QueryLogicTransformer<Map.Entry<Key,Value>,TagCloudPartition> getTransformer(Query settings) {
             return null;
         }
 

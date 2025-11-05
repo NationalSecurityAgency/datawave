@@ -1,6 +1,5 @@
 package datawave.query.transformer;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -12,13 +11,12 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
 import datawave.microservice.query.Query;
-import datawave.query.table.parser.KeywordKeyValueFactory;
 import datawave.query.tables.keyword.KeywordQueryState;
-import datawave.util.keyword.KeywordResults;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.util.keyword.TagCloud;
 import datawave.util.keyword.TagCloudEntry;
+import datawave.util.keyword.TagCloudPartition;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.keyword.TagCloudBase;
@@ -27,17 +25,21 @@ import datawave.webservice.result.keyword.TagCloudResponseBase;
 
 /** Transforms the Key/Values returned by the KeywordExtractionIterator into KeywordResults and then Tag Clouds Responses */
 @SuppressWarnings("rawtypes")
-public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,KeywordResults> {
+public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,TagCloudPartition> {
 
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;
     protected final KeywordQueryState state;
+    private final List<TagCloudInputTransformer<?>> transformers;
 
-    public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    // TODO-crwill9 pass in state data, not the state object so this is more reusable
+    public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
+                    List<TagCloudInputTransformer<?>> transformers) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
         this.state = state;
+        this.transformers = transformers;
     }
 
     /**
@@ -48,7 +50,7 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
      * @return KeywordResults object containing the transformed entry.
      */
     @Override
-    public KeywordResults transform(Entry<Key,Value> entry) {
+    public TagCloudPartition transform(Entry<Key,Value> entry) {
         // each contains the serialized keywords for individual documents.
         if (entry.getKey() == null && entry.getValue() == null) {
             return null;
@@ -58,21 +60,13 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
             throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
         }
 
-        try {
-            final KeywordKeyValueFactory.KeywordKeyValue kkv = KeywordKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
-            final KeywordResults keywordResults = KeywordResults.deserialize(kkv.getContents());
-            final String identifier = state.getIdentifierMap().get(keywordResults.getSource());
-            if (identifier != null) {
-                // update the source from the identifier map.
-                keywordResults.setSource(identifier);
+        for (TagCloudInputTransformer<?> transformer : transformers) {
+            if (transformer.canDecode(entry)) {
+                return transformer.decode(entry);
             }
-
-            // todo: preserve shard, datatype, uid, markings, timestamp?
-
-            return keywordResults;
-        } catch (Exception | IOException e1) {
-            throw new IllegalArgumentException("Unable to parse keyword extraction results", e1);
         }
+
+        throw new IllegalArgumentException("Unable to parse keyword extraction results " + entry.getKey());
     }
 
     /**
@@ -84,19 +78,27 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
      */
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
-        final List<KeywordResults> keywordResultsList = resultList.stream().map(o -> (KeywordResults) o).collect(Collectors.toList());
+        final List<TagCloudPartition> inputList = resultList.stream().map(o -> (TagCloudPartition) o).collect(Collectors.toList());
         List<TagCloud> tagClouds = new ArrayList<>();
-        tagClouds.addAll(buildTagCloud(state.isGenerateCloud(), keywordResultsList));
+        tagClouds.addAll(buildTagCloud(state.isGenerateCloud(), inputList));
 
         return generateTagCloudResponse(tagClouds);
     }
 
-    // TODO document
-    private List<TagCloud> buildTagCloud(boolean merged, List<KeywordResults> resultList) {
+    /**
+     * Transform a list of partitions into a query response containing tag clouds either merged into a single tag cloud, or into one tag cloud per partition
+     *
+     * @param merged
+     *            if the tag clouds should be merged
+     * @param resultList
+     *            the partitions to add to the tag cloud(s)
+     * @return a non-null list of tag clouds
+     */
+    private List<TagCloud> buildTagCloud(boolean merged, List<TagCloudPartition> resultList) {
         List<TagCloud> results = new ArrayList<>();
         TagCloud.Builder builder = getTagCloudBuilder().withComparator(TagCloudEntry.ORDER_BY_FREQUENCY);
-        for (KeywordResults result : resultList) {
-            builder.addResults(result);
+        for (TagCloudPartition result : resultList) {
+            builder.addInput(result);
             if (!merged) {
                 results.addAll(builder.build());
                 builder = getTagCloudBuilder().withComparator(TagCloudEntry.ORDER_BY_FREQUENCY);
@@ -108,44 +110,6 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
         }
 
         return results;
-    }
-
-    /**
-     * Transform a list of results generated by the transform method into a query response containing tag clouds for individual documents potentially grouped by
-     * language.
-     *
-     * @param resultList
-     *            the results to add to the response that were created by the transform method
-     * @return a tag cloud response that includes one or more tag clouds.
-     */
-    // TODO delete
-    protected TagCloudResponseBase createIndividualCloudResponse(List<KeywordResults> resultList) {
-        // collect the results for individual documents into individual word clouds.
-        List<TagCloud> tagCloudResults = new ArrayList<>();
-        for (KeywordResults result : resultList) {
-            final TagCloud.Builder builder = getTagCloudBuilder();
-            builder.addResults(result);
-            tagCloudResults.addAll(builder.build());
-        }
-        return generateTagCloudResponse(tagCloudResults);
-    }
-
-    /**
-     * Transform a list of results generated by the transform method into a query response. This method merges results for all documents returned into one or
-     * more tag clouds potentially grouped by language and ordered by frequency.
-     *
-     * @param resultList
-     *            the results to add to the response that were created by the transform method
-     * @return a tag cloud response that includes one or more tag clouds.
-     */
-    // TODO delete
-    protected TagCloudResponseBase createMergedCloudResponse(List<KeywordResults> resultList) {
-        // collect the keywords for individual documents into a single word cloud.
-        final TagCloud.Builder builder = getTagCloudBuilder().withComparator(TagCloudEntry.ORDER_BY_FREQUENCY);
-        for (KeywordResults result : resultList) {
-            builder.addResults(result);
-        }
-        return generateTagCloudResponse(builder.build());
     }
 
     /**

@@ -75,8 +75,8 @@ public class KeywordResultsTest {
     @Test
     public void testSerializeDeserializeJsonPopulated() throws IOException {
         KeywordResults results = new KeywordResults(EXPECTED_SOURCE, EXPECTED_VIEW, EXPECTED_LANGUAGE, EXPECTED_VISIBILITY, EXPECTED_NEWS_OUTPUT);
-        String resultsJson = results.toJson();
-        KeywordResults deserialized = KeywordResults.fromJson(resultsJson);
+        String resultsJson = TagCloudInput.toJson(results);
+        KeywordResults deserialized = (KeywordResults) TagCloudInput.fromJson(resultsJson, KeywordResults.class);
         assertEquals(results.getKeywordCount(), deserialized.getKeywordCount());
         assertEquals(results.getKeywords(), deserialized.getKeywords());
         assertEquals(results.getSource(), deserialized.getSource());

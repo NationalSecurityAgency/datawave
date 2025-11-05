@@ -195,7 +195,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(row, topKey.getRow());
         assertEquals(Constants.D_COLUMN_FAMILY, topKey.getColumnFamily());
         assertTrue(topKey.getColumnQualifier().toString().startsWith(dtUid));
-        assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
+        assertEquals(expectedKeywordExtractor.extractKeywords(), KeywordResults.deserialize(iterator.getTopValue().get()));
     }
 
     /**
@@ -230,7 +230,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(row, topKey.getRow());
         assertEquals(Constants.D_COLUMN_FAMILY, topKey.getColumnFamily());
         assertTrue(topKey.getColumnQualifier().toString().startsWith(dtUid));
-        assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
+        assertEquals(expectedKeywordExtractor.extractKeywords(), KeywordResults.deserialize(iterator.getTopValue().get()));
     }
 
     /**
@@ -266,7 +266,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(row, topKey.getRow());
         assertEquals(Constants.D_COLUMN_FAMILY, topKey.getColumnFamily());
         assertTrue(topKey.getColumnQualifier().toString().startsWith(dtUid));
-        assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
+        assertEquals(expectedKeywordExtractor.extractKeywords(), KeywordResults.deserialize(iterator.getTopValue().get()));
     }
 
     /**
@@ -301,7 +301,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(row, topKey.getRow());
         assertEquals(Constants.D_COLUMN_FAMILY, topKey.getColumnFamily());
         assertTrue(topKey.getColumnQualifier().toString().startsWith(dtUid));
-        assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
+        assertEquals(expectedKeywordExtractor.extractKeywords(), KeywordResults.deserialize(iterator.getTopValue().get()));
     }
 
     /**
@@ -335,6 +335,6 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertEquals(row, topKey.getRow());
         assertEquals(Constants.D_COLUMN_FAMILY, topKey.getColumnFamily());
         assertTrue(topKey.getColumnQualifier().toString().startsWith(dtUid));
-        assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
+        assertEquals(expectedKeywordExtractor.extractKeywords(), KeywordResults.deserialize(iterator.getTopValue().get()));
     }
 }

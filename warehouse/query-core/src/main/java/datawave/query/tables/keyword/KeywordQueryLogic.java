@@ -5,11 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-<<<<<<< HEAD
-import java.util.LinkedList;
-=======
 import java.util.Iterator;
->>>>>>> 08ea60dba2 (WIP: first cut, push data to TagCloudTransformer)
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,8 +45,11 @@ import datawave.query.QueryParameters;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
+import datawave.query.tables.keyword.transform.TagCloudPartitionTransformer;
 import datawave.query.transformer.TagCloudTransformer;
-import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudPartition;
 import datawave.util.keyword.TagCloudUtils;
 import datawave.webservice.query.exception.QueryException;
 
@@ -109,11 +109,6 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     public static final String PARENT_ONLY = "\1";
     public static final String ALL = "\u10FFFF";
 
-    /**
-     * Fields that will be extracted from events for inclusion in the tag cloud, may be comma-delimited or null/empty
-     */
-    public static final String TAG_CLOUD_FIELDS = "tag.cloud.fields";
-
     private int queryThreads = 100;
 
     @VisibleForTesting
@@ -121,7 +116,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     private KeywordQueryConfiguration config;
 
-    private Map<String,List<KeywordResults>> fieldedKeywordResults;;
+    private List<TagCloudPartition> externalTagCloudPartitions;
+    private List<TagCloudInputTransformer<?>> transformers = new ArrayList<>();
+    final private TagCloudPartitionTransformer partitionTransformer = new TagCloudPartitionTransformer();
 
     public KeywordQueryLogic() {
         super();
@@ -132,6 +129,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.queryThreads = keywordQueryLogic.queryThreads;
         this.scannerFactory = keywordQueryLogic.scannerFactory;
         this.config = new KeywordQueryConfiguration(keywordQueryLogic.config);
+
+        this.externalTagCloudPartitions = keywordQueryLogic.externalTagCloudPartitions;
+        this.transformers = keywordQueryLogic.transformers;
     }
 
     /**
@@ -191,6 +191,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         // add the views from the config with lower priority.
         preferredViews.addAll(getPreferredViews());
 
+        // TODO-crwill9 do we need to support this for field extraction too? probably
         // Determine whether we include the content of child events
         String end;
         p = settings.findParameter(QueryParameters.CONTENT_VIEW_ALL);
@@ -222,15 +223,24 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             log.warn("Could not parse parameter " + TAG_CLOUD_MAX + " (value: " + maxCloudTagsString + " as integer, ignoring.");
         }
 
-        // Execute the query logic.
-        final Collection<String> queryTerms = extractQueryTerms(settings);
+        if (!settings.getQuery().isEmpty()) {
+            // Execute the query logic.
+            final Collection<String> queryTerms = extractQueryTerms(settings);
 
-        // Populate the identifier and language maps based on the data included for each document in the query.
-        extractIdentifiersAndLanguages(queryTerms, state.getIdentifierMap(), state.getLanguageMap());
+            // Populate the identifier and language maps based on the data included for each document in the query.
+            extractIdentifiersAndLanguages(queryTerms, state.getIdentifierMap(), state.getLanguageMap());
 
-        // Configure ranges for finding content.
-        final Collection<Range> ranges = createRanges(queryTerms, end);
-        state.setRanges(ranges);
+            // Configure ranges for finding content.
+            final Collection<Range> ranges = createRanges(queryTerms, end);
+            state.setRanges(ranges);
+
+            // TODO-crwill9 not sure how I feel about this setup... probably should happen elsewhere
+            // since this iterator will be returning KeywordResults, setup a transformer
+            KeywordResultsTransformer transformer = new KeywordResultsTransformer();
+            transformer.setLanguagePartitioned(config.getState().isLanguagePartitioned());
+            transformer.setIdentifierMap(state.getIdentifierMap());
+            transformers.add(transformer);
+        }
 
         return config;
     }
@@ -260,8 +270,8 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
             final Iterator<Entry<Key,Value>> scanIterator = scanner.iterator();
             this.iterator = scanIterator;
-            if (fieldedKeywordResults != null) {
-                Iterator<Entry<Key,Value>> fieldedKeywordIterator = prepareFieldedIterator(fieldedKeywordResults);
+            if (externalTagCloudPartitions != null) {
+                Iterator<Entry<Key,Value>> fieldedKeywordIterator = prepareFieldedIterator(externalTagCloudPartitions);
                 this.iterator = new IteratorChain<>(scanIterator, fieldedKeywordIterator);
             }
 
@@ -272,20 +282,18 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         }
     }
 
-    private Iterator<Entry<Key,Value>> prepareFieldedIterator(Map<String,List<KeywordResults>> fieldedKeywordResults) throws IOException {
-        List<Entry<Key,Value>> convertedList = new ArrayList<>(fieldedKeywordResults.entrySet().size());
+    /**
+     * convert partitions into key/value pairs so they can be intermixed with what is coming off the KeywordExtractingIterator
+     *
+     * @param partitions
+     * @return
+     * @throws IOException
+     */
+    private Iterator<Entry<Key,Value>> prepareFieldedIterator(List<TagCloudPartition> partitions) throws IOException {
+        List<Entry<Key,Value>> convertedList = new ArrayList<>();
 
-        for (String field : fieldedKeywordResults.keySet()) {
-            for (KeywordResults result : fieldedKeywordResults.get(field)) {
-                String source = result.getSource();
-                String[] splits = source.split("/");
-                if (splits.length != 3) {
-                    throw new IllegalStateException("unknown source format: " + source);
-                }
-                Key key = new Key(splits[0], splits[1] + "\u0000" + splits[2], result.getLanguage());
-                convertedList.add(Map.entry(key, new Value(KeywordResults.serialize(result))));
-            }
-
+        for (TagCloudPartition partition : partitions) {
+            convertedList.add(partitionTransformer.encode(partition));
         }
 
         return convertedList.iterator();
@@ -400,8 +408,8 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     }
 
     @Override
-    public QueryLogicTransformer<Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
-        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory);
+    public QueryLogicTransformer<Entry<Key,Value>,TagCloudPartition> getTransformer(Query settings) {
+        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory, transformers);
     }
 
     @Override
@@ -543,12 +551,21 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         setupQuery(contentQueryConfig);
     }
 
-    public void setFieldedKeywordResults(Map<String,List<KeywordResults>> fieldedKeywordResults) {
-        this.fieldedKeywordResults = fieldedKeywordResults;
+    /**
+     * Allows inclusion of extracted data externally to be included in the tag clouds generated from this logic. These partitions will be combined with all data
+     * collected from this logic and returned together
+     *
+     * @param externalTagCloudPartitions
+     */
+    public void setExternalTagCloudPartitions(List<TagCloudPartition> externalTagCloudPartitions) {
+        this.externalTagCloudPartitions = externalTagCloudPartitions;
+        if (!this.transformers.contains(partitionTransformer)) {
+            this.transformers.add(partitionTransformer);
+        }
     }
 
-    public Map<String,List<KeywordResults>> getFieldedKeywordResults() {
-        return this.fieldedKeywordResults;
+    public List<TagCloudPartition> getExternalTagCloudPartitions() {
+        return externalTagCloudPartitions;
     }
 
     /**

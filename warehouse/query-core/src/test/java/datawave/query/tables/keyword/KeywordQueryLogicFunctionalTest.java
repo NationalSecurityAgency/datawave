@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -45,7 +44,8 @@ import datawave.query.tables.ResponseQueryDriver;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
-import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudInput;
+import datawave.util.keyword.TagCloudPartition;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.result.keyword.DefaultTagCloud;
 import datawave.webservice.result.keyword.DefaultTagCloudEntry;
@@ -104,11 +104,7 @@ public class KeywordQueryLogicFunctionalTest {
         queryDriver = new ResponseQueryDriver<>(logic);
     }
 
-    @Test
-    public void simpleTest() throws Exception {
-        String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
-        String queryString = "DOCUMENT:" + docId;
-
+    private DefaultTagCloud getKeywordCloud(String docId) {
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
         entries.add(createTagCloudEntry("kind word", 0.2052, 1, List.of(docId)));
         entries.add(createTagCloudEntry("kind", 0.2546, 1, List.of(docId)));
@@ -122,7 +118,15 @@ public class KeywordQueryLogicFunctionalTest {
         expectedCloud.setMarkings(Map.of("visibility", "ALL"));
         expectedCloud.setTags(entries);
         expectedCloud.setIntermediateResult(false);
-        addExpectedTagCloud(expectedCloud);
+        return expectedCloud;
+    }
+
+    @Test
+    public void simpleTest() throws Exception {
+        String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
+        String queryString = "DOCUMENT:" + docId;
+
+        addExpectedTagCloud(getKeywordCloud(docId));
 
         runTestQuery(queryString);
     }
@@ -131,13 +135,9 @@ public class KeywordQueryLogicFunctionalTest {
     public void simpleWithOnlyExternalHitsTest() throws Exception {
         String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
 
-        List<KeywordResults> keywordResultsList = new ArrayList<>();
-        LinkedHashMap<String,Double> labels = new LinkedHashMap<>();
-        labels.put("x", .5d);
-        labels.put("y", .8d);
-        labels.put("z", 1d);
-        keywordResultsList.add(new KeywordResults("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "event:FOO", "FOO", "ALL", labels));
-        logic.setFieldedKeywordResults(Map.of("FOO", keywordResultsList));
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO",
+                        List.of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d))));
+        logic.setExternalTagCloudPartitions(List.of(externalPartition));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
         entries.add(createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
@@ -157,19 +157,14 @@ public class KeywordQueryLogicFunctionalTest {
     public void multipleExternalHitsTest() throws Exception {
         String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
 
-        List<KeywordResults> keywordResultsList = new ArrayList<>();
-        LinkedHashMap<String,Double> labels = new LinkedHashMap<>();
-        labels.put("x", .5d);
-        labels.put("y", .8d);
-        labels.put("z", 1d);
-        keywordResultsList.add(new KeywordResults("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "event:FOO", "FOO", "ALL", labels));
-        keywordResultsList.add(new KeywordResults("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "event:FOO", "FOO", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d)));
-        logic.setFieldedKeywordResults(Map.of("FOO", keywordResultsList));
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER,
+                        List.of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d)),
+                                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d))));
+        logic.setExternalTagCloudPartitions(List.of(externalPartition));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
-        // TODO combining the tag clouds keeps the LOWEST score... not the highest score... may need to be able to adjust this in the TagCloudTransformer or maybe its fine
-        entries.add(createTagCloudEntry("x", .5, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
-        entries.add(createTagCloudEntry("y", .9, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
+        entries.add(createTagCloudEntry("x", .5, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        entries.add(createTagCloudEntry("y", .9, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
         entries.add(createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
         entries.add(createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
@@ -178,6 +173,32 @@ public class KeywordQueryLogicFunctionalTest {
         expectedCloud.setTags(entries);
         expectedCloud.setIntermediateResult(false);
         addExpectedTagCloud(expectedCloud);
+
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void mixedHitTest() throws Exception {
+        String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
+        String queryString = "DOCUMENT:" + docId;
+
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER,
+                        List.of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d)),
+                                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d))));
+        logic.setExternalTagCloudPartitions(List.of(externalPartition));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(createTagCloudEntry("y", .9, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        DefaultTagCloud expectedCloud = new DefaultTagCloud();
+        expectedCloud.setLanguage("FOO");
+        expectedCloud.setMarkings(Map.of("visibility", "ALL"));
+        expectedCloud.setTags(entries);
+        expectedCloud.setIntermediateResult(false);
+        addExpectedTagCloud(expectedCloud);
+        addExpectedTagCloud(getKeywordCloud(docId));
 
         runTestQuery(queryString);
     }
