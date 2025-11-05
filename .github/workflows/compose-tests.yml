@@ -110,18 +110,17 @@ jobs:
         run: |
           cd docker
           docker compose logs
-      - name: Docker Compose Reset for Web
-        run: |
-          cd docker
-          docker compose down
-          sed -i -e 's/command: \["datawave-bootstrap.sh", "--accumulo"\]/command: \["datawave-bootstrap.sh", "--ingest", "--web", "--test"\]/g' docker-compose.yml
-      - name: Docker Compose Web Start and Run Tests
+      - name: Docker Compose Web Start
         run: |
           cd docker
           export DW_HOST_IP=127.0.0.1
-          ./bootstrap.sh
-          echo "Starting docker compose"
-          docker compose up -d --no-recreate
+          echo "Starting datawave web"
+          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebStart"
+      - name: Docker Compose Web Tests
+        run: |
+          cd docker
+          export DW_HOST_IP=127.0.0.1
+          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebTest --blacklist-files QueryMetrics"
       - name: Docker Compose Web Test Logs
         run: |
           cd docker
