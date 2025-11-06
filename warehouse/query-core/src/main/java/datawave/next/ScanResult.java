@@ -44,8 +44,8 @@ public class ScanResult {
      *            flag to enable partial intersection
      */
     public ScanResult(boolean allowPartialIntersections) {
-        this.allowPartialIntersections = allowPartialIntersections;
         this.results = new HashSet<>();
+        this.setAllowPartialIntersections(allowPartialIntersections);
     }
 
     /**
@@ -165,7 +165,7 @@ public class ScanResult {
 
         boolean otherMinInBounds = withinBounds(other.getMin());
         boolean otherMaxInBounds = withinBounds(other.getMax());
-        return otherMinInBounds || otherMaxInBounds || contained(other) || other.contained(this);
+        return otherMinInBounds || otherMaxInBounds || this.isContainedBy(other);
     }
 
     private boolean withinBounds(Key key) {
@@ -179,7 +179,7 @@ public class ScanResult {
      *            another ScanResult
      * @return true if this is fully contained
      */
-    private boolean contained(ScanResult other) {
+    private boolean isContainedBy(ScanResult other) {
         return min.compareTo(other.getMin()) >= 0 && max.compareTo(other.getMax()) <= 0;
     }
 
