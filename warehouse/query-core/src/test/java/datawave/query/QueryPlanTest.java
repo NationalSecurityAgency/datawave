@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.Collections;
 
+import datawave.query.exceptions.DatawaveQueryException;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -109,8 +110,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
-            fail("Expected RuntimeException.");
-        } catch (RuntimeException e) {
+            fail("Expected DatawaveQueryException.");
+        } catch (DatawaveQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
@@ -122,8 +123,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
-            fail("Expected RuntimeException.");
-        } catch (RuntimeException e) {
+            fail("Expected DatawaveQueryException.");
+        } catch (DatawaveQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
