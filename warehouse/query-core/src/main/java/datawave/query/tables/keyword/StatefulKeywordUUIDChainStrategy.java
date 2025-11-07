@@ -76,7 +76,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
         }
 
         // as long as there are extractors it is okay for an empty query string, if neither there is nothing to do
-        if (extractors.isEmpty() && (queryString == null || queryString.isBlank())) {
+        if (extractors.isEmpty() && StringUtils.isBlank(queryString)) {
             return null;
         }
 

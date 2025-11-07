@@ -106,22 +106,38 @@ public class TagCloud {
             for (TagCloudInput tagCloudInput : tagCloudPartition.getInputs()) {
                 for (final Map.Entry<String,Double> e : tagCloudInput.getEntities().entrySet()) {
                     final String partitionKey = partition + VALUE_SEPARATOR + e.getKey();
-                    TagCloudEntry.Builder b = index.computeIfAbsent(partitionKey,
-                                    k -> new TagCloudEntry.Builder(e.getKey(), tagCloudPartition.getScoreType()).withUtilities(utils));
+                    final TagCloudPartition.ScoreType scoreType = tagCloudPartition.getScoreType();
+                    TagCloudEntry.Builder b = index.computeIfAbsent(partitionKey, k -> new TagCloudEntry.Builder(e.getKey()).withUtilities(utils))
+                                    .withScoreComparator(getScoreComparator(scoreType)).withDefaultScore(getDefaultScore(scoreType));
                     // these are aggregated on the partition, not the partition/key combination
                     Map<String,Set<String>> partitionMetadata = metadata.computeIfAbsent(partition, k -> new HashMap<>());
                     for (Map.Entry<String,String> entryMetadata : tagCloudInput.getMetadata().entrySet()) {
                         Set<String> entryValues = partitionMetadata.computeIfAbsent(entryMetadata.getKey(), k -> new HashSet<>());
                         entryValues.add(entryMetadata.getValue());
                     }
-                    // TODO-crwill9 probably okay to pass partition here, but not sure why its needed at all
-                    b.addSourceScore(tagCloudInput.getSource(), e.getValue(), partition);
+                    b.addSourceScore(tagCloudInput.getSource(), e.getValue());
                 }
 
                 if (!tagCloudInput.getVisibility().isEmpty() && !tagCloudInput.getEntities().isEmpty()) {
                     Set<String> visibilityList = visibilities.computeIfAbsent(partition, k -> new TreeSet<>());
                     visibilityList.add(tagCloudInput.getVisibility());
                 }
+            }
+        }
+
+        private Comparator<Double> getScoreComparator(TagCloudPartition.ScoreType scoreType) {
+            if (scoreType == TagCloudPartition.ScoreType.HIGHER_IS_BETTER) {
+                return Comparator.<Double> naturalOrder().reversed();
+            } else {
+                return Comparator.naturalOrder();
+            }
+        }
+
+        private double getDefaultScore(TagCloudPartition.ScoreType scoreType) {
+            if (scoreType == TagCloudPartition.ScoreType.HIGHER_IS_BETTER) {
+                return 0;
+            } else {
+                return 1;
             }
         }
 
