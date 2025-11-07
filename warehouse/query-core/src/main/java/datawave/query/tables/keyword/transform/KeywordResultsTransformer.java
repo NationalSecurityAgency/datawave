@@ -10,10 +10,11 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
 
 public class KeywordResultsTransformer implements TagCloudInputTransformer<KeywordResults> {
-    private static final String LABEL = "keywords";
+    public static final String LABEL = "keywords";
 
     private boolean languagePartitioned = true;
     private Map<String,String> identifierMap = new HashMap<>();
@@ -48,12 +49,27 @@ public class KeywordResultsTransformer implements TagCloudInputTransformer<Keywo
             keywordResults.setSource(identifier);
         }
 
+        TagCloudInput tagCloudInput = getTagCloudInput(keywordResults);
+
         String partition = "";
-        if (languagePartitioned && keywordResults.getMetadata().get("language") != null) {
-            partition = keywordResults.getMetadata().get("language");
+        if (languagePartitioned && !keywordResults.getLanguage().isEmpty()) {
+            partition = keywordResults.getLanguage();
         }
 
-        return new TagCloudPartition(partition, LABEL, List.of(keywordResults));
+        return new TagCloudPartition(partition, LABEL, List.of(tagCloudInput));
+    }
+
+    private TagCloudInput getTagCloudInput(KeywordResults keywordResults) {
+        Map<String,String> metadata = new HashMap<>();
+        metadata.put("type", LABEL);
+        if (!keywordResults.getView().isEmpty()) {
+            metadata.put("view", keywordResults.getView());
+        }
+        if (!keywordResults.getLanguage().isEmpty()) {
+            metadata.put("language", keywordResults.getLanguage());
+        }
+
+        return new TagCloudInput(keywordResults.getSource(), keywordResults.getVisibility(), keywordResults.getKeywords(), metadata);
     }
 
     public void setIdentifierMap(Map<String,String> identifierMap) {

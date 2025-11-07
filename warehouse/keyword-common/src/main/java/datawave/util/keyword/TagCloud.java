@@ -95,9 +95,6 @@ public class TagCloud {
         /** The maximum number of tags to keep per cloud. Zero means unlimited */
         int maxTags = 0;
 
-        /** Whether we should partition tag clouds based on language */
-        boolean partitionOnLanguage;
-
         /** The comparator of tuples to keep */
         Comparator<TagCloudEntry> comparator = TagCloudEntry.ORDER_BY_SCORE;
 

@@ -47,7 +47,9 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
 import datawave.webservice.query.exception.QueryException;
 
@@ -191,8 +193,7 @@ public class KeywordQueryLogicTest {
         baseResults.put("kind", 0.2546);
         baseResults.put("kind word", 0.2052);
 
-        KeywordResults results = new KeywordResults("someSource", "someVisibility", baseResults,
-                        Map.of("view", "someView", "language", "someLanguage", "type", "someType"));
+        KeywordResults results = new KeywordResults("someSource", "someView", "someLanguage", "someVisibility", baseResults);
 
         Key dataKey = new Key("20241218_0", "d", "sampleCsv" + '\u0000' + "1.2.3" + '\u0000' + "someView", "A");
         Value viewValue = new Value(KeywordResults.serialize(results));
@@ -209,9 +210,9 @@ public class KeywordQueryLogicTest {
 
         verifyAll();
 
-        TagCloudPartition expected = new TagCloudPartition("someLanguage", "keywords",
-                        List.of(new KeywordResults("someSource", "someVisibility", Map.of("get much", 0.5903, "kind", 0.2546, "kind word", 0.2052),
-                                        Map.of("view", "someView", "language", "someLanguage", "type", "someType"))));
+        TagCloudPartition expected = new TagCloudPartition("someLanguage", KeywordResultsTransformer.LABEL,
+                        List.of(new TagCloudInput("someSource", "someVisibility", Map.of("get much", 0.5903, "kind", 0.2546, "kind word", 0.2052),
+                                        Map.of("view", "someView", "language", "someLanguage", "type", KeywordResultsTransformer.LABEL))));
         assertEquals(expected, base);
     }
 

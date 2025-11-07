@@ -42,6 +42,7 @@ import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.ResponseQueryDriver;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.util.keyword.TagCloudInput;
@@ -117,7 +118,7 @@ public class KeywordQueryLogicFunctionalTest {
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
         expectedCloud.setMarkings(Map.of("visibility", "ALL"));
         expectedCloud.setTags(entries);
-        expectedCloud.setMetadata(Map.of("view", "CONTENT", "type", "keyword"));
+        expectedCloud.setMetadata(Map.of("view", "CONTENT", "type", KeywordResultsTransformer.LABEL));
         expectedCloud.setIntermediateResult(false);
         return expectedCloud;
     }
