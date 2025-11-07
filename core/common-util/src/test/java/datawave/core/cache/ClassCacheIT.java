@@ -70,8 +70,33 @@ public class ClassCacheIT {
     }
 
     private Pair<Long,String> testThreads(int threads, ClassCache cache, List<String> names) {
-        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        ExecutorService executor = null;
+        try {
+            executor = Executors.newFixedThreadPool(threads);
+            List<Callable<Long>> callables = createCallables(threads, names, cache);
+            List<Future<Long>> futures = executor.invokeAll(callables);
 
+            long total = 0L;
+            for (Future<Long> future : futures) {
+                long time = future.get();
+                total += time;
+            }
+
+            long time = total / ((long) threads * names.size());
+            time = TimeUnit.NANOSECONDS.toMicros(time);
+
+            String line = "threads: " + threads + " size: " + names.size() + " iterations: " + maxIterations + " took " + time + " micros for " + cache.name();
+            return Pair.of(time, line);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (executor != null) {
+                executor.shutdownNow();
+            }
+        }
+    }
+
+    private List<Callable<Long>> createCallables(int threads, List<String> names, ClassCache cache) {
         List<Callable<Long>> callables = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
             final List<String> copy = new ArrayList<>(names);
@@ -88,24 +113,7 @@ public class ClassCacheIT {
                 return total;
             });
         }
-
-        try {
-            List<Future<Long>> futures = executor.invokeAll(callables);
-
-            long total = 0L;
-            for (Future<Long> future : futures) {
-                long time = future.get();
-                total += time;
-            }
-
-            long time = total / ((long) threads * names.size());
-            time = TimeUnit.NANOSECONDS.toMicros(time);
-
-            String line = "threads: " + threads + " size: " + names.size() + " iterations: " + maxIterations + " took " + time + " micros for " + cache.name();
-            return Pair.of(time, line);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        return callables;
     }
 
     private List<ClassCache> getCaches() {
