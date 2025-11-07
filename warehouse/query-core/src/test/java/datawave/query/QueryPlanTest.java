@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.Collections;
 
-import datawave.query.exceptions.DatawaveQueryException;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -19,6 +18,7 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveAsyncOperationException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
