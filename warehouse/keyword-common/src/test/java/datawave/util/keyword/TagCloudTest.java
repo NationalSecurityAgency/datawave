@@ -201,20 +201,21 @@ public class TagCloudTest {
     @Test
     public void testBuilderWithLanguages() {
         TagCloudPartition testInput = createDataWithOverlaps();
-        testInput.getInputs().get(0).getMetadata().put("language", "ONE");
-        testInput.getInputs().get(1).getMetadata().put("language", "TWO");
-        testInput.getInputs().get(2).getMetadata().put("language", "THREE");
-        testInput.getInputs().get(3).getMetadata().put("language", "ONE");
+        List<TagCloudInput> inputs = testInput.getInputs();
+        inputs.get(0).getMetadata().put("language", "ONE");
+        inputs.get(1).getMetadata().put("language", "TWO");
+        inputs.get(2).getMetadata().put("language", "THREE");
+        inputs.get(3).getMetadata().put("language", "ONE");
 
         TagCloudPartition one = new TagCloudPartition("ONE");
-        one.addInput(testInput.getInputs().get(0));
-        one.addInput(testInput.getInputs().get(3));
+        one.addInput(inputs.get(0));
+        one.addInput(inputs.get(3));
 
         TagCloudPartition two = new TagCloudPartition("TWO");
-        two.addInput(testInput.getInputs().get(1));
+        two.addInput(inputs.get(1));
 
         TagCloudPartition three = new TagCloudPartition("THREE");
-        three.addInput(testInput.getInputs().get(2));
+        three.addInput(inputs.get(2));
 
         TagCloud.Builder builder = new TagCloud.Builder();
         builder.addInput(one);
