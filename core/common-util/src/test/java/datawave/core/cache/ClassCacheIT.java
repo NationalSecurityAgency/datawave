@@ -79,7 +79,7 @@ public class ClassCacheIT {
             callables.add(() -> {
                 long total = 0L;
                 for (int k = 0; k < maxIterations; k++) {
-                    for (String name : names) {
+                    for (String name : copy) {
                         long elapsed = System.nanoTime();
                         Class<?> clazz = cache.get(name);
                         total += System.nanoTime() - elapsed;
