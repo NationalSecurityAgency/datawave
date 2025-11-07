@@ -139,6 +139,11 @@ function datawaveWebIsDeployed() {
    return 0
 }
 
+function datawaveWebReadyToStart() {
+    ss -ln | grep 8020 && ss -ln | grep 2181 && ss -ln | grep 9997 && return 0
+    return 1
+}
+
 function datawaveWebStart() {
 
     local debug=false
@@ -149,6 +154,24 @@ function datawaveWebStart() {
 
     hadoopIsRunning || hadoopStart || return 1
     accumuloIsRunning || accumuloStart || return 1
+
+    # We need to wait until Hadoop, Zookeeper, and Accumulo are completely ready before starting web
+    local pollInterval=5
+    local maxAttempts=20
+
+    info "Polling for dependent services every ${pollInterval} seconds (${maxAttempts} attempts max)"
+
+    for (( i=1; i<=${maxAttempts}; i++ ))
+    do
+       if datawaveWebReadyToStart ; then
+          echo "    Hadoop, Zookeeper and Accumulo now ready (${i}/${maxAttempts})"
+          break
+       fi
+       echo "    -- Dependent services not ready yet (${i}/${maxAttempts})"
+
+       sleep $pollInterval
+    done
+    datawaveWebReadyToStart || return 1
 
     if datawaveWebIsRunning ; then
        info "Wildfly is already running"
