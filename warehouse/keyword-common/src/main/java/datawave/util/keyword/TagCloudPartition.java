@@ -17,7 +17,7 @@ import org.apache.hadoop.io.Writable;
  * Used to partition TagCloudInput
  */
 public class TagCloudPartition implements Writable {
-    public enum SCORE_TYPE {
+    public enum ScoreType {
         LOWER_IS_BETTER, HIGHER_IS_BETTER
     }
 
@@ -27,7 +27,7 @@ public class TagCloudPartition implements Writable {
     // TODO-crwill9 this may not be necessary
     private String label;
     private List<TagCloudInput> inputs;
-    private SCORE_TYPE scoreType;
+    private ScoreType scoreType;
 
     public TagCloudPartition() {
         this(EMPTY_PARTITION);
@@ -42,10 +42,10 @@ public class TagCloudPartition implements Writable {
     }
 
     public TagCloudPartition(String partition, String label, List<TagCloudInput> inputs) {
-        this(partition, label, SCORE_TYPE.LOWER_IS_BETTER, inputs);
+        this(partition, label, ScoreType.LOWER_IS_BETTER, inputs);
     }
 
-    public TagCloudPartition(String partition, String label, SCORE_TYPE scoreType, List<TagCloudInput> inputs) {
+    public TagCloudPartition(String partition, String label, ScoreType scoreType, List<TagCloudInput> inputs) {
         this.partition = partition;
         this.label = label;
         this.scoreType = scoreType;
@@ -70,7 +70,7 @@ public class TagCloudPartition implements Writable {
         return inputs;
     }
 
-    public SCORE_TYPE getScoreType() {
+    public ScoreType getScoreType() {
         return scoreType;
     }
 
@@ -113,7 +113,7 @@ public class TagCloudPartition implements Writable {
         this.partition = dataInput.readUTF();
         this.label = dataInput.readUTF();
         String scoreTypeName = dataInput.readUTF();
-        this.scoreType = SCORE_TYPE.valueOf(scoreTypeName);
+        this.scoreType = ScoreType.valueOf(scoreTypeName);
         int inputCount = dataInput.readInt();
         this.inputs = new ArrayList<>();
         for (int i = 0; i < inputCount; i++) {

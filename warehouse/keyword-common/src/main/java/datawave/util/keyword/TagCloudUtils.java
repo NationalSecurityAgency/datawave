@@ -1,6 +1,7 @@
 package datawave.util.keyword;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,11 +33,11 @@ public interface TagCloudUtils {
      *
      * @param sourceScores
      *            a list of scores
-     * @param scoreType
-     *            the orientation of the scores
+     * @param comparator
+     *            the comparator for the scores
      * @return the final keyword score
      */
-    double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, TagCloudPartition.SCORE_TYPE scoreType);
+    double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, Comparator<Double> comparator, double defaultScore);
 
     /**
      * given a set of ScoreTuples, calculate the resulting source set for the keyword entry

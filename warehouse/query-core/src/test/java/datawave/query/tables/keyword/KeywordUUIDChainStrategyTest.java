@@ -337,7 +337,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         TagCloudPartition partition = tagCloudPartitions.get(0);
         assertEquals("external", partition.getPartition());
         assertEquals("external", partition.getLabel());
-        assertEquals(TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER, partition.getScoreType());
+        assertEquals(TagCloudPartition.ScoreType.HIGHER_IS_BETTER, partition.getScoreType());
         assertEquals(1, partition.getInputs().size());
         TagCloudInput tagCloudInput = partition.getInputs().get(0);
         assertNotNull(tagCloudInput);

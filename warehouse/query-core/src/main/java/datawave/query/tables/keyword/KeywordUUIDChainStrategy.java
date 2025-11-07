@@ -25,7 +25,7 @@ import datawave.query.tables.keyword.extractor.TagCloudInputExtractor;
 public class KeywordUUIDChainStrategy extends FullChainStrategy<Entry<Key,Value>,Entry<Key,Value>> {
     public static final String CATEGORY_PARAMETER = "tag.cloud.category";
     private static final String KEYWORD_CATEGORY = "keyword";
-    private static final String DEFAULT_CATEGORY = KEYWORD_CATEGORY;
+    private static final String DEFAULT_CATEGORIES = KEYWORD_CATEGORY;
 
     /**
      * configurable batch size in the chain, -1 is no batching
@@ -87,7 +87,7 @@ public class KeywordUUIDChainStrategy extends FullChainStrategy<Entry<Key,Value>
     private String[] getCategories(Query settings) {
         String categoryParam = settings.findParameter(CATEGORY_PARAMETER).getParameterValue();
         if (categoryParam.isEmpty()) {
-            categoryParam = DEFAULT_CATEGORY;
+            categoryParam = DEFAULT_CATEGORIES;
         }
         return categoryParam.split(",");
     }

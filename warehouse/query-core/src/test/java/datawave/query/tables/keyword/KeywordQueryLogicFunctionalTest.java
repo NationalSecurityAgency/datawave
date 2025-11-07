@@ -159,7 +159,7 @@ public class KeywordQueryLogicFunctionalTest {
     public void multipleExternalHitsTest() throws Exception {
         String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
 
-        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER, List.of(
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
         logic.setExternalTagCloudPartitions(List.of(externalPartition));
@@ -184,7 +184,7 @@ public class KeywordQueryLogicFunctionalTest {
         String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
         String queryString = "DOCUMENT:" + docId;
 
-        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER, List.of(
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
         logic.setExternalTagCloudPartitions(List.of(externalPartition));

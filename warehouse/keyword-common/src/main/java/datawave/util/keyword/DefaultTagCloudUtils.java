@@ -3,6 +3,7 @@ package datawave.util.keyword;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -47,12 +48,8 @@ public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
     }
 
     @Override
-    public double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, TagCloudPartition.SCORE_TYPE scoreType) {
-        if (scoreType == TagCloudPartition.SCORE_TYPE.LOWER_IS_BETTER) {
-            return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).min(Double::compareTo).orElse(1.0);
-        } else {
-            return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).max(Double::compareTo).orElse(0d);
-        }
+    public double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, Comparator<Double> comparator, double defaultScore) {
+        return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).sorted(comparator).findFirst().orElse(defaultScore);
     }
 
     @Override
