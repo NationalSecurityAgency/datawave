@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.ingest.protobuf.Uid;
+import datawave.util.CompositeTimestamp;
 import datawave.util.TableName;
 
 /**
@@ -416,6 +417,264 @@ public class AggregatorIntegrationTests {
         assertList(COUNT_ONLY_AGGREGATOR, true, 22);
     }
 
+    @Test
+    public void testSingleCompositeUid() {
+        String row = getRandomRow();
+        long composite = composite(11, 13);
+        log.info("composite: {}", composite);
+        String uid = "uid-a";
+        writeUid(row, composite, uid);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uid);
+        assertList(UID_AGGREGATOR, uid);
+        assertList(KEEP_COUNT_AGGREGATOR, uid);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uid);
+        assertList(UID_AGGREGATOR, uid);
+        assertList(KEEP_COUNT_AGGREGATOR, uid);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+    }
+
+    @Test
+    public void testStandardUidAndCompositeUid() {
+        String row = getRandomRow();
+        long composite = composite(11, 99);
+        long time = time(11);
+        log.info("composite: {}", composite);
+        log.info("normal   : {}", time);
+        String uidA = "uid-a";
+        String uidB = "uid-b";
+
+        // the scan should traverse two keys (which triggers a test framework error)
+        writeUid(row, time, uidA);
+        writeUid(row, composite, uidB);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidB);
+        assertList(UID_AGGREGATOR, uidB);
+        assertList(KEEP_COUNT_AGGREGATOR, uidB);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidB);
+        assertList(UID_AGGREGATOR, uidB);
+        assertList(KEEP_COUNT_AGGREGATOR, uidB);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+    }
+
+    @Test
+    public void testStandardUidAndCompositeCount() {
+        String row = getRandomRow();
+        long composite = composite(11, 99);
+        long time = time(11);
+        log.info("composite: {}", composite);
+        log.info("normal   : {}", time);
+
+        // composite count clobbers standard uid, indicating standard uid was dropped
+        int count = 37;
+        int expected = 38; // expected value for the UID, KEEP, and COUNT tables
+        writeUid(row, time, "uid-a");
+        writeCount(row, composite, count);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, count);
+        assertList(UID_AGGREGATOR, true, count);
+        assertList(KEEP_COUNT_AGGREGATOR, true, count);
+        assertList(COUNT_ONLY_AGGREGATOR, true, count);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, count);
+        assertList(UID_AGGREGATOR, true, count);
+        assertList(KEEP_COUNT_AGGREGATOR, true, count);
+        assertList(COUNT_ONLY_AGGREGATOR, true, count);
+    }
+
+    @Test
+    public void testStandardCountAndCompositeUid() {
+        String row = getRandomRow();
+        long composite = composite(11, 99);
+        long time = time(11);
+        log.info("composite: {}", composite);
+        log.info("normal   : {}", time);
+        String uidA = "uid-a";
+
+        // composite timestamp uid clobbers standard count, standard key was dropped
+        int count = 37;
+        int expected = 38;
+        writeCount(row, time, count);
+        writeUid(row, composite, uidA);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidA);
+        assertList(UID_AGGREGATOR, uidA);
+        assertList(KEEP_COUNT_AGGREGATOR, uidA);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidA);
+        assertList(UID_AGGREGATOR, uidA);
+        assertList(KEEP_COUNT_AGGREGATOR, uidA);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+    }
+
+    @Test
+    public void testStandardCountAndCompositeCount() {
+        String row = getRandomRow();
+        long composite = composite(11, 99);
+        long time = time(11);
+        log.info("composite: {}", composite);
+        log.info("normal   : {}", time);
+        String uidA = "uid-a";
+
+        // composite timestamp key clobbers a key that denotes a shard range
+        int count = 25;
+        int expected = 50; // expected for the UID, KEEP, and COUNT tables
+        writeCount(row, time, count);
+        writeCount(row, composite, count);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, count);
+        assertList(UID_AGGREGATOR, true, count);
+        assertList(KEEP_COUNT_AGGREGATOR, true, count);
+        assertList(COUNT_ONLY_AGGREGATOR, true, count);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, count);
+        assertList(UID_AGGREGATOR, true, count);
+        assertList(KEEP_COUNT_AGGREGATOR, true, count);
+        assertList(COUNT_ONLY_AGGREGATOR, true, count);
+    }
+
+    @Test
+    public void testCompositeUidAndCompositeUid() {
+        String row = getRandomRow();
+        long compositeA = composite(11, 55);
+        long compositeB = composite(11, 77);
+        log.info("composite a: {}", compositeA);
+        log.info("composite b: {}", compositeB);
+        String uidA = "uid-a";
+        String uidB = "uid-b";
+
+        // second composite uid clobbers first composite uid
+        writeUid(row, compositeA, uidA);
+        writeUid(row, compositeB, uidB);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidB);
+        assertList(UID_AGGREGATOR, uidB);
+        assertList(KEEP_COUNT_AGGREGATOR, uidB);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidB);
+        assertList(UID_AGGREGATOR, uidB);
+        assertList(KEEP_COUNT_AGGREGATOR, uidB);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+    }
+
+    @Test
+    public void testCompositeUidAndCompositeCount() {
+        String row = getRandomRow();
+        long compositeA = composite(11, 55);
+        long compositeB = composite(11, 77);
+        log.info("composite a: {}", compositeA);
+        log.info("composite b: {}", compositeB);
+        String uidA = "uid-a";
+        String uidB = "uid-b";
+
+        // composite count is not incremented, indicating that composite uid was dropped
+        int count = 25;
+        int expected = 26; // expected value for UID, KEEP and COUNT tables
+        writeUid(row, compositeA, uidA);
+        writeCount(row, compositeB, count);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, count);
+        assertList(UID_AGGREGATOR, true, count);
+        assertList(KEEP_COUNT_AGGREGATOR, true, count);
+        assertList(COUNT_ONLY_AGGREGATOR, true, count);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, count);
+        assertList(UID_AGGREGATOR, true, count);
+        assertList(KEEP_COUNT_AGGREGATOR, true, count);
+        assertList(COUNT_ONLY_AGGREGATOR, true, count);
+    }
+
+    @Test
+    public void testCompositeCountAndCompositeUid() {
+        String row = getRandomRow();
+        long compositeA = composite(11, 55);
+        long compositeB = composite(11, 77);
+        log.info("composite a: {}", compositeA);
+        log.info("composite b: {}", compositeB);
+        String uidB = "uid-b";
+
+        // second composite timestamp with later age off date clobbers the first composite timestamp
+        int count = 25;
+        int expected = 26; // this is the actual expected
+        writeCount(row, compositeA, count);
+        writeUid(row, compositeB, uidB);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidB);
+        assertList(UID_AGGREGATOR, uidB);
+        assertList(KEEP_COUNT_AGGREGATOR, uidB);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, uidB);
+        assertList(UID_AGGREGATOR, uidB);
+        assertList(KEEP_COUNT_AGGREGATOR, uidB);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+    }
+
+    @Test
+    public void testCompositeCountAndCompositeCount() {
+        String row = getRandomRow();
+        long compositeA = composite(11, 55);
+        long compositeB = composite(11, 77);
+        log.info("composite a: {}", compositeA);
+        log.info("composite b: {}", compositeB);
+
+        // count should be 34 but is 17, indicating that an entire key was skipped
+        writeCount(row, compositeA, 17);
+        writeCount(row, compositeB, 17);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, 17);
+        assertList(UID_AGGREGATOR, true, 17);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 17);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 17);
+
+        compactRow(row);
+
+        scanTables(row);
+        assertList(DEFAULT_AGGREGATOR, true, 17);
+        assertList(UID_AGGREGATOR, true, 17);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 17);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 17);
+    }
+
     protected void scanTables(String row) {
         for (String tableName : tableNames) {
             try (Scanner scanner = client.createScanner(tableName)) {
@@ -424,7 +683,7 @@ public class AggregatorIntegrationTests {
                 int count = 0;
                 Value value = null;
                 for (Map.Entry<Key,Value> entry : scanner) {
-                    log.trace("k: {} v: {}", entry.getKey(), entry.getValue());
+                    log.info("k: {} v: {}", entry.getKey(), entry.getValue());
                     count++;
                     value = entry.getValue();
                 }
@@ -498,9 +757,9 @@ public class AggregatorIntegrationTests {
         assertFalse(list.getIGNORE());
         assertTrue(list.hasCOUNT());
         assertTrue(uids.length > 0);
-        assertEquals(uids.length, list.getUIDList().size());
+        assertEquals(uids.length, list.getUIDList().size(), "uids: " + list.getUIDList());
         for (String uid : uids) {
-            assertTrue(list.getUIDList().contains(uid));
+            assertTrue(list.getUIDList().contains(uid), "list: " + list.getUIDList());
         }
     }
 
@@ -550,5 +809,24 @@ public class AggregatorIntegrationTests {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    /**
+     * See {@link CompositeTimestamp} for more details.
+     *
+     * @param eventDays
+     *            the event date in days
+     * @param ageOffDays
+     *            the age off date in the number of days since the event date
+     * @return a composite timestamp
+     */
+    private long composite(int eventDays, int ageOffDays) {
+        long eventDate = time(eventDays);
+        long ageOffDate = time(ageOffDays);
+        return CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOffDate);
+    }
+
+    private long time(int days) {
+        return (long) days * 24 * 60 * 60 * 1000;
     }
 }
