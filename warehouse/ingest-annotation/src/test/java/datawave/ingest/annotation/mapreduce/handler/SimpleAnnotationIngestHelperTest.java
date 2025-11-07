@@ -18,9 +18,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Multimap;
+
 import datawave.ingest.annotation.mapreduce.input.SimpleAnnotationRecordReader;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 public class SimpleAnnotationIngestHelperTest {
     protected SimpleAnnotationIngestHelper ingestHelper;
@@ -32,7 +35,7 @@ public class SimpleAnnotationIngestHelperTest {
     @Before
     public void setupIngestHelper() {
         conf = new Configuration();
-        conf.addResource(this.getClass().getClassLoader().getResource("config/ingest/all-config.xml"));
+        conf.addResource(this.getClass().getClassLoader().getResource("config/all-config.xml"));
         conf.addResource(this.getClass().getClassLoader().getResource("config/ingest/annotation-ingest-config.xml"));
 
         TypeRegistry.reset();
@@ -71,11 +74,19 @@ public class SimpleAnnotationIngestHelperTest {
 
         Assert.assertEquals("annotation", e.getDataType().outputName());
         Assert.assertNotNull(e.getRawData());
+        Assert.assertFalse(e.fatalError());
+
+        Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(e);
+        System.out.println(fields.keySet());
+        System.out.println(fields.get("dataType"));
+
         Assert.assertTrue(reader.nextKeyValue());
         e = reader.getEvent();
 
         Assert.assertEquals("annotation", e.getDataType().outputName());
         Assert.assertNotNull(e.getRawData());
+        Assert.assertFalse(e.fatalError());
+
         Assert.assertFalse(reader.nextKeyValue());
     }
 }

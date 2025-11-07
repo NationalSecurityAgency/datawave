@@ -1,7 +1,7 @@
 {
   "shard": "20251017_0",
-  "dataType": "csv",
-  "uid": "-7m7uk9.oz9qpy.-nfahrv",
+  "dataType": "annotation",
+  "uid": "-1111.1111.-1111",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
   "metadata": {
@@ -89,8 +89,8 @@
 }
 {
   "shard": "20160426_0",
-  "dataType": "csv",
-  "uid": "1855zl.64utu.-nzzng8",
+  "dataType": "annotation",
+  "uid": "2222.2222.-2222",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
   "metadata": {

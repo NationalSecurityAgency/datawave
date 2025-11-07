@@ -23,7 +23,7 @@ public class SimpleAnnotationRecordReaderTest {
         File dataFile = null;
 
         conf = new Configuration();
-        conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
+        conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/ingest/annotation-ingest-config.xml"));
 
         URL data = SimpleAnnotationRecordReaderTest.class.getResource(inputData);
