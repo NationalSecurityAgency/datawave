@@ -1,6 +1,5 @@
 package datawave.util.keyword;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,15 +141,7 @@ public class KeywordExtractor {
                 logger.debug("Extracted {} keywords from {} view.", keywords.size(), view);
             }
             if (!keywords.isEmpty()) {
-                Map<String,String> metadata = new HashMap<>();
-                metadata.put("type", KEYWORD_TYPE);
-                if (view != null && !view.isEmpty()) {
-                    metadata.put("view", view);
-                }
-                if (language != null && !language.isEmpty()) {
-                    metadata.put("language", language);
-                }
-                return new KeywordResults(source, content.getVisibility(), keywords, metadata);
+                return new KeywordResults(source, view, language, content.getVisibility(), keywords);
             }
         }
 

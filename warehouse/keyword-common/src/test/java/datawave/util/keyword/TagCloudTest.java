@@ -119,7 +119,7 @@ public class TagCloudTest {
             metadata.put("view", "content");
             metadata.put("language", "english");
             metadata.put("type", "keyword");
-            partition.addInput(new KeywordResults(source, "visibility", parsedContent, metadata));
+            partition.addInput(new TagCloudInput(source, "visibility", parsedContent, metadata));
         }
 
         return partition;

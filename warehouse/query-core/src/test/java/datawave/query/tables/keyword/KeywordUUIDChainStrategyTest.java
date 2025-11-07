@@ -83,8 +83,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         String colf = "d";
         String colq = dt + "\0" + uid + "\0CONTENT";
         Key documentKey = new Key(shard, colf, colq);
-        Value v = new Value(KeywordResults
-                        .serialize(new KeywordResults(identifier, visibility, results, Map.of("view", view, "language", language, "type", "keywords"))));
+        Value v = new Value(KeywordResults.serialize(new KeywordResults(identifier, view, language, visibility, results)));
         return Map.entry(documentKey, v);
     }
 
@@ -142,8 +141,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
         assertEquals("PAGE_ID:12345", keywordResults.getSource());
-        assertEquals("CONTENT", keywordResults.getMetadata().get("view"));
-        assertEquals("ENGLISH", keywordResults.getMetadata().get("language"));
+        assertEquals("CONTENT", keywordResults.getView());
+        assertEquals("ENGLISH", keywordResults.getLanguage());
         assertEquals("PUBLIC", keywordResults.getVisibility());
 
         assertNotNull(keywordResults.getKeywords().get("cat"));
@@ -197,8 +196,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         {
             KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
             assertEquals("PAGE_ID:12345", keywordResults.getSource());
-            assertEquals("CONTENT", keywordResults.getMetadata().get("view"));
-            assertEquals("ENGLISH", keywordResults.getMetadata().get("language"));
+            assertEquals("CONTENT", keywordResults.getView());
+            assertEquals("ENGLISH", keywordResults.getLanguage());
             assertEquals("PUBLIC", keywordResults.getVisibility());
 
             assertNotNull(keywordResults.getKeywords().get("cat"));
@@ -210,8 +209,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         {
             KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
             assertEquals("PAGE_ID:12346", keywordResults.getSource());
-            assertEquals("INDEXABLE_TEXT", keywordResults.getMetadata().get("view"));
-            assertEquals("ENGLISH", keywordResults.getMetadata().get("language"));
+            assertEquals("INDEXABLE_TEXT", keywordResults.getView());
+            assertEquals("ENGLISH", keywordResults.getLanguage());
             assertEquals("PUBLIC", keywordResults.getVisibility());
             assertNotNull(keywordResults.getKeywords().get("bird"));
         }
@@ -263,8 +262,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         {
             KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
             assertEquals("PAGE_ID:12345", keywordResults.getSource());
-            assertEquals("CONTENT", keywordResults.getMetadata().get("view"));
-            assertEquals("ENGLISH", keywordResults.getMetadata().get("language"));
+            assertEquals("CONTENT", keywordResults.getView());
+            assertEquals("ENGLISH", keywordResults.getLanguage());
             assertNotNull(keywordResults.getKeywords().get("cat"));
         }
 
@@ -274,8 +273,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         {
             KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
             assertEquals("PAGE_ID:12346", keywordResults.getSource());
-            assertEquals("INDEXABLE_TEXT", keywordResults.getMetadata().get("view"));
-            assertEquals("ENGLISH", keywordResults.getMetadata().get("language"));
+            assertEquals("INDEXABLE_TEXT", keywordResults.getView());
+            assertEquals("ENGLISH", keywordResults.getLanguage());
             assertNotNull(keywordResults.getKeywords().get("bird"));
         }
     }
@@ -324,8 +323,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
         assertEquals("PAGE_ID:12345", keywordResults.getSource());
-        assertEquals("CONTENT", keywordResults.getMetadata().get("view"));
-        assertEquals("ENGLISH", keywordResults.getMetadata().get("language"));
+        assertEquals("CONTENT", keywordResults.getView());
+        assertEquals("ENGLISH", keywordResults.getLanguage());
         assertEquals("PUBLIC", keywordResults.getVisibility());
 
         assertNotNull(keywordResults.getKeywords().get("cat"));
