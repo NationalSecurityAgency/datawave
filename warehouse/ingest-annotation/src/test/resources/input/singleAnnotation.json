@@ -1,18 +1,16 @@
 {
-  "shard": "20251017_0",
-  "dataType": "testDataType",
-  "uid": "123.abc.123",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
+  "shard": "20251017_0",
+  "dataType": "testDataType",
   "metadata": {
     "visibility": "PUBLIC",
-    "created_date": "2025-10-17T10:30:00.0Z"
+    "created_date": "2025-10-17T10:30:00.0Z",
+    "test_metadata_key": "test_metadata_value"
   },
   "segments": [
     {
       "segmentId": "testSegmentId1",
-      "createTime": "2025-10-17T11:30:00.0Z",
-      "eTag": "testETag1",
       "segmentValue": [
         {
           "value": "test1a",
