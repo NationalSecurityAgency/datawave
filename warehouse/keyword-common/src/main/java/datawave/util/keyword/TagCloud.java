@@ -161,9 +161,7 @@ public class TagCloud {
 
         private String getPartition(String partitionKey) {
             int sepIndex = partitionKey.indexOf(VALUE_SEPARATOR);
-            String partition = sepIndex > -1 ? partitionKey.substring(0, sepIndex) : partitionKey;
-
-            return partition;
+            return sepIndex > -1 ? partitionKey.substring(0, sepIndex) : partitionKey;
         }
 
         /**
