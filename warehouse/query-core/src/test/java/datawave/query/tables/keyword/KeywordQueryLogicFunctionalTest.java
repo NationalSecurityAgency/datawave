@@ -117,6 +117,7 @@ public class KeywordQueryLogicFunctionalTest {
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
         expectedCloud.setMarkings(Map.of("visibility", "ALL"));
         expectedCloud.setTags(entries);
+        expectedCloud.setMetadata(Map.of("view", "CONTENT", "type", "keyword"));
         expectedCloud.setIntermediateResult(false);
         return expectedCloud;
     }
@@ -135,8 +136,8 @@ public class KeywordQueryLogicFunctionalTest {
     public void simpleWithOnlyExternalHitsTest() throws Exception {
         String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
 
-        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO",
-                        List.of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d))));
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", List
+                        .of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo"))));
         logic.setExternalTagCloudPartitions(List.of(externalPartition));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
@@ -144,7 +145,7 @@ public class KeywordQueryLogicFunctionalTest {
         entries.add(createTagCloudEntry("y", .8, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
         entries.add(createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
-        expectedCloud.setLanguage("FOO");
+        expectedCloud.setMetadata(Map.of("type", "demo"));
         expectedCloud.setMarkings(Map.of("visibility", "ALL"));
         expectedCloud.setTags(entries);
         expectedCloud.setIntermediateResult(false);
@@ -157,9 +158,9 @@ public class KeywordQueryLogicFunctionalTest {
     public void multipleExternalHitsTest() throws Exception {
         String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
 
-        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER,
-                        List.of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d)),
-                                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d))));
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER, List.of(
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
         logic.setExternalTagCloudPartitions(List.of(externalPartition));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
@@ -168,7 +169,7 @@ public class KeywordQueryLogicFunctionalTest {
         entries.add(createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
         entries.add(createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
-        expectedCloud.setLanguage("FOO");
+        expectedCloud.setMetadata(Map.of("type", "demo"));
         expectedCloud.setMarkings(Map.of("visibility", "ALL"));
         expectedCloud.setTags(entries);
         expectedCloud.setIntermediateResult(false);
@@ -182,9 +183,9 @@ public class KeywordQueryLogicFunctionalTest {
         String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
         String queryString = "DOCUMENT:" + docId;
 
-        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER,
-                        List.of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d)),
-                                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d))));
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER, List.of(
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
         logic.setExternalTagCloudPartitions(List.of(externalPartition));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
@@ -193,7 +194,7 @@ public class KeywordQueryLogicFunctionalTest {
         entries.add(createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
         entries.add(createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
-        expectedCloud.setLanguage("FOO");
+        expectedCloud.setMetadata(Map.of("type", "demo"));
         expectedCloud.setMarkings(Map.of("visibility", "ALL"));
         expectedCloud.setTags(entries);
         expectedCloud.setIntermediateResult(false);
@@ -246,7 +247,7 @@ public class KeywordQueryLogicFunctionalTest {
     private boolean isExpectedTagCloud(DefaultTagCloud tagCloud) {
         DefaultTagCloud expected = null;
         for (DefaultTagCloud expectedCloud : expectedResults) {
-            if (Objects.equals(expectedCloud.getLanguage(), tagCloud.getLanguage())) {
+            if (Objects.equals(expectedCloud.getMetadata(), tagCloud.getMetadata())) {
                 List<DefaultTagCloudEntry> expectedTags = expectedCloud.getTags();
                 if (expectedTags.containsAll(tagCloud.getTags()) && tagCloud.getTags().containsAll(expectedTags)) {
                     expected = expectedCloud;

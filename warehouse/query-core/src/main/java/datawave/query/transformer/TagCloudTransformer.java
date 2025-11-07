@@ -122,9 +122,6 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
         if (state.getMaxCloudTags() > 0) {
             builder.withMaxTags(state.getMaxCloudTags());
         }
-        if (state.isLanguagePartitioned()) {
-            builder.withLanguagePartitions(true);
-        }
         return builder;
     }
 
@@ -141,8 +138,8 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
         List<TagCloudBase> tagClouds = new ArrayList<>();
         for (TagCloud tagCloudResult : tagCloudResultsList) {
             TagCloudBase tagCloud = responseObjectFactory.getTagCloud();
-            if (!tagCloudResult.getName().isBlank()) {
-                tagCloud.setLanguage(tagCloudResult.getName());
+            if (tagCloudResult.getMetadata() != null && !tagCloudResult.getMetadata().isEmpty()) {
+                tagCloud.setMetadata(tagCloudResult.getMetadata());
             }
             if (!tagCloudResult.getVisibility().isEmpty()) {
                 tagCloud.setMarkings(tagCloudResult.getVisibility());

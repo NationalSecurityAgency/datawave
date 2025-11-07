@@ -115,7 +115,11 @@ public class TagCloudTest {
             String content = data[i];
             LinkedHashMap<String,Double> parsedContent = parseContent(content);
             String source = sources[i];
-            partition.addInput(new KeywordResults(source, "content", "english", "visibility", parsedContent));
+            Map<String,String> metadata = new HashMap<>();
+            metadata.put("view", "content");
+            metadata.put("language", "english");
+            metadata.put("type", "keyword");
+            partition.addInput(new KeywordResults(source, "visibility", parsedContent, metadata));
         }
 
         return partition;
@@ -142,11 +146,13 @@ public class TagCloudTest {
 
         List<TagCloud> cloud = builder.build();
         assertEquals(1, cloud.size());
-        assertEquals("", cloud.get(0).getName());
+        // TODO-crwill9 talk to drew to see if this is an okay shift
+        assertEquals("english", cloud.get(0).getMetadata().get("language"));
         String result = cloud.get(0).toString();
         TagCloud deser = TagCloud.fromJson(result);
 
-        assertEquals("", deser.getName());
+        // TODO-crwill9 talk to drew to see if this is an okay shift
+        assertEquals("english", deser.getMetadata().get("language"));
         assertTagCloudResults(26, 0.0092, 0.5552, TagCloudEntry.ORDER_BY_SCORE, deser.getResults());
     }
 
@@ -158,7 +164,8 @@ public class TagCloudTest {
         List<TagCloud> cloud = builder.build();
 
         assertEquals(1, cloud.size());
-        assertEquals("", cloud.get(0).getName());
+        // TODO-crwill9 talk to drew to see if this is an okay shift
+        assertEquals("english", cloud.get(0).getMetadata().get("language"));
         assertTagCloudResults(26, 0.0092, 0.5552, TagCloudEntry.ORDER_BY_SCORE, cloud.get(0).getResults());
     }
 
@@ -170,7 +177,8 @@ public class TagCloudTest {
         List<TagCloud> cloud = builder.build();
 
         assertEquals(1, cloud.size());
-        assertEquals("", cloud.get(0).getName());
+        // TODO-crwill9 talk to drew to see if this is an okay shift
+        assertEquals("english", cloud.get(0).getMetadata().get("language"));
         assertTagCloudResults(10, 0.0092, 0.0951, TagCloudEntry.ORDER_BY_SCORE, cloud.get(0).getResults());
     }
 
@@ -184,7 +192,8 @@ public class TagCloudTest {
         List<TagCloud> cloud = builder.build();
 
         assertEquals(1, cloud.size());
-        assertEquals("", cloud.get(0).getName());
+        // TODO-crwill9 talk to drew to see if this is an okay shift
+        assertEquals("english", cloud.get(0).getMetadata().get("language"));
         assertTagCloudResults(19, 0.0092, 0.3884, comparator, cloud.get(0).getResults());
         assertFirstAndLastFrequency(3, 1, cloud.get(0).getResults());
     }
@@ -192,10 +201,10 @@ public class TagCloudTest {
     @Test
     public void testBuilderWithLanguages() {
         TagCloudPartition testInput = createDataWithOverlaps();
-        ((KeywordResults)testInput.getInputs().get(0)).setLanguage("ONE");
-        ((KeywordResults)testInput.getInputs().get(1)).setLanguage("TWO");
-        ((KeywordResults)testInput.getInputs().get(2)).setLanguage("THREE");
-        ((KeywordResults)testInput.getInputs().get(3)).setLanguage("ONE");
+        testInput.getInputs().get(0).getMetadata().put("language", "ONE");
+        testInput.getInputs().get(1).getMetadata().put("language", "TWO");
+        testInput.getInputs().get(2).getMetadata().put("language", "THREE");
+        testInput.getInputs().get(3).getMetadata().put("language", "ONE");
 
         TagCloudPartition one = new TagCloudPartition("ONE");
         one.addInput(testInput.getInputs().get(0));
@@ -207,7 +216,7 @@ public class TagCloudTest {
         TagCloudPartition three = new TagCloudPartition("THREE");
         three.addInput(testInput.getInputs().get(2));
 
-        TagCloud.Builder builder = new TagCloud.Builder().withLanguagePartitions(true);
+        TagCloud.Builder builder = new TagCloud.Builder();
         builder.addInput(one);
         builder.addInput(two);
         builder.addInput(three);
@@ -220,8 +229,8 @@ public class TagCloudTest {
         Map<String,TagCloud> resultsMap = new HashMap<>();
 
         for (TagCloud c : cloud) {
-            unseenLanguages.remove(c.getName());
-            resultsMap.put(c.getName(), c);
+            unseenLanguages.remove(c.getMetadata().get("language"));
+            resultsMap.put(c.getMetadata().get("language"), c);
         }
         assertTrue("We expected to observe the following languages, but did not: " + unseenLanguages, unseenLanguages.isEmpty());
 

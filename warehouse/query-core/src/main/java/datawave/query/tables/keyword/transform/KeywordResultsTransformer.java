@@ -48,7 +48,12 @@ public class KeywordResultsTransformer implements TagCloudInputTransformer<Keywo
             keywordResults.setSource(identifier);
         }
 
-        return new TagCloudPartition(languagePartitioned ? keywordResults.getLanguage() : "", LABEL, List.of(keywordResults));
+        String partition = "";
+        if (languagePartitioned && keywordResults.getMetadata().get("language") != null) {
+            partition = keywordResults.getMetadata().get("language");
+        }
+
+        return new TagCloudPartition(partition, LABEL, List.of(keywordResults));
     }
 
     public void setIdentifierMap(Map<String,String> identifierMap) {

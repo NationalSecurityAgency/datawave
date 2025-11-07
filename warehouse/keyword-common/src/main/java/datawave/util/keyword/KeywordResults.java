@@ -7,44 +7,21 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Encapsulates results from a keyword extraction algorithm for a single document and provides serialization and deserialization mechanism
  */
 public class KeywordResults extends TagCloudInput {
-    /** the name of the view from which the keywords were extracted */
-    String view;
-
-    /** the language of the source document used for keyword extraction */
-    String language;
-
+    // TODO-crwill9 this class should be decoupled from TagCloudInput
     public KeywordResults() {
-        this("", "", "", "", new LinkedHashMap<>());
+        this("", "", new LinkedHashMap<>(), new HashMap<>());
     }
 
-    public KeywordResults(String source, String view, String language, String visibility, Map<String,Double> results) {
-        super(source, visibility, results);
-        this.view = view;
-        this.language = language;
-    }
-
-    public String getView() {
-        return view;
-    }
-
-    public void setView(String view) {
-        this.view = view;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
+    public KeywordResults(String source, String visibility, Map<String,Double> results, Map<String,String> metadata) {
+        super(source, visibility, results, metadata);
     }
 
     public Map<String,Double> getKeywords() {
@@ -66,14 +43,12 @@ public class KeywordResults extends TagCloudInput {
         if (!(other instanceof KeywordResults)) {
             return false;
         }
-
-        KeywordResults otherKeywordResults = (KeywordResults) other;
-        return Objects.equals(view, otherKeywordResults.view) && Objects.equals(language, otherKeywordResults.language);
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), view, language);
+        return super.hashCode();
     }
 
     @Override
@@ -84,8 +59,6 @@ public class KeywordResults extends TagCloudInput {
         }
 
         super.readFields(dataInput);
-        this.view = dataInput.readUTF();
-        this.language = dataInput.readUTF();
     }
 
     @Override
@@ -93,8 +66,6 @@ public class KeywordResults extends TagCloudInput {
         // write the class first
         dataOutput.writeUTF(KeywordResults.class.getCanonicalName());
         super.write(dataOutput);
-        dataOutput.writeUTF(view == null ? "" : view);
-        dataOutput.writeUTF(language == null ? "" : language);
     }
 
     public static boolean canDeserialize(byte[] input) throws IOException {

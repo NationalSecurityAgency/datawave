@@ -33,8 +33,9 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     @XmlJavaTypeAdapter(StringMapAdapter.class)
     private HashMap<String,String> markings = null;
 
-    @XmlElement(name = "language")
-    private String language = null;
+    @XmlElement(name = "metadata")
+    @XmlJavaTypeAdapter(StringMapAdapter.class)
+    private Map<String,String> metadata = null;
 
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
@@ -59,13 +60,13 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     }
 
     @Override
-    public String getLanguage() {
-        return language;
+    public void setMetadata(Map<String,String> metadata) {
+        this.metadata = metadata;
     }
 
     @Override
-    public void setLanguage(String language) {
-        this.language = language;
+    public Map<String,String> getMetadata() {
+        return metadata;
     }
 
     public List<DefaultTagCloudEntry> getTags() {
@@ -107,8 +108,8 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
             if (message.markings != null)
                 output.writeObject(1, message.markings, MapSchema.SCHEMA, false);
 
-            if (message.language != null) {
-                output.writeString(2, message.language, false);
+            if (message.metadata != null) {
+                output.writeObject(2, message.metadata, MapSchema.SCHEMA, false);
             }
 
             if (message.tags != null) {
@@ -134,7 +135,8 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                         input.mergeObject(message.markings, MapSchema.SCHEMA);
                         break;
                     case 2:
-                        message.language = input.readString();
+                        message.metadata = new HashMap<>();
+                        input.mergeObject(message.metadata, MapSchema.SCHEMA);
                         break;
                     case 3:
                         if (message.tags == null)
@@ -158,7 +160,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                 case 1:
                     return "markings";
                 case 2:
-                    return "language";
+                    return "metadata";
                 case 3:
                     return "tags";
                 default:
@@ -174,7 +176,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
         final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
             fieldMap.put("markings", 1);
-            fieldMap.put("language", 2);
+            fieldMap.put("metadata", 2);
             fieldMap.put("tags", 3);
         }
     };

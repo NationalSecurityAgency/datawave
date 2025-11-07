@@ -63,7 +63,7 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
             }
         }
 
-        TagCloudInput tagCloudInput = new TagCloudInput(docId, source.getColumnVisibility().toString(), extractedFields);
+        TagCloudInput tagCloudInput = new TagCloudInput(docId, source.getColumnVisibility().toString(), extractedFields, Map.of("type", category));
 
         if (this.partition == null) {
             this.partition = new TagCloudPartition(this.category, this.category, TagCloudPartition.SCORE_TYPE.HIGHER_IS_BETTER, new ArrayList<>());
