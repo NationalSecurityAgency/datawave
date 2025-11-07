@@ -40,9 +40,9 @@ public abstract class TagCloudBase<T,E extends TagCloudEntryBase<E>> implements 
         this.intermediateResult = intermediateResult;
     }
 
-    public abstract String getLanguage();
+    public abstract void setMetadata(Map<String,String> metadata);
 
-    public abstract void setLanguage(String language);
+    public abstract Map<String,String> getMetadata();
 
     public abstract List<E> getTags();
 

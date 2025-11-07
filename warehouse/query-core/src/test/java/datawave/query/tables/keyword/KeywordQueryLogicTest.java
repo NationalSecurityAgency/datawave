@@ -191,7 +191,8 @@ public class KeywordQueryLogicTest {
         baseResults.put("kind", 0.2546);
         baseResults.put("kind word", 0.2052);
 
-        KeywordResults results = new KeywordResults("someSource", "someView", "someLanguage", "someVisibility", baseResults);
+        KeywordResults results = new KeywordResults("someSource", "someVisibility", baseResults,
+                        Map.of("view", "someView", "language", "someLanguage", "type", "someType"));
 
         Key dataKey = new Key("20241218_0", "d", "sampleCsv" + '\u0000' + "1.2.3" + '\u0000' + "someView", "A");
         Value viewValue = new Value(KeywordResults.serialize(results));
@@ -208,8 +209,9 @@ public class KeywordQueryLogicTest {
 
         verifyAll();
 
-        TagCloudPartition expected = new TagCloudPartition("someLanguage", "keywords", List.of(new KeywordResults("someSource", "someView", "someLanguage",
-                        "someVisibility", Map.of("get much", 0.5903, "kind", 0.2546, "kind word", 0.2052))));
+        TagCloudPartition expected = new TagCloudPartition("someLanguage", "keywords",
+                        List.of(new KeywordResults("someSource", "someVisibility", Map.of("get much", 0.5903, "kind", 0.2546, "kind word", 0.2052),
+                                        Map.of("view", "someView", "language", "someLanguage", "type", "someType"))));
         assertEquals(expected, base);
     }
 

@@ -36,15 +36,17 @@ public class TagCloudInput implements Writable {
     private String source;
     private String visibility;
     private Map<String,Double> entities;
+    private Map<String,String> metadata;
 
     private TagCloudInput() {
         // only to support deserialize()
     }
 
-    public TagCloudInput(String source, String visibility, Map<String,Double> entities) {
+    public TagCloudInput(String source, String visibility, Map<String,Double> entities, Map<String,String> metadata) {
         this.source = source;
         this.visibility = visibility;
         this.entities = entities;
+        this.metadata = metadata;
     }
 
     public Map<String,Double> getEntities() {
@@ -63,6 +65,14 @@ public class TagCloudInput implements Writable {
         this.source = source;
     }
 
+    public Map<String,String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String,String> metadata) {
+        this.metadata = metadata;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -72,12 +82,13 @@ public class TagCloudInput implements Writable {
             return false;
         }
         TagCloudInput otherTci = (TagCloudInput) other;
-        return Objects.equals(source, otherTci.source) && Objects.equals(visibility, otherTci.visibility) && Objects.equals(entities, otherTci.entities);
+        return Objects.equals(source, otherTci.source) && Objects.equals(visibility, otherTci.visibility) && Objects.equals(entities, otherTci.entities)
+                        && Objects.equals(metadata, otherTci.metadata);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(source, visibility, entities);
+        return Objects.hash(source, visibility, entities, metadata);
     }
 
     @Override
@@ -88,6 +99,11 @@ public class TagCloudInput implements Writable {
         for (Map.Entry<String,Double> e : entities.entrySet()) {
             dataOutput.writeUTF(e.getKey());
             dataOutput.writeDouble(e.getValue());
+        }
+        dataOutput.writeInt(metadata.size());
+        for (Map.Entry<String,String> e : metadata.entrySet()) {
+            dataOutput.writeUTF(e.getKey());
+            dataOutput.writeUTF(e.getValue());
         }
     }
 
@@ -101,6 +117,13 @@ public class TagCloudInput implements Writable {
             String label = dataInput.readUTF();
             double score = dataInput.readDouble();
             entities.put(label, score);
+        }
+        int metadataCount = dataInput.readInt();
+        this.metadata = new HashMap<>();
+        for (int i = 0; i < metadataCount; i++) {
+            String key = dataInput.readUTF();
+            String value = dataInput.readUTF();
+            this.metadata.put(key, value);
         }
     }
 
