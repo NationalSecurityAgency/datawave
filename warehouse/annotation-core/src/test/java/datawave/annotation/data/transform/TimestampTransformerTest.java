@@ -8,6 +8,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -87,6 +88,10 @@ public class TimestampTransformerTest {
         public Map<String,String> toMetadataMap(long timestamp) throws AnnotationTransformException {
             String iso8601 = Instant.ofEpochMilli(timestamp).toString();
             return Map.of("updated_date", iso8601);
+        }
+
+        public Set<String> getTimestampFields() {
+            return Set.of("updated_date");
         }
     }
 }

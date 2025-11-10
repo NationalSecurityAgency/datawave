@@ -12,7 +12,7 @@ import datawave.annotation.protobuf.v1.Segment;
 
 /** Implements a custom Jackson Segment deserializer that simply uses the native Protobuf JsonFormat.Parser */
 public class JacksonSegmentDeserializer extends JsonDeserializer<Segment> {
-    private static final JsonFormat.Parser protobufJsonParser = JsonFormat.parser();
+    private static final JsonFormat.Parser protobufJsonParser = AnnotationJsonUtils.getParser();
 
     private final Segment defaultInstance;
 

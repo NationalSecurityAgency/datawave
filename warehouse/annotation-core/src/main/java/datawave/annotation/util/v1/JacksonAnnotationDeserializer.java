@@ -12,7 +12,7 @@ import datawave.annotation.protobuf.v1.Annotation;
 
 /** Implements a custom Jackson Annotation deserializer that simply uses the native Protobuf JsonFormat.Parser */
 public class JacksonAnnotationDeserializer extends JsonDeserializer<Annotation> {
-    private static final JsonFormat.Parser protobufJsonParser = JsonFormat.parser();
+    private static final JsonFormat.Parser protobufJsonParser = AnnotationJsonUtils.getParser();
 
     private final Annotation defaultInstance;
 

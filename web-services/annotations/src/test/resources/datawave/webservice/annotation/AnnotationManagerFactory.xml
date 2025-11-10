@@ -11,7 +11,8 @@
     <bean id="AnnotationManager" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerBean"/>
 
     <bean id="AnnotationManagerConfig" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerConfig">
-        <property name="tableName" value="annotations"/>
+        <property name="annotationTableName" value="annotation"/>
+        <property name="annotationSourceTableName" value="annotationSource"/>
         <property name="connPoolName" value="WAREHOUSE" />
         <property name="lookupUUIDQueryLogic">
             <bean scope="prototype" parent="BaseEventQuery">

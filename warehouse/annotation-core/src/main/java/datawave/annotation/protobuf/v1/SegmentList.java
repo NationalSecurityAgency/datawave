@@ -5,7 +5,7 @@ package datawave.annotation.protobuf.v1;
 
 /**
  * <pre>
- * Embed-able list/element wrappers that are JSON-friendly.
+ * Embeddable list/element wrappers that are JSON-friendly.
  * </pre>
  *
  * Protobuf type {@code datawave.annotation.protobuf.v1.SegmentList}
@@ -289,7 +289,7 @@ public final class SegmentList extends com.google.protobuf.GeneratedMessageV3 im
 
     /**
      * <pre>
-     * Embed-able list/element wrappers that are JSON-friendly.
+     * Embeddable list/element wrappers that are JSON-friendly.
      * </pre>
      *
      * Protobuf type {@code datawave.annotation.protobuf.v1.SegmentList}
