@@ -45,31 +45,51 @@ public interface SegmentValueOrBuilder extends
      * type-specific data
      * </pre>
      *
-     * <code>string extension = 3;</code>
-     *
-     * @return Whether the extension field is set.
+     * <code>map&lt;string, string&gt; extension = 3;</code>
      */
-    boolean hasExtension();
+    int getExtensionCount();
 
     /**
      * <pre>
      * type-specific data
      * </pre>
      *
-     * <code>string extension = 3;</code>
-     *
-     * @return The extension.
+     * <code>map&lt;string, string&gt; extension = 3;</code>
      */
-    java.lang.String getExtension();
+    boolean containsExtension(java.lang.String key);
+
+    /**
+     * Use {@link #getExtensionMap()} instead.
+     */
+    @java.lang.Deprecated
+    java.util.Map<java.lang.String,java.lang.String> getExtension();
 
     /**
      * <pre>
      * type-specific data
      * </pre>
      *
-     * <code>string extension = 3;</code>
-     *
-     * @return The bytes for extension.
+     * <code>map&lt;string, string&gt; extension = 3;</code>
      */
-    com.google.protobuf.ByteString getExtensionBytes();
+    java.util.Map<java.lang.String,java.lang.String> getExtensionMap();
+
+    /**
+     * <pre>
+     * type-specific data
+     * </pre>
+     *
+     * <code>map&lt;string, string&gt; extension = 3;</code>
+     */
+
+    java.lang.String getExtensionOrDefault(java.lang.String key, java.lang.String defaultValue);
+
+    /**
+     * <pre>
+     * type-specific data
+     * </pre>
+     *
+     * <code>map&lt;string, string&gt; extension = 3;</code>
+     */
+
+    java.lang.String getExtensionOrThrow(java.lang.String key);
 }

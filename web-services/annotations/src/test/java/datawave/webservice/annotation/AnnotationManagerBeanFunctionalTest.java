@@ -389,7 +389,7 @@ public class AnnotationManagerBeanFunctionalTest {
     public void testGetAnnotationInternalId() {
         Annotation testAnnotation = generateTestAnnotation();
         Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
-        Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "a75beb9e");
+        Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "628b014c");
         assertResponseStatus(200, response);
         List<Annotation> annotationList = assertExpectedEntity(List.class, response);
         assertFalse(annotationList.isEmpty());
@@ -424,7 +424,7 @@ public class AnnotationManagerBeanFunctionalTest {
     public void testGetAnnotationExternalIdWithAnnotations() {
         Annotation testAnnotation = generateCorleoneAnnotation();
         Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
-        Response response = annotationManager.getAnnotation("UUID", "CORLEONE", "2e8fbb3e");
+        Response response = annotationManager.getAnnotation("UUID", "CORLEONE", "92fa78cd");
         assertResponseStatus(200, response);
         List<Annotation> annotationList = assertExpectedEntity(List.class, response);
         assertFalse(annotationList.isEmpty());
@@ -451,8 +451,8 @@ public class AnnotationManagerBeanFunctionalTest {
         Response response = annotationManager.getAnnotationSegment(
                 "DOCUMENT",
                 "20250704_249/testDataType/abcde.fghij.klmno",
-                "a75beb9e",
-                "5a7bcdd9"
+                "628b014c",
+                "cb693def"
         );
         //@formatter:on
         assertResponseStatus(200, response);
@@ -488,7 +488,7 @@ public class AnnotationManagerBeanFunctionalTest {
         Response response = annotationManager.getAnnotationSegment(
                 "DOCUMENT",
                 "20250704_249/testDataType/abcde.fghij.klmno",
-                "a75beb9e",
+                "628b014c",
                 "bbbbbbbb");
         //@formatter:on
         assertResponseStatus(404, response);

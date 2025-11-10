@@ -19,7 +19,7 @@ public class AnnotationValidators {
             .addCheck(a -> !a.getSegmentsList().isEmpty(), "Annotation must include at least one segment");
 
     public static final Validator<Segment> segmentValidator = Validator.<Segment>create()
-            .addCheck(s -> !s.getSegmentValueList().isEmpty(), "Segment must have at lease one value");
+            .addCheck(s -> !s.getValuesList().isEmpty(), "Segment must have at least one value");
     //@formatter:on
 
     public static Validator<Annotation> getAnnotationValidator() {

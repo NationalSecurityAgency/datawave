@@ -18,36 +18,40 @@ public class AnnotationUtilsJsonTest {
             "  \"dataType\": \"testDataType\",\n" +
             "  \"uid\": \"abcde.fghij.klmno\",\n" +
             "  \"annotationType\": \"testAnnotationType\",\n" +
-            "  \"annotationId\": \"a75beb9e\",\n" +
-            "  \"metadata\": {\n" +
-            "    \"visibility\": \"PUBLIC\",\n" +
-            "    \"foo\": \"bar\",\n" +
-            "    \"plough\": \"plover\",\n" +
-            "    \"created_date\": \"2025-10-01T00:00:00.000Z\"\n" +
-            "  },\n" +
+            "  \"annotationId\": \"628b014c\",\n" +
             "  \"segments\": [{\n" +
-            "    \"segmentId\": \"5a7bcdd9\",\n" +
-            "    \"segmentValue\": [{\n" +
+            "    \"segmentId\": \"cb693def\",\n" +
+            "    \"boundary\": {\n" +
+            "      \"boundaryType\": \"TIME_SPAN\",\n" +
+            "      \"timeSpan\": {\n" +
+            "        \"startSeconds\": 0.154,\n" +
+            "        \"endSeconds\": 0.52\n" +
+            "      }\n" +
+            "    },\n" +
+            "    \"values\": [{\n" +
             "      \"value\": \"cow\",\n" +
             "      \"score\": 0.23499999940395355\n" +
             "    }, {\n" +
             "      \"value\": \"horse\",\n" +
             "      \"score\": 0.20999999344348907,\n" +
-            "      \"extension\": \"animal\"\n" +
-            "    }],\n" +
-            "    \"boundaryType\": \"TIME\",\n" +
-            "    \"time\": {\n" +
-            "      \"startSeconds\": 0.154,\n" +
-            "      \"endSeconds\": 0.52\n" +
-            "    }\n" +
-            "  }]\n" +
+            "      \"extension\": {\n" +
+            "        \"objectType\": \"animal\"\n" +
+            "      }\n" +
+            "    }]\n" +
+            "  }],\n" +
+            "  \"metadata\": {\n" +
+            "    \"visibility\": \"PUBLIC\",\n" +
+            "    \"foo\": \"bar\",\n" +
+            "    \"plough\": \"plover\",\n" +
+            "    \"created_date\": \"2025-10-01T00:00:00.000Z\"\n" +
+            "  }\n" +
             "}";
     //@formater:on
 
     @Test
     public void testToJson() throws Exception {
         Annotation a = AnnotationTestDataUtil.generateTestAnnotation();
-        String json = AnnotationUtils.annotationToJsonWithBoundaryTypes(a);
+        String json = AnnotationJsonUtils.annotationToJsonWithBoundaryTypesAndIds(a);
         log.info(json);
     }
 
@@ -55,7 +59,7 @@ public class AnnotationUtilsJsonTest {
     public void testFromJson() throws Exception {
         Annotation testAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
         Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
-        Annotation observedAnnotation = AnnotationUtils.annotationFromJson(testAnnotationJson);
+        Annotation observedAnnotation = AnnotationJsonUtils.annotationFromJson(testAnnotationJson);
         AnnotationAssertions.assertAnnotationsEqual(expectedAnnotation, observedAnnotation);
     }
 }

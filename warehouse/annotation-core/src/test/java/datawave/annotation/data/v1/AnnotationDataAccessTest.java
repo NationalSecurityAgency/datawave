@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.protobuf.v1.TextSpanChars;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
@@ -292,18 +293,18 @@ public class AnnotationDataAccessTest {
         List<String> errorMessages = new ArrayList<>();
 
         for (Segment segment : segments) {
-
-            SegmentValue expectedValue = SegmentValue.newBuilder().setValue(expectedWords[pos]).setScore(1.0f).setExtension("").build();
+            // TODO: test extensions
+            SegmentValue expectedValue = SegmentValue.newBuilder().setValue(expectedWords[pos]).setScore(1.0f).build();
             TextSpanChars expectedSpan = TextSpanChars.newBuilder().setStartCharacter(expectedStarts[pos])
                             .setEndCharacter(expectedStarts[pos] + expectedWords[pos].length()).build();
             pos++;
 
-            List<SegmentValue> observedValues = segment.getSegmentValueList();
+            List<SegmentValue> observedValues = segment.getValuesList();
             assertFalse(observedValues.isEmpty());
             assertEquals(1, observedValues.size());
             SegmentValue observedValue = observedValues.get(0);
-
-            TextSpanChars observedSpan = segment.getCharacters();
+            SegmentBoundary bounds = segment.getBoundary();
+            TextSpanChars observedSpan = bounds.getCharacterSpan();
 
             // we want to see all errors, so don't stop on the first failure.
             evaluateTextSegmentMatch(errorMessages, expectedValue, expectedSpan, observedValue, observedSpan);

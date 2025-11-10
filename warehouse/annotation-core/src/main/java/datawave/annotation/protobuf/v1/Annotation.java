@@ -22,6 +22,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         uid_ = "";
         annotationType_ = "";
         annotationId_ = "";
+        sourceId_ = "";
         segments_ = java.util.Collections.emptyList();
     }
 
@@ -44,7 +45,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     @java.lang.Override
     protected com.google.protobuf.MapField internalGetMapField(int number) {
         switch (number) {
-            case 7:
+            case 50:
                 return internalGetMetadata();
             default:
                 throw new RuntimeException("Invalid map field number: " + number);
@@ -62,6 +63,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     private volatile java.lang.Object shard_;
 
     /**
+     * <pre>
+     * the shard of the record this annotation addresses
+     * </pre>
+     *
      * <code>string shard = 1;</code>
      *
      * @return The shard.
@@ -80,6 +85,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
+     * <pre>
+     * the shard of the record this annotation addresses
+     * </pre>
+     *
      * <code>string shard = 1;</code>
      *
      * @return The bytes for shard.
@@ -100,6 +109,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     private volatile java.lang.Object dataType_;
 
     /**
+     * <pre>
+     * the datatype of the record this annotation addresses
+     * </pre>
+     *
      * <code>string dataType = 2;</code>
      *
      * @return The dataType.
@@ -118,6 +131,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
+     * <pre>
+     * the datatype of the record this annotation addresses
+     * </pre>
+     *
      * <code>string dataType = 2;</code>
      *
      * @return The bytes for dataType.
@@ -138,6 +155,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     private volatile java.lang.Object uid_;
 
     /**
+     * <pre>
+     * the internal id of the record this annotation addresses
+     * </pre>
+     *
      * <code>string uid = 3;</code>
      *
      * @return The uid.
@@ -156,6 +177,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
+     * <pre>
+     * the internal id of the record this annotation addresses
+     * </pre>
+     *
      * <code>string uid = 3;</code>
      *
      * @return The bytes for uid.
@@ -176,6 +201,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     private volatile java.lang.Object annotationType_;
 
     /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
      * <code>string annotationType = 4;</code>
      *
      * @return The annotationType.
@@ -194,6 +223,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
      * <code>string annotationType = 4;</code>
      *
      * @return The bytes for annotationType.
@@ -214,6 +247,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     private volatile java.lang.Object annotationId_;
 
     /**
+     * <pre>
+     * the hash that identifies this annotation
+     * </pre>
+     *
      * <code>string annotationId = 5;</code>
      *
      * @return The annotationId.
@@ -232,6 +269,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
+     * <pre>
+     * the hash that identifies this annotation
+     * </pre>
+     *
      * <code>string annotationId = 5;</code>
      *
      * @return The bytes for annotationId.
@@ -248,7 +289,116 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
     }
 
-    public static final int METADATA_FIELD_NUMBER = 7;
+    public static final int SOURCEID_FIELD_NUMBER = 6;
+    private volatile java.lang.Object sourceId_;
+
+    /**
+     * <pre>
+     * the identifier for this annotations source
+     * </pre>
+     *
+     * <code>string sourceId = 6;</code>
+     *
+     * @return The sourceId.
+     */
+    @java.lang.Override
+    public java.lang.String getSourceId() {
+        java.lang.Object ref = sourceId_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            sourceId_ = s;
+            return s;
+        }
+    }
+
+    /**
+     * <pre>
+     * the identifier for this annotations source
+     * </pre>
+     *
+     * <code>string sourceId = 6;</code>
+     *
+     * @return The bytes for sourceId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getSourceIdBytes() {
+        java.lang.Object ref = sourceId_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            sourceId_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+
+    public static final int SEGMENTS_FIELD_NUMBER = 20;
+    private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_;
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    @java.lang.Override
+    public java.util.List<datawave.annotation.protobuf.v1.Segment> getSegmentsList() {
+        return segments_;
+    }
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    @java.lang.Override
+    public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsOrBuilderList() {
+        return segments_;
+    }
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    @java.lang.Override
+    public int getSegmentsCount() {
+        return segments_.size();
+    }
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.Segment getSegments(int index) {
+        return segments_.get(index);
+    }
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.SegmentOrBuilder getSegmentsOrBuilder(int index) {
+        return segments_.get(index);
+    }
+
+    public static final int METADATA_FIELD_NUMBER = 50;
 
     private static final class MetadataDefaultEntryHolder {
         static final com.google.protobuf.MapEntry<java.lang.String,java.lang.String> defaultEntry = com.google.protobuf.MapEntry.<java.lang.String,java.lang.String> newDefaultInstance(
@@ -270,7 +420,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
 
     @java.lang.Override
@@ -291,7 +441,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     @java.lang.Override
 
@@ -300,7 +450,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     @java.lang.Override
 
@@ -313,7 +463,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
     }
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     @java.lang.Override
 
@@ -326,49 +476,6 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             throw new java.lang.IllegalArgumentException();
         }
         return map.get(key);
-    }
-
-    public static final int SEGMENTS_FIELD_NUMBER = 8;
-    private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_;
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    @java.lang.Override
-    public java.util.List<datawave.annotation.protobuf.v1.Segment> getSegmentsList() {
-        return segments_;
-    }
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    @java.lang.Override
-    public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsOrBuilderList() {
-        return segments_;
-    }
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    @java.lang.Override
-    public int getSegmentsCount() {
-        return segments_.size();
-    }
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.Segment getSegments(int index) {
-        return segments_.get(index);
-    }
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.SegmentOrBuilder getSegmentsOrBuilder(int index) {
-        return segments_.get(index);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -402,10 +509,13 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         if (!getAnnotationIdBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 5, annotationId_);
         }
-        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetMetadata(), MetadataDefaultEntryHolder.defaultEntry, 7);
-        for (int i = 0; i < segments_.size(); i++) {
-            output.writeMessage(8, segments_.get(i));
+        if (!getSourceIdBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 6, sourceId_);
         }
+        for (int i = 0; i < segments_.size(); i++) {
+            output.writeMessage(20, segments_.get(i));
+        }
+        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetMetadata(), MetadataDefaultEntryHolder.defaultEntry, 50);
         getUnknownFields().writeTo(output);
     }
 
@@ -431,13 +541,16 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         if (!getAnnotationIdBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, annotationId_);
         }
+        if (!getSourceIdBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, sourceId_);
+        }
+        for (int i = 0; i < segments_.size(); i++) {
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(20, segments_.get(i));
+        }
         for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetMetadata().getMap().entrySet()) {
             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = MetadataDefaultEntryHolder.defaultEntry.newBuilderForType()
                             .setKey(entry.getKey()).setValue(entry.getValue()).build();
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(7, metadata__);
-        }
-        for (int i = 0; i < segments_.size(); i++) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(8, segments_.get(i));
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(50, metadata__);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -464,9 +577,11 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             return false;
         if (!getAnnotationId().equals(other.getAnnotationId()))
             return false;
-        if (!internalGetMetadata().equals(other.internalGetMetadata()))
+        if (!getSourceId().equals(other.getSourceId()))
             return false;
         if (!getSegmentsList().equals(other.getSegmentsList()))
+            return false;
+        if (!internalGetMetadata().equals(other.internalGetMetadata()))
             return false;
         if (!getUnknownFields().equals(other.getUnknownFields()))
             return false;
@@ -490,13 +605,15 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         hash = (53 * hash) + getAnnotationType().hashCode();
         hash = (37 * hash) + ANNOTATIONID_FIELD_NUMBER;
         hash = (53 * hash) + getAnnotationId().hashCode();
-        if (!internalGetMetadata().getMap().isEmpty()) {
-            hash = (37 * hash) + METADATA_FIELD_NUMBER;
-            hash = (53 * hash) + internalGetMetadata().hashCode();
-        }
+        hash = (37 * hash) + SOURCEID_FIELD_NUMBER;
+        hash = (53 * hash) + getSourceId().hashCode();
         if (getSegmentsCount() > 0) {
             hash = (37 * hash) + SEGMENTS_FIELD_NUMBER;
             hash = (53 * hash) + getSegmentsList().hashCode();
+        }
+        if (!internalGetMetadata().getMap().isEmpty()) {
+            hash = (37 * hash) + METADATA_FIELD_NUMBER;
+            hash = (53 * hash) + internalGetMetadata().hashCode();
         }
         hash = (29 * hash) + getUnknownFields().hashCode();
         memoizedHashCode = hash;
@@ -595,7 +712,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMapField(int number) {
             switch (number) {
-                case 7:
+                case 50:
                     return internalGetMetadata();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
@@ -605,7 +722,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMutableMapField(int number) {
             switch (number) {
-                case 7:
+                case 50:
                     return internalGetMutableMetadata();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
@@ -642,14 +759,16 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
 
             annotationId_ = "";
 
-            internalGetMutableMetadata().clear();
+            sourceId_ = "";
+
             if (segmentsBuilder_ == null) {
                 segments_ = java.util.Collections.emptyList();
             } else {
                 segments_ = null;
                 segmentsBuilder_.clear();
             }
-            bitField0_ = (bitField0_ & ~0x00000002);
+            bitField0_ = (bitField0_ & ~0x00000001);
+            internalGetMutableMetadata().clear();
             return this;
         }
 
@@ -681,17 +800,18 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             result.uid_ = uid_;
             result.annotationType_ = annotationType_;
             result.annotationId_ = annotationId_;
-            result.metadata_ = internalGetMetadata();
-            result.metadata_.makeImmutable();
+            result.sourceId_ = sourceId_;
             if (segmentsBuilder_ == null) {
-                if (((bitField0_ & 0x00000002) != 0)) {
+                if (((bitField0_ & 0x00000001) != 0)) {
                     segments_ = java.util.Collections.unmodifiableList(segments_);
-                    bitField0_ = (bitField0_ & ~0x00000002);
+                    bitField0_ = (bitField0_ & ~0x00000001);
                 }
                 result.segments_ = segments_;
             } else {
                 result.segments_ = segmentsBuilder_.build();
             }
+            result.metadata_ = internalGetMetadata();
+            result.metadata_.makeImmutable();
             onBuilt();
             return result;
         }
@@ -759,12 +879,15 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 annotationId_ = other.annotationId_;
                 onChanged();
             }
-            internalGetMutableMetadata().mergeFrom(other.internalGetMetadata());
+            if (!other.getSourceId().isEmpty()) {
+                sourceId_ = other.sourceId_;
+                onChanged();
+            }
             if (segmentsBuilder_ == null) {
                 if (!other.segments_.isEmpty()) {
                     if (segments_.isEmpty()) {
                         segments_ = other.segments_;
-                        bitField0_ = (bitField0_ & ~0x00000002);
+                        bitField0_ = (bitField0_ & ~0x00000001);
                     } else {
                         ensureSegmentsIsMutable();
                         segments_.addAll(other.segments_);
@@ -777,13 +900,14 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                         segmentsBuilder_.dispose();
                         segmentsBuilder_ = null;
                         segments_ = other.segments_;
-                        bitField0_ = (bitField0_ & ~0x00000002);
+                        bitField0_ = (bitField0_ & ~0x00000001);
                         segmentsBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getSegmentsFieldBuilder() : null;
                     } else {
                         segmentsBuilder_.addAllMessages(other.segments_);
                     }
                 }
             }
+            internalGetMutableMetadata().mergeFrom(other.internalGetMetadata());
             this.mergeUnknownFields(other.getUnknownFields());
             onChanged();
             return this;
@@ -833,13 +957,12 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
 
                             break;
                         } // case 42
-                        case 58: {
-                            com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = input
-                                            .readMessage(MetadataDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-                            internalGetMutableMetadata().getMutableMap().put(metadata__.getKey(), metadata__.getValue());
+                        case 50: {
+                            sourceId_ = input.readStringRequireUtf8();
+
                             break;
-                        } // case 58
-                        case 66: {
+                        } // case 50
+                        case 162: {
                             datawave.annotation.protobuf.v1.Segment m = input.readMessage(datawave.annotation.protobuf.v1.Segment.parser(), extensionRegistry);
                             if (segmentsBuilder_ == null) {
                                 ensureSegmentsIsMutable();
@@ -848,7 +971,13 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                                 segmentsBuilder_.addMessage(m);
                             }
                             break;
-                        } // case 66
+                        } // case 162
+                        case 402: {
+                            com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = input
+                                            .readMessage(MetadataDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
+                            internalGetMutableMetadata().getMutableMap().put(metadata__.getKey(), metadata__.getValue());
+                            break;
+                        } // case 402
                         default: {
                             if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                                 done = true; // was an endgroup tag
@@ -870,6 +999,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         private java.lang.Object shard_ = "";
 
         /**
+         * <pre>
+         * the shard of the record this annotation addresses
+         * </pre>
+         *
          * <code>string shard = 1;</code>
          *
          * @return The shard.
@@ -887,6 +1020,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the shard of the record this annotation addresses
+         * </pre>
+         *
          * <code>string shard = 1;</code>
          *
          * @return The bytes for shard.
@@ -903,6 +1040,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the shard of the record this annotation addresses
+         * </pre>
+         *
          * <code>string shard = 1;</code>
          *
          * @param value
@@ -920,6 +1061,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the shard of the record this annotation addresses
+         * </pre>
+         *
          * <code>string shard = 1;</code>
          *
          * @return This builder for chaining.
@@ -932,6 +1077,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the shard of the record this annotation addresses
+         * </pre>
+         *
          * <code>string shard = 1;</code>
          *
          * @param value
@@ -952,6 +1101,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         private java.lang.Object dataType_ = "";
 
         /**
+         * <pre>
+         * the datatype of the record this annotation addresses
+         * </pre>
+         *
          * <code>string dataType = 2;</code>
          *
          * @return The dataType.
@@ -969,6 +1122,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the datatype of the record this annotation addresses
+         * </pre>
+         *
          * <code>string dataType = 2;</code>
          *
          * @return The bytes for dataType.
@@ -985,6 +1142,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the datatype of the record this annotation addresses
+         * </pre>
+         *
          * <code>string dataType = 2;</code>
          *
          * @param value
@@ -1002,6 +1163,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the datatype of the record this annotation addresses
+         * </pre>
+         *
          * <code>string dataType = 2;</code>
          *
          * @return This builder for chaining.
@@ -1014,6 +1179,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the datatype of the record this annotation addresses
+         * </pre>
+         *
          * <code>string dataType = 2;</code>
          *
          * @param value
@@ -1034,6 +1203,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         private java.lang.Object uid_ = "";
 
         /**
+         * <pre>
+         * the internal id of the record this annotation addresses
+         * </pre>
+         *
          * <code>string uid = 3;</code>
          *
          * @return The uid.
@@ -1051,6 +1224,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the internal id of the record this annotation addresses
+         * </pre>
+         *
          * <code>string uid = 3;</code>
          *
          * @return The bytes for uid.
@@ -1067,6 +1244,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the internal id of the record this annotation addresses
+         * </pre>
+         *
          * <code>string uid = 3;</code>
          *
          * @param value
@@ -1084,6 +1265,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the internal id of the record this annotation addresses
+         * </pre>
+         *
          * <code>string uid = 3;</code>
          *
          * @return This builder for chaining.
@@ -1096,6 +1281,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the internal id of the record this annotation addresses
+         * </pre>
+         *
          * <code>string uid = 3;</code>
          *
          * @param value
@@ -1116,6 +1305,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         private java.lang.Object annotationType_ = "";
 
         /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
          * <code>string annotationType = 4;</code>
          *
          * @return The annotationType.
@@ -1133,6 +1326,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
          * <code>string annotationType = 4;</code>
          *
          * @return The bytes for annotationType.
@@ -1149,6 +1346,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
          * <code>string annotationType = 4;</code>
          *
          * @param value
@@ -1166,6 +1367,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
          * <code>string annotationType = 4;</code>
          *
          * @return This builder for chaining.
@@ -1178,6 +1383,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
          * <code>string annotationType = 4;</code>
          *
          * @param value
@@ -1198,6 +1407,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         private java.lang.Object annotationId_ = "";
 
         /**
+         * <pre>
+         * the hash that identifies this annotation
+         * </pre>
+         *
          * <code>string annotationId = 5;</code>
          *
          * @return The annotationId.
@@ -1215,6 +1428,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the hash that identifies this annotation
+         * </pre>
+         *
          * <code>string annotationId = 5;</code>
          *
          * @return The bytes for annotationId.
@@ -1231,6 +1448,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the hash that identifies this annotation
+         * </pre>
+         *
          * <code>string annotationId = 5;</code>
          *
          * @param value
@@ -1248,6 +1469,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the hash that identifies this annotation
+         * </pre>
+         *
          * <code>string annotationId = 5;</code>
          *
          * @return This builder for chaining.
@@ -1260,6 +1485,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
+         * <pre>
+         * the hash that identifies this annotation
+         * </pre>
+         *
          * <code>string annotationId = 5;</code>
          *
          * @param value
@@ -1275,6 +1504,418 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             annotationId_ = value;
             onChanged();
             return this;
+        }
+
+        private java.lang.Object sourceId_ = "";
+
+        /**
+         * <pre>
+         * the identifier for this annotations source
+         * </pre>
+         *
+         * <code>string sourceId = 6;</code>
+         *
+         * @return The sourceId.
+         */
+        public java.lang.String getSourceId() {
+            java.lang.Object ref = sourceId_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                sourceId_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the identifier for this annotations source
+         * </pre>
+         *
+         * <code>string sourceId = 6;</code>
+         *
+         * @return The bytes for sourceId.
+         */
+        public com.google.protobuf.ByteString getSourceIdBytes() {
+            java.lang.Object ref = sourceId_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                sourceId_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the identifier for this annotations source
+         * </pre>
+         *
+         * <code>string sourceId = 6;</code>
+         *
+         * @param value
+         *            The sourceId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setSourceId(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+
+            sourceId_ = value;
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the identifier for this annotations source
+         * </pre>
+         *
+         * <code>string sourceId = 6;</code>
+         *
+         * @return This builder for chaining.
+         */
+        public Builder clearSourceId() {
+
+            sourceId_ = getDefaultInstance().getSourceId();
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the identifier for this annotations source
+         * </pre>
+         *
+         * <code>string sourceId = 6;</code>
+         *
+         * @param value
+         *            The bytes for sourceId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setSourceIdBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+
+            sourceId_ = value;
+            onChanged();
+            return this;
+        }
+
+        private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_ = java.util.Collections.emptyList();
+
+        private void ensureSegmentsIsMutable() {
+            if (!((bitField0_ & 0x00000001) != 0)) {
+                segments_ = new java.util.ArrayList<datawave.annotation.protobuf.v1.Segment>(segments_);
+                bitField0_ |= 0x00000001;
+            }
+        }
+
+        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder> segmentsBuilder_;
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public java.util.List<datawave.annotation.protobuf.v1.Segment> getSegmentsList() {
+            if (segmentsBuilder_ == null) {
+                return java.util.Collections.unmodifiableList(segments_);
+            } else {
+                return segmentsBuilder_.getMessageList();
+            }
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public int getSegmentsCount() {
+            if (segmentsBuilder_ == null) {
+                return segments_.size();
+            } else {
+                return segmentsBuilder_.getCount();
+            }
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public datawave.annotation.protobuf.v1.Segment getSegments(int index) {
+            if (segmentsBuilder_ == null) {
+                return segments_.get(index);
+            } else {
+                return segmentsBuilder_.getMessage(index);
+            }
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder setSegments(int index, datawave.annotation.protobuf.v1.Segment value) {
+            if (segmentsBuilder_ == null) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureSegmentsIsMutable();
+                segments_.set(index, value);
+                onChanged();
+            } else {
+                segmentsBuilder_.setMessage(index, value);
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder setSegments(int index, datawave.annotation.protobuf.v1.Segment.Builder builderForValue) {
+            if (segmentsBuilder_ == null) {
+                ensureSegmentsIsMutable();
+                segments_.set(index, builderForValue.build());
+                onChanged();
+            } else {
+                segmentsBuilder_.setMessage(index, builderForValue.build());
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder addSegments(datawave.annotation.protobuf.v1.Segment value) {
+            if (segmentsBuilder_ == null) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureSegmentsIsMutable();
+                segments_.add(value);
+                onChanged();
+            } else {
+                segmentsBuilder_.addMessage(value);
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder addSegments(int index, datawave.annotation.protobuf.v1.Segment value) {
+            if (segmentsBuilder_ == null) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureSegmentsIsMutable();
+                segments_.add(index, value);
+                onChanged();
+            } else {
+                segmentsBuilder_.addMessage(index, value);
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder addSegments(datawave.annotation.protobuf.v1.Segment.Builder builderForValue) {
+            if (segmentsBuilder_ == null) {
+                ensureSegmentsIsMutable();
+                segments_.add(builderForValue.build());
+                onChanged();
+            } else {
+                segmentsBuilder_.addMessage(builderForValue.build());
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder addSegments(int index, datawave.annotation.protobuf.v1.Segment.Builder builderForValue) {
+            if (segmentsBuilder_ == null) {
+                ensureSegmentsIsMutable();
+                segments_.add(index, builderForValue.build());
+                onChanged();
+            } else {
+                segmentsBuilder_.addMessage(index, builderForValue.build());
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder addAllSegments(java.lang.Iterable<? extends datawave.annotation.protobuf.v1.Segment> values) {
+            if (segmentsBuilder_ == null) {
+                ensureSegmentsIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, segments_);
+                onChanged();
+            } else {
+                segmentsBuilder_.addAllMessages(values);
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder clearSegments() {
+            if (segmentsBuilder_ == null) {
+                segments_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000001);
+                onChanged();
+            } else {
+                segmentsBuilder_.clear();
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public Builder removeSegments(int index) {
+            if (segmentsBuilder_ == null) {
+                ensureSegmentsIsMutable();
+                segments_.remove(index);
+                onChanged();
+            } else {
+                segmentsBuilder_.remove(index);
+            }
+            return this;
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public datawave.annotation.protobuf.v1.Segment.Builder getSegmentsBuilder(int index) {
+            return getSegmentsFieldBuilder().getBuilder(index);
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public datawave.annotation.protobuf.v1.SegmentOrBuilder getSegmentsOrBuilder(int index) {
+            if (segmentsBuilder_ == null) {
+                return segments_.get(index);
+            } else {
+                return segmentsBuilder_.getMessageOrBuilder(index);
+            }
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsOrBuilderList() {
+            if (segmentsBuilder_ != null) {
+                return segmentsBuilder_.getMessageOrBuilderList();
+            } else {
+                return java.util.Collections.unmodifiableList(segments_);
+            }
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public datawave.annotation.protobuf.v1.Segment.Builder addSegmentsBuilder() {
+            return getSegmentsFieldBuilder().addBuilder(datawave.annotation.protobuf.v1.Segment.getDefaultInstance());
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public datawave.annotation.protobuf.v1.Segment.Builder addSegmentsBuilder(int index) {
+            return getSegmentsFieldBuilder().addBuilder(index, datawave.annotation.protobuf.v1.Segment.getDefaultInstance());
+        }
+
+        /**
+         * <pre>
+         * segment data
+         * </pre>
+         *
+         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+         */
+        public java.util.List<datawave.annotation.protobuf.v1.Segment.Builder> getSegmentsBuilderList() {
+            return getSegmentsFieldBuilder().getBuilderList();
+        }
+
+        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsFieldBuilder() {
+            if (segmentsBuilder_ == null) {
+                segmentsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder>(
+                                segments_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
+                segments_ = null;
+            }
+            return segmentsBuilder_;
         }
 
         private com.google.protobuf.MapField<java.lang.String,java.lang.String> metadata_;
@@ -1303,7 +1944,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
 
         @java.lang.Override
@@ -1324,7 +1965,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         @java.lang.Override
 
@@ -1333,7 +1974,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         @java.lang.Override
 
@@ -1346,7 +1987,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         @java.lang.Override
 
@@ -1367,7 +2008,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
 
         public Builder removeMetadata(java.lang.String key) {
@@ -1387,7 +2028,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         public Builder putMetadata(java.lang.String key, java.lang.String value) {
             if (key == null) {
@@ -1401,250 +2042,12 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
 
         /**
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
 
         public Builder putAllMetadata(java.util.Map<java.lang.String,java.lang.String> values) {
             internalGetMutableMetadata().getMutableMap().putAll(values);
             return this;
-        }
-
-        private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_ = java.util.Collections.emptyList();
-
-        private void ensureSegmentsIsMutable() {
-            if (!((bitField0_ & 0x00000002) != 0)) {
-                segments_ = new java.util.ArrayList<datawave.annotation.protobuf.v1.Segment>(segments_);
-                bitField0_ |= 0x00000002;
-            }
-        }
-
-        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder> segmentsBuilder_;
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public java.util.List<datawave.annotation.protobuf.v1.Segment> getSegmentsList() {
-            if (segmentsBuilder_ == null) {
-                return java.util.Collections.unmodifiableList(segments_);
-            } else {
-                return segmentsBuilder_.getMessageList();
-            }
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public int getSegmentsCount() {
-            if (segmentsBuilder_ == null) {
-                return segments_.size();
-            } else {
-                return segmentsBuilder_.getCount();
-            }
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public datawave.annotation.protobuf.v1.Segment getSegments(int index) {
-            if (segmentsBuilder_ == null) {
-                return segments_.get(index);
-            } else {
-                return segmentsBuilder_.getMessage(index);
-            }
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder setSegments(int index, datawave.annotation.protobuf.v1.Segment value) {
-            if (segmentsBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                ensureSegmentsIsMutable();
-                segments_.set(index, value);
-                onChanged();
-            } else {
-                segmentsBuilder_.setMessage(index, value);
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder setSegments(int index, datawave.annotation.protobuf.v1.Segment.Builder builderForValue) {
-            if (segmentsBuilder_ == null) {
-                ensureSegmentsIsMutable();
-                segments_.set(index, builderForValue.build());
-                onChanged();
-            } else {
-                segmentsBuilder_.setMessage(index, builderForValue.build());
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder addSegments(datawave.annotation.protobuf.v1.Segment value) {
-            if (segmentsBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                ensureSegmentsIsMutable();
-                segments_.add(value);
-                onChanged();
-            } else {
-                segmentsBuilder_.addMessage(value);
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder addSegments(int index, datawave.annotation.protobuf.v1.Segment value) {
-            if (segmentsBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                ensureSegmentsIsMutable();
-                segments_.add(index, value);
-                onChanged();
-            } else {
-                segmentsBuilder_.addMessage(index, value);
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder addSegments(datawave.annotation.protobuf.v1.Segment.Builder builderForValue) {
-            if (segmentsBuilder_ == null) {
-                ensureSegmentsIsMutable();
-                segments_.add(builderForValue.build());
-                onChanged();
-            } else {
-                segmentsBuilder_.addMessage(builderForValue.build());
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder addSegments(int index, datawave.annotation.protobuf.v1.Segment.Builder builderForValue) {
-            if (segmentsBuilder_ == null) {
-                ensureSegmentsIsMutable();
-                segments_.add(index, builderForValue.build());
-                onChanged();
-            } else {
-                segmentsBuilder_.addMessage(index, builderForValue.build());
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder addAllSegments(java.lang.Iterable<? extends datawave.annotation.protobuf.v1.Segment> values) {
-            if (segmentsBuilder_ == null) {
-                ensureSegmentsIsMutable();
-                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, segments_);
-                onChanged();
-            } else {
-                segmentsBuilder_.addAllMessages(values);
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder clearSegments() {
-            if (segmentsBuilder_ == null) {
-                segments_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000002);
-                onChanged();
-            } else {
-                segmentsBuilder_.clear();
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public Builder removeSegments(int index) {
-            if (segmentsBuilder_ == null) {
-                ensureSegmentsIsMutable();
-                segments_.remove(index);
-                onChanged();
-            } else {
-                segmentsBuilder_.remove(index);
-            }
-            return this;
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public datawave.annotation.protobuf.v1.Segment.Builder getSegmentsBuilder(int index) {
-            return getSegmentsFieldBuilder().getBuilder(index);
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public datawave.annotation.protobuf.v1.SegmentOrBuilder getSegmentsOrBuilder(int index) {
-            if (segmentsBuilder_ == null) {
-                return segments_.get(index);
-            } else {
-                return segmentsBuilder_.getMessageOrBuilder(index);
-            }
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsOrBuilderList() {
-            if (segmentsBuilder_ != null) {
-                return segmentsBuilder_.getMessageOrBuilderList();
-            } else {
-                return java.util.Collections.unmodifiableList(segments_);
-            }
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public datawave.annotation.protobuf.v1.Segment.Builder addSegmentsBuilder() {
-            return getSegmentsFieldBuilder().addBuilder(datawave.annotation.protobuf.v1.Segment.getDefaultInstance());
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public datawave.annotation.protobuf.v1.Segment.Builder addSegmentsBuilder(int index) {
-            return getSegmentsFieldBuilder().addBuilder(index, datawave.annotation.protobuf.v1.Segment.getDefaultInstance());
-        }
-
-        /**
-         * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-         */
-        public java.util.List<datawave.annotation.protobuf.v1.Segment.Builder> getSegmentsBuilderList() {
-            return getSegmentsFieldBuilder().getBuilderList();
-        }
-
-        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsFieldBuilder() {
-            if (segmentsBuilder_ == null) {
-                segmentsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder>(
-                                segments_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
-                segments_ = null;
-            }
-            return segmentsBuilder_;
         }
 
         @java.lang.Override

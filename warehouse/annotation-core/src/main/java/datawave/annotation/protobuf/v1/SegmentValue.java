@@ -22,7 +22,6 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
     private SegmentValue() {
         value_ = "";
-        extension_ = "";
     }
 
     @java.lang.Override
@@ -40,6 +39,17 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         return datawave.annotation.protobuf.v1.AnnotationV1.internal_static_datawave_annotation_protobuf_v1_SegmentValue_descriptor;
     }
 
+    @SuppressWarnings({"rawtypes"})
+    @java.lang.Override
+    protected com.google.protobuf.MapField internalGetMapField(int number) {
+        switch (number) {
+            case 3:
+                return internalGetExtension();
+            default:
+                throw new RuntimeException("Invalid map field number: " + number);
+        }
+    }
+
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
         return datawave.annotation.protobuf.v1.AnnotationV1.internal_static_datawave_annotation_protobuf_v1_SegmentValue_fieldAccessorTable
@@ -47,7 +57,6 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                                         datawave.annotation.protobuf.v1.SegmentValue.Builder.class);
     }
 
-    private int bitField0_;
     public static final int VALUE_FIELD_NUMBER = 1;
     private volatile java.lang.Object value_;
 
@@ -112,20 +121,24 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
     }
 
     public static final int EXTENSION_FIELD_NUMBER = 3;
-    private volatile java.lang.Object extension_;
 
-    /**
-     * <pre>
-     * type-specific data
-     * </pre>
-     *
-     * <code>string extension = 3;</code>
-     *
-     * @return Whether the extension field is set.
-     */
-    @java.lang.Override
-    public boolean hasExtension() {
-        return ((bitField0_ & 0x00000001) != 0);
+    private static final class ExtensionDefaultEntryHolder {
+        static final com.google.protobuf.MapEntry<java.lang.String,java.lang.String> defaultEntry = com.google.protobuf.MapEntry.<java.lang.String,java.lang.String> newDefaultInstance(
+                        datawave.annotation.protobuf.v1.AnnotationV1.internal_static_datawave_annotation_protobuf_v1_SegmentValue_ExtensionEntry_descriptor,
+                        com.google.protobuf.WireFormat.FieldType.STRING, "", com.google.protobuf.WireFormat.FieldType.STRING, "");
+    }
+
+    private com.google.protobuf.MapField<java.lang.String,java.lang.String> extension_;
+
+    private com.google.protobuf.MapField<java.lang.String,java.lang.String> internalGetExtension() {
+        if (extension_ == null) {
+            return com.google.protobuf.MapField.emptyMapField(ExtensionDefaultEntryHolder.defaultEntry);
+        }
+        return extension_;
+    }
+
+    public int getExtensionCount() {
+        return internalGetExtension().getMap().size();
     }
 
     /**
@@ -133,21 +146,24 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * type-specific data
      * </pre>
      *
-     * <code>string extension = 3;</code>
-     *
-     * @return The extension.
+     * <code>map&lt;string, string&gt; extension = 3;</code>
+     */
+
+    @java.lang.Override
+    public boolean containsExtension(java.lang.String key) {
+        if (key == null) {
+            throw new java.lang.NullPointerException();
+        }
+        return internalGetExtension().getMap().containsKey(key);
+    }
+
+    /**
+     * Use {@link #getExtensionMap()} instead.
      */
     @java.lang.Override
-    public java.lang.String getExtension() {
-        java.lang.Object ref = extension_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            extension_ = s;
-            return s;
-        }
+    @java.lang.Deprecated
+    public java.util.Map<java.lang.String,java.lang.String> getExtension() {
+        return getExtensionMap();
     }
 
     /**
@@ -155,20 +171,49 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * type-specific data
      * </pre>
      *
-     * <code>string extension = 3;</code>
-     *
-     * @return The bytes for extension.
+     * <code>map&lt;string, string&gt; extension = 3;</code>
      */
     @java.lang.Override
-    public com.google.protobuf.ByteString getExtensionBytes() {
-        java.lang.Object ref = extension_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            extension_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
+
+    public java.util.Map<java.lang.String,java.lang.String> getExtensionMap() {
+        return internalGetExtension().getMap();
+    }
+
+    /**
+     * <pre>
+     * type-specific data
+     * </pre>
+     *
+     * <code>map&lt;string, string&gt; extension = 3;</code>
+     */
+    @java.lang.Override
+
+    public java.lang.String getExtensionOrDefault(java.lang.String key, java.lang.String defaultValue) {
+        if (key == null) {
+            throw new java.lang.NullPointerException();
         }
+        java.util.Map<java.lang.String,java.lang.String> map = internalGetExtension().getMap();
+        return map.containsKey(key) ? map.get(key) : defaultValue;
+    }
+
+    /**
+     * <pre>
+     * type-specific data
+     * </pre>
+     *
+     * <code>map&lt;string, string&gt; extension = 3;</code>
+     */
+    @java.lang.Override
+
+    public java.lang.String getExtensionOrThrow(java.lang.String key) {
+        if (key == null) {
+            throw new java.lang.NullPointerException();
+        }
+        java.util.Map<java.lang.String,java.lang.String> map = internalGetExtension().getMap();
+        if (!map.containsKey(key)) {
+            throw new java.lang.IllegalArgumentException();
+        }
+        return map.get(key);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -193,9 +238,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         if (score_ != 0D) {
             output.writeDouble(2, score_);
         }
-        if (((bitField0_ & 0x00000001) != 0)) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 3, extension_);
-        }
+        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetExtension(), ExtensionDefaultEntryHolder.defaultEntry, 3);
         getUnknownFields().writeTo(output);
     }
 
@@ -212,8 +255,10 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         if (score_ != 0D) {
             size += com.google.protobuf.CodedOutputStream.computeDoubleSize(2, score_);
         }
-        if (((bitField0_ & 0x00000001) != 0)) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, extension_);
+        for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetExtension().getMap().entrySet()) {
+            com.google.protobuf.MapEntry<java.lang.String,java.lang.String> extension__ = ExtensionDefaultEntryHolder.defaultEntry.newBuilderForType()
+                            .setKey(entry.getKey()).setValue(entry.getValue()).build();
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, extension__);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -234,12 +279,8 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             return false;
         if (java.lang.Double.doubleToLongBits(getScore()) != java.lang.Double.doubleToLongBits(other.getScore()))
             return false;
-        if (hasExtension() != other.hasExtension())
+        if (!internalGetExtension().equals(other.internalGetExtension()))
             return false;
-        if (hasExtension()) {
-            if (!getExtension().equals(other.getExtension()))
-                return false;
-        }
         if (!getUnknownFields().equals(other.getUnknownFields()))
             return false;
         return true;
@@ -256,9 +297,9 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         hash = (53 * hash) + getValue().hashCode();
         hash = (37 * hash) + SCORE_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getScore()));
-        if (hasExtension()) {
+        if (!internalGetExtension().getMap().isEmpty()) {
             hash = (37 * hash) + EXTENSION_FIELD_NUMBER;
-            hash = (53 * hash) + getExtension().hashCode();
+            hash = (53 * hash) + internalGetExtension().hashCode();
         }
         hash = (29 * hash) + getUnknownFields().hashCode();
         memoizedHashCode = hash;
@@ -358,6 +399,26 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             return datawave.annotation.protobuf.v1.AnnotationV1.internal_static_datawave_annotation_protobuf_v1_SegmentValue_descriptor;
         }
 
+        @SuppressWarnings({"rawtypes"})
+        protected com.google.protobuf.MapField internalGetMapField(int number) {
+            switch (number) {
+                case 3:
+                    return internalGetExtension();
+                default:
+                    throw new RuntimeException("Invalid map field number: " + number);
+            }
+        }
+
+        @SuppressWarnings({"rawtypes"})
+        protected com.google.protobuf.MapField internalGetMutableMapField(int number) {
+            switch (number) {
+                case 3:
+                    return internalGetMutableExtension();
+                default:
+                    throw new RuntimeException("Invalid map field number: " + number);
+            }
+        }
+
         @java.lang.Override
         protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
             return datawave.annotation.protobuf.v1.AnnotationV1.internal_static_datawave_annotation_protobuf_v1_SegmentValue_fieldAccessorTable
@@ -382,8 +443,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
             score_ = 0D;
 
-            extension_ = "";
-            bitField0_ = (bitField0_ & ~0x00000001);
+            internalGetMutableExtension().clear();
             return this;
         }
 
@@ -410,14 +470,10 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         public datawave.annotation.protobuf.v1.SegmentValue buildPartial() {
             datawave.annotation.protobuf.v1.SegmentValue result = new datawave.annotation.protobuf.v1.SegmentValue(this);
             int from_bitField0_ = bitField0_;
-            int to_bitField0_ = 0;
             result.value_ = value_;
             result.score_ = score_;
-            if (((from_bitField0_ & 0x00000001) != 0)) {
-                to_bitField0_ |= 0x00000001;
-            }
-            result.extension_ = extension_;
-            result.bitField0_ = to_bitField0_;
+            result.extension_ = internalGetExtension();
+            result.extension_.makeImmutable();
             onBuilt();
             return result;
         }
@@ -472,11 +528,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             if (other.getScore() != 0D) {
                 setScore(other.getScore());
             }
-            if (other.hasExtension()) {
-                bitField0_ |= 0x00000001;
-                extension_ = other.extension_;
-                onChanged();
-            }
+            internalGetMutableExtension().mergeFrom(other.internalGetExtension());
             this.mergeUnknownFields(other.getUnknownFields());
             onChanged();
             return this;
@@ -512,8 +564,9 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                             break;
                         } // case 17
                         case 26: {
-                            extension_ = input.readStringRequireUtf8();
-                            bitField0_ |= 0x00000001;
+                            com.google.protobuf.MapEntry<java.lang.String,java.lang.String> extension__ = input
+                                            .readMessage(ExtensionDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
+                            internalGetMutableExtension().getMutableMap().put(extension__.getKey(), extension__.getValue());
                             break;
                         } // case 26
                         default: {
@@ -686,81 +739,29 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             return this;
         }
 
-        private java.lang.Object extension_ = "";
+        private com.google.protobuf.MapField<java.lang.String,java.lang.String> extension_;
 
-        /**
-         * <pre>
-         * type-specific data
-         * </pre>
-         *
-         * <code>string extension = 3;</code>
-         *
-         * @return Whether the extension field is set.
-         */
-        public boolean hasExtension() {
-            return ((bitField0_ & 0x00000001) != 0);
+        private com.google.protobuf.MapField<java.lang.String,java.lang.String> internalGetExtension() {
+            if (extension_ == null) {
+                return com.google.protobuf.MapField.emptyMapField(ExtensionDefaultEntryHolder.defaultEntry);
+            }
+            return extension_;
         }
 
-        /**
-         * <pre>
-         * type-specific data
-         * </pre>
-         *
-         * <code>string extension = 3;</code>
-         *
-         * @return The extension.
-         */
-        public java.lang.String getExtension() {
-            java.lang.Object ref = extension_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                extension_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * type-specific data
-         * </pre>
-         *
-         * <code>string extension = 3;</code>
-         *
-         * @return The bytes for extension.
-         */
-        public com.google.protobuf.ByteString getExtensionBytes() {
-            java.lang.Object ref = extension_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                extension_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * type-specific data
-         * </pre>
-         *
-         * <code>string extension = 3;</code>
-         *
-         * @param value
-         *            The extension to set.
-         * @return This builder for chaining.
-         */
-        public Builder setExtension(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            bitField0_ |= 0x00000001;
-            extension_ = value;
+        private com.google.protobuf.MapField<java.lang.String,java.lang.String> internalGetMutableExtension() {
             onChanged();
-            return this;
+            ;
+            if (extension_ == null) {
+                extension_ = com.google.protobuf.MapField.newMapField(ExtensionDefaultEntryHolder.defaultEntry);
+            }
+            if (!extension_.isMutable()) {
+                extension_ = extension_.copy();
+            }
+            return extension_;
+        }
+
+        public int getExtensionCount() {
+            return internalGetExtension().getMap().size();
         }
 
         /**
@@ -768,14 +769,78 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>string extension = 3;</code>
-         *
-         * @return This builder for chaining.
+         * <code>map&lt;string, string&gt; extension = 3;</code>
          */
+
+        @java.lang.Override
+        public boolean containsExtension(java.lang.String key) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            return internalGetExtension().getMap().containsKey(key);
+        }
+
+        /**
+         * Use {@link #getExtensionMap()} instead.
+         */
+        @java.lang.Override
+        @java.lang.Deprecated
+        public java.util.Map<java.lang.String,java.lang.String> getExtension() {
+            return getExtensionMap();
+        }
+
+        /**
+         * <pre>
+         * type-specific data
+         * </pre>
+         *
+         * <code>map&lt;string, string&gt; extension = 3;</code>
+         */
+        @java.lang.Override
+
+        public java.util.Map<java.lang.String,java.lang.String> getExtensionMap() {
+            return internalGetExtension().getMap();
+        }
+
+        /**
+         * <pre>
+         * type-specific data
+         * </pre>
+         *
+         * <code>map&lt;string, string&gt; extension = 3;</code>
+         */
+        @java.lang.Override
+
+        public java.lang.String getExtensionOrDefault(java.lang.String key, java.lang.String defaultValue) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            java.util.Map<java.lang.String,java.lang.String> map = internalGetExtension().getMap();
+            return map.containsKey(key) ? map.get(key) : defaultValue;
+        }
+
+        /**
+         * <pre>
+         * type-specific data
+         * </pre>
+         *
+         * <code>map&lt;string, string&gt; extension = 3;</code>
+         */
+        @java.lang.Override
+
+        public java.lang.String getExtensionOrThrow(java.lang.String key) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            java.util.Map<java.lang.String,java.lang.String> map = internalGetExtension().getMap();
+            if (!map.containsKey(key)) {
+                throw new java.lang.IllegalArgumentException();
+            }
+            return map.get(key);
+        }
+
         public Builder clearExtension() {
-            bitField0_ = (bitField0_ & ~0x00000001);
-            extension_ = getDefaultInstance().getExtension();
-            onChanged();
+            internalGetMutableExtension().getMutableMap().clear();
             return this;
         }
 
@@ -784,20 +849,53 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>string extension = 3;</code>
-         *
-         * @param value
-         *            The bytes for extension to set.
-         * @return This builder for chaining.
+         * <code>map&lt;string, string&gt; extension = 3;</code>
          */
-        public Builder setExtensionBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
+
+        public Builder removeExtension(java.lang.String key) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
             }
-            checkByteStringIsUtf8(value);
-            bitField0_ |= 0x00000001;
-            extension_ = value;
-            onChanged();
+            internalGetMutableExtension().getMutableMap().remove(key);
+            return this;
+        }
+
+        /**
+         * Use alternate mutation accessors instead.
+         */
+        @java.lang.Deprecated
+        public java.util.Map<java.lang.String,java.lang.String> getMutableExtension() {
+            return internalGetMutableExtension().getMutableMap();
+        }
+
+        /**
+         * <pre>
+         * type-specific data
+         * </pre>
+         *
+         * <code>map&lt;string, string&gt; extension = 3;</code>
+         */
+        public Builder putExtension(java.lang.String key, java.lang.String value) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            if (value == null) {
+                throw new java.lang.NullPointerException();
+            }
+            internalGetMutableExtension().getMutableMap().put(key, value);
+            return this;
+        }
+
+        /**
+         * <pre>
+         * type-specific data
+         * </pre>
+         *
+         * <code>map&lt;string, string&gt; extension = 3;</code>
+         */
+
+        public Builder putAllExtension(java.util.Map<java.lang.String,java.lang.String> values) {
+            internalGetMutableExtension().getMutableMap().putAll(values);
             return this;
         }
 

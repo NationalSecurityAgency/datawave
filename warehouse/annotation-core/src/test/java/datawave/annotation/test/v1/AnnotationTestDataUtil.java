@@ -10,8 +10,8 @@ import java.util.Map;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Point;
-import datawave.annotation.protobuf.v1.PointList;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.protobuf.v1.TextSpanChars;
 import datawave.annotation.protobuf.v1.TimeSpanSeconds;
@@ -46,15 +46,19 @@ public class AnnotationTestDataUtil {
     public static Segment generateTestSegment() {
         TimeSpanSeconds time = TimeSpanSeconds.newBuilder().setStartSeconds(0.154).setEndSeconds(0.52).build();
         SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").setScore(.21f).build();
-        Segment segment = Segment.newBuilder().addSegmentValue(segmentValue).setTime(time).build();
+        SegmentBoundary bounds = SegmentBoundary.newBuilder().setTimeSpan(time).build();
+        Segment segment = Segment.newBuilder().addValues(segmentValue).setBoundary(bounds).build();
         return injectBoundaryType(segment);
     }
 
     public static Segment generateMultiTestSegment() {
         TimeSpanSeconds time = TimeSpanSeconds.newBuilder().setStartSeconds(0.154).setEndSeconds(0.52).build();
         SegmentValue segmentValueOne = SegmentValue.newBuilder().setValue("cow").setScore(.235f).build();
-        SegmentValue segmentValueTwo = SegmentValue.newBuilder().setValue("horse").setScore(.21f).setExtension("animal").build();
-        Segment segment = Segment.newBuilder().addSegmentValue(segmentValueOne).addSegmentValue(segmentValueTwo).setTime(time).build();
+        Map<String,String> extension = new HashMap<>();
+        extension.put("objectType", "animal");
+        SegmentValue segmentValueTwo = SegmentValue.newBuilder().setValue("horse").setScore(.21f).putAllExtension(extension).build();
+        SegmentBoundary bounds = SegmentBoundary.newBuilder().setTimeSpan(time).build();
+        Segment segment = Segment.newBuilder().addValues(segmentValueOne).addValues(segmentValueTwo).setBoundary(bounds).build();
         return injectBoundaryType(segment);
     }
 
@@ -110,9 +114,11 @@ public class AnnotationTestDataUtil {
         // generate a boundary of 1 second of duration every 10 seconds
         for (int i = 0; i < 100; i += 10) {
             TimeSpanSeconds timeSpan = TimeSpanSeconds.newBuilder().setStartSeconds(i).setEndSeconds(i + 5).build();
+            SegmentBoundary bounds = SegmentBoundary.newBuilder().setTimeSpan(timeSpan).build();
+
             SegmentValue valueOne = SegmentValue.newBuilder().setValue(words[wordPos]).setScore(.235f).build();
             SegmentValue valueTwo = SegmentValue.newBuilder().setValue(altWords[wordPos]).setScore(.21f).build();
-            Segment segment = Segment.newBuilder().setTime(timeSpan).addSegmentValue(valueOne).addSegmentValue(valueTwo).build();
+            Segment segment = Segment.newBuilder().setBoundary(bounds).addValues(valueOne).addValues(valueTwo).build();
             segments.add(segment);
 
             // cycle through words
@@ -133,8 +139,10 @@ public class AnnotationTestDataUtil {
 
             // character offsets
             TextSpanChars charSpan = TextSpanChars.newBuilder().setStartCharacter(start).setEndCharacter(end).build();
+            SegmentBoundary bounds = SegmentBoundary.newBuilder().setCharacterSpan(charSpan).build();
+
             SegmentValue valueOne = SegmentValue.newBuilder().setValue(word).setScore(1.0f).build();
-            Segment segment = Segment.newBuilder().setCharacters(charSpan).addSegmentValue(valueOne).build();
+            Segment segment = Segment.newBuilder().setBoundary(bounds).addValues(valueOne).build();
             segments.add(segment);
 
             start = end + 1;
@@ -154,12 +162,14 @@ public class AnnotationTestDataUtil {
         for (int i = 0; i < objects.length; i++) {
             Point topLeft = Point.newBuilder().setLabel("topLeft").setX(upperLeft[i][0]).setY(upperLeft[i][1]).build();
             Point bottomRight = Point.newBuilder().setLabel("bottomRight").setX(lowerRight[i][0]).setY(lowerRight[i][1]).build();
-            PointList rectangle = PointList.newBuilder().addPoint(topLeft).addPoint(bottomRight).build();
-            Segment.Builder segmentBuilder = Segment.newBuilder().setPointList(rectangle);
+            SegmentBoundary bounds = SegmentBoundary.newBuilder().addPoints(topLeft).addPoints(bottomRight).build();
+            Segment.Builder segmentBuilder = Segment.newBuilder().setBoundary(bounds);
 
-            segmentBuilder.addSegmentValue(SegmentValue.newBuilder().setValue(objects[i]).setScore(.97f).setExtension(model[i]).build());
+            Map<String,String> extension = new HashMap<>();
+            extension.put("version", model[i]);
+            segmentBuilder.addValues(SegmentValue.newBuilder().setValue(objects[i]).setScore(.97f).putAllExtension(extension).build());
             if (!altObjects[i].isEmpty()) {
-                segmentBuilder.addSegmentValue(SegmentValue.newBuilder().setValue(altObjects[i]).setScore(.86f).setExtension(model[i]).build());
+                segmentBuilder.addValues(SegmentValue.newBuilder().setValue(altObjects[i]).setScore(.86f).putAllExtension(extension).build());
             }
             segments.add(segmentBuilder.build());
         }

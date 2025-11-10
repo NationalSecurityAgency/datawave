@@ -13,7 +13,7 @@ import datawave.annotation.protobuf.v1.Annotation;
 
 /** Implements a custom Jackson Annotation serializer that simply uses the native Protobuf JsonFormat.Printer */
 public class JacksonAnnotationSerializer extends JsonSerializer<Annotation> {
-    private static final JsonFormat.Printer protobufJsonPrinter = JsonFormat.printer();
+    private static final JsonFormat.Printer protobufJsonPrinter = AnnotationJsonUtils.getPrinter();
 
     @Override
     public void serialize(Annotation annotation, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {

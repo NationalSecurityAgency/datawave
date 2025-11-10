@@ -1,5 +1,6 @@
 package datawave.annotation.test.v1;
 
+import static datawave.annotation.util.v1.AnnotationUtils.getBoundaryCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,10 +14,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
-
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 
 /** Utility methods for asserting annotation identity in unit tests */
@@ -110,20 +110,15 @@ public class AnnotationAssertions {
             errorMessages.add("Mismatched segment id's: expected " + expected.getSegmentId() + " result: " + result.getSegmentId());
         }
 
-        if (!expected.getAnnotationId().equals(result.getAnnotationId())) {
-            errorMessages.add("Mismatched annotation id's: expected " + expected.getAnnotationId() + " result: " + result.getAnnotationId());
-        }
-
-        List<SegmentValue> expectedData = expected.getSegmentValueList();
-        List<SegmentValue> resultData = result.getSegmentValueList();
+        List<SegmentValue> expectedData = expected.getValuesList();
+        List<SegmentValue> resultData = result.getValuesList();
 
         if (expectedData.size() != resultData.size()) {
             errorMessages.add("Mismatched Value counts: expected " + expectedData.size() + " result: " + resultData.size());
         }
 
-        compareSegmentBoundaries(expected, result, errorMessages);
+        compareSegmentBoundaries(expected.getBoundary(), result.getBoundary(), errorMessages);
         compareSegmentValues(expectedData, resultData, errorMessages);
-
     }
 
     /**
@@ -137,30 +132,30 @@ public class AnnotationAssertions {
      * @param errorMessages
      *            results stored here.
      */
-    public static void compareSegmentBoundaries(Segment expected, Segment result, List<String> errorMessages) {
+    public static void compareSegmentBoundaries(SegmentBoundary expected, SegmentBoundary result, List<String> errorMessages) {
 
         if (!expected.getBoundaryType().equals(result.getBoundaryType())) {
             errorMessages.add("Mismatched boundary types: expected " + expected.getBoundaryType() + " result: " + result.getBoundaryType());
 
         }
 
-        if (!expected.getBoundaryCase().equals(result.getBoundaryCase())) {
-            errorMessages.add("Mismatched boundary case: expected " + expected.getBoundaryCase() + " result: " + result.getBoundaryCase());
+        if (!getBoundaryCase(expected).equals(getBoundaryCase(result))) {
+            errorMessages.add("Mismatched boundary case: expected " + getBoundaryCase(expected) + " result: " + getBoundaryCase(result));
         } else {
-            switch (expected.getBoundaryCase()) {
-                case TIME:
-                    if (!expected.getTime().equals(result.getTime())) {
-                        errorMessages.add("Mismatched time boundary: expected " + expected.getTime() + " result: " + result.getTime());
+            switch (getBoundaryCase(expected)) {
+                case TIME_SPAN:
+                    if (!expected.getTimeSpan().equals(result.getTimeSpan())) {
+                        errorMessages.add("Mismatched time boundary: expected " + expected.getTimeSpan() + " result: " + result.getTimeSpan());
                     }
                     break;
-                case CHARACTERS:
-                    if (!expected.getCharacters().equals(result.getCharacters())) {
-                        errorMessages.add("Mismatched text boundary: expected " + expected.getCharacters() + " result: " + result.getCharacters());
+                case CHARACTER_SPAN:
+                    if (!expected.getCharacterSpan().equals(result.getCharacterSpan())) {
+                        errorMessages.add("Mismatched text boundary: expected " + expected.getCharacterSpan() + " result: " + result.getCharacterSpan());
                     }
                     break;
-                case POINTLIST:
-                    if (!expected.getPointList().equals(result.getPointList())) {
-                        errorMessages.add("Mismatched rectangle boundary: expected " + expected.getPointList() + " result: " + result.getPointList());
+                case POINTS:
+                    if (!expected.getPointsList().equals(result.getPointsList())) {
+                        errorMessages.add("Mismatched rectangle boundary: expected " + expected.getPointsList() + " result: " + result.getPointsList());
                     }
                     break;
                 case ALL:
@@ -168,7 +163,7 @@ public class AnnotationAssertions {
                     // no error, safe to ignore.
                     break;
                 default:
-                    throw new IllegalArgumentException("Encountered unexpected boundary case: " + expected.getBoundaryCase());
+                    throw new IllegalArgumentException("Encountered unexpected boundary case: " + getBoundaryCase(expected));
             }
         }
     }
@@ -212,10 +207,13 @@ public class AnnotationAssertions {
      */
     public static String valueToString(SegmentValue segmentValue) {
         StringBuilder b = new StringBuilder().append(segmentValue.getValue());
-        if (!StringUtils.isEmpty(segmentValue.getExtension())) {
-            b.append("-").append(segmentValue.getExtension());
+        Map<String,String> extensionMap = segmentValue.getExtensionMap();
+        if (!extensionMap.isEmpty()) {
+            for (Map.Entry<String,String> e : extensionMap.entrySet()) {
+                b.append('-').append(e.getKey()).append(':').append(e.getValue());
+            }
         }
-        b.append(":").append(segmentValue.getScore());
+        b.append("--").append(segmentValue.getScore());
         return b.toString();
     }
 }
