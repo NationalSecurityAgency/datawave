@@ -89,7 +89,7 @@ public abstract class KryoDocumentSerDeTest {
             int max = 1_000_000;
             for (int i = 1; i <= max; i++) {
                 byte[] bytes = serializer.serialize(d);
-                assertTrue(450 < bytes.length && bytes.length <= 460);
+                assertTrue(460 < bytes.length && bytes.length <= 465, "actual size: " + bytes.length);
             }
         }
     }

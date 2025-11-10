@@ -146,7 +146,7 @@ public class DocumentTest {
             Attribute<?> attr = createAttribute("LC", "value-" + i);
             d.put("LC", attr);
         }
-        roundTrip(MAX_ITERATIONS, 188006);
+        roundTrip(MAX_ITERATIONS, 198006);
     }
 
     @Test

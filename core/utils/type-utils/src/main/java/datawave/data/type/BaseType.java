@@ -13,7 +13,7 @@ import datawave.webservice.query.data.ObjectSizeOf;
 
 public class BaseType<T extends Comparable<T> & Serializable> implements Serializable, Type<T>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 5354270429891763693L;
+    private static final long serialVersionUID = -3747720721391071135L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + Sizer.REFERENCE + Sizer.REFERENCE;
 
     protected T delegate;
@@ -34,7 +34,8 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
     }
 
     public void setDelegateFromString(String in) {
-        setDelegate(normalizer.denormalize(in));
+        T denormalized = normalizer.denormalize(in);
+        setDelegate(denormalized);
     }
 
     public void setDelegate(T delegate) {
@@ -91,7 +92,8 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
 
     @Override
     public void normalizeAndSetNormalizedValue(T valueToNormalize) {
-        setNormalizedValue(normalizer.normalizeDelegateType(valueToNormalize));
+        String normalized = normalizer.normalizeDelegateType(valueToNormalize);
+        setNormalizedValue(normalized);
     }
 
     public void validate() {
@@ -179,19 +181,45 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
 
     @Override
     public void write(Kryo kryo, Output output) {
-        output.writeString(getDelegateAsString());
+        boolean equivalent = normalizedValue.equals(delegate);
+        output.writeBoolean(equivalent);
+        output.writeString(normalizedValue);
+        if (!equivalent) {
+            // write the delegate if not equivalent to the normalized value
+            String delegateString = getDelegateAsString();
+            output.writeString(delegateString);
+        }
     }
 
     @Override
     public void read(Kryo kryo, Input input) {
-        String delegateString = input.readString();
+        boolean equivalent = input.readBoolean();
+        String normalizedValue = input.readString();
+        if (equivalent) {
+            setNormalizedValue(normalizedValue);
+            setDelegateWithoutNormalization(normalizedValue);
+        } else {
+            String delegateString = input.readString();
+            setNormalizedValue(normalizedValue);
+            setDelegateWithoutNormalization(delegateString);
+        }
+    }
+
+    /**
+     * Set the delegate from a string without using the normalizer
+     *
+     * @param delegateString
+     *            the delegate's normalized string value
+     */
+    @SuppressWarnings("unchecked")
+    protected void setDelegateWithoutNormalization(String delegateString) {
         try {
-            setDelegateFromString(delegateString);
+            this.delegate = (T) delegateString;
         } catch (Exception e) {
             // if there was some problem with setting the delegate for the specific Type, then
             // set the normalized value to the input string. This effectively mimics falling back
             // to a NoOpType
-            setNormalizedValue(delegateString);
+            this.normalizedValue = delegateString;
         }
     }
 }

@@ -37,6 +37,8 @@ public class TypeAttributeTest extends AttributeTest {
         output.writeInt(0, true);
         output.writeString("MrMcDoesn'tExist");
         output.writeBoolean(false); // write metadata when not set
+        output.writeBoolean(false); // normalized value and delegate not equivalent
+        output.writeString("normalized value");
         output.writeString("delegate value as string");
         output.writeBoolean(false); // to keep false
         output.writeInt(12, true); // hash code
@@ -48,6 +50,7 @@ public class TypeAttributeTest extends AttributeTest {
 
         assertInstanceOf(TypeAttribute.class, type);
         assertInstanceOf(NoOpType.class, type.getType());
+        assertEquals("normalized value", type.getType().getNormalizedValue());
         assertEquals("delegate value as string", type.getData().toString());
     }
 }
