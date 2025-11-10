@@ -24,7 +24,7 @@ public class SimpleAnnotationRecordReaderTest {
 
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
-        conf.addResource(ClassLoader.getSystemResource("config/ingest/annotation-ingest-config.xml"));
+        conf.addResource(ClassLoader.getSystemResource("config/test-annotation-ingest-config.xml"));
 
         URL data = SimpleAnnotationRecordReaderTest.class.getResource(inputData);
         Assert.assertNotNull(data);

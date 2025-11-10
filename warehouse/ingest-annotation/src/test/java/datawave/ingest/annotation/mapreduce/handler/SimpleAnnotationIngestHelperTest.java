@@ -36,7 +36,7 @@ public class SimpleAnnotationIngestHelperTest {
     public void setupIngestHelper() {
         conf = new Configuration();
         conf.addResource(this.getClass().getClassLoader().getResource("config/all-config.xml"));
-        conf.addResource(this.getClass().getClassLoader().getResource("config/ingest/annotation-ingest-config.xml"));
+        conf.addResource(this.getClass().getClassLoader().getResource("config/test-annotation-ingest-config.xml"));
 
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
@@ -72,7 +72,7 @@ public class SimpleAnnotationIngestHelperTest {
         Assert.assertTrue(reader.nextKeyValue());
         RawRecordContainer e = reader.getEvent();
 
-        Assert.assertEquals("annotation", e.getDataType().outputName());
+        Assert.assertEquals("myannotation", e.getDataType().outputName());
         Assert.assertNotNull(e.getRawData());
         Assert.assertFalse(e.fatalError());
 
@@ -83,7 +83,7 @@ public class SimpleAnnotationIngestHelperTest {
         Assert.assertTrue(reader.nextKeyValue());
         e = reader.getEvent();
 
-        Assert.assertEquals("annotation", e.getDataType().outputName());
+        Assert.assertEquals("myannotation", e.getDataType().outputName());
         Assert.assertNotNull(e.getRawData());
         Assert.assertFalse(e.fatalError());
 
