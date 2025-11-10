@@ -48,8 +48,8 @@ public class AnnotationUtils {
      *            the annotation to enrich
      * @return the enriched version of the annotation, or the same annotation of the segment list is empty.
      */
-    public static Annotation addSegmentBoundaryTypes(Annotation a) {
-        if (!a.getSegmentsList().isEmpty()) {
+    public static Annotation injectSegmentBoundaryTypes(Annotation a) {
+        if (a.getSegmentsList().isEmpty()) {
             return a;
         }
         Annotation.Builder b = a.toBuilder().clearSegments();

@@ -87,7 +87,10 @@ public class JacksonJsonSerializationTest {
         Path p = Path.of("src/test/resources/annotation_baseline.json");
         PrintWriter out = new PrintWriter(new FileWriter(p.toFile()));
         //@formatter:off
+        // boundary type and segment id generation are usually taken care of by the dao layer, we add them
+        // here to create a simulation of that behavior.
         List<Annotation> testAnnotations = AnnotationTestDataUtil.generateManyTestAnnotations().stream()
+                .map(AnnotationUtils::injectSegmentBoundaryTypes)
                 .map(AnnotationUtils::injectAnnotationAndSegmentIds)
                 .collect(Collectors.toList());
         //@formatter:on

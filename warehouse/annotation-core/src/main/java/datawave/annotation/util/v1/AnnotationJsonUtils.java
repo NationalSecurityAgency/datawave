@@ -56,7 +56,7 @@ public class AnnotationJsonUtils {
      *             if there's a problem with serialization.
      */
     public static String annotationToJsonWithBoundaryTypesAndIds(Annotation a) throws InvalidProtocolBufferException {
-        return PRINTER.print(AnnotationUtils.injectAnnotationAndSegmentIds(AnnotationUtils.addSegmentBoundaryTypes(a)));
+        return PRINTER.print(AnnotationUtils.injectAnnotationAndSegmentIds(AnnotationUtils.injectSegmentBoundaryTypes(a)));
     }
 
     /**

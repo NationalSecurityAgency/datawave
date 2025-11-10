@@ -8,6 +8,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -23,6 +24,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -38,6 +40,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -53,6 +56,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -68,6 +72,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -83,6 +88,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -98,6 +104,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -113,6 +120,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -128,6 +136,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -143,6 +152,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -174,6 +184,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -186,6 +197,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -198,6 +210,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -210,6 +223,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -222,6 +236,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -234,6 +249,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -246,6 +262,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -258,6 +275,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -286,6 +304,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -312,6 +331,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -338,6 +358,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -358,6 +379,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -384,6 +406,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -404,6 +427,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -446,6 +470,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -461,6 +486,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -476,6 +502,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -491,6 +518,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -506,6 +534,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -521,6 +550,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -536,6 +566,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -551,6 +582,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -566,6 +598,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -581,6 +614,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -612,6 +646,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -624,6 +659,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -636,6 +672,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -648,6 +685,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -660,6 +698,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -672,6 +711,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -684,6 +724,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -696,6 +737,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -724,6 +766,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -750,6 +793,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -776,6 +820,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -796,6 +841,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -822,6 +868,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -842,6 +889,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -884,6 +932,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -899,6 +948,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -914,6 +964,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -929,6 +980,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -944,6 +996,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -959,6 +1012,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -974,6 +1028,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -989,6 +1044,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -1004,6 +1060,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -1019,6 +1076,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -1050,6 +1108,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -1062,6 +1121,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -1074,6 +1134,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -1086,6 +1147,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -1098,6 +1160,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -1110,6 +1173,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -1122,6 +1186,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -1134,6 +1199,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -1162,6 +1228,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -1188,6 +1255,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -1214,6 +1282,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -1234,6 +1303,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -1260,6 +1330,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -1280,6 +1351,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -1322,6 +1394,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -1337,6 +1410,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -1352,6 +1426,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -1367,6 +1442,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -1382,6 +1458,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -1397,6 +1474,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -1412,6 +1490,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -1427,6 +1506,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -1442,6 +1522,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -1457,6 +1538,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -1488,6 +1570,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -1500,6 +1583,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -1512,6 +1596,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -1524,6 +1609,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -1536,6 +1622,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -1548,6 +1635,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -1560,6 +1648,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -1572,6 +1661,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -1600,6 +1690,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -1626,6 +1717,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -1652,6 +1744,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -1672,6 +1765,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -1698,6 +1792,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -1718,6 +1813,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -1760,6 +1856,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -1775,6 +1872,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -1790,6 +1888,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -1805,6 +1904,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -1820,6 +1920,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -1835,6 +1936,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -1850,6 +1952,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -1865,6 +1968,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -1880,6 +1984,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -1895,6 +2000,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -1926,6 +2032,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -1938,6 +2045,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -1950,6 +2058,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -1962,6 +2071,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -1974,6 +2084,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -1986,6 +2097,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -1998,6 +2110,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -2010,6 +2123,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -2038,6 +2152,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -2064,6 +2179,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -2090,6 +2206,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -2110,6 +2227,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -2136,6 +2254,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -2156,6 +2275,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -2198,6 +2318,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -2213,6 +2334,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -2228,6 +2350,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -2243,6 +2366,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -2258,6 +2382,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -2273,6 +2398,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -2288,6 +2414,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -2303,6 +2430,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -2318,6 +2446,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -2333,6 +2462,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -2364,6 +2494,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -2376,6 +2507,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -2388,6 +2520,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -2400,6 +2533,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -2412,6 +2546,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -2424,6 +2559,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -2436,6 +2572,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -2448,6 +2585,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -2476,6 +2614,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -2502,6 +2641,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -2528,6 +2668,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -2548,6 +2689,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -2574,6 +2716,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -2594,6 +2737,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -2636,6 +2780,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -2651,6 +2796,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -2666,6 +2812,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -2681,6 +2828,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -2696,6 +2844,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -2711,6 +2860,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -2726,6 +2876,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -2741,6 +2892,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -2756,6 +2908,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -2771,6 +2924,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -2802,6 +2956,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -2814,6 +2969,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -2826,6 +2982,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -2838,6 +2995,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -2850,6 +3008,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -2862,6 +3021,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -2874,6 +3034,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -2886,6 +3047,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -2914,6 +3076,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -2940,6 +3103,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -2966,6 +3130,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -2986,6 +3151,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -3012,6 +3178,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -3032,6 +3199,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -3074,6 +3242,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -3089,6 +3258,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -3104,6 +3274,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -3119,6 +3290,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -3134,6 +3306,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -3149,6 +3322,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -3164,6 +3338,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -3179,6 +3354,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -3194,6 +3370,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -3209,6 +3386,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -3240,6 +3418,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -3252,6 +3431,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -3264,6 +3444,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -3276,6 +3457,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -3288,6 +3470,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -3300,6 +3483,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -3312,6 +3496,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -3324,6 +3509,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -3352,6 +3538,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -3378,6 +3565,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -3404,6 +3592,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -3424,6 +3613,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -3450,6 +3640,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -3470,6 +3661,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
@@ -3512,6 +3704,7 @@
     "segments": [{
       "segmentId": "48430fa7",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 0.0,
           "endSeconds": 5.0
@@ -3527,6 +3720,7 @@
     }, {
       "segmentId": "d6a4a0a8",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 10.0,
           "endSeconds": 15.0
@@ -3542,6 +3736,7 @@
     }, {
       "segmentId": "fcfd567e",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 20.0,
           "endSeconds": 25.0
@@ -3557,6 +3752,7 @@
     }, {
       "segmentId": "e7b29c3d",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 30.0,
           "endSeconds": 35.0
@@ -3572,6 +3768,7 @@
     }, {
       "segmentId": "0b07d196",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 40.0,
           "endSeconds": 45.0
@@ -3587,6 +3784,7 @@
     }, {
       "segmentId": "d180911c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 50.0,
           "endSeconds": 55.0
@@ -3602,6 +3800,7 @@
     }, {
       "segmentId": "c0200ae5",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 60.0,
           "endSeconds": 65.0
@@ -3617,6 +3816,7 @@
     }, {
       "segmentId": "b37d7788",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 70.0,
           "endSeconds": 75.0
@@ -3632,6 +3832,7 @@
     }, {
       "segmentId": "1a8d39ae",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 80.0,
           "endSeconds": 85.0
@@ -3647,6 +3848,7 @@
     }, {
       "segmentId": "f9a5d27c",
       "boundary": {
+        "boundaryType": "TIME_SPAN",
         "timeSpan": {
           "startSeconds": 90.0,
           "endSeconds": 95.0
@@ -3678,6 +3880,7 @@
     "segments": [{
       "segmentId": "b5c1c16a",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "0",
           "endCharacter": "3"
@@ -3690,6 +3893,7 @@
     }, {
       "segmentId": "f546a3bd",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "4",
           "endCharacter": "9"
@@ -3702,6 +3906,7 @@
     }, {
       "segmentId": "f9606465",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "10",
           "endCharacter": "15"
@@ -3714,6 +3919,7 @@
     }, {
       "segmentId": "4042cc17",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "16",
           "endCharacter": "19"
@@ -3726,6 +3932,7 @@
     }, {
       "segmentId": "6076566c",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "20",
           "endCharacter": "26"
@@ -3738,6 +3945,7 @@
     }, {
       "segmentId": "ed265b8d",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "27",
           "endCharacter": "30"
@@ -3750,6 +3958,7 @@
     }, {
       "segmentId": "79da319f",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "31",
           "endCharacter": "37"
@@ -3762,6 +3971,7 @@
     }, {
       "segmentId": "33e5aa59",
       "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
           "startCharacter": "38",
           "endCharacter": "43"
@@ -3790,6 +4000,7 @@
     "segments": [{
       "segmentId": "419a2f43",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 0.0,
           "y": 0.0,
@@ -3816,6 +4027,7 @@
     }, {
       "segmentId": "0f72b45e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 10.0,
           "y": 15.0,
@@ -3842,6 +4054,7 @@
     }, {
       "segmentId": "4dd8940e",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 20.0,
           "y": 20.0,
@@ -3862,6 +4075,7 @@
     }, {
       "segmentId": "9d029996",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 30.0,
           "y": 50.0,
@@ -3888,6 +4102,7 @@
     }, {
       "segmentId": "fdbdb916",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 60.0,
           "y": 70.0,
@@ -3908,6 +4123,7 @@
     }, {
       "segmentId": "210d0c92",
       "boundary": {
+        "boundaryType": "POINTS",
         "points": [{
           "x": 80.0,
           "y": 90.0,
