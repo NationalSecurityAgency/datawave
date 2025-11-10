@@ -20,22 +20,18 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import datawave.core.cache.CaffeineClassCache;
-import datawave.core.cache.ClassCache;
 import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
-    private static final long serialVersionUID = 4677957768640489928L;
+    private static final long serialVersionUID = 6225336487950799972L;
     private static final Logger log = Logger.getLogger(Attributes.class);
     private Set<Attribute<? extends Comparable<?>>> attributes;
     private int _count = 0;
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
-
-    private static final ClassCache classCache = new CaffeineClassCache();
 
     /**
      * Should sizes of documents be tracked
@@ -150,7 +146,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             String attrClassName = WritableUtils.readString(in);
             Class<?> clz = null;
             try {
-                clz = classCache.get(attrClassName);
+                clz = classCache.get().get(attrClassName);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -351,7 +347,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         Class<?> clz;
         try {
             // Get the Class for the name of the class of the concrete Attribute
-            clz = classCache.get(clazzName);
+            clz = classCache.get().get(clazzName);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

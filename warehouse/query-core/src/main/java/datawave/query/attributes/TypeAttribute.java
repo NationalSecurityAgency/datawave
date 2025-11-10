@@ -18,8 +18,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import datawave.core.cache.CaffeineClassCache;
-import datawave.core.cache.ClassCache;
 import datawave.data.type.DatawaveTypeIndex;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -30,15 +28,12 @@ import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
 
-    private static final long serialVersionUID = 7264249641813898860L;
+    private static final long serialVersionUID = -6108667228858778287L;
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
 
-    private static final ClassCache classCache = new CaffeineClassCache();
-
     private Type<T> datawaveType;
 
-    private int hashCode = Integer.MIN_VALUE;
     private String delegateString = null;
 
     protected TypeAttribute() {
@@ -101,7 +96,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
         readMetadata(in);
         if (datawaveType == null) {
-            datawaveType = (Type) new NoOpType();
+            datawaveType = (Type<T>) new NoOpType();
         }
         this.datawaveType.setDelegateFromString(WritableUtils.readString(in));
         this.toKeep = WritableUtils.readVInt(in) != 0;
@@ -126,7 +121,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
 
         if (o instanceof TypeAttribute) {
-            TypeAttribute other = (TypeAttribute) o;
+            TypeAttribute<T> other = (TypeAttribute<T>) o;
             return this.getType().equals(other.getType()) && (0 == this.compareMetadata(other));
         }
 
@@ -190,17 +185,18 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
         super.readMetadata(kryo, input);
         if (datawaveType == null) {
-            datawaveType = (Type) new NoOpType();
+            datawaveType = (Type<T>) new NoOpType();
         }
         this.datawaveType.read(kryo, input);
         this.toKeep = input.readBoolean();
-        this.hashCode = input.readInt(true);
+        this.hashcode = input.readInt(true);
     }
 
+    @SuppressWarnings("unchecked")
     private void setDatawaveType(String datawaveTypeString)
                     throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-        Class<?> clazz = classCache.get(datawaveTypeString);
-        Constructor<Type> constructor = (Constructor<Type>) clazz.getDeclaredConstructor();
+        Class<?> clazz = classCache.get().get(datawaveTypeString);
+        Constructor<Type<T>> constructor = (Constructor<Type<T>>) clazz.getDeclaredConstructor();
         this.datawaveType = constructor.newInstance();
     }
 
@@ -210,8 +206,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
      * @see Attribute#deepCopy()
      */
     @Override
-    public TypeAttribute copy() {
-        return new TypeAttribute(this.getType(), this.getMetadata(), this.isToKeep());
+    public TypeAttribute<T> copy() {
+        return new TypeAttribute<>(this.getType(), this.getMetadata(), this.isToKeep());
     }
 
     @Override

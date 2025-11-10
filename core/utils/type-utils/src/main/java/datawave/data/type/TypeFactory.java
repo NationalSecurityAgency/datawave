@@ -2,9 +2,8 @@ package datawave.data.type;
 
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
 /**
  * TypeFactory that uses an internal loading cache to limit new Type objects
@@ -33,15 +32,12 @@ public class TypeFactory {
      */
     public TypeFactory(int size, int timeout) {
         //  @formatter:off
-        typeCache = CacheBuilder.newBuilder()
+        typeCache = Caffeine.newBuilder()
                         .maximumSize(size)
                         .expireAfterWrite(timeout, TimeUnit.MINUTES)
-                        .build(new CacheLoader<>() {
-                            @Override
-                            public Type<?> load(String className) throws Exception {
-                                Class<?> clazz = Class.forName(className);
-                                return (Type<?>) clazz.getDeclaredConstructor().newInstance();
-                            }
+                        .build(className-> {
+                            Class<?> clazz = Class.forName(className);
+                            return (Type<?>) clazz.getDeclaredConstructor().newInstance();
                         });
         //  @formatter:on
     }
@@ -67,6 +63,6 @@ public class TypeFactory {
      * @return the current cache size
      */
     public long getCacheSize() {
-        return typeCache.size();
+        return typeCache.estimatedSize();
     }
 }
