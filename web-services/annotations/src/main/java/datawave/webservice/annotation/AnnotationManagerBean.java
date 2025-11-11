@@ -42,6 +42,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
@@ -166,7 +167,10 @@ public class AnnotationManagerBean implements AnnotationManager {
             final AccumuloClient client = initializeAccumuloClient();
             final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getVisibilityTransformer(),
                             config.getTimestampTransformer());
-            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getTableName(), annotationSerializer);
+            final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(config.getVisibilityTransformer(),
+                            config.getTimestampTransformer());
+            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationTableName(), config.getAnnotationSourceTableName(),
+                            annotationSerializer, annotationSourceSerializer);
         }
         return annotationDataAccess;
     }

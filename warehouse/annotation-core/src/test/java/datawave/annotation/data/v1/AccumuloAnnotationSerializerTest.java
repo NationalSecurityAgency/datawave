@@ -78,10 +78,10 @@ public class AccumuloAnnotationSerializerTest {
             String[] parts = cq.split("\0");
             assertTrue(parts.length >= 2, "Column qualifier incorrect length");
             String annotationId = parts[0];
-            assertEquals("628b014c", annotationId, "Annotation id mismatch");
+            assertEquals("7a441cdb", annotationId, "Annotation id mismatch");
             if (parts.length == 2) {
                 String segmentId = parts[1];
-                assertEquals("cb693def", segmentId);
+                assertEquals("fa389252", segmentId);
 
                 // the value must be decode-able into SegmentData.
                 Segment segment = Segment.parseFrom(value.get());

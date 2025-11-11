@@ -40,6 +40,15 @@ Each annotation has one or more segments. Each segment is defined by:
   * score - a score for this value, typically a confidence score.
   * extension (optional) - a class of segment, used to group values.
 
+## Annotation Source Table Structure
+
+| Purpose                  | Row      | Column Family  | Column Qualifier | Value |
+|--------------------------|----------|----------------|------------------|-------|
+| Annotation Source Engine | sourceId | engine         | engineValue      | None  |
+| Annotation Source Model  | sourceId | model          | modelValue       | None  |
+| Annotation Source Label  | sourceId | sourceLabel    | sourceLabelValue | None  |
+| Annotation Source Config | sourceId | config         | key (n) value    | None  |
+
 # Protobuf Compiler, Supporting Libraries and Tools
 
 The source code for the generated source code in `src/main/java/datawave/annotation/protobuf` is located in

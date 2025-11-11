@@ -15,12 +15,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 
 /** Utility methods for asserting annotation identity in unit tests */
 public class AnnotationAssertions {
+    public static void assertAnnotationSourcesEqual(AnnotationSource t, AnnotationSource a) {
+        assertEquals(t.getSourceId(), a.getSourceId());
+        assertEquals(t.getEngine(), a.getEngine());
+        assertEquals(t.getModel(), a.getModel());
+        assertEquals(t.getSourceLabel(), a.getSourceLabel());
+        assertEquals(t.getConfigurationMap(), a.getConfigurationMap());
+    }
+
     public static void assertMetadataEqual(Map<String,String> expectedMetadata, List<Map.Entry<String,String>> observedMetadata) {
         Map<String,String> testMetadata = new HashMap<>(expectedMetadata);
         for (Map.Entry<String,String> observedMetadataItem : observedMetadata) {

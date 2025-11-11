@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Point;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
@@ -22,6 +23,20 @@ import datawave.data.hash.HashUID;
  * the data access objects.
  */
 public class AnnotationTestDataUtil {
+    public static AnnotationSource generateTestAnnotationSource() {
+        //@formatter:off
+        return AnnotationSource.newBuilder()
+                .setEngine("inline v6")
+                .setModel("GR Supra")
+                .setSourceLabel("Toyota")
+                .putConfiguration("visibility", "PUBLIC")
+                .putConfiguration("created_date","2025-11-01T12:00:00.000Z")
+                .putConfiguration("octane","99")
+                .putConfiguration("model_year", "2025")
+                .build();
+        //@formatter:on
+    }
+
     public static Annotation generateTestAnnotation() {
         //@formatter:off
         return Annotation.newBuilder()
@@ -90,6 +105,41 @@ public class AnnotationTestDataUtil {
         }
 
         return testAnnotations;
+    }
+
+    public static List<AnnotationSource> generateManyTestAnnotationSources() {
+        List<AnnotationSource> testAnnotationSources = new ArrayList<>();
+
+        final String[] engines = {"v4", "v6", "v8"};
+        final String[] models = {"camry", "corolla", "avalon"};
+        final String[] sourceLabels = {"toyota", "honda", "mitsubishi"};
+        final String[] configurations = {"circular", "reduction", "inherit", "standalone", "inline"};
+
+        int iteration = 0;
+        for (String engine : engines) {
+            for (String model : models) {
+                for (String sourceLabel : sourceLabels) {
+                    int pos = iteration % configurations.length;
+                    iteration++;
+                    //@formatter:off
+                    Map<String, String> configuration = Map.of(
+                            "visibility", "PUBLIC",
+                            "created_date", "2025-10-01T00:00:00.000Z",
+                            "provenance", engine + "/" + model + "/" + sourceLabel,
+                            "normalization", configurations[pos]
+                    );
+                    AnnotationSource annotationSource = AnnotationSource.newBuilder()
+                            .setEngine(engine)
+                            .setModel(model)
+                            .setSourceLabel(sourceLabel)
+                            .putAllConfiguration(configuration)
+                            .build();
+                    testAnnotationSources.add(annotationSource);
+                    //@formatter:on
+                }
+            }
+        }
+        return testAnnotationSources;
     }
 
     public static List<Segment> generateTestSegments(String day, String shard, String datatype) {

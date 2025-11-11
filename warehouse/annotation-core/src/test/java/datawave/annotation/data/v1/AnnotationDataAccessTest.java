@@ -1,7 +1,9 @@
 package datawave.annotation.data.v1;
 
+import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationSourcesEqual;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationsEqual;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotation;
+import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotationSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +32,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
@@ -57,6 +61,9 @@ public class AnnotationDataAccessTest {
     // the object under test
     private AnnotationDataAccess dao;
 
+    private static final String ANNOTATION_TABLE_NAME = "datawave.annotation";
+    private static final String ANNOTATION_SOURCE_TABLE_NAME = "datawave.annotationSource";
+
     @BeforeAll
     public static void startCluster() throws Exception {
         File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + AnnotationDataAccessTest.class.getName());
@@ -72,25 +79,35 @@ public class AnnotationDataAccessTest {
         namespaceOperations.create("datawave");
 
         TableOperations tableOperations = client.tableOperations();
-        tableOperations.create("datawave.annotations");
+        tableOperations.create(ANNOTATION_TABLE_NAME);
+        tableOperations.create(ANNOTATION_SOURCE_TABLE_NAME);
 
         SecurityOperations securityOperations = client.securityOperations();
         securityOperations.changeUserAuthorizations("root", new Authorizations(auths));
 
         List<Annotation> manyAnnotations = AnnotationTestDataUtil.generateManyTestAnnotations();
+        List<AnnotationSource> manyAnnotationSources = AnnotationTestDataUtil.generateManyTestAnnotationSources();
 
-        AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        AnnotationDataAccess setupDao = new AnnotationDataAccess(client, accumuloAuthorizations, "datawave.annotations", serializer);
+        AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer();
+        AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+        AnnotationDataAccess setupDao = new AnnotationDataAccess(client, accumuloAuthorizations, ANNOTATION_TABLE_NAME, ANNOTATION_SOURCE_TABLE_NAME,
+                        annotationSerializer, annotationSourceSerializer);
         for (Annotation annotation : manyAnnotations) {
             setupDao.addAnnotation(annotation);
         }
-        dumpTable("datawave.annotations");
+        for (AnnotationSource annotationSource : manyAnnotationSources) {
+            setupDao.addAnnotationSource(annotationSource);
+        }
+        dumpTable(ANNOTATION_TABLE_NAME);
+        dumpTable(ANNOTATION_SOURCE_TABLE_NAME);
     }
 
     @BeforeEach
     public void setup() {
-        AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        dao = new AnnotationDataAccess(client, accumuloAuthorizations, "datawave.annotations", serializer);
+        AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer();
+        AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+        dao = new AnnotationDataAccess(client, accumuloAuthorizations, ANNOTATION_TABLE_NAME, ANNOTATION_SOURCE_TABLE_NAME, annotationSerializer,
+                        annotationSourceSerializer);
     }
 
     /** Insert a new annotation into the table and retrieve it and validate */
@@ -213,7 +230,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
-        String annotationUid = "28c912d1";
+        String annotationUid = "f025a75a";
 
         Optional<Annotation> annotationOptional = dao.getAnnotation(row, dataType, documentUid, annotationType, annotationUid);
         assertFalse(annotationOptional.isEmpty());
@@ -233,6 +250,82 @@ public class AnnotationDataAccessTest {
 
         Optional<Annotation> annotationOptional = dao.getAnnotation(row, dataType, documentUid, annotationType, annotationUid);
         assertTrue(annotationOptional.isEmpty());
+    }
+
+    /** Insert a new annotation into the table and retrieve it and validate */
+    @Test
+    public void testAddGetAnnotationSource() {
+        AnnotationSource sourceAnnotationSource = generateTestAnnotationSource();
+        Optional<AnnotationSource> addedAnnotationSource = dao.addAnnotationSource(sourceAnnotationSource);
+        assertFalse(addedAnnotationSource.isEmpty());
+        assertTrue(StringUtils.isNotBlank(addedAnnotationSource.get().getSourceId()));
+
+        // we expect the test annotation to have the same id injected as the annotation retuned from the dao.
+        AnnotationSource expectedAnnotationSource = AnnotationUtils.injectAnnotationSourceId(sourceAnnotationSource);
+        assertEquals(addedAnnotationSource.get().getSourceId(), expectedAnnotationSource.getSourceId());
+
+        Optional<AnnotationSource> annotationSource = dao.getAnnotationSource(expectedAnnotationSource.getSourceId());
+        assertFalse(annotationSource.isEmpty());
+        AnnotationSource resultAnnotationSource = annotationSource.get();
+        assertAnnotationSourcesEqual(expectedAnnotationSource, resultAnnotationSource);
+    }
+
+    /*
+     * INFO [AnnotationDataAccessTest:dumpTable] key: 766e345a config:created_date%00;2025-10-01T00:00:00.000Z [PUBLIC] 1759276800000 false; value length: 0
+     * INFO [AnnotationDataAccessTest:dumpTable] key: 766e345a config:normalization%00;circular [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: 766e345a config:provenance%00;v6/avalon/toyota [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: 766e345a config:visibility%00;PUBLIC [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: 766e345a engine:v6 [PUBLIC] 1759276800000 false; value length: 0
+     *
+     */
+
+    /*
+     * INFO [AnnotationDataAccessTest:dumpTable] key: 6e71a554 config:created_date%00;2025-10-01T00:00:00.000Z [PUBLIC] 1759276800000 false; value length: 0
+     * INFO [AnnotationDataAccessTest:dumpTable] key: 6e71a554 config:normalization%00;circular [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: 6e71a554 config:provenance%00;v6/avalon/toyota [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: 6e71a554 config:visibility%00;PUBLIC [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: 6e71a554 engine:v6 [PUBLIC] 1759276800000 false; value length: 0 INFO [AnnotationDataAccessTest:dumpTable] key:
+     * 6e71a554 model:avalon [PUBLIC] 1759276800000 false; value length: 0 INFO [AnnotationDataAccessTest:dumpTable] key: 6e71a554 sourceLabel:toyota [PUBLIC]
+     * 1759276800000 false; value length: 0
+     */
+
+    /*
+     * INFO [AnnotationDataAccessTest:dumpTable] key: d5d01b24 config:created_date%00;2025-10-01T00:00:00.000Z [PUBLIC] 1759276800000 false; value length: 0
+     * INFO [AnnotationDataAccessTest:dumpTable] key: d5d01b24 config:normalization%00;circular [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: d5d01b24 config:provenance%00;v6/avalon/toyota [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: d5d01b24 config:visibility%00;PUBLIC [PUBLIC] 1759276800000 false; value length: 0 INFO
+     * [AnnotationDataAccessTest:dumpTable] key: d5d01b24 engine:v6 [PUBLIC] 1759276800000 false; value length: 0 INFO [AnnotationDataAccessTest:dumpTable] key:
+     * d5d01b24 model:avalon [PUBLIC] 1759276800000 false; value length: 0 INFO [AnnotationDataAccessTest:dumpTable] key: d5d01b24 sourceLabel:toyota [PUBLIC]
+     * 1759276800000 false; value length: 0
+     */
+    @Test
+    public void testGetAnnotationSource() {
+        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("d5d01b24");
+        assertFalse(annotationOptional.isEmpty());
+        AnnotationSource as = annotationOptional.get();
+        assertEquals("v6", as.getEngine());
+        assertEquals("avalon", as.getModel());
+        assertEquals("toyota", as.getSourceLabel());
+        assertExpectedAnnotationSourceConfig(as.getConfigurationMap());
+    }
+
+    @Test
+    public void testGetAnnotationSourceMissing() {
+        String row = "aaaaaaaa";
+        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource(row);
+        assertTrue(annotationOptional.isEmpty());
+    }
+
+    public void assertExpectedAnnotationSourceConfig(Map<String,String> configuration) {
+        assertEquals(4, configuration.size());
+
+        final String[] expectedKeys = {"normalization", "provenance", "visibility", "created_date"};
+        final String[] expectedValues = {"circular", "v6/avalon/toyota", "PUBLIC", "2025-10-01T00:00:00.000Z"};
+
+        for (int i = 0; i < expectedKeys.length; i++) {
+            String observedValue = configuration.get(expectedKeys[i]);
+            assertEquals(expectedValues[i], observedValue, "expected value " + expectedValues[i] + " for key " + expectedKeys[i] + " but saw " + observedValue);
+        }
     }
 
     @AfterAll
@@ -281,10 +374,10 @@ public class AnnotationDataAccessTest {
      *            the list of segments to check
      */
     public static void assertExpectedTextSegments(List<Segment> segments) {
-        // the tokens are return in an order based on their segment id, _not_ the position, if the id's change
-        // the order changes.
-        final String[] expectedWords = {"<eos>", "fox", "caught", "rabbit", "the", "the", "quick", "brown"};
-        final int[] expectedStarts = {38, 16, 20, 31, 0, 27, 4, 10};
+
+        // TODO: make this less sensitive to order
+        final String[] expectedWords = {"the", "fox", "brown", "<eos>", "caught", "rabbit", "the", "quick", "brown"};
+        final int[] expectedStarts = {27, 16, 10, 38, 20, 31, 0, 4};
 
         assertFalse(segments.isEmpty());
         assertEquals(8, segments.size());

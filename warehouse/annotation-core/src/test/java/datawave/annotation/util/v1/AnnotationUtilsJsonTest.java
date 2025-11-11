@@ -18,9 +18,9 @@ public class AnnotationUtilsJsonTest {
             "  \"dataType\": \"testDataType\",\n" +
             "  \"uid\": \"abcde.fghij.klmno\",\n" +
             "  \"annotationType\": \"testAnnotationType\",\n" +
-            "  \"annotationId\": \"628b014c\",\n" +
+            "  \"annotationId\": \"7a441cdb\",\n" +
             "  \"segments\": [{\n" +
-            "    \"segmentId\": \"cb693def\",\n" +
+            "    \"segmentId\": \"fa389252\",\n" +
             "    \"boundary\": {\n" +
             "      \"boundaryType\": \"TIME_SPAN\",\n" +
             "      \"timeSpan\": {\n" +

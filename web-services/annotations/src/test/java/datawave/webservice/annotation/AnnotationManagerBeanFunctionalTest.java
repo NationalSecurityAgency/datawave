@@ -47,6 +47,7 @@ import datawave.annotation.data.transform.DefaultVisibilityTransformer;
 import datawave.annotation.data.transform.TimestampTransformer;
 import datawave.annotation.data.transform.VisibilityTransformer;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
@@ -144,7 +145,8 @@ public class AnnotationManagerBeanFunctionalTest {
         QueryTestTableHelper queryTestTableHelper = new QueryTestTableHelper(ExcerptTest.DocumentRangeTest.class.toString(), log);
         client = queryTestTableHelper.client;
 
-        String tableName = "annotations";
+        String annotationTableName = "annotation";
+        String annotationSourceTableName = "annotationSource";
         TableOperations tops = client.tableOperations();
         tops.create("annotations");
 
@@ -152,8 +154,11 @@ public class AnnotationManagerBeanFunctionalTest {
         TimestampTransformer timestampTransformer = new DefaultTimestampTransformer();
 
         AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(visibilityTransformer, timestampTransformer);
+        AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(visibilityTransformer, timestampTransformer);
+
         Authorizations auths = new Authorizations("ALL", "PUBLIC");
-        testDao = new AnnotationDataAccess(client, Set.of(auths), tableName, annotationSerializer);
+        testDao = new AnnotationDataAccess(client, Set.of(auths), annotationTableName, annotationSourceTableName, annotationSerializer,
+                        annotationSourceSerializer);
 
         Annotation testAnnotation = generateTestAnnotation();
         testDao.addAnnotation(testAnnotation);
@@ -169,7 +174,8 @@ public class AnnotationManagerBeanFunctionalTest {
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        PrintUtility.printTable(client, auths, tableName);
+        PrintUtility.printTable(client, auths, annotationTableName);
+        PrintUtility.printTable(client, auths, annotationSourceTableName);
 
         ctx = EasyMock.createMock(EJBContext.class);
 
@@ -211,6 +217,7 @@ public class AnnotationManagerBeanFunctionalTest {
     }
 
     public static void addAnnotationTestData(AccumuloClient client) {
+        // TODO: add annotation source data
         testDao.addAnnotation(generateCorleoneAnnotation());
     }
 
