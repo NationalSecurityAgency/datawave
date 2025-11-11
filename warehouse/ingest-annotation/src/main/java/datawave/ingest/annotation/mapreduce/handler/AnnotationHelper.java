@@ -55,7 +55,7 @@ public class AnnotationHelper {
     private final int annotationTableLoaderPriority;
 
     public static final String ANNOTATION_RAW_TRANSFORMATION_ENABLED = "annotation.raw.transform.enable";
-    private boolean annotationRawTransformationEnabled;
+    private final boolean annotationRawTransformationEnabled;
 
     public static final String ANNOTATION_RAW_TRANSFORMATION_CONFIG = "annotation.raw.transform.config";
     private Xslt30Transformer xslt30Transformer;

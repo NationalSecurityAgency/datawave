@@ -2,10 +2,10 @@ package datawave.ingest.annotation.mapreduce.handler;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Map;
@@ -15,10 +15,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
@@ -40,11 +39,10 @@ public class AnnotationHelperTest {
     private AnnotationHelper annotationHelper;
     private Configuration conf;
     private StandaloneTaskAttemptContext<Text,RawRecordContainer,BulkIngestKey,Value> ctx = null;
-    private Counters counters;
     private CachingContextWriter contextWriter;
     private MockStatusReporter statusReporter;
 
-    @Before
+    @BeforeEach
     public void setupAnnotationHelper() {
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/test-annotation-ingest-config.xml"));
@@ -101,7 +99,7 @@ public class AnnotationHelperTest {
 
         // the first segment value should be protobuf that can be parsed by Segment class
         Segment segment = Segment.parseFrom(contextWriter.getCache().get(expectedKey).stream().findFirst().get().get());
-        assertEquals("BulkIngestKey structure could potentially change as annotation-core library gets updated.", "testSegmentId1", segment.getSegmentId());
+        assertEquals("testSegmentId1", segment.getSegmentId(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
     }
 
     @Test
@@ -125,11 +123,11 @@ public class AnnotationHelperTest {
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
                         new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0testSegmentId1", "TEST_VISIBILITY", time));
         // checking to make sure the first segment BulkIngestKey is created
-        assertTrue("BulkIngestKey structure could potentially change as annotation-core library gets updated.", bulkKeys.containsKey(expectedKey));
+        assertTrue(bulkKeys.containsKey(expectedKey), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
 
         // the first segment value should be protobuf that can be parsed by Segment class
         Segment segment = Segment.parseFrom(bulkKeys.get(expectedKey).stream().findFirst().get().get());
-        assertEquals("BulkIngestKey structure could potentially change as annotation-core library gets updated.", "testSegmentId1", segment.getSegmentId());
+        assertEquals("testSegmentId1", segment.getSegmentId(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
     }
 
     @Test
@@ -195,7 +193,6 @@ public class AnnotationHelperTest {
                         "}\n").getBytes(UTF_8);
         // @formatter:on
 
-        // transformation strips out documentId from json
         assertTrue(annotationHelper.transformJson(json).contains("documentId"));
     }
 
