@@ -43,6 +43,7 @@ import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.ResponseQueryDriver;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
+import datawave.query.tables.keyword.transform.TagCloudPartitionTransformer;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.util.keyword.TagCloudInput;
@@ -64,6 +65,8 @@ public class KeywordQueryLogicFunctionalTest {
     @Inject
     @SpringBean(name = "KeywordQuery")
     protected KeywordQueryLogic logic;
+
+    private final TagCloudPartitionTransformer tagCloudPartitionTransformer = TagCloudPartitionTransformer.getInstance();
 
     private final Map<String,String> extraParameters = new HashMap<>();
     private final List<DefaultTagCloud> expectedResults = new ArrayList<>();
@@ -139,7 +142,7 @@ public class KeywordQueryLogicFunctionalTest {
 
         TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", List
                         .of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo"))));
-        logic.setExternalTagCloudPartitions(List.of(externalPartition));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
         entries.add(createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
@@ -162,7 +165,7 @@ public class KeywordQueryLogicFunctionalTest {
         TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
-        logic.setExternalTagCloudPartitions(List.of(externalPartition));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
         entries.add(createTagCloudEntry("x", .5, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
@@ -187,7 +190,7 @@ public class KeywordQueryLogicFunctionalTest {
         TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
                         new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
-        logic.setExternalTagCloudPartitions(List.of(externalPartition));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
 
         List<DefaultTagCloudEntry> entries = new ArrayList<>();
         entries.add(createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));

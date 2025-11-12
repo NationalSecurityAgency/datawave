@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
@@ -36,6 +37,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.function.serializer.DocumentSerializer;
 import datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.util.keyword.KeywordResults;
 import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
@@ -95,7 +97,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
 
-        mockLogic.setExternalTagCloudPartitions(List.of());
+        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -124,7 +126,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalTagCloudPartitions(List.of());
+        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -177,7 +179,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalTagCloudPartitions(List.of());
+        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -243,7 +245,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalTagCloudPartitions(List.of());
+        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -305,8 +307,9 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
 
-        Capture<List<TagCloudPartition>> externalPartitions = newCapture();
-        mockLogic.setExternalTagCloudPartitions(capture(externalPartitions));
+        Capture<List<Entry<Key,Value>>> externalData = newCapture();
+        Capture<Set<TagCloudInputTransformer<?>>> transformers = newCapture();
+        mockLogic.setExternalData(capture(externalData), capture(transformers));
 
         replayAll();
 
@@ -331,10 +334,15 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         assertFalse(result.hasNext());
 
-        List<TagCloudPartition> tagCloudPartitions = externalPartitions.getValue();
-        assertNotNull(tagCloudPartitions);
-        assertEquals(1, tagCloudPartitions.size());
-        TagCloudPartition partition = tagCloudPartitions.get(0);
+        Set<TagCloudInputTransformer<?>> capturedTransformers = transformers.getValue();
+        assertNotNull(capturedTransformers);
+        assertEquals(1, capturedTransformers.size());
+        List<Entry<Key,Value>> capturedExternalData = externalData.getValue();
+        assertNotNull(capturedExternalData);
+        assertEquals(1, capturedExternalData.size());
+        TagCloudInputTransformer theTransformer = capturedTransformers.iterator().next();
+        TagCloudPartition partition = theTransformer.decode(capturedExternalData.get(0));
+        assertNotNull(partition);
         assertEquals("external", partition.getPartition());
         assertEquals("external", partition.getLabel());
         assertEquals(TagCloudPartition.ScoreType.HIGHER_IS_BETTER, partition.getScoreType());

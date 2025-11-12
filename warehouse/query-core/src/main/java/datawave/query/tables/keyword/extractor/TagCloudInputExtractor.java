@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.util.keyword.TagCloudPartition;
 
 public interface TagCloudInputExtractor {
@@ -32,4 +33,6 @@ public interface TagCloudInputExtractor {
     TagCloudPartition get();
 
     void clear();
+
+    TagCloudInputTransformer<TagCloudPartition> getInputTransformer();
 }

@@ -1,10 +1,10 @@
 package datawave.query.tables.keyword;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +47,6 @@ import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
 import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
-import datawave.query.tables.keyword.transform.TagCloudPartitionTransformer;
 import datawave.query.transformer.TagCloudTransformer;
 import datawave.util.keyword.TagCloudPartition;
 import datawave.util.keyword.TagCloudUtils;
@@ -116,9 +115,10 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     private KeywordQueryConfiguration config;
 
-    private List<TagCloudPartition> externalTagCloudPartitions;
-    private List<TagCloudInputTransformer<?>> transformers = new ArrayList<>();
-    final private TagCloudPartitionTransformer partitionTransformer = new TagCloudPartitionTransformer();
+    private Set<TagCloudInputTransformer<?>> transformers = new HashSet<>();
+    private List<Entry<Key,Value>> externalData = new ArrayList<>();
+
+    final private IteratorChain<Entry<Key,Value>> iteratorChain = new IteratorChain<>();
 
     public KeywordQueryLogic() {
         super();
@@ -129,8 +129,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.queryThreads = keywordQueryLogic.queryThreads;
         this.scannerFactory = keywordQueryLogic.scannerFactory;
         this.config = new KeywordQueryConfiguration(keywordQueryLogic.config);
-
-        this.externalTagCloudPartitions = keywordQueryLogic.externalTagCloudPartitions;
+        this.externalData = keywordQueryLogic.externalData;
         this.transformers = keywordQueryLogic.transformers;
     }
 
@@ -258,45 +257,29 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.config = (KeywordQueryConfiguration) genericConfig;
 
         try {
-            final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
-                            config.getQuery());
-            scanner.setRanges(config.getState().getRanges());
+            if (genericConfig.getQuery() != null && !genericConfig.getQuery().getQuery().isEmpty()) {
+                final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
+                                config.getQuery());
+                scanner.setRanges(config.getState().getRanges());
 
-            final IteratorSetting cfg = new IteratorSetting(60, "keyword-extractor", KeywordExtractingIterator.class);
-            KeywordExtractingIterator.setOptions(cfg, config.getMinNgrams(), config.getMaxNgrams(), config.getMaxKeywords(), config.getMaxScore(),
-                            config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
-            scanner.addScanIterator(cfg);
+                final IteratorSetting cfg = new IteratorSetting(60, "keyword-extractor", KeywordExtractingIterator.class);
+                KeywordExtractingIterator.setOptions(cfg, config.getMinNgrams(), config.getMaxNgrams(), config.getMaxKeywords(), config.getMaxScore(),
+                                config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
+                scanner.addScanIterator(cfg);
 
-            // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
-            final Iterator<Entry<Key,Value>> scanIterator = scanner.iterator();
-            this.iterator = scanIterator;
-            if (externalTagCloudPartitions != null) {
-                Iterator<Entry<Key,Value>> fieldedKeywordIterator = prepareFieldedIterator(externalTagCloudPartitions);
-                this.iterator = new IteratorChain<>(scanIterator, fieldedKeywordIterator);
+                // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
+                final Iterator<Entry<Key,Value>> scanIterator = scanner.iterator();
+                this.iteratorChain.addIterator(scanIterator);
+                this.scanner = scanner;
+            }
+            if (this.externalData != null && !this.externalData.isEmpty()) {
+                this.iteratorChain.addIterator(this.externalData.iterator());
             }
 
-            this.scanner = scanner;
-
+            this.iterator = iteratorChain;
         } catch (TableNotFoundException e) {
             throw new RuntimeException("Table not found: " + this.getTableName(), e);
         }
-    }
-
-    /**
-     * convert partitions into key/value pairs so they can be intermixed with what is coming off the KeywordExtractingIterator
-     *
-     * @param partitions
-     * @return
-     * @throws IOException
-     */
-    private Iterator<Entry<Key,Value>> prepareFieldedIterator(List<TagCloudPartition> partitions) throws IOException {
-        List<Entry<Key,Value>> convertedList = new ArrayList<>();
-
-        for (TagCloudPartition partition : partitions) {
-            convertedList.add(partitionTransformer.encode(partition));
-        }
-
-        return convertedList.iterator();
     }
 
     /**
@@ -552,20 +535,17 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     }
 
     /**
-     * Allows inclusion of extracted data externally to be included in the tag clouds generated from this logic. These partitions will be combined with all data
+     * Allows inclusion of extracted data externally to be included in the tag clouds generated from this logic. This data will be combined with all data
      * collected from this logic and returned together
      *
-     * @param externalTagCloudPartitions
+     * @param externalData
+     *            data that should be included in the iterator provided from an external source
+     * @param transformers
+     *            the transformers that can decode the external data
      */
-    public void setExternalTagCloudPartitions(List<TagCloudPartition> externalTagCloudPartitions) {
-        this.externalTagCloudPartitions = externalTagCloudPartitions;
-        if (!this.transformers.contains(partitionTransformer)) {
-            this.transformers.add(partitionTransformer);
-        }
-    }
-
-    public List<TagCloudPartition> getExternalTagCloudPartitions() {
-        return externalTagCloudPartitions;
+    public void setExternalData(List<Entry<Key,Value>> externalData, Set<TagCloudInputTransformer<?>> transformers) {
+        this.externalData = externalData;
+        this.transformers.addAll(transformers);
     }
 
     /**
