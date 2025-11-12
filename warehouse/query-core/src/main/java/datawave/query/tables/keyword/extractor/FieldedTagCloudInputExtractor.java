@@ -12,6 +12,8 @@ import org.apache.log4j.Logger;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.tables.keyword.KeywordQueryUtil;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
+import datawave.query.tables.keyword.transform.TagCloudPartitionTransformer;
 import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
 
@@ -85,6 +87,11 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
     @Override
     public String getName() {
         return category;
+    }
+
+    @Override
+    public TagCloudInputTransformer<TagCloudPartition> getInputTransformer() {
+        return TagCloudPartitionTransformer.getInstance();
     }
 
     /**

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -57,6 +58,25 @@ public class KeywordResultsTransformer implements TagCloudInputTransformer<Keywo
         }
 
         return new TagCloudPartition(partition, LABEL, List.of(tagCloudInput));
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof KeywordResultsTransformer)) {
+            return false;
+        }
+
+        KeywordResultsTransformer otherTransformer = (KeywordResultsTransformer) other;
+        return Objects.equals(languagePartitioned, otherTransformer.languagePartitioned) && Objects.equals(identifierMap, otherTransformer.identifierMap);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(languagePartitioned, identifierMap);
     }
 
     private TagCloudInput getTagCloudInput(KeywordResults keywordResults) {

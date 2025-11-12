@@ -17,9 +17,11 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 import java.util.AbstractMap;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -29,6 +31,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.collections.iterators.ArrayListIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,6 +77,7 @@ public class KeywordQueryLogicTest {
 
         keywordQueryLogic.scannerFactory = mockScannerFactory;
         when(mockScannerFactory.newScanner(any(), any(), anyInt(), any())).thenReturn(mockScanner);
+        when(mockScanner.iterator()).thenReturn(new ArrayListIterator());
         when(mockKeywordConfig.getState()).thenReturn(mockKeywordState);
     }
 
@@ -84,12 +88,18 @@ public class KeywordQueryLogicTest {
 
     @Test
     public void setupQueryValidConfigurationSetsUpScanner() throws Exception {
+        Query settings = new QueryImpl();
+        settings.setQuery("not null");
+        when(mockKeywordConfig.getQuery()).thenReturn(settings);
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         verify(mockScanner).setRanges(any());
     }
 
     @Test
     public void setupQueryWithViewNameSetsIteratorSetting() throws Exception {
+        Query settings = new QueryImpl();
+        settings.setQuery("not null");
+        when(mockKeywordConfig.getQuery()).thenReturn(settings);
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         keywordQueryLogic.getConfig().getState().getPreferredViews().add("FOO");
         verify(mockScanner).addScanIterator(any());
@@ -97,8 +107,50 @@ public class KeywordQueryLogicTest {
 
     @Test
     public void setupQueryTableNotFoundThrowsRuntimeException() throws Exception {
+        Query settings = new QueryImpl();
+        settings.setQuery("not null");
+        when(mockKeywordConfig.getQuery()).thenReturn(settings);
         when(mockScannerFactory.newScanner(any(), any(), anyInt(), any())).thenThrow(TableNotFoundException.class);
         assertThrows(RuntimeException.class, () -> keywordQueryLogic.setupQuery(mockKeywordConfig));
+    }
+
+    @Test
+    public void setupNoQuery() throws Exception {
+        keywordQueryLogic.setupQuery(mockKeywordConfig);
+        assertFalse(keywordQueryLogic.iterator().hasNext());
+    }
+
+    @Test
+    public void setupExternalDataQuery() throws Exception {
+        keywordQueryLogic.setExternalData(List.of(Map.entry(new Key("externalKey"), new Value("externalValue"))), Set.of());
+        keywordQueryLogic.setupQuery(mockKeywordConfig);
+        Iterator<Entry<Key,Value>> itr = keywordQueryLogic.iterator();
+        assertTrue(itr.hasNext());
+        Entry<Key,Value> entry = itr.next();
+        assertEquals(new Key("externalKey"), entry.getKey());
+        assertEquals(new Value("externalValue"), entry.getValue());
+        assertFalse(itr.hasNext());
+    }
+
+    @Test
+    public void cloneExternalTest() throws Exception {
+        keywordQueryLogic.setExternalData(List.of(Map.entry(new Key("externalKey"), new Value("externalValue"))), Set.of());
+        keywordQueryLogic.setupQuery(mockKeywordConfig);
+        Iterator<Entry<Key,Value>> itr = keywordQueryLogic.iterator();
+        assertTrue(itr.hasNext());
+        Entry<Key,Value> entry = itr.next();
+        assertEquals(new Key("externalKey"), entry.getKey());
+        assertEquals(new Value("externalValue"), entry.getValue());
+        assertFalse(itr.hasNext());
+
+        KeywordQueryLogic clone = (KeywordQueryLogic) keywordQueryLogic.clone();
+        clone.setupQuery(mockKeywordConfig);
+        itr = clone.iterator();
+        assertTrue(itr.hasNext());
+        entry = itr.next();
+        assertEquals(new Key("externalKey"), entry.getKey());
+        assertEquals(new Value("externalValue"), entry.getValue());
+        assertFalse(itr.hasNext());
     }
 
     @Test

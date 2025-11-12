@@ -3,6 +3,7 @@ package datawave.query.transformer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
@@ -30,11 +31,11 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;
     protected final KeywordQueryState state;
-    private final List<TagCloudInputTransformer<?>> transformers;
+    private final Set<TagCloudInputTransformer<?>> transformers;
 
     // TODO-crwill9 pass in state data, not the state object so this is more reusable
     public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    List<TagCloudInputTransformer<?>> transformers) {
+                    Set<TagCloudInputTransformer<?>> transformers) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;

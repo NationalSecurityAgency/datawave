@@ -26,6 +26,7 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.tables.chained.strategy.FullChainStrategy;
 import datawave.query.tables.keyword.extractor.TagCloudInputExtractor;
 import datawave.query.tables.keyword.extractor.TagCloudInputExtractorException;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.util.keyword.TagCloudPartition;
 
 /**
@@ -149,15 +150,21 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
 
         if (nextLogic instanceof KeywordQueryLogic) {
             // get all partitions from configured extractors
-            List<TagCloudPartition> extractedPartitions = new ArrayList<>();
+            List<Entry<Key,Value>> encodedData = new ArrayList<>();
+            Set<TagCloudInputTransformer<?>> transformers = new HashSet<>();
             for (TagCloudInputExtractor extractor : extractors) {
-                extractedPartitions.add(extractor.get());
+                TagCloudInputTransformer<TagCloudPartition> transformer = extractor.getInputTransformer();
+                transformers.add(transformer);
+                TagCloudPartition partition = extractor.get();
+                Entry<Key,Value> transformed = transformer.encode(partition);
+
+                encodedData.add(transformed);
                 extractor.clear();
             }
 
             KeywordQueryLogic keywordQueryLogic = (KeywordQueryLogic) nextLogic;
             // pass the extracted partitions on to the keyword query logic
-            keywordQueryLogic.setExternalTagCloudPartitions(extractedPartitions);
+            keywordQueryLogic.setExternalData(encodedData, transformers);
         }
 
         return queryTerms.isEmpty() ? null : StringUtils.join(queryTerms, " ");
