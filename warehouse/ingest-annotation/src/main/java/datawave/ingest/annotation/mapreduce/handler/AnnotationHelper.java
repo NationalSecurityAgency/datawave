@@ -25,6 +25,7 @@ import com.google.protobuf.util.JsonFormat;
 import datawave.annotation.data.AnnotationSerializationException;
 import datawave.annotation.data.AnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.data.hash.UID;
 import datawave.ingest.data.RawRecordContainer;
@@ -51,8 +52,15 @@ public class AnnotationHelper {
     private final String annotationTableName;
     private final Text annotationTableNameText;
 
+    public static final String ANNOTATION_SOURCE_TNAME = "annotation.source.table.name";
+    private final String annotationSourceTableName;
+    private final Text annotationSourceTableNameText;
+
     public static final String ANNOTATION_TABLE_LOAD_PRIORITY = "annotation.table.loader.priority";
     private final int annotationTableLoaderPriority;
+
+    public static final String ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY = "annotation.source.table.loader.priority";
+    private final int annotationSourceTableLoaderPriority;
 
     public static final String ANNOTATION_RAW_TRANSFORMATION_ENABLED = "annotation.raw.transform.enable";
     private final boolean annotationRawTransformationEnabled;
@@ -60,12 +68,26 @@ public class AnnotationHelper {
     public static final String ANNOTATION_RAW_TRANSFORMATION_CONFIG = "annotation.raw.transform.config";
     private Xslt30Transformer xslt30Transformer;
 
+    public static final String ANNOTATION_SOURCE_VISIBILITY_INHERIT_EVENT = "annotation.source.visibility.inherit.event";
+    private final boolean annotationSourceVisibilityInheritEvent;
+
+    public static final String ANNOTATION_SOURCE_VISIBILITY_DEFAULT = "annotation.source.visibility.default";
+    private final String annotationSourceVisbilityDefault;
+
     public AnnotationHelper(Configuration conf) {
         this.annotationTableName = conf.get(ANNOTATION_TNAME, "datawave.annotation");
         this.annotationTableNameText = new Text(annotationTableName);
 
+        this.annotationSourceTableName = conf.get(ANNOTATION_SOURCE_TNAME, "datawave.annotationSource");
+        this.annotationSourceTableNameText = new Text(annotationSourceTableName);
+
         this.annotationTableLoaderPriority = conf.getInt(ANNOTATION_TABLE_LOAD_PRIORITY, 50);
+        this.annotationSourceTableLoaderPriority = conf.getInt(ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY, 60);
+
         this.annotationRawTransformationEnabled = conf.getBoolean(ANNOTATION_RAW_TRANSFORMATION_ENABLED, false);
+
+        this.annotationSourceVisibilityInheritEvent = conf.getBoolean(ANNOTATION_SOURCE_VISIBILITY_INHERIT_EVENT, false);
+        this.annotationSourceVisbilityDefault = conf.get(ANNOTATION_SOURCE_VISIBILITY_DEFAULT, "");
 
         try {
             if (annotationRawTransformationEnabled) {
@@ -92,11 +114,12 @@ public class AnnotationHelper {
      */
     public String[] getAnnotationTableNames(String[] tableNames) {
         if (tableNames == null || tableNames.length == 0) {
-            return new String[] {this.annotationTableName};
+            return new String[] {this.annotationTableName, this.annotationSourceTableName};
         } else {
-            String[] annotationTableNames = new String[tableNames.length + 1];
+            String[] annotationTableNames = new String[tableNames.length + 2];
             System.arraycopy(tableNames, 0, annotationTableNames, 0, tableNames.length);
             annotationTableNames[tableNames.length] = this.annotationTableName;
+            annotationTableNames[tableNames.length + 1] = this.annotationSourceTableName;
 
             return annotationTableNames;
         }
@@ -110,11 +133,12 @@ public class AnnotationHelper {
      */
     public int[] getAnnotationTableLoaderPriorities(int[] tableLoaderPriorities) {
         if (tableLoaderPriorities == null || tableLoaderPriorities.length == 0) {
-            return new int[] {this.annotationTableLoaderPriority};
+            return new int[] {this.annotationTableLoaderPriority, this.annotationSourceTableLoaderPriority};
         } else {
-            int[] annotationTableLoaderPriorities = new int[tableLoaderPriorities.length + 1];
+            int[] annotationTableLoaderPriorities = new int[tableLoaderPriorities.length + 2];
             System.arraycopy(tableLoaderPriorities, 0, annotationTableLoaderPriorities, 0, tableLoaderPriorities.length);
             annotationTableLoaderPriorities[tableLoaderPriorities.length] = this.annotationTableLoaderPriority;
+            annotationTableLoaderPriorities[tableLoaderPriorities.length + 1] = this.annotationSourceTableLoaderPriority;
 
             return annotationTableLoaderPriorities;
         }
@@ -139,6 +163,14 @@ public class AnnotationHelper {
             while (annotationKeyIterator.hasNext()) {
                 Map.Entry<Key,Value> entry = annotationKeyIterator.next();
                 values.put(new BulkIngestKey(annotationTableNameText, entry.getKey()), entry.getValue());
+            }
+
+            AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+            Iterator<Map.Entry<Key,Value>> annotationSourceKeyIterator = annotationSourceSerializer.serialize(annotation.getSource());
+
+            while (annotationSourceKeyIterator.hasNext()) {
+                Map.Entry<Key,Value> entry = annotationSourceKeyIterator.next();
+                values.put(new BulkIngestKey(annotationSourceTableNameText, entry.getKey()), entry.getValue());
             }
 
         } catch (InvalidProtocolBufferException | AnnotationSerializationException | SaxonApiException e) {
@@ -172,14 +204,22 @@ public class AnnotationHelper {
                     byte[] shardId, byte[] rawData) throws IOException, InterruptedException {
         try {
             Annotation annotation = buildAnnotation(rawData, shardId, uid, visibility, event);
-            AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
-            Iterator<Map.Entry<Key,Value>> annotationKeyIterator = serializer.serialize(annotation);
+            AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer();
+            Iterator<Map.Entry<Key,Value>> annotationKeyIterator = annotationSerializer.serialize(annotation);
 
             while (annotationKeyIterator.hasNext()) {
                 Map.Entry<Key,Value> entry = annotationKeyIterator.next();
                 contextWriter.write(new BulkIngestKey(annotationTableNameText, entry.getKey()), entry.getValue(), context);
             }
 
+            AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+
+            Iterator<Map.Entry<Key,Value>> annotationSourceKeyIterator = annotationSourceSerializer.serialize(annotation.getSource());
+
+            while (annotationSourceKeyIterator.hasNext()) {
+                Map.Entry<Key,Value> entry = annotationSourceKeyIterator.next();
+                contextWriter.write(new BulkIngestKey(annotationSourceTableNameText, entry.getKey()), entry.getValue(), context);
+            }
         } catch (InvalidProtocolBufferException | AnnotationSerializationException | SaxonApiException e) {
             log.error(e);
             // failing the record
@@ -206,6 +246,12 @@ public class AnnotationHelper {
      */
     public Annotation buildAnnotation(byte[] jsonInBytes, byte[] shardId, UID uid, byte[] visibility, RawRecordContainer event)
                     throws InvalidProtocolBufferException, SaxonApiException {
+        // transform the json via configured xslt
+        String jsonString = transformJson(jsonInBytes);
+
+        Annotation.Builder annotationBuilder = Annotation.newBuilder();
+        JsonFormat.parser().ignoringUnknownFields().merge(jsonString, annotationBuilder);
+
         Annotation.Builder datawaveAnnotationBuilder = Annotation.newBuilder();
 
         // populating DATAWAVE fields from event/fields
@@ -215,14 +261,17 @@ public class AnnotationHelper {
         datawaveAnnotationBuilder.putMetadata("visibility", new String(visibility));
         datawaveAnnotationBuilder.putMetadata("created_date", DateHelper.format8601(new Date(event.getTimestamp())));
 
+        if (annotationBuilder.getSource() != null && !annotationBuilder.getSource().getSourceLabel().isEmpty()) {
+            if (annotationSourceVisibilityInheritEvent) {
+                datawaveAnnotationBuilder.getSourceBuilder().putConfiguration("visibility", new String(visibility));
+            } else {
+                datawaveAnnotationBuilder.getSourceBuilder().putConfiguration("visibility", annotationSourceVisbilityDefault);
+            }
+            datawaveAnnotationBuilder.getSourceBuilder().putConfiguration("created_date", DateHelper.format8601(new Date(event.getTimestamp())));
+        }
+
         // datawaveAnnotation represents properties that are generated during ingest
         Annotation datawaveAnnotation = datawaveAnnotationBuilder.build();
-
-        // transform the json via configured xslt
-        String jsonString = transformJson(jsonInBytes);
-
-        Annotation.Builder annotationBuilder = Annotation.newBuilder();
-        JsonFormat.parser().ignoringUnknownFields().merge(jsonString, annotationBuilder);
 
         // when there are conflicts between properties generated from ingest and json source,
         // mergeFrom will collapse them in a way that preserves datawaveAnnotation

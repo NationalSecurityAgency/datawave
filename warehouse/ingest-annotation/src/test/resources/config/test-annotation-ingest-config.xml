@@ -36,6 +36,28 @@
     </property>
 
     <property>
+        <name>annotation.source.table.name</name>
+        <value>datawave.annotationSource</value>
+    </property>
+
+    <property>
+        <name>annotation.source.table.loader.priority</name>
+        <value>60</value>
+    </property>
+
+    <property>
+        <name>annotation.source.visibility.inherit.event</name>
+        <value>false</value>
+        <description>enable setting the visibility for annotation source from event</description>
+    </property>
+
+    <property>
+        <name>annotation.source.visibility.default</name>
+        <value>PRIVATE</value>
+        <description>default visibility to use for storing annotation source</description>
+    </property>
+
+    <property>
         <name>annotation.ingest.helper.class</name>
         <value>datawave.ingest.annotation.mapreduce.handler.SimpleAnnotationIngestHelper</value>
     </property>

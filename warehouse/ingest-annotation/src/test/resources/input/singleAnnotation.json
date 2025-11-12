@@ -3,6 +3,17 @@
   "annotationId": "testAnnotationId",
   "shard": "20251017_0",
   "dataType": "testDataType",
+  "documentId": "testDocumentId",
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "sourceLabel": "testSourceLabel"
+  },
   "metadata": {
     "visibility": "PUBLIC",
     "created_date": "2025-10-17T10:30:00.0Z",
@@ -11,10 +22,14 @@
   "segments": [
     {
       "segmentId": "testSegmentId1",
-      "segmentValue": [
+      "values": [
         {
           "value": "test1a",
-          "score": -83737019.1792235
+          "score": -83737019.1792235,
+          "extension": {
+            "extensionType": "testExentionType",
+            "barcodeType": "testBarcodeType"
+          }
         },
         {
           "value": "test1b",
@@ -64,7 +79,7 @@
     {
       "segmentId": "testSegmentId3",
       "eTag": "testETag3",
-      "segmentValue": [],
+      "values": [],
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
@@ -75,7 +90,7 @@
     {
       "segmentId": "testSegmentId3",
       "eTag": "testETag3",
-      "segmentValue": [],
+      "values": [],
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },

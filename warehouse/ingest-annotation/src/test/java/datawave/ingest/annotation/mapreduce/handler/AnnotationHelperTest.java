@@ -1,7 +1,5 @@
 package datawave.ingest.annotation.mapreduce.handler;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,14 +64,19 @@ public class AnnotationHelperTest {
 
     @Test
     public void testGetTableNamesAndPriorities() {
-        assertEquals(annotationHelper.getAnnotationTableNames(null)[0], conf.get(AnnotationHelper.ANNOTATION_TNAME));
-        assertEquals(annotationHelper.getAnnotationTableNames(new String[] {})[0], conf.get(AnnotationHelper.ANNOTATION_TNAME));
-        assertArrayEquals(annotationHelper.getAnnotationTableNames(new String[] {"test"}), new String[] {"test", conf.get(AnnotationHelper.ANNOTATION_TNAME)});
+        String[] expectedTableNames = new String[] {conf.get(AnnotationHelper.ANNOTATION_TNAME), conf.get(AnnotationHelper.ANNOTATION_SOURCE_TNAME)};
 
-        assertEquals(annotationHelper.getAnnotationTableLoaderPriorities(null)[0], conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10));
-        assertEquals(annotationHelper.getAnnotationTableLoaderPriorities(new int[] {})[0], conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10));
-        assertArrayEquals(annotationHelper.getAnnotationTableLoaderPriorities(new int[] {1}),
-                        new int[] {1, conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10)});
+        assertArrayEquals(expectedTableNames, annotationHelper.getAnnotationTableNames(null));
+        assertArrayEquals(expectedTableNames, annotationHelper.getAnnotationTableNames(new String[] {}));
+        assertArrayEquals(new String[] {"test", expectedTableNames[0], expectedTableNames[1]}, annotationHelper.getAnnotationTableNames(new String[] {"test"}));
+
+        int[] expectedTablePriorities = new int[] {conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10),
+                conf.getInt(AnnotationHelper.ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY, -10)};
+
+        assertArrayEquals(expectedTablePriorities, annotationHelper.getAnnotationTableLoaderPriorities(null));
+        assertArrayEquals(expectedTablePriorities, annotationHelper.getAnnotationTableLoaderPriorities(new int[] {}));
+        assertArrayEquals(new int[] {1, expectedTablePriorities[0], expectedTablePriorities[1]},
+                        annotationHelper.getAnnotationTableLoaderPriorities(new int[] {1}));
     }
 
     @Test
@@ -96,6 +99,11 @@ public class AnnotationHelperTest {
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
                         new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0testSegmentId1", "TEST_VISIBILITY", time));
+
+        BulkIngestKey expectedSourceKey = new BulkIngestKey(new Text("datawave.annotationSource"),
+                        new Key("testAnalyticHash", "engine", "testEngine", "PRIVATE", time));
+
+        assertFalse(contextWriter.getCache().get(expectedSourceKey).isEmpty());
 
         // the first segment value should be protobuf that can be parsed by Segment class
         Segment segment = Segment.parseFrom(contextWriter.getCache().get(expectedKey).stream().findFirst().get().get());
@@ -145,30 +153,14 @@ public class AnnotationHelperTest {
     }
 
     @Test
-    public void testTransformJson() throws SaxonApiException {
-        // @formatter:off
-        byte[] json = (
-                "{\n" +
-                "  \"annotationType\": \"testAnnotationType\",\n" +
-                "  \"annotationId\": \"testAnnotationId\",\n" +
-                "  \"shard\": \"20251017_0\",\n" +
-                "  \"dataType\": \"testDataType\",\n" +
-                "  \"documentId\": \"testDocumentId\",\n" +
-                "  \"metadata\": {\n" +
-                "    \"visibility\": \"PUBLIC\",\n" +
-                "    \"created_date\": \"2025-10-17T10:30:00.0Z\",\n" +
-                "    \"test_metadata_key\": \"test_metadata_value\"\n" +
-                "  }\n" +
-                "}\n").getBytes(UTF_8);
-
-        // @formatter:on
-
-        // transformation strips out documentId from json
-        assertFalse(annotationHelper.transformJson(json).contains("documentId"));
+    public void testTransformJson() throws SaxonApiException, IOException {
+        // transformation remaps values out segmentValue from json
+        assertFalse(annotationHelper.transformJson(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes())
+                        .contains("values"));
     }
 
     @Test
-    public void testDisabledTransformJson() throws SaxonApiException {
+    public void testDisabledTransformJson() throws SaxonApiException, IOException {
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/test-annotation-ingest-config-notransform.xml"));
 
@@ -177,23 +169,7 @@ public class AnnotationHelperTest {
 
         annotationHelper = new AnnotationHelper(conf);
 
-        // @formatter:off
-        byte[] json = (
-                "{\n" +
-                        "  \"annotationType\": \"testAnnotationType\",\n" +
-                        "  \"annotationId\": \"testAnnotationId\",\n" +
-                        "  \"shard\": \"20251017_0\",\n" +
-                        "  \"dataType\": \"testDataType\",\n" +
-                        "  \"documentId\": \"testDocumentId\",\n" +
-                        "  \"metadata\": {\n" +
-                        "    \"visibility\": \"PUBLIC\",\n" +
-                        "    \"created_date\": \"2025-10-17T10:30:00.0Z\",\n" +
-                        "    \"test_metadata_key\": \"test_metadata_value\"\n" +
-                        "  }\n" +
-                        "}\n").getBytes(UTF_8);
-        // @formatter:on
-
-        assertTrue(annotationHelper.transformJson(json).contains("documentId"));
+        assertTrue(annotationHelper.transformJson(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes()).contains("values"));
     }
 
     public static class EventWithShardId extends RawRecordContainerImpl {
