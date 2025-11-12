@@ -43,7 +43,8 @@ message Annotation {
     string annotationType = 4; // the type of this annotation
     string annotationId = 5; // the hash that identifies this annotation
     string sourceId = 6; // the identifier for this annotations source
-    reserved 7 to 19; // for future growth.
+    optional AnnotationSource source = 7; // the source details for this annotation.
+    reserved 8 to 19; // for future growth.
     repeated Segment segments = 20; // segment data
     reserved 21 to 49; // for future growth.
     map<string, string> metadata = 50;

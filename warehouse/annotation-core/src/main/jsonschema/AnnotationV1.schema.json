@@ -8,6 +8,28 @@
       "description": "segment boundary types"
     },
     ".datawave.annotation.protobuf.v1.Annotation": {
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "source"
+              ]
+            },
+            {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "source"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
       "properties": {
         "shard": {
           "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.shard"
@@ -26,6 +48,16 @@
         },
         "sourceId": {
           "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.sourceId"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.source"
+            }
+          ]
         },
         "segments": {
           "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.segments"
@@ -74,6 +106,10 @@
       "type": "string",
       "description": "the shard of the record this annotation addresses"
     },
+    ".datawave.annotation.protobuf.v1.Annotation.source": {
+      "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource",
+      "description": "the source details for this annotation."
+    },
     ".datawave.annotation.protobuf.v1.Annotation.sourceId": {
       "type": "string",
       "description": "the identifier for this annotations source"
@@ -81,6 +117,55 @@
     ".datawave.annotation.protobuf.v1.Annotation.uid": {
       "type": "string",
       "description": "the internal id of the record this annotation addresses"
+    },
+    ".datawave.annotation.protobuf.v1.AnnotationSource": {
+      "properties": {
+        "sourceId": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.sourceId"
+        },
+        "engine": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.engine"
+        },
+        "model": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.model"
+        },
+        "sourceLabel": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.sourceLabel"
+        },
+        "configuration": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.configuration"
+        }
+      },
+      "type": "object",
+      "required": [
+        "sourceId",
+        "engine",
+        "model",
+        "sourceLabel"
+      ]
+    },
+    ".datawave.annotation.protobuf.v1.AnnotationSource.configuration": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object",
+      "description": "key value pairs identifying the configuration for the source."
+    },
+    ".datawave.annotation.protobuf.v1.AnnotationSource.engine": {
+      "type": "string",
+      "description": "a string identifying the engine that produce the annotation"
+    },
+    ".datawave.annotation.protobuf.v1.AnnotationSource.model": {
+      "type": "string",
+      "description": "a string identifying the model that produced the annotation"
+    },
+    ".datawave.annotation.protobuf.v1.AnnotationSource.sourceId": {
+      "type": "string",
+      "description": "the analytic hash for this source"
+    },
+    ".datawave.annotation.protobuf.v1.AnnotationSource.sourceLabel": {
+      "type": "string",
+      "description": "a label for the engine/model/configuration combo"
     },
     ".datawave.annotation.protobuf.v1.Point": {
       "properties": {

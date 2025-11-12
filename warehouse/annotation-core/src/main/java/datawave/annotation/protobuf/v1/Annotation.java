@@ -59,6 +59,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                                         datawave.annotation.protobuf.v1.Annotation.Builder.class);
     }
 
+    private int bitField0_;
     public static final int SHARD_FIELD_NUMBER = 1;
     private volatile java.lang.Object shard_;
 
@@ -335,6 +336,49 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
     }
 
+    public static final int SOURCE_FIELD_NUMBER = 7;
+    private datawave.annotation.protobuf.v1.AnnotationSource source_;
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     *
+     * @return Whether the source field is set.
+     */
+    @java.lang.Override
+    public boolean hasSource() {
+        return ((bitField0_ & 0x00000001) != 0);
+    }
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     *
+     * @return The source.
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.AnnotationSource getSource() {
+        return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
+    }
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder() {
+        return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
+    }
+
     public static final int SEGMENTS_FIELD_NUMBER = 20;
     private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_;
 
@@ -512,6 +556,9 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         if (!getSourceIdBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 6, sourceId_);
         }
+        if (((bitField0_ & 0x00000001) != 0)) {
+            output.writeMessage(7, getSource());
+        }
         for (int i = 0; i < segments_.size(); i++) {
             output.writeMessage(20, segments_.get(i));
         }
@@ -543,6 +590,9 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
         if (!getSourceIdBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, sourceId_);
+        }
+        if (((bitField0_ & 0x00000001) != 0)) {
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(7, getSource());
         }
         for (int i = 0; i < segments_.size(); i++) {
             size += com.google.protobuf.CodedOutputStream.computeMessageSize(20, segments_.get(i));
@@ -579,6 +629,12 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             return false;
         if (!getSourceId().equals(other.getSourceId()))
             return false;
+        if (hasSource() != other.hasSource())
+            return false;
+        if (hasSource()) {
+            if (!getSource().equals(other.getSource()))
+                return false;
+        }
         if (!getSegmentsList().equals(other.getSegmentsList()))
             return false;
         if (!internalGetMetadata().equals(other.internalGetMetadata()))
@@ -607,6 +663,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         hash = (53 * hash) + getAnnotationId().hashCode();
         hash = (37 * hash) + SOURCEID_FIELD_NUMBER;
         hash = (53 * hash) + getSourceId().hashCode();
+        if (hasSource()) {
+            hash = (37 * hash) + SOURCE_FIELD_NUMBER;
+            hash = (53 * hash) + getSource().hashCode();
+        }
         if (getSegmentsCount() > 0) {
             hash = (37 * hash) + SEGMENTS_FIELD_NUMBER;
             hash = (53 * hash) + getSegmentsList().hashCode();
@@ -738,12 +798,19 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
 
         // Construct using datawave.annotation.protobuf.v1.Annotation.newBuilder()
         private Builder() {
-
+            maybeForceBuilderInitialization();
         }
 
         private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
             super(parent);
+            maybeForceBuilderInitialization();
+        }
 
+        private void maybeForceBuilderInitialization() {
+            if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {
+                getSourceFieldBuilder();
+                getSegmentsFieldBuilder();
+            }
         }
 
         @java.lang.Override
@@ -761,13 +828,19 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
 
             sourceId_ = "";
 
+            if (sourceBuilder_ == null) {
+                source_ = null;
+            } else {
+                sourceBuilder_.clear();
+            }
+            bitField0_ = (bitField0_ & ~0x00000001);
             if (segmentsBuilder_ == null) {
                 segments_ = java.util.Collections.emptyList();
             } else {
                 segments_ = null;
                 segmentsBuilder_.clear();
             }
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ = (bitField0_ & ~0x00000002);
             internalGetMutableMetadata().clear();
             return this;
         }
@@ -795,16 +868,25 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         public datawave.annotation.protobuf.v1.Annotation buildPartial() {
             datawave.annotation.protobuf.v1.Annotation result = new datawave.annotation.protobuf.v1.Annotation(this);
             int from_bitField0_ = bitField0_;
+            int to_bitField0_ = 0;
             result.shard_ = shard_;
             result.dataType_ = dataType_;
             result.uid_ = uid_;
             result.annotationType_ = annotationType_;
             result.annotationId_ = annotationId_;
             result.sourceId_ = sourceId_;
+            if (((from_bitField0_ & 0x00000001) != 0)) {
+                if (sourceBuilder_ == null) {
+                    result.source_ = source_;
+                } else {
+                    result.source_ = sourceBuilder_.build();
+                }
+                to_bitField0_ |= 0x00000001;
+            }
             if (segmentsBuilder_ == null) {
-                if (((bitField0_ & 0x00000001) != 0)) {
+                if (((bitField0_ & 0x00000002) != 0)) {
                     segments_ = java.util.Collections.unmodifiableList(segments_);
-                    bitField0_ = (bitField0_ & ~0x00000001);
+                    bitField0_ = (bitField0_ & ~0x00000002);
                 }
                 result.segments_ = segments_;
             } else {
@@ -812,6 +894,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             }
             result.metadata_ = internalGetMetadata();
             result.metadata_.makeImmutable();
+            result.bitField0_ = to_bitField0_;
             onBuilt();
             return result;
         }
@@ -883,11 +966,14 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 sourceId_ = other.sourceId_;
                 onChanged();
             }
+            if (other.hasSource()) {
+                mergeSource(other.getSource());
+            }
             if (segmentsBuilder_ == null) {
                 if (!other.segments_.isEmpty()) {
                     if (segments_.isEmpty()) {
                         segments_ = other.segments_;
-                        bitField0_ = (bitField0_ & ~0x00000001);
+                        bitField0_ = (bitField0_ & ~0x00000002);
                     } else {
                         ensureSegmentsIsMutable();
                         segments_.addAll(other.segments_);
@@ -900,7 +986,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                         segmentsBuilder_.dispose();
                         segmentsBuilder_ = null;
                         segments_ = other.segments_;
-                        bitField0_ = (bitField0_ & ~0x00000001);
+                        bitField0_ = (bitField0_ & ~0x00000002);
                         segmentsBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getSegmentsFieldBuilder() : null;
                     } else {
                         segmentsBuilder_.addAllMessages(other.segments_);
@@ -962,6 +1048,11 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
 
                             break;
                         } // case 50
+                        case 58: {
+                            input.readMessage(getSourceFieldBuilder().getBuilder(), extensionRegistry);
+                            bitField0_ |= 0x00000001;
+                            break;
+                        } // case 58
                         case 162: {
                             datawave.annotation.protobuf.v1.Segment m = input.readMessage(datawave.annotation.protobuf.v1.Segment.parser(), extensionRegistry);
                             if (segmentsBuilder_ == null) {
@@ -1608,12 +1699,168 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             return this;
         }
 
+        private datawave.annotation.protobuf.v1.AnnotationSource source_;
+        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.AnnotationSource,datawave.annotation.protobuf.v1.AnnotationSource.Builder,datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder> sourceBuilder_;
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         *
+         * @return Whether the source field is set.
+         */
+        public boolean hasSource() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         *
+         * @return The source.
+         */
+        public datawave.annotation.protobuf.v1.AnnotationSource getSource() {
+            if (sourceBuilder_ == null) {
+                return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
+            } else {
+                return sourceBuilder_.getMessage();
+            }
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         */
+        public Builder setSource(datawave.annotation.protobuf.v1.AnnotationSource value) {
+            if (sourceBuilder_ == null) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                source_ = value;
+                onChanged();
+            } else {
+                sourceBuilder_.setMessage(value);
+            }
+            bitField0_ |= 0x00000001;
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         */
+        public Builder setSource(datawave.annotation.protobuf.v1.AnnotationSource.Builder builderForValue) {
+            if (sourceBuilder_ == null) {
+                source_ = builderForValue.build();
+                onChanged();
+            } else {
+                sourceBuilder_.setMessage(builderForValue.build());
+            }
+            bitField0_ |= 0x00000001;
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         */
+        public Builder mergeSource(datawave.annotation.protobuf.v1.AnnotationSource value) {
+            if (sourceBuilder_ == null) {
+                if (((bitField0_ & 0x00000001) != 0) && source_ != null && source_ != datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance()) {
+                    source_ = datawave.annotation.protobuf.v1.AnnotationSource.newBuilder(source_).mergeFrom(value).buildPartial();
+                } else {
+                    source_ = value;
+                }
+                onChanged();
+            } else {
+                sourceBuilder_.mergeFrom(value);
+            }
+            bitField0_ |= 0x00000001;
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         */
+        public Builder clearSource() {
+            if (sourceBuilder_ == null) {
+                source_ = null;
+                onChanged();
+            } else {
+                sourceBuilder_.clear();
+            }
+            bitField0_ = (bitField0_ & ~0x00000001);
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         */
+        public datawave.annotation.protobuf.v1.AnnotationSource.Builder getSourceBuilder() {
+            bitField0_ |= 0x00000001;
+            onChanged();
+            return getSourceFieldBuilder().getBuilder();
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         */
+        public datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder() {
+            if (sourceBuilder_ != null) {
+                return sourceBuilder_.getMessageOrBuilder();
+            } else {
+                return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
+            }
+        }
+
+        /**
+         * <pre>
+         * the source details for this annotation.
+         * </pre>
+         *
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         */
+        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.AnnotationSource,datawave.annotation.protobuf.v1.AnnotationSource.Builder,datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder> getSourceFieldBuilder() {
+            if (sourceBuilder_ == null) {
+                sourceBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.AnnotationSource,datawave.annotation.protobuf.v1.AnnotationSource.Builder,datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder>(
+                                getSource(), getParentForChildren(), isClean());
+                source_ = null;
+            }
+            return sourceBuilder_;
+        }
+
         private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_ = java.util.Collections.emptyList();
 
         private void ensureSegmentsIsMutable() {
-            if (!((bitField0_ & 0x00000001) != 0)) {
+            if (!((bitField0_ & 0x00000002) != 0)) {
                 segments_ = new java.util.ArrayList<datawave.annotation.protobuf.v1.Segment>(segments_);
-                bitField0_ |= 0x00000001;
+                bitField0_ |= 0x00000002;
             }
         }
 
@@ -1809,7 +2056,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         public Builder clearSegments() {
             if (segmentsBuilder_ == null) {
                 segments_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000001);
+                bitField0_ = (bitField0_ & ~0x00000002);
                 onChanged();
             } else {
                 segmentsBuilder_.clear();
@@ -1912,7 +2159,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsFieldBuilder() {
             if (segmentsBuilder_ == null) {
                 segmentsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.Segment,datawave.annotation.protobuf.v1.Segment.Builder,datawave.annotation.protobuf.v1.SegmentOrBuilder>(
-                                segments_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
+                                segments_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
                 segments_ = null;
             }
             return segmentsBuilder_;

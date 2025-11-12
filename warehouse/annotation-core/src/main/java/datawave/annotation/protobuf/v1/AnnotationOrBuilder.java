@@ -141,6 +141,37 @@ public interface AnnotationOrBuilder extends
 
     /**
      * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     *
+     * @return Whether the source field is set.
+     */
+    boolean hasSource();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     *
+     * @return The source.
+     */
+    datawave.annotation.protobuf.v1.AnnotationSource getSource();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     */
+    datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder();
+
+    /**
+     * <pre>
      * segment data
      * </pre>
      *
