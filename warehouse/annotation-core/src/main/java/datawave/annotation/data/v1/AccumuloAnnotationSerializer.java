@@ -9,6 +9,7 @@ import java.util.Map;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,9 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
     final VisibilityTransformer visibilityTransformer;
     final TimestampTransformer timestampTransformer;
 
+    public static final String DOCUMENT_ID_KEY = "docId";
+    public static final String SOURCE_ID_KEY = "sourceId";
+
     public AccumuloAnnotationSerializer() {
         this(DEFAULT_VISIBILITY_TRANSFORMER, DEFAULT_TIMESTAMP_TRANSFORMER);
     }
@@ -50,12 +54,7 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
         Key baseKey = generateBaseKey(annotation);
         List<Map.Entry<Key,Value>> serializedResults = new ArrayList<>();
 
-        // TODO: convert the annotation id to a string/byte array once and pass this down instead of converting it each
-        // time
-        if (!annotation.getMetadataMap().isEmpty()) {
-            serializeMetadata(baseKey, annotation.getAnnotationId(), annotation.getMetadataMap(), serializedResults);
-        }
-
+        serializeFieldsAndMetadata(baseKey, annotation, serializedResults);
         serializeSegments(baseKey, annotation.getAnnotationId(), annotation.getSegmentsList(), serializedResults);
 
         return serializedResults.iterator();
@@ -94,8 +93,16 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
 
             String[] cqParts = key.getColumnQualifier().toString().split("\0");
             if (cqParts.length == 3) {
-                metadata.put(cqParts[1], cqParts[2]);
-
+                switch (cqParts[1]) {
+                    case SOURCE_ID_KEY:
+                        annotationBuilder.setSourceId(cqParts[2]);
+                        break;
+                    case DOCUMENT_ID_KEY:
+                        annotationBuilder.setDocumentId(cqParts[2]);
+                        break;
+                    default:
+                        metadata.put(cqParts[1], cqParts[2]);
+                }
             } else if (cqParts.length == 2) { // 3 parts.
                 try {
                     segments.add(Segment.parseFrom(e.getValue().get()));
@@ -157,20 +164,38 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
     }
 
     /**
-     * Serialize an Annotation's metadata map to a series of Accumulo key, value pairs written to the list provided
+     * Serialize an Annotation's metadata map and fields to a series of Accumulo key, value pairs written to the list provided
      *
      * @param baseKey
      *            the base key for the annotation.
-     * @param annotationId
-     *            the annotation id we are serializing.
-     * @param metadata
-     *            the metadata map to serialize.
+     * @param annotation
+     *            the annotation we are serializing.
      * @param serializedResults
      *            serialized pairs will be written to a provided list.
      */
-    protected static void serializeMetadata(Key baseKey, String annotationId, Map<String,String> metadata, List<Map.Entry<Key,Value>> serializedResults) {
-        for (Map.Entry<String,String> entry : metadata.entrySet()) {
-            serializedResults.add(serializeMetadata(baseKey, annotationId, entry.getKey(), entry.getValue()));
+    protected static void serializeFieldsAndMetadata(Key baseKey, Annotation annotation, List<Map.Entry<Key,Value>> serializedResults) {
+        // the output combines the annotation's metadata map and data from a few annotation fields that
+        // aren't stored in the accumulo key in other ways.
+
+        // metadata map
+        if (!annotation.getMetadataMap().isEmpty()) {
+            for (Map.Entry<String,String> entry : annotation.getMetadataMap().entrySet()) {
+                serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), entry.getKey(), entry.getValue()));
+            }
+        }
+
+        // document id field
+        if (!StringUtils.isEmpty(annotation.getDocumentId())) {
+            serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), DOCUMENT_ID_KEY, annotation.getDocumentId()));
+        }
+
+        // source id field
+        if (!StringUtils.isEmpty(annotation.getSourceId())) {
+            // use the source id if set.
+            serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), SOURCE_ID_KEY, annotation.getSourceId()));
+        } else if (annotation.hasSource() && !StringUtils.isEmpty(annotation.getSource().getSourceId())) {
+            // use the source's id if set if source id isn't set.
+            serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), SOURCE_ID_KEY, annotation.getSource().getSourceId()));
         }
     }
 
@@ -187,7 +212,7 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
      *            a single metadata value.
      * @return the key and value pair for the serialized metadata key value pair.
      */
-    protected static Map.Entry<Key,Value> serializeMetadata(Key baseKey, String annotationId, String metadataKey, String metadataValue) {
+    protected static Map.Entry<Key,Value> generateMetadataEntry(Key baseKey, String annotationId, String metadataKey, String metadataValue) {
         final String columnQualifier = annotationId + NULL + metadataKey + NULL + metadataValue;
         //@formatter:off
         final Key key = Key.builder()

@@ -23,6 +23,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         annotationType_ = "";
         annotationId_ = "";
         sourceId_ = "";
+        documentId_ = "";
         segments_ = java.util.Collections.emptyList();
     }
 
@@ -379,6 +380,52 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
     }
 
+    public static final int DOCUMENTID_FIELD_NUMBER = 8;
+    private volatile java.lang.Object documentId_;
+
+    /**
+     * <pre>
+     * the external identifier for this annotations source document.
+     * </pre>
+     *
+     * <code>string documentId = 8;</code>
+     *
+     * @return The documentId.
+     */
+    @java.lang.Override
+    public java.lang.String getDocumentId() {
+        java.lang.Object ref = documentId_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            documentId_ = s;
+            return s;
+        }
+    }
+
+    /**
+     * <pre>
+     * the external identifier for this annotations source document.
+     * </pre>
+     *
+     * <code>string documentId = 8;</code>
+     *
+     * @return The bytes for documentId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getDocumentIdBytes() {
+        java.lang.Object ref = documentId_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            documentId_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+
     public static final int SEGMENTS_FIELD_NUMBER = 20;
     private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_;
 
@@ -559,6 +606,9 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         if (((bitField0_ & 0x00000001) != 0)) {
             output.writeMessage(7, getSource());
         }
+        if (!getDocumentIdBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 8, documentId_);
+        }
         for (int i = 0; i < segments_.size(); i++) {
             output.writeMessage(20, segments_.get(i));
         }
@@ -593,6 +643,9 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
         if (((bitField0_ & 0x00000001) != 0)) {
             size += com.google.protobuf.CodedOutputStream.computeMessageSize(7, getSource());
+        }
+        if (!getDocumentIdBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, documentId_);
         }
         for (int i = 0; i < segments_.size(); i++) {
             size += com.google.protobuf.CodedOutputStream.computeMessageSize(20, segments_.get(i));
@@ -635,6 +688,8 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             if (!getSource().equals(other.getSource()))
                 return false;
         }
+        if (!getDocumentId().equals(other.getDocumentId()))
+            return false;
         if (!getSegmentsList().equals(other.getSegmentsList()))
             return false;
         if (!internalGetMetadata().equals(other.internalGetMetadata()))
@@ -667,6 +722,8 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             hash = (37 * hash) + SOURCE_FIELD_NUMBER;
             hash = (53 * hash) + getSource().hashCode();
         }
+        hash = (37 * hash) + DOCUMENTID_FIELD_NUMBER;
+        hash = (53 * hash) + getDocumentId().hashCode();
         if (getSegmentsCount() > 0) {
             hash = (37 * hash) + SEGMENTS_FIELD_NUMBER;
             hash = (53 * hash) + getSegmentsList().hashCode();
@@ -834,6 +891,8 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 sourceBuilder_.clear();
             }
             bitField0_ = (bitField0_ & ~0x00000001);
+            documentId_ = "";
+
             if (segmentsBuilder_ == null) {
                 segments_ = java.util.Collections.emptyList();
             } else {
@@ -883,6 +942,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 }
                 to_bitField0_ |= 0x00000001;
             }
+            result.documentId_ = documentId_;
             if (segmentsBuilder_ == null) {
                 if (((bitField0_ & 0x00000002) != 0)) {
                     segments_ = java.util.Collections.unmodifiableList(segments_);
@@ -969,6 +1029,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             if (other.hasSource()) {
                 mergeSource(other.getSource());
             }
+            if (!other.getDocumentId().isEmpty()) {
+                documentId_ = other.documentId_;
+                onChanged();
+            }
             if (segmentsBuilder_ == null) {
                 if (!other.segments_.isEmpty()) {
                     if (segments_.isEmpty()) {
@@ -1053,6 +1117,11 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                             bitField0_ |= 0x00000001;
                             break;
                         } // case 58
+                        case 66: {
+                            documentId_ = input.readStringRequireUtf8();
+
+                            break;
+                        } // case 66
                         case 162: {
                             datawave.annotation.protobuf.v1.Segment m = input.readMessage(datawave.annotation.protobuf.v1.Segment.parser(), extensionRegistry);
                             if (segmentsBuilder_ == null) {
@@ -1853,6 +1922,108 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 source_ = null;
             }
             return sourceBuilder_;
+        }
+
+        private java.lang.Object documentId_ = "";
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 8;</code>
+         *
+         * @return The documentId.
+         */
+        public java.lang.String getDocumentId() {
+            java.lang.Object ref = documentId_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                documentId_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 8;</code>
+         *
+         * @return The bytes for documentId.
+         */
+        public com.google.protobuf.ByteString getDocumentIdBytes() {
+            java.lang.Object ref = documentId_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                documentId_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 8;</code>
+         *
+         * @param value
+         *            The documentId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setDocumentId(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+
+            documentId_ = value;
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 8;</code>
+         *
+         * @return This builder for chaining.
+         */
+        public Builder clearDocumentId() {
+
+            documentId_ = getDefaultInstance().getDocumentId();
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 8;</code>
+         *
+         * @param value
+         *            The bytes for documentId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setDocumentIdBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+
+            documentId_ = value;
+            onChanged();
+            return this;
         }
 
         private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_ = java.util.Collections.emptyList();

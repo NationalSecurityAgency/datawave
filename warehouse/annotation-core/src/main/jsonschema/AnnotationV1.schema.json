@@ -59,6 +59,9 @@
             }
           ]
         },
+        "documentId": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.documentId"
+        },
         "segments": {
           "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.segments"
         },
@@ -73,7 +76,8 @@
         "uid",
         "annotationType",
         "annotationId",
-        "sourceId"
+        "sourceId",
+        "documentId"
       ]
     },
     ".datawave.annotation.protobuf.v1.Annotation.annotationId": {
@@ -87,6 +91,10 @@
     ".datawave.annotation.protobuf.v1.Annotation.dataType": {
       "type": "string",
       "description": "the datatype of the record this annotation addresses"
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.documentId": {
+      "type": "string",
+      "description": "the external identifier for this annotations source document."
     },
     ".datawave.annotation.protobuf.v1.Annotation.metadata": {
       "additionalProperties": {

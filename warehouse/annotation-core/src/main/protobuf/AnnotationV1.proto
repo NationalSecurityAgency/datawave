@@ -44,7 +44,8 @@ message Annotation {
     string annotationId = 5; // the hash that identifies this annotation
     string sourceId = 6; // the identifier for this annotations source
     optional AnnotationSource source = 7; // the source details for this annotation.
-    reserved 8 to 19; // for future growth.
+    string documentId = 8; // the external identifier for this annotations source document.
+    reserved 9 to 19; // for future growth.
     repeated Segment segments = 20; // segment data
     reserved 21 to 49; // for future growth.
     map<string, string> metadata = 50;

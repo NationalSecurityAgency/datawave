@@ -6,11 +6,13 @@ Provides a generic method to annotate portions of data stored in datawave.
 
 Annotations are encoded in Accumulo as follows.
 
-| Purpose             | Row             | Column Family                                       | Column Qualifier                    | Value          |
-|---------------------|-----------------|-----------------------------------------------------|-------------------------------------|----------------|
-| Annotation Metadata | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) key (n) value      | None           |
-| Annotation Segment  | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) segmentId          | Protobuf Value |
-| Annotation Update   | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) segmentId.updateId | Protobuf Value |
+| Purpose                | Row             | Column Family                                       | Column Qualifier                     | Value            |
+|------------------------|-----------------|-----------------------------------------------------|--------------------------------------|------------------|
+| Annotation Source Id   | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) "sourceId (n) value | None             |
+| Annotation Document Id | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) "docId" (n) value   | None             |
+| Annotation Metadata    | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) key (n) value       | None             |
+| Annotation Segment     | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) segmentId           | Protobuf Value   |
+| Annotation Update      | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) segmentId.updateId  | Protobuf Value   |
 
 The primary portion of this table is structured to align with documents in the Datawave shard tables.
 

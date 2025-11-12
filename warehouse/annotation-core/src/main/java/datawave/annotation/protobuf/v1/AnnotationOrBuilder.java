@@ -172,6 +172,28 @@ public interface AnnotationOrBuilder extends
 
     /**
      * <pre>
+     * the external identifier for this annotations source document.
+     * </pre>
+     *
+     * <code>string documentId = 8;</code>
+     *
+     * @return The documentId.
+     */
+    java.lang.String getDocumentId();
+
+    /**
+     * <pre>
+     * the external identifier for this annotations source document.
+     * </pre>
+     *
+     * <code>string documentId = 8;</code>
+     *
+     * @return The bytes for documentId.
+     */
+    com.google.protobuf.ByteString getDocumentIdBytes();
+
+    /**
+     * <pre>
      * segment data
      * </pre>
      *
