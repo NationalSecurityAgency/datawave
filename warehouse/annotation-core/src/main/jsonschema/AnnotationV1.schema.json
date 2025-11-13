@@ -198,10 +198,10 @@
       "type": "string"
     },
     ".datawave.annotation.protobuf.v1.Point.x": {
-      "type": "number"
+      "type": "integer"
     },
     ".datawave.annotation.protobuf.v1.Point.y": {
-      "type": "number"
+      "type": "integer"
     },
     ".datawave.annotation.protobuf.v1.Segment": {
       "properties": {

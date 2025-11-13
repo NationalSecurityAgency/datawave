@@ -42,28 +42,28 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
     }
 
     public static final int X_FIELD_NUMBER = 1;
-    private double x_;
+    private int x_;
 
     /**
-     * <code>double x = 1;</code>
+     * <code>sint32 x = 1;</code>
      *
      * @return The x.
      */
     @java.lang.Override
-    public double getX() {
+    public int getX() {
         return x_;
     }
 
     public static final int Y_FIELD_NUMBER = 2;
-    private double y_;
+    private int y_;
 
     /**
-     * <code>double y = 2;</code>
+     * <code>sint32 y = 2;</code>
      *
      * @return The y.
      */
     @java.lang.Override
-    public double getY() {
+    public int getY() {
         return y_;
     }
 
@@ -121,11 +121,11 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-        if (x_ != 0D) {
-            output.writeDouble(1, x_);
+        if (x_ != 0) {
+            output.writeSInt32(1, x_);
         }
-        if (y_ != 0D) {
-            output.writeDouble(2, y_);
+        if (y_ != 0) {
+            output.writeSInt32(2, y_);
         }
         if (!getLabelBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 3, label_);
@@ -140,11 +140,11 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
             return size;
 
         size = 0;
-        if (x_ != 0D) {
-            size += com.google.protobuf.CodedOutputStream.computeDoubleSize(1, x_);
+        if (x_ != 0) {
+            size += com.google.protobuf.CodedOutputStream.computeSInt32Size(1, x_);
         }
-        if (y_ != 0D) {
-            size += com.google.protobuf.CodedOutputStream.computeDoubleSize(2, y_);
+        if (y_ != 0) {
+            size += com.google.protobuf.CodedOutputStream.computeSInt32Size(2, y_);
         }
         if (!getLabelBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, label_);
@@ -164,9 +164,9 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
         }
         datawave.annotation.protobuf.v1.Point other = (datawave.annotation.protobuf.v1.Point) obj;
 
-        if (java.lang.Double.doubleToLongBits(getX()) != java.lang.Double.doubleToLongBits(other.getX()))
+        if (getX() != other.getX())
             return false;
-        if (java.lang.Double.doubleToLongBits(getY()) != java.lang.Double.doubleToLongBits(other.getY()))
+        if (getY() != other.getY())
             return false;
         if (!getLabel().equals(other.getLabel()))
             return false;
@@ -183,9 +183,9 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
         int hash = 41;
         hash = (19 * hash) + getDescriptor().hashCode();
         hash = (37 * hash) + X_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getX()));
+        hash = (53 * hash) + getX();
         hash = (37 * hash) + Y_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getY()));
+        hash = (53 * hash) + getY();
         hash = (37 * hash) + LABEL_FIELD_NUMBER;
         hash = (53 * hash) + getLabel().hashCode();
         hash = (29 * hash) + getUnknownFields().hashCode();
@@ -301,9 +301,9 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
         @java.lang.Override
         public Builder clear() {
             super.clear();
-            x_ = 0D;
+            x_ = 0;
 
-            y_ = 0D;
+            y_ = 0;
 
             label_ = "";
 
@@ -382,10 +382,10 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
         public Builder mergeFrom(datawave.annotation.protobuf.v1.Point other) {
             if (other == datawave.annotation.protobuf.v1.Point.getDefaultInstance())
                 return this;
-            if (other.getX() != 0D) {
+            if (other.getX() != 0) {
                 setX(other.getX());
             }
-            if (other.getY() != 0D) {
+            if (other.getY() != 0) {
                 setY(other.getY());
             }
             if (!other.getLabel().isEmpty()) {
@@ -416,16 +416,16 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
                         case 0:
                             done = true;
                             break;
-                        case 9: {
-                            x_ = input.readDouble();
+                        case 8: {
+                            x_ = input.readSInt32();
 
                             break;
-                        } // case 9
-                        case 17: {
-                            y_ = input.readDouble();
+                        } // case 8
+                        case 16: {
+                            y_ = input.readSInt32();
 
                             break;
-                        } // case 17
+                        } // case 16
                         case 26: {
                             label_ = input.readStringRequireUtf8();
 
@@ -447,26 +447,26 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
             return this;
         }
 
-        private double x_;
+        private int x_;
 
         /**
-         * <code>double x = 1;</code>
+         * <code>sint32 x = 1;</code>
          *
          * @return The x.
          */
         @java.lang.Override
-        public double getX() {
+        public int getX() {
             return x_;
         }
 
         /**
-         * <code>double x = 1;</code>
+         * <code>sint32 x = 1;</code>
          *
          * @param value
          *            The x to set.
          * @return This builder for chaining.
          */
-        public Builder setX(double value) {
+        public Builder setX(int value) {
 
             x_ = value;
             onChanged();
@@ -474,37 +474,37 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
         }
 
         /**
-         * <code>double x = 1;</code>
+         * <code>sint32 x = 1;</code>
          *
          * @return This builder for chaining.
          */
         public Builder clearX() {
 
-            x_ = 0D;
+            x_ = 0;
             onChanged();
             return this;
         }
 
-        private double y_;
+        private int y_;
 
         /**
-         * <code>double y = 2;</code>
+         * <code>sint32 y = 2;</code>
          *
          * @return The y.
          */
         @java.lang.Override
-        public double getY() {
+        public int getY() {
             return y_;
         }
 
         /**
-         * <code>double y = 2;</code>
+         * <code>sint32 y = 2;</code>
          *
          * @param value
          *            The y to set.
          * @return This builder for chaining.
          */
-        public Builder setY(double value) {
+        public Builder setY(int value) {
 
             y_ = value;
             onChanged();
@@ -512,13 +512,13 @@ public final class Point extends com.google.protobuf.GeneratedMessageV3 implemen
         }
 
         /**
-         * <code>double y = 2;</code>
+         * <code>sint32 y = 2;</code>
          *
          * @return This builder for chaining.
          */
         public Builder clearY() {
 
-            y_ = 0D;
+            y_ = 0;
             onChanged();
             return this;
         }

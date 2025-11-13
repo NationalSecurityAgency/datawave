@@ -1,15 +1,17 @@
 package datawave.annotation.util.v1;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.hash.Funnel;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
@@ -50,25 +52,7 @@ public class AnnotationUtils {
     }
 
     /**
-     * Add the segment boundary types to the specified annotation
-     *
-     * @param a
-     *            the annotation to enrich
-     * @return the enriched version of the annotation, or the same annotation of the segment list is empty.
-     */
-    public static Annotation injectSegmentBoundaryTypes(Annotation a) {
-        if (a.getSegmentsList().isEmpty()) {
-            return a;
-        }
-        Annotation.Builder b = a.toBuilder().clearSegments();
-        for (Segment s : a.getSegmentsList()) {
-            b.addSegments(injectBoundaryType(s));
-        }
-        return b.build();
-    }
-
-    /**
-     * Given a segment boundary case, return the string describing that boundary
+     * Given a segment boundary case, return the string describing that boundary. TODO: implement this using toString on the enum?
      *
      * @param boundary
      *            the boundary
@@ -78,13 +62,13 @@ public class AnnotationUtils {
         BoundaryCase boundaryCase = getBoundaryCase(boundary);
         switch (boundaryCase) {
             case ALL:
-                return "ENTIRE";
-            case POINTS:
-                return "POINTS";
+                return "ALL";
             case TIME_SPAN:
                 return "TIME_SPAN";
             case CHARACTER_SPAN:
                 return "CHARACTER_SPAN";
+            case POINTS:
+                return "POINTS";
             case BOUNDARY_NOT_SET:
             default:
                 return "";
@@ -110,6 +94,24 @@ public class AnnotationUtils {
 
         // finally, generate the annotation id for the updated annotation
         return AnnotationUtils.injectAnnotationId(updatedAnnotation);
+    }
+
+    /**
+     * Add the segment boundary types to the specified annotation
+     *
+     * @param a
+     *            the annotation to enrich
+     * @return the enriched version of the annotation, or the same annotation of the segment list is empty.
+     */
+    public static Annotation injectSegmentBoundaryTypes(Annotation a) {
+        if (a.getSegmentsList().isEmpty()) {
+            return a;
+        }
+        Annotation.Builder b = a.toBuilder().clearSegments();
+        for (Segment s : a.getSegmentsList()) {
+            b.addSegments(injectBoundaryType(s));
+        }
+        return b.build();
     }
 
     /**
@@ -199,17 +201,18 @@ public class AnnotationUtils {
     @SuppressWarnings("UnstableApiUsage")
     public static String calculateAnnotationSourceHash(AnnotationSource annotationSource) {
         Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
-        hasher.putString(annotationSource.getEngine(), StandardCharsets.UTF_8);
-        hasher.putString(annotationSource.getModel(), StandardCharsets.UTF_8);
-        hasher.putString(annotationSource.getSourceLabel(), StandardCharsets.UTF_8);
+        hasher.putUnencodedChars(annotationSource.getEngine());
+        hasher.putUnencodedChars(annotationSource.getModel());
+        hasher.putUnencodedChars(annotationSource.getSourceLabel());
         // maps must be hashed in a consistent order (by key)
+        // TODO: extract to a subroutine?
         final Map<String,String> configMap = annotationSource.getConfigurationMap();
         final SortedSet<String> sortedKeySet = new TreeSet<>(configMap.keySet());
         for (String key : sortedKeySet) {
-            hasher.putString(key, StandardCharsets.UTF_8);
-            hasher.putString(configMap.get(key), StandardCharsets.UTF_8);
+            hasher.putUnencodedChars(key);
+            hasher.putUnencodedChars(configMap.get(key));
         }
-        return hasher.hash().toString();
+        return hasher.hash().toString().toUpperCase();
     }
 
     /**
@@ -226,19 +229,19 @@ public class AnnotationUtils {
      */
     @SuppressWarnings("UnstableApiUsage")
     public static String calculateAnnotationHash(Annotation annotation) {
-        Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
-        hasher.putString(annotation.getAnnotationType(), StandardCharsets.UTF_8);
+        final Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
+        hasher.putUnencodedChars(annotation.getAnnotationType());
         for (Segment s : annotation.getSegmentsList()) {
-            hasher.putString(calculateSegmentHash(s), StandardCharsets.UTF_8);
+            hasher.putUnencodedChars(calculateSegmentHash(s));
         }
         // maps must be hashed in a consistent order (by key)
         final Map<String,String> metadataMap = annotation.getMetadataMap();
         final SortedSet<String> sortedKeySet = new TreeSet<>(metadataMap.keySet());
         for (String key : sortedKeySet) {
-            hasher.putString(key, StandardCharsets.UTF_8);
-            hasher.putString(metadataMap.get(key), StandardCharsets.UTF_8);
+            hasher.putUnencodedChars(key);
+            hasher.putUnencodedChars(metadataMap.get(key));
         }
-        return hasher.hash().toString();
+        return hasher.hash().toString().toUpperCase();
     }
 
     /**
@@ -255,49 +258,78 @@ public class AnnotationUtils {
      */
     @SuppressWarnings("UnstableApiUsage")
     public static String calculateSegmentHash(Segment segment) {
-        Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
+        final Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
         for (SegmentValue v : segment.getValuesList()) {
-            hasher.putString(v.getValue(), StandardCharsets.UTF_8);
+            hasher.putUnencodedChars(v.getValue());
             hasher.putDouble(v.getScore());
             if (!v.getExtensionMap().isEmpty()) {
                 // maps must be hashed in a consistent order (by key)
                 final Map<String,String> extensionMap = v.getExtensionMap();
                 final SortedSet<String> sortedKeySet = new TreeSet<>(extensionMap.keySet());
                 for (String key : sortedKeySet) {
-                    hasher.putString(key, StandardCharsets.UTF_8);
-                    hasher.putString(extensionMap.get(key), StandardCharsets.UTF_8);
+                    hasher.putUnencodedChars(key);
+                    hasher.putUnencodedChars(extensionMap.get(key));
                 }
             }
         }
+
         final SegmentBoundary boundary = segment.getBoundary();
-        final BoundaryCase boundaryCase = getBoundaryCase(boundary);
-        switch (boundaryCase) {
-            case ALL:
-                hasher.putString("All", StandardCharsets.UTF_8);
-                break;
-            case POINTS:
-                for (Point p : boundary.getPointsList()) {
-                    hasher.putDouble(p.getX());
-                    hasher.putDouble(p.getY());
-                    hasher.putString(p.getLabel(), StandardCharsets.UTF_8);
-                }
-                break;
-            case TIME_SPAN:
-                hasher.putDouble(boundary.getTimeSpan().getStartSeconds());
-                hasher.putDouble(boundary.getTimeSpan().getEndSeconds());
-                break;
-            case CHARACTER_SPAN:
-                hasher.putLong(boundary.getCharacterSpan().getStartCharacter());
-                hasher.putLong(boundary.getCharacterSpan().getEndCharacter());
-                break;
-        }
+        hasher.putInt(calculateBoundaryHash(boundary));
+
         // maps must be hashed in a consistent order (by key)
         final Map<String,String> metadataMap = segment.getMetadataMap();
         final SortedSet<String> sortedKeySet = new TreeSet<>(metadataMap.keySet());
         for (String key : sortedKeySet) {
-            hasher.putString(key, StandardCharsets.UTF_8);
-            hasher.putString(metadataMap.get(key), StandardCharsets.UTF_8);
+            hasher.putUnencodedChars(key);
+            hasher.putUnencodedChars(metadataMap.get(key));
         }
         return hasher.hash().toString();
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    public static int calculateBoundaryHash(SegmentBoundary boundary) {
+        final BoundaryCase boundaryCase = getBoundaryCase(boundary);
+        //@formatter:off
+        switch (boundaryCase) {
+            case ALL:
+                return Hashing.murmur3_32_fixed().newHasher()
+                        .putUnencodedChars("ALL")
+                        .hash().asInt();
+            case POINTS:
+                return Hashing.murmur3_32_fixed().newHasher()
+                        .putUnencodedChars("POINT_LIST")
+                        .putObject(boundary.getPointsList(), boundaryPointsToHasher)
+                        .hash().asInt();
+            case TIME_SPAN:
+                return Objects.hash("OFFSET_RANGE",
+                        boundary.getTimeSpan().getStartSeconds(),
+                        boundary.getTimeSpan().getEndSeconds()
+                );
+            case CHARACTER_SPAN:
+                return Objects.hash("OFFSET_RANGE",
+                        boundary.getCharacterSpan().getStartCharacter(),
+                        boundary.getCharacterSpan().getEndCharacter()
+                );
+            default:
+                return 0;
+        }
+        //@formatter:on
+    }
+
+    //@formatter:off
+    @SuppressWarnings("UnstableApiUsage") // from Hasher
+    private static final Funnel<List<Point>> boundaryPointsToHasher =
+            (from, into) -> from.stream().map(AnnotationUtils::calculatePointHash).forEach(into::putInt);
+    //@formatter:on
+
+    @SuppressWarnings("UnstableApiUsage")
+    public static int calculatePointHash(Point p) {
+        //@formatter:off
+        return Hashing.murmur3_32_fixed().newHasher()
+                .putInt(p.getX())
+                .putInt(p.getY())
+                .putUnencodedChars(StringUtils.defaultString(p.getLabel()))
+                .hash().asInt();
+        //@formatter:on
     }
 }

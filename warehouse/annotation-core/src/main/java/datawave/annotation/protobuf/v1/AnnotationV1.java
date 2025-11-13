@@ -50,8 +50,8 @@ public final class AnnotationV1 {
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
         java.lang.String[] descriptorData = {"\n\022AnnotationV1.proto\022\037datawave.annotatio"
-                        + "n.protobuf.v1\"\005\n\003All\",\n\005Point\022\t\n\001x\030\001 \001(\001"
-                        + "\022\t\n\001y\030\002 \001(\001\022\r\n\005label\030\003 \001(\t\";\n\017TimeSpanSe"
+                        + "n.protobuf.v1\"\005\n\003All\",\n\005Point\022\t\n\001x\030\001 \001(\021"
+                        + "\022\t\n\001y\030\002 \001(\021\022\r\n\005label\030\003 \001(\t\";\n\017TimeSpanSe"
                         + "conds\022\024\n\014startSeconds\030\001 \001(\001\022\022\n\nendSecond"
                         + "s\030\002 \001(\001\"=\n\rTextSpanChars\022\026\n\016startCharact"
                         + "er\030\001 \001(\003\022\024\n\014endCharacter\030\002 \001(\003\"\257\001\n\014Segme"

@@ -7,8 +7,8 @@ option java_multiple_files = true;
 
 // segment boundary types
 message All { } // annotations on the entire object
-message Point { double x = 1; double y = 2; string label = 3; } // annotations on a point
-message TimeSpanSeconds { double startSeconds = 1; double endSeconds = 2; } // annotations on a span of time
+message Point { sint32 x = 1; sint32 y = 2; string label = 3; } // annotations on a point
+message TimeSpanSeconds { sfixed32 startSeconds = 1; sfixed32 endSeconds = 2; } // annotations on a span of time
 message TextSpanChars { int64 startCharacter = 1; int64 endCharacter = 2; } // annotations on a span of characters
 
 // segment value, e.g. a label, confidence and source

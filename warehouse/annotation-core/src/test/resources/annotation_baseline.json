@@ -4,9 +4,9 @@
     "dataType": "audio",
     "uid": "l46b0b.l9xx93.-jsda4n",
     "annotationType": "tts",
-    "annotationId": "b364f663",
+    "annotationId": "5AE1EFFB",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -22,7 +22,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -38,7 +38,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -54,7 +54,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -70,7 +70,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -86,7 +86,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -102,7 +102,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -118,7 +118,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -134,7 +134,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -150,7 +150,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -180,9 +180,9 @@
     "dataType": "news",
     "uid": "6tzt7u.-hm7g23.i1ueb4",
     "annotationType": "tokens",
-    "annotationId": "e8746271",
+    "annotationId": "7B4465E4",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -195,7 +195,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -208,7 +208,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -221,7 +221,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -234,7 +234,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -247,7 +247,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -260,7 +260,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -273,7 +273,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -300,18 +300,18 @@
     "dataType": "cars",
     "uid": "-pp0vkp.3rzqnz.5q54vx",
     "annotationType": "object",
-    "annotationId": "a8b19431",
+    "annotationId": "6B0FBA6B",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -329,16 +329,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -356,16 +356,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -377,16 +377,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -404,16 +404,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -425,16 +425,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -466,9 +466,9 @@
     "dataType": "audio",
     "uid": "ayu73v.3cwl0r.-4ptvm7",
     "annotationType": "tts",
-    "annotationId": "f0fcd1a0",
+    "annotationId": "CFF9F9C4",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -484,7 +484,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -500,7 +500,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -516,7 +516,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -532,7 +532,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -548,7 +548,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -564,7 +564,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -580,7 +580,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -596,7 +596,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -612,7 +612,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -642,9 +642,9 @@
     "dataType": "news",
     "uid": "-6j7k0l.u7xkz5.-x8hpes",
     "annotationType": "tokens",
-    "annotationId": "3215ddbb",
+    "annotationId": "B1C92F04",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -657,7 +657,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -670,7 +670,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -683,7 +683,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -696,7 +696,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -709,7 +709,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -722,7 +722,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -735,7 +735,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -762,18 +762,18 @@
     "dataType": "cars",
     "uid": "sr2ace.-4lv4w6.-begkwn",
     "annotationType": "object",
-    "annotationId": "bacdb442",
+    "annotationId": "DEE31B02",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -791,16 +791,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -818,16 +818,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -839,16 +839,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -866,16 +866,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -887,16 +887,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -928,9 +928,9 @@
     "dataType": "audio",
     "uid": "j0cfzn.-4j53im.-d2w0tz",
     "annotationType": "tts",
-    "annotationId": "36dbcb7d",
+    "annotationId": "13E62CA0",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -946,7 +946,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -962,7 +962,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -978,7 +978,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -994,7 +994,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1010,7 +1010,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1026,7 +1026,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1042,7 +1042,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1058,7 +1058,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1074,7 +1074,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1104,9 +1104,9 @@
     "dataType": "news",
     "uid": "-ngbobu.-c94tvj.8y2p8a",
     "annotationType": "tokens",
-    "annotationId": "8dc2b541",
+    "annotationId": "215E0049",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1119,7 +1119,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1132,7 +1132,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1145,7 +1145,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1158,7 +1158,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1171,7 +1171,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1184,7 +1184,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1197,7 +1197,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1224,18 +1224,18 @@
     "dataType": "cars",
     "uid": "pz3x7s.o7mcqn.-kj0cpa",
     "annotationType": "object",
-    "annotationId": "1474e104",
+    "annotationId": "5F2FEFCB",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -1253,16 +1253,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -1280,16 +1280,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -1301,16 +1301,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -1328,16 +1328,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -1349,16 +1349,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -1390,9 +1390,9 @@
     "dataType": "audio",
     "uid": "-hyi367.-mgypqf.-fg916b",
     "annotationType": "tts",
-    "annotationId": "189b6f0c",
+    "annotationId": "32251087",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1408,7 +1408,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1424,7 +1424,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1440,7 +1440,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1456,7 +1456,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1472,7 +1472,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1488,7 +1488,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1504,7 +1504,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1520,7 +1520,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1536,7 +1536,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1566,9 +1566,9 @@
     "dataType": "news",
     "uid": "wb1pp4.-wwcije.7resun",
     "annotationType": "tokens",
-    "annotationId": "3a94e32f",
+    "annotationId": "E8D11745",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1581,7 +1581,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1594,7 +1594,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1607,7 +1607,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1620,7 +1620,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1633,7 +1633,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1646,7 +1646,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1659,7 +1659,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -1686,18 +1686,18 @@
     "dataType": "cars",
     "uid": "-ihvcwi.-y2d5ue.-wce8xi",
     "annotationType": "object",
-    "annotationId": "f97ef7eb",
+    "annotationId": "9D700AB7",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -1715,16 +1715,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -1742,16 +1742,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -1763,16 +1763,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -1790,16 +1790,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -1811,16 +1811,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -1852,9 +1852,9 @@
     "dataType": "audio",
     "uid": "-j9ketf.npng62.u4mw0y",
     "annotationType": "tts",
-    "annotationId": "07fadb00",
+    "annotationId": "5F977DF5",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1870,7 +1870,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1886,7 +1886,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1902,7 +1902,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1918,7 +1918,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1934,7 +1934,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1950,7 +1950,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1966,7 +1966,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1982,7 +1982,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -1998,7 +1998,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2028,9 +2028,9 @@
     "dataType": "news",
     "uid": "aiddza.kdn85e.-wnbwkq",
     "annotationType": "tokens",
-    "annotationId": "dcf2d066",
+    "annotationId": "77070A07",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2043,7 +2043,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2056,7 +2056,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2069,7 +2069,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2082,7 +2082,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2095,7 +2095,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2108,7 +2108,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2121,7 +2121,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2148,18 +2148,18 @@
     "dataType": "cars",
     "uid": "-dwa987.-nmx1jx.g2brsm",
     "annotationType": "object",
-    "annotationId": "4d719106",
+    "annotationId": "6EBF38D6",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -2177,16 +2177,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -2204,16 +2204,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -2225,16 +2225,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -2252,16 +2252,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -2273,16 +2273,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -2314,9 +2314,9 @@
     "dataType": "audio",
     "uid": "-29vx6c.-lwa23c.isbedx",
     "annotationType": "tts",
-    "annotationId": "47444990",
+    "annotationId": "E731773E",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2332,7 +2332,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2348,7 +2348,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2364,7 +2364,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2380,7 +2380,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2396,7 +2396,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2412,7 +2412,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2428,7 +2428,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2444,7 +2444,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2460,7 +2460,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2490,9 +2490,9 @@
     "dataType": "news",
     "uid": "ofv6g7.-cb3p6d.-ivgfo9",
     "annotationType": "tokens",
-    "annotationId": "36d3ddec",
+    "annotationId": "7711DED2",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2505,7 +2505,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2518,7 +2518,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2531,7 +2531,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2544,7 +2544,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2557,7 +2557,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2570,7 +2570,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2583,7 +2583,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2610,18 +2610,18 @@
     "dataType": "cars",
     "uid": "va8jna.-hil636.-9lwvxz",
     "annotationType": "object",
-    "annotationId": "9e146ae2",
+    "annotationId": "7267FB5A",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -2639,16 +2639,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -2666,16 +2666,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -2687,16 +2687,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -2714,16 +2714,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -2735,16 +2735,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -2776,9 +2776,9 @@
     "dataType": "audio",
     "uid": "16end8.-vn8vng.-khm2w8",
     "annotationType": "tts",
-    "annotationId": "85489fcc",
+    "annotationId": "E25F752D",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2794,7 +2794,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2810,7 +2810,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2826,7 +2826,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2842,7 +2842,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2858,7 +2858,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2874,7 +2874,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2890,7 +2890,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2906,7 +2906,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2922,7 +2922,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -2952,9 +2952,9 @@
     "dataType": "news",
     "uid": "-6g8vi5.-m6euyr.cc6sho",
     "annotationType": "tokens",
-    "annotationId": "aa79a9f5",
+    "annotationId": "FF4BE081",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2967,7 +2967,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2980,7 +2980,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -2993,7 +2993,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3006,7 +3006,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3019,7 +3019,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3032,7 +3032,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3045,7 +3045,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3072,18 +3072,18 @@
     "dataType": "cars",
     "uid": "-hytjod.-nov8f8.-g5zapt",
     "annotationType": "object",
-    "annotationId": "c18c9d6f",
+    "annotationId": "F446D3F3",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -3101,16 +3101,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -3128,16 +3128,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -3149,16 +3149,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -3176,16 +3176,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -3197,16 +3197,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -3238,9 +3238,9 @@
     "dataType": "audio",
     "uid": "pa5nh.-njbvvg.-82pk6f",
     "annotationType": "tts",
-    "annotationId": "753637a3",
+    "annotationId": "65766886",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3256,7 +3256,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3272,7 +3272,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3288,7 +3288,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3304,7 +3304,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3320,7 +3320,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3336,7 +3336,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3352,7 +3352,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3368,7 +3368,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3384,7 +3384,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3414,9 +3414,9 @@
     "dataType": "news",
     "uid": "-rjrn67.fih94d.-w0pe6m",
     "annotationType": "tokens",
-    "annotationId": "0cf0d026",
+    "annotationId": "35AE13D2",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3429,7 +3429,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3442,7 +3442,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3455,7 +3455,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3468,7 +3468,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3481,7 +3481,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3494,7 +3494,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3507,7 +3507,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3534,18 +3534,18 @@
     "dataType": "cars",
     "uid": "-kzyodx.s0n5gw.xn56uj",
     "annotationType": "object",
-    "annotationId": "33569dd4",
+    "annotationId": "A3CA3A35",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -3563,16 +3563,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -3590,16 +3590,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -3611,16 +3611,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -3638,16 +3638,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -3659,16 +3659,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },
@@ -3700,9 +3700,9 @@
     "dataType": "audio",
     "uid": "-h8gcvv.2ngwd5.7bbswm",
     "annotationType": "tts",
-    "annotationId": "c40c90b3",
+    "annotationId": "29F9DEC7",
     "segments": [{
-      "segmentId": "4dda05ab",
+      "segmentId": "47a932ac",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3718,7 +3718,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "42aa9d75",
+      "segmentId": "ec66ff86",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3734,7 +3734,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "152c101f",
+      "segmentId": "fdd17cd0",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3750,7 +3750,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "0ee1cd75",
+      "segmentId": "7f81999c",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3766,7 +3766,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "04a6db73",
+      "segmentId": "34f85e64",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3782,7 +3782,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "a4d2cb55",
+      "segmentId": "a04d155f",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3798,7 +3798,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "e392fbfa",
+      "segmentId": "34203657",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3814,7 +3814,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "cf8c4863",
+      "segmentId": "40331225",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3830,7 +3830,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "43ee89b7",
+      "segmentId": "7e03f69b",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3846,7 +3846,7 @@
         "score": 0.20999999344348907
       }]
     }, {
-      "segmentId": "c9f6935f",
+      "segmentId": "a48e82ad",
       "boundary": {
         "boundaryType": "TIME_SPAN",
         "timeSpan": {
@@ -3876,9 +3876,9 @@
     "dataType": "news",
     "uid": "cvf0v4.-ncjfen.-69rc5w",
     "annotationType": "tokens",
-    "annotationId": "baf9b9a2",
+    "annotationId": "06456F2F",
     "segments": [{
-      "segmentId": "bf2c4677",
+      "segmentId": "2f16aed0",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3891,7 +3891,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bfc87d54",
+      "segmentId": "1c40d5e8",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3904,7 +3904,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "3fda599c",
+      "segmentId": "64a9d70b",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3917,7 +3917,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "33907bdb",
+      "segmentId": "0c727e38",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3930,7 +3930,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "79b10856",
+      "segmentId": "25f234e2",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3943,7 +3943,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "13926bd7",
+      "segmentId": "a237b10e",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3956,7 +3956,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "bb1e2be8",
+      "segmentId": "f0834fe1",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3969,7 +3969,7 @@
         "score": 1.0
       }]
     }, {
-      "segmentId": "671a7824",
+      "segmentId": "f6aed058",
       "boundary": {
         "boundaryType": "CHARACTER_SPAN",
         "characterSpan": {
@@ -3996,18 +3996,18 @@
     "dataType": "cars",
     "uid": "-diuujx.-vthisr.-z7h545",
     "annotationType": "object",
-    "annotationId": "5a684ac1",
+    "annotationId": "EE438212",
     "segments": [{
-      "segmentId": "69c6aaa2",
+      "segmentId": "88b19263",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 0.0,
-          "y": 0.0,
+          "x": 0,
+          "y": 0,
           "label": "topLeft"
         }, {
-          "x": 5.0,
-          "y": 12.0,
+          "x": 5,
+          "y": 12,
           "label": "bottomRight"
         }]
       },
@@ -4025,16 +4025,16 @@
         }
       }]
     }, {
-      "segmentId": "70bf3bd1",
+      "segmentId": "6f03ad59",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 10.0,
-          "y": 15.0,
+          "x": 10,
+          "y": 15,
           "label": "topLeft"
         }, {
-          "x": 15.0,
-          "y": 18.0,
+          "x": 15,
+          "y": 18,
           "label": "bottomRight"
         }]
       },
@@ -4052,16 +4052,16 @@
         }
       }]
     }, {
-      "segmentId": "82d3a82a",
+      "segmentId": "6331b9bc",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 20.0,
-          "y": 20.0,
+          "x": 20,
+          "y": 20,
           "label": "topLeft"
         }, {
-          "x": 28.0,
-          "y": 47.0,
+          "x": 28,
+          "y": 47,
           "label": "bottomRight"
         }]
       },
@@ -4073,16 +4073,16 @@
         }
       }]
     }, {
-      "segmentId": "250ba650",
+      "segmentId": "d8c68307",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 30.0,
-          "y": 50.0,
+          "x": 30,
+          "y": 50,
           "label": "topLeft"
         }, {
-          "x": 36.0,
-          "y": 55.0,
+          "x": 36,
+          "y": 55,
           "label": "bottomRight"
         }]
       },
@@ -4100,16 +4100,16 @@
         }
       }]
     }, {
-      "segmentId": "97f76cce",
+      "segmentId": "dd37d8e4",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 60.0,
-          "y": 70.0,
+          "x": 60,
+          "y": 70,
           "label": "topLeft"
         }, {
-          "x": 70.0,
-          "y": 78.0,
+          "x": 70,
+          "y": 78,
           "label": "bottomRight"
         }]
       },
@@ -4121,16 +4121,16 @@
         }
       }]
     }, {
-      "segmentId": "efb64343",
+      "segmentId": "eeaf0640",
       "boundary": {
         "boundaryType": "POINTS",
         "points": [{
-          "x": 80.0,
-          "y": 90.0,
+          "x": 80,
+          "y": 90,
           "label": "topLeft"
         }, {
-          "x": 89.0,
-          "y": 95.0,
+          "x": 89,
+          "y": 95,
           "label": "bottomRight"
         }]
       },

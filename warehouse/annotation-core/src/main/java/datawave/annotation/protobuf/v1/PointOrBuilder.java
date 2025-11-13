@@ -8,18 +8,18 @@ public interface PointOrBuilder extends
                 com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>double x = 1;</code>
+     * <code>sint32 x = 1;</code>
      *
      * @return The x.
      */
-    double getX();
+    int getX();
 
     /**
-     * <code>double y = 2;</code>
+     * <code>sint32 y = 2;</code>
      *
      * @return The y.
      */
-    double getY();
+    int getY();
 
     /**
      * <code>string label = 3;</code>
