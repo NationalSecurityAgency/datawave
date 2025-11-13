@@ -55,7 +55,7 @@ public class AccumuloAnnotationSourceSerializer implements AnnotationSerializer<
         serializeAnnotationSourceFields(baseKey, annotationSource, serializedResults);
 
         if (!annotationSource.getConfigurationMap().isEmpty()) {
-            serializeConfiguration(baseKey, annotationSource.getSourceId(), annotationSource.getConfigurationMap(), serializedResults);
+            serializeConfiguration(baseKey, annotationSource.getAnalyticHash(), annotationSource.getConfigurationMap(), serializedResults);
         }
 
         return serializedResults.iterator();
@@ -83,7 +83,7 @@ public class AccumuloAnnotationSourceSerializer implements AnnotationSerializer<
 
             if (baseKey == null) {
                 baseKey = key;
-                annotationSourceBuilder.setSourceId(key.getRow().toString());
+                annotationSourceBuilder.setAnalyticHash(key.getRow().toString());
             } else if (!correctAnnotationSource(baseKey, key)) {
                 throw new AnnotationSerializationException("The key provided isn't from the same annotation as the " + "first key provided: baseKey: ["
                                 + baseKey + "] currentKey: [" + key + "]");
@@ -175,7 +175,7 @@ public class AccumuloAnnotationSourceSerializer implements AnnotationSerializer<
      *             if there's a problem with the visibility transformer.
      */
     protected Key generateBaseKey(AnnotationSource annotationSource) throws AnnotationSerializationException {
-        String rowId = annotationSource.getSourceId();
+        String rowId = annotationSource.getAnalyticHash();
         String columnFamily = "source";
         ColumnVisibility cv = visibilityTransformer.toColumnVisibility(annotationSource.getConfigurationMap());
         long timestamp = timestampTransformer.toTimestamp(annotationSource.getConfigurationMap());

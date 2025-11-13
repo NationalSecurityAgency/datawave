@@ -119,25 +119,25 @@ public interface AnnotationOrBuilder extends
 
     /**
      * <pre>
-     * the identifier for this annotations source
+     * the analytic hash that identifies this annotation's source
      * </pre>
      *
-     * <code>string sourceId = 6;</code>
+     * <code>string analyticHash = 6;</code>
      *
-     * @return The sourceId.
+     * @return The analyticHash.
      */
-    java.lang.String getSourceId();
+    java.lang.String getAnalyticHash();
 
     /**
      * <pre>
-     * the identifier for this annotations source
+     * the analytic hash that identifies this annotation's source
      * </pre>
      *
-     * <code>string sourceId = 6;</code>
+     * <code>string analyticHash = 6;</code>
      *
-     * @return The bytes for sourceId.
+     * @return The bytes for analyticHash.
      */
-    com.google.protobuf.ByteString getSourceIdBytes();
+    com.google.protobuf.ByteString getAnalyticHashBytes();
 
     /**
      * <pre>

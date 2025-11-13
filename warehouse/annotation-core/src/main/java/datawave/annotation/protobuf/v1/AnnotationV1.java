@@ -49,42 +49,41 @@ public final class AnnotationV1 {
 
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {
-                "\n\022AnnotationV1.proto\022\037datawave.annotatio" + "n.protobuf.v1\"\005\n\003All\",\n\005Point\022\t\n\001x\030\001 \001(\001"
-                                + "\022\t\n\001y\030\002 \001(\001\022\r\n\005label\030\003 \001(\t\";\n\017TimeSpanSe"
-                                + "conds\022\024\n\014startSeconds\030\001 \001(\001\022\022\n\nendSecond"
-                                + "s\030\002 \001(\001\"=\n\rTextSpanChars\022\026\n\016startCharact"
-                                + "er\030\001 \001(\003\022\024\n\014endCharacter\030\002 \001(\003\"\257\001\n\014Segme"
-                                + "ntValue\022\r\n\005value\030\001 \001(\t\022\r\n\005score\030\002 \001(\001\022O\n"
-                                + "\textension\030\003 \003(\0132<.datawave.annotation.p" + "rotobuf.v1.SegmentValue.ExtensionEntry\0320"
-                                + "\n\016ExtensionEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002"
-                                + " \001(\t:\0028\001\"\337\002\n\017SegmentBoundary\022\024\n\014boundary"
-                                + "Type\030\001 \001(\t\0226\n\003all\030\024 \001(\0132$.datawave.annot"
-                                + "ation.protobuf.v1.AllH\000\210\001\001\022G\n\010timeSpan\030\025" + " \001(\01320.datawave.annotation.protobuf.v1.T"
-                                + "imeSpanSecondsH\001\210\001\001\022J\n\rcharacterSpan\030\026 \001" + "(\0132..datawave.annotation.protobuf.v1.Tex"
-                                + "tSpanCharsH\002\210\001\001\0226\n\006points\030\027 \003(\0132&.datawa" + "ve.annotation.protobuf.v1.PointB\006\n\004_allB"
-                                + "\013\n\t_timeSpanB\020\n\016_characterSpanJ\004\010\002\020\024J\004\010\030"
-                                + "\0203\"\240\002\n\007Segment\022\021\n\tsegmentId\030\001 \001(\t\022B\n\010bou"
-                                + "ndary\030\002 \001(\01320.datawave.annotation.protob" + "uf.v1.SegmentBoundary\022=\n\006values\030\003 \003(\0132-."
-                                + "datawave.annotation.protobuf.v1.SegmentV" + "alue\022H\n\010metadata\0302 \003(\01326.datawave.annota"
-                                + "tion.protobuf.v1.Segment.MetadataEntry\032/" + "\n\rMetadataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 "
-                                + "\001(\t:\0028\001J\004\010\004\0202\"\247\003\n\nAnnotation\022\r\n\005shard\030\001 "
-                                + "\001(\t\022\020\n\010dataType\030\002 \001(\t\022\013\n\003uid\030\003 \001(\t\022\026\n\016an"
-                                + "notationType\030\004 \001(\t\022\024\n\014annotationId\030\005 \001(\t"
-                                + "\022\020\n\010sourceId\030\006 \001(\t\022F\n\006source\030\007 \001(\01321.dat" + "awave.annotation.protobuf.v1.AnnotationS"
-                                + "ourceH\000\210\001\001\022\022\n\ndocumentId\030\010 \001(\t\022:\n\010segmen"
-                                + "ts\030\024 \003(\0132(.datawave.annotation.protobuf." + "v1.Segment\022K\n\010metadata\0302 \003(\01329.datawave."
-                                + "annotation.protobuf.v1.Annotation.Metada" + "taEntry\032/\n\rMetadataEntry\022\013\n\003key\030\001 \001(\t\022\r\n"
-                                + "\005value\030\002 \001(\t:\0028\001B\t\n\007_sourceJ\004\010\t\020\024J\004\010\025\0202\""
-                                + "\361\001\n\020AnnotationSource\022\020\n\010sourceId\030\001 \001(\t\022\016"
-                                + "\n\006engine\030\002 \001(\t\022\r\n\005model\030\003 \001(\t\022\023\n\013sourceL"
-                                + "abel\030\004 \001(\t\022[\n\rconfiguration\0302 \003(\0132D.data" + "wave.annotation.protobuf.v1.AnnotationSo"
-                                + "urce.ConfigurationEntry\0324\n\022Configuration"
-                                + "Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001J\004\010"
-                                + "\005\0202\"`\n\013SegmentList\022:\n\010segments\030\001 \003(\0132(.d" + "atawave.annotation.protobuf.v1.Segment\022\025"
-                                + "\n\rnextPageToken\030\002 \001(\t\"i\n\016AnnotationList\022" + "@\n\013annotations\030\001 \003(\0132+.datawave.annotati"
-                                + "on.protobuf.v1.Annotation\022\025\n\rnextPageTok" + "en\030\002 \001(\tB#\n\037datawave.annotation.protobuf"
-                                + ".v1P\001b\006proto3"};
+        java.lang.String[] descriptorData = {"\n\022AnnotationV1.proto\022\037datawave.annotatio"
+                        + "n.protobuf.v1\"\005\n\003All\",\n\005Point\022\t\n\001x\030\001 \001(\001"
+                        + "\022\t\n\001y\030\002 \001(\001\022\r\n\005label\030\003 \001(\t\";\n\017TimeSpanSe"
+                        + "conds\022\024\n\014startSeconds\030\001 \001(\001\022\022\n\nendSecond"
+                        + "s\030\002 \001(\001\"=\n\rTextSpanChars\022\026\n\016startCharact"
+                        + "er\030\001 \001(\003\022\024\n\014endCharacter\030\002 \001(\003\"\257\001\n\014Segme"
+                        + "ntValue\022\r\n\005value\030\001 \001(\t\022\r\n\005score\030\002 \001(\001\022O\n"
+                        + "\textension\030\003 \003(\0132<.datawave.annotation.p" + "rotobuf.v1.SegmentValue.ExtensionEntry\0320"
+                        + "\n\016ExtensionEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002"
+                        + " \001(\t:\0028\001\"\337\002\n\017SegmentBoundary\022\024\n\014boundary"
+                        + "Type\030\001 \001(\t\0226\n\003all\030\024 \001(\0132$.datawave.annot"
+                        + "ation.protobuf.v1.AllH\000\210\001\001\022G\n\010timeSpan\030\025" + " \001(\01320.datawave.annotation.protobuf.v1.T"
+                        + "imeSpanSecondsH\001\210\001\001\022J\n\rcharacterSpan\030\026 \001" + "(\0132..datawave.annotation.protobuf.v1.Tex"
+                        + "tSpanCharsH\002\210\001\001\0226\n\006points\030\027 \003(\0132&.datawa" + "ve.annotation.protobuf.v1.PointB\006\n\004_allB"
+                        + "\013\n\t_timeSpanB\020\n\016_characterSpanJ\004\010\002\020\024J\004\010\030"
+                        + "\0203\"\240\002\n\007Segment\022\021\n\tsegmentId\030\001 \001(\t\022B\n\010bou"
+                        + "ndary\030\002 \001(\01320.datawave.annotation.protob" + "uf.v1.SegmentBoundary\022=\n\006values\030\003 \003(\0132-."
+                        + "datawave.annotation.protobuf.v1.SegmentV" + "alue\022H\n\010metadata\0302 \003(\01326.datawave.annota"
+                        + "tion.protobuf.v1.Segment.MetadataEntry\032/" + "\n\rMetadataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 "
+                        + "\001(\t:\0028\001J\004\010\004\0202\"\253\003\n\nAnnotation\022\r\n\005shard\030\001 "
+                        + "\001(\t\022\020\n\010dataType\030\002 \001(\t\022\013\n\003uid\030\003 \001(\t\022\026\n\016an"
+                        + "notationType\030\004 \001(\t\022\024\n\014annotationId\030\005 \001(\t"
+                        + "\022\024\n\014analyticHash\030\006 \001(\t\022F\n\006source\030\007 \001(\01321" + ".datawave.annotation.protobuf.v1.Annotat"
+                        + "ionSourceH\000\210\001\001\022\022\n\ndocumentId\030\010 \001(\t\022:\n\010se"
+                        + "gments\030\024 \003(\0132(.datawave.annotation.proto" + "buf.v1.Segment\022K\n\010metadata\0302 \003(\01329.dataw"
+                        + "ave.annotation.protobuf.v1.Annotation.Me" + "tadataEntry\032/\n\rMetadataEntry\022\013\n\003key\030\001 \001("
+                        + "\t\022\r\n\005value\030\002 \001(\t:\0028\001B\t\n\007_sourceJ\004\010\t\020\024J\004\010"
+                        + "\025\0202\"\365\001\n\020AnnotationSource\022\024\n\014analyticHash"
+                        + "\030\001 \001(\t\022\016\n\006engine\030\002 \001(\t\022\r\n\005model\030\003 \001(\t\022\023\n"
+                        + "\013sourceLabel\030\004 \001(\t\022[\n\rconfiguration\0302 \003(" + "\0132D.datawave.annotation.protobuf.v1.Anno"
+                        + "tationSource.ConfigurationEntry\0324\n\022Confi" + "gurationEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001("
+                        + "\t:\0028\001J\004\010\005\0202\"`\n\013SegmentList\022:\n\010segments\030\001" + " \003(\0132(.datawave.annotation.protobuf.v1.S"
+                        + "egment\022\025\n\rnextPageToken\030\002 \001(\t\"i\n\016Annotat" + "ionList\022@\n\013annotations\030\001 \003(\0132+.datawave."
+                        + "annotation.protobuf.v1.Annotation\022\025\n\rnex" + "tPageToken\030\002 \001(\tB#\n\037datawave.annotation."
+                        + "protobuf.v1P\001b\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_annotation_protobuf_v1_All_descriptor = getDescriptor().getMessageTypes().get(0);
@@ -121,7 +120,7 @@ public final class AnnotationV1 {
         internal_static_datawave_annotation_protobuf_v1_Annotation_descriptor = getDescriptor().getMessageTypes().get(7);
         internal_static_datawave_annotation_protobuf_v1_Annotation_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_annotation_protobuf_v1_Annotation_descriptor, new java.lang.String[] {"Shard", "DataType", "Uid",
-                                "AnnotationType", "AnnotationId", "SourceId", "Source", "DocumentId", "Segments", "Metadata", "Source",});
+                                "AnnotationType", "AnnotationId", "AnalyticHash", "Source", "DocumentId", "Segments", "Metadata", "Source",});
         internal_static_datawave_annotation_protobuf_v1_Annotation_MetadataEntry_descriptor = internal_static_datawave_annotation_protobuf_v1_Annotation_descriptor
                         .getNestedTypes().get(0);
         internal_static_datawave_annotation_protobuf_v1_Annotation_MetadataEntry_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
@@ -129,7 +128,7 @@ public final class AnnotationV1 {
         internal_static_datawave_annotation_protobuf_v1_AnnotationSource_descriptor = getDescriptor().getMessageTypes().get(8);
         internal_static_datawave_annotation_protobuf_v1_AnnotationSource_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_annotation_protobuf_v1_AnnotationSource_descriptor,
-                        new java.lang.String[] {"SourceId", "Engine", "Model", "SourceLabel", "Configuration",});
+                        new java.lang.String[] {"AnalyticHash", "Engine", "Model", "SourceLabel", "Configuration",});
         internal_static_datawave_annotation_protobuf_v1_AnnotationSource_ConfigurationEntry_descriptor = internal_static_datawave_annotation_protobuf_v1_AnnotationSource_descriptor
                         .getNestedTypes().get(0);
         internal_static_datawave_annotation_protobuf_v1_AnnotationSource_ConfigurationEntry_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(

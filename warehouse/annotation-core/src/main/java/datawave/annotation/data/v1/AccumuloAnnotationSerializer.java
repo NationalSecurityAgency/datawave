@@ -35,8 +35,8 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
     final VisibilityTransformer visibilityTransformer;
     final TimestampTransformer timestampTransformer;
 
-    public static final String DOCUMENT_ID_KEY = "docId";
-    public static final String SOURCE_ID_KEY = "sourceId";
+    public static final String DOCUMENT_ID_KEY = "documentId";
+    public static final String ANALYTIC_HASH_KEY = "analyticHash";
 
     public AccumuloAnnotationSerializer() {
         this(DEFAULT_VISIBILITY_TRANSFORMER, DEFAULT_TIMESTAMP_TRANSFORMER);
@@ -94,8 +94,8 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
             String[] cqParts = key.getColumnQualifier().toString().split("\0");
             if (cqParts.length == 3) {
                 switch (cqParts[1]) {
-                    case SOURCE_ID_KEY:
-                        annotationBuilder.setSourceId(cqParts[2]);
+                    case ANALYTIC_HASH_KEY:
+                        annotationBuilder.setAnalyticHash(cqParts[2]);
                         break;
                     case DOCUMENT_ID_KEY:
                         annotationBuilder.setDocumentId(cqParts[2]);
@@ -190,12 +190,12 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
         }
 
         // source id field
-        if (!StringUtils.isEmpty(annotation.getSourceId())) {
+        if (!StringUtils.isEmpty(annotation.getAnalyticHash())) {
             // use the source id if set.
-            serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), SOURCE_ID_KEY, annotation.getSourceId()));
-        } else if (annotation.hasSource() && !StringUtils.isEmpty(annotation.getSource().getSourceId())) {
+            serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), ANALYTIC_HASH_KEY, annotation.getAnalyticHash()));
+        } else if (annotation.hasSource() && !StringUtils.isEmpty(annotation.getSource().getAnalyticHash())) {
             // use the source's id if set if source id isn't set.
-            serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), SOURCE_ID_KEY, annotation.getSource().getSourceId()));
+            serializedResults.add(generateMetadataEntry(baseKey, annotation.getAnnotationId(), ANALYTIC_HASH_KEY, annotation.getSource().getAnalyticHash()));
         }
     }
 

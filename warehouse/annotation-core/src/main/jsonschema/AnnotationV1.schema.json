@@ -46,8 +46,8 @@
         "annotationId": {
           "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.annotationId"
         },
-        "sourceId": {
-          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.sourceId"
+        "analyticHash": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.Annotation.analyticHash"
         },
         "source": {
           "oneOf": [
@@ -76,9 +76,13 @@
         "uid",
         "annotationType",
         "annotationId",
-        "sourceId",
+        "analyticHash",
         "documentId"
       ]
+    },
+    ".datawave.annotation.protobuf.v1.Annotation.analyticHash": {
+      "type": "string",
+      "description": "the analytic hash that identifies this annotation's source"
     },
     ".datawave.annotation.protobuf.v1.Annotation.annotationId": {
       "type": "string",
@@ -118,18 +122,14 @@
       "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource",
       "description": "the source details for this annotation."
     },
-    ".datawave.annotation.protobuf.v1.Annotation.sourceId": {
-      "type": "string",
-      "description": "the identifier for this annotations source"
-    },
     ".datawave.annotation.protobuf.v1.Annotation.uid": {
       "type": "string",
       "description": "the internal id of the record this annotation addresses"
     },
     ".datawave.annotation.protobuf.v1.AnnotationSource": {
       "properties": {
-        "sourceId": {
-          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.sourceId"
+        "analyticHash": {
+          "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.analyticHash"
         },
         "engine": {
           "$ref": "#/$defs/.datawave.annotation.protobuf.v1.AnnotationSource.engine"
@@ -146,11 +146,15 @@
       },
       "type": "object",
       "required": [
-        "sourceId",
+        "analyticHash",
         "engine",
         "model",
         "sourceLabel"
       ]
+    },
+    ".datawave.annotation.protobuf.v1.AnnotationSource.analyticHash": {
+      "type": "string",
+      "description": "the analytic hash for this source"
     },
     ".datawave.annotation.protobuf.v1.AnnotationSource.configuration": {
       "additionalProperties": {
@@ -166,10 +170,6 @@
     ".datawave.annotation.protobuf.v1.AnnotationSource.model": {
       "type": "string",
       "description": "a string identifying the model that produced the annotation"
-    },
-    ".datawave.annotation.protobuf.v1.AnnotationSource.sourceId": {
-      "type": "string",
-      "description": "the analytic hash for this source"
     },
     ".datawave.annotation.protobuf.v1.AnnotationSource.sourceLabel": {
       "type": "string",

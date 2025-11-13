@@ -483,9 +483,9 @@ public class AnnotationDataAccess {
      *             if there's a validation failure.
      */
     protected void validateAnnotationSourceForAdd(AnnotationSource annotationSource) {
-        if (StringUtils.isNotBlank(annotationSource.getSourceId())) {
+        if (StringUtils.isNotBlank(annotationSource.getAnalyticHash())) {
             throw new AnnotationWriteException(
-                            "Cannot add segment because it already has an id assigned '" + annotationSource.getSourceId() + "', annotation context was: "
+                            "Cannot add segment because it already has an id assigned '" + annotationSource.getAnalyticHash() + "', annotation context was: "
                                             + annotationSource.getEngine() + "/" + annotationSource.getModel() + "/" + annotationSource.getSourceLabel());
         }
     }
@@ -504,13 +504,13 @@ public class AnnotationDataAccess {
      */
     protected void checkAnnotationSourceForConflicts(AnnotationSource annotationSource) {
         // check that the annotation has an id assigned.
-        if (StringUtils.isBlank(annotationSource.getSourceId())) {
-            throw new AnnotationWriteException("Cannot add annotation because the id could not be automatically assigned '" + annotationSource.getSourceId()
+        if (StringUtils.isBlank(annotationSource.getAnalyticHash())) {
+            throw new AnnotationWriteException("Cannot add annotation because the id could not be automatically assigned '" + annotationSource.getAnalyticHash()
                             + "', annotation context was: " + annotationSource.getEngine() + "/" + annotationSource.getModel() + "/"
                             + annotationSource.getSourceLabel());
         }
 
-        Optional<AnnotationSource> conflicting = getAnnotationSource(annotationSource.getSourceId());
+        Optional<AnnotationSource> conflicting = getAnnotationSource(annotationSource.getAnalyticHash());
         if (conflicting.isPresent()) {
             throw new AnnotationWriteException("Cannot add annotation because an annotation with the same id already exists. New annotation: "
                             + annotationSource + ", Existing annotation: " + conflicting.get());

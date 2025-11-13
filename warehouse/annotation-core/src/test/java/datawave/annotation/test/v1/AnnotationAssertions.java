@@ -23,7 +23,7 @@ import datawave.annotation.protobuf.v1.SegmentValue;
 /** Utility methods for asserting annotation identity in unit tests */
 public class AnnotationAssertions {
     public static void assertAnnotationSourcesEqual(AnnotationSource t, AnnotationSource a) {
-        assertEquals(t.getSourceId(), a.getSourceId());
+        assertEquals(t.getAnalyticHash(), a.getAnalyticHash());
         assertEquals(t.getEngine(), a.getEngine());
         assertEquals(t.getModel(), a.getModel());
         assertEquals(t.getSourceLabel(), a.getSourceLabel());

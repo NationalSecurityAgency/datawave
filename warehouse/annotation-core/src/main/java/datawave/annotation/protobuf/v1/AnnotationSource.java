@@ -17,7 +17,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
     }
 
     private AnnotationSource() {
-        sourceId_ = "";
+        analyticHash_ = "";
         engine_ = "";
         model_ = "";
         sourceLabel_ = "";
@@ -56,27 +56,27 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                                         datawave.annotation.protobuf.v1.AnnotationSource.Builder.class);
     }
 
-    public static final int SOURCEID_FIELD_NUMBER = 1;
-    private volatile java.lang.Object sourceId_;
+    public static final int ANALYTICHASH_FIELD_NUMBER = 1;
+    private volatile java.lang.Object analyticHash_;
 
     /**
      * <pre>
      * the analytic hash for this source
      * </pre>
      *
-     * <code>string sourceId = 1;</code>
+     * <code>string analyticHash = 1;</code>
      *
-     * @return The sourceId.
+     * @return The analyticHash.
      */
     @java.lang.Override
-    public java.lang.String getSourceId() {
-        java.lang.Object ref = sourceId_;
+    public java.lang.String getAnalyticHash() {
+        java.lang.Object ref = analyticHash_;
         if (ref instanceof java.lang.String) {
             return (java.lang.String) ref;
         } else {
             com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
             java.lang.String s = bs.toStringUtf8();
-            sourceId_ = s;
+            analyticHash_ = s;
             return s;
         }
     }
@@ -86,16 +86,16 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * the analytic hash for this source
      * </pre>
      *
-     * <code>string sourceId = 1;</code>
+     * <code>string analyticHash = 1;</code>
      *
-     * @return The bytes for sourceId.
+     * @return The bytes for analyticHash.
      */
     @java.lang.Override
-    public com.google.protobuf.ByteString getSourceIdBytes() {
-        java.lang.Object ref = sourceId_;
+    public com.google.protobuf.ByteString getAnalyticHashBytes() {
+        java.lang.Object ref = analyticHash_;
         if (ref instanceof java.lang.String) {
             com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            sourceId_ = b;
+            analyticHash_ = b;
             return b;
         } else {
             return (com.google.protobuf.ByteString) ref;
@@ -352,8 +352,8 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-        if (!getSourceIdBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, sourceId_);
+        if (!getAnalyticHashBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, analyticHash_);
         }
         if (!getEngineBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 2, engine_);
@@ -375,8 +375,8 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             return size;
 
         size = 0;
-        if (!getSourceIdBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, sourceId_);
+        if (!getAnalyticHashBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, analyticHash_);
         }
         if (!getEngineBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, engine_);
@@ -407,7 +407,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         }
         datawave.annotation.protobuf.v1.AnnotationSource other = (datawave.annotation.protobuf.v1.AnnotationSource) obj;
 
-        if (!getSourceId().equals(other.getSourceId()))
+        if (!getAnalyticHash().equals(other.getAnalyticHash()))
             return false;
         if (!getEngine().equals(other.getEngine()))
             return false;
@@ -429,8 +429,8 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         }
         int hash = 41;
         hash = (19 * hash) + getDescriptor().hashCode();
-        hash = (37 * hash) + SOURCEID_FIELD_NUMBER;
-        hash = (53 * hash) + getSourceId().hashCode();
+        hash = (37 * hash) + ANALYTICHASH_FIELD_NUMBER;
+        hash = (53 * hash) + getAnalyticHash().hashCode();
         hash = (37 * hash) + ENGINE_FIELD_NUMBER;
         hash = (53 * hash) + getEngine().hashCode();
         hash = (37 * hash) + MODEL_FIELD_NUMBER;
@@ -576,7 +576,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         @java.lang.Override
         public Builder clear() {
             super.clear();
-            sourceId_ = "";
+            analyticHash_ = "";
 
             engine_ = "";
 
@@ -611,7 +611,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         public datawave.annotation.protobuf.v1.AnnotationSource buildPartial() {
             datawave.annotation.protobuf.v1.AnnotationSource result = new datawave.annotation.protobuf.v1.AnnotationSource(this);
             int from_bitField0_ = bitField0_;
-            result.sourceId_ = sourceId_;
+            result.analyticHash_ = analyticHash_;
             result.engine_ = engine_;
             result.model_ = model_;
             result.sourceLabel_ = sourceLabel_;
@@ -664,8 +664,8 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         public Builder mergeFrom(datawave.annotation.protobuf.v1.AnnotationSource other) {
             if (other == datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance())
                 return this;
-            if (!other.getSourceId().isEmpty()) {
-                sourceId_ = other.sourceId_;
+            if (!other.getAnalyticHash().isEmpty()) {
+                analyticHash_ = other.analyticHash_;
                 onChanged();
             }
             if (!other.getEngine().isEmpty()) {
@@ -706,7 +706,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                             done = true;
                             break;
                         case 10: {
-                            sourceId_ = input.readStringRequireUtf8();
+                            analyticHash_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 10
@@ -749,23 +749,23 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         private int bitField0_;
 
-        private java.lang.Object sourceId_ = "";
+        private java.lang.Object analyticHash_ = "";
 
         /**
          * <pre>
          * the analytic hash for this source
          * </pre>
          *
-         * <code>string sourceId = 1;</code>
+         * <code>string analyticHash = 1;</code>
          *
-         * @return The sourceId.
+         * @return The analyticHash.
          */
-        public java.lang.String getSourceId() {
-            java.lang.Object ref = sourceId_;
+        public java.lang.String getAnalyticHash() {
+            java.lang.Object ref = analyticHash_;
             if (!(ref instanceof java.lang.String)) {
                 com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
                 java.lang.String s = bs.toStringUtf8();
-                sourceId_ = s;
+                analyticHash_ = s;
                 return s;
             } else {
                 return (java.lang.String) ref;
@@ -777,15 +777,15 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * the analytic hash for this source
          * </pre>
          *
-         * <code>string sourceId = 1;</code>
+         * <code>string analyticHash = 1;</code>
          *
-         * @return The bytes for sourceId.
+         * @return The bytes for analyticHash.
          */
-        public com.google.protobuf.ByteString getSourceIdBytes() {
-            java.lang.Object ref = sourceId_;
+        public com.google.protobuf.ByteString getAnalyticHashBytes() {
+            java.lang.Object ref = analyticHash_;
             if (ref instanceof String) {
                 com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                sourceId_ = b;
+                analyticHash_ = b;
                 return b;
             } else {
                 return (com.google.protobuf.ByteString) ref;
@@ -797,18 +797,18 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * the analytic hash for this source
          * </pre>
          *
-         * <code>string sourceId = 1;</code>
+         * <code>string analyticHash = 1;</code>
          *
          * @param value
-         *            The sourceId to set.
+         *            The analyticHash to set.
          * @return This builder for chaining.
          */
-        public Builder setSourceId(java.lang.String value) {
+        public Builder setAnalyticHash(java.lang.String value) {
             if (value == null) {
                 throw new NullPointerException();
             }
 
-            sourceId_ = value;
+            analyticHash_ = value;
             onChanged();
             return this;
         }
@@ -818,13 +818,13 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * the analytic hash for this source
          * </pre>
          *
-         * <code>string sourceId = 1;</code>
+         * <code>string analyticHash = 1;</code>
          *
          * @return This builder for chaining.
          */
-        public Builder clearSourceId() {
+        public Builder clearAnalyticHash() {
 
-            sourceId_ = getDefaultInstance().getSourceId();
+            analyticHash_ = getDefaultInstance().getAnalyticHash();
             onChanged();
             return this;
         }
@@ -834,19 +834,19 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * the analytic hash for this source
          * </pre>
          *
-         * <code>string sourceId = 1;</code>
+         * <code>string analyticHash = 1;</code>
          *
          * @param value
-         *            The bytes for sourceId to set.
+         *            The bytes for analyticHash to set.
          * @return This builder for chaining.
          */
-        public Builder setSourceIdBytes(com.google.protobuf.ByteString value) {
+        public Builder setAnalyticHashBytes(com.google.protobuf.ByteString value) {
             if (value == null) {
                 throw new NullPointerException();
             }
             checkByteStringIsUtf8(value);
 
-            sourceId_ = value;
+            analyticHash_ = value;
             onChanged();
             return this;
         }

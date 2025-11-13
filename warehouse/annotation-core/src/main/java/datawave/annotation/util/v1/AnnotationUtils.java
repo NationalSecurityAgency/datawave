@@ -154,7 +154,7 @@ public class AnnotationUtils {
      */
     public static AnnotationSource injectAnnotationSourceId(AnnotationSource annotationSource) {
         final String hash = calculateAnnotationSourceHash(annotationSource);
-        return annotationSource.toBuilder().setSourceId(hash).build();
+        return annotationSource.toBuilder().setAnalyticHash(hash).build();
     }
 
     /**

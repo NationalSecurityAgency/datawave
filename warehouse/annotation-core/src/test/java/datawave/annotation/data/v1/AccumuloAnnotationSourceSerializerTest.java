@@ -82,7 +82,7 @@ public class AccumuloAnnotationSourceSerializerTest {
             Value value = e.getValue();
             assertEquals(EMPTY, value);
 
-            assertEquals(expected.getSourceId(), key.getRow().toString(), "Row id mismatch");
+            assertEquals(expected.getAnalyticHash(), key.getRow().toString(), "Row id mismatch");
             String columnFamily = key.getColumnFamily().toString();
             String columnQualifier = key.getColumnQualifier().toString();
 

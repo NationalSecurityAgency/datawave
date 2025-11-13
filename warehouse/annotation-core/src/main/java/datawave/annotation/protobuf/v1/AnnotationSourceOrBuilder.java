@@ -12,22 +12,22 @@ public interface AnnotationSourceOrBuilder extends
      * the analytic hash for this source
      * </pre>
      *
-     * <code>string sourceId = 1;</code>
+     * <code>string analyticHash = 1;</code>
      *
-     * @return The sourceId.
+     * @return The analyticHash.
      */
-    java.lang.String getSourceId();
+    java.lang.String getAnalyticHash();
 
     /**
      * <pre>
      * the analytic hash for this source
      * </pre>
      *
-     * <code>string sourceId = 1;</code>
+     * <code>string analyticHash = 1;</code>
      *
-     * @return The bytes for sourceId.
+     * @return The bytes for analyticHash.
      */
-    com.google.protobuf.ByteString getSourceIdBytes();
+    com.google.protobuf.ByteString getAnalyticHashBytes();
 
     /**
      * <pre>

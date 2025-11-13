@@ -42,7 +42,7 @@ message Annotation {
     string uid = 3; // the internal id of the record this annotation addresses
     string annotationType = 4; // the type of this annotation
     string annotationId = 5; // the hash that identifies this annotation
-    string sourceId = 6; // the identifier for this annotations source
+    string analyticHash = 6; // the analytic hash that identifies this annotation's source
     optional AnnotationSource source = 7; // the source details for this annotation.
     string documentId = 8; // the external identifier for this annotations source document.
     reserved 9 to 19; // for future growth.
@@ -52,7 +52,7 @@ message Annotation {
 }
 
 message AnnotationSource {
-    string sourceId = 1; // the analytic hash for this source
+    string analyticHash = 1; // the analytic hash for this source
     string engine = 2; // a string identifying the engine that produce the annotation
     string model = 3; // a string identifying the model that produced the annotation
     string sourceLabel = 4; // a label for the engine/model/configuration combo

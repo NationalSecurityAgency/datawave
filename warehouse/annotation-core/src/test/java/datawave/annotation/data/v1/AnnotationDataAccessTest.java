@@ -258,13 +258,13 @@ public class AnnotationDataAccessTest {
         AnnotationSource sourceAnnotationSource = generateTestAnnotationSource();
         Optional<AnnotationSource> addedAnnotationSource = dao.addAnnotationSource(sourceAnnotationSource);
         assertFalse(addedAnnotationSource.isEmpty());
-        assertTrue(StringUtils.isNotBlank(addedAnnotationSource.get().getSourceId()));
+        assertTrue(StringUtils.isNotBlank(addedAnnotationSource.get().getAnalyticHash()));
 
         // we expect the test annotation to have the same id injected as the annotation retuned from the dao.
         AnnotationSource expectedAnnotationSource = AnnotationUtils.injectAnnotationSourceId(sourceAnnotationSource);
-        assertEquals(addedAnnotationSource.get().getSourceId(), expectedAnnotationSource.getSourceId());
+        assertEquals(addedAnnotationSource.get().getAnalyticHash(), expectedAnnotationSource.getAnalyticHash());
 
-        Optional<AnnotationSource> annotationSource = dao.getAnnotationSource(expectedAnnotationSource.getSourceId());
+        Optional<AnnotationSource> annotationSource = dao.getAnnotationSource(expectedAnnotationSource.getAnalyticHash());
         assertFalse(annotationSource.isEmpty());
         AnnotationSource resultAnnotationSource = annotationSource.get();
         assertAnnotationSourcesEqual(expectedAnnotationSource, resultAnnotationSource);
