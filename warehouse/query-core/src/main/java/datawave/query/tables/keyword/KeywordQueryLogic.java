@@ -77,6 +77,10 @@ import datawave.webservice.query.exception.QueryException;
  */
 @SuppressWarnings("unused")
 public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
+    /**
+     * Used to allow a request to have a specific version response
+     */
+    public static final String TAG_CLOUD_VERSION = "tag.cloud.version";
 
     /**
      * Used to specify that a tag cloud should consist of merged results for all documents or for individual results for individual documents.
@@ -117,8 +121,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     private Set<TagCloudInputTransformer<?>> transformers = new HashSet<>();
     private List<Entry<Key,Value>> externalData = new ArrayList<>();
-
-    final private IteratorChain<Entry<Key,Value>> iteratorChain = new IteratorChain<>();
+    private String responseVersion;
 
     public KeywordQueryLogic() {
         super();
@@ -131,6 +134,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.config = new KeywordQueryConfiguration(keywordQueryLogic.config);
         this.externalData = keywordQueryLogic.externalData;
         this.transformers = keywordQueryLogic.transformers;
+        this.responseVersion = keywordQueryLogic.responseVersion;
     }
 
     /**
@@ -222,6 +226,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             log.warn("Could not parse parameter " + TAG_CLOUD_MAX + " (value: " + maxCloudTagsString + " as integer, ignoring.");
         }
 
+        String responseVersion = settings.findParameter(TAG_CLOUD_VERSION).getParameterValue().trim();
+        setResponseVersion(responseVersion);
+
         if (!settings.getQuery().isEmpty()) {
             // Execute the query logic.
             final Collection<String> queryTerms = extractQueryTerms(settings);
@@ -257,6 +264,8 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.config = (KeywordQueryConfiguration) genericConfig;
 
         try {
+            final IteratorChain<Entry<Key,Value>> iteratorChain = new IteratorChain<>();
+
             if (genericConfig.getQuery() != null && !genericConfig.getQuery().getQuery().isEmpty()) {
                 final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
                                 config.getQuery());
@@ -269,11 +278,11 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
                 // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
                 final Iterator<Entry<Key,Value>> scanIterator = scanner.iterator();
-                this.iteratorChain.addIterator(scanIterator);
+                iteratorChain.addIterator(scanIterator);
                 this.scanner = scanner;
             }
             if (this.externalData != null && !this.externalData.isEmpty()) {
-                this.iteratorChain.addIterator(this.externalData.iterator());
+                iteratorChain.addIterator(this.externalData.iterator());
             }
 
             this.iterator = iteratorChain;
@@ -392,7 +401,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public QueryLogicTransformer<Entry<Key,Value>,TagCloudPartition> getTransformer(Query settings) {
-        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory, transformers);
+        return new TagCloudTransformer(responseVersion, settings, config.getState(), this.markingFunctions, this.responseObjectFactory, transformers);
     }
 
     @Override
@@ -594,6 +603,12 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                 identifierMap.put(key, identifier);
                 log.debug("Added identifier " + identifier + "for key: " + key);
             }
+        }
+    }
+
+    public void setResponseVersion(String responseVersion) {
+        if (!responseVersion.isBlank()) {
+            this.responseVersion = responseVersion;
         }
     }
 }
