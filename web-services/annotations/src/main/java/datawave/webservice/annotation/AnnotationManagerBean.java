@@ -36,7 +36,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -590,17 +590,32 @@ public class AnnotationManagerBean implements AnnotationManager {
 
     /**
      * Given an annotation, retrieve the annotation source information that is referenced by their analyticHash. Employs a per-request hash so we don't look up
-     * a single source multiple times
+     * a single source multiple times.
      */
     private Annotation lookupAndInjectAnnotationSource(Annotation a) {
+        // no need to inject a source if we already have one.
+        if (a.hasSource()) {
+            log.warn("Strange, this annotation already has a source. Annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId(), a.getAnalyticHash());
+            return a;
+        }
+
+        if (StringUtils.isBlank(a.getAnalyticHash())) {
+            log.warn("Strange, this annotation does not have an analytic hash. Annotation {}/{}/{} {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId());
+            return a;
+        }
+
+        // do the deed and cache the results.
         final String analyticHash = a.getAnalyticHash();
         final Optional<AnnotationSource> result = retrievedSourcesCache.computeIfAbsent(analyticHash,
                         key -> annotationDataAccess.getAnnotationSource(analyticHash));
+
         if (result.isPresent()) {
             return injectAnnotationSource(a, result.get());
         } else {
             log.debug("No analytic source found for annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
-                            a.getAnnotationId(), analyticHash);
+                            a.getAnnotationId(), a.getAnalyticHash());
             return a;
         }
     }
