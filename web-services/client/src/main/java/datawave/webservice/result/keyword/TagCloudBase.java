@@ -44,6 +44,10 @@ public abstract class TagCloudBase<T,E extends TagCloudEntryBase<E>> implements 
 
     public abstract Map<String,String> getMetadata();
 
+    public abstract String getLanguage();
+
+    public abstract void setLanguage(String language);
+
     public abstract List<E> getTags();
 
     public abstract void setTags(List<E> tags);

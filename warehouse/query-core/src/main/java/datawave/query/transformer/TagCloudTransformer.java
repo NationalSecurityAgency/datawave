@@ -27,20 +27,41 @@ import datawave.webservice.result.keyword.TagCloudResponseBase;
 /** Transforms the Key/Values returned by the KeywordExtractionIterator into KeywordResults and then Tag Clouds Responses */
 @SuppressWarnings("rawtypes")
 public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,TagCloudPartition> {
+    public static final ResponseVersion DEFAULT_VERSION = ResponseVersion.V1;
 
+    private final ResponseVersion responseVersion;
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;
     protected final KeywordQueryState state;
     private final Set<TagCloudInputTransformer<?>> transformers;
 
+    public enum ResponseVersion {
+        V1, V2
+    }
+
     // TODO-crwill9 pass in state data, not the state object so this is more reusable
-    public TagCloudTransformer(Query query, KeywordQueryState state, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    Set<TagCloudInputTransformer<?>> transformers) {
+    public TagCloudTransformer(String responseVersion, Query query, KeywordQueryState state, MarkingFunctions markingFunctions,
+                    ResponseObjectFactory responseObjectFactory, Set<TagCloudInputTransformer<?>> transformers) {
         super(markingFunctions);
+        this.responseVersion = getResponseVersion(responseVersion);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
         this.state = state;
         this.transformers = transformers;
+    }
+
+    private ResponseVersion getResponseVersion(String responseVersion) {
+        if (responseVersion == null) {
+            return DEFAULT_VERSION;
+        }
+
+        if (responseVersion.equals("1") || responseVersion.equals("v1") || responseVersion.equals("V1")) {
+            return ResponseVersion.V1;
+        } else if (responseVersion.equals("2") || responseVersion.equals("v2") || responseVersion.equals("V2")) {
+            return ResponseVersion.V2;
+        }
+
+        return DEFAULT_VERSION;
     }
 
     /**
@@ -139,17 +160,53 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
         List<TagCloudBase> tagClouds = new ArrayList<>();
         for (TagCloud tagCloudResult : tagCloudResultsList) {
             TagCloudBase tagCloud = responseObjectFactory.getTagCloud();
-            if (tagCloudResult.getMetadata() != null && !tagCloudResult.getMetadata().isEmpty()) {
-                tagCloud.setMetadata(tagCloudResult.getMetadata());
-            }
-            if (!tagCloudResult.getVisibility().isEmpty()) {
-                tagCloud.setMarkings(tagCloudResult.getVisibility());
-            }
-            tagCloud.setTags(generateTagCloudEntries(tagCloudResult));
+            configureTagCloud(tagCloud, tagCloudResult);
             tagClouds.add(tagCloud);
         }
         response.setTagClouds(tagClouds);
         return response;
+    }
+
+    public ResponseVersion getResponseVersion() {
+        return responseVersion;
+    }
+
+    private void configureV1TagCloud(TagCloudBase base, TagCloud tagCloud) {
+        if (tagCloud.getMetadata() != null) {
+            String language = tagCloud.getMetadata().get("language");
+            if (language != null) {
+                base.setLanguage(language);
+            } else {
+                String type = tagCloud.getMetadata().get("type");
+                if (type != null) {
+                    base.setLanguage(type);
+                }
+            }
+        }
+        if (!tagCloud.getVisibility().isEmpty()) {
+            base.setMarkings(tagCloud.getVisibility());
+        }
+        base.setTags(generateTagCloudEntries(tagCloud));
+    }
+
+    private void configureV2TagCloud(TagCloudBase base, TagCloud tagCloud) {
+        if (tagCloud.getMetadata() != null && !tagCloud.getMetadata().isEmpty()) {
+            base.setMetadata(tagCloud.getMetadata());
+        }
+        if (!tagCloud.getVisibility().isEmpty()) {
+            base.setMarkings(tagCloud.getVisibility());
+        }
+        base.setTags(generateTagCloudEntries(tagCloud));
+    }
+
+    private void configureTagCloud(TagCloudBase base, TagCloud tagCloud) {
+        if (responseVersion == ResponseVersion.V1) {
+            configureV1TagCloud(base, tagCloud);
+        } else if (responseVersion == ResponseVersion.V2) {
+            configureV2TagCloud(base, tagCloud);
+        } else {
+            throw new UnsupportedOperationException("cannot configure response for " + responseVersion);
+        }
     }
 
     /**
