@@ -42,11 +42,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.Validator;
-import datawave.annotation.util.v1.AnnotationUtils;
+import datawave.annotation.util.v1.AnnotationJsonUtils;
 import datawave.annotation.util.v1.AnnotationValidators;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -166,7 +167,10 @@ public class AnnotationManagerBean implements AnnotationManager {
             final AccumuloClient client = initializeAccumuloClient();
             final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getVisibilityTransformer(),
                             config.getTimestampTransformer());
-            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getTableName(), annotationSerializer);
+            final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(config.getVisibilityTransformer(),
+                            config.getTimestampTransformer());
+            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationTableName(), config.getAnnotationSourceTableName(),
+                            annotationSerializer, annotationSourceSerializer);
         }
         return annotationDataAccess;
     }
@@ -299,7 +303,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response addAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, String body) {
         try {
-            final Annotation rawAnnotation = AnnotationUtils.annotationFromJson(body);
+            final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
             final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
             final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
             if (!validationState.isValid()) {
@@ -362,7 +366,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response updateAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     String body) {
         try {
-            final Annotation rawAnnotation = AnnotationUtils.annotationFromJson(body);
+            final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
             final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
             final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
             if (!validationState.isValid()) {
@@ -472,7 +476,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response addSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId, String body) {
         try {
-            Segment segment = AnnotationUtils.segmentFromJson(body);
+            Segment segment = AnnotationJsonUtils.segmentFromJson(body);
 
             final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
             if (metadataList.isEmpty()) {

@@ -6,7 +6,8 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.query.tables.ShardQueryLogic;
 
 public class AnnotationManagerConfig {
-    private String tableName;
+    private String annotationTableName;
+    private String annotationSourceTableName;
     private String connPoolName;
     private ShardQueryLogic lookupUUIDQueryLogic;
     private LookupUUIDServiceConfig lookupUUIDServiceConfig;
@@ -46,12 +47,20 @@ public class AnnotationManagerConfig {
         this.priority = priority;
     }
 
-    public String getTableName() {
-        return tableName;
+    public String getAnnotationTableName() {
+        return annotationTableName;
     }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
+    public void setAnnotationTableName(String annotationTableName) {
+        this.annotationTableName = annotationTableName;
+    }
+
+    public String getAnnotationSourceTableName() {
+        return annotationSourceTableName;
+    }
+
+    public void setAnnotationSourceTableName(String annotationSourceTableName) {
+        this.annotationSourceTableName = annotationSourceTableName;
     }
 
     public TimestampTransformer getTimestampTransformer() {
