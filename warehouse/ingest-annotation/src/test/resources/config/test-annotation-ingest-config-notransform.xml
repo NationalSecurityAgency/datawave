@@ -19,6 +19,23 @@
     </property>
 
     <property>
+        <name>annotation.output.name</name>
+        <value>myannotation</value>
+        <description>This is the name to use on the data in Accumulo. If not specified, 'data.name' is used by default
+        </description>
+    </property>
+
+    <property>
+        <name>annotation.table.name</name>
+        <value>datawave.annotation</value>
+    </property>
+
+    <property>
+        <name>annotation.table.loader.priority</name>
+        <value>50</value>
+    </property>
+
+    <property>
         <name>annotation.ingest.helper.class</name>
         <value>datawave.ingest.annotation.mapreduce.handler.SimpleAnnotationIngestHelper</value>
     </property>
@@ -30,8 +47,20 @@
 
     <property>
         <name>annotation.handler.classes</name>
-        <value>datawave.ingest.annotation.mapreduce.handler.SimpleAnnotationDataTypeHandler</value>
+        <value>datawave.ingest.annotation.mapreduce.handler.ShardedAnnotationDataTypeHandler</value>
         <description>List of classes that should process each event</description>
+    </property>
+
+    <property>
+        <name>annotation.raw.transform.enable</name>
+        <value>false</value>
+        <description>enable transformation of raw data using the defined xslt</description>
+    </property>
+
+    <property>
+        <name>annotation.raw.transform.config</name>
+        <value>config/test-annotation-transform-config.xml</value>
+        <description>used to transform raw annotation json view (xslt file with xml extension)</description>
     </property>
 
     <property>

@@ -121,6 +121,8 @@ MICROMETER_COMMONS_JAR=$(findJar micrometer-commons)
 #for annotation ingest
 PROTO_GOOGLE_COMMON_PROTOS_JAR=$(findJar proto-google-common-protos)
 PROTOBUF_JAVA_UTIL_JAR=$(findJar protobuf-java-util)
+XMLRESOLVER_JAR=$(findJar xmlresolver)
+SAXON_HE_JAR=$(findJar Saxon-HE)
 
 #for geo hilbert curve processing
 JTS_CORE_JAR=$(findJar jts-core)
