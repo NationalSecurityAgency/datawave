@@ -1,7 +1,9 @@
 package datawave.annotation.data.v1;
 
+import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationSourcesEqual;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationsEqual;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotation;
+import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotationSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +32,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.protobuf.v1.TextSpanChars;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
@@ -56,6 +61,9 @@ public class AnnotationDataAccessTest {
     // the object under test
     private AnnotationDataAccess dao;
 
+    private static final String ANNOTATION_TABLE_NAME = "datawave.annotation";
+    private static final String ANNOTATION_SOURCE_TABLE_NAME = "datawave.annotationSource";
+
     @BeforeAll
     public static void startCluster() throws Exception {
         File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + AnnotationDataAccessTest.class.getName());
@@ -71,25 +79,35 @@ public class AnnotationDataAccessTest {
         namespaceOperations.create("datawave");
 
         TableOperations tableOperations = client.tableOperations();
-        tableOperations.create("datawave.annotations");
+        tableOperations.create(ANNOTATION_TABLE_NAME);
+        tableOperations.create(ANNOTATION_SOURCE_TABLE_NAME);
 
         SecurityOperations securityOperations = client.securityOperations();
         securityOperations.changeUserAuthorizations("root", new Authorizations(auths));
 
         List<Annotation> manyAnnotations = AnnotationTestDataUtil.generateManyTestAnnotations();
+        List<AnnotationSource> manyAnnotationSources = AnnotationTestDataUtil.generateManyTestAnnotationSources();
 
-        AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        AnnotationDataAccess setupDao = new AnnotationDataAccess(client, accumuloAuthorizations, "datawave.annotations", serializer);
+        AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer();
+        AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+        AnnotationDataAccess setupDao = new AnnotationDataAccess(client, accumuloAuthorizations, ANNOTATION_TABLE_NAME, ANNOTATION_SOURCE_TABLE_NAME,
+                        annotationSerializer, annotationSourceSerializer);
         for (Annotation annotation : manyAnnotations) {
             setupDao.addAnnotation(annotation);
         }
-        dumpTable("datawave.annotations");
+        for (AnnotationSource annotationSource : manyAnnotationSources) {
+            setupDao.addAnnotationSource(annotationSource);
+        }
+        dumpTable(ANNOTATION_TABLE_NAME);
+        dumpTable(ANNOTATION_SOURCE_TABLE_NAME);
     }
 
     @BeforeEach
     public void setup() {
-        AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        dao = new AnnotationDataAccess(client, accumuloAuthorizations, "datawave.annotations", serializer);
+        AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer();
+        AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+        dao = new AnnotationDataAccess(client, accumuloAuthorizations, ANNOTATION_TABLE_NAME, ANNOTATION_SOURCE_TABLE_NAME, annotationSerializer,
+                        annotationSourceSerializer);
     }
 
     /** Insert a new annotation into the table and retrieve it and validate */
@@ -212,7 +230,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
-        String annotationUid = "28c912d1";
+        String annotationUid = "dcf2d066";
 
         Optional<Annotation> annotationOptional = dao.getAnnotation(row, dataType, documentUid, annotationType, annotationUid);
         assertFalse(annotationOptional.isEmpty());
@@ -232,6 +250,54 @@ public class AnnotationDataAccessTest {
 
         Optional<Annotation> annotationOptional = dao.getAnnotation(row, dataType, documentUid, annotationType, annotationUid);
         assertTrue(annotationOptional.isEmpty());
+    }
+
+    /** Insert a new annotation into the table and retrieve it and validate */
+    @Test
+    public void testAddGetAnnotationSource() {
+        AnnotationSource sourceAnnotationSource = generateTestAnnotationSource();
+        Optional<AnnotationSource> addedAnnotationSource = dao.addAnnotationSource(sourceAnnotationSource);
+        assertFalse(addedAnnotationSource.isEmpty());
+        assertTrue(StringUtils.isNotBlank(addedAnnotationSource.get().getAnalyticHash()));
+
+        // we expect the test annotation to have the same id injected as the annotation retuned from the dao.
+        AnnotationSource expectedAnnotationSource = AnnotationUtils.injectAnnotationSourceId(sourceAnnotationSource);
+        assertEquals(addedAnnotationSource.get().getAnalyticHash(), expectedAnnotationSource.getAnalyticHash());
+
+        Optional<AnnotationSource> annotationSource = dao.getAnnotationSource(expectedAnnotationSource.getAnalyticHash());
+        assertFalse(annotationSource.isEmpty());
+        AnnotationSource resultAnnotationSource = annotationSource.get();
+        assertAnnotationSourcesEqual(expectedAnnotationSource, resultAnnotationSource);
+    }
+
+    @Test
+    public void testGetAnnotationSource() {
+        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("58590657");
+        assertFalse(annotationOptional.isEmpty());
+        AnnotationSource as = annotationOptional.get();
+        assertEquals("v6", as.getEngine());
+        assertEquals("avalon", as.getModel());
+        assertEquals("toyota", as.getSourceLabel());
+        assertExpectedAnnotationSourceConfig(as.getConfigurationMap());
+    }
+
+    @Test
+    public void testGetAnnotationSourceMissing() {
+        String row = "aaaaaaaa";
+        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource(row);
+        assertTrue(annotationOptional.isEmpty());
+    }
+
+    public void assertExpectedAnnotationSourceConfig(Map<String,String> configuration) {
+        assertEquals(4, configuration.size());
+
+        final String[] expectedKeys = {"normalization", "provenance", "visibility", "created_date"};
+        final String[] expectedValues = {"circular", "v6/avalon/toyota", "PUBLIC", "2025-10-01T00:00:00Z"};
+
+        for (int i = 0; i < expectedKeys.length; i++) {
+            String observedValue = configuration.get(expectedKeys[i]);
+            assertEquals(expectedValues[i], observedValue, "expected value " + expectedValues[i] + " for key " + expectedKeys[i] + " but saw " + observedValue);
+        }
     }
 
     @AfterAll
@@ -265,7 +331,7 @@ public class AnnotationDataAccessTest {
         assertEquals(7, metadata.size());
 
         final String[] expectedKeys = {"datatype", "shard", "day", "foo", "plough", "visibility", "created_date"};
-        final String[] expectedValues = {"news", "456", "20250406", "bar", "plover", "PUBLIC", "2025-10-01T00:00:00.000Z"};
+        final String[] expectedValues = {"news", "456", "20250406", "bar", "plover", "PUBLIC", "2025-10-01T00:00:00Z"};
 
         for (int i = 0; i < expectedKeys.length; i++) {
             String observedValue = metadata.get(expectedKeys[i]);
@@ -280,10 +346,10 @@ public class AnnotationDataAccessTest {
      *            the list of segments to check
      */
     public static void assertExpectedTextSegments(List<Segment> segments) {
-        // the tokens are return in an order based on their segment id, _not_ the position, if the id's change
-        // the order changes.
-        final String[] expectedWords = {"<eos>", "fox", "caught", "rabbit", "the", "the", "quick", "brown"};
-        final int[] expectedStarts = {38, 16, 20, 31, 0, 27, 4, 10};
+
+        // TODO: make this less sensitive to order
+        final String[] expectedWords = {"the", "fox", "brown", "<eos>", "caught", "rabbit", "the", "quick", "brown"};
+        final int[] expectedStarts = {27, 16, 10, 38, 20, 31, 0, 4};
 
         assertFalse(segments.isEmpty());
         assertEquals(8, segments.size());
@@ -292,18 +358,18 @@ public class AnnotationDataAccessTest {
         List<String> errorMessages = new ArrayList<>();
 
         for (Segment segment : segments) {
-
-            SegmentValue expectedValue = SegmentValue.newBuilder().setValue(expectedWords[pos]).setScore(1.0f).setExtension("").build();
+            // TODO: test extensions
+            SegmentValue expectedValue = SegmentValue.newBuilder().setValue(expectedWords[pos]).setScore(1.0f).build();
             TextSpanChars expectedSpan = TextSpanChars.newBuilder().setStartCharacter(expectedStarts[pos])
                             .setEndCharacter(expectedStarts[pos] + expectedWords[pos].length()).build();
             pos++;
 
-            List<SegmentValue> observedValues = segment.getSegmentValueList();
+            List<SegmentValue> observedValues = segment.getValuesList();
             assertFalse(observedValues.isEmpty());
             assertEquals(1, observedValues.size());
             SegmentValue observedValue = observedValues.get(0);
-
-            TextSpanChars observedSpan = segment.getCharacters();
+            SegmentBoundary bounds = segment.getBoundary();
+            TextSpanChars observedSpan = bounds.getCharacterSpan();
 
             // we want to see all errors, so don't stop on the first failure.
             evaluateTextSegmentMatch(errorMessages, expectedValue, expectedSpan, observedValue, observedSpan);

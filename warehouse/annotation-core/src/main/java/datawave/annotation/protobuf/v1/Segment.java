@@ -4,10 +4,6 @@
 package datawave.annotation.protobuf.v1;
 
 /**
- * <pre>
- * segment wrapping, consisting of a boundary and one or more associated values.
- * </pre>
- *
  * Protobuf type {@code datawave.annotation.protobuf.v1.Segment}
  */
 public final class Segment extends com.google.protobuf.GeneratedMessageV3 implements
@@ -21,11 +17,8 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
     }
 
     private Segment() {
-        annotationId_ = "";
         segmentId_ = "";
-        eTag_ = "";
-        segmentValue_ = java.util.Collections.emptyList();
-        boundaryType_ = "";
+        values_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -47,7 +40,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
     @java.lang.Override
     protected com.google.protobuf.MapField internalGetMapField(int number) {
         switch (number) {
-            case 7:
+            case 50:
                 return internalGetMetadata();
             default:
                 throw new RuntimeException("Invalid map field number: " + number);
@@ -60,102 +53,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
                         .ensureFieldAccessorsInitialized(datawave.annotation.protobuf.v1.Segment.class, datawave.annotation.protobuf.v1.Segment.Builder.class);
     }
 
-    private int boundaryCase_ = 0;
-    private java.lang.Object boundary_;
-
-    public enum BoundaryCase implements com.google.protobuf.Internal.EnumLite, com.google.protobuf.AbstractMessage.InternalOneOfEnum {
-        ALL(20), POINTLIST(21), TIME(22), CHARACTERS(23), BOUNDARY_NOT_SET(0);
-
-        private final int value;
-
-        private BoundaryCase(int value) {
-            this.value = value;
-        }
-
-        /**
-         * @param value
-         *            The number of the enum to look for.
-         * @return The enum associated with the given number.
-         * @deprecated Use {@link #forNumber(int)} instead.
-         */
-        @java.lang.Deprecated
-        public static BoundaryCase valueOf(int value) {
-            return forNumber(value);
-        }
-
-        public static BoundaryCase forNumber(int value) {
-            switch (value) {
-                case 20:
-                    return ALL;
-                case 21:
-                    return POINTLIST;
-                case 22:
-                    return TIME;
-                case 23:
-                    return CHARACTERS;
-                case 0:
-                    return BOUNDARY_NOT_SET;
-                default:
-                    return null;
-            }
-        }
-
-        public int getNumber() {
-            return this.value;
-        }
-    };
-
-    public BoundaryCase getBoundaryCase() {
-        return BoundaryCase.forNumber(boundaryCase_);
-    }
-
-    public static final int ANNOTATIONID_FIELD_NUMBER = 1;
-    private volatile java.lang.Object annotationId_;
-
-    /**
-     * <pre>
-     * the annotation this segment is associated with.
-     * </pre>
-     *
-     * <code>string annotationId = 1;</code>
-     *
-     * @return The annotationId.
-     */
-    @java.lang.Override
-    public java.lang.String getAnnotationId() {
-        java.lang.Object ref = annotationId_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            annotationId_ = s;
-            return s;
-        }
-    }
-
-    /**
-     * <pre>
-     * the annotation this segment is associated with.
-     * </pre>
-     *
-     * <code>string annotationId = 1;</code>
-     *
-     * @return The bytes for annotationId.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getAnnotationIdBytes() {
-        java.lang.Object ref = annotationId_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            annotationId_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
-        }
-    }
-
-    public static final int SEGMENTID_FIELD_NUMBER = 2;
+    public static final int SEGMENTID_FIELD_NUMBER = 1;
     private volatile java.lang.Object segmentId_;
 
     /**
@@ -163,7 +61,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
      * the segment id in this annotation.
      * </pre>
      *
-     * <code>string segmentId = 2;</code>
+     * <code>string segmentId = 1;</code>
      *
      * @return The segmentId.
      */
@@ -185,7 +83,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
      * the segment id in this annotation.
      * </pre>
      *
-     * <code>string segmentId = 2;</code>
+     * <code>string segmentId = 1;</code>
      *
      * @return The bytes for segmentId.
      */
@@ -201,151 +99,62 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         }
     }
 
-    public static final int CREATETIME_FIELD_NUMBER = 3;
-    private com.google.protobuf.Timestamp createTime_;
+    public static final int BOUNDARY_FIELD_NUMBER = 2;
+    private datawave.annotation.protobuf.v1.SegmentBoundary boundary_;
 
     /**
      * <pre>
-     * segment creation time
+     * boundary for this segment.
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp createTime = 3;</code>
+     * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
      *
-     * @return Whether the createTime field is set.
+     * @return Whether the boundary field is set.
      */
     @java.lang.Override
-    public boolean hasCreateTime() {
-        return createTime_ != null;
+    public boolean hasBoundary() {
+        return boundary_ != null;
     }
 
     /**
      * <pre>
-     * segment creation time
+     * boundary for this segment.
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp createTime = 3;</code>
+     * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
      *
-     * @return The createTime.
+     * @return The boundary.
      */
     @java.lang.Override
-    public com.google.protobuf.Timestamp getCreateTime() {
-        return createTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : createTime_;
+    public datawave.annotation.protobuf.v1.SegmentBoundary getBoundary() {
+        return boundary_ == null ? datawave.annotation.protobuf.v1.SegmentBoundary.getDefaultInstance() : boundary_;
     }
 
     /**
      * <pre>
-     * segment creation time
+     * boundary for this segment.
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp createTime = 3;</code>
+     * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
      */
     @java.lang.Override
-    public com.google.protobuf.TimestampOrBuilder getCreateTimeOrBuilder() {
-        return getCreateTime();
+    public datawave.annotation.protobuf.v1.SegmentBoundaryOrBuilder getBoundaryOrBuilder() {
+        return getBoundary();
     }
 
-    public static final int UPDATETIME_FIELD_NUMBER = 4;
-    private com.google.protobuf.Timestamp updateTime_;
-
-    /**
-     * <pre>
-     * segment update time
-     * </pre>
-     *
-     * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-     *
-     * @return Whether the updateTime field is set.
-     */
-    @java.lang.Override
-    public boolean hasUpdateTime() {
-        return updateTime_ != null;
-    }
-
-    /**
-     * <pre>
-     * segment update time
-     * </pre>
-     *
-     * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-     *
-     * @return The updateTime.
-     */
-    @java.lang.Override
-    public com.google.protobuf.Timestamp getUpdateTime() {
-        return updateTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : updateTime_;
-    }
-
-    /**
-     * <pre>
-     * segment update time
-     * </pre>
-     *
-     * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-     */
-    @java.lang.Override
-    public com.google.protobuf.TimestampOrBuilder getUpdateTimeOrBuilder() {
-        return getUpdateTime();
-    }
-
-    public static final int ETAG_FIELD_NUMBER = 5;
-    private volatile java.lang.Object eTag_;
-
-    /**
-     * <pre>
-     * Used for optimistic concurrency across JSON and gRPC
-     * </pre>
-     *
-     * <code>string eTag = 5;</code>
-     *
-     * @return The eTag.
-     */
-    @java.lang.Override
-    public java.lang.String getETag() {
-        java.lang.Object ref = eTag_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            eTag_ = s;
-            return s;
-        }
-    }
-
-    /**
-     * <pre>
-     * Used for optimistic concurrency across JSON and gRPC
-     * </pre>
-     *
-     * <code>string eTag = 5;</code>
-     *
-     * @return The bytes for eTag.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getETagBytes() {
-        java.lang.Object ref = eTag_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            eTag_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
-        }
-    }
-
-    public static final int SEGMENTVALUE_FIELD_NUMBER = 6;
-    private java.util.List<datawave.annotation.protobuf.v1.SegmentValue> segmentValue_;
+    public static final int VALUES_FIELD_NUMBER = 3;
+    private java.util.List<datawave.annotation.protobuf.v1.SegmentValue> values_;
 
     /**
      * <pre>
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
     @java.lang.Override
-    public java.util.List<datawave.annotation.protobuf.v1.SegmentValue> getSegmentValueList() {
-        return segmentValue_;
+    public java.util.List<datawave.annotation.protobuf.v1.SegmentValue> getValuesList() {
+        return values_;
     }
 
     /**
@@ -353,11 +162,11 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
     @java.lang.Override
-    public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getSegmentValueOrBuilderList() {
-        return segmentValue_;
+    public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getValuesOrBuilderList() {
+        return values_;
     }
 
     /**
@@ -365,11 +174,11 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
     @java.lang.Override
-    public int getSegmentValueCount() {
-        return segmentValue_.size();
+    public int getValuesCount() {
+        return values_.size();
     }
 
     /**
@@ -377,11 +186,11 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
     @java.lang.Override
-    public datawave.annotation.protobuf.v1.SegmentValue getSegmentValue(int index) {
-        return segmentValue_.get(index);
+    public datawave.annotation.protobuf.v1.SegmentValue getValues(int index) {
+        return values_.get(index);
     }
 
     /**
@@ -389,14 +198,14 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
     @java.lang.Override
-    public datawave.annotation.protobuf.v1.SegmentValueOrBuilder getSegmentValueOrBuilder(int index) {
-        return segmentValue_.get(index);
+    public datawave.annotation.protobuf.v1.SegmentValueOrBuilder getValuesOrBuilder(int index) {
+        return values_.get(index);
     }
 
-    public static final int METADATA_FIELD_NUMBER = 7;
+    public static final int METADATA_FIELD_NUMBER = 50;
 
     private static final class MetadataDefaultEntryHolder {
         static final com.google.protobuf.MapEntry<java.lang.String,java.lang.String> defaultEntry = com.google.protobuf.MapEntry.<java.lang.String,java.lang.String> newDefaultInstance(
@@ -419,10 +228,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
 
     @java.lang.Override
@@ -444,10 +253,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     @java.lang.Override
 
@@ -457,10 +266,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     @java.lang.Override
 
@@ -474,10 +283,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     @java.lang.Override
 
@@ -490,208 +299,6 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
             throw new java.lang.IllegalArgumentException();
         }
         return map.get(key);
-    }
-
-    public static final int BOUNDARYTYPE_FIELD_NUMBER = 10;
-    private volatile java.lang.Object boundaryType_;
-
-    /**
-     * <pre>
-     * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-     * </pre>
-     *
-     * <code>string boundaryType = 10;</code>
-     *
-     * @return The boundaryType.
-     */
-    @java.lang.Override
-    public java.lang.String getBoundaryType() {
-        java.lang.Object ref = boundaryType_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            boundaryType_ = s;
-            return s;
-        }
-    }
-
-    /**
-     * <pre>
-     * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-     * </pre>
-     *
-     * <code>string boundaryType = 10;</code>
-     *
-     * @return The bytes for boundaryType.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getBoundaryTypeBytes() {
-        java.lang.Object ref = boundaryType_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            boundaryType_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
-        }
-    }
-
-    public static final int ALL_FIELD_NUMBER = 20;
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-     *
-     * @return Whether the all field is set.
-     */
-    @java.lang.Override
-    public boolean hasAll() {
-        return boundaryCase_ == 20;
-    }
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-     *
-     * @return The all.
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.All getAll() {
-        if (boundaryCase_ == 20) {
-            return (datawave.annotation.protobuf.v1.All) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.All.getDefaultInstance();
-    }
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.AllOrBuilder getAllOrBuilder() {
-        if (boundaryCase_ == 20) {
-            return (datawave.annotation.protobuf.v1.All) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.All.getDefaultInstance();
-    }
-
-    public static final int POINTLIST_FIELD_NUMBER = 21;
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-     *
-     * @return Whether the pointList field is set.
-     */
-    @java.lang.Override
-    public boolean hasPointList() {
-        return boundaryCase_ == 21;
-    }
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-     *
-     * @return The pointList.
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.PointList getPointList() {
-        if (boundaryCase_ == 21) {
-            return (datawave.annotation.protobuf.v1.PointList) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.PointList.getDefaultInstance();
-    }
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.PointListOrBuilder getPointListOrBuilder() {
-        if (boundaryCase_ == 21) {
-            return (datawave.annotation.protobuf.v1.PointList) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.PointList.getDefaultInstance();
-    }
-
-    public static final int TIME_FIELD_NUMBER = 22;
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-     *
-     * @return Whether the time field is set.
-     */
-    @java.lang.Override
-    public boolean hasTime() {
-        return boundaryCase_ == 22;
-    }
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-     *
-     * @return The time.
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.TimeSpanSeconds getTime() {
-        if (boundaryCase_ == 22) {
-            return (datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.TimeSpanSeconds.getDefaultInstance();
-    }
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.TimeSpanSecondsOrBuilder getTimeOrBuilder() {
-        if (boundaryCase_ == 22) {
-            return (datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.TimeSpanSeconds.getDefaultInstance();
-    }
-
-    public static final int CHARACTERS_FIELD_NUMBER = 23;
-
-    /**
-     * <pre>
-     * add future segment types here
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-     *
-     * @return Whether the characters field is set.
-     */
-    @java.lang.Override
-    public boolean hasCharacters() {
-        return boundaryCase_ == 23;
-    }
-
-    /**
-     * <pre>
-     * add future segment types here
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-     *
-     * @return The characters.
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.TextSpanChars getCharacters() {
-        if (boundaryCase_ == 23) {
-            return (datawave.annotation.protobuf.v1.TextSpanChars) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.TextSpanChars.getDefaultInstance();
-    }
-
-    /**
-     * <pre>
-     * add future segment types here
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.TextSpanCharsOrBuilder getCharactersOrBuilder() {
-        if (boundaryCase_ == 23) {
-            return (datawave.annotation.protobuf.v1.TextSpanChars) boundary_;
-        }
-        return datawave.annotation.protobuf.v1.TextSpanChars.getDefaultInstance();
     }
 
     private byte memoizedIsInitialized = -1;
@@ -710,40 +317,16 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-        if (!getAnnotationIdBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, annotationId_);
-        }
         if (!getSegmentIdBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 2, segmentId_);
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, segmentId_);
         }
-        if (createTime_ != null) {
-            output.writeMessage(3, getCreateTime());
+        if (boundary_ != null) {
+            output.writeMessage(2, getBoundary());
         }
-        if (updateTime_ != null) {
-            output.writeMessage(4, getUpdateTime());
+        for (int i = 0; i < values_.size(); i++) {
+            output.writeMessage(3, values_.get(i));
         }
-        if (!getETagBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 5, eTag_);
-        }
-        for (int i = 0; i < segmentValue_.size(); i++) {
-            output.writeMessage(6, segmentValue_.get(i));
-        }
-        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetMetadata(), MetadataDefaultEntryHolder.defaultEntry, 7);
-        if (!getBoundaryTypeBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 10, boundaryType_);
-        }
-        if (boundaryCase_ == 20) {
-            output.writeMessage(20, (datawave.annotation.protobuf.v1.All) boundary_);
-        }
-        if (boundaryCase_ == 21) {
-            output.writeMessage(21, (datawave.annotation.protobuf.v1.PointList) boundary_);
-        }
-        if (boundaryCase_ == 22) {
-            output.writeMessage(22, (datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_);
-        }
-        if (boundaryCase_ == 23) {
-            output.writeMessage(23, (datawave.annotation.protobuf.v1.TextSpanChars) boundary_);
-        }
+        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetMetadata(), MetadataDefaultEntryHolder.defaultEntry, 50);
         getUnknownFields().writeTo(output);
     }
 
@@ -754,43 +337,19 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
             return size;
 
         size = 0;
-        if (!getAnnotationIdBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, annotationId_);
-        }
         if (!getSegmentIdBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, segmentId_);
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, segmentId_);
         }
-        if (createTime_ != null) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, getCreateTime());
+        if (boundary_ != null) {
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, getBoundary());
         }
-        if (updateTime_ != null) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(4, getUpdateTime());
-        }
-        if (!getETagBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, eTag_);
-        }
-        for (int i = 0; i < segmentValue_.size(); i++) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(6, segmentValue_.get(i));
+        for (int i = 0; i < values_.size(); i++) {
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, values_.get(i));
         }
         for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetMetadata().getMap().entrySet()) {
             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = MetadataDefaultEntryHolder.defaultEntry.newBuilderForType()
                             .setKey(entry.getKey()).setValue(entry.getValue()).build();
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(7, metadata__);
-        }
-        if (!getBoundaryTypeBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(10, boundaryType_);
-        }
-        if (boundaryCase_ == 20) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(20, (datawave.annotation.protobuf.v1.All) boundary_);
-        }
-        if (boundaryCase_ == 21) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(21, (datawave.annotation.protobuf.v1.PointList) boundary_);
-        }
-        if (boundaryCase_ == 22) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(22, (datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_);
-        }
-        if (boundaryCase_ == 23) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(23, (datawave.annotation.protobuf.v1.TextSpanChars) boundary_);
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(50, metadata__);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -807,52 +366,18 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         }
         datawave.annotation.protobuf.v1.Segment other = (datawave.annotation.protobuf.v1.Segment) obj;
 
-        if (!getAnnotationId().equals(other.getAnnotationId()))
-            return false;
         if (!getSegmentId().equals(other.getSegmentId()))
             return false;
-        if (hasCreateTime() != other.hasCreateTime())
+        if (hasBoundary() != other.hasBoundary())
             return false;
-        if (hasCreateTime()) {
-            if (!getCreateTime().equals(other.getCreateTime()))
+        if (hasBoundary()) {
+            if (!getBoundary().equals(other.getBoundary()))
                 return false;
         }
-        if (hasUpdateTime() != other.hasUpdateTime())
-            return false;
-        if (hasUpdateTime()) {
-            if (!getUpdateTime().equals(other.getUpdateTime()))
-                return false;
-        }
-        if (!getETag().equals(other.getETag()))
-            return false;
-        if (!getSegmentValueList().equals(other.getSegmentValueList()))
+        if (!getValuesList().equals(other.getValuesList()))
             return false;
         if (!internalGetMetadata().equals(other.internalGetMetadata()))
             return false;
-        if (!getBoundaryType().equals(other.getBoundaryType()))
-            return false;
-        if (!getBoundaryCase().equals(other.getBoundaryCase()))
-            return false;
-        switch (boundaryCase_) {
-            case 20:
-                if (!getAll().equals(other.getAll()))
-                    return false;
-                break;
-            case 21:
-                if (!getPointList().equals(other.getPointList()))
-                    return false;
-                break;
-            case 22:
-                if (!getTime().equals(other.getTime()))
-                    return false;
-                break;
-            case 23:
-                if (!getCharacters().equals(other.getCharacters()))
-                    return false;
-                break;
-            case 0:
-            default:
-        }
         if (!getUnknownFields().equals(other.getUnknownFields()))
             return false;
         return true;
@@ -865,49 +390,19 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         }
         int hash = 41;
         hash = (19 * hash) + getDescriptor().hashCode();
-        hash = (37 * hash) + ANNOTATIONID_FIELD_NUMBER;
-        hash = (53 * hash) + getAnnotationId().hashCode();
         hash = (37 * hash) + SEGMENTID_FIELD_NUMBER;
         hash = (53 * hash) + getSegmentId().hashCode();
-        if (hasCreateTime()) {
-            hash = (37 * hash) + CREATETIME_FIELD_NUMBER;
-            hash = (53 * hash) + getCreateTime().hashCode();
+        if (hasBoundary()) {
+            hash = (37 * hash) + BOUNDARY_FIELD_NUMBER;
+            hash = (53 * hash) + getBoundary().hashCode();
         }
-        if (hasUpdateTime()) {
-            hash = (37 * hash) + UPDATETIME_FIELD_NUMBER;
-            hash = (53 * hash) + getUpdateTime().hashCode();
-        }
-        hash = (37 * hash) + ETAG_FIELD_NUMBER;
-        hash = (53 * hash) + getETag().hashCode();
-        if (getSegmentValueCount() > 0) {
-            hash = (37 * hash) + SEGMENTVALUE_FIELD_NUMBER;
-            hash = (53 * hash) + getSegmentValueList().hashCode();
+        if (getValuesCount() > 0) {
+            hash = (37 * hash) + VALUES_FIELD_NUMBER;
+            hash = (53 * hash) + getValuesList().hashCode();
         }
         if (!internalGetMetadata().getMap().isEmpty()) {
             hash = (37 * hash) + METADATA_FIELD_NUMBER;
             hash = (53 * hash) + internalGetMetadata().hashCode();
-        }
-        hash = (37 * hash) + BOUNDARYTYPE_FIELD_NUMBER;
-        hash = (53 * hash) + getBoundaryType().hashCode();
-        switch (boundaryCase_) {
-            case 20:
-                hash = (37 * hash) + ALL_FIELD_NUMBER;
-                hash = (53 * hash) + getAll().hashCode();
-                break;
-            case 21:
-                hash = (37 * hash) + POINTLIST_FIELD_NUMBER;
-                hash = (53 * hash) + getPointList().hashCode();
-                break;
-            case 22:
-                hash = (37 * hash) + TIME_FIELD_NUMBER;
-                hash = (53 * hash) + getTime().hashCode();
-                break;
-            case 23:
-                hash = (37 * hash) + CHARACTERS_FIELD_NUMBER;
-                hash = (53 * hash) + getCharacters().hashCode();
-                break;
-            case 0:
-            default:
         }
         hash = (29 * hash) + getUnknownFields().hashCode();
         memoizedHashCode = hash;
@@ -994,10 +489,6 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
     }
 
     /**
-     * <pre>
-     * segment wrapping, consisting of a boundary and one or more associated values.
-     * </pre>
-     *
      * Protobuf type {@code datawave.annotation.protobuf.v1.Segment}
      */
     public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
@@ -1010,7 +501,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMapField(int number) {
             switch (number) {
-                case 7:
+                case 50:
                     return internalGetMetadata();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
@@ -1020,7 +511,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMutableMapField(int number) {
             switch (number) {
-                case 7:
+                case 50:
                     return internalGetMutableMetadata();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
@@ -1047,48 +538,22 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         @java.lang.Override
         public Builder clear() {
             super.clear();
-            annotationId_ = "";
-
             segmentId_ = "";
 
-            if (createTimeBuilder_ == null) {
-                createTime_ = null;
+            if (boundaryBuilder_ == null) {
+                boundary_ = null;
             } else {
-                createTime_ = null;
-                createTimeBuilder_ = null;
+                boundary_ = null;
+                boundaryBuilder_ = null;
             }
-            if (updateTimeBuilder_ == null) {
-                updateTime_ = null;
+            if (valuesBuilder_ == null) {
+                values_ = java.util.Collections.emptyList();
             } else {
-                updateTime_ = null;
-                updateTimeBuilder_ = null;
-            }
-            eTag_ = "";
-
-            if (segmentValueBuilder_ == null) {
-                segmentValue_ = java.util.Collections.emptyList();
-            } else {
-                segmentValue_ = null;
-                segmentValueBuilder_.clear();
+                values_ = null;
+                valuesBuilder_.clear();
             }
             bitField0_ = (bitField0_ & ~0x00000001);
             internalGetMutableMetadata().clear();
-            boundaryType_ = "";
-
-            if (allBuilder_ != null) {
-                allBuilder_.clear();
-            }
-            if (pointListBuilder_ != null) {
-                pointListBuilder_.clear();
-            }
-            if (timeBuilder_ != null) {
-                timeBuilder_.clear();
-            }
-            if (charactersBuilder_ != null) {
-                charactersBuilder_.clear();
-            }
-            boundaryCase_ = 0;
-            boundary_ = null;
             return this;
         }
 
@@ -1115,60 +580,23 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         public datawave.annotation.protobuf.v1.Segment buildPartial() {
             datawave.annotation.protobuf.v1.Segment result = new datawave.annotation.protobuf.v1.Segment(this);
             int from_bitField0_ = bitField0_;
-            result.annotationId_ = annotationId_;
             result.segmentId_ = segmentId_;
-            if (createTimeBuilder_ == null) {
-                result.createTime_ = createTime_;
+            if (boundaryBuilder_ == null) {
+                result.boundary_ = boundary_;
             } else {
-                result.createTime_ = createTimeBuilder_.build();
+                result.boundary_ = boundaryBuilder_.build();
             }
-            if (updateTimeBuilder_ == null) {
-                result.updateTime_ = updateTime_;
-            } else {
-                result.updateTime_ = updateTimeBuilder_.build();
-            }
-            result.eTag_ = eTag_;
-            if (segmentValueBuilder_ == null) {
+            if (valuesBuilder_ == null) {
                 if (((bitField0_ & 0x00000001) != 0)) {
-                    segmentValue_ = java.util.Collections.unmodifiableList(segmentValue_);
+                    values_ = java.util.Collections.unmodifiableList(values_);
                     bitField0_ = (bitField0_ & ~0x00000001);
                 }
-                result.segmentValue_ = segmentValue_;
+                result.values_ = values_;
             } else {
-                result.segmentValue_ = segmentValueBuilder_.build();
+                result.values_ = valuesBuilder_.build();
             }
             result.metadata_ = internalGetMetadata();
             result.metadata_.makeImmutable();
-            result.boundaryType_ = boundaryType_;
-            if (boundaryCase_ == 20) {
-                if (allBuilder_ == null) {
-                    result.boundary_ = boundary_;
-                } else {
-                    result.boundary_ = allBuilder_.build();
-                }
-            }
-            if (boundaryCase_ == 21) {
-                if (pointListBuilder_ == null) {
-                    result.boundary_ = boundary_;
-                } else {
-                    result.boundary_ = pointListBuilder_.build();
-                }
-            }
-            if (boundaryCase_ == 22) {
-                if (timeBuilder_ == null) {
-                    result.boundary_ = boundary_;
-                } else {
-                    result.boundary_ = timeBuilder_.build();
-                }
-            }
-            if (boundaryCase_ == 23) {
-                if (charactersBuilder_ == null) {
-                    result.boundary_ = boundary_;
-                } else {
-                    result.boundary_ = charactersBuilder_.build();
-                }
-            }
-            result.boundaryCase_ = boundaryCase_;
             onBuilt();
             return result;
         }
@@ -1216,74 +644,38 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         public Builder mergeFrom(datawave.annotation.protobuf.v1.Segment other) {
             if (other == datawave.annotation.protobuf.v1.Segment.getDefaultInstance())
                 return this;
-            if (!other.getAnnotationId().isEmpty()) {
-                annotationId_ = other.annotationId_;
-                onChanged();
-            }
             if (!other.getSegmentId().isEmpty()) {
                 segmentId_ = other.segmentId_;
                 onChanged();
             }
-            if (other.hasCreateTime()) {
-                mergeCreateTime(other.getCreateTime());
+            if (other.hasBoundary()) {
+                mergeBoundary(other.getBoundary());
             }
-            if (other.hasUpdateTime()) {
-                mergeUpdateTime(other.getUpdateTime());
-            }
-            if (!other.getETag().isEmpty()) {
-                eTag_ = other.eTag_;
-                onChanged();
-            }
-            if (segmentValueBuilder_ == null) {
-                if (!other.segmentValue_.isEmpty()) {
-                    if (segmentValue_.isEmpty()) {
-                        segmentValue_ = other.segmentValue_;
+            if (valuesBuilder_ == null) {
+                if (!other.values_.isEmpty()) {
+                    if (values_.isEmpty()) {
+                        values_ = other.values_;
                         bitField0_ = (bitField0_ & ~0x00000001);
                     } else {
-                        ensureSegmentValueIsMutable();
-                        segmentValue_.addAll(other.segmentValue_);
+                        ensureValuesIsMutable();
+                        values_.addAll(other.values_);
                     }
                     onChanged();
                 }
             } else {
-                if (!other.segmentValue_.isEmpty()) {
-                    if (segmentValueBuilder_.isEmpty()) {
-                        segmentValueBuilder_.dispose();
-                        segmentValueBuilder_ = null;
-                        segmentValue_ = other.segmentValue_;
+                if (!other.values_.isEmpty()) {
+                    if (valuesBuilder_.isEmpty()) {
+                        valuesBuilder_.dispose();
+                        valuesBuilder_ = null;
+                        values_ = other.values_;
                         bitField0_ = (bitField0_ & ~0x00000001);
-                        segmentValueBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getSegmentValueFieldBuilder() : null;
+                        valuesBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getValuesFieldBuilder() : null;
                     } else {
-                        segmentValueBuilder_.addAllMessages(other.segmentValue_);
+                        valuesBuilder_.addAllMessages(other.values_);
                     }
                 }
             }
             internalGetMutableMetadata().mergeFrom(other.internalGetMetadata());
-            if (!other.getBoundaryType().isEmpty()) {
-                boundaryType_ = other.boundaryType_;
-                onChanged();
-            }
-            switch (other.getBoundaryCase()) {
-                case ALL: {
-                    mergeAll(other.getAll());
-                    break;
-                }
-                case POINTLIST: {
-                    mergePointList(other.getPointList());
-                    break;
-                }
-                case TIME: {
-                    mergeTime(other.getTime());
-                    break;
-                }
-                case CHARACTERS: {
-                    mergeCharacters(other.getCharacters());
-                    break;
-                }
-                case BOUNDARY_NOT_SET: {
-                    break;
-                }
-            }
             this.mergeUnknownFields(other.getUnknownFields());
             onChanged();
             return this;
@@ -1309,72 +701,32 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
                             done = true;
                             break;
                         case 10: {
-                            annotationId_ = input.readStringRequireUtf8();
+                            segmentId_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 10
                         case 18: {
-                            segmentId_ = input.readStringRequireUtf8();
+                            input.readMessage(getBoundaryFieldBuilder().getBuilder(), extensionRegistry);
 
                             break;
                         } // case 18
                         case 26: {
-                            input.readMessage(getCreateTimeFieldBuilder().getBuilder(), extensionRegistry);
-
-                            break;
-                        } // case 26
-                        case 34: {
-                            input.readMessage(getUpdateTimeFieldBuilder().getBuilder(), extensionRegistry);
-
-                            break;
-                        } // case 34
-                        case 42: {
-                            eTag_ = input.readStringRequireUtf8();
-
-                            break;
-                        } // case 42
-                        case 50: {
                             datawave.annotation.protobuf.v1.SegmentValue m = input.readMessage(datawave.annotation.protobuf.v1.SegmentValue.parser(),
                                             extensionRegistry);
-                            if (segmentValueBuilder_ == null) {
-                                ensureSegmentValueIsMutable();
-                                segmentValue_.add(m);
+                            if (valuesBuilder_ == null) {
+                                ensureValuesIsMutable();
+                                values_.add(m);
                             } else {
-                                segmentValueBuilder_.addMessage(m);
+                                valuesBuilder_.addMessage(m);
                             }
                             break;
-                        } // case 50
-                        case 58: {
+                        } // case 26
+                        case 402: {
                             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = input
                                             .readMessage(MetadataDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
                             internalGetMutableMetadata().getMutableMap().put(metadata__.getKey(), metadata__.getValue());
                             break;
-                        } // case 58
-                        case 82: {
-                            boundaryType_ = input.readStringRequireUtf8();
-
-                            break;
-                        } // case 82
-                        case 162: {
-                            input.readMessage(getAllFieldBuilder().getBuilder(), extensionRegistry);
-                            boundaryCase_ = 20;
-                            break;
-                        } // case 162
-                        case 170: {
-                            input.readMessage(getPointListFieldBuilder().getBuilder(), extensionRegistry);
-                            boundaryCase_ = 21;
-                            break;
-                        } // case 170
-                        case 178: {
-                            input.readMessage(getTimeFieldBuilder().getBuilder(), extensionRegistry);
-                            boundaryCase_ = 22;
-                            break;
-                        } // case 178
-                        case 186: {
-                            input.readMessage(getCharactersFieldBuilder().getBuilder(), extensionRegistry);
-                            boundaryCase_ = 23;
-                            break;
-                        } // case 186
+                        } // case 402
                         default: {
                             if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                                 done = true; // was an endgroup tag
@@ -1391,123 +743,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
             return this;
         }
 
-        private int boundaryCase_ = 0;
-        private java.lang.Object boundary_;
-
-        public BoundaryCase getBoundaryCase() {
-            return BoundaryCase.forNumber(boundaryCase_);
-        }
-
-        public Builder clearBoundary() {
-            boundaryCase_ = 0;
-            boundary_ = null;
-            onChanged();
-            return this;
-        }
-
         private int bitField0_;
-
-        private java.lang.Object annotationId_ = "";
-
-        /**
-         * <pre>
-         * the annotation this segment is associated with.
-         * </pre>
-         *
-         * <code>string annotationId = 1;</code>
-         *
-         * @return The annotationId.
-         */
-        public java.lang.String getAnnotationId() {
-            java.lang.Object ref = annotationId_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                annotationId_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * the annotation this segment is associated with.
-         * </pre>
-         *
-         * <code>string annotationId = 1;</code>
-         *
-         * @return The bytes for annotationId.
-         */
-        public com.google.protobuf.ByteString getAnnotationIdBytes() {
-            java.lang.Object ref = annotationId_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                annotationId_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * the annotation this segment is associated with.
-         * </pre>
-         *
-         * <code>string annotationId = 1;</code>
-         *
-         * @param value
-         *            The annotationId to set.
-         * @return This builder for chaining.
-         */
-        public Builder setAnnotationId(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-
-            annotationId_ = value;
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * the annotation this segment is associated with.
-         * </pre>
-         *
-         * <code>string annotationId = 1;</code>
-         *
-         * @return This builder for chaining.
-         */
-        public Builder clearAnnotationId() {
-
-            annotationId_ = getDefaultInstance().getAnnotationId();
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * the annotation this segment is associated with.
-         * </pre>
-         *
-         * <code>string annotationId = 1;</code>
-         *
-         * @param value
-         *            The bytes for annotationId to set.
-         * @return This builder for chaining.
-         */
-        public Builder setAnnotationIdBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            checkByteStringIsUtf8(value);
-
-            annotationId_ = value;
-            onChanged();
-            return this;
-        }
 
         private java.lang.Object segmentId_ = "";
 
@@ -1516,7 +752,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * the segment id in this annotation.
          * </pre>
          *
-         * <code>string segmentId = 2;</code>
+         * <code>string segmentId = 1;</code>
          *
          * @return The segmentId.
          */
@@ -1537,7 +773,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * the segment id in this annotation.
          * </pre>
          *
-         * <code>string segmentId = 2;</code>
+         * <code>string segmentId = 1;</code>
          *
          * @return The bytes for segmentId.
          */
@@ -1557,7 +793,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * the segment id in this annotation.
          * </pre>
          *
-         * <code>string segmentId = 2;</code>
+         * <code>string segmentId = 1;</code>
          *
          * @param value
          *            The segmentId to set.
@@ -1578,7 +814,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * the segment id in this annotation.
          * </pre>
          *
-         * <code>string segmentId = 2;</code>
+         * <code>string segmentId = 1;</code>
          *
          * @return This builder for chaining.
          */
@@ -1594,7 +830,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * the segment id in this annotation.
          * </pre>
          *
-         * <code>string segmentId = 2;</code>
+         * <code>string segmentId = 1;</code>
          *
          * @param value
          *            The bytes for segmentId to set.
@@ -1611,55 +847,55 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
             return this;
         }
 
-        private com.google.protobuf.Timestamp createTime_;
-        private com.google.protobuf.SingleFieldBuilderV3<com.google.protobuf.Timestamp,com.google.protobuf.Timestamp.Builder,com.google.protobuf.TimestampOrBuilder> createTimeBuilder_;
+        private datawave.annotation.protobuf.v1.SegmentBoundary boundary_;
+        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentBoundary,datawave.annotation.protobuf.v1.SegmentBoundary.Builder,datawave.annotation.protobuf.v1.SegmentBoundaryOrBuilder> boundaryBuilder_;
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          *
-         * @return Whether the createTime field is set.
+         * @return Whether the boundary field is set.
          */
-        public boolean hasCreateTime() {
-            return createTimeBuilder_ != null || createTime_ != null;
+        public boolean hasBoundary() {
+            return boundaryBuilder_ != null || boundary_ != null;
         }
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          *
-         * @return The createTime.
+         * @return The boundary.
          */
-        public com.google.protobuf.Timestamp getCreateTime() {
-            if (createTimeBuilder_ == null) {
-                return createTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : createTime_;
+        public datawave.annotation.protobuf.v1.SegmentBoundary getBoundary() {
+            if (boundaryBuilder_ == null) {
+                return boundary_ == null ? datawave.annotation.protobuf.v1.SegmentBoundary.getDefaultInstance() : boundary_;
             } else {
-                return createTimeBuilder_.getMessage();
+                return boundaryBuilder_.getMessage();
             }
         }
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          */
-        public Builder setCreateTime(com.google.protobuf.Timestamp value) {
-            if (createTimeBuilder_ == null) {
+        public Builder setBoundary(datawave.annotation.protobuf.v1.SegmentBoundary value) {
+            if (boundaryBuilder_ == null) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                createTime_ = value;
+                boundary_ = value;
                 onChanged();
             } else {
-                createTimeBuilder_.setMessage(value);
+                boundaryBuilder_.setMessage(value);
             }
 
             return this;
@@ -1667,17 +903,17 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          */
-        public Builder setCreateTime(com.google.protobuf.Timestamp.Builder builderForValue) {
-            if (createTimeBuilder_ == null) {
-                createTime_ = builderForValue.build();
+        public Builder setBoundary(datawave.annotation.protobuf.v1.SegmentBoundary.Builder builderForValue) {
+            if (boundaryBuilder_ == null) {
+                boundary_ = builderForValue.build();
                 onChanged();
             } else {
-                createTimeBuilder_.setMessage(builderForValue.build());
+                boundaryBuilder_.setMessage(builderForValue.build());
             }
 
             return this;
@@ -1685,21 +921,21 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          */
-        public Builder mergeCreateTime(com.google.protobuf.Timestamp value) {
-            if (createTimeBuilder_ == null) {
-                if (createTime_ != null) {
-                    createTime_ = com.google.protobuf.Timestamp.newBuilder(createTime_).mergeFrom(value).buildPartial();
+        public Builder mergeBoundary(datawave.annotation.protobuf.v1.SegmentBoundary value) {
+            if (boundaryBuilder_ == null) {
+                if (boundary_ != null) {
+                    boundary_ = datawave.annotation.protobuf.v1.SegmentBoundary.newBuilder(boundary_).mergeFrom(value).buildPartial();
                 } else {
-                    createTime_ = value;
+                    boundary_ = value;
                 }
                 onChanged();
             } else {
-                createTimeBuilder_.mergeFrom(value);
+                boundaryBuilder_.mergeFrom(value);
             }
 
             return this;
@@ -1707,18 +943,18 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          */
-        public Builder clearCreateTime() {
-            if (createTimeBuilder_ == null) {
-                createTime_ = null;
+        public Builder clearBoundary() {
+            if (boundaryBuilder_ == null) {
+                boundary_ = null;
                 onChanged();
             } else {
-                createTime_ = null;
-                createTimeBuilder_ = null;
+                boundary_ = null;
+                boundaryBuilder_ = null;
             }
 
             return this;
@@ -1726,330 +962,71 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          */
-        public com.google.protobuf.Timestamp.Builder getCreateTimeBuilder() {
+        public datawave.annotation.protobuf.v1.SegmentBoundary.Builder getBoundaryBuilder() {
 
             onChanged();
-            return getCreateTimeFieldBuilder().getBuilder();
+            return getBoundaryFieldBuilder().getBuilder();
         }
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          */
-        public com.google.protobuf.TimestampOrBuilder getCreateTimeOrBuilder() {
-            if (createTimeBuilder_ != null) {
-                return createTimeBuilder_.getMessageOrBuilder();
+        public datawave.annotation.protobuf.v1.SegmentBoundaryOrBuilder getBoundaryOrBuilder() {
+            if (boundaryBuilder_ != null) {
+                return boundaryBuilder_.getMessageOrBuilder();
             } else {
-                return createTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : createTime_;
+                return boundary_ == null ? datawave.annotation.protobuf.v1.SegmentBoundary.getDefaultInstance() : boundary_;
             }
         }
 
         /**
          * <pre>
-         * segment creation time
+         * boundary for this segment.
          * </pre>
          *
-         * <code>.google.protobuf.Timestamp createTime = 3;</code>
+         * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
          */
-        private com.google.protobuf.SingleFieldBuilderV3<com.google.protobuf.Timestamp,com.google.protobuf.Timestamp.Builder,com.google.protobuf.TimestampOrBuilder> getCreateTimeFieldBuilder() {
-            if (createTimeBuilder_ == null) {
-                createTimeBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<com.google.protobuf.Timestamp,com.google.protobuf.Timestamp.Builder,com.google.protobuf.TimestampOrBuilder>(
-                                getCreateTime(), getParentForChildren(), isClean());
-                createTime_ = null;
+        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentBoundary,datawave.annotation.protobuf.v1.SegmentBoundary.Builder,datawave.annotation.protobuf.v1.SegmentBoundaryOrBuilder> getBoundaryFieldBuilder() {
+            if (boundaryBuilder_ == null) {
+                boundaryBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentBoundary,datawave.annotation.protobuf.v1.SegmentBoundary.Builder,datawave.annotation.protobuf.v1.SegmentBoundaryOrBuilder>(
+                                getBoundary(), getParentForChildren(), isClean());
+                boundary_ = null;
             }
-            return createTimeBuilder_;
+            return boundaryBuilder_;
         }
 
-        private com.google.protobuf.Timestamp updateTime_;
-        private com.google.protobuf.SingleFieldBuilderV3<com.google.protobuf.Timestamp,com.google.protobuf.Timestamp.Builder,com.google.protobuf.TimestampOrBuilder> updateTimeBuilder_;
+        private java.util.List<datawave.annotation.protobuf.v1.SegmentValue> values_ = java.util.Collections.emptyList();
 
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         *
-         * @return Whether the updateTime field is set.
-         */
-        public boolean hasUpdateTime() {
-            return updateTimeBuilder_ != null || updateTime_ != null;
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         *
-         * @return The updateTime.
-         */
-        public com.google.protobuf.Timestamp getUpdateTime() {
-            if (updateTimeBuilder_ == null) {
-                return updateTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : updateTime_;
-            } else {
-                return updateTimeBuilder_.getMessage();
-            }
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         */
-        public Builder setUpdateTime(com.google.protobuf.Timestamp value) {
-            if (updateTimeBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                updateTime_ = value;
-                onChanged();
-            } else {
-                updateTimeBuilder_.setMessage(value);
-            }
-
-            return this;
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         */
-        public Builder setUpdateTime(com.google.protobuf.Timestamp.Builder builderForValue) {
-            if (updateTimeBuilder_ == null) {
-                updateTime_ = builderForValue.build();
-                onChanged();
-            } else {
-                updateTimeBuilder_.setMessage(builderForValue.build());
-            }
-
-            return this;
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         */
-        public Builder mergeUpdateTime(com.google.protobuf.Timestamp value) {
-            if (updateTimeBuilder_ == null) {
-                if (updateTime_ != null) {
-                    updateTime_ = com.google.protobuf.Timestamp.newBuilder(updateTime_).mergeFrom(value).buildPartial();
-                } else {
-                    updateTime_ = value;
-                }
-                onChanged();
-            } else {
-                updateTimeBuilder_.mergeFrom(value);
-            }
-
-            return this;
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         */
-        public Builder clearUpdateTime() {
-            if (updateTimeBuilder_ == null) {
-                updateTime_ = null;
-                onChanged();
-            } else {
-                updateTime_ = null;
-                updateTimeBuilder_ = null;
-            }
-
-            return this;
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         */
-        public com.google.protobuf.Timestamp.Builder getUpdateTimeBuilder() {
-
-            onChanged();
-            return getUpdateTimeFieldBuilder().getBuilder();
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         */
-        public com.google.protobuf.TimestampOrBuilder getUpdateTimeOrBuilder() {
-            if (updateTimeBuilder_ != null) {
-                return updateTimeBuilder_.getMessageOrBuilder();
-            } else {
-                return updateTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : updateTime_;
-            }
-        }
-
-        /**
-         * <pre>
-         * segment update time
-         * </pre>
-         *
-         * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-         */
-        private com.google.protobuf.SingleFieldBuilderV3<com.google.protobuf.Timestamp,com.google.protobuf.Timestamp.Builder,com.google.protobuf.TimestampOrBuilder> getUpdateTimeFieldBuilder() {
-            if (updateTimeBuilder_ == null) {
-                updateTimeBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<com.google.protobuf.Timestamp,com.google.protobuf.Timestamp.Builder,com.google.protobuf.TimestampOrBuilder>(
-                                getUpdateTime(), getParentForChildren(), isClean());
-                updateTime_ = null;
-            }
-            return updateTimeBuilder_;
-        }
-
-        private java.lang.Object eTag_ = "";
-
-        /**
-         * <pre>
-         * Used for optimistic concurrency across JSON and gRPC
-         * </pre>
-         *
-         * <code>string eTag = 5;</code>
-         *
-         * @return The eTag.
-         */
-        public java.lang.String getETag() {
-            java.lang.Object ref = eTag_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                eTag_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * Used for optimistic concurrency across JSON and gRPC
-         * </pre>
-         *
-         * <code>string eTag = 5;</code>
-         *
-         * @return The bytes for eTag.
-         */
-        public com.google.protobuf.ByteString getETagBytes() {
-            java.lang.Object ref = eTag_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                eTag_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * Used for optimistic concurrency across JSON and gRPC
-         * </pre>
-         *
-         * <code>string eTag = 5;</code>
-         *
-         * @param value
-         *            The eTag to set.
-         * @return This builder for chaining.
-         */
-        public Builder setETag(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-
-            eTag_ = value;
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * Used for optimistic concurrency across JSON and gRPC
-         * </pre>
-         *
-         * <code>string eTag = 5;</code>
-         *
-         * @return This builder for chaining.
-         */
-        public Builder clearETag() {
-
-            eTag_ = getDefaultInstance().getETag();
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * Used for optimistic concurrency across JSON and gRPC
-         * </pre>
-         *
-         * <code>string eTag = 5;</code>
-         *
-         * @param value
-         *            The bytes for eTag to set.
-         * @return This builder for chaining.
-         */
-        public Builder setETagBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            checkByteStringIsUtf8(value);
-
-            eTag_ = value;
-            onChanged();
-            return this;
-        }
-
-        private java.util.List<datawave.annotation.protobuf.v1.SegmentValue> segmentValue_ = java.util.Collections.emptyList();
-
-        private void ensureSegmentValueIsMutable() {
+        private void ensureValuesIsMutable() {
             if (!((bitField0_ & 0x00000001) != 0)) {
-                segmentValue_ = new java.util.ArrayList<datawave.annotation.protobuf.v1.SegmentValue>(segmentValue_);
+                values_ = new java.util.ArrayList<datawave.annotation.protobuf.v1.SegmentValue>(values_);
                 bitField0_ |= 0x00000001;
             }
         }
 
-        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentValue,datawave.annotation.protobuf.v1.SegmentValue.Builder,datawave.annotation.protobuf.v1.SegmentValueOrBuilder> segmentValueBuilder_;
+        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentValue,datawave.annotation.protobuf.v1.SegmentValue.Builder,datawave.annotation.protobuf.v1.SegmentValueOrBuilder> valuesBuilder_;
 
         /**
          * <pre>
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public java.util.List<datawave.annotation.protobuf.v1.SegmentValue> getSegmentValueList() {
-            if (segmentValueBuilder_ == null) {
-                return java.util.Collections.unmodifiableList(segmentValue_);
+        public java.util.List<datawave.annotation.protobuf.v1.SegmentValue> getValuesList() {
+            if (valuesBuilder_ == null) {
+                return java.util.Collections.unmodifiableList(values_);
             } else {
-                return segmentValueBuilder_.getMessageList();
+                return valuesBuilder_.getMessageList();
             }
         }
 
@@ -2058,13 +1035,13 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public int getSegmentValueCount() {
-            if (segmentValueBuilder_ == null) {
-                return segmentValue_.size();
+        public int getValuesCount() {
+            if (valuesBuilder_ == null) {
+                return values_.size();
             } else {
-                return segmentValueBuilder_.getCount();
+                return valuesBuilder_.getCount();
             }
         }
 
@@ -2073,13 +1050,13 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public datawave.annotation.protobuf.v1.SegmentValue getSegmentValue(int index) {
-            if (segmentValueBuilder_ == null) {
-                return segmentValue_.get(index);
+        public datawave.annotation.protobuf.v1.SegmentValue getValues(int index) {
+            if (valuesBuilder_ == null) {
+                return values_.get(index);
             } else {
-                return segmentValueBuilder_.getMessage(index);
+                return valuesBuilder_.getMessage(index);
             }
         }
 
@@ -2088,18 +1065,18 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder setSegmentValue(int index, datawave.annotation.protobuf.v1.SegmentValue value) {
-            if (segmentValueBuilder_ == null) {
+        public Builder setValues(int index, datawave.annotation.protobuf.v1.SegmentValue value) {
+            if (valuesBuilder_ == null) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                ensureSegmentValueIsMutable();
-                segmentValue_.set(index, value);
+                ensureValuesIsMutable();
+                values_.set(index, value);
                 onChanged();
             } else {
-                segmentValueBuilder_.setMessage(index, value);
+                valuesBuilder_.setMessage(index, value);
             }
             return this;
         }
@@ -2109,15 +1086,15 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder setSegmentValue(int index, datawave.annotation.protobuf.v1.SegmentValue.Builder builderForValue) {
-            if (segmentValueBuilder_ == null) {
-                ensureSegmentValueIsMutable();
-                segmentValue_.set(index, builderForValue.build());
+        public Builder setValues(int index, datawave.annotation.protobuf.v1.SegmentValue.Builder builderForValue) {
+            if (valuesBuilder_ == null) {
+                ensureValuesIsMutable();
+                values_.set(index, builderForValue.build());
                 onChanged();
             } else {
-                segmentValueBuilder_.setMessage(index, builderForValue.build());
+                valuesBuilder_.setMessage(index, builderForValue.build());
             }
             return this;
         }
@@ -2127,18 +1104,18 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder addSegmentValue(datawave.annotation.protobuf.v1.SegmentValue value) {
-            if (segmentValueBuilder_ == null) {
+        public Builder addValues(datawave.annotation.protobuf.v1.SegmentValue value) {
+            if (valuesBuilder_ == null) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                ensureSegmentValueIsMutable();
-                segmentValue_.add(value);
+                ensureValuesIsMutable();
+                values_.add(value);
                 onChanged();
             } else {
-                segmentValueBuilder_.addMessage(value);
+                valuesBuilder_.addMessage(value);
             }
             return this;
         }
@@ -2148,18 +1125,18 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder addSegmentValue(int index, datawave.annotation.protobuf.v1.SegmentValue value) {
-            if (segmentValueBuilder_ == null) {
+        public Builder addValues(int index, datawave.annotation.protobuf.v1.SegmentValue value) {
+            if (valuesBuilder_ == null) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                ensureSegmentValueIsMutable();
-                segmentValue_.add(index, value);
+                ensureValuesIsMutable();
+                values_.add(index, value);
                 onChanged();
             } else {
-                segmentValueBuilder_.addMessage(index, value);
+                valuesBuilder_.addMessage(index, value);
             }
             return this;
         }
@@ -2169,15 +1146,15 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder addSegmentValue(datawave.annotation.protobuf.v1.SegmentValue.Builder builderForValue) {
-            if (segmentValueBuilder_ == null) {
-                ensureSegmentValueIsMutable();
-                segmentValue_.add(builderForValue.build());
+        public Builder addValues(datawave.annotation.protobuf.v1.SegmentValue.Builder builderForValue) {
+            if (valuesBuilder_ == null) {
+                ensureValuesIsMutable();
+                values_.add(builderForValue.build());
                 onChanged();
             } else {
-                segmentValueBuilder_.addMessage(builderForValue.build());
+                valuesBuilder_.addMessage(builderForValue.build());
             }
             return this;
         }
@@ -2187,15 +1164,15 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder addSegmentValue(int index, datawave.annotation.protobuf.v1.SegmentValue.Builder builderForValue) {
-            if (segmentValueBuilder_ == null) {
-                ensureSegmentValueIsMutable();
-                segmentValue_.add(index, builderForValue.build());
+        public Builder addValues(int index, datawave.annotation.protobuf.v1.SegmentValue.Builder builderForValue) {
+            if (valuesBuilder_ == null) {
+                ensureValuesIsMutable();
+                values_.add(index, builderForValue.build());
                 onChanged();
             } else {
-                segmentValueBuilder_.addMessage(index, builderForValue.build());
+                valuesBuilder_.addMessage(index, builderForValue.build());
             }
             return this;
         }
@@ -2205,15 +1182,15 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder addAllSegmentValue(java.lang.Iterable<? extends datawave.annotation.protobuf.v1.SegmentValue> values) {
-            if (segmentValueBuilder_ == null) {
-                ensureSegmentValueIsMutable();
-                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, segmentValue_);
+        public Builder addAllValues(java.lang.Iterable<? extends datawave.annotation.protobuf.v1.SegmentValue> values) {
+            if (valuesBuilder_ == null) {
+                ensureValuesIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, values_);
                 onChanged();
             } else {
-                segmentValueBuilder_.addAllMessages(values);
+                valuesBuilder_.addAllMessages(values);
             }
             return this;
         }
@@ -2223,15 +1200,15 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder clearSegmentValue() {
-            if (segmentValueBuilder_ == null) {
-                segmentValue_ = java.util.Collections.emptyList();
+        public Builder clearValues() {
+            if (valuesBuilder_ == null) {
+                values_ = java.util.Collections.emptyList();
                 bitField0_ = (bitField0_ & ~0x00000001);
                 onChanged();
             } else {
-                segmentValueBuilder_.clear();
+                valuesBuilder_.clear();
             }
             return this;
         }
@@ -2241,15 +1218,15 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public Builder removeSegmentValue(int index) {
-            if (segmentValueBuilder_ == null) {
-                ensureSegmentValueIsMutable();
-                segmentValue_.remove(index);
+        public Builder removeValues(int index) {
+            if (valuesBuilder_ == null) {
+                ensureValuesIsMutable();
+                values_.remove(index);
                 onChanged();
             } else {
-                segmentValueBuilder_.remove(index);
+                valuesBuilder_.remove(index);
             }
             return this;
         }
@@ -2259,10 +1236,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public datawave.annotation.protobuf.v1.SegmentValue.Builder getSegmentValueBuilder(int index) {
-            return getSegmentValueFieldBuilder().getBuilder(index);
+        public datawave.annotation.protobuf.v1.SegmentValue.Builder getValuesBuilder(int index) {
+            return getValuesFieldBuilder().getBuilder(index);
         }
 
         /**
@@ -2270,13 +1247,13 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public datawave.annotation.protobuf.v1.SegmentValueOrBuilder getSegmentValueOrBuilder(int index) {
-            if (segmentValueBuilder_ == null) {
-                return segmentValue_.get(index);
+        public datawave.annotation.protobuf.v1.SegmentValueOrBuilder getValuesOrBuilder(int index) {
+            if (valuesBuilder_ == null) {
+                return values_.get(index);
             } else {
-                return segmentValueBuilder_.getMessageOrBuilder(index);
+                return valuesBuilder_.getMessageOrBuilder(index);
             }
         }
 
@@ -2285,13 +1262,13 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getSegmentValueOrBuilderList() {
-            if (segmentValueBuilder_ != null) {
-                return segmentValueBuilder_.getMessageOrBuilderList();
+        public java.util.List<? extends datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getValuesOrBuilderList() {
+            if (valuesBuilder_ != null) {
+                return valuesBuilder_.getMessageOrBuilderList();
             } else {
-                return java.util.Collections.unmodifiableList(segmentValue_);
+                return java.util.Collections.unmodifiableList(values_);
             }
         }
 
@@ -2300,10 +1277,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public datawave.annotation.protobuf.v1.SegmentValue.Builder addSegmentValueBuilder() {
-            return getSegmentValueFieldBuilder().addBuilder(datawave.annotation.protobuf.v1.SegmentValue.getDefaultInstance());
+        public datawave.annotation.protobuf.v1.SegmentValue.Builder addValuesBuilder() {
+            return getValuesFieldBuilder().addBuilder(datawave.annotation.protobuf.v1.SegmentValue.getDefaultInstance());
         }
 
         /**
@@ -2311,10 +1288,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public datawave.annotation.protobuf.v1.SegmentValue.Builder addSegmentValueBuilder(int index) {
-            return getSegmentValueFieldBuilder().addBuilder(index, datawave.annotation.protobuf.v1.SegmentValue.getDefaultInstance());
+        public datawave.annotation.protobuf.v1.SegmentValue.Builder addValuesBuilder(int index) {
+            return getValuesFieldBuilder().addBuilder(index, datawave.annotation.protobuf.v1.SegmentValue.getDefaultInstance());
         }
 
         /**
@@ -2322,19 +1299,19 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
          * Multiple values associated with this segment.
          * </pre>
          *
-         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+         * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
          */
-        public java.util.List<datawave.annotation.protobuf.v1.SegmentValue.Builder> getSegmentValueBuilderList() {
-            return getSegmentValueFieldBuilder().getBuilderList();
+        public java.util.List<datawave.annotation.protobuf.v1.SegmentValue.Builder> getValuesBuilderList() {
+            return getValuesFieldBuilder().getBuilderList();
         }
 
-        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentValue,datawave.annotation.protobuf.v1.SegmentValue.Builder,datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getSegmentValueFieldBuilder() {
-            if (segmentValueBuilder_ == null) {
-                segmentValueBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentValue,datawave.annotation.protobuf.v1.SegmentValue.Builder,datawave.annotation.protobuf.v1.SegmentValueOrBuilder>(
-                                segmentValue_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
-                segmentValue_ = null;
+        private com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentValue,datawave.annotation.protobuf.v1.SegmentValue.Builder,datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getValuesFieldBuilder() {
+            if (valuesBuilder_ == null) {
+                valuesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.annotation.protobuf.v1.SegmentValue,datawave.annotation.protobuf.v1.SegmentValue.Builder,datawave.annotation.protobuf.v1.SegmentValueOrBuilder>(
+                                values_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
+                values_ = null;
             }
-            return segmentValueBuilder_;
+            return valuesBuilder_;
         }
 
         private com.google.protobuf.MapField<java.lang.String,java.lang.String> metadata_;
@@ -2364,10 +1341,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional metadata
+         * arbitrary, optional segment metadata
          * </pre>
          *
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
 
         @java.lang.Override
@@ -2389,10 +1366,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional metadata
+         * arbitrary, optional segment metadata
          * </pre>
          *
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         @java.lang.Override
 
@@ -2402,10 +1379,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional metadata
+         * arbitrary, optional segment metadata
          * </pre>
          *
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         @java.lang.Override
 
@@ -2419,10 +1396,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional metadata
+         * arbitrary, optional segment metadata
          * </pre>
          *
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         @java.lang.Override
 
@@ -2444,10 +1421,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional metadata
+         * arbitrary, optional segment metadata
          * </pre>
          *
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
 
         public Builder removeMetadata(java.lang.String key) {
@@ -2468,10 +1445,10 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional metadata
+         * arbitrary, optional segment metadata
          * </pre>
          *
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
         public Builder putMetadata(java.lang.String key, java.lang.String value) {
             if (key == null) {
@@ -2486,732 +1463,15 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional metadata
+         * arbitrary, optional segment metadata
          * </pre>
          *
-         * <code>map&lt;string, string&gt; metadata = 7;</code>
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
          */
 
         public Builder putAllMetadata(java.util.Map<java.lang.String,java.lang.String> values) {
             internalGetMutableMetadata().getMutableMap().putAll(values);
             return this;
-        }
-
-        private java.lang.Object boundaryType_ = "";
-
-        /**
-         * <pre>
-         * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-         * </pre>
-         *
-         * <code>string boundaryType = 10;</code>
-         *
-         * @return The boundaryType.
-         */
-        public java.lang.String getBoundaryType() {
-            java.lang.Object ref = boundaryType_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                boundaryType_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-         * </pre>
-         *
-         * <code>string boundaryType = 10;</code>
-         *
-         * @return The bytes for boundaryType.
-         */
-        public com.google.protobuf.ByteString getBoundaryTypeBytes() {
-            java.lang.Object ref = boundaryType_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                boundaryType_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-         * </pre>
-         *
-         * <code>string boundaryType = 10;</code>
-         *
-         * @param value
-         *            The boundaryType to set.
-         * @return This builder for chaining.
-         */
-        public Builder setBoundaryType(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-
-            boundaryType_ = value;
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-         * </pre>
-         *
-         * <code>string boundaryType = 10;</code>
-         *
-         * @return This builder for chaining.
-         */
-        public Builder clearBoundaryType() {
-
-            boundaryType_ = getDefaultInstance().getBoundaryType();
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-         * </pre>
-         *
-         * <code>string boundaryType = 10;</code>
-         *
-         * @param value
-         *            The bytes for boundaryType to set.
-         * @return This builder for chaining.
-         */
-        public Builder setBoundaryTypeBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            checkByteStringIsUtf8(value);
-
-            boundaryType_ = value;
-            onChanged();
-            return this;
-        }
-
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.All,datawave.annotation.protobuf.v1.All.Builder,datawave.annotation.protobuf.v1.AllOrBuilder> allBuilder_;
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         *
-         * @return Whether the all field is set.
-         */
-        @java.lang.Override
-        public boolean hasAll() {
-            return boundaryCase_ == 20;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         *
-         * @return The all.
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.All getAll() {
-            if (allBuilder_ == null) {
-                if (boundaryCase_ == 20) {
-                    return (datawave.annotation.protobuf.v1.All) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.All.getDefaultInstance();
-            } else {
-                if (boundaryCase_ == 20) {
-                    return allBuilder_.getMessage();
-                }
-                return datawave.annotation.protobuf.v1.All.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         */
-        public Builder setAll(datawave.annotation.protobuf.v1.All value) {
-            if (allBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                boundary_ = value;
-                onChanged();
-            } else {
-                allBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 20;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         */
-        public Builder setAll(datawave.annotation.protobuf.v1.All.Builder builderForValue) {
-            if (allBuilder_ == null) {
-                boundary_ = builderForValue.build();
-                onChanged();
-            } else {
-                allBuilder_.setMessage(builderForValue.build());
-            }
-            boundaryCase_ = 20;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         */
-        public Builder mergeAll(datawave.annotation.protobuf.v1.All value) {
-            if (allBuilder_ == null) {
-                if (boundaryCase_ == 20 && boundary_ != datawave.annotation.protobuf.v1.All.getDefaultInstance()) {
-                    boundary_ = datawave.annotation.protobuf.v1.All.newBuilder((datawave.annotation.protobuf.v1.All) boundary_).mergeFrom(value).buildPartial();
-                } else {
-                    boundary_ = value;
-                }
-                onChanged();
-            } else {
-                if (boundaryCase_ == 20) {
-                    allBuilder_.mergeFrom(value);
-                }
-                allBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 20;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         */
-        public Builder clearAll() {
-            if (allBuilder_ == null) {
-                if (boundaryCase_ == 20) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                    onChanged();
-                }
-            } else {
-                if (boundaryCase_ == 20) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                }
-                allBuilder_.clear();
-            }
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         */
-        public datawave.annotation.protobuf.v1.All.Builder getAllBuilder() {
-            return getAllFieldBuilder().getBuilder();
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.AllOrBuilder getAllOrBuilder() {
-            if ((boundaryCase_ == 20) && (allBuilder_ != null)) {
-                return allBuilder_.getMessageOrBuilder();
-            } else {
-                if (boundaryCase_ == 20) {
-                    return (datawave.annotation.protobuf.v1.All) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.All.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-         */
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.All,datawave.annotation.protobuf.v1.All.Builder,datawave.annotation.protobuf.v1.AllOrBuilder> getAllFieldBuilder() {
-            if (allBuilder_ == null) {
-                if (!(boundaryCase_ == 20)) {
-                    boundary_ = datawave.annotation.protobuf.v1.All.getDefaultInstance();
-                }
-                allBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.All,datawave.annotation.protobuf.v1.All.Builder,datawave.annotation.protobuf.v1.AllOrBuilder>(
-                                (datawave.annotation.protobuf.v1.All) boundary_, getParentForChildren(), isClean());
-                boundary_ = null;
-            }
-            boundaryCase_ = 20;
-            onChanged();
-            ;
-            return allBuilder_;
-        }
-
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.PointList,datawave.annotation.protobuf.v1.PointList.Builder,datawave.annotation.protobuf.v1.PointListOrBuilder> pointListBuilder_;
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         *
-         * @return Whether the pointList field is set.
-         */
-        @java.lang.Override
-        public boolean hasPointList() {
-            return boundaryCase_ == 21;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         *
-         * @return The pointList.
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.PointList getPointList() {
-            if (pointListBuilder_ == null) {
-                if (boundaryCase_ == 21) {
-                    return (datawave.annotation.protobuf.v1.PointList) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.PointList.getDefaultInstance();
-            } else {
-                if (boundaryCase_ == 21) {
-                    return pointListBuilder_.getMessage();
-                }
-                return datawave.annotation.protobuf.v1.PointList.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         */
-        public Builder setPointList(datawave.annotation.protobuf.v1.PointList value) {
-            if (pointListBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                boundary_ = value;
-                onChanged();
-            } else {
-                pointListBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 21;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         */
-        public Builder setPointList(datawave.annotation.protobuf.v1.PointList.Builder builderForValue) {
-            if (pointListBuilder_ == null) {
-                boundary_ = builderForValue.build();
-                onChanged();
-            } else {
-                pointListBuilder_.setMessage(builderForValue.build());
-            }
-            boundaryCase_ = 21;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         */
-        public Builder mergePointList(datawave.annotation.protobuf.v1.PointList value) {
-            if (pointListBuilder_ == null) {
-                if (boundaryCase_ == 21 && boundary_ != datawave.annotation.protobuf.v1.PointList.getDefaultInstance()) {
-                    boundary_ = datawave.annotation.protobuf.v1.PointList.newBuilder((datawave.annotation.protobuf.v1.PointList) boundary_).mergeFrom(value)
-                                    .buildPartial();
-                } else {
-                    boundary_ = value;
-                }
-                onChanged();
-            } else {
-                if (boundaryCase_ == 21) {
-                    pointListBuilder_.mergeFrom(value);
-                }
-                pointListBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 21;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         */
-        public Builder clearPointList() {
-            if (pointListBuilder_ == null) {
-                if (boundaryCase_ == 21) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                    onChanged();
-                }
-            } else {
-                if (boundaryCase_ == 21) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                }
-                pointListBuilder_.clear();
-            }
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         */
-        public datawave.annotation.protobuf.v1.PointList.Builder getPointListBuilder() {
-            return getPointListFieldBuilder().getBuilder();
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.PointListOrBuilder getPointListOrBuilder() {
-            if ((boundaryCase_ == 21) && (pointListBuilder_ != null)) {
-                return pointListBuilder_.getMessageOrBuilder();
-            } else {
-                if (boundaryCase_ == 21) {
-                    return (datawave.annotation.protobuf.v1.PointList) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.PointList.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-         */
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.PointList,datawave.annotation.protobuf.v1.PointList.Builder,datawave.annotation.protobuf.v1.PointListOrBuilder> getPointListFieldBuilder() {
-            if (pointListBuilder_ == null) {
-                if (!(boundaryCase_ == 21)) {
-                    boundary_ = datawave.annotation.protobuf.v1.PointList.getDefaultInstance();
-                }
-                pointListBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.PointList,datawave.annotation.protobuf.v1.PointList.Builder,datawave.annotation.protobuf.v1.PointListOrBuilder>(
-                                (datawave.annotation.protobuf.v1.PointList) boundary_, getParentForChildren(), isClean());
-                boundary_ = null;
-            }
-            boundaryCase_ = 21;
-            onChanged();
-            ;
-            return pointListBuilder_;
-        }
-
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.TimeSpanSeconds,datawave.annotation.protobuf.v1.TimeSpanSeconds.Builder,datawave.annotation.protobuf.v1.TimeSpanSecondsOrBuilder> timeBuilder_;
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         *
-         * @return Whether the time field is set.
-         */
-        @java.lang.Override
-        public boolean hasTime() {
-            return boundaryCase_ == 22;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         *
-         * @return The time.
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.TimeSpanSeconds getTime() {
-            if (timeBuilder_ == null) {
-                if (boundaryCase_ == 22) {
-                    return (datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.TimeSpanSeconds.getDefaultInstance();
-            } else {
-                if (boundaryCase_ == 22) {
-                    return timeBuilder_.getMessage();
-                }
-                return datawave.annotation.protobuf.v1.TimeSpanSeconds.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         */
-        public Builder setTime(datawave.annotation.protobuf.v1.TimeSpanSeconds value) {
-            if (timeBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                boundary_ = value;
-                onChanged();
-            } else {
-                timeBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 22;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         */
-        public Builder setTime(datawave.annotation.protobuf.v1.TimeSpanSeconds.Builder builderForValue) {
-            if (timeBuilder_ == null) {
-                boundary_ = builderForValue.build();
-                onChanged();
-            } else {
-                timeBuilder_.setMessage(builderForValue.build());
-            }
-            boundaryCase_ = 22;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         */
-        public Builder mergeTime(datawave.annotation.protobuf.v1.TimeSpanSeconds value) {
-            if (timeBuilder_ == null) {
-                if (boundaryCase_ == 22 && boundary_ != datawave.annotation.protobuf.v1.TimeSpanSeconds.getDefaultInstance()) {
-                    boundary_ = datawave.annotation.protobuf.v1.TimeSpanSeconds.newBuilder((datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_)
-                                    .mergeFrom(value).buildPartial();
-                } else {
-                    boundary_ = value;
-                }
-                onChanged();
-            } else {
-                if (boundaryCase_ == 22) {
-                    timeBuilder_.mergeFrom(value);
-                }
-                timeBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 22;
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         */
-        public Builder clearTime() {
-            if (timeBuilder_ == null) {
-                if (boundaryCase_ == 22) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                    onChanged();
-                }
-            } else {
-                if (boundaryCase_ == 22) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                }
-                timeBuilder_.clear();
-            }
-            return this;
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         */
-        public datawave.annotation.protobuf.v1.TimeSpanSeconds.Builder getTimeBuilder() {
-            return getTimeFieldBuilder().getBuilder();
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.TimeSpanSecondsOrBuilder getTimeOrBuilder() {
-            if ((boundaryCase_ == 22) && (timeBuilder_ != null)) {
-                return timeBuilder_.getMessageOrBuilder();
-            } else {
-                if (boundaryCase_ == 22) {
-                    return (datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.TimeSpanSeconds.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-         */
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.TimeSpanSeconds,datawave.annotation.protobuf.v1.TimeSpanSeconds.Builder,datawave.annotation.protobuf.v1.TimeSpanSecondsOrBuilder> getTimeFieldBuilder() {
-            if (timeBuilder_ == null) {
-                if (!(boundaryCase_ == 22)) {
-                    boundary_ = datawave.annotation.protobuf.v1.TimeSpanSeconds.getDefaultInstance();
-                }
-                timeBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.TimeSpanSeconds,datawave.annotation.protobuf.v1.TimeSpanSeconds.Builder,datawave.annotation.protobuf.v1.TimeSpanSecondsOrBuilder>(
-                                (datawave.annotation.protobuf.v1.TimeSpanSeconds) boundary_, getParentForChildren(), isClean());
-                boundary_ = null;
-            }
-            boundaryCase_ = 22;
-            onChanged();
-            ;
-            return timeBuilder_;
-        }
-
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.TextSpanChars,datawave.annotation.protobuf.v1.TextSpanChars.Builder,datawave.annotation.protobuf.v1.TextSpanCharsOrBuilder> charactersBuilder_;
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         *
-         * @return Whether the characters field is set.
-         */
-        @java.lang.Override
-        public boolean hasCharacters() {
-            return boundaryCase_ == 23;
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         *
-         * @return The characters.
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.TextSpanChars getCharacters() {
-            if (charactersBuilder_ == null) {
-                if (boundaryCase_ == 23) {
-                    return (datawave.annotation.protobuf.v1.TextSpanChars) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.TextSpanChars.getDefaultInstance();
-            } else {
-                if (boundaryCase_ == 23) {
-                    return charactersBuilder_.getMessage();
-                }
-                return datawave.annotation.protobuf.v1.TextSpanChars.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         */
-        public Builder setCharacters(datawave.annotation.protobuf.v1.TextSpanChars value) {
-            if (charactersBuilder_ == null) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                boundary_ = value;
-                onChanged();
-            } else {
-                charactersBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 23;
-            return this;
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         */
-        public Builder setCharacters(datawave.annotation.protobuf.v1.TextSpanChars.Builder builderForValue) {
-            if (charactersBuilder_ == null) {
-                boundary_ = builderForValue.build();
-                onChanged();
-            } else {
-                charactersBuilder_.setMessage(builderForValue.build());
-            }
-            boundaryCase_ = 23;
-            return this;
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         */
-        public Builder mergeCharacters(datawave.annotation.protobuf.v1.TextSpanChars value) {
-            if (charactersBuilder_ == null) {
-                if (boundaryCase_ == 23 && boundary_ != datawave.annotation.protobuf.v1.TextSpanChars.getDefaultInstance()) {
-                    boundary_ = datawave.annotation.protobuf.v1.TextSpanChars.newBuilder((datawave.annotation.protobuf.v1.TextSpanChars) boundary_)
-                                    .mergeFrom(value).buildPartial();
-                } else {
-                    boundary_ = value;
-                }
-                onChanged();
-            } else {
-                if (boundaryCase_ == 23) {
-                    charactersBuilder_.mergeFrom(value);
-                }
-                charactersBuilder_.setMessage(value);
-            }
-            boundaryCase_ = 23;
-            return this;
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         */
-        public Builder clearCharacters() {
-            if (charactersBuilder_ == null) {
-                if (boundaryCase_ == 23) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                    onChanged();
-                }
-            } else {
-                if (boundaryCase_ == 23) {
-                    boundaryCase_ = 0;
-                    boundary_ = null;
-                }
-                charactersBuilder_.clear();
-            }
-            return this;
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         */
-        public datawave.annotation.protobuf.v1.TextSpanChars.Builder getCharactersBuilder() {
-            return getCharactersFieldBuilder().getBuilder();
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         */
-        @java.lang.Override
-        public datawave.annotation.protobuf.v1.TextSpanCharsOrBuilder getCharactersOrBuilder() {
-            if ((boundaryCase_ == 23) && (charactersBuilder_ != null)) {
-                return charactersBuilder_.getMessageOrBuilder();
-            } else {
-                if (boundaryCase_ == 23) {
-                    return (datawave.annotation.protobuf.v1.TextSpanChars) boundary_;
-                }
-                return datawave.annotation.protobuf.v1.TextSpanChars.getDefaultInstance();
-            }
-        }
-
-        /**
-         * <pre>
-         * add future segment types here
-         * </pre>
-         *
-         * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-         */
-        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.TextSpanChars,datawave.annotation.protobuf.v1.TextSpanChars.Builder,datawave.annotation.protobuf.v1.TextSpanCharsOrBuilder> getCharactersFieldBuilder() {
-            if (charactersBuilder_ == null) {
-                if (!(boundaryCase_ == 23)) {
-                    boundary_ = datawave.annotation.protobuf.v1.TextSpanChars.getDefaultInstance();
-                }
-                charactersBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.TextSpanChars,datawave.annotation.protobuf.v1.TextSpanChars.Builder,datawave.annotation.protobuf.v1.TextSpanCharsOrBuilder>(
-                                (datawave.annotation.protobuf.v1.TextSpanChars) boundary_, getParentForChildren(), isClean());
-                boundary_ = null;
-            }
-            boundaryCase_ = 23;
-            onChanged();
-            ;
-            return charactersBuilder_;
         }
 
         @java.lang.Override

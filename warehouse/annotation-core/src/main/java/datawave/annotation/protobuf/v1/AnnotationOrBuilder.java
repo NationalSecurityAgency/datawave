@@ -8,6 +8,10 @@ public interface AnnotationOrBuilder extends
                 com.google.protobuf.MessageOrBuilder {
 
     /**
+     * <pre>
+     * the shard of the record this annotation addresses
+     * </pre>
+     *
      * <code>string shard = 1;</code>
      *
      * @return The shard.
@@ -15,6 +19,10 @@ public interface AnnotationOrBuilder extends
     java.lang.String getShard();
 
     /**
+     * <pre>
+     * the shard of the record this annotation addresses
+     * </pre>
+     *
      * <code>string shard = 1;</code>
      *
      * @return The bytes for shard.
@@ -22,6 +30,10 @@ public interface AnnotationOrBuilder extends
     com.google.protobuf.ByteString getShardBytes();
 
     /**
+     * <pre>
+     * the datatype of the record this annotation addresses
+     * </pre>
+     *
      * <code>string dataType = 2;</code>
      *
      * @return The dataType.
@@ -29,6 +41,10 @@ public interface AnnotationOrBuilder extends
     java.lang.String getDataType();
 
     /**
+     * <pre>
+     * the datatype of the record this annotation addresses
+     * </pre>
+     *
      * <code>string dataType = 2;</code>
      *
      * @return The bytes for dataType.
@@ -36,6 +52,10 @@ public interface AnnotationOrBuilder extends
     com.google.protobuf.ByteString getDataTypeBytes();
 
     /**
+     * <pre>
+     * the internal id of the record this annotation addresses
+     * </pre>
+     *
      * <code>string uid = 3;</code>
      *
      * @return The uid.
@@ -43,6 +63,10 @@ public interface AnnotationOrBuilder extends
     java.lang.String getUid();
 
     /**
+     * <pre>
+     * the internal id of the record this annotation addresses
+     * </pre>
+     *
      * <code>string uid = 3;</code>
      *
      * @return The bytes for uid.
@@ -50,6 +74,10 @@ public interface AnnotationOrBuilder extends
     com.google.protobuf.ByteString getUidBytes();
 
     /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
      * <code>string annotationType = 4;</code>
      *
      * @return The annotationType.
@@ -57,6 +85,10 @@ public interface AnnotationOrBuilder extends
     java.lang.String getAnnotationType();
 
     /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
      * <code>string annotationType = 4;</code>
      *
      * @return The bytes for annotationType.
@@ -64,6 +96,10 @@ public interface AnnotationOrBuilder extends
     com.google.protobuf.ByteString getAnnotationTypeBytes();
 
     /**
+     * <pre>
+     * the hash that identifies this annotation
+     * </pre>
+     *
      * <code>string annotationId = 5;</code>
      *
      * @return The annotationId.
@@ -71,6 +107,10 @@ public interface AnnotationOrBuilder extends
     java.lang.String getAnnotationId();
 
     /**
+     * <pre>
+     * the hash that identifies this annotation
+     * </pre>
+     *
      * <code>string annotationId = 5;</code>
      *
      * @return The bytes for annotationId.
@@ -78,12 +118,132 @@ public interface AnnotationOrBuilder extends
     com.google.protobuf.ByteString getAnnotationIdBytes();
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <pre>
+     * the analytic hash that identifies this annotation's source
+     * </pre>
+     *
+     * <code>string analyticHash = 6;</code>
+     *
+     * @return The analyticHash.
+     */
+    java.lang.String getAnalyticHash();
+
+    /**
+     * <pre>
+     * the analytic hash that identifies this annotation's source
+     * </pre>
+     *
+     * <code>string analyticHash = 6;</code>
+     *
+     * @return The bytes for analyticHash.
+     */
+    com.google.protobuf.ByteString getAnalyticHashBytes();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     *
+     * @return Whether the source field is set.
+     */
+    boolean hasSource();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     *
+     * @return The source.
+     */
+    datawave.annotation.protobuf.v1.AnnotationSource getSource();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+     */
+    datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder();
+
+    /**
+     * <pre>
+     * the external identifier for this annotations source document.
+     * </pre>
+     *
+     * <code>string documentId = 8;</code>
+     *
+     * @return The documentId.
+     */
+    java.lang.String getDocumentId();
+
+    /**
+     * <pre>
+     * the external identifier for this annotations source document.
+     * </pre>
+     *
+     * <code>string documentId = 8;</code>
+     *
+     * @return The bytes for documentId.
+     */
+    com.google.protobuf.ByteString getDocumentIdBytes();
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    java.util.List<datawave.annotation.protobuf.v1.Segment> getSegmentsList();
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    datawave.annotation.protobuf.v1.Segment getSegments(int index);
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    int getSegmentsCount();
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    java.util.List<? extends datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsOrBuilderList();
+
+    /**
+     * <pre>
+     * segment data
+     * </pre>
+     *
+     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 20;</code>
+     */
+    datawave.annotation.protobuf.v1.SegmentOrBuilder getSegmentsOrBuilder(int index);
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     int getMetadataCount();
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     boolean containsMetadata(java.lang.String key);
 
@@ -94,44 +254,19 @@ public interface AnnotationOrBuilder extends
     java.util.Map<java.lang.String,java.lang.String> getMetadata();
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     java.util.Map<java.lang.String,java.lang.String> getMetadataMap();
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
 
     java.lang.String getMetadataOrDefault(java.lang.String key, java.lang.String defaultValue);
 
     /**
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
 
     java.lang.String getMetadataOrThrow(java.lang.String key);
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    java.util.List<datawave.annotation.protobuf.v1.Segment> getSegmentsList();
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    datawave.annotation.protobuf.v1.Segment getSegments(int index);
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    int getSegmentsCount();
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    java.util.List<? extends datawave.annotation.protobuf.v1.SegmentOrBuilder> getSegmentsOrBuilderList();
-
-    /**
-     * <code>repeated .datawave.annotation.protobuf.v1.Segment segments = 8;</code>
-     */
-    datawave.annotation.protobuf.v1.SegmentOrBuilder getSegmentsOrBuilder(int index);
 }

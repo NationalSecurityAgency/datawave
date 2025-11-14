@@ -3,10 +3,12 @@ package datawave.annotation.data.transform;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
+import java.util.Set;
 
 public class DefaultTimestampTransformer implements TimestampTransformer {
 
     public static final String CREATED_DATE_METADATA_KEY = "created_date";
+    public static final Set<String> TIMESTAMP_FIELDS = Set.of(CREATED_DATE_METADATA_KEY);
 
     /**
      * Finds the @{code CREATED_DATE_METADATA_KEY} in the metadataMap in ISO8601 zulu and transforms it into the number of milliseconds since the epoch.
@@ -34,7 +36,7 @@ public class DefaultTimestampTransformer implements TimestampTransformer {
      *            the number of milliseconds since the epoch.
      * @return a map containing the @{code CREATE_DATE_METADATA_KEY}
      * @throws AnnotationTransformException
-     *             if the timestamp can't be parsed into zulo tade format.
+     *             if the timestamp can't be parsed into zulu time format.
      */
     @Override
     public Map<String,String> toMetadataMap(long timestamp) throws AnnotationTransformException {
@@ -44,5 +46,15 @@ public class DefaultTimestampTransformer implements TimestampTransformer {
         } catch (Exception e) {
             throw new AnnotationTransformException("Exception transforming timestamp to metadata map");
         }
+    }
+
+    /**
+     * Return the fields that are used to calculate the timestamp. Certain serializers may decide to drop these from the metadata map
+     *
+     * @return a set of timestamp field names.
+     */
+    @Override
+    public Set<String> getTimestampFields() {
+        return TIMESTAMP_FIELDS;
     }
 }

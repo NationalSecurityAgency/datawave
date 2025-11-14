@@ -1,5 +1,7 @@
 package datawave.annotation.data.v1;
 
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.ANALYTIC_HASH_KEY;
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.DOCUMENT_ID_KEY;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationsEqual;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertMetadataEqual;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertSegmentsEqual;
@@ -60,6 +62,38 @@ public class AccumuloAnnotationSerializerTest {
         assertAnnotationsEqual(expectedAnnotation, observedAnnotation);
     }
 
+    @Test
+    public void testAnnotationSerializerDeserializeWithSourceAndDocument() throws AnnotationSerializationException, InvalidProtocolBufferException {
+        Annotation baseAnnotation = generateTestAnnotation();
+
+        // enrich the base annotation with a document id and a source id.
+        Annotation testAnnotation = baseAnnotation.toBuilder().setDocumentId("a-good-document").setAnalyticHash("a-good-source").build();
+
+        // an id must be assigned to serialize/deserialize an annotation - typically this is handled by the data
+        // access object.
+        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+
+        AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
+        Iterator<Map.Entry<Key,Value>> results = serializer.serialize(expectedAnnotation);
+        assertNotNull(results);
+
+        // persist the results from the iterator so we can inspect them later.
+        final List<Map.Entry<Key,Value>> savedResults = new ArrayList<>();
+        while (results.hasNext()) {
+            savedResults.add(results.next());
+        }
+        assertFalse(savedResults.isEmpty());
+
+        // deserialize the results back into an annotation.
+        Annotation observedAnnotation = serializer.deserialize(savedResults.iterator());
+
+        // Compare the serialized results with what's expected
+        assertSerialization(expectedAnnotation, savedResults.iterator());
+
+        // Compare the deserialized results with the original annotation.
+        assertAnnotationsEqual(expectedAnnotation, observedAnnotation);
+    }
+
     private void assertSerialization(Annotation expected, Iterator<Map.Entry<Key,Value>> results) throws InvalidProtocolBufferException {
         final List<Map.Entry<String,String>> observedMetadata = new ArrayList<>();
         final List<Segment> observedSegments = new ArrayList<>();
@@ -78,10 +112,10 @@ public class AccumuloAnnotationSerializerTest {
             String[] parts = cq.split("\0");
             assertTrue(parts.length >= 2, "Column qualifier incorrect length");
             String annotationId = parts[0];
-            assertEquals("a75beb9e", annotationId, "Annotation id mismatch");
+            assertEquals("ddf5715c", annotationId, "Annotation id mismatch");
             if (parts.length == 2) {
                 String segmentId = parts[1];
-                assertEquals("5a7bcdd9", segmentId);
+                assertEquals("fa389252", segmentId);
 
                 // the value must be decode-able into SegmentData.
                 Segment segment = Segment.parseFrom(value.get());
@@ -89,7 +123,16 @@ public class AccumuloAnnotationSerializerTest {
 
             }
             if (parts.length == 3) {
-                observedMetadata.add(Map.entry(parts[1], parts[2]));
+                switch (parts[1]) {
+                    case ANALYTIC_HASH_KEY:
+                        assertEquals("a-good-source", parts[2]);
+                        break;
+                    case DOCUMENT_ID_KEY:
+                        assertEquals("a-good-document", parts[2]);
+                        break;
+                    default:
+                        observedMetadata.add(Map.entry(parts[1], parts[2]));
+                }
             }
         }
 

@@ -4,105 +4,91 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.util.JsonFormat;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
+import datawave.annotation.protobuf.v1.Point;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 
 public class AnnotationUtils {
-    private static final JsonFormat.Printer PRINTER = JsonFormat.printer().preservingProtoFieldNames();
-    private static final JsonFormat.Parser PARSER = JsonFormat.parser();
+    protected static final Logger log = LoggerFactory.getLogger(AnnotationUtils.class);
 
-    public static Annotation addSegmentBoundaryTypes(Annotation a) {
-        Annotation.Builder b = a.toBuilder().clearSegments();
-        for (Segment s : a.getSegmentsList()) {
-            b.addSegments(AnnotationUtils.injectBoundaryType(s));
-        }
-        return b.build();
+    /** Enum for the SegmentBoundary types */
+    public enum BoundaryCase {
+        TIME_SPAN, CHARACTER_SPAN, POINTS, ALL, BOUNDARY_NOT_SET
     }
 
     /**
-     * Convert the annotation to json and inject the boundary type
+     * Decode the SegmentBoundary type into an enum value for streamlined handling later
+     *
+     * @param boundary
+     *            the boundary to inspect
+     * @return the BoundaryCase for this boundary.
+     */
+    public static BoundaryCase getBoundaryCase(SegmentBoundary boundary) {
+        if (boundary.hasAll()) {
+            return BoundaryCase.ALL;
+        } else if (boundary.hasTimeSpan()) {
+            return BoundaryCase.TIME_SPAN;
+        } else if (boundary.hasCharacterSpan()) {
+            return BoundaryCase.CHARACTER_SPAN;
+        } else if (!boundary.getPointsList().isEmpty()) {
+            return BoundaryCase.POINTS;
+        } else {
+            return BoundaryCase.BOUNDARY_NOT_SET;
+        }
+    }
+
+    /**
+     * Add the segment boundary types to the specified annotation
      *
      * @param a
-     *            the segment to convert
-     * @return json representing the segment.
-     * @throws InvalidProtocolBufferException
-     *             if there's a problem with serialization.
+     *            the annotation to enrich
+     * @return the enriched version of the annotation, or the same annotation of the segment list is empty.
      */
-    public static String annotationToJsonWithBoundaryTypes(Annotation a) throws InvalidProtocolBufferException {
-        return PRINTER.print(addSegmentBoundaryTypes(a));
-    }
-
-    /**
-     * Convert json to an annotation. The conversion depends on having a proper boundary case set
-     *
-     * @param json
-     *            the json to convert.
-     * @return an annotation.
-     * @throws InvalidProtocolBufferException
-     *             if there's a problem with serialization.
-     */
-    public static Annotation annotationFromJson(String json) throws InvalidProtocolBufferException {
-        Annotation.Builder b = Annotation.newBuilder();
-        PARSER.merge(json, b);
+    public static Annotation injectSegmentBoundaryTypes(Annotation a) {
+        if (a.getSegmentsList().isEmpty()) {
+            return a;
+        }
+        Annotation.Builder b = a.toBuilder().clearSegments();
+        for (Segment s : a.getSegmentsList()) {
+            b.addSegments(injectBoundaryType(s));
+        }
         return b.build();
     }
 
     /**
      * Given a segment boundary case, return the string describing that boundary
      *
-     * @param boundaryCase
-     *            the boundary case
+     * @param boundary
+     *            the boundary
      * @return a string describing the boundary case.
      */
-    public static String getSegmentBoundaryCaseString(Segment.BoundaryCase boundaryCase) {
+    public static String getBoundaryTypeString(SegmentBoundary boundary) {
+        BoundaryCase boundaryCase = getBoundaryCase(boundary);
         switch (boundaryCase) {
             case ALL:
                 return "ENTIRE";
-            case POINTLIST:
-                return "POINTLIST";
-            case TIME:
-                return "TIME";
-            case CHARACTERS:
-                return "CHARACTERS";
+            case POINTS:
+                return "POINTS";
+            case TIME_SPAN:
+                return "TIME_SPAN";
+            case CHARACTER_SPAN:
+                return "CHARACTER_SPAN";
             case BOUNDARY_NOT_SET:
             default:
                 return "";
         }
-    }
-
-    /**
-     * Convert the segment to json and inject the boundary type
-     *
-     * @param s
-     *            the segment to convert
-     * @return json representing the segment.
-     * @throws InvalidProtocolBufferException
-     *             if there's a problem with serialization.
-     */
-    public static String segmentToJsonWithBoundaryType(Segment s) throws InvalidProtocolBufferException {
-        return PRINTER.print(injectBoundaryType(s));
-    }
-
-    /**
-     * Convert json to a segment. The conversion depends on having a proper boundary case set
-     *
-     * @param json
-     *            the json to convert.
-     * @return a segment.
-     * @throws InvalidProtocolBufferException
-     *             if there's a problem with serialization.
-     */
-    public static Segment segmentFromJson(String json) throws InvalidProtocolBufferException {
-        Segment.Builder b = Segment.newBuilder();
-        PARSER.merge(json, b);
-        return b.build();
     }
 
     /**
@@ -132,11 +118,43 @@ public class AnnotationUtils {
      *
      * @param segment
      *            the segment to inject.
-     * @return the segment with boundary type injected.
+     * @return the segment with the text boundary type injected.
      */
     public static Segment injectBoundaryType(Segment segment) {
-        String type = getSegmentBoundaryCaseString(segment.getBoundaryCase());
-        return segment.toBuilder().setBoundaryType(type).build();
+        if (segment.hasBoundary()) {
+            SegmentBoundary boundary = injectBoundaryType(segment.getBoundary());
+            return segment.toBuilder().setBoundary(boundary).build();
+        } else {
+            // technically invalid, but validation logic belongs elsewhere.
+            return segment;
+        }
+    }
+
+    /**
+     * Utility method to inject the boundary type field into the boundary so that it will be included in the serialized result and support deserialization. This
+     * should generally be called by and data access object just prior to writing the segment, but before injecting an identifier.
+     *
+     * @param boundary
+     *            the boundary to inject.
+     * @return the boundary with the text boundary type injected.
+     */
+    public static SegmentBoundary injectBoundaryType(SegmentBoundary boundary) {
+        String type = getBoundaryTypeString(boundary);
+        return boundary.toBuilder().setBoundaryType(type).build();
+    }
+
+    /**
+     * Utility method to generate and inject the annotation source identifier into the annotation source. included in the serialized result and supports
+     * deserialization. The identifier is a hash of certain values in the annotation source. This should generally be called by and data access object just
+     * prior to writing the annotation.
+     *
+     * @param annotationSource
+     *            the annotation to inject.
+     * @return the annotation with boundary type injected.
+     */
+    public static AnnotationSource injectAnnotationSourceId(AnnotationSource annotationSource) {
+        final String hash = calculateAnnotationSourceHash(annotationSource);
+        return annotationSource.toBuilder().setAnalyticHash(hash).build();
     }
 
     /**
@@ -166,6 +184,35 @@ public class AnnotationUtils {
     }
 
     /**
+     * Calculate the 32-bit murmur3 hash used to identify an annotation source, this includes the following attributes:
+     * <ul>
+     * <li>the annotation source engine</li>
+     * <li>the annotation source model</li>
+     * <li>the annotation source label</li>
+     * <li>the annotation source configuration</li>
+     * </ul>
+     *
+     * @param annotationSource
+     *            the annotation to hash.
+     * @return the calculated hash. TODO: validate that this is the right algorithm for hashing the segment.
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    public static String calculateAnnotationSourceHash(AnnotationSource annotationSource) {
+        Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
+        hasher.putString(annotationSource.getEngine(), StandardCharsets.UTF_8);
+        hasher.putString(annotationSource.getModel(), StandardCharsets.UTF_8);
+        hasher.putString(annotationSource.getSourceLabel(), StandardCharsets.UTF_8);
+        // maps must be hashed in a consistent order (by key)
+        final Map<String,String> configMap = annotationSource.getConfigurationMap();
+        final SortedSet<String> sortedKeySet = new TreeSet<>(configMap.keySet());
+        for (String key : sortedKeySet) {
+            hasher.putString(key, StandardCharsets.UTF_8);
+            hasher.putString(configMap.get(key), StandardCharsets.UTF_8);
+        }
+        return hasher.hash().toString();
+    }
+
+    /**
      * Calculate the 32-bit murmur3 hash used to identify an annotation, this includes the following attributes:
      * <ul>
      * <li>the annotation type</li>
@@ -184,9 +231,12 @@ public class AnnotationUtils {
         for (Segment s : annotation.getSegmentsList()) {
             hasher.putString(calculateSegmentHash(s), StandardCharsets.UTF_8);
         }
-        for (Map.Entry<String,String> e : annotation.getMetadataMap().entrySet()) {
-            hasher.putString(e.getKey(), StandardCharsets.UTF_8);
-            hasher.putString(e.getValue(), StandardCharsets.UTF_8);
+        // maps must be hashed in a consistent order (by key)
+        final Map<String,String> metadataMap = annotation.getMetadataMap();
+        final SortedSet<String> sortedKeySet = new TreeSet<>(metadataMap.keySet());
+        for (String key : sortedKeySet) {
+            hasher.putString(key, StandardCharsets.UTF_8);
+            hasher.putString(metadataMap.get(key), StandardCharsets.UTF_8);
         }
         return hasher.hash().toString();
     }
@@ -206,22 +256,47 @@ public class AnnotationUtils {
     @SuppressWarnings("UnstableApiUsage")
     public static String calculateSegmentHash(Segment segment) {
         Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
-        for (SegmentValue v : segment.getSegmentValueList()) {
-            hasher.putString(v.toString(), StandardCharsets.UTF_8);
+        for (SegmentValue v : segment.getValuesList()) {
+            hasher.putString(v.getValue(), StandardCharsets.UTF_8);
+            hasher.putDouble(v.getScore());
+            if (!v.getExtensionMap().isEmpty()) {
+                // maps must be hashed in a consistent order (by key)
+                final Map<String,String> extensionMap = v.getExtensionMap();
+                final SortedSet<String> sortedKeySet = new TreeSet<>(extensionMap.keySet());
+                for (String key : sortedKeySet) {
+                    hasher.putString(key, StandardCharsets.UTF_8);
+                    hasher.putString(extensionMap.get(key), StandardCharsets.UTF_8);
+                }
+            }
         }
-        switch (segment.getBoundaryCase()) {
+        final SegmentBoundary boundary = segment.getBoundary();
+        final BoundaryCase boundaryCase = getBoundaryCase(boundary);
+        switch (boundaryCase) {
             case ALL:
-                hasher.putString(segment.getAll().toString(), StandardCharsets.UTF_8);
+                hasher.putString("All", StandardCharsets.UTF_8);
                 break;
-            case POINTLIST:
-                hasher.putString(segment.getPointList().toString(), StandardCharsets.UTF_8);
+            case POINTS:
+                for (Point p : boundary.getPointsList()) {
+                    hasher.putDouble(p.getX());
+                    hasher.putDouble(p.getY());
+                    hasher.putString(p.getLabel(), StandardCharsets.UTF_8);
+                }
                 break;
-            case TIME:
-                hasher.putString(segment.getTime().toString(), StandardCharsets.UTF_8);
+            case TIME_SPAN:
+                hasher.putDouble(boundary.getTimeSpan().getStartSeconds());
+                hasher.putDouble(boundary.getTimeSpan().getEndSeconds());
                 break;
-            case CHARACTERS:
-                hasher.putString(segment.getCharacters().toString(), StandardCharsets.UTF_8);
+            case CHARACTER_SPAN:
+                hasher.putLong(boundary.getCharacterSpan().getStartCharacter());
+                hasher.putLong(boundary.getCharacterSpan().getEndCharacter());
                 break;
+        }
+        // maps must be hashed in a consistent order (by key)
+        final Map<String,String> metadataMap = segment.getMetadataMap();
+        final SortedSet<String> sortedKeySet = new TreeSet<>(metadataMap.keySet());
+        for (String key : sortedKeySet) {
+            hasher.putString(key, StandardCharsets.UTF_8);
+            hasher.putString(metadataMap.get(key), StandardCharsets.UTF_8);
         }
         return hasher.hash().toString();
     }
