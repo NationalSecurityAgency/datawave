@@ -155,8 +155,8 @@ public class AnnotationHelperTest {
     @Test
     public void testTransformJson() throws SaxonApiException, IOException {
         // transformation remaps values out segmentValue from json
-        assertFalse(annotationHelper.transformJson(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes())
-                        .contains("values"));
+        assertTrue(annotationHelper.transformJson(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes())
+                        .contains("\"boundary\""));
     }
 
     @Test
@@ -169,7 +169,8 @@ public class AnnotationHelperTest {
 
         annotationHelper = new AnnotationHelper(conf);
 
-        assertTrue(annotationHelper.transformJson(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes()).contains("values"));
+        assertFalse(annotationHelper.transformJson(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes())
+                        .contains("\"boundary\""));
     }
 
     public static class EventWithShardId extends RawRecordContainerImpl {

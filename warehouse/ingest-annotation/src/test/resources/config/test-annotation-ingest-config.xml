@@ -86,6 +86,12 @@
     </property>
 
     <property>
+        <name>annotation.ignore.unknown.fields</name>
+        <value>false</value>
+        <description>ignore unknown fields when parsing the annotation json</description>
+    </property>
+
+    <property>
         <name>annotation.data.category.uuid.fields</name>
         <value>HEADER_ID,EXTRA_UUID_1,EXTRA_UUID_2,ID</value>
         <description>List of known fields that contain UUIDs</description>

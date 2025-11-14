@@ -42,15 +42,15 @@
                 <xsl:map-entry key="'segmentId'" select="$segment('segmentId')"/>
             </xsl:if>
 
-            <!-- Rename values to segmentValue -->
-            <xsl:if test="map:contains($segment, 'values')">
-                <xsl:map-entry key="'segmentValue'" select="$segment('values')"/>
+            <!-- Rename bounds to boundary -->
+            <xsl:if test="map:contains($segment, 'bounds')">
+                <xsl:map-entry key="'boundary'" select="$segment('bounds')"/>
             </xsl:if>
 
             <!-- Copy any other fields that might exist -->
             <xsl:for-each select="map:keys($segment)">
                 <xsl:variable name="key" select="."/>
-                <xsl:if test="$key != 'segmentId' and $key != 'bounds' and $key != 'values'">
+                <xsl:if test="$key != 'segmentId' and $key != 'bounds' and $key != 'bounds'">
                     <xsl:map-entry key="$key" select="$segment($key)"/>
                 </xsl:if>
             </xsl:for-each>

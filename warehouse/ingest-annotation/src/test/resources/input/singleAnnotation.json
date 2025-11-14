@@ -50,9 +50,9 @@
       ],
       "metadata": {
       },
-      "boundaryType": "testBoundaryType1",
-      "pointList": {
-        "point": [
+      "bounds": {
+        "boundaryType": "POINT_LIST",
+        "points": [
           {
             "x": -78087840.7337584,
             "y": 56815415.1987268,
@@ -63,10 +63,9 @@
     },
     {
       "segmentId": "testSegmentId2",
-      "eTag": "testETag2",
-      "boundaryType": "testBoundaryType2",
-      "pointList": {
-        "point": [
+      "bounds": {
+        "boundaryType": "POINT_LIST",
+        "points": [
           {
             "label": "testPointLabel2a"
           },
@@ -78,24 +77,22 @@
     },
     {
       "segmentId": "testSegmentId3",
-      "eTag": "testETag3",
       "values": [],
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
-      "boundaryType": "testBoundaryType3",
-      "pointList": {
+      "bounds": {
+        "boundaryType": "POINT_LIST"
       }
     },
     {
       "segmentId": "testSegmentId3",
-      "eTag": "testETag3",
       "values": [],
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },
-      "boundaryType": "testBoundaryType4",
-      "pointList": {
+      "bounds": {
+        "boundaryType": "POINT_LIST"
       }
     }
   ]

@@ -74,6 +74,9 @@ public class AnnotationHelper {
     public static final String ANNOTATION_SOURCE_VISIBILITY_DEFAULT = "annotation.source.visibility.default";
     private final String annotationSourceVisbilityDefault;
 
+    public static final String ANNOTATION_IGNORE_UNKNOWN_FIELDS = "annotation.ignore.unknown.fields";
+    private final boolean annotationIgnoreUnknownFields;
+
     public AnnotationHelper(Configuration conf) {
         this.annotationTableName = conf.get(ANNOTATION_TNAME, "datawave.annotation");
         this.annotationTableNameText = new Text(annotationTableName);
@@ -88,6 +91,8 @@ public class AnnotationHelper {
 
         this.annotationSourceVisibilityInheritEvent = conf.getBoolean(ANNOTATION_SOURCE_VISIBILITY_INHERIT_EVENT, false);
         this.annotationSourceVisbilityDefault = conf.get(ANNOTATION_SOURCE_VISIBILITY_DEFAULT, "");
+
+        this.annotationIgnoreUnknownFields = conf.getBoolean(ANNOTATION_IGNORE_UNKNOWN_FIELDS, true);
 
         try {
             if (annotationRawTransformationEnabled) {
@@ -250,7 +255,12 @@ public class AnnotationHelper {
         String jsonString = transformJson(jsonInBytes);
 
         Annotation.Builder annotationBuilder = Annotation.newBuilder();
-        JsonFormat.parser().ignoringUnknownFields().merge(jsonString, annotationBuilder);
+
+        if (this.annotationIgnoreUnknownFields) {
+            JsonFormat.parser().ignoringUnknownFields().merge(jsonString, annotationBuilder);
+        } else {
+            JsonFormat.parser().merge(jsonString, annotationBuilder);
+        }
 
         Annotation.Builder datawaveAnnotationBuilder = Annotation.newBuilder();
 
