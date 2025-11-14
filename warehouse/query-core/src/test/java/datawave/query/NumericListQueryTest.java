@@ -392,7 +392,7 @@ public abstract class NumericListQueryTest {
         extraParameters.put("return.fields", "SIZE,CANINE");
 
         String queryString = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
-        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == '+bE9')) && CANINE == 'coyote'";
 
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.WILD.1:90,26.5", "CANINE.WILD.1:coyote");
 
@@ -408,7 +408,7 @@ public abstract class NumericListQueryTest {
 
         // this only works because the entire string '90,26.5' is included in the jexl context and we match against that
         String queryString = "SIZE =~'.*0.*' AND CANINE == 'coyote'";
-        String expectedQueryPlan = "((_Delayed_ = true) && (SIZE =~ '\\+[a-zA-Z]E.*0?\\.?.*|\\+AE0|![A-Za-z]E(.+|.*9\\.?.+)')) && ((_Eval_ = true) && (SIZE =~ '.*0.*')) && CANINE == 'coyote'";
+        String expectedQueryPlan = "CANINE == 'coyote' && ((_Delayed_ = true) && (SIZE =~ '\\+[a-zA-Z]E.*0?\\.?.*|\\+AE0|![A-Za-z]E(.+|.*9\\.?.+)')) && ((_Norm_ = true) && ((_Eval_ = true) && (SIZE =~ '.*0.*')))";
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.WILD.1:tiger", "SIZE.CANINE.3:20,12.5",
                         "CANINE.WILD.1:coyote", "FISH.WILD.1:tuna", "BIRD.WILD.1:hawk");
@@ -424,7 +424,7 @@ public abstract class NumericListQueryTest {
         extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
         String queryString = "SIZE =~ '20*'";
-        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '20*'))";
+        String expectedQueryPlan = "((_Eval_ = true) && (((_Norm_ = true) && (SIZE =~ '20*')) && SIZE =~ '\\+[a-z]E2'))";
 
         Set<String> goodResults = Sets.newHashSet();
 
@@ -441,7 +441,7 @@ public abstract class NumericListQueryTest {
         // 90 only exists by itself in the jexl context in its normalized form. Numeric regex handling should some day rectify this or perhaps we should
         // consider adding the non-normalized tokens to the context for certain OneToMany types.
         String queryString = "SIZE =~'.*5' AND CANINE == 'coyote'";
-        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '.*5')) && CANINE == 'coyote'";
+        String expectedQueryPlan = "CANINE == 'coyote' && ((_Eval_ = true) && (((_Norm_ = true) && (SIZE =~ '.*5')) && SIZE =~ '\\+[a-zA-Z]E.*5|![A-Za-z]E.*5'))";
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
 

@@ -401,7 +401,7 @@ public abstract class ExecutableExpansionVisitorTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
 
-        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Eval_ = true) && (BAIL =~ '12340.*?'))";
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Norm_ = true) && ((_Eval_ = true) && (BAIL =~ '12340.*?')))";
         String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
         Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
                         TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
@@ -449,7 +449,7 @@ public abstract class ExecutableExpansionVisitorTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
 
-        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Eval_ = true) && (_ANYFIELD_ =~ '12340.*?'))";
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Norm_ = true) && ((_Eval_ = true) && (_ANYFIELD_ =~ '12340.*?')))";
         String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
         Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
                         TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
@@ -494,7 +494,7 @@ public abstract class ExecutableExpansionVisitorTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
 
-        String expectedQueryStr = "(UUID == 'capone' || UUID == 'soprano') && ((_Eval_ = true) && (BAIL =~ '.*?05'))";
+        String expectedQueryStr = "(UUID == 'capone' || UUID == 'soprano') && ((_Eval_ = true) && ((_Norm_ = true) && (BAIL =~ '.*?05')) && BAIL =~ '\\+[a-zA-Z]E.*?0?\\.?5|![A-Za-z]E.*?9?\\.?5')";
         String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
         Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
                         TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));

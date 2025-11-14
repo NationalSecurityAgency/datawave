@@ -6,6 +6,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATIO
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.NORMALIZED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
 
 import java.text.MessageFormat;
@@ -156,11 +157,11 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         /*
-         * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types If we
-         * have an evaluation only term predicate, then no need to apply normalizations If we have already expanded this node, then nothing to do
+         * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types. If
+         * we marked the term explicitly as normalized then nothing to do. If we have already expanded this node, then nothing to do.
          */
         QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
-        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM, EVALUATION_ONLY) || this.expandedNodes.contains(node)) {
+        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM, NORMALIZED) || this.expandedNodes.contains(node)) {
             return node;
         }
 
@@ -362,8 +363,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
                                     // if not index only, and we have a lossy normalized regex, then add the original regex as eval only
                                     if (!indexOnly && (!term.equals(normTerm)) && normalizer.normalizedRegexIsLossy(term)) {
-                                        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
-                                                        EVALUATION_ONLY);
+                                        JexlNode nodeCopy = JexlNodeFactory.buildUntypedNode(node, fieldName, term);
+                                        JexlNode evalOnly = QueryPropertyMarker.create(nodeCopy, EVALUATION_ONLY);
+                                        // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)
+                                        if (!(evalOnly instanceof ASTReferenceExpression)) {
+                                            evalOnly = JexlNodes.wrap(evalOnly);
+                                        }
+                                        evalOnly = QueryPropertyMarker.create(evalOnly, NORMALIZED);
                                         // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)
                                         if (!(evalOnly instanceof ASTReferenceExpression)) {
                                             evalOnly = JexlNodes.wrap(evalOnly);

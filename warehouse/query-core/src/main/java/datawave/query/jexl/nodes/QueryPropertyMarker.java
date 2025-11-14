@@ -36,6 +36,7 @@ public class QueryPropertyMarker {
         BOUNDED_RANGE("_Bounded_", false, false),
         LENIENT("_Lenient_", false, false),
         STRICT("_Strict_", false, false),
+        NORMALIZED("_Norm_", false, false),
         PLAN("plan", false, false);
 
         private final String label;
