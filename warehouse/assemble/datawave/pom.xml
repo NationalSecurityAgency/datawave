@@ -165,6 +165,10 @@
             <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-jci-core</artifactId>
         </dependency>
