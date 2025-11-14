@@ -1,6 +1,7 @@
 package datawave.annotation.data.transform;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Used for transforming timestamps into the standard metadata format to the long representation used in the Accumulo Key. Implementations will define specific
@@ -11,4 +12,6 @@ public interface TimestampTransformer {
     Map<String,String> toMetadataMap(long timestamp) throws AnnotationTransformException;
 
     long toTimestamp(Map<String,String> visibilityMap) throws AnnotationTransformException;
+
+    Set<String> getTimestampFields();
 }

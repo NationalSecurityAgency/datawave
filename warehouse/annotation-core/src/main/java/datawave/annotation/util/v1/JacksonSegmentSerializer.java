@@ -11,7 +11,7 @@ import datawave.annotation.protobuf.v1.Segment;
 
 /** Implements a custom Jackson Segment serializer that simply uses the native Protobuf JsonFormat.Printer */
 public class JacksonSegmentSerializer extends JsonSerializer<Segment> {
-    private static final JsonFormat.Printer protobufJsonPrinter = JsonFormat.printer();
+    private static final JsonFormat.Printer protobufJsonPrinter = AnnotationJsonUtils.getPrinter();
 
     @Override
     public void serialize(Segment segment, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {

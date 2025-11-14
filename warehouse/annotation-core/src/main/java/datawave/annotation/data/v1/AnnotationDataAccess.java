@@ -33,6 +33,7 @@ import datawave.annotation.data.AnnotationSerializer;
 import datawave.annotation.data.AnnotationUpdateException;
 import datawave.annotation.data.AnnotationWriteException;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.security.util.ScannerHelper;
@@ -48,8 +49,10 @@ public class AnnotationDataAccess {
 
     final AccumuloClient accumuloClient;
     final Set<Authorizations> authorizations;
-    final String tableName;
+    final String annotationTableName;
+    final String annotationSourceTableName;
     final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> annotationSerializer;
+    final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer;
 
     /**
      * Create the annotation data access object
@@ -58,17 +61,33 @@ public class AnnotationDataAccess {
      *            the accumulo client to use
      * @param authorizations
      *            the authorizations used for these operations
-     * @param tableName
+     * @param annotationTableName
      *            the accumulo table to use
      * @param annotationSerializer
      *            the serializer to transform protobuf to accumulo entries
      */
-    public AnnotationDataAccess(AccumuloClient accumuloClient, Set<Authorizations> authorizations, String tableName,
-                    AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> annotationSerializer) {
+    public AnnotationDataAccess(AccumuloClient accumuloClient, Set<Authorizations> authorizations, String annotationTableName, String annotationSourceTableName,
+                    AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> annotationSerializer,
+                    AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer) {
         this.accumuloClient = accumuloClient;
         this.authorizations = authorizations;
-        this.tableName = tableName;
+        this.annotationTableName = annotationTableName;
+        this.annotationSourceTableName = annotationSourceTableName;
         this.annotationSerializer = annotationSerializer;
+        this.annotationSourceSerializer = annotationSourceSerializer;
+    }
+
+    public Optional<AnnotationSource> getAnnotationSource(String sourceId) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationSourceTableName, authorizations)) {
+            final Range range = new Range(sourceId);
+            scanner.setRange(range);
+
+            Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
+            AnnotationSource as = annotationSourceSerializer.deserialize(it);
+            return as == null ? Optional.empty() : Optional.of(as);
+        } catch (TableNotFoundException | AnnotationSerializationException e) {
+            throw new AnnotationReadException(e.getClass().getSimpleName() + " reading annotation source for id: " + sourceId, e);
+        }
     }
 
     /**
@@ -87,7 +106,7 @@ public class AnnotationDataAccess {
      * @return an Optional that will contain the retrieved annotation if found.
      */
     public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationType, String annotationUid) {
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, tableName, authorizations)) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL + annotationType;
             final String columnQualifierPrefix = annotationUid + NULL;
             final String columnQualifierRegex = columnQualifierPrefix + ".*";
@@ -125,7 +144,7 @@ public class AnnotationDataAccess {
      * @return an Optional that will contain the retrieved annotation if found.
      */
     public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationId) {
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, tableName, authorizations)) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamily + ".*";
             final String columnQualifierRegex = annotationId + NULL + ".*";
@@ -167,7 +186,7 @@ public class AnnotationDataAccess {
      * @return a collection of annotation types we have for this document.
      */
     public Collection<String> getAnnotationTypes(String shard, String datatype, String uid) {
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, tableName, authorizations)) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamilyPrefix = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamilyPrefix + ".*";
 
@@ -200,7 +219,7 @@ public class AnnotationDataAccess {
      * @return a collection of annotation types we have for this document.
      */
     public List<Annotation> getAnnotations(String shard, String datatype, String uid) {
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, tableName, authorizations)) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamilyPrefix = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamilyPrefix + ".*";
 
@@ -234,7 +253,7 @@ public class AnnotationDataAccess {
      * @return a list of annotations for this document of the specified type.
      */
     public List<Annotation> getAnnotationsForType(String shard, String datatype, String uid, String annotationType) {
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, tableName, authorizations)) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL + annotationType;
 
             final Key startKey = new Key(shard, columnFamily);
@@ -255,6 +274,25 @@ public class AnnotationDataAccess {
     }
 
     /**
+     * Save a new annotation source
+     *
+     * @param annotationSource
+     *            the annotation to save.
+     * @return an Optional containing the save annotation if the save was successful.
+     */
+    public Optional<AnnotationSource> addAnnotationSource(AnnotationSource annotationSource) {
+        AnnotationSource addedAnnotationSource = prepareAnnotationSourceForAdd(annotationSource);
+        try (BatchWriter writer = accumuloClient.createBatchWriter(annotationSourceTableName)) {
+            Iterator<Map.Entry<Key,Value>> it = annotationSourceSerializer.serialize(addedAnnotationSource);
+            Mutation m = AccumuloAnnotationUtil.mutationAdapter(it, false);
+            writer.addMutation(m);
+            return Optional.of(addedAnnotationSource);
+        } catch (TableNotFoundException | MutationsRejectedException | AnnotationSerializationException e) {
+            throw new AnnotationWriteException(e.getClass().getSimpleName() + " saving annotation " + addedAnnotationSource, e);
+        }
+    }
+
+    /**
      * Save a new annotation.
      *
      * @param annotation
@@ -263,7 +301,7 @@ public class AnnotationDataAccess {
      */
     public Optional<Annotation> addAnnotation(Annotation annotation) {
         Annotation addedAnnotation = prepareAnnotationForAdd(annotation);
-        try (BatchWriter writer = accumuloClient.createBatchWriter(tableName)) {
+        try (BatchWriter writer = accumuloClient.createBatchWriter(annotationTableName)) {
             Iterator<Map.Entry<Key,Value>> it = annotationSerializer.serialize(addedAnnotation);
             Mutation m = AccumuloAnnotationUtil.mutationAdapter(it, false);
             writer.addMutation(m);
@@ -289,7 +327,7 @@ public class AnnotationDataAccess {
         String uid = annotation.getUid();
         String annotationId = annotation.getAnnotationId();
 
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, tableName, authorizations)) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamily + ".*";
             final String columnQualifierRegex = annotationId + NULL + ".*";
@@ -335,8 +373,8 @@ public class AnnotationDataAccess {
      *            the id of the annotation we want to delete.
      */
     public void delete(String shard, String datatype, String uid, String annotationId) {
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, tableName, authorizations);
-                        BatchWriter writer = accumuloClient.createBatchWriter(tableName)) {
+        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations);
+                        BatchWriter writer = accumuloClient.createBatchWriter(annotationTableName)) {
             final String columnFamily = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamily + ".*";
             final String columnQualifierRegex = annotationId + NULL + ".*";
@@ -412,6 +450,71 @@ public class AnnotationDataAccess {
      */
     public void deleteSegment(String shard, String datatype, String uid, String annotationId, String segmentId) {
         // TODO: implement me
+    }
+
+    /**
+     * prepare the annotation source for the addition to the datastore by performing the following:
+     * <ol>
+     * <li>validate</li>
+     * <li>assign identifiers</li>
+     * <li>check for conflicts</li>
+     * </ol>
+     *
+     * @param annotationSource
+     *            the annotation to prepare for addition
+     * @return the prepared annotation/segments that should be written.
+     * @throws AnnotationWriteException
+     *             if there's an issue encountered when preparing and the annotation should not be written as a result.
+     */
+    protected AnnotationSource prepareAnnotationSourceForAdd(AnnotationSource annotationSource) {
+        validateAnnotationSourceForAdd(annotationSource);
+        AnnotationSource identifiedAnnotationSource = AnnotationUtils.injectAnnotationSourceId(annotationSource);
+        checkAnnotationSourceForConflicts(identifiedAnnotationSource);
+        return identifiedAnnotationSource;
+    }
+
+    /**
+     * Validate the basic structure of the provided annotation source. This will error if the datastructures already have an id assigned because we don't want
+     * folks to assume they can assign their own ids to new annotations, that is the job of the data access object.
+     *
+     * @param annotationSource
+     *            the annotation to validate
+     * @throws AnnotationWriteException
+     *             if there's a validation failure.
+     */
+    protected void validateAnnotationSourceForAdd(AnnotationSource annotationSource) {
+        if (StringUtils.isNotBlank(annotationSource.getAnalyticHash())) {
+            throw new AnnotationWriteException(
+                            "Cannot add segment because it already has an id assigned '" + annotationSource.getAnalyticHash() + "', annotation context was: "
+                                            + annotationSource.getEngine() + "/" + annotationSource.getModel() + "/" + annotationSource.getSourceLabel());
+        }
+    }
+
+    /**
+     * Check the annotation source for conflicts
+     * <ol>
+     * <li>source id is assigned</li>
+     * <li>no annotation source exists with the same id</li> <!-- TODO: validate whether we need to do this -->
+     * </ol>
+     *
+     * @param annotationSource
+     *            the annotation to check
+     * @throws AnnotationWriteException
+     *             if a check fails.
+     */
+    protected void checkAnnotationSourceForConflicts(AnnotationSource annotationSource) {
+        // check that the annotation has an id assigned.
+        if (StringUtils.isBlank(annotationSource.getAnalyticHash())) {
+            throw new AnnotationWriteException("Cannot add annotation because the id could not be automatically assigned '" + annotationSource.getAnalyticHash()
+                            + "', annotation context was: " + annotationSource.getEngine() + "/" + annotationSource.getModel() + "/"
+                            + annotationSource.getSourceLabel());
+        }
+
+        Optional<AnnotationSource> conflicting = getAnnotationSource(annotationSource.getAnalyticHash());
+        if (conflicting.isPresent()) {
+            throw new AnnotationWriteException("Cannot add annotation because an annotation with the same id already exists. New annotation: "
+                            + annotationSource + ", Existing annotation: " + conflicting.get());
+        }
     }
 
     /**

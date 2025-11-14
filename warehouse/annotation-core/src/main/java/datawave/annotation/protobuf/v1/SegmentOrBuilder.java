@@ -9,32 +9,10 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * the annotation this segment is associated with.
-     * </pre>
-     *
-     * <code>string annotationId = 1;</code>
-     *
-     * @return The annotationId.
-     */
-    java.lang.String getAnnotationId();
-
-    /**
-     * <pre>
-     * the annotation this segment is associated with.
-     * </pre>
-     *
-     * <code>string annotationId = 1;</code>
-     *
-     * @return The bytes for annotationId.
-     */
-    com.google.protobuf.ByteString getAnnotationIdBytes();
-
-    /**
-     * <pre>
      * the segment id in this annotation.
      * </pre>
      *
-     * <code>string segmentId = 2;</code>
+     * <code>string segmentId = 1;</code>
      *
      * @return The segmentId.
      */
@@ -45,7 +23,7 @@ public interface SegmentOrBuilder extends
      * the segment id in this annotation.
      * </pre>
      *
-     * <code>string segmentId = 2;</code>
+     * <code>string segmentId = 1;</code>
      *
      * @return The bytes for segmentId.
      */
@@ -53,148 +31,95 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * segment creation time
+     * boundary for this segment.
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp createTime = 3;</code>
+     * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
      *
-     * @return Whether the createTime field is set.
+     * @return Whether the boundary field is set.
      */
-    boolean hasCreateTime();
+    boolean hasBoundary();
 
     /**
      * <pre>
-     * segment creation time
+     * boundary for this segment.
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp createTime = 3;</code>
+     * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
      *
-     * @return The createTime.
+     * @return The boundary.
      */
-    com.google.protobuf.Timestamp getCreateTime();
+    datawave.annotation.protobuf.v1.SegmentBoundary getBoundary();
 
     /**
      * <pre>
-     * segment creation time
+     * boundary for this segment.
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp createTime = 3;</code>
+     * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
      */
-    com.google.protobuf.TimestampOrBuilder getCreateTimeOrBuilder();
-
-    /**
-     * <pre>
-     * segment update time
-     * </pre>
-     *
-     * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-     *
-     * @return Whether the updateTime field is set.
-     */
-    boolean hasUpdateTime();
-
-    /**
-     * <pre>
-     * segment update time
-     * </pre>
-     *
-     * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-     *
-     * @return The updateTime.
-     */
-    com.google.protobuf.Timestamp getUpdateTime();
-
-    /**
-     * <pre>
-     * segment update time
-     * </pre>
-     *
-     * <code>.google.protobuf.Timestamp updateTime = 4;</code>
-     */
-    com.google.protobuf.TimestampOrBuilder getUpdateTimeOrBuilder();
-
-    /**
-     * <pre>
-     * Used for optimistic concurrency across JSON and gRPC
-     * </pre>
-     *
-     * <code>string eTag = 5;</code>
-     *
-     * @return The eTag.
-     */
-    java.lang.String getETag();
-
-    /**
-     * <pre>
-     * Used for optimistic concurrency across JSON and gRPC
-     * </pre>
-     *
-     * <code>string eTag = 5;</code>
-     *
-     * @return The bytes for eTag.
-     */
-    com.google.protobuf.ByteString getETagBytes();
+    datawave.annotation.protobuf.v1.SegmentBoundaryOrBuilder getBoundaryOrBuilder();
 
     /**
      * <pre>
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
-    java.util.List<datawave.annotation.protobuf.v1.SegmentValue> getSegmentValueList();
+    java.util.List<datawave.annotation.protobuf.v1.SegmentValue> getValuesList();
 
     /**
      * <pre>
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
-    datawave.annotation.protobuf.v1.SegmentValue getSegmentValue(int index);
+    datawave.annotation.protobuf.v1.SegmentValue getValues(int index);
 
     /**
      * <pre>
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
-    int getSegmentValueCount();
+    int getValuesCount();
 
     /**
      * <pre>
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
-    java.util.List<? extends datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getSegmentValueOrBuilderList();
+    java.util.List<? extends datawave.annotation.protobuf.v1.SegmentValueOrBuilder> getValuesOrBuilderList();
 
     /**
      * <pre>
      * Multiple values associated with this segment.
      * </pre>
      *
-     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue segmentValue = 6;</code>
+     * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
      */
-    datawave.annotation.protobuf.v1.SegmentValueOrBuilder getSegmentValueOrBuilder(int index);
+    datawave.annotation.protobuf.v1.SegmentValueOrBuilder getValuesOrBuilder(int index);
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     int getMetadataCount();
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     boolean containsMetadata(java.lang.String key);
 
@@ -206,142 +131,30 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     java.util.Map<java.lang.String,java.lang.String> getMetadataMap();
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
 
     java.lang.String getMetadataOrDefault(java.lang.String key, java.lang.String defaultValue);
 
     /**
      * <pre>
-     * arbitrary, optional metadata
+     * arbitrary, optional segment metadata
      * </pre>
      *
-     * <code>map&lt;string, string&gt; metadata = 7;</code>
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
 
     java.lang.String getMetadataOrThrow(java.lang.String key);
-
-    /**
-     * <pre>
-     * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-     * </pre>
-     *
-     * <code>string boundaryType = 10;</code>
-     *
-     * @return The boundaryType.
-     */
-    java.lang.String getBoundaryType();
-
-    /**
-     * <pre>
-     * used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON
-     * </pre>
-     *
-     * <code>string boundaryType = 10;</code>
-     *
-     * @return The bytes for boundaryType.
-     */
-    com.google.protobuf.ByteString getBoundaryTypeBytes();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-     *
-     * @return Whether the all field is set.
-     */
-    boolean hasAll();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-     *
-     * @return The all.
-     */
-    datawave.annotation.protobuf.v1.All getAll();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
-     */
-    datawave.annotation.protobuf.v1.AllOrBuilder getAllOrBuilder();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-     *
-     * @return Whether the pointList field is set.
-     */
-    boolean hasPointList();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-     *
-     * @return The pointList.
-     */
-    datawave.annotation.protobuf.v1.PointList getPointList();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.PointList pointList = 21;</code>
-     */
-    datawave.annotation.protobuf.v1.PointListOrBuilder getPointListOrBuilder();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-     *
-     * @return Whether the time field is set.
-     */
-    boolean hasTime();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-     *
-     * @return The time.
-     */
-    datawave.annotation.protobuf.v1.TimeSpanSeconds getTime();
-
-    /**
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds time = 22;</code>
-     */
-    datawave.annotation.protobuf.v1.TimeSpanSecondsOrBuilder getTimeOrBuilder();
-
-    /**
-     * <pre>
-     * add future segment types here
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-     *
-     * @return Whether the characters field is set.
-     */
-    boolean hasCharacters();
-
-    /**
-     * <pre>
-     * add future segment types here
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-     *
-     * @return The characters.
-     */
-    datawave.annotation.protobuf.v1.TextSpanChars getCharacters();
-
-    /**
-     * <pre>
-     * add future segment types here
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characters = 23;</code>
-     */
-    datawave.annotation.protobuf.v1.TextSpanCharsOrBuilder getCharactersOrBuilder();
-
-    public datawave.annotation.protobuf.v1.Segment.BoundaryCase getBoundaryCase();
 }

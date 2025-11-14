@@ -1,0 +1,4161 @@
+{
+  "annotations": [{
+    "shard": "20250405_123",
+    "dataType": "audio",
+    "uid": "l46b0b.l9xx93.-jsda4n",
+    "annotationType": "tts",
+    "annotationId": "b364f663",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_123",
+    "dataType": "news",
+    "uid": "6tzt7u.-hm7g23.i1ueb4",
+    "annotationType": "tokens",
+    "annotationId": "e8746271",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_123",
+    "dataType": "cars",
+    "uid": "-pp0vkp.3rzqnz.5q54vx",
+    "annotationType": "object",
+    "annotationId": "a8b19431",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_456",
+    "dataType": "audio",
+    "uid": "ayu73v.3cwl0r.-4ptvm7",
+    "annotationType": "tts",
+    "annotationId": "f0fcd1a0",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_456",
+    "dataType": "news",
+    "uid": "-6j7k0l.u7xkz5.-x8hpes",
+    "annotationType": "tokens",
+    "annotationId": "3215ddbb",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_456",
+    "dataType": "cars",
+    "uid": "sr2ace.-4lv4w6.-begkwn",
+    "annotationType": "object",
+    "annotationId": "bacdb442",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_789",
+    "dataType": "audio",
+    "uid": "j0cfzn.-4j53im.-d2w0tz",
+    "annotationType": "tts",
+    "annotationId": "36dbcb7d",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_789",
+    "dataType": "news",
+    "uid": "-ngbobu.-c94tvj.8y2p8a",
+    "annotationType": "tokens",
+    "annotationId": "8dc2b541",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_789",
+    "dataType": "cars",
+    "uid": "pz3x7s.o7mcqn.-kj0cpa",
+    "annotationType": "object",
+    "annotationId": "1474e104",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250406_123",
+    "dataType": "audio",
+    "uid": "-hyi367.-mgypqf.-fg916b",
+    "annotationType": "tts",
+    "annotationId": "189b6f0c",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_123",
+    "dataType": "news",
+    "uid": "wb1pp4.-wwcije.7resun",
+    "annotationType": "tokens",
+    "annotationId": "3a94e32f",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_123",
+    "dataType": "cars",
+    "uid": "-ihvcwi.-y2d5ue.-wce8xi",
+    "annotationType": "object",
+    "annotationId": "f97ef7eb",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_456",
+    "dataType": "audio",
+    "uid": "-j9ketf.npng62.u4mw0y",
+    "annotationType": "tts",
+    "annotationId": "07fadb00",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_456",
+    "dataType": "news",
+    "uid": "aiddza.kdn85e.-wnbwkq",
+    "annotationType": "tokens",
+    "annotationId": "dcf2d066",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_456",
+    "dataType": "cars",
+    "uid": "-dwa987.-nmx1jx.g2brsm",
+    "annotationType": "object",
+    "annotationId": "4d719106",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_789",
+    "dataType": "audio",
+    "uid": "-29vx6c.-lwa23c.isbedx",
+    "annotationType": "tts",
+    "annotationId": "47444990",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_789",
+    "dataType": "news",
+    "uid": "ofv6g7.-cb3p6d.-ivgfo9",
+    "annotationType": "tokens",
+    "annotationId": "36d3ddec",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_789",
+    "dataType": "cars",
+    "uid": "va8jna.-hil636.-9lwvxz",
+    "annotationType": "object",
+    "annotationId": "9e146ae2",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250407_123",
+    "dataType": "audio",
+    "uid": "16end8.-vn8vng.-khm2w8",
+    "annotationType": "tts",
+    "annotationId": "85489fcc",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_123",
+    "dataType": "news",
+    "uid": "-6g8vi5.-m6euyr.cc6sho",
+    "annotationType": "tokens",
+    "annotationId": "aa79a9f5",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_123",
+    "dataType": "cars",
+    "uid": "-hytjod.-nov8f8.-g5zapt",
+    "annotationType": "object",
+    "annotationId": "c18c9d6f",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_456",
+    "dataType": "audio",
+    "uid": "pa5nh.-njbvvg.-82pk6f",
+    "annotationType": "tts",
+    "annotationId": "753637a3",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_456",
+    "dataType": "news",
+    "uid": "-rjrn67.fih94d.-w0pe6m",
+    "annotationType": "tokens",
+    "annotationId": "0cf0d026",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_456",
+    "dataType": "cars",
+    "uid": "-kzyodx.s0n5gw.xn56uj",
+    "annotationType": "object",
+    "annotationId": "33569dd4",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_789",
+    "dataType": "audio",
+    "uid": "-h8gcvv.2ngwd5.7bbswm",
+    "annotationType": "tts",
+    "annotationId": "c40c90b3",
+    "segments": [{
+      "segmentId": "4dda05ab",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 0.0,
+          "endSeconds": 5.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "42aa9d75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 10.0,
+          "endSeconds": 15.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "152c101f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 20.0,
+          "endSeconds": 25.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "0ee1cd75",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 30.0,
+          "endSeconds": 35.0
+        }
+      },
+      "values": [{
+        "value": "on",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003cunk\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "04a6db73",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 40.0,
+          "endSeconds": 45.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "a4d2cb55",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 50.0,
+          "endSeconds": 55.0
+        }
+      },
+      "values": [{
+        "value": "mat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "gnat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "e392fbfa",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 60.0,
+          "endSeconds": 65.0
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 0.23499999940395355
+      }, {
+        "value": "\u003ceos\u003e",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "cf8c4863",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 70.0,
+          "endSeconds": 75.0
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 0.23499999940395355
+      }, {
+        "value": "the",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "43ee89b7",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 80.0,
+          "endSeconds": 85.0
+        }
+      },
+      "values": [{
+        "value": "cat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "bat",
+        "score": 0.20999999344348907
+      }]
+    }, {
+      "segmentId": "c9f6935f",
+      "boundary": {
+        "boundaryType": "TIME_SPAN",
+        "timeSpan": {
+          "startSeconds": 90.0,
+          "endSeconds": 95.0
+        }
+      },
+      "values": [{
+        "value": "sat",
+        "score": 0.23499999940395355
+      }, {
+        "value": "ate",
+        "score": 0.20999999344348907
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_789",
+    "dataType": "news",
+    "uid": "cvf0v4.-ncjfen.-69rc5w",
+    "annotationType": "tokens",
+    "annotationId": "baf9b9a2",
+    "segments": [{
+      "segmentId": "bf2c4677",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "0",
+          "endCharacter": "3"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bfc87d54",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "4",
+          "endCharacter": "9"
+        }
+      },
+      "values": [{
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "3fda599c",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "10",
+          "endCharacter": "15"
+        }
+      },
+      "values": [{
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "33907bdb",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "16",
+          "endCharacter": "19"
+        }
+      },
+      "values": [{
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "79b10856",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "20",
+          "endCharacter": "26"
+        }
+      },
+      "values": [{
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "13926bd7",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "27",
+          "endCharacter": "30"
+        }
+      },
+      "values": [{
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "bb1e2be8",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "31",
+          "endCharacter": "37"
+        }
+      },
+      "values": [{
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentId": "671a7824",
+      "boundary": {
+        "boundaryType": "CHARACTER_SPAN",
+        "characterSpan": {
+          "startCharacter": "38",
+          "endCharacter": "43"
+        }
+      },
+      "values": [{
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_789",
+    "dataType": "cars",
+    "uid": "-diuujx.-vthisr.-z7h545",
+    "annotationType": "object",
+    "annotationId": "5a684ac1",
+    "segments": [{
+      "segmentId": "69c6aaa2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0.0,
+          "y": 0.0,
+          "label": "topLeft"
+        }, {
+          "x": 5.0,
+          "y": 12.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "bird",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "crow",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentId": "70bf3bd1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10.0,
+          "y": 15.0,
+          "label": "topLeft"
+        }, {
+          "x": 15.0,
+          "y": 18.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "car",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "truck",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "82d3a82a",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20.0,
+          "y": 20.0,
+          "label": "topLeft"
+        }, {
+          "x": 28.0,
+          "y": 47.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "stairs",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentId": "250ba650",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30.0,
+          "y": 50.0,
+          "label": "topLeft"
+        }, {
+          "x": 36.0,
+          "y": 55.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "motorcycle",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "value": "bicycle",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "97f76cce",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60.0,
+          "y": 70.0,
+          "label": "topLeft"
+        }, {
+          "x": 70.0,
+          "y": 78.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "flashlight",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentId": "efb64343",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80.0,
+          "y": 90.0,
+          "label": "topLeft"
+        }, {
+          "x": 89.0,
+          "y": 95.0,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "value": "dog",
+        "score": 0.9700000286102295,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "value": "pig",
+        "score": 0.8600000143051147,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }]
+}
