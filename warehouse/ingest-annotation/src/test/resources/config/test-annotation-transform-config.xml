@@ -12,7 +12,7 @@
         <xsl:map>
             <xsl:for-each select="map:keys(.)">
                 <xsl:variable name="key" select="."/>
-                <xsl:if test="$key != 'documentId' and $key != 'segments'">
+                <xsl:if test="$key != 'segments'">
                     <xsl:map-entry key="$key" select="$annotation($key)"/>
                 </xsl:if>
                 <xsl:if test="$key = 'segments'">
