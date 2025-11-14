@@ -314,6 +314,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(true);
         this.config.setExpandValues(true);
+        this.config.setExpandUnfieldedValues(true);
         this.config.setGeneratePlanOnly(false);
         initialize(config, client, settings, auths);
         return config;
@@ -328,6 +329,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(expandFields);
         this.config.setExpandValues(expandValues);
+        this.config.setExpandUnfieldedValues(expandValues);
         // if we are not generating the full plan, then set the flag such that we avoid checking for final executability/full table scan
         if (!expandFields || !expandValues) {
             this.config.setGeneratePlanOnly(true);
@@ -2139,6 +2141,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setYieldThresholdMs(yieldThresholdMs);
     }
 
+    public int getMaxYields() {
+        return getConfig().getMaxYields();
+    }
+
+    public void setMaxYields(int maxYields) {
+        getConfig().setMaxYields(maxYields);
+    }
+
     public boolean isCleanupShardsAndDaysQueryHints() {
         return getConfig().isCleanupShardsAndDaysQueryHints();
     }
@@ -2185,6 +2195,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setIndexStatsTableName(String indexStatsTableName) {
         getConfig().setIndexStatsTableName(indexStatsTableName);
+    }
+
+    public String getDayIndexTableName() {
+        return getConfig().getDayIndexTableName();
+    }
+
+    public void setDayIndexTableName(String dayIndexTableName) {
+        getConfig().setDayIndexTableName(dayIndexTableName);
     }
 
     public String getModelTableName() {
@@ -3500,5 +3518,45 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         getConfig().setMaxLinesToPrint(maxLinesToPrint);
+    }
+
+    public boolean isUseShardedIndex() {
+        return getConfig().isUseShardedIndex();
+    }
+
+    public void setUseShardedIndex(boolean useShardedIndex) {
+        getConfig().setUseShardedIndex(useShardedIndex);
+    }
+
+    public int getDayIndexThreshold() {
+        return getConfig().getDayIndexThreshold();
+    }
+
+    public void setDayIndexThreshold(int dayIndexThreshold) {
+        getConfig().setDayIndexThreshold(dayIndexThreshold);
+    }
+
+    public boolean isExpandUnfieldedValues() {
+        return getConfig().isExpandUnfieldedValues();
+    }
+
+    public void setExpandUnfieldedValues(boolean expand) {
+        getConfig().setExpandUnfieldedValues(expand);
+    }
+
+    public boolean isUseTruncatedIndex() {
+        return getConfig().isUseTruncatedIndex();
+    }
+
+    public void setUseTruncatedIndex(boolean useTruncatedIndex) {
+        getConfig().setUseTruncatedIndex(useTruncatedIndex);
+    }
+
+    public String getTruncatedIndexTableName() {
+        return getConfig().getTruncatedIndexTableName();
+    }
+
+    public void setTruncatedIndexTableName(String truncatedIndexTableName) {
+        getConfig().setTruncatedIndexTableName(truncatedIndexTableName);
     }
 }

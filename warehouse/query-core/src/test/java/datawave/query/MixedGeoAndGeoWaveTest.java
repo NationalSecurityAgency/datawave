@@ -83,6 +83,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -180,6 +181,8 @@ public class MixedGeoAndGeoWaveTest {
 
     private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
@@ -235,7 +238,7 @@ public class MixedGeoAndGeoWaveTest {
                 if (entry.getValue().getError() == null)
                     fields.put(entry.getKey(), entry.getValue());
 
-            Multimap kvPairs = dataTypeHandler.processBulk(new Text(), record, fields, new MockStatusReporter());
+            Multimap<BulkIngestKey,Value> kvPairs = dataTypeHandler.processBulk(new Text(), record, fields, new MockStatusReporter());
 
             keyValues.putAll(kvPairs);
 
@@ -248,6 +251,8 @@ public class MixedGeoAndGeoWaveTest {
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 
         writeKeyValues(client, keyValues);
+
+        ingestUtil.write(client, new Authorizations(AUTHS));
 
         return recNum;
     }

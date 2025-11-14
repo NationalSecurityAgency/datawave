@@ -22,7 +22,9 @@ public interface AccumuloTableCache extends AutoCloseable {
 
     void submitReloadTasks();
 
-    public void reloadTableCache(String tableName);
+    void reloadTableCache(String tableName);
 
-    public List<TableCacheDescription> getTableCaches();
+    List<TableCacheDescription> getTableCaches();
+
+    boolean isAvailable();
 }

@@ -14,13 +14,13 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -73,6 +73,7 @@ public abstract class ExcerptTest {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Override
         @Before
         public void setup() throws ParseException {
             super.setup();
@@ -102,6 +103,7 @@ public abstract class ExcerptTest {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Override
         @Before
         public void setup() throws ParseException {
             super.setup();
@@ -155,24 +157,21 @@ public abstract class ExcerptTest {
         startDate = format.parse("19000101");
         endDate = format.parse("20240101");
         extraParameters.clear();
-        expectedResults.clear();
-    }
-
-    protected void setDefaultQueryParams() {
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
         extraParameters.put("return.fields", "HIT_EXCERPT");
         extraParameters.put("query.syntax", "LUCENE");
+        expectedResults.clear();
     }
 
-    protected void updateQueryParam(String key, String value) {
-        if (StringUtils.isNoneBlank(key, value)) {
+    protected void updateQueryParam(@Nonnull String key, @Nonnull String value) {
+        if (!key.isBlank() && !value.isBlank()) {
             extraParameters.put(key, value);
         }
     }
 
-    protected void addExpectedResult(String result) {
-        if (StringUtils.isNotBlank(result)) {
+    protected void addExpectedResult(@Nonnull String result) {
+        if (!result.isBlank()) {
             expectedResults.add(result);
         }
     }
@@ -213,17 +212,17 @@ public abstract class ExcerptTest {
 
             log.debug("dictionary:" + dictionary);
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> dictionaryEntry : dictionary.entrySet()) {
+                String fieldName = dictionaryEntry.getKey();
 
                 // skip expected generated fields
-                if (dictionaryEntry.getKey().equals(JexlEvaluation.HIT_TERM_FIELD) || dictionaryEntry.getKey().contains("ORIGINAL_COUNT")
-                                || dictionaryEntry.getKey().equals("RECORD_ID")) {
+                if (fieldName.equals(JexlEvaluation.HIT_TERM_FIELD) || fieldName.contains("ORIGINAL_COUNT") || fieldName.equals("RECORD_ID")) {
                     continue;
                 }
 
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
-                    for (Attribute attr : ((Attributes) attribute).getAttributes()) {
-                        String toFind = dictionaryEntry.getKey() + ":" + attr;
+                    for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
+                        String toFind = fieldName + ":" + attr.getData();
                         boolean found = expectedResults.remove(toFind);
                         if (found)
                             log.debug("removed " + toFind);
@@ -233,7 +232,7 @@ public abstract class ExcerptTest {
                     }
                 } else {
 
-                    String toFind = dictionaryEntry.getKey() + ":" + dictionaryEntry.getValue();
+                    String toFind = fieldName + ":" + attribute.getData();
 
                     boolean found = expectedResults.remove(toFind);
                     if (found)
@@ -254,155 +253,132 @@ public abstract class ExcerptTest {
 
     @Test
     public void simpleTest() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2)";
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("HIT_EXCERPT:get much [farther] with a: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:get much [farther] with a");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void simpleTestBefore() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/before)";
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("HIT_EXCERPT:get much [farther]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:get much [farther]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void simpleTestAfter() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/after)";
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("HIT_EXCERPT:[farther] with a: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:[farther] with a");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void lessSimpleBeforeTest() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/before)";
 
-        addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void lessSimpleAfterTest() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/after)";
 
-        addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void lessSimpleTest() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2)";
 
-        addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void biggerRangeThanQuoteLength() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
-        addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void biggerRangeThanQuoteLengthBeforeTest() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/before)";
 
-        addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void biggerRangeThanQuoteLengthAfterTest() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/after)";
 
-        addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void wholeQuote() throws Exception {
-        setDefaultQueryParams();
-
         String queryString = "QUOTE:(im gonna make him an offer he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
-        addExpectedResult("HIT_EXCERPT:[im] [gonna] [make] [him] [an] [offer] [he] [cant] [refuse]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:[im] [gonna] [make] [him] [an] [offer] [he] [cant] [refuse]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void anotherFirstTerm() throws Exception {
-        setDefaultQueryParams();
         updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3)";
 
         addExpectedResult("UUID.0:SOPRANO");
-        addExpectedResult("HIT_EXCERPT:[if] you can quote: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:[if] you can quote");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void anotherFirstTermBeforeTest() throws Exception {
-        setDefaultQueryParams();
         updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3/before)";
 
         addExpectedResult("UUID.0:SOPRANO");
-        addExpectedResult("HIT_EXCERPT:[if]: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:[if]");
 
         runTestQuery(queryString);
     }
 
     @Test
     public void anotherFirstTermAfterTest() throws Exception {
-        setDefaultQueryParams();
         updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3/after)";
 
         addExpectedResult("UUID.0:SOPRANO");
-        addExpectedResult("HIT_EXCERPT:[if] you can quote: : [] 9223372036854775807 false");
+        addExpectedResult("HIT_EXCERPT:[if] you can quote");
 
         runTestQuery(queryString);
     }

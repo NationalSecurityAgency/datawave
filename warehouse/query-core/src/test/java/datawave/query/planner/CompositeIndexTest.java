@@ -87,6 +87,7 @@ import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -195,6 +196,8 @@ public class CompositeIndexTest {
 
     private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
@@ -289,6 +292,8 @@ public class CompositeIndexTest {
         writeKeyValues(client, keyValues);
 
         ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+
+        ingestUtil.write(client, new Authorizations(AUTHS));
     }
 
     public static void setupConfiguration(Configuration conf) {
@@ -361,10 +366,15 @@ public class CompositeIndexTest {
         ShardQueryLogic logic = getShardQueryLogic(false);
         logic.setIntermediateMaxTermThreshold(50);
         logic.setIndexedMaxTermThreshold(50);
+        logic.setFinalMaxTermThreshold(50);
 
         if (!logic.isUseDocumentScheduler()) {
             List<QueryData> queries = getQueryRanges(logic, query, false);
-            Assert.assertEquals(10, queries.size());
+            if (logic.isUseShardedIndex()) {
+                Assert.assertEquals(17, queries.size());
+            } else {
+                Assert.assertEquals(10, queries.size());
+            }
         }
 
         List<DefaultEvent> events = getQueryResults(logic, query, false);
