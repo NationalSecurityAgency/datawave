@@ -70,8 +70,9 @@ public class NoOpTypeAttributeIT extends TypeAttributeIT {
         // serializing full type name: 43
         // serializing type name index: 17
         // serialize hash code: 22
-        verifyKryoPreservesValue(createNormalizedAttribute(), 22);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 22);
+        // serialize normalized and non-normalized value to avoid expensive calls to the normalizer: 23, 23
+        verifyKryoPreservesValue(createNormalizedAttribute(), 23);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 23);
     }
 
     @Test

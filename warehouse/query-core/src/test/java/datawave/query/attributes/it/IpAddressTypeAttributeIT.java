@@ -55,8 +55,9 @@ public class IpAddressTypeAttributeIT extends TypeAttributeIT {
         // serializing full type name: 54
         // serializing type name index: 23
         // serialize hash code: 28
-        verifyKryoPreservesValue(createNormalizedAttribute(), 28);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 28);
+        // serialize normalized and non-normalized value to avoid expensive calls to the normalizer: 44, 44
+        verifyKryoPreservesValue(createNormalizedAttribute(), 44);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 44);
     }
 
     @Test
