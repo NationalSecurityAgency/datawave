@@ -23,6 +23,10 @@ import datawave.annotation.protobuf.v1.SegmentValue;
 public class AnnotationUtils {
     protected static final Logger log = LoggerFactory.getLogger(AnnotationUtils.class);
 
+    public static Annotation injectAnnotationSource(Annotation a, AnnotationSource as) {
+        return a.toBuilder().clearSource().setSource(as).build();
+    }
+
     /** Enum for the SegmentBoundary types */
     public enum BoundaryCase {
         TIME_SPAN, CHARACTER_SPAN, POINTS, ALL, BOUNDARY_NOT_SET

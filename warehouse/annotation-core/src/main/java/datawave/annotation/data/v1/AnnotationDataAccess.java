@@ -77,16 +77,16 @@ public class AnnotationDataAccess {
         this.annotationSourceSerializer = annotationSourceSerializer;
     }
 
-    public Optional<AnnotationSource> getAnnotationSource(String sourceId) {
+    public Optional<AnnotationSource> getAnnotationSource(String analyticHash) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationSourceTableName, authorizations)) {
-            final Range range = new Range(sourceId);
+            final Range range = new Range(analyticHash);
             scanner.setRange(range);
 
             Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
             AnnotationSource as = annotationSourceSerializer.deserialize(it);
             return as == null ? Optional.empty() : Optional.of(as);
         } catch (TableNotFoundException | AnnotationSerializationException e) {
-            throw new AnnotationReadException(e.getClass().getSimpleName() + " reading annotation source for id: " + sourceId, e);
+            throw new AnnotationReadException(e.getClass().getSimpleName() + " reading annotation source for analyticHash: " + analyticHash, e);
         }
     }
 
