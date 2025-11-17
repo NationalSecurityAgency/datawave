@@ -71,7 +71,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      */
     public byte[] getColumnVisibilityBytes() {
         if (isMetadataSet()) {
-            byte[] data = metadata.getColumnVisibilityData().getBackingArray();
+            byte[] data = metadata.getColumnVisibilityData().toArray();
             return Arrays.copyOf(data, data.length);
         }
         return EMPTY_BYTES;
