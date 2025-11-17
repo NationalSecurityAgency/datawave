@@ -158,16 +158,17 @@ public class Content extends Attribute<Content> implements Serializable {
         this.toKeep = input.readBoolean();
         boolean hasSource = input.readBoolean();
         if (hasSource) {
+            String className = null;
             try {
-                String className = input.readString();
+                className = input.readString();
                 Class<?> clazz = classCache.get().get(className);
                 if(Attribute.class.isAssignableFrom(clazz)) {
                     source = (Attribute<?>) clazz.getDeclaredConstructor().newInstance();
                 } else {
-                    throw new RuntimeException("could not instantiate " + className);
+                    throw new RuntimeException(className + " does not extend " + Attribute.class.getSimpleName());
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                throw new RuntimeException("could not parse source", e);
+                throw new RuntimeException("Could not instantiate " + className, e);
             }
 
             source.read(kryo, input);
