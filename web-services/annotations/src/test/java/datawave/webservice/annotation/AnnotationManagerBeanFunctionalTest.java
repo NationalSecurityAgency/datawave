@@ -4,6 +4,7 @@ import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotations
 import static datawave.annotation.test.v1.AnnotationAssertions.assertSegmentsEqual;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateMultiTestSegment;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotation;
+import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotationSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -50,6 +51,7 @@ import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.configuration.spring.SpringBean;
@@ -164,6 +166,9 @@ public class AnnotationManagerBeanFunctionalTest {
         Annotation testAnnotation = generateTestAnnotation();
         testDao.addAnnotation(testAnnotation);
 
+        AnnotationSource testAnnotationSource = generateTestAnnotationSource();
+        testDao.addAnnotationSource(testAnnotationSource);
+
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
 
         WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
@@ -246,6 +251,24 @@ public class AnnotationManagerBeanFunctionalTest {
         log.setLevel(Level.TRACE);
         AnnotationManagerBean bean = (AnnotationManagerBean) annotationManager;
         bean.setEJBContext(ctx);
+    }
+
+    @Test
+    public void testGetAnnotationSource() {
+        Response response = annotationManager.getAnnotationSource("1fd902ac");
+        assertResponseStatus(200, response);
+        AnnotationSource annotationSource = assertExpectedEntity(AnnotationSource.class, response);
+        assertNotNull(annotationSource);
+    }
+
+    @Test
+    public void testGetMissingAnnotationSource() {
+        Response response = annotationManager.getAnnotationSource("1fd902ab");
+        assertResponseStatus(404, response);
+        String errorResponse = assertExpectedEntity(String.class, response);
+        assertContains("No annotation source found for analyticHash", errorResponse);
+        assertContains("1fd902ab", errorResponse);
+
     }
 
     @Test
