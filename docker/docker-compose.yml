@@ -389,8 +389,8 @@ services:
       test: curl -f http://localhost:8080/querymetric/mgmt/health
       interval: 5s
       timeout: 1s
-      start_period: 20s
-      retries: 8
+      start_period: 40s
+      retries: 10
     depends_on:
       authorization:
         condition: service_healthy
