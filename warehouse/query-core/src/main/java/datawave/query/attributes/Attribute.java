@@ -1,8 +1,11 @@
 package datawave.query.attributes;
 
+import static datawave.query.Constants.EMPTY_BYTES;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
@@ -28,7 +31,6 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
 
     private static final Logger log = Logger.getLogger(Attribute.class);
     private static final Text EMPTY_TEXT = new Text();
-    private static final byte[] EMPTY_BYTES = new byte[0];
     private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[0]);
 
     /**
@@ -62,15 +64,17 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     }
 
     /**
-     * Some callers only require the raw bytes
+     * Get a copy byte array that backs the {@link ColumnVisibility}. This avoids the expensive parse call found in the default constructor for the
+     * ColumnVisibility.
      *
-     * @return the byte array that backs the column visibility
+     * @return a copy of the byte array that backs the column visibility
      */
     public byte[] getColumnVisibilityBytes() {
         if (isMetadataSet()) {
-            return metadata.getColumnVisibilityData().getBackingArray();
+            byte[] data = metadata.getColumnVisibilityData().getBackingArray();
+            return Arrays.copyOf(data, data.length);
         }
-        return Constants.EMPTY_BYTES;
+        return EMPTY_BYTES;
     }
 
     public void setColumnVisibility(ColumnVisibility columnVisibility) {
