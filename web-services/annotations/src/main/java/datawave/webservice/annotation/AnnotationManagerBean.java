@@ -1,5 +1,7 @@
 package datawave.webservice.annotation;
 
+import static datawave.annotation.util.v1.AnnotationUtils.injectAnnotationSource;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +36,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,7 @@ import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.Validator;
 import datawave.annotation.util.v1.AnnotationJsonUtils;
@@ -90,6 +93,10 @@ public class AnnotationManagerBean implements AnnotationManager {
     private AccumuloClient client;
     private LookupUUIDService lookupUUIDService;
     private AnnotationDataAccess annotationDataAccess;
+
+    // Per-request, cache lookups for unique analytic source hashes so we don't do them more than once.
+    // TODO: make this a proper cross-request cache?
+    private final Map<String,Optional<AnnotationSource>> retrievedSourcesCache = new HashMap<>();
 
     @VisibleForTesting
     public void setEJBContext(EJBContext ctx) {
@@ -176,6 +183,26 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     @GET
+    @Path("/source/{analyticHash}")
+    @Produces("application/json")
+    @Override
+    public Response getAnnotationSource(@PathParam("analyticHash") String analyticHash) {
+        try {
+            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            Optional<AnnotationSource> results = annotationDataAccess.getAnnotationSource(analyticHash);
+            if (results.isEmpty()) {
+                return jsonNotFound("No annotation source found for analyticHash: " + analyticHash);
+            }
+            return jsonOk(results.get());
+        } catch (Exception e) {
+            final String message = String.format("Internal error fetching annotation source: %s", e.getMessage());
+            log.error(message, e);
+            return jsonError(message);
+        }
+
+    }
+
+    @GET
     @Path("/{idType}/{id}/types")
     @Produces("application/json")
     @Override
@@ -222,7 +249,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             for (Metadata md : metadata) {
                 final List<Annotation> annotations = annotationDataAccess.getAnnotations(md.getRow(), md.getDataType(), md.getInternalId());
                 if (!annotations.isEmpty()) {
-                    results.addAll(annotations);
+                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(annotations);
+                    results.addAll(annotationsWithSources);
                 }
             }
             if (results.isEmpty()) {
@@ -254,7 +282,8 @@ public class AnnotationManagerBean implements AnnotationManager {
                 final List<Annotation> annotations = annotationDataAccess.getAnnotationsForType(md.getRow(), md.getDataType(), md.getInternalId(),
                                 annotationType);
                 if (!annotations.isEmpty()) {
-                    results.addAll(annotations);
+                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(annotations);
+                    results.addAll(annotationsWithSources);
                 }
             }
             if (results.isEmpty()) {
@@ -283,7 +312,10 @@ public class AnnotationManagerBean implements AnnotationManager {
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
                 final Optional<Annotation> annotations = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
-                annotations.ifPresent(results::add);
+                if (annotations.isPresent()) {
+                    Annotation annotationWithSource = lookupAndInjectAnnotationSource(annotations.get());
+                    results.add(annotationWithSource);
+                }
             }
             if (results.isEmpty()) {
                 return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
@@ -537,6 +569,54 @@ public class AnnotationManagerBean implements AnnotationManager {
             // Otherwise, perform a lookup to find the internal id.
             final LookupUUIDService lookup = initializeLookupUUIDService();
             return lookup.executeLookupUUIDQuery(idType, id);
+        }
+    }
+
+    /**
+     * Given a list of annotations, retrieve the annotation source information that is referenced by their analyticHash. If an analyticHash is not found, we
+     * simply return the annotation without the source data injected. Currently, no errors are logged.
+     *
+     * @param annotations
+     *            the annotations to inject sources into
+     * @return return annotations with sources injected where possible.
+     */
+    private List<Annotation> lookupAndInjectAnnotationSources(List<Annotation> annotations) {
+        final List<Annotation> results = new ArrayList<>();
+        for (Annotation a : annotations) {
+            results.add(lookupAndInjectAnnotationSource(a));
+        }
+        return results;
+    }
+
+    /**
+     * Given an annotation, retrieve the annotation source information that is referenced by their analyticHash. Employs a per-request hash so we don't look up
+     * a single source multiple times.
+     */
+    private Annotation lookupAndInjectAnnotationSource(Annotation a) {
+        // no need to inject a source if we already have one.
+        if (a.hasSource()) {
+            log.warn("Strange, this annotation already has a source. Annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId(), a.getAnalyticHash());
+            return a;
+        }
+
+        if (StringUtils.isBlank(a.getAnalyticHash())) {
+            log.warn("Strange, this annotation does not have an analytic hash. Annotation {}/{}/{} {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId());
+            return a;
+        }
+
+        // do the deed and cache the results.
+        final String analyticHash = a.getAnalyticHash();
+        final Optional<AnnotationSource> result = retrievedSourcesCache.computeIfAbsent(analyticHash,
+                        key -> annotationDataAccess.getAnnotationSource(analyticHash));
+
+        if (result.isPresent()) {
+            return injectAnnotationSource(a, result.get());
+        } else {
+            log.debug("No analytic source found for annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId(), a.getAnalyticHash());
+            return a;
         }
     }
 
