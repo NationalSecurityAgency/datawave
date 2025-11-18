@@ -3,6 +3,7 @@ package datawave.ingest.annotation.mapreduce.handler;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.annotation.data.AnnotationWriteException;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.data.hash.UID;
@@ -98,16 +100,33 @@ public class AnnotationHelperTest {
         contextWriter.commit(ctx);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
 
         BulkIngestKey expectedSourceKey = new BulkIngestKey(new Text("datawave.annotationSource"),
-                        new Key("testAnalyticHash", "engine", "testEngine", "PRIVATE", time));
+                        new Key("F1A0463C207B3778B472B506F3F8351A", "d", "testEngine\u00006.7\u0000testAnalyticHash", new ColumnVisibility("PRIVATE"), time));
 
         assertFalse(contextWriter.getCache().get(expectedSourceKey).isEmpty());
 
         // the first segment value should be protobuf that can be parsed by Segment class
         Segment segment = Segment.parseFrom(contextWriter.getCache().get(expectedKey).stream().findFirst().get().get());
         assertEquals("testSegmentId1", segment.getSegmentHash(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
+    }
+
+    @Test
+    public void testProcessSingleAnnotationWithoutSource() throws IOException, InterruptedException {
+        // create test event record wrapper with minimum set of fields required for creating annotation mutations
+        RawRecordContainer event = new EventWithShardId("20251107_1");
+
+        long time = System.currentTimeMillis();
+        event.setDataType(TypeRegistry.getType("annotation"));
+        event.setTimestamp(time);
+        event.setVisibility(new ColumnVisibility("TEST_VISIBILITY"));
+        event.setId(UID.parse("a.b.c"));
+
+        assertThrows(AnnotationWriteException.class, () -> {
+            annotationHelper.process(event, contextWriter, ctx, statusReporter, event.getId(), event.getVisibility().flatten(), event.getShardId().getBytes(),
+                            ClassLoader.getSystemResource("input/singleAnnotationWithoutSource.json").openStream().readAllBytes());
+        }, "annotation without source is no longer allowed");
     }
 
     @Test
@@ -129,7 +148,7 @@ public class AnnotationHelperTest {
                         .processBulk(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes(), event, fields);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
         // checking to make sure the first segment BulkIngestKey is created
         assertTrue(bulkKeys.containsKey(expectedKey), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
 
