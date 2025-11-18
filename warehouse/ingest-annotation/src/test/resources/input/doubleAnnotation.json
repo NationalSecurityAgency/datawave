@@ -1,12 +1,22 @@
 {
-  "shard": "20251017_0",
+  "shard": "20160426_0",
   "dataType": "annotation",
-  "uid": "-1111.1111.-1111",
+  "uid": "2222.2222.-2222",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "sourceLabel": "testSourceLabel"
+  },
   "metadata": {
     "visibility": "PUBLIC",
-    "created_date": "2016-04-26T01:31:53Z"
+    "created_date": "2016-04-26T01:00:53Z"
   },
   "segments": [
     {
@@ -92,6 +102,16 @@
     "visibility": "PUBLIC",
     "created_date": "2016-04-26T01:00:53Z"
   },
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "sourceLabel": "testSourceLabel"
+  },
   "segments": [
     {
       "segmentId": "testSegmentId1",
@@ -150,8 +170,8 @@
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
-      "boundaryType": "POINT_LIST",
-      "bounds": {
+      "boundary": {
+        "boundaryType": "POINT_LIST"
       }
     },
     {
@@ -160,7 +180,7 @@
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },
-      "bounds": {
+      "boundary": {
         "boundaryType": "POINT_LIST"
       }
     }

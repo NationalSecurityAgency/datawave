@@ -271,7 +271,8 @@ public class AnnotationHelper {
         datawaveAnnotationBuilder.putMetadata("visibility", new String(visibility));
         datawaveAnnotationBuilder.putMetadata("created_date", DateHelper.format8601(new Date(event.getTimestamp())));
 
-        if (annotationBuilder.getSource() != null && !annotationBuilder.getSource().getSourceLabel().isEmpty()) {
+        // annotation source is required, but checking just in case
+        if (annotationBuilder.getSource() != null) {
             if (annotationSourceVisibilityInheritEvent) {
                 datawaveAnnotationBuilder.getSourceBuilder().putConfiguration("visibility", new String(visibility));
             } else {

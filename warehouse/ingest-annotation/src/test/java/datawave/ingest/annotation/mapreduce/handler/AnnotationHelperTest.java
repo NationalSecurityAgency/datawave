@@ -111,6 +111,32 @@ public class AnnotationHelperTest {
     }
 
     @Test
+    public void testProcessSingleAnnotationWithoutSource() throws IOException, InterruptedException {
+        // create test event record wrapper with minimum set of fields required for creating annotation mutations
+        RawRecordContainer event = new EventWithShardId("20251107_1");
+
+        long time = System.currentTimeMillis();
+        event.setDataType(TypeRegistry.getType("annotation"));
+        event.setTimestamp(time);
+        event.setVisibility(new ColumnVisibility("TEST_VISIBILITY"));
+        event.setId(UID.parse("a.b.c"));
+
+        // no fields are required
+        HashMultimap<String,NormalizedContentInterface> fields = HashMultimap.create();
+
+        annotationHelper.process(event, contextWriter, ctx, statusReporter, event.getId(), event.getVisibility().flatten(), event.getShardId().getBytes(),
+                        ClassLoader.getSystemResource("input/singleAnnotationWithoutSource.json").openStream().readAllBytes());
+        contextWriter.commit(ctx);
+
+        BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0testSegmentId1", "TEST_VISIBILITY", time));
+
+        // the first segment value should be protobuf that can be parsed by Segment class
+        Segment segment = Segment.parseFrom(contextWriter.getCache().get(expectedKey).stream().findFirst().get().get());
+        assertEquals("testSegmentId1", segment.getSegmentId(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
+    }
+
+    @Test
     public void testProcessBulk() throws IOException {
         // create test event record wrapper with minimum set of fields required for creating annotation mutations
         RawRecordContainer event = new EventWithShardId("20251107_1");
