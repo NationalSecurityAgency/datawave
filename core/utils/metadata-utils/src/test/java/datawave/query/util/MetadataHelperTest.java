@@ -1,6 +1,7 @@
 package datawave.query.util;
 
 import static datawave.data.ColumnFamilyConstants.COLF_F;
+import static datawave.data.ColumnFamilyConstants.COLF_H;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 import static org.apache.accumulo.core.iterators.LongCombiner.VAR_LEN_ENCODER;
 
@@ -105,9 +106,8 @@ public class MetadataHelperTest {
     }
 
     private void givenHiddenField(String row, String datatype) {
-        Text h = new Text("h");
         Mutation mutation = new Mutation(row);
-        mutation.put(h, new Text(datatype), new Value());
+        mutation.put(COLF_H, new Text(datatype), new Value());
         givenMutation(mutation);
     }
 

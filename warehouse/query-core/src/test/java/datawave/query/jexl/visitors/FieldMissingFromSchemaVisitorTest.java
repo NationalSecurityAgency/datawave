@@ -7,6 +7,11 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
@@ -16,19 +21,26 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.util.TableName;
 
 public class FieldMissingFromSchemaVisitorTest {
 
     // Special fields required by visitor.
     private Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
-
+    private static final String[] AUTHS = {"FOO", "BAR"};
+    private static final Set<Authorizations> AUTHS_SET = Collections.singleton(new Authorizations(AUTHS));
     private MockMetadataHelper helper;
 
     @Before
-    public void before() {
-        helper = new MockMetadataHelper();
+    public void before() throws AccumuloException, TableExistsException, AccumuloSecurityException {
+        helper = new MockMetadataHelper(AUTHS_SET, AUTHS_SET, AUTHS_SET, getClient());
+        if (!helper.getAccumuloClient().tableOperations().exists(TableName.METADATA)) {
+            helper.getAccumuloClient().tableOperations().create(TableName.METADATA);
+        }
     }
 
     /**
@@ -313,5 +325,13 @@ public class FieldMissingFromSchemaVisitorTest {
     private void checkEmptyDatatypeFilter(Set<String> expected, ASTJexlScript script) {
         Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
         assertEquals(expected, actual);
+    }
+
+    private static AccumuloClient getClient() {
+        try {
+            return new InMemoryAccumuloClient("root", new InMemoryInstance());
+        } catch (AccumuloSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

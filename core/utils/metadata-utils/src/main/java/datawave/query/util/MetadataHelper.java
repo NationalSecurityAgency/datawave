@@ -2178,4 +2178,7 @@ public class MetadataHelper {
         return cqRegex;
     }
 
+    public AccumuloClient getAccumuloClient() {
+        return this.accumuloClient;
+    }
 }

@@ -73,9 +73,22 @@ public class MockMetadataHelper extends MetadataHelper {
                         Collections.emptySet());
     }
 
+    public MockMetadataHelper(Set<Authorizations> allMetadataAuths, Set<Authorizations> auths, Set<Authorizations> fullUserAuths, AccumuloClient client) {
+        super(createAllFieldMetadataHelperWithCertainAuths(client, allMetadataAuths, auths), allMetadataAuths, client, TableName.METADATA, auths,
+                        fullUserAuths);
+    }
+
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
         final Set<Authorizations> allMetadataAuths = Collections.emptySet();
         final Set<Authorizations> auths = Collections.emptySet();
+        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, client, TableName.METADATA, auths, false);
+        CompositeMetadataHelper cmh = new CompositeMetadataHelper(client, TableName.METADATA, auths);
+        return new AllFieldMetadataHelper(tmh, cmh, client, TableName.METADATA, auths, allMetadataAuths);
+
+    }
+
+    private static AllFieldMetadataHelper createAllFieldMetadataHelperWithCertainAuths(AccumuloClient client, Set<Authorizations> allMetadataAuths,
+                    Set<Authorizations> auths) {
         TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, client, TableName.METADATA, auths, false);
         CompositeMetadataHelper cmh = new CompositeMetadataHelper(client, TableName.METADATA, auths);
         return new AllFieldMetadataHelper(tmh, cmh, client, TableName.METADATA, auths, allMetadataAuths);
