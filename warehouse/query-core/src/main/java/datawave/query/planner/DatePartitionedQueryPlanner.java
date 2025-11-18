@@ -79,7 +79,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     /**
      * The max number of concurrent planning threads
      */
-    private int maxConcurrentPlanningThreads = 10;
+    private int numConcurrentPlanningThreads = 10;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private final TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -269,12 +269,12 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         return this.queryPlanner.getUidIntersector();
     }
 
-    public void setMaxConcurrentPlanningThreads(int maxConcurrentPlanningThreads) {
-        this.maxConcurrentPlanningThreads = maxConcurrentPlanningThreads;
+    public void setNumConcurrentPlanningThreads(int numConcurrentPlanningThreads) {
+        this.numConcurrentPlanningThreads = numConcurrentPlanningThreads;
     }
 
-    public int getMaxConcurrentPlanningThreads() {
-        return this.maxConcurrentPlanningThreads;
+    public int getNumConcurrentPlanningThreads() {
+        return this.numConcurrentPlanningThreads;
     }
 
     /**
@@ -322,7 +322,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                 return new Thread(r, "DatePartitionedQueryPlanner thread #" + threadCounter.getAndIncrement() + " for " + settings.getId());
             }
         };
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, getMaxConcurrentPlanningThreads(), 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, getNumConcurrentPlanningThreads(), 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
                         threadFactory);
 
         try {
@@ -370,7 +370,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(planningConfig);
 
             // Get those threads fired up
-            int threadsToUse = Math.min(dateRanges.size(), getMaxConcurrentPlanningThreads());
+            int threadsToUse = Math.min(dateRanges.size(), getNumConcurrentPlanningThreads());
             executor.setCorePoolSize(threadsToUse);
 
             // Now startup a planner for each date range
