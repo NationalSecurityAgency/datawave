@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +53,6 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 
@@ -176,18 +176,24 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Produces("application/json")
     @Override
     public Response getAnnotationTypes(@PathParam("idType") String idType, @PathParam("id") String id) {
+        // TODO sanitize input to make sure it contains nothing weird like nulls.
         try {
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
+            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
-            final Collection<String> types = annotationDataAccess.getAnnotationTypes(metadata.getRow(), metadata.getDataType(), metadata.getInternalId());
-            if (types.isEmpty()) {
-                return jsonNotFound("annotation types", idType, id, mdFmt(metadata), null, null);
+            final Map<Metadata,Collection<String>> results = new HashMap<>();
+            for (Metadata md : metadata) {
+                final Collection<String> types = annotationDataAccess.getAnnotationTypes(md.getRow(), md.getDataType(), md.getInternalId());
+                if (!types.isEmpty()) {
+                    results.put(md, types);
+                }
             }
-            return jsonOk(types);
+            if (results.isEmpty()) {
+                return jsonNotFound("annotation types", idType, id, metadata.toString(), null, null, null);
+            }
+            return jsonOk(results);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
@@ -201,19 +207,24 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotationsFor(@PathParam("idType") String idType, @PathParam("id") String id) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
-
         try {
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
+            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
-            final List<Annotation> annotations = annotationDataAccess.getAnnotations(metadata.getRow(), metadata.getDataType(), metadata.getInternalId());
-            if (annotations.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, mdFmt(metadata), null, null);
+
+            final List<Annotation> results = new ArrayList<>();
+            for (Metadata md : metadata) {
+                final List<Annotation> annotations = annotationDataAccess.getAnnotations(md.getRow(), md.getDataType(), md.getInternalId());
+                if (!annotations.isEmpty()) {
+                    results.addAll(annotations);
+                }
             }
-            return jsonOk(annotations);
+            if (results.isEmpty()) {
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, null, null);
+            }
+            return jsonOk(results);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
@@ -227,20 +238,25 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotationsByType(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationType") String annotationType) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
-
         try {
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
+            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
-            final List<Annotation> annotations = annotationDataAccess.getAnnotationsForType(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(),
-                            annotationType);
-            if (annotations.isEmpty()) {
-                return jsonNotFound("annotations of type", idType, id, mdFmt(metadata), annotationType, null);
+
+            final List<Annotation> results = new ArrayList<>();
+            for (Metadata md : metadata) {
+                final List<Annotation> annotations = annotationDataAccess.getAnnotationsForType(md.getRow(), md.getDataType(), md.getInternalId(),
+                                annotationType);
+                if (!annotations.isEmpty()) {
+                    results.addAll(annotations);
+                }
             }
-            return jsonOk(annotations);
+            if (results.isEmpty()) {
+                return jsonNotFound("annotations of type", idType, id, metadata.toString(), annotationType, null, null);
+            }
+            return jsonOk(results);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
@@ -254,18 +270,21 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId) {
         try {
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
+            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
-            final Optional<Annotation> annotations = annotationDataAccess.getAnnotation(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(),
-                            annotationId);
-            if (annotations.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, mdFmt(metadata), null, annotationId);
+
+            final List<Annotation> results = new ArrayList<>();
+            for (Metadata md : metadata) {
+                final Optional<Annotation> annotations = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
+                annotations.ifPresent(results::add);
             }
-            return jsonOk(annotations);
+            if (results.isEmpty()) {
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
+            }
+            return jsonOk(results);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
@@ -289,12 +308,19 @@ public class AnnotationManagerBean implements AnnotationManager {
                 return jsonError(message);
             }
 
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
+            final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
+            if (metadataList.isEmpty()) {
                 final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
                 log.info(message);
                 return jsonNotFound(message);
+            } else if (metadataList.size() > 1) {
+                final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
+                                id, metadataList);
+                log.info(message);
+                return jsonError(message);
             }
+
+            final Metadata metadata = metadataList.get(0);
 
             //@formatter:off
             final Annotation localizedAnnotation = rawAnnotation.toBuilder()
@@ -345,12 +371,19 @@ public class AnnotationManagerBean implements AnnotationManager {
                 return jsonError(message);
             }
 
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
+            final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
+            if (metadataList.isEmpty()) {
                 final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
                 log.info(message);
                 return jsonNotFound(message);
+            } else if (metadataList.size() > 1) {
+                final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
+                                id, metadataList);
+                log.info(message);
+                return jsonError(message);
             }
+
+            final Metadata metadata = metadataList.get(0);
 
             //@formatter:off
             final Annotation localizedAnnotation = rawAnnotation.toBuilder()
@@ -390,50 +423,42 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response getAnnotationSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     @PathParam("segmentId") String segmentId) {
         try {
-
-            // TODO: validate that we still need to retrieve individual segments. This is sorta brute force for now, we
-            // retrieve the entire annotation and return the segment with the matching id. Optimize later if this is a
-            // heavily used case.
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
-                final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
-                log.info(message);
-                return jsonNotFound(message);
+            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            if (metadata.isEmpty()) {
+                return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
-            final Optional<Annotation> annotation = annotationDataAccess.getAnnotation(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(),
-                            annotationId);
-            if (annotation.isEmpty()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("No annotation found for idType: {}, id: {}, internalId: {}", idType, id, mdFmt(metadata));
+
+            final Map<Metadata,Annotation> annotationResults = new HashMap<>();
+            for (Metadata md : metadata) {
+                final Optional<Annotation> annotation = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
+                annotation.ifPresent(value -> annotationResults.put(md, value));
+            }
+
+            if (annotationResults.isEmpty()) {
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentId);
+            }
+
+            final Map<Metadata,Collection<Segment>> results = new HashMap<>();
+            for (Map.Entry<Metadata,Annotation> entry : annotationResults.entrySet()) {
+                // now select only the segments that were requested.
+                List<Segment> matchingSegments = new ArrayList<>();
+                for (Segment s : entry.getValue().getSegmentsList()) {
+                    if (s.getSegmentId().equals(segmentId)) {
+                        matchingSegments.add(s);
+                    }
                 }
-                return jsonNotFound("annotations", idType, id, mdFmt(metadata), null, annotationId);
-            }
-
-            // now filter out the segment that was requested
-            Annotation a = annotation.get();
-            List<Segment> matchingSegments = new ArrayList<>();
-            for (Segment s : a.getSegmentsList()) {
-                if (s.getSegmentId().equals(segmentId)) {
-                    matchingSegments.add(s);
+                if (!matchingSegments.isEmpty()) {
+                    results.put(entry.getKey(), matchingSegments);
                 }
             }
 
-            if (matchingSegments.isEmpty()) {
-                final String message = String.format("No segments found for identifier '%s:%s', internalId: '%s', with annotation id '%s' and segment id '%s'",
-                                idType, id, mdFmt(metadata), annotationId, segmentId);
-                log.debug(message);
-                return jsonNotFound(message);
-            } else if (matchingSegments.size() > 1) {
-                throw new QueryException(
-                                String.format("Multiple segments found for identifier '%s:%s', internalId: '%s', with annotation id '%s' and segment id '%s'",
-                                                idType, id, mdFmt(metadata), annotationId, segmentId));
+            if (results.isEmpty()) {
+                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentId);
             }
-            return jsonOk(Optional.of(matchingSegments.get(0)));
-
+            return jsonOk(results);
         } catch (QueryException e) {
-            final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
+            final String message = String.format("Internal error fetching segment: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
         }
@@ -448,10 +473,20 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response addSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId, String body) {
         try {
             Segment segment = AnnotationUtils.segmentFromJson(body);
-            final Metadata metadata = lookupDocumentIdentifier(idType, id);
-            if (metadata == null) {
-                return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
+
+            final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
+            if (metadataList.isEmpty()) {
+                final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
+                log.info(message);
+                return jsonNotFound(message);
+            } else if (metadataList.size() > 1) {
+                final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
+                                id, metadataList);
+                log.info(message);
+                return jsonError(message);
             }
+            final Metadata metadata = metadataList.get(0);
+
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
             annotationDataAccess.addSegment(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(), annotationId, segment);
             return jsonOk(segment.getSegmentId());
@@ -475,8 +510,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response updateSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     @PathParam("segmentId") String segmentId, String body) {
         // TODO: determine update semantics.
-
-        return Response.ok().build();
+        return jsonError("Not implemented");
     }
 
     /**
@@ -486,11 +520,12 @@ public class AnnotationManagerBean implements AnnotationManager {
      *            the type of id provided
      * @param id
      *            the id itself.
-     * @return a Metadata object containing the source table, row, datatype and internal document id (uid).
+     * @return a list of zero to many Metadata objects with the internal shard, datatype, uid and table name of the identifier(s) provided. The list will be
+     *         empty if no identifier could be found using the authorizations and query logic employed by this class.
      * @throws QueryException
      *             if the id is malformed.
      */
-    private Metadata lookupDocumentIdentifier(String idType, String id) throws QueryException {
+    private List<Metadata> lookupDocumentIdentifier(String idType, String id) throws QueryException {
         if (idType.equals("DOCUMENT") || idType.equals("RECORD_ID")) {
             // If the idType is RECORD_ID or DOCUMENT treat the id provided is an internal id.
             return parseDocumentIdentifier(id);
@@ -506,25 +541,22 @@ public class AnnotationManagerBean implements AnnotationManager {
      *
      * @param identifier
      *            the identifier to parse
-     * @return the corresponding Metadata object
+     * @return a singleton list the corresponding Metadata object
      * @throws IllegalArgumentException
      *             if the identifier is not in the expected shardId/datatype/eventUID format.
      */
-    private Metadata parseDocumentIdentifier(String identifier) {
+    private List<Metadata> parseDocumentIdentifier(String identifier) {
         final String[] parts = identifier.split("/");
         if (parts.length != 3) {
             throw new IllegalArgumentException("Identifier does not specify all needed 3 parts. Identifier must be in the form 'shardId/datatype/eventUID'.");
         }
 
-        final Metadata md = new Metadata();
-        md.setTable(config.getLookupUUIDQueryLogic().getTableName());
-        md.setRow(parts[0]);
-        md.setDataType(parts[1]);
-        md.setInternalId(parts[2]);
-        return md;
+        final Metadata md = new Metadata(config.getLookupUUIDQueryLogic().getTableName(), parts[0], parts[1], parts[2]);
+        return Collections.singletonList(md);
     }
 
-    private static Response jsonNotFound(String objectType, String idType, String id, String internalId, String annotationType, String annotationId) {
+    private static Response jsonNotFound(String objectType, String idType, String id, String internalId, String annotationType, String annotationId,
+                    String segmentId) {
         String message = id.contains(internalId) ? String.format("No %s found for identifier: '%s:%s'", objectType, idType, id)
                         : String.format("No %s found for identifier '%s:%s', internalId: '%s'", objectType, idType, id, internalId);
 
@@ -533,6 +565,9 @@ public class AnnotationManagerBean implements AnnotationManager {
         }
         if (!StringUtils.isEmpty(annotationId)) {
             message += String.format(", annotationId '%s'", annotationId);
+        }
+        if (!StringUtils.isEmpty(segmentId)) {
+            message += String.format(", segmentId '%s'", segmentId);
         }
 
         return jsonNotFound(message);
@@ -551,10 +586,5 @@ public class AnnotationManagerBean implements AnnotationManager {
     private static Response jsonOk(Object responseObject) {
         // TODO: do we want to return more? (e.g., include fields like internal id, etc..
         return Response.ok(responseObject, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8")).build();
-    }
-
-    /** Format metadata for error messages, since it doesn't have a reasonable {@code toString} method */
-    private static String mdFmt(Metadata metadata) {
-        return String.format("%s/%s/%s [%s]", metadata.getRow(), metadata.getDataType(), metadata.getInternalId(), metadata.getTable());
     }
 }

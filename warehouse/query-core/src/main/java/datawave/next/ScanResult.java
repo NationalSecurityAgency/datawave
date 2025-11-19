@@ -44,8 +44,8 @@ public class ScanResult {
      *            flag to enable partial intersection
      */
     public ScanResult(boolean allowPartialIntersections) {
-        this.allowPartialIntersections = allowPartialIntersections;
         this.results = new HashSet<>();
+        this.setAllowPartialIntersections(allowPartialIntersections);
     }
 
     /**
@@ -101,6 +101,7 @@ public class ScanResult {
         }
 
         this.results.retainAll(other.getResults());
+        updateMinMax();
     }
 
     /**
@@ -153,6 +154,10 @@ public class ScanResult {
     }
 
     protected boolean isIntersectionPossible(ScanResult other) {
+        if (results.isEmpty() || other.getResults().isEmpty()) {
+            return false;
+        }
+
         if (results.size() == 1 && other.results.size() != 1) {
             // in the case where ScanResult is a singleton and the other is not we must call isIntersectionPossible using the other ScanResult
             return other.isIntersectionPossible(this);
@@ -160,17 +165,22 @@ public class ScanResult {
 
         boolean otherMinInBounds = withinBounds(other.getMin());
         boolean otherMaxInBounds = withinBounds(other.getMax());
-        return otherMinInBounds || otherMaxInBounds;
-    }
-
-    private boolean isFullIntersection(ScanResult other) {
-        boolean otherMinInBounds = withinBounds(other.getMin());
-        boolean otherMaxInBounds = withinBounds(other.getMax());
-        return otherMinInBounds && otherMaxInBounds;
+        return otherMinInBounds || otherMaxInBounds || this.isContainedBy(other);
     }
 
     private boolean withinBounds(Key key) {
         return min.compareTo(key) <= 0 && max.compareTo(key) >= 0;
+    }
+
+    /**
+     * Does this ScanResult fall entirely within the other?
+     *
+     * @param other
+     *            another ScanResult
+     * @return true if this is fully contained
+     */
+    private boolean isContainedBy(ScanResult other) {
+        return min.compareTo(other.getMin()) >= 0 && max.compareTo(other.getMax()) <= 0;
     }
 
     /**
@@ -202,6 +212,36 @@ public class ScanResult {
         }
 
         results.add(key);
+    }
+
+    /**
+     * Iterate through the collection of results and
+     */
+    protected void updateMinMax() {
+        switch (results.size()) {
+            case 0:
+                min = null;
+                max = null;
+                break;
+            case 1:
+                Key key = results.iterator().next();
+                min = key;
+                max = key;
+                break;
+            default:
+                Key localMin = null;
+                Key localMax = null;
+                for (Key result : results) {
+                    if (localMin == null || result.compareTo(localMin) <= 0) {
+                        localMin = result;
+                    }
+                    if (localMax == null || result.compareTo(localMax) >= 0) {
+                        localMax = result;
+                    }
+                }
+                this.min = localMin;
+                this.max = localMax;
+        }
     }
 
     /**
