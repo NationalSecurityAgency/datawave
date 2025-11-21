@@ -1,6 +1,5 @@
 package datawave.annotation.util.v1;
 
-import static datawave.annotation.util.v1.AnnotationUtils.getBoundaryCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,11 +13,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
-import datawave.annotation.protobuf.v1.TextSpanChars;
-import datawave.annotation.protobuf.v1.TimeSpanSeconds;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 
 public class SegmentUtilsJsonTest {
@@ -27,13 +25,11 @@ public class SegmentUtilsJsonTest {
 
     //@formatter:off
     final String testJson = "{\n" +
-            "  \"segmentId\": \"5674ff10\",\n" +
+            "  \"segmentHash\": \"5674ff10\",\n" +
             "  \"boundary\": {\n" +
-            "    \"boundaryType\": \"TIME_SPAN\",\n" +
-            "    \"timeSpan\": {\n" +
-            "      \"startSeconds\": 0.154,\n" +
-            "      \"endSeconds\": 0.52\n" +
-            "    }\n" +
+            "    \"boundaryType\": \"TIME_MILLI\",\n" +
+            "    \"start\": 1540,\n" +
+            "    \"end\": 5200\n" +
             "  },\n" +
             "  \"values\": [{\n" +
             "    \"value\": \"horse\",\n" +
@@ -42,13 +38,11 @@ public class SegmentUtilsJsonTest {
             "}";
 
     final String testMalformedJsonOne = "{\n" +
-            "  \"segmentId\": \"5674ff10\",\n" +
+            "  \"segmentHash\": \"5674ff10\",\n" +
             "  \"boundary\": {\n" +
-            "    \"boundaryType\": \"TIME_SPAN\",\n" +
-            "    \"timeSpan\": {\n" +
-            "      \"startSeconds\": 0.154,\n" +
-            "      \"endSeconds\": 0.52\n" +
-            "    }\n" +
+            "    \"boundaryType\": \"TIME_MILLI\",\n" +
+            "    \"start\": 1540,\n" +
+            "    \"end\": 5200\n" +
             "  },\n" +
             "  \"values\": {\n" + // missing list in segment values.
             "    \"value\": \"horse\",\n" +
@@ -57,13 +51,11 @@ public class SegmentUtilsJsonTest {
             "}";
 
     final String testMalformedJsonTwo = "{\n" +
-            "  \"segmentId\": \"5674ff10\",\n" +
-            "  \"boundary\": [{\n" + // list in boundary
-            "    \"boundaryType\": \"TIME_SPAN\",\n" +
-            "    \"timeSpan\": {\n" +
-            "      \"startSeconds\": 0.154,\n" +
-            "      \"endSeconds\": 0.52\n" +
-            "    }\n" +
+            "  \"segmentHash\": \"5674ff10\",\n" +
+            "  \"boundary\": [{\n" +
+            "    \"boundaryType\": \"TIME_MILLI\",\n" +
+            "    \"start\": 1540,\n" +
+            "    \"end\": 5200\n" +
             "  }],\n" +
             "  \"values\": [{\n" +
             "    \"value\": \"horse\",\n" +
@@ -75,56 +67,52 @@ public class SegmentUtilsJsonTest {
     @Test
     public void testToJson() throws Exception {
         Segment s = AnnotationTestDataUtil.generateTestSegment();
-        String json = AnnotationJsonUtils.segmentToJsonWithBoundaryType(s);
+        String json = AnnotationJsonUtils.segmentToJson(s);
         log.info(json);
-        assertTrue(json.contains("\"boundaryType\": \"TIME_SPAN\""));
-        assertTrue(json.contains("\"startSeconds\": 0.154"));
-        assertTrue(json.contains("\"endSeconds\": 0.52"));
+        assertTrue(json.contains("\"boundaryType\": \"TIME_MILLI\""));
+        assertTrue(json.contains("\"start\": 1540"));
+        assertTrue(json.contains("\"end\": 5200"));
 
     }
 
     @Test
     public void testEmptyToJson() throws InvalidProtocolBufferException {
         Segment s = Segment.newBuilder().build();
-        String json = AnnotationJsonUtils.segmentToJsonWithBoundaryType(s);
+        String json = AnnotationJsonUtils.segmentToJson(s);
         log.info(json);
         assertTrue(json.contains("{\n}"));
     }
 
     @Test
     public void testMultiSegmentBoundaryToJson() throws InvalidProtocolBufferException {
-        TimeSpanSeconds timeSpanSeconds = TimeSpanSeconds.newBuilder().setStartSeconds(1).setEndSeconds(2).build();
-        TextSpanChars textSpanChars = TextSpanChars.newBuilder().setStartCharacter(4).setEndCharacter(10).build();
-
         // the behavior of this step is undefined - we should not try to set two different spans on a single segment boundary
         // in this case the behavior is determined by how we resolve boundary types in AnnotationUtils, but that's an
         // implementation detail. Also, this would be caught by something that checks the object for validity prior to
         // persistence.
-        SegmentBoundary bounds = SegmentBoundary.newBuilder().setTimeSpan(timeSpanSeconds).setCharacterSpan(textSpanChars).build();
+        SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(BoundaryType.TIME_MILLI).setBoundaryType(BoundaryType.TEXT_CHAR).setStart(1)
+                        .setEnd(2).setStart(4).setEnd(10).build();
 
         Segment s = Segment.newBuilder().setBoundary(bounds).build();
-        String json = AnnotationJsonUtils.segmentToJsonWithBoundaryType(s);
+        String json = AnnotationJsonUtils.segmentToJson(s);
         log.info(json);
-        assertFalse(json.contains("CHARACTER_SPAN"));
-        assertTrue(json.contains("TIME_SPAN"));
+        assertTrue(json.contains("TEXT_CHAR"));
+        assertFalse(json.contains("TIME_MILLI"));
     }
 
     @Test
     public void testFromJson() throws Exception {
         Segment s = AnnotationJsonUtils.segmentFromJson(testJson);
         log.info(s.toString());
-        assertEquals("5674ff10", s.getSegmentId());
+        assertEquals("5674ff10", s.getSegmentHash());
         List<SegmentValue> segmentValueList = s.getValuesList();
         assertEquals(1, segmentValueList.size());
         SegmentValue sv = segmentValueList.get(0);
         assertEquals("horse", sv.getValue());
         assertEquals(0.2, sv.getScore(), 0.1f);
         SegmentBoundary bounds = s.getBoundary();
-        assertEquals(AnnotationUtils.BoundaryCase.TIME_SPAN, getBoundaryCase(bounds));
-        TimeSpanSeconds span = bounds.getTimeSpan();
-        assertEquals(0.154, span.getStartSeconds());
-        assertEquals(0.52, span.getEndSeconds());
-        assertEquals("TIME_SPAN", bounds.getBoundaryType());
+        assertEquals(BoundaryType.TIME_MILLI, bounds.getBoundaryType());
+        assertEquals(1540, bounds.getStart());
+        assertEquals(5200, bounds.getEnd());
     }
 
     @Test

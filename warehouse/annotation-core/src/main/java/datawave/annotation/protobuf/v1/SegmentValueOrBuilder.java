@@ -9,10 +9,32 @@ public interface SegmentValueOrBuilder extends
 
     /**
      * <pre>
+     * the 32-bit value hash used for grouping.
+     * </pre>
+     *
+     * <code>string valueHash = 1;</code>
+     *
+     * @return The valueHash.
+     */
+    java.lang.String getValueHash();
+
+    /**
+     * <pre>
+     * the 32-bit value hash used for grouping.
+     * </pre>
+     *
+     * <code>string valueHash = 1;</code>
+     *
+     * @return The bytes for valueHash.
+     */
+    com.google.protobuf.ByteString getValueHashBytes();
+
+    /**
+     * <pre>
      * e.g., label
      * </pre>
      *
-     * <code>string value = 1;</code>
+     * <code>string value = 2;</code>
      *
      * @return The value.
      */
@@ -23,7 +45,7 @@ public interface SegmentValueOrBuilder extends
      * e.g., label
      * </pre>
      *
-     * <code>string value = 1;</code>
+     * <code>string value = 2;</code>
      *
      * @return The bytes for value.
      */
@@ -34,18 +56,18 @@ public interface SegmentValueOrBuilder extends
      * e.g., confidence
      * </pre>
      *
-     * <code>double score = 2;</code>
+     * <code>float score = 3;</code>
      *
      * @return The score.
      */
-    double getScore();
+    float getScore();
 
     /**
      * <pre>
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
     int getExtensionCount();
 
@@ -54,7 +76,7 @@ public interface SegmentValueOrBuilder extends
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
     boolean containsExtension(java.lang.String key);
 
@@ -69,7 +91,7 @@ public interface SegmentValueOrBuilder extends
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
     java.util.Map<java.lang.String,java.lang.String> getExtensionMap();
 
@@ -78,7 +100,7 @@ public interface SegmentValueOrBuilder extends
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
 
     java.lang.String getExtensionOrDefault(java.lang.String key, java.lang.String defaultValue);
@@ -88,7 +110,7 @@ public interface SegmentValueOrBuilder extends
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
 
     java.lang.String getExtensionOrThrow(java.lang.String key);

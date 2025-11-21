@@ -107,7 +107,7 @@ public class AnnotationHelperTest {
 
         // the first segment value should be protobuf that can be parsed by Segment class
         Segment segment = Segment.parseFrom(contextWriter.getCache().get(expectedKey).stream().findFirst().get().get());
-        assertEquals("testSegmentId1", segment.getSegmentId(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
+        assertEquals("testSegmentId1", segment.getSegmentHash(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
     }
 
     @Test
@@ -135,7 +135,7 @@ public class AnnotationHelperTest {
 
         // the first segment value should be protobuf that can be parsed by Segment class
         Segment segment = Segment.parseFrom(bulkKeys.get(expectedKey).stream().findFirst().get().get());
-        assertEquals("testSegmentId1", segment.getSegmentId(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
+        assertEquals("testSegmentId1", segment.getSegmentHash(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
     }
 
     @Test

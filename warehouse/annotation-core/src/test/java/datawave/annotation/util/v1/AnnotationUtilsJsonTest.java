@@ -17,23 +17,37 @@ public class AnnotationUtilsJsonTest {
             "  \"shard\": \"20250704_249\",\n" +
             "  \"dataType\": \"testDataType\",\n" +
             "  \"uid\": \"abcde.fghij.klmno\",\n" +
+            "  \"annotationId\": \"23BD91EC\",\n" +
+            "  \"documentId\": \"1234567890\",\n" +
             "  \"annotationType\": \"testAnnotationType\",\n" +
-            "  \"annotationId\": \"ddf5715c\",\n" +
+            "  \"analyticSourceHash\": \"F1A0463C207B3778B472B506F3F8351A\",\n" +
+            "  \"source\": {\n" +
+            "    \"analyticHash\": \"86226841\",\n" +
+            "    \"analyticSourceHash\": \"F1A0463C207B3778B472B506F3F8351A\",\n" +
+            "    \"engine\": \"inline v6\",\n" +
+            "    \"model\": \"GR Supra\",\n" +
+            "    \"configuration\": {\n" +
+            "      \"octane\": \"99\",\n" +
+            "      \"model_year\": \"2025\"\n" +
+            "    },\n" +
+            "    \"metadata\": {\n" +
+            "      \"visibility\": \"PUBLIC\",\n" +
+            "      \"created_date\": \"2025-10-01T00:00:00Z\"\n" +
+            "    }\n" +
+            "  },\n" +
             "  \"segments\": [{\n" +
-            "    \"segmentId\": \"fa389252\",\n" +
+            "    \"segmentHash\": \"053D8C2B\",\n" +
             "    \"boundary\": {\n" +
-            "      \"boundaryType\": \"TIME_SPAN\",\n" +
-            "      \"timeSpan\": {\n" +
-            "        \"startSeconds\": 0.154,\n" +
-            "        \"endSeconds\": 0.52\n" +
-            "      }\n" +
+            "      \"boundaryType\": \"TIME_MILLI\",\n" +
+            "      \"start\": 1540,\n" +
+            "      \"end\": 5200\n" +
             "    },\n" +
             "    \"values\": [{\n" +
             "      \"value\": \"cow\",\n" +
-            "      \"score\": 0.23499999940395355\n" +
+            "      \"score\": 0.235\n" +
             "    }, {\n" +
             "      \"value\": \"horse\",\n" +
-            "      \"score\": 0.20999999344348907,\n" +
+            "      \"score\": 0.21,\n" +
             "      \"extension\": {\n" +
             "        \"objectType\": \"animal\"\n" +
             "      }\n" +
@@ -51,14 +65,14 @@ public class AnnotationUtilsJsonTest {
     @Test
     public void testToJson() throws Exception {
         Annotation a = AnnotationTestDataUtil.generateTestAnnotation();
-        String json = AnnotationJsonUtils.annotationToJsonWithBoundaryTypesAndIds(a);
+        String json = AnnotationJsonUtils.annotationToJsonWithIds(a);
         log.info(json);
     }
 
     @Test
     public void testFromJson() throws Exception {
         Annotation testAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         Annotation observedAnnotation = AnnotationJsonUtils.annotationFromJson(testAnnotationJson);
         AnnotationAssertions.assertAnnotationsEqual(expectedAnnotation, observedAnnotation);
     }

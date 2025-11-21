@@ -75,32 +75,10 @@ public interface AnnotationOrBuilder extends
 
     /**
      * <pre>
-     * the type of this annotation
-     * </pre>
-     *
-     * <code>string annotationType = 4;</code>
-     *
-     * @return The annotationType.
-     */
-    java.lang.String getAnnotationType();
-
-    /**
-     * <pre>
-     * the type of this annotation
-     * </pre>
-     *
-     * <code>string annotationType = 4;</code>
-     *
-     * @return The bytes for annotationType.
-     */
-    com.google.protobuf.ByteString getAnnotationTypeBytes();
-
-    /**
-     * <pre>
      * the hash that identifies this annotation
      * </pre>
      *
-     * <code>string annotationId = 5;</code>
+     * <code>string annotationId = 4;</code>
      *
      * @return The annotationId.
      */
@@ -111,7 +89,7 @@ public interface AnnotationOrBuilder extends
      * the hash that identifies this annotation
      * </pre>
      *
-     * <code>string annotationId = 5;</code>
+     * <code>string annotationId = 4;</code>
      *
      * @return The bytes for annotationId.
      */
@@ -119,63 +97,10 @@ public interface AnnotationOrBuilder extends
 
     /**
      * <pre>
-     * the analytic hash that identifies this annotation's source
-     * </pre>
-     *
-     * <code>string analyticHash = 6;</code>
-     *
-     * @return The analyticHash.
-     */
-    java.lang.String getAnalyticHash();
-
-    /**
-     * <pre>
-     * the analytic hash that identifies this annotation's source
-     * </pre>
-     *
-     * <code>string analyticHash = 6;</code>
-     *
-     * @return The bytes for analyticHash.
-     */
-    com.google.protobuf.ByteString getAnalyticHashBytes();
-
-    /**
-     * <pre>
-     * the source details for this annotation.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
-     *
-     * @return Whether the source field is set.
-     */
-    boolean hasSource();
-
-    /**
-     * <pre>
-     * the source details for this annotation.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
-     *
-     * @return The source.
-     */
-    datawave.annotation.protobuf.v1.AnnotationSource getSource();
-
-    /**
-     * <pre>
-     * the source details for this annotation.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
-     */
-    datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder();
-
-    /**
-     * <pre>
      * the external identifier for this annotations source document.
      * </pre>
      *
-     * <code>string documentId = 8;</code>
+     * <code>string documentId = 5;</code>
      *
      * @return The documentId.
      */
@@ -186,11 +111,86 @@ public interface AnnotationOrBuilder extends
      * the external identifier for this annotations source document.
      * </pre>
      *
-     * <code>string documentId = 8;</code>
+     * <code>string documentId = 5;</code>
      *
      * @return The bytes for documentId.
      */
     com.google.protobuf.ByteString getDocumentIdBytes();
+
+    /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
+     * <code>string annotationType = 6;</code>
+     *
+     * @return The annotationType.
+     */
+    java.lang.String getAnnotationType();
+
+    /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
+     * <code>string annotationType = 6;</code>
+     *
+     * @return The bytes for annotationType.
+     */
+    com.google.protobuf.ByteString getAnnotationTypeBytes();
+
+    /**
+     * <pre>
+     * the analytic hash that identifies this annotation's source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 7;</code>
+     *
+     * @return The analyticSourceHash.
+     */
+    java.lang.String getAnalyticSourceHash();
+
+    /**
+     * <pre>
+     * the analytic hash that identifies this annotation's source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 7;</code>
+     *
+     * @return The bytes for analyticSourceHash.
+     */
+    com.google.protobuf.ByteString getAnalyticSourceHashBytes();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
+     *
+     * @return Whether the source field is set.
+     */
+    boolean hasSource();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
+     *
+     * @return The source.
+     */
+    datawave.annotation.protobuf.v1.AnnotationSource getSource();
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
+     */
+    datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder();
 
     /**
      * <pre>

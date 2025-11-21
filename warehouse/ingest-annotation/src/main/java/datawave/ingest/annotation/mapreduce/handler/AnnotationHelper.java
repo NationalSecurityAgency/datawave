@@ -271,7 +271,8 @@ public class AnnotationHelper {
         datawaveAnnotationBuilder.putMetadata("visibility", new String(visibility));
         datawaveAnnotationBuilder.putMetadata("created_date", DateHelper.format8601(new Date(event.getTimestamp())));
 
-        if (annotationBuilder.getSource() != null && !annotationBuilder.getSource().getSourceLabel().isEmpty()) {
+        // TODO: drew - not sure what to do about this, it was checking whether the source label was empty, that field no longer exists I switched it to engine.
+        if (annotationBuilder.getSource() != null && !annotationBuilder.getSource().getEngine().isEmpty()) {
             if (annotationSourceVisibilityInheritEvent) {
                 datawaveAnnotationBuilder.getSourceBuilder().putConfiguration("visibility", new String(visibility));
             } else {

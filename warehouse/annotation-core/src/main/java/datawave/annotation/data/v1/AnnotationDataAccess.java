@@ -1,5 +1,9 @@
 package datawave.annotation.data.v1;
 
+import static datawave.annotation.util.v1.AnnotationStringUtils.annotationIdContext;
+import static datawave.annotation.util.v1.AnnotationStringUtils.annotationSourceString;
+import static datawave.annotation.util.v1.AnnotationStringUtils.segmentWithAnnotationContext;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -468,7 +472,7 @@ public class AnnotationDataAccess {
      */
     protected AnnotationSource prepareAnnotationSourceForAdd(AnnotationSource annotationSource) {
         validateAnnotationSourceForAdd(annotationSource);
-        AnnotationSource identifiedAnnotationSource = AnnotationUtils.injectAnnotationSourceId(annotationSource);
+        AnnotationSource identifiedAnnotationSource = AnnotationUtils.injectAnnotationSourceHashes(annotationSource);
         checkAnnotationSourceForConflicts(identifiedAnnotationSource);
         return identifiedAnnotationSource;
     }
@@ -485,8 +489,7 @@ public class AnnotationDataAccess {
     protected void validateAnnotationSourceForAdd(AnnotationSource annotationSource) {
         if (StringUtils.isNotBlank(annotationSource.getAnalyticHash())) {
             throw new AnnotationWriteException(
-                            "Cannot add segment because it already has an id assigned '" + annotationSource.getAnalyticHash() + "', annotation context was: "
-                                            + annotationSource.getEngine() + "/" + annotationSource.getModel() + "/" + annotationSource.getSourceLabel());
+                            "Cannot add annotation source because it already has an id assigned '" + annotationSourceString(annotationSource));
         }
     }
 
@@ -505,9 +508,8 @@ public class AnnotationDataAccess {
     protected void checkAnnotationSourceForConflicts(AnnotationSource annotationSource) {
         // check that the annotation has an id assigned.
         if (StringUtils.isBlank(annotationSource.getAnalyticHash())) {
-            throw new AnnotationWriteException("Cannot add annotation because the id could not be automatically assigned '" + annotationSource.getAnalyticHash()
-                            + "', annotation context was: " + annotationSource.getEngine() + "/" + annotationSource.getModel() + "/"
-                            + annotationSource.getSourceLabel());
+            throw new AnnotationWriteException(
+                            "Cannot add annotation source because the id could not be automatically assigned '" + annotationSourceString(annotationSource));
         }
 
         Optional<AnnotationSource> conflicting = getAnnotationSource(annotationSource.getAnalyticHash());
@@ -533,7 +535,7 @@ public class AnnotationDataAccess {
      */
     protected Annotation prepareAnnotationForAdd(Annotation annotation) {
         validateAnnotationForAdd(annotation);
-        Annotation identifiedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(annotation);
+        Annotation identifiedAnnotation = AnnotationUtils.injectAllHashes(annotation);
         checkAnnotationForConflicts(identifiedAnnotation);
         return identifiedAnnotation;
     }
@@ -549,13 +551,12 @@ public class AnnotationDataAccess {
      */
     protected void validateAnnotationForAdd(Annotation annotation) {
         if (StringUtils.isNotBlank(annotation.getAnnotationId())) {
-            throw new AnnotationWriteException("Cannot add segment because it already has an id assigned '" + annotation.getAnnotationId()
-                            + "', annotation context was: " + annotation.getShard() + "/" + annotation.getDataType() + "/" + annotation.getUid());
+            throw new AnnotationWriteException("Cannot add segment because it already has an id assigned " + annotationIdContext(annotation));
         }
         for (Segment segment : annotation.getSegmentsList()) {
-            if (StringUtils.isNotBlank(segment.getSegmentId())) {
-                throw new AnnotationWriteException("Cannot add segment because it already has an id assigned '" + segment + "', annotation context was: "
-                                + annotation.getShard() + "/" + annotation.getDataType() + "/" + annotation.getUid());
+            if (StringUtils.isNotBlank(segment.getSegmentHash())) {
+                throw new AnnotationWriteException(
+                                "Cannot add segment because it already has an id assigned " + segmentWithAnnotationContext(segment, annotation));
             }
         }
     }
@@ -576,21 +577,19 @@ public class AnnotationDataAccess {
     protected void checkAnnotationForConflicts(Annotation annotation) {
         // check that the annotation has an id assigned.
         if (StringUtils.isBlank(annotation.getAnnotationId())) {
-            throw new AnnotationWriteException("Cannot add annotation because the id could not be automatically assigned '" + annotation.getAnnotationId()
-                            + "', annotation context was: " + annotation.getShard() + "/" + annotation.getDataType() + "/" + annotation.getUid());
+            throw new AnnotationWriteException("Cannot add annotation because the id could not be automatically assigned " + annotationIdContext(annotation));
         }
 
         // ensure that the segments have ids assigned and are unique.
         final Set<String> observedSegmentIds = new HashSet<>();
         for (Segment segment : annotation.getSegmentsList()) {
-            if (StringUtils.isBlank(segment.getSegmentId())) {
-                throw new AnnotationWriteException("Cannot add segment because the id could not be automatically assigned '" + segment
-                                + "', annotation context was: " + annotation.getShard() + "/" + annotation.getDataType() + "/" + annotation.getUid());
-            }
-            final String segmentId = segment.getSegmentId();
-            if (!observedSegmentIds.add(segmentId)) {
+            if (StringUtils.isBlank(segment.getSegmentHash())) {
                 throw new AnnotationWriteException(
-                                "Cannot add annotation because it already contains multiple segments with the same id '" + segmentId + "', " + annotation);
+                                "Cannot add segment because the id could not be automatically assigned " + segmentWithAnnotationContext(segment, annotation));
+            }
+            final String segmentHash = segment.getSegmentHash();
+            if (!observedSegmentIds.add(segmentHash)) {
+                throw new AnnotationWriteException("Cannot add annotation because it contains multiple segments with the same id " + annotation);
             }
         }
 
