@@ -29,14 +29,15 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.query.data.parsers.ShardIndexKey;
+import datawave.query.index.day.AbstractIndexIngest;
 import datawave.util.time.DateHelper;
 
 /**
  * Utility that converts a shard index to a shard year index table
  */
-public class YearIndexIngest {
+public class YearIndexIngest extends AbstractIndexIngest {
 
-    private final static Logger log = LoggerFactory.getLogger(YearIndexIngest.class);
+    private static final Logger log = LoggerFactory.getLogger(YearIndexIngest.class);
 
     private final ShardIndexKey parser = new ShardIndexKey();
 
@@ -57,8 +58,9 @@ public class YearIndexIngest {
      * @param yearIndexTableName
      *            the year index table name
      */
-    public void convertToYearIndex(AccumuloClient client, Authorizations auths, String shardIndexTableName, String yearIndexTableName) {
-        createAndConfigureYearIndex(client, yearIndexTableName);
+    @Override
+    public void convert(AccumuloClient client, Authorizations auths, String shardIndexTableName, String yearIndexTableName) {
+        configureDestination(client, yearIndexTableName);
 
         Comparator<Key> comparator = (left, right) -> left.compareTo(right, PartialKey.ROW_COLFAM_COLQUAL_COLVIS);
 
@@ -117,14 +119,11 @@ public class YearIndexIngest {
         return new Key(row, cf, cq, key.getColumnVisibilityParsed(), key.getTimestamp());
     }
 
-    private void createAndConfigureYearIndex(AccumuloClient client, String yearIndexTableName) {
+    @Override
+    protected void configureDestination(AccumuloClient client, String yearIndexTableName) {
         try {
             TableOperations tops = client.tableOperations();
-
             tops.create(yearIndexTableName);
-
-            // TODO -- set combiner, add splits, compact
-
         } catch (AccumuloException | AccumuloSecurityException | TableExistsException e) {
             log.error("Could not create {}", yearIndexTableName);
         }

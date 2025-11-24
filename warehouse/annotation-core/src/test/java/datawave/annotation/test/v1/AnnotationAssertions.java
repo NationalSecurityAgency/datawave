@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class AnnotationAssertions {
     }
 
     /** Assert that two lists of segment are equal. We start by ensuring that both of the segment id's */
-    public static void assertSegmentsEqual(List<Segment> expected, List<Segment> result) {
+    public static void assertSegmentsEqual(Collection<Segment> expected, Collection<Segment> result) {
         Map<String,Segment> expectedByUID = indexSegments(expected);
         Set<String> expectedUIDs = expectedByUID.keySet();
 
@@ -85,7 +86,7 @@ public class AnnotationAssertions {
      *            the list of segments we'll be comparing/
      * @return a map of segment id to segment.
      */
-    public static Map<String,Segment> indexSegments(List<Segment> input) {
+    public static Map<String,Segment> indexSegments(Collection<Segment> input) {
         final Map<String,Segment> index = new HashMap<>();
         for (Segment s : input) {
             index.put(s.getSegmentId(), s);

@@ -1,5 +1,6 @@
 package datawave.query.util;
 
+import static datawave.query.util.ValueSerializer.KryoValueSerializer.DEFAULT_BUFFER_SIZE;
 import static datawave.query.util.ValueSerializerType.KRYO;
 import static datawave.query.util.ValueSerializerType.WRITABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,6 +11,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hadoop.io.Writable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,6 +44,18 @@ public class ValueSerializerTest {
         TestType actual = serializer.deserialize(v1, TestType::new);
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testKryoSerializerWithLargeBuffer() throws Exception {
+        String r1 = RandomStringUtils.randomAlphabetic(DEFAULT_BUFFER_SIZE);
+        String r2 = RandomStringUtils.randomAlphabetic(DEFAULT_BUFFER_SIZE);
+        ValueSerializer<TestType> serializer = ValueSerializer.newSerializer(TestType.class, null, KRYO);
+        TestType typeIn = new TestType(r1, r2);
+        Value valOut = serializer.serializeUnchecked(typeIn);
+        TestType typeOut = serializer.deserializeUnchecked(valOut, TestType::new);
+
+        assertEquals(typeIn, typeOut);
     }
 
     static class TestType implements KryoSerializable, Writable {

@@ -160,7 +160,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
          * have an evaluation only term predicate, then no need to apply normalizations If we have already expanded this node, then nothing to do
          */
         QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
-        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM, EVALUATION_ONLY) || this.expandedNodes.contains(node)) {
+        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM) || this.expandedNodes.contains(node)) {
             return node;
         }
 
@@ -362,15 +362,21 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
                                     // if not index only, and we have a lossy normalized regex, then add the original regex as eval only
                                     if (!indexOnly && (!term.equals(normTerm)) && normalizer.normalizedRegexIsLossy(term)) {
-                                        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
-                                                        EVALUATION_ONLY);
-                                        // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)
-                                        if (!(evalOnly instanceof ASTReferenceExpression)) {
-                                            evalOnly = JexlNodes.wrap(evalOnly);
+                                        // if this whole phrase is already wrapped with an evaluation-only marker, then just leave the original
+                                        // regex as is
+                                        if (QueryPropertyMarker.isAncestorMarked(node, EVALUATION_ONLY)) {
+                                            normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                        } else {
+                                            JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
+                                                            EVALUATION_ONLY);
+                                            // ensure we are wrapped (not done by QueryPropertyMarker if node.parent is a ref expression)
+                                            if (!(evalOnly instanceof ASTReferenceExpression)) {
+                                                evalOnly = JexlNodes.wrap(evalOnly);
+                                            }
+                                            // now we need to combine these two nodes so that both are required
+                                            JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {evalOnly, normalizedNode}));
+                                            normalizedNodes.add(combined);
                                         }
-                                        // now we need to combine these two nodes so that both are required
-                                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {evalOnly, normalizedNode}));
-                                        normalizedNodes.add(combined);
                                     } else {
                                         normalizedNodes.add(normalizedNode);
                                     }
