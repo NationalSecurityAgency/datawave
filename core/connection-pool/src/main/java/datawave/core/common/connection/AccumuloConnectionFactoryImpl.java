@@ -15,6 +15,7 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
@@ -116,8 +117,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         AccumuloClient c = null;
         try {
             c = pool.borrowObject(new HashMap<>());
-
-            Pair<String,PasswordToken> pair = instances.get(cache.getInstance().getInstanceID());
+            Pair<String,PasswordToken> pair = instances.get("mock-instance-id"); // c.instanceOperations().getInstanceId().canonical()
             String user = "root";
             SecurityOperations security = new InMemoryAccumuloClient(user, cache.getInstance()).securityOperations();
             Set<String> users = security.listLocalUsers();
@@ -132,7 +132,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
                     if (pair != null && !newPassword.equals(pair.getRight()))
                         throw new IllegalStateException(
                                         "Invalid AccumuloConnectionFactoryBean configuration--multiple pools are configured with different root passwords!");
-                    instances.put(cache.getInstance().getInstanceID(), Pair.of(conf.getUsername(), newPassword));
+                    instances.put("mock-instance-id", Pair.of(conf.getUsername(), newPassword));
                 }
                 // match root's password on mock to the password on the actual Accumulo instance
                 security.changeLocalUserPassword(conf.getUsername(), newPassword);
