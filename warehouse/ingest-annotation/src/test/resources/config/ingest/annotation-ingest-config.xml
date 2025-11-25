@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+    <property>
+        <name>file.input.format</name>
+        <value>datawave.ingest.annotation.mapreduce.input.SimpleAnnotationInputFormat</value>
+    </property>
+
+    <property>
+        <name>data.name</name>
+        <value>annotation</value>
+        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of
+            ingest processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a
+            subtype of some common data format, like CSV files for example, which could originate from any number of
+            sources
+        </description>
+    </property>
+
+    <property>
+        <name>annotation.ingest.helper.class</name>
+        <value>datawave.ingest.annotation.mapreduce.handler.SimpleAnnotationIngestHelper</value>
+    </property>
+
+    <property>
+        <name>annotation.reader.class</name>
+        <value>datawave.ingest.annotation.mapreduce.input.SimpleAnnotationRecordReader</value>
+    </property>
+
+    <property>
+        <name>annotation.handler.classes</name>
+        <value>datawave.ingest.annotation.mapreduce.handler.SimpleAnnotationDataTypeHandler</value>
+        <description>List of classes that should process each event</description>
+    </property>
+
+    <property>
+        <name>annotation.data.category.uuid.fields</name>
+        <value>HEADER_ID,EXTRA_UUID_1,EXTRA_UUID_2,ID</value>
+        <description>List of known fields that contain UUIDs</description>
+    </property>
+</configuration>

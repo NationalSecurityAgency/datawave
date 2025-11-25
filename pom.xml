@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.32.0-SNAPSHOT</version>
+    <version>7.33.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -109,6 +109,7 @@
         <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jaxb-impl>2.3.3</version.jaxb-impl>
+        <version.jboss-ejb-api>1.0.2.Final</version.jboss-ejb-api>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
@@ -131,7 +132,9 @@
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
+        <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
+        <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>2.0.12</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
@@ -224,6 +227,11 @@
                 <version>${version.caffeine}</version>
             </dependency>
             <dependency>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>${version.proto-google-common-protos}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
                 <version>${version.googlecode-findbugs}</version>
@@ -243,6 +251,17 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${version.protobuf}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${version.protobuf}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.json-simple</groupId>
@@ -2316,6 +2335,7 @@
                 <dependency>
                     <groupId>org.jboss.spec.javax.ejb</groupId>
                     <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+                    <version>${version.jboss-ejb-api}</version>
                 </dependency>
             </dependencies>
         </profile>

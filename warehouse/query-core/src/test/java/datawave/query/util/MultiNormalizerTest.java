@@ -25,6 +25,7 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.query.MultiNormalizerIngest;
 import datawave.query.QueryParameters;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -47,6 +48,8 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         return logic;
     }
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @RunWith(Arquillian.class)
     public static class ShardRangeTest extends MultiNormalizerTest {
 
@@ -62,11 +65,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
 
             Authorizations auths = new Authorizations("ALL");
 
-            DayIndexIngest dayIndexIngest = new DayIndexIngest();
-            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-
-            YearIndexIngest yearIndexIngest = new YearIndexIngest();
-            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+            ingestUtil.write(client, auths);
 
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
@@ -95,11 +94,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
 
             Authorizations auths = new Authorizations("ALL");
 
-            DayIndexIngest dayIndexIngest = new DayIndexIngest();
-            dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-
-            YearIndexIngest yearIndexIngest = new YearIndexIngest();
-            yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+            ingestUtil.write(client, auths);
 
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);

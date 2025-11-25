@@ -29,7 +29,6 @@ import javax.security.auth.login.CredentialException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.logging.Logger;
 import org.jboss.security.JSSESecurityDomain;
 import org.jboss.security.SimpleGroup;
@@ -44,7 +43,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.AuthorizationException;
@@ -55,7 +53,6 @@ import datawave.security.authorization.JWTTokenHandler;
 import datawave.util.StringUtils;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
 
     private Principal identity;
