@@ -84,7 +84,7 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
 
                 cachedQuery.setAccumuloClient(accumuloClient);
 
-                runningQuery = new RunningQuery(null, accumuloClient, AccumuloConnectionFactory.Priority.ADMIN, queryLogic, query,
+                runningQuery = new RunningQuery(null, accumuloClient, AccumuloConnectionFactory.Priority.NORMAL, queryLogic, query,
                                 query.getQueryAuthorizations(), datawavePrincipal, datawaveQueryMetricFactory);
 
                 cachedQuery.setRunningQuery(runningQuery);
