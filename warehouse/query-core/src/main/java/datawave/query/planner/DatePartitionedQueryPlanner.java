@@ -17,14 +17,6 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -43,18 +35,14 @@ import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveAsyncOperationException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.UidIntersector;
-import datawave.query.jexl.visitors.PushdownUnindexedFieldsVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.model.IndexFieldHole;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import datawave.query.util.QueryStopwatch;
-import datawave.util.time.TraceStopwatch;
 
 /**
  * Executes a query over a time range while handling the case where a field may be both indexed and not indexed in the time range. A period of time in which a
@@ -76,10 +64,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private DefaultQueryPlanner queryPlanner;
     private String initialPlan;
     private String plannedScript;
-    /**
-     * The max number of concurrent planning threads
-     */
-    private int numConcurrentPlanningThreads = 10;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private final TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -269,14 +253,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         return this.queryPlanner.getUidIntersector();
     }
 
-    public void setNumConcurrentPlanningThreads(int numConcurrentPlanningThreads) {
-        this.numConcurrentPlanningThreads = numConcurrentPlanningThreads;
-    }
-
-    public int getNumConcurrentPlanningThreads() {
-        return this.numConcurrentPlanningThreads;
-    }
-
     /**
      * Not supported for {@link DatePartitionedQueryPlanner} and will result in an {@link UnsupportedOperationException}.
      *
@@ -312,273 +288,59 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                     throws DatawaveQueryException {
         visitorManager.setDebugEnabled(log.isDebugEnabled());
 
-        DatePartitionedQueryIterable results = new DatePartitionedQueryIterable();
-
-        // start up an executor with at least one core thread started
-        final AtomicInteger threadCounter = new AtomicInteger(1);
-        ThreadFactory threadFactory = new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "DatePartitionedQueryPlanner thread #" + threadCounter.getAndIncrement() + " for " + settings.getId());
-            }
-        };
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, getNumConcurrentPlanningThreads(), 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
-                        threadFactory);
-
-        try {
-            // Validate the config type.
-            if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
-                throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
-            }
-
-            // Reset the planned script.
-            this.plannedScript = null;
-            this.plans.clear();
-
-            if (log.isDebugEnabled()) {
-                log.debug("Federated query: " + query);
-            }
-
-            ShardQueryConfiguration planningConfig = (ShardQueryConfiguration) genericConfig;
-            if (log.isDebugEnabled()) {
-                log.debug("Query's original date range " + dateFormat.format(planningConfig.getBeginDate()) + "-"
-                                + dateFormat.format(planningConfig.getEndDate()));
-            }
-
-            // Let's do the planning with the delegate planner first to ensure we have a final date range
-            // and appropriately expanded unfielded terms etc.
-            boolean generatePlanOnly = planningConfig.isGeneratePlanOnly();
-            planningConfig.setGeneratePlanOnly(true);
-            boolean expandValues = planningConfig.isExpandValues();
-            // we do NOT want to expand any values yet as they may not be dependable
-            // note we are expanding unfielded values (different flag)
-            planningConfig.setExpandValues(false);
-            boolean deferPushdownPullup = planningConfig.isDeferPushdownPullup();
-            planningConfig.setDeferPushdownPullup(true);
-
-            // now let's do the initial planning
-            DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
-            initialPlanner.process(planningConfig, query, settings, scannerFactory);
-            this.initialPlan = initialPlanner.plannedScript;
-
-            // and reset the expansion flags to what we had previously
-            planningConfig.setGeneratePlanOnly(generatePlanOnly);
-            planningConfig.setExpandValues(expandValues);
-            planningConfig.setDeferPushdownPullup(deferPushdownPullup);
-
-            // Get the relevant date ranges and the sets of fields that have gaps in those ranges
-            SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(planningConfig);
-
-            // Get those threads fired up
-            int threadsToUse = Math.min(dateRanges.size(), getNumConcurrentPlanningThreads());
-            executor.setCorePoolSize(threadsToUse);
-
-            // Now startup a planner for each date range
-            List<SubPlanCallable> futures = new ArrayList<>();
-            for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
-                SubPlanCallable subPlan = new SubPlanCallable(this.queryPlanner, planningConfig, dateRange, scannerFactory);
-                subPlan.setFuture(executor.submit(subPlan));
-                futures.add(subPlan);
-            }
-
-            // and process the results of each planner, gathering the stream of ranges into one iterable
-            List<DatawaveQueryException> exceptions = new ArrayList<>();
-            for (SubPlanCallable future : futures) {
-                Map.Entry<Pair<Date,Date>,Set<String>> dateRange = future.getDateRange();
-                String subBeginDate = dateFormat.format(dateRange.getKey().getLeft());
-                String subEndDate = dateFormat.format(dateRange.getKey().getRight());
-
-                try {
-                    results.addIterable(future.getFuture().get());
-                    if (log.isDebugEnabled()) {
-                        log.debug("Query string for config of sub-plan against date range (" + subBeginDate + "-" + subEndDate + ") with unindexed fields "
-                                        + dateRange.getValue() + ": " + future.getSubPlanConfig().getQueryString());
-                    }
-                } catch (ExecutionException e) {
-                    String msg = "Exception occurred when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")";
-                    log.warn(msg, e);
-                    exceptions.add(new DatawaveQueryException(msg, e.getCause()));
-                } catch (InterruptedException e) {
-                    String msg = "Interrupted when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")";
-                    exceptions.add(new DatawaveQueryException(msg, e));
-                } finally {
-                    ShardQueryConfiguration subPlanConfig = future.getSubPlanConfig();
-
-                    // append the new timers for logging at the end
-                    planningConfig.appendTimers(subPlanConfig.getTimers());
-
-                    // Add to the set of plans
-                    plans.add(subPlanConfig.getQueryString());
-
-                    // Update the planned script.
-                    updatePlannedScript();
-                    planningConfig.setQueryString(plannedScript);
-                }
-            }
-
-            // if every plan failed, then pass an exception up
-            if (exceptions.size() == dateRanges.size()) {
-                if (exceptions.size() == 1) {
-                    Throwable e = unwrapException(exceptions.get(0));
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
-                    } else {
-                        throw (DatawaveQueryException) e;
-                    }
-                } else {
-                    DatawaveFatalQueryException e = new DatawaveFatalQueryException("Query failed creation for " + planningConfig.getQuery().getId());
-                    for (Throwable reason : exceptions) {
-                        e.addSuppressed(reason);
-                    }
-                    throw e;
-                }
-            }
-
-        } finally {
-            executor.shutdown();
+        // Validate the config type.
+        if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
+            throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
 
-        // reset the iterator to be our federated iterator
-        return results;
-    }
+        // Reset the planned script.
+        this.plannedScript = null;
+        this.plans.clear();
 
-    /**
-     * In the case were we have only 1 exception, we want to throw the underlying exception to be backward compatible which will be the lowest level
-     * DatawaveQueryException or first DatawaveFatalQueryException
-     *
-     * @param e
-     *            The exception being unwrapped
-     * @return DatawaveQueryException or DatawaveFatalQueryException
-     */
-    private Throwable unwrapException(DatawaveQueryException e) {
-        Throwable toThrow = e;
-        Throwable test = e;
-        while (test.getCause() != null && test.getCause() != test) {
-            test = test.getCause();
-            if (test instanceof DatawaveFatalQueryException) {
-                return test;
-            }
-            if (test instanceof DatawaveQueryException) {
-                toThrow = test;
-            }
-        }
-        return toThrow;
-    }
-
-    /**
-     * Update the planned script to represent a concatenation of the planned scripts from all sub-plans of the most recently executed call to
-     * {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
-     */
-    private void updatePlannedScript() {
-        if (plans.isEmpty()) {
-            this.plannedScript = "";
-        } else if (this.plans.size() == 1) {
-            this.plannedScript = this.plans.iterator().next();
-        } else {
-            StringBuilder sb = new StringBuilder();
-            int i = 0;
-            for (String plan : plans) {
-                if (sb.length() > 0) {
-                    sb.append(" || ");
-                }
-                sb.append("((plan = ").append(++i).append(") && (").append(plan).append("))");
-            }
-            this.plannedScript = sb.toString();
-        }
-    }
-
-    /**
-     * This callable will hold the state of one of the plan and the future used to generate that plan.
-     */
-    private class SubPlanCallable implements Callable<CloseableIterable<QueryData>> {
-        private final ShardQueryConfiguration planningConfig;
-        private final Map.Entry<Pair<Date,Date>,Set<String>> dateRange;
-        private final DefaultQueryPlanner basePlanner;
-        private final ScannerFactory scannerFactory;
-
-        private ShardQueryConfiguration subPlanConfig;
-        private Future<CloseableIterable<QueryData>> future;
-
-        public SubPlanCallable(DefaultQueryPlanner planner, ShardQueryConfiguration planningConfig, Map.Entry<Pair<Date,Date>,Set<String>> dateRange,
-                        ScannerFactory scannerFactory) {
-            this.basePlanner = planner;
-            this.planningConfig = planningConfig;
-            this.dateRange = dateRange;
-            this.scannerFactory = scannerFactory;
+        if (log.isDebugEnabled()) {
+            log.debug("Federated query: " + query);
         }
 
-        @Override
-        public CloseableIterable<QueryData> call() throws Exception {
-            try {
-                // Get an updated configuration with the new date range and query tree
-                this.subPlanConfig = getUpdatedConfig(planningConfig, dateRange.getKey(), dateRange.getValue());
-
-                // Create a copy of the original default query planner, and process the query with the new date range.
-                DefaultQueryPlanner subPlan = basePlanner.clone();
-
-                // Get the range stream for the new date range and query
-                return subPlan.reprocess(subPlanConfig, subPlanConfig.getQuery(), scannerFactory);
-            } catch (Exception e) {
-                throw new DatawaveAsyncOperationException(
-                                "Failed to generate partitioned for " + subPlanConfig.getQuery().getId() + " and date range " + dateRange.getKey(), e);
-            }
+        ShardQueryConfiguration planningConfig = (ShardQueryConfiguration) genericConfig;
+        if (log.isDebugEnabled()) {
+            log.debug("Query's original date range " + dateFormat.format(planningConfig.getBeginDate()) + "-" + dateFormat.format(planningConfig.getEndDate()));
         }
 
-        public void setFuture(Future<CloseableIterable<QueryData>> future) {
-            this.future = future;
+        // Let's do the planning with the delegate planner first to ensure we have a final date range
+        // and appropriately expanded unfielded terms etc.
+        boolean generatePlanOnly = planningConfig.isGeneratePlanOnly();
+        planningConfig.setGeneratePlanOnly(true);
+        boolean expandValues = planningConfig.isExpandValues();
+        // we do NOT want to expand any values yet as they may not be dependable
+        // note we are expanding unfielded values (different flag)
+        planningConfig.setExpandValues(false);
+        boolean deferPushdownPullup = planningConfig.isDeferPushdownPullup();
+        planningConfig.setDeferPushdownPullup(true);
+
+        // now let's do the initial planning
+        DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
+        initialPlanner.process(planningConfig, query, settings, scannerFactory);
+        this.initialPlan = initialPlanner.plannedScript;
+
+        // and reset the expansion flags to what we had previously
+        planningConfig.setGeneratePlanOnly(generatePlanOnly);
+        planningConfig.setExpandValues(expandValues);
+        planningConfig.setDeferPushdownPullup(deferPushdownPullup);
+
+        // Get the relevant date ranges and the sets of fields that have gaps in those ranges
+        SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(planningConfig);
+
+        // Create a callable for each suhb plan
+        List<SubPlanCallable> futures = new ArrayList<>();
+        for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
+            SubPlanCallable subPlan = new SubPlanCallable(this.queryPlanner, planningConfig, dateRange, scannerFactory);
+            futures.add(subPlan);
         }
 
-        public Future<CloseableIterable<QueryData>> getFuture() {
-            return future;
-        }
-
-        public Map.Entry<Pair<Date,Date>,Set<String>> getDateRange() {
-            return dateRange;
-        }
-
-        public ShardQueryConfiguration getSubPlanConfig() {
-            return subPlanConfig;
-        }
-    }
-
-    /**
-     * Get a configuration object configured with an updated query date range, and a plan with pushed down unindexed fields.
-     *
-     * @param originalConfig
-     * @param dateRange
-     * @param unindexedFields
-     * @return The new configuration
-     * @throws DatawaveQueryException
-     */
-    private ShardQueryConfiguration getUpdatedConfig(ShardQueryConfiguration originalConfig, Pair<Date,Date> dateRange, Set<String> unindexedFields)
-                    throws DatawaveQueryException {
-        // Format the beginDate and endDate of the current sub-query to execute.
-        String subBeginDate = dateFormat.format(dateRange.getLeft());
-        String subEndDate = dateFormat.format(dateRange.getRight());
-
-        // Start a new stopwatch.
-        final QueryStopwatch timers = originalConfig.getTimers();
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan against date range (" + subBeginDate + "-"
-                        + subEndDate + ") with unindexed fields " + unindexedFields);
-
-        try {
-            // Set the new date range in a copy of the config.
-            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
-            configCopy.setBeginDate(dateRange.getLeft());
-            configCopy.setEndDate(dateRange.getRight());
-
-            // we want to make sure the same query id for tracking purposes and execution
-            configCopy.getQuery().setId(originalConfig.getQuery().getId());
-
-            if (!unindexedFields.isEmpty()) {
-                configCopy.setQueryTree(visitorManager.timedVisit(timers, "Push down indexed field holes",
-                                () -> (PushdownUnindexedFieldsVisitor.pushdownPredicates(configCopy.getQueryTree(), unindexedFields))));
-            }
-
-            return configCopy;
-        } finally {
-            stopwatch.stop();
-        }
+        // Return an iterable out of the callables
+        DatePartitionedQueryIterable iterable = new DatePartitionedQueryIterable(futures, planningConfig);
+        plannedScript = iterable.getPlannedScript();
+        return iterable;
     }
 
     /**
