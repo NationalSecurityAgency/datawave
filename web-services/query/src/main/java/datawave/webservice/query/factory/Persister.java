@@ -39,7 +39,6 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -48,7 +47,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.query.util.QueryUtil;
@@ -75,7 +73,6 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
 @Stateless
 @LocalBean
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class Persister {
     private static class QueryResultsTransform<Q extends Query> implements Function<Entry<Key,Value>,Q> {
         @SuppressWarnings("unchecked")

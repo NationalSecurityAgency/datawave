@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.0.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <!--  part of what enforces any Required properties to be set on loading of the context -->
+    <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
+
+    <!-- Database properties are retrieved from the database.properties file
+        but can be overridden by system properties -->
+    <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
+
+    <bean id="AnnotationManagerConfig" scope="prototype" class="datawave.webservice.annotation.AnnotationManagerConfig">
+        <property name="tableName" value="${annotation.table.name}"/>
+        <property name="connPoolName" value="WAREHOUSE" />
+        <property name="lookupUUIDQueryLogic">
+            <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+            </bean>
+        </property>
+        <property name="lookupUUIDServiceConfig">
+            <bean class="datawave.webservice.annotation.LookupUUIDServiceConfig"/>
+        </property>
+        <property name="visibilityTransformer">
+            <bean class="datawave.annotation.data.transform.DefaultVisibilityTransformer"/>
+        </property>
+        <property name="timestampTransformer">
+            <bean class="datawave.annotation.data.transform.DefaultTimestampTransformer"/>
+        </property>
+    </bean>
+
+</beans>

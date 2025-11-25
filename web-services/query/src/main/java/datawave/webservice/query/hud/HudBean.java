@@ -19,12 +19,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.resteasy.annotations.GZIP;
 
 import com.google.gson.Gson;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
@@ -44,7 +42,6 @@ import datawave.webservice.result.QueryImplListResponse;
 @DeclareRoles("AuthorizedUser")
 @Stateless
 @LocalBean
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class HudBean {
 
     private Gson gson = new Gson();

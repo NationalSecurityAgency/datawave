@@ -15,6 +15,8 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.remote.RemoteTimeoutQueryException;
+import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.config.RemoteQueryConfiguration;
@@ -22,6 +24,7 @@ import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 
 /**
@@ -180,5 +183,25 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
     @Override
     public UserOperations getUserOperations() {
         return userOperations;
+    }
+
+    /**
+     * Provide an unchecked alternative that keeps the distinction of a RemoteTimeoutQueryException by wrapping it as a RemoteTimeoutQueryRuntimeException.
+     *
+     * @return the result of remoteQueryService.next()
+     * @throws RemoteTimeoutQueryRuntimeException
+     *             if a RemoteTimeoutQueryException is thrown
+     * @throws RuntimeException
+     *             if any other QueryException is thrown
+     */
+    protected BaseQueryResponse uncheckedRemoteNext() {
+        try {
+            return remoteQueryService.next(getRemoteId(), currentUser);
+        } catch (QueryException e) {
+            if (e instanceof RemoteTimeoutQueryException) {
+                throw new RemoteTimeoutQueryRuntimeException(e);
+            }
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 }

@@ -25,6 +25,7 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.query.MultiNormalizerIngest;
 import datawave.query.QueryParameters;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -47,6 +48,8 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         return logic;
     }
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @RunWith(Arquillian.class)
     public static class ShardRangeTest extends MultiNormalizerTest {
 
@@ -61,6 +64,9 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
             ingest.write(RangeType.SHARD);
 
             Authorizations auths = new Authorizations("ALL");
+
+            ingestUtil.write(client, auths);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, TableName.METADATA);
@@ -87,6 +93,9 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
             ingest.write(RangeType.DOCUMENT);
 
             Authorizations auths = new Authorizations("ALL");
+
+            ingestUtil.write(client, auths);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, TableName.METADATA);

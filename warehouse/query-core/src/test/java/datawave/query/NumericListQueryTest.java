@@ -392,7 +392,7 @@ public abstract class NumericListQueryTest {
         extraParameters.put("return.fields", "SIZE,CANINE");
 
         String queryString = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
-        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == '+bE9')) && CANINE == 'coyote'";
 
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.WILD.1:90,26.5", "CANINE.WILD.1:coyote");
 

@@ -16,7 +16,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import datawave.query.config.IndexValueHole;
-import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -79,7 +79,7 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
         runTest(query, query, start, end);
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testErrorFieldOnly() throws Exception {
         log.info("------  testErrorFieldOnly  ------");
         String usa = "'uSa'";

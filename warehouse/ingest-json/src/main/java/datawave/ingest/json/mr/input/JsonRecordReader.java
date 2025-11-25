@@ -213,7 +213,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         super.getEvent();
 
         if (StringUtils.isEmpty(eventDateFieldName)) {
-            event.setDate(this.inputDate);
+            event.setTimestamp(this.inputDate);
         }
 
         for (Map.Entry<String,String> entry : currentValue.entries()) {
@@ -229,7 +229,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         event.setRawData(currentJsonObj.toString().getBytes());
 
         if (!event.isTimestampSet()) {
-            event.setDate(System.currentTimeMillis());
+            event.setTimestamp(System.currentTimeMillis());
         }
 
         UID newUID = uidOverride(event);
