@@ -145,9 +145,9 @@ public class MetadataCardinalityCounts implements Serializable {
 
     @Override
     public int hashCode() {
-        return field.hashCode() + value.hashCode() + new Long(fieldValueCount).hashCode() + new Long(fieldAllValueCount).hashCode()
-                        + new Long(uniqueFieldAllValueCount).hashCode() + new Long(totalAllFieldAllValueCount).hashCode()
-                        + new Long(totalUniqueAllFieldAllValueCount).hashCode() + new Long(totalUniqueAllFieldCount).hashCode();
+        return field.hashCode() + value.hashCode() + Long.valueOf(fieldValueCount).hashCode() + Long.valueOf(fieldAllValueCount).hashCode()
+                        + Long.valueOf(uniqueFieldAllValueCount).hashCode() + Long.valueOf(totalAllFieldAllValueCount).hashCode()
+                        + Long.valueOf(totalUniqueAllFieldAllValueCount).hashCode() + Long.valueOf(totalUniqueAllFieldCount).hashCode();
     }
 
     @Override

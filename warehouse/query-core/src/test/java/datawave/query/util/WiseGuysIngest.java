@@ -16,6 +16,7 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -36,6 +37,7 @@ import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.util.TableName;
 
 public class WiseGuysIngest {
@@ -65,7 +67,10 @@ public class WiseGuysIngest {
     public static final long sopranoTimeStampDelta = 10;
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
     public static final long caponeTimeStampDelta = 20;
+    public static final String caponeChildUID = UID.builder().newId("Capone".getBytes(), (Date) null, "1").toString();
     public static final String tattagliaUID = UID.builder().newId("Tattaglia".getBytes(), (Date) null).toString();
+
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     protected static String normalizeColVal(Map.Entry<String,String> colVal) {
         switch (colVal.getKey()) {
@@ -463,6 +468,7 @@ public class WiseGuysIngest {
             addTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
             addTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
                             caponeTimeStampDelta);
+            addTokens(bw, range, "QUOTE", "Said by the child", caponeChildUID, caponeTimeStampDelta);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -848,11 +854,13 @@ public class WiseGuysIngest {
             addFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
             addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
                             caponeTimeStampDelta);
+            addFiTfTokens(bw, range, "QUOTE", "Said by the child", caponeChildUID, caponeTimeStampDelta);
 
             addDColumn(datatype, corleoneUID, "CONTENT", "Im gonna make him an offer he cant refuse", bw);
             addDColumn(datatype, sopranoUID, "CONTENT", "If you can quote the rules then you can obey them", bw);
             addDColumn(datatype, caponeUID, "CONTENT", "You can get much farther with a kind word and a gun than you can with a kind word alone", bw);
             addDColumn(datatype, caponeUID, "CONTENT2", "A lawyer and his briefcase can steal more than ten men with guns.", bw);
+            addDColumn(datatype, caponeChildUID, "CONTENT", "Said by the child", bw);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -1165,6 +1173,10 @@ public class WiseGuysIngest {
             m.put("ns", "20000101_1", new Value());
             batchWriter.addMutation(m);
         }
+
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL");
+        ingestUtil.write(client, auths);
     }
 
     private static Value getValueForBuilderFor(String... in) {

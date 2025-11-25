@@ -203,7 +203,6 @@ public abstract class ShardQueryLogicTest {
                 boolean found = false;
 
                 for (EventBase event : eventQueryResponse.getEvents()) {
-
                     if (expectedSet.contains("UID:" + event.getMetadata().getInternalId())) {
                         expectedSet.remove("UID:" + event.getMetadata().getInternalId());
                         ((List<DefaultField>) event.getFields()).forEach((f) -> expectedSet.remove(f.getName() + ":" + f.getValueString()));

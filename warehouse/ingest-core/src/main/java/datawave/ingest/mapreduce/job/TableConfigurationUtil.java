@@ -48,7 +48,9 @@ import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.iterator.ReducingIterator;
 import datawave.iterators.PropogatingIterator;
+import datawave.util.TableName;
 
 /**
  * This class serves as the liaison between datawave job configuration and accumulo tables. Most of this was ripped out of IngestJob for more convenient reuse
@@ -573,6 +575,10 @@ public class TableConfigurationUtil {
                 }
                 for (Map.Entry<String,String> entry : tableProps.entrySet()) {
 
+                    if (entry.getKey().contains(TableName.SHARD_DAY_INDEX) || entry.getKey().contains(TableName.SHARD_YEAR_INDEX)) {
+                        continue;
+                    }
+
                     if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
 
                         String suffix = entry.getKey().substring(Property.TABLE_ITERATOR_PREFIX.getKey().length());
@@ -620,8 +626,21 @@ public class TableConfigurationUtil {
                             } else
                                 log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
 
-                        }
-                        if (Combiner.class.isAssignableFrom(klass)) {
+                        } else if (ReducingIterator.class.isAssignableFrom(klass)) {
+                            Map<String,String> options = allOptions.get(iter.getName());
+                            if (null != options) {
+                                try {
+                                    ReducingIterator iterInstance = (ReducingIterator) (klass.getDeclaredConstructor().newInstance());
+                                    options.put(ITERATOR_CLASS_MARKER, iterInstance.getReducerClass().getName());
+                                    combinerMap.put(iter.getPriority(), options);
+                                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                                    log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have an accessible null constructor",
+                                                    e);
+                                }
+                            } else {
+                                log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                            }
+                        } else if (Combiner.class.isAssignableFrom(klass)) {
                             Map<String,String> options = allOptions.get(iter.getName());
                             if (null != options) {
                                 options.put(ITERATOR_CLASS_MARKER, iter.getIteratorClass());
