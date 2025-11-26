@@ -46,6 +46,7 @@ import datawave.util.TableName;
 public class MockMetadataHelper extends MetadataHelper {
     protected final Metadata metadata = new Metadata();
     private Set<String> indexOnlyFields = new HashSet<>();
+    private Set<String> hiddenFields = new HashSet<>();
     private Set<String> expansionFields = new HashSet<>();
     private Set<String> contentFields = new HashSet<>();
     private Set<String> riFields = new HashSet<>();
@@ -73,22 +74,9 @@ public class MockMetadataHelper extends MetadataHelper {
                         Collections.emptySet());
     }
 
-    public MockMetadataHelper(Set<Authorizations> allMetadataAuths, Set<Authorizations> auths, Set<Authorizations> fullUserAuths, AccumuloClient client) {
-        super(createAllFieldMetadataHelperWithCertainAuths(client, allMetadataAuths, auths), allMetadataAuths, client, TableName.METADATA, auths,
-                        fullUserAuths);
-    }
-
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
         final Set<Authorizations> allMetadataAuths = Collections.emptySet();
         final Set<Authorizations> auths = Collections.emptySet();
-        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, client, TableName.METADATA, auths, false);
-        CompositeMetadataHelper cmh = new CompositeMetadataHelper(client, TableName.METADATA, auths);
-        return new AllFieldMetadataHelper(tmh, cmh, client, TableName.METADATA, auths, allMetadataAuths);
-
-    }
-
-    private static AllFieldMetadataHelper createAllFieldMetadataHelperWithCertainAuths(AccumuloClient client, Set<Authorizations> allMetadataAuths,
-                    Set<Authorizations> auths) {
         TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, client, TableName.METADATA, auths, false);
         CompositeMetadataHelper cmh = new CompositeMetadataHelper(client, TableName.METADATA, auths);
         return new AllFieldMetadataHelper(tmh, cmh, client, TableName.METADATA, auths, allMetadataAuths);
@@ -190,6 +178,11 @@ public class MockMetadataHelper extends MetadataHelper {
     @Override
     public Set<String> getIndexOnlyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         return indexOnlyFields;
+    }
+
+    @Override
+    public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        return hiddenFields;
     }
 
     @Override
@@ -416,6 +409,10 @@ public class MockMetadataHelper extends MetadataHelper {
 
     public void setIndexOnlyFields(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
+    }
+
+    public void setHiddenFields(Set<String> hiddenFields) {
+        this.hiddenFields = hiddenFields;
     }
 
     public void setNormalizedFields(Set<String> normalizedFields) {

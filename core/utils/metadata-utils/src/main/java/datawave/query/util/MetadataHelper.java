@@ -718,25 +718,27 @@ public class MetadataHelper {
     }
 
     /**
-     * Determines whether a field has been hidden by looking for the h column in the metadata table
+     * Get the set of hidden fields for the provided ingest type filter. A null or empty filter indicates all hidden fields should be returned.
      *
-     * @param fieldName
-     *            the field name
      * @param ingestTypeFilter
      *            the ingest type filter
-     * @return true if the field is hidden for the provided ingest types
+     * @return the set of hidden fields given the provided ingest type filter
+     * @throws TableNotFoundException
+     *             if the table does not exist
      */
-    public boolean isHidden(String fieldName, Set<String> ingestTypeFilter) {
-        Preconditions.checkNotNull(fieldName);
-        Preconditions.checkNotNull(ingestTypeFilter);
+    public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
 
-        Entry<String,Entry<String,Set<String>>> entry = Maps.immutableEntry(metadataTableName, Maps.immutableEntry(fieldName, ingestTypeFilter));
+        Multimap<String,String> hiddenFields = this.allFieldMetadataHelper.loadHiddenFields();
 
-        try {
-            return this.allFieldMetadataHelper.isIndexed(ColumnFamilyConstants.COLF_H, entry);
-        } catch (InstantiationException | ExecutionException | TableNotFoundException e) {
-            throw new RuntimeException(e);
+        Set<String> fields = new HashSet<>();
+        if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
+            fields.addAll(hiddenFields.values());
+        } else {
+            for (String datatype : ingestTypeFilter) {
+                fields.addAll(hiddenFields.get(datatype));
+            }
         }
+        return Collections.unmodifiableSet(fields);
     }
 
     /**

@@ -43,6 +43,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     private final Set<String> allFieldsForDatatypes; // All fields for the specified datatypes pulled from MetadataHelper
     private final Set<String> specialFields;
     private final Set<String> datatypeFilter;
+    private final Set<String> allHiddenFields;
 
     public FieldMissingFromSchemaVisitor(MetadataHelper helper, Set<String> datatypeFilter, Set<String> specialFields) {
         this.helper = helper;
@@ -53,6 +54,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
                 datatypeFilter = Collections.emptySet();
             }
             this.allFieldsForDatatypes = this.helper.getAllFields(datatypeFilter);
+            this.allHiddenFields = this.helper.getHiddenFields(datatypeFilter);
         } catch (TableNotFoundException e) {
             log.error(e);
             throw new RuntimeException("Unable to get metadata", e);
@@ -94,7 +96,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
 
         for (ASTIdentifier identifier : identifiers) {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
-            if ((!this.allFieldsForDatatypes.contains(fieldName) && !specialFields.contains(fieldName)) || helper.isHidden(fieldName, this.datatypeFilter)) {
+            if (!this.allFieldsForDatatypes.contains(fieldName) && !specialFields.contains(fieldName) || this.allHiddenFields.contains(fieldName)) {
                 nonExistentFieldNames.add(fieldName);
             }
         }
@@ -152,8 +154,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
                 // deconstruct the identifier
                 final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
                 // changed to allow _ANYFIELD_ in functions
-                if ((!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName))
-                                || this.helper.isHidden(fieldName, this.datatypeFilter)) {
+                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName) || this.allHiddenFields.contains(fieldName)) {
                     nonExistentFieldNames.add(testFieldName);
                 }
             }

@@ -410,9 +410,9 @@ public class MetadataHelperTest {
         givenHiddenField("EVENT_DATE", "maze");
         writeMutations();
 
-        Assertions.assertTrue(helper.isHidden("NAME", Set.of("csv")));
-        Assertions.assertTrue(helper.isHidden("EVENT_DATE", Set.of()));
-        Assertions.assertFalse(helper.isHidden("NAME", Set.of("foo")));
-        Assertions.assertFalse(helper.isHidden("FOO", Set.of()));
+        Assertions.assertTrue(helper.getHiddenFields(Set.of("csv")).contains("NAME"));
+        Assertions.assertTrue(helper.getHiddenFields(Set.of()).contains("EVENT_DATE"));
+        Assertions.assertFalse(helper.getHiddenFields(Set.of("foo")).contains("NAME"));
+        Assertions.assertFalse(helper.getHiddenFields(Set.of()).contains("FOO"));
     }
 }

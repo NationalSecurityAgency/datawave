@@ -4,33 +4,27 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.security.Authorizations;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
 
 public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
-    private static final Set<String> ALL_FIELDS = Set.of("FOO", "BAR", "BAT");
+    private static final Set<String> ALL_FIELDS = Set.of("FOO", "BAR", "BAT", "HIDDEN_FIELD");
     private static final String ANYFIELD = "_ANYFIELD_";
-    private static final String[] AUTHS = {"FOO", "BAR"};
-    private static final Set<Authorizations> AUTHS_SET = Collections.singleton(new Authorizations(AUTHS));
-    private static final MockMetadataHelper defaultMetadataHelper = new MockMetadataHelper(AUTHS_SET, AUTHS_SET, AUTHS_SET, getClient());
+    private static final Set<String> hiddenFields = Set.of("HIDDEN_FIELD");
+    private static final MockMetadataHelper defaultMetadataHelper = new MockMetadataHelper();
 
     private final Set<String> fieldExceptions = new HashSet<>();
 
     @BeforeAll
     public static void beforeClass() throws Exception {
         defaultMetadataHelper.addFields(ALL_FIELDS);
+        defaultMetadataHelper.setHiddenFields(hiddenFields);
     }
 
     @BeforeEach
@@ -38,9 +32,6 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
         givenRuleName(RULE_NAME);
         givenMetadataHelper(defaultMetadataHelper);
         expectRuleName(RULE_NAME);
-        if (!defaultMetadataHelper.getAccumuloClient().tableOperations().exists(TableName.METADATA)) {
-            defaultMetadataHelper.getAccumuloClient().tableOperations().create(TableName.METADATA);
-        }
     }
 
     /**
@@ -60,6 +51,16 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
     public void testNonExistentFields() throws Exception {
         givenQuery("TOMFOOLERY == 'abc' || CHAOS =~ 'abc' || filter:includeRegex(SHENANIGANS, '45.8') || FOO == 'aa'");
         expectMessage("Fields not found in data dictionary: TOMFOOLERY, CHAOS, SHENANIGANS");
+        assertResult();
+    }
+
+    /**
+     * Test a query with a hidden field.
+     */
+    @Test
+    public void testHiddenFields() throws Exception {
+        givenQuery("FOO == 'abc' || BAR =~ 'abc' || filter:includeRegex(SHENANIGANS, '45.8') || HIDDEN_FIELD == 'aa'");
+        expectMessage("Fields not found in data dictionary: SHENANIGANS, HIDDEN_FIELD");
         assertResult();
     }
 
@@ -105,13 +106,5 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
         FieldExistenceRule rule = new FieldExistenceRule(ruleName);
         rule.setSpecialFields(fieldExceptions);
         return rule;
-    }
-
-    private static AccumuloClient getClient() {
-        try {
-            return new InMemoryAccumuloClient("root", new InMemoryInstance());
-        } catch (AccumuloSecurityException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
