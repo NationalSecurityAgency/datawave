@@ -7,9 +7,6 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
@@ -29,7 +26,7 @@ public class FieldMissingFromSchemaVisitorTest {
     private MockMetadataHelper helper;
 
     @Before
-    public void before() throws AccumuloException, TableExistsException, AccumuloSecurityException {
+    public void before() {
         helper = new MockMetadataHelper();
     }
 
