@@ -17,7 +17,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
     }
 
     private Segment() {
-        segmentId_ = "";
+        segmentHash_ = "";
         values_ = java.util.Collections.emptyList();
     }
 
@@ -53,46 +53,46 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
                         .ensureFieldAccessorsInitialized(datawave.annotation.protobuf.v1.Segment.class, datawave.annotation.protobuf.v1.Segment.Builder.class);
     }
 
-    public static final int SEGMENTID_FIELD_NUMBER = 1;
-    private volatile java.lang.Object segmentId_;
+    public static final int SEGMENTHASH_FIELD_NUMBER = 1;
+    private volatile java.lang.Object segmentHash_;
 
     /**
      * <pre>
-     * the segment id in this annotation.
+     * the 32-bit hash used for segment identification and grouping.
      * </pre>
      *
-     * <code>string segmentId = 1;</code>
+     * <code>string segmentHash = 1;</code>
      *
-     * @return The segmentId.
+     * @return The segmentHash.
      */
     @java.lang.Override
-    public java.lang.String getSegmentId() {
-        java.lang.Object ref = segmentId_;
+    public java.lang.String getSegmentHash() {
+        java.lang.Object ref = segmentHash_;
         if (ref instanceof java.lang.String) {
             return (java.lang.String) ref;
         } else {
             com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
             java.lang.String s = bs.toStringUtf8();
-            segmentId_ = s;
+            segmentHash_ = s;
             return s;
         }
     }
 
     /**
      * <pre>
-     * the segment id in this annotation.
+     * the 32-bit hash used for segment identification and grouping.
      * </pre>
      *
-     * <code>string segmentId = 1;</code>
+     * <code>string segmentHash = 1;</code>
      *
-     * @return The bytes for segmentId.
+     * @return The bytes for segmentHash.
      */
     @java.lang.Override
-    public com.google.protobuf.ByteString getSegmentIdBytes() {
-        java.lang.Object ref = segmentId_;
+    public com.google.protobuf.ByteString getSegmentHashBytes() {
+        java.lang.Object ref = segmentHash_;
         if (ref instanceof java.lang.String) {
             com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            segmentId_ = b;
+            segmentHash_ = b;
             return b;
         } else {
             return (com.google.protobuf.ByteString) ref;
@@ -104,7 +104,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * boundary for this segment.
+     * the boundary for this segment.
      * </pre>
      *
      * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -118,7 +118,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * boundary for this segment.
+     * the boundary for this segment.
      * </pre>
      *
      * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -132,7 +132,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * boundary for this segment.
+     * the boundary for this segment.
      * </pre>
      *
      * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -147,7 +147,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -159,7 +159,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -171,7 +171,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -183,7 +183,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -195,7 +195,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -228,7 +228,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -253,7 +253,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -266,7 +266,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -283,7 +283,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -317,8 +317,8 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-        if (!getSegmentIdBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, segmentId_);
+        if (!getSegmentHashBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, segmentHash_);
         }
         if (boundary_ != null) {
             output.writeMessage(2, getBoundary());
@@ -337,8 +337,8 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
             return size;
 
         size = 0;
-        if (!getSegmentIdBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, segmentId_);
+        if (!getSegmentHashBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, segmentHash_);
         }
         if (boundary_ != null) {
             size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, getBoundary());
@@ -366,7 +366,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         }
         datawave.annotation.protobuf.v1.Segment other = (datawave.annotation.protobuf.v1.Segment) obj;
 
-        if (!getSegmentId().equals(other.getSegmentId()))
+        if (!getSegmentHash().equals(other.getSegmentHash()))
             return false;
         if (hasBoundary() != other.hasBoundary())
             return false;
@@ -390,8 +390,8 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         }
         int hash = 41;
         hash = (19 * hash) + getDescriptor().hashCode();
-        hash = (37 * hash) + SEGMENTID_FIELD_NUMBER;
-        hash = (53 * hash) + getSegmentId().hashCode();
+        hash = (37 * hash) + SEGMENTHASH_FIELD_NUMBER;
+        hash = (53 * hash) + getSegmentHash().hashCode();
         if (hasBoundary()) {
             hash = (37 * hash) + BOUNDARY_FIELD_NUMBER;
             hash = (53 * hash) + getBoundary().hashCode();
@@ -538,7 +538,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         @java.lang.Override
         public Builder clear() {
             super.clear();
-            segmentId_ = "";
+            segmentHash_ = "";
 
             if (boundaryBuilder_ == null) {
                 boundary_ = null;
@@ -580,7 +580,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         public datawave.annotation.protobuf.v1.Segment buildPartial() {
             datawave.annotation.protobuf.v1.Segment result = new datawave.annotation.protobuf.v1.Segment(this);
             int from_bitField0_ = bitField0_;
-            result.segmentId_ = segmentId_;
+            result.segmentHash_ = segmentHash_;
             if (boundaryBuilder_ == null) {
                 result.boundary_ = boundary_;
             } else {
@@ -644,8 +644,8 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
         public Builder mergeFrom(datawave.annotation.protobuf.v1.Segment other) {
             if (other == datawave.annotation.protobuf.v1.Segment.getDefaultInstance())
                 return this;
-            if (!other.getSegmentId().isEmpty()) {
-                segmentId_ = other.segmentId_;
+            if (!other.getSegmentHash().isEmpty()) {
+                segmentHash_ = other.segmentHash_;
                 onChanged();
             }
             if (other.hasBoundary()) {
@@ -701,7 +701,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
                             done = true;
                             break;
                         case 10: {
-                            segmentId_ = input.readStringRequireUtf8();
+                            segmentHash_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 10
@@ -745,23 +745,23 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         private int bitField0_;
 
-        private java.lang.Object segmentId_ = "";
+        private java.lang.Object segmentHash_ = "";
 
         /**
          * <pre>
-         * the segment id in this annotation.
+         * the 32-bit hash used for segment identification and grouping.
          * </pre>
          *
-         * <code>string segmentId = 1;</code>
+         * <code>string segmentHash = 1;</code>
          *
-         * @return The segmentId.
+         * @return The segmentHash.
          */
-        public java.lang.String getSegmentId() {
-            java.lang.Object ref = segmentId_;
+        public java.lang.String getSegmentHash() {
+            java.lang.Object ref = segmentHash_;
             if (!(ref instanceof java.lang.String)) {
                 com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
                 java.lang.String s = bs.toStringUtf8();
-                segmentId_ = s;
+                segmentHash_ = s;
                 return s;
             } else {
                 return (java.lang.String) ref;
@@ -770,18 +770,18 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * the segment id in this annotation.
+         * the 32-bit hash used for segment identification and grouping.
          * </pre>
          *
-         * <code>string segmentId = 1;</code>
+         * <code>string segmentHash = 1;</code>
          *
-         * @return The bytes for segmentId.
+         * @return The bytes for segmentHash.
          */
-        public com.google.protobuf.ByteString getSegmentIdBytes() {
-            java.lang.Object ref = segmentId_;
+        public com.google.protobuf.ByteString getSegmentHashBytes() {
+            java.lang.Object ref = segmentHash_;
             if (ref instanceof String) {
                 com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                segmentId_ = b;
+                segmentHash_ = b;
                 return b;
             } else {
                 return (com.google.protobuf.ByteString) ref;
@@ -790,59 +790,59 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * the segment id in this annotation.
+         * the 32-bit hash used for segment identification and grouping.
          * </pre>
          *
-         * <code>string segmentId = 1;</code>
+         * <code>string segmentHash = 1;</code>
          *
          * @param value
-         *            The segmentId to set.
+         *            The segmentHash to set.
          * @return This builder for chaining.
          */
-        public Builder setSegmentId(java.lang.String value) {
+        public Builder setSegmentHash(java.lang.String value) {
             if (value == null) {
                 throw new NullPointerException();
             }
 
-            segmentId_ = value;
+            segmentHash_ = value;
             onChanged();
             return this;
         }
 
         /**
          * <pre>
-         * the segment id in this annotation.
+         * the 32-bit hash used for segment identification and grouping.
          * </pre>
          *
-         * <code>string segmentId = 1;</code>
+         * <code>string segmentHash = 1;</code>
          *
          * @return This builder for chaining.
          */
-        public Builder clearSegmentId() {
+        public Builder clearSegmentHash() {
 
-            segmentId_ = getDefaultInstance().getSegmentId();
+            segmentHash_ = getDefaultInstance().getSegmentHash();
             onChanged();
             return this;
         }
 
         /**
          * <pre>
-         * the segment id in this annotation.
+         * the 32-bit hash used for segment identification and grouping.
          * </pre>
          *
-         * <code>string segmentId = 1;</code>
+         * <code>string segmentHash = 1;</code>
          *
          * @param value
-         *            The bytes for segmentId to set.
+         *            The bytes for segmentHash to set.
          * @return This builder for chaining.
          */
-        public Builder setSegmentIdBytes(com.google.protobuf.ByteString value) {
+        public Builder setSegmentHashBytes(com.google.protobuf.ByteString value) {
             if (value == null) {
                 throw new NullPointerException();
             }
             checkByteStringIsUtf8(value);
 
-            segmentId_ = value;
+            segmentHash_ = value;
             onChanged();
             return this;
         }
@@ -852,7 +852,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -865,7 +865,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -882,7 +882,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -903,7 +903,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -921,7 +921,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -943,7 +943,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -962,7 +962,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -975,7 +975,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -990,7 +990,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * boundary for this segment.
+         * the boundary for this segment.
          * </pre>
          *
          * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -1017,7 +1017,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1032,7 +1032,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1047,7 +1047,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1062,7 +1062,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1083,7 +1083,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1101,7 +1101,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1122,7 +1122,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1143,7 +1143,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1161,7 +1161,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1179,7 +1179,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1197,7 +1197,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1215,7 +1215,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1233,7 +1233,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1244,7 +1244,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1259,7 +1259,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1274,7 +1274,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1285,7 +1285,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1296,7 +1296,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * Multiple values associated with this segment.
+         * multiple values associated with this segment.
          * </pre>
          *
          * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -1341,7 +1341,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional segment metadata
+         * optional segment metadata
          * </pre>
          *
          * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -1366,7 +1366,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional segment metadata
+         * optional segment metadata
          * </pre>
          *
          * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -1379,7 +1379,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional segment metadata
+         * optional segment metadata
          * </pre>
          *
          * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -1396,7 +1396,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional segment metadata
+         * optional segment metadata
          * </pre>
          *
          * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -1421,7 +1421,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional segment metadata
+         * optional segment metadata
          * </pre>
          *
          * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -1445,7 +1445,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional segment metadata
+         * optional segment metadata
          * </pre>
          *
          * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -1463,7 +1463,7 @@ public final class Segment extends com.google.protobuf.GeneratedMessageV3 implem
 
         /**
          * <pre>
-         * arbitrary, optional segment metadata
+         * optional segment metadata
          * </pre>
          *
          * <code>map&lt;string, string&gt; metadata = 50;</code>

@@ -9,29 +9,29 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * the segment id in this annotation.
+     * the 32-bit hash used for segment identification and grouping.
      * </pre>
      *
-     * <code>string segmentId = 1;</code>
+     * <code>string segmentHash = 1;</code>
      *
-     * @return The segmentId.
+     * @return The segmentHash.
      */
-    java.lang.String getSegmentId();
+    java.lang.String getSegmentHash();
 
     /**
      * <pre>
-     * the segment id in this annotation.
+     * the 32-bit hash used for segment identification and grouping.
      * </pre>
      *
-     * <code>string segmentId = 1;</code>
+     * <code>string segmentHash = 1;</code>
      *
-     * @return The bytes for segmentId.
+     * @return The bytes for segmentHash.
      */
-    com.google.protobuf.ByteString getSegmentIdBytes();
+    com.google.protobuf.ByteString getSegmentHashBytes();
 
     /**
      * <pre>
-     * boundary for this segment.
+     * the boundary for this segment.
      * </pre>
      *
      * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -42,7 +42,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * boundary for this segment.
+     * the boundary for this segment.
      * </pre>
      *
      * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -53,7 +53,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * boundary for this segment.
+     * the boundary for this segment.
      * </pre>
      *
      * <code>.datawave.annotation.protobuf.v1.SegmentBoundary boundary = 2;</code>
@@ -62,7 +62,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -71,7 +71,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -80,7 +80,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -89,7 +89,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -98,7 +98,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * Multiple values associated with this segment.
+     * multiple values associated with this segment.
      * </pre>
      *
      * <code>repeated .datawave.annotation.protobuf.v1.SegmentValue values = 3;</code>
@@ -107,7 +107,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -116,7 +116,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -131,7 +131,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -140,7 +140,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>
@@ -150,7 +150,7 @@ public interface SegmentOrBuilder extends
 
     /**
      * <pre>
-     * arbitrary, optional segment metadata
+     * optional segment metadata
      * </pre>
      *
      * <code>map&lt;string, string&gt; metadata = 50;</code>

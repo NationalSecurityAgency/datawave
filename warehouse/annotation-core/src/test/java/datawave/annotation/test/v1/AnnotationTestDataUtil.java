@@ -1,6 +1,9 @@
 package datawave.annotation.test.v1;
 
-import static datawave.annotation.util.v1.AnnotationUtils.injectBoundaryType;
+import static datawave.annotation.protobuf.v1.BoundaryType.ALL;
+import static datawave.annotation.protobuf.v1.BoundaryType.POINTS;
+import static datawave.annotation.protobuf.v1.BoundaryType.TEXT_CHAR;
+import static datawave.annotation.protobuf.v1.BoundaryType.TIME_MILLI;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -14,8 +17,7 @@ import datawave.annotation.protobuf.v1.Point;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
-import datawave.annotation.protobuf.v1.TextSpanChars;
-import datawave.annotation.protobuf.v1.TimeSpanSeconds;
+import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.data.hash.HashUID;
 
 /**
@@ -23,14 +25,16 @@ import datawave.data.hash.HashUID;
  * the data access objects.
  */
 public class AnnotationTestDataUtil {
+    public static final String CREATED_DATE = "2025-10-01T00:00:00Z";
+    public static final String VISIBILITY = "PUBLIC";
+
     public static AnnotationSource generateTestAnnotationSource() {
         //@formatter:off
         return AnnotationSource.newBuilder()
                 .setEngine("inline v6")
                 .setModel("GR Supra")
-                .setSourceLabel("Toyota")
-                .putConfiguration("visibility", "PUBLIC")
-                .putConfiguration("created_date","2025-11-01T12:00:00Z")
+                .putMetadata("visibility", VISIBILITY)
+                .putMetadata("created_date",CREATED_DATE)
                 .putConfiguration("octane","99")
                 .putConfiguration("model_year", "2025")
                 .build();
@@ -39,51 +43,58 @@ public class AnnotationTestDataUtil {
 
     public static Annotation generateTestAnnotation() {
         //@formatter:off
+        AnnotationSource partialSource = generateTestAnnotationSource();
+        AnnotationSource source = AnnotationUtils.injectAnnotationSourceHashes(partialSource);
+
         return Annotation.newBuilder()
                 .setShard("20250704_249")
                 .setDataType("testDataType")
                 .setUid("abcde.fghij.klmno")
                 .setAnnotationType("testAnnotationType")
+                .setDocumentId("1234567890")
+                .setSource(source)
+                .setAnalyticSourceHash(source.getAnalyticSourceHash())
                 .addAllSegments(List.of(generateMultiTestSegment()))
-                .putAllMetadata(generateTestMetadata()).build();
+                .putAllMetadata(generateTestAnnotationMetadata()).build();
         //@formatter:on
     }
 
-    public static Map<String,String> generateTestMetadata() {
+    public static Map<String,String> generateTestAnnotationMetadata() {
         Map<String,String> metadata = new HashMap<>();
         metadata.put("foo", "bar");
         metadata.put("plough", "plover");
-        metadata.put("visibility", "PUBLIC");
-        metadata.put("created_date", "2025-10-01T00:00:00Z");
+        metadata.put("visibility", VISIBILITY);
+        metadata.put("created_date", CREATED_DATE);
         return metadata;
     }
 
     public static Segment generateTestSegment() {
-        TimeSpanSeconds time = TimeSpanSeconds.newBuilder().setStartSeconds(0.154).setEndSeconds(0.52).build();
         SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").setScore(.21f).build();
-        SegmentBoundary bounds = SegmentBoundary.newBuilder().setTimeSpan(time).build();
-        Segment segment = Segment.newBuilder().addValues(segmentValue).setBoundary(bounds).build();
-        return injectBoundaryType(segment);
+        SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(TIME_MILLI).setStart(1540).setEnd(5200).build();
+        return Segment.newBuilder().addValues(segmentValue).setBoundary(bounds).build();
     }
 
     public static Segment generateMultiTestSegment() {
-        TimeSpanSeconds time = TimeSpanSeconds.newBuilder().setStartSeconds(0.154).setEndSeconds(0.52).build();
         SegmentValue segmentValueOne = SegmentValue.newBuilder().setValue("cow").setScore(.235f).build();
         Map<String,String> extension = new HashMap<>();
         extension.put("objectType", "animal");
         SegmentValue segmentValueTwo = SegmentValue.newBuilder().setValue("horse").setScore(.21f).putAllExtension(extension).build();
-        SegmentBoundary bounds = SegmentBoundary.newBuilder().setTimeSpan(time).build();
-        Segment segment = Segment.newBuilder().addValues(segmentValueOne).addValues(segmentValueTwo).setBoundary(bounds).build();
-        return injectBoundaryType(segment);
+        SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(TIME_MILLI).setStart(1540).setEnd(5200).build();
+        return Segment.newBuilder().addValues(segmentValueOne).addValues(segmentValueTwo).setBoundary(bounds).build();
     }
 
     public static List<Annotation> generateManyTestAnnotations() {
         List<Annotation> testAnnotations = new ArrayList<>();
 
-        final String[] dataTypes = {"audio", "news", "cars"};
-        final String[] annotationTypes = {"tts", "tokens", "object"};
+        final String[] dataTypes = {"audio", "news", "cars", "media"};
+        final String[] annotationTypes = {"tts", "tokens", "object", "image"};
         final String[] days = {"20250405", "20250406", "20250407"};
         final String[] shards = {"123", "456", "789"};
+
+        AnnotationSource baseAnnotationSource = generateTestAnnotationSource();
+        AnnotationSource annotationSource = AnnotationUtils.injectAnnotationSourceHashes(baseAnnotationSource);
+
+        int documentId = 0;
 
         for (String day : days) {
             for (String shard : shards) {
@@ -94,12 +105,19 @@ public class AnnotationTestDataUtil {
                     String seed = row + "_" + dataType;
                     String documentUid = HashUID.builder().newId(seed.getBytes(StandardCharsets.UTF_8)).toString();
 
-                    // @formatter: off
-                    Annotation annotation = Annotation.newBuilder().setShard(row).setDataType(dataTypes[i]).setUid(documentUid)
-                                    .addAllSegments(generateTestSegments(day, shard, dataType)).putAllMetadata(generateTestMetadata(day, shard, dataType))
-                                    .setAnnotationType(annotationType).build();
+                    //@formatter:off
+                    Annotation annotation = Annotation.newBuilder()
+                            .setShard(row)
+                            .setDataType(dataTypes[i])
+                            .setUid(documentUid)
+                            .setDocumentId(String.format("%012d", ++documentId))
+                            .setAnalyticSourceHash(annotationSource.getAnalyticSourceHash())
+                            .setSource(annotationSource)
+                            .addAllSegments(generateTestSegments(day, shard, dataType))
+                            .putAllMetadata(generateTestMetadata(day, shard, dataType))
+                            .setAnnotationType(annotationType).build();
                     testAnnotations.add(annotation);
-                    // @formatter on;
+                    //@formatter:on
                 }
             }
         }
@@ -122,16 +140,19 @@ public class AnnotationTestDataUtil {
                     int pos = iteration % configurations.length;
                     iteration++;
                     //@formatter:off
+                    Map<String, String> metadata = Map.of(
+                        "visibility", VISIBILITY,
+                        "created_date", CREATED_DATE,
+                        "provenance", engine + "/" + model
+                    );
+
                     Map<String, String> configuration = Map.of(
-                            "visibility", "PUBLIC",
-                            "created_date", "2025-10-01T00:00:00Z",
-                            "provenance", engine + "/" + model + "/" + sourceLabel,
-                            "normalization", configurations[pos]
+                        "normalization", configurations[pos]
                     );
                     AnnotationSource annotationSource = AnnotationSource.newBuilder()
                             .setEngine(engine)
                             .setModel(model)
-                            .setSourceLabel(sourceLabel)
+                            .putAllMetadata(metadata)
                             .putAllConfiguration(configuration)
                             .build();
                     testAnnotationSources.add(annotationSource);
@@ -149,7 +170,9 @@ public class AnnotationTestDataUtil {
             case "news": // an imaginary text dataset
                 return generateTextSegments(day, shard);
             case "cars": // an imaginary image dataset
-                return generateImageSegments(day, shard);
+                return generateImageBoxSegments(day, shard);
+            case "media":
+                return generateImageAllSegments(day, shard);
             default:
                 return List.of(generateMultiTestSegment());
         }
@@ -163,8 +186,7 @@ public class AnnotationTestDataUtil {
 
         // generate a boundary of 1 second of duration every 10 seconds
         for (int i = 0; i < 100; i += 10) {
-            TimeSpanSeconds timeSpan = TimeSpanSeconds.newBuilder().setStartSeconds(i).setEndSeconds(i + 5).build();
-            SegmentBoundary bounds = SegmentBoundary.newBuilder().setTimeSpan(timeSpan).build();
+            SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(TIME_MILLI).setStart(i * 1000).setEnd((i + 5) * 1000).build();
 
             SegmentValue valueOne = SegmentValue.newBuilder().setValue(words[wordPos]).setScore(.235f).build();
             SegmentValue valueTwo = SegmentValue.newBuilder().setValue(altWords[wordPos]).setScore(.21f).build();
@@ -188,8 +210,7 @@ public class AnnotationTestDataUtil {
             int end = start + word.length();
 
             // character offsets
-            TextSpanChars charSpan = TextSpanChars.newBuilder().setStartCharacter(start).setEndCharacter(end).build();
-            SegmentBoundary bounds = SegmentBoundary.newBuilder().setCharacterSpan(charSpan).build();
+            SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(TEXT_CHAR).setStart(start).setEnd(end).build();
 
             SegmentValue valueOne = SegmentValue.newBuilder().setValue(word).setScore(1.0f).build();
             Segment segment = Segment.newBuilder().setBoundary(bounds).addValues(valueOne).build();
@@ -200,7 +221,7 @@ public class AnnotationTestDataUtil {
         return segments;
     }
 
-    public static List<Segment> generateImageSegments(String day, String shard) {
+    public static List<Segment> generateImageBoxSegments(String day, String shard) {
         List<Segment> segments = new ArrayList<>();
 
         final String[] objects = {"bird", "car", "stairs", "motorcycle", "flashlight", "dog"};
@@ -212,7 +233,7 @@ public class AnnotationTestDataUtil {
         for (int i = 0; i < objects.length; i++) {
             Point topLeft = Point.newBuilder().setLabel("topLeft").setX(upperLeft[i][0]).setY(upperLeft[i][1]).build();
             Point bottomRight = Point.newBuilder().setLabel("bottomRight").setX(lowerRight[i][0]).setY(lowerRight[i][1]).build();
-            SegmentBoundary bounds = SegmentBoundary.newBuilder().addPoints(topLeft).addPoints(bottomRight).build();
+            SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(POINTS).addPoints(topLeft).addPoints(bottomRight).build();
             Segment.Builder segmentBuilder = Segment.newBuilder().setBoundary(bounds);
 
             Map<String,String> extension = new HashMap<>();
@@ -227,6 +248,30 @@ public class AnnotationTestDataUtil {
         return segments;
     }
 
+    public static List<Segment> generateImageAllSegments(String day, String shard) {
+        List<Segment> segments = new ArrayList<>();
+
+        final String[] objects = {"landscape", "portrait", "scene", "evening", "astral", "material"};
+        final String[] altObjects = {"underground", "postcard", "", "afternoon", "ethereal", "fabric"};
+        final String[] model = {"charlie", "bravo", "lima", "victor", "delta", "micro"};
+
+        SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(ALL).build();
+        Segment.Builder segmentBuilder = Segment.newBuilder().setBoundary(bounds);
+
+        for (int i = 0; i < objects.length; i++) {
+            Map<String,String> extension = new HashMap<>();
+            extension.put("version", model[i]);
+            segmentBuilder.addValues(SegmentValue.newBuilder().setValue(objects[i]).setScore(.97f).putAllExtension(extension).build());
+            if (!altObjects[i].isEmpty()) {
+                segmentBuilder.addValues(SegmentValue.newBuilder().setValue(altObjects[i]).setScore(.86f).putAllExtension(extension).build());
+            }
+        }
+
+        segments.add(segmentBuilder.build());
+
+        return segments;
+    }
+
     public static Map<String,String> generateTestMetadata(String day, String shard, String datatype) {
         Map<String,String> metadata = new HashMap<>();
         metadata.put("datatype", datatype);
@@ -234,8 +279,8 @@ public class AnnotationTestDataUtil {
         metadata.put("day", day);
         metadata.put("foo", "bar");
         metadata.put("plough", "plover");
-        metadata.put("visibility", "PUBLIC");
-        metadata.put("created_date", "2025-10-01T00:00:00Z");
+        metadata.put("visibility", VISIBILITY);
+        metadata.put("created_date", CREATED_DATE);
         return metadata;
     }
 }

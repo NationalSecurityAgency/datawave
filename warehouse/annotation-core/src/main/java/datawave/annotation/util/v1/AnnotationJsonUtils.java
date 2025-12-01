@@ -9,8 +9,7 @@ import com.google.protobuf.util.JsonFormat;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Point;
 import datawave.annotation.protobuf.v1.Segment;
-import datawave.annotation.protobuf.v1.TextSpanChars;
-import datawave.annotation.protobuf.v1.TimeSpanSeconds;
+import datawave.annotation.protobuf.v1.SegmentBoundary;
 
 /** Encapsulates and centralizes Protobuf Json-related utilities such as the JsonFormat printer and parser configuration */
 public class AnnotationJsonUtils {
@@ -20,20 +19,15 @@ public class AnnotationJsonUtils {
 
     static {
         // in some cases, we _always_ want to output certain fields when serializing to JSON. Here are the one we want to output:
-        Descriptors.Descriptor timeSpanSecondDescriptor = TimeSpanSeconds.getDescriptor();
-        Descriptors.FieldDescriptor startSecondsDescriptor = timeSpanSecondDescriptor.findFieldByName("startSeconds");
-        Descriptors.FieldDescriptor endSecondsDescriptor = timeSpanSecondDescriptor.findFieldByName("endSeconds");
-
-        Descriptors.Descriptor textSpanCharsDescriptor = TextSpanChars.getDescriptor();
-        Descriptors.FieldDescriptor startCharacterDescriptor = textSpanCharsDescriptor.findFieldByName("startCharacter");
-        Descriptors.FieldDescriptor endCharacterDescriptor = textSpanCharsDescriptor.findFieldByName("endCharacter");
+        Descriptors.Descriptor boundaryDescriptor = SegmentBoundary.getDescriptor();
+        Descriptors.FieldDescriptor startDescriptor = boundaryDescriptor.findFieldByName("start");
+        Descriptors.FieldDescriptor endDescriptor = boundaryDescriptor.findFieldByName("end");
 
         Descriptors.Descriptor pointDescriptor = Point.getDescriptor();
         Descriptors.FieldDescriptor xDescriptor = pointDescriptor.findFieldByName("x");
         Descriptors.FieldDescriptor yDescriptor = pointDescriptor.findFieldByName("y");
 
-        Set<Descriptors.FieldDescriptor> printDefaultFieldDescriptors = Set.of(startSecondsDescriptor, endSecondsDescriptor, startCharacterDescriptor,
-                        endCharacterDescriptor, xDescriptor, yDescriptor);
+        Set<Descriptors.FieldDescriptor> printDefaultFieldDescriptors = Set.of(startDescriptor, endDescriptor, xDescriptor, yDescriptor);
         PRINTER = JsonFormat.printer().preservingProtoFieldNames().includingDefaultValueFields(printDefaultFieldDescriptors);
         PARSER = JsonFormat.parser();
     }
@@ -47,7 +41,7 @@ public class AnnotationJsonUtils {
     }
 
     /**
-     * Convert the annotation to json and inject the boundary type
+     * Convert the annotation to json.
      *
      * @param a
      *            the segment to convert
@@ -55,8 +49,8 @@ public class AnnotationJsonUtils {
      * @throws InvalidProtocolBufferException
      *             if there's a problem with serialization.
      */
-    public static String annotationToJsonWithBoundaryTypesAndIds(Annotation a) throws InvalidProtocolBufferException {
-        return PRINTER.print(AnnotationUtils.injectAnnotationAndSegmentIds(AnnotationUtils.injectSegmentBoundaryTypes(a)));
+    public static String annotationToJsonWithIds(Annotation a) throws InvalidProtocolBufferException {
+        return PRINTER.print(AnnotationUtils.injectAllHashes(a));
     }
 
     /**
@@ -75,7 +69,7 @@ public class AnnotationJsonUtils {
     }
 
     /**
-     * Convert the segment to json and inject the boundary type
+     * Convert the segment to json.
      *
      * @param s
      *            the segment to convert
@@ -83,8 +77,8 @@ public class AnnotationJsonUtils {
      * @throws InvalidProtocolBufferException
      *             if there's a problem with serialization.
      */
-    public static String segmentToJsonWithBoundaryType(Segment s) throws InvalidProtocolBufferException {
-        return PRINTER.print(AnnotationUtils.injectBoundaryType(s));
+    public static String segmentToJson(Segment s) throws InvalidProtocolBufferException {
+        return PRINTER.print(s);
     }
 
     /**

@@ -9,7 +9,7 @@ public interface AnnotationSourceOrBuilder extends
 
     /**
      * <pre>
-     * the analytic hash for this source
+     * the 32-bit hash used for grouping this source
      * </pre>
      *
      * <code>string analyticHash = 1;</code>
@@ -20,7 +20,7 @@ public interface AnnotationSourceOrBuilder extends
 
     /**
      * <pre>
-     * the analytic hash for this source
+     * the 32-bit hash used for grouping this source
      * </pre>
      *
      * <code>string analyticHash = 1;</code>
@@ -31,10 +31,32 @@ public interface AnnotationSourceOrBuilder extends
 
     /**
      * <pre>
+     * the 128-bit hash for this source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 2;</code>
+     *
+     * @return The analyticSourceHash.
+     */
+    java.lang.String getAnalyticSourceHash();
+
+    /**
+     * <pre>
+     * the 128-bit hash for this source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 2;</code>
+     *
+     * @return The bytes for analyticSourceHash.
+     */
+    com.google.protobuf.ByteString getAnalyticSourceHashBytes();
+
+    /**
+     * <pre>
      * a string identifying the engine that produce the annotation
      * </pre>
      *
-     * <code>string engine = 2;</code>
+     * <code>string engine = 3;</code>
      *
      * @return The engine.
      */
@@ -45,7 +67,7 @@ public interface AnnotationSourceOrBuilder extends
      * a string identifying the engine that produce the annotation
      * </pre>
      *
-     * <code>string engine = 2;</code>
+     * <code>string engine = 3;</code>
      *
      * @return The bytes for engine.
      */
@@ -56,7 +78,7 @@ public interface AnnotationSourceOrBuilder extends
      * a string identifying the model that produced the annotation
      * </pre>
      *
-     * <code>string model = 3;</code>
+     * <code>string model = 4;</code>
      *
      * @return The model.
      */
@@ -67,7 +89,7 @@ public interface AnnotationSourceOrBuilder extends
      * a string identifying the model that produced the annotation
      * </pre>
      *
-     * <code>string model = 3;</code>
+     * <code>string model = 4;</code>
      *
      * @return The bytes for model.
      */
@@ -75,32 +97,10 @@ public interface AnnotationSourceOrBuilder extends
 
     /**
      * <pre>
-     * a label for the engine/model/configuration combo
-     * </pre>
-     *
-     * <code>string sourceLabel = 4;</code>
-     *
-     * @return The sourceLabel.
-     */
-    java.lang.String getSourceLabel();
-
-    /**
-     * <pre>
-     * a label for the engine/model/configuration combo
-     * </pre>
-     *
-     * <code>string sourceLabel = 4;</code>
-     *
-     * @return The bytes for sourceLabel.
-     */
-    com.google.protobuf.ByteString getSourceLabelBytes();
-
-    /**
-     * <pre>
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
     int getConfigurationCount();
 
@@ -109,7 +109,7 @@ public interface AnnotationSourceOrBuilder extends
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
     boolean containsConfiguration(java.lang.String key);
 
@@ -124,7 +124,7 @@ public interface AnnotationSourceOrBuilder extends
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
     java.util.Map<java.lang.String,java.lang.String> getConfigurationMap();
 
@@ -133,7 +133,7 @@ public interface AnnotationSourceOrBuilder extends
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
 
     java.lang.String getConfigurationOrDefault(java.lang.String key, java.lang.String defaultValue);
@@ -143,8 +143,41 @@ public interface AnnotationSourceOrBuilder extends
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
 
     java.lang.String getConfigurationOrThrow(java.lang.String key);
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+    int getMetadataCount();
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+    boolean containsMetadata(java.lang.String key);
+
+    /**
+     * Use {@link #getMetadataMap()} instead.
+     */
+    @java.lang.Deprecated
+    java.util.Map<java.lang.String,java.lang.String> getMetadata();
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+    java.util.Map<java.lang.String,java.lang.String> getMetadataMap();
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+
+    java.lang.String getMetadataOrDefault(java.lang.String key, java.lang.String defaultValue);
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+
+    java.lang.String getMetadataOrThrow(java.lang.String key);
 }

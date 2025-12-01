@@ -1,18 +1,17 @@
 # Datawave Annotations
 
-Provides a generic method to annotate portions of data stored in datawave.
+Provides a generic method to annotate portions of data stored in Datawave.
 
 ## Annotation Table Structure
 
 Annotations are encoded in Accumulo as follows.
 
-| Purpose                | Row             | Column Family                                       | Column Qualifier                         | Value            |
-|------------------------|-----------------|-----------------------------------------------------|------------------------------------------|------------------|
-| Annotation Source Hash | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) "analyticHash (n) value | None             |
-| Annotation Document Id | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) "documentId" (n) value  | None             |
-| Annotation Metadata    | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) key (n) value           | None             |
-| Annotation Segment     | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) segmentId               | Protobuf Value   |
-| Annotation Update      | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationId (n) segmentId.updateId      | Protobuf Value   |
+| Purpose                | Row             | Column Family                                       | Column Qualifier                          | Value            |
+|------------------------|-----------------|-----------------------------------------------------|-------------------------------------------|------------------|
+| Annotation Source Hash | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationHash (n) "source" (n) value     | None             |
+| Annotation Document Id | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationHash (n) "doc" (n) value        | None             |
+| Annotation Metadata    | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationHash (n) "md" (n) key (n) value | None             |
+| Annotation Segment     | documentShardId | documentDataType (n) documentUid (n) annotationType | annotationHash (n) "seg" (n) segmentHash  | Protobuf Value   |
 
 The primary portion of this table is structured to align with documents in the Datawave shard tables.
 
@@ -23,12 +22,14 @@ The primary portion of this table is structured to align with documents in the D
 The rest of the table uses annotation specific data;
 
 * annotationType: the type of annotation, e.g., an arbitrary string (e.g., correction)
-* annotationUid: Murmur hash identifier for the annotation (must be unique in the context of a document) 
-* segmentId: Hash identifier for the segment (must be unique in the context of an annotation)
-* segmentId.updateId: Hash identifier of the segment plus a hash for the update value (most recent updates must sort last)
-* Protobuf Value: contains structured data stored in the following protobuf schema that encode a segment's boundary and metadata values.
+* annotationHash: Murmur hash identifier for the annotation (must be unique in the context of a document) 
+* segmentHash: Hash identifier for the segment (must be unique in the context of an annotation)
+* source: the annotation source that generated the annotation
+* document id: the external document id that uniquely generates the object being annotated
+* metadata: key value pairs representing additional data (e.g. 'visibility' and 'created_date' are manditory)
+* segment data: Protobuf Value: contains structured data stored in the following protobuf schema that encode a segment's boundary and metadata values.
 
-# Protobuf Values for Annotations and Segments
+## Protobuf Values for Annotation Segments
 
 Each annotation has one or more segments. Each segment is defined by:
 
@@ -36,20 +37,44 @@ Each annotation has one or more segments. Each segment is defined by:
   * type - depends on the segment or annotation type, can be time or position based.
   * start - the start of the segment, meaning depends on boundary type
   * end - the end of the segment, meaning depends on boundary type
-  * rotation -
+  * points - a list of points for bounding boxes
 * One or more values, which include;
   * value - a value for the segment, value will depend on annotation type
   * score - a score for this value, typically a confidence score.
-  * extension (optional) - a class of segment, used to group values.
+  * extension (optional) - a map of arbitrary items.
+
+A boundary must have a start/end (span) -or- a list of points, not both and maybe neither
+* Currently, valid boundary types include:
+  * TIME_MILLI - a star and end that represents start and end times in milliseconds.
+  * TEXT_CHAR - a start and end that represents character offsets in text.
+  * POINTS - a list of points, each with an x coordinate, y coordinate, and optional label.
+  * ALL - represents the entire object, with no span or points.
+
+Each annotation optionally contains full source details or a reference to the sources analyticSourceHash. In practice
+we write annotation source details to the annotation source table and track references via analyticSourceHash in the
+annotations table.
+
+## Annotation Sources
+
+Annotation sources capture information about things that have been used to create annotations.
 
 ## Annotation Source Table Structure
 
-| Purpose                  | Row            | Column Family  | Column Qualifier | Value |
-|--------------------------|----------------|----------------|------------------|-------|
-| Annotation Source Engine | analyticHash   | engine         | engineValue      | None  |
-| Annotation Source Model  | analyticHash   | model          | modelValue       | None  |
-| Annotation Source Label  | analyticHash   | sourceLabel    | sourceLabelValue | None  |
-| Annotation Source Config | analyticHash   | config         | key (n) value    | None  |
+| Purpose                | Row                | Column Family | Column Qualifier                            | Value                      |
+|------------------------|--------------------|---------------|---------------------------------------------|----------------------------|
+| Annotation Source Data | analyticSourceHash | "data"        | engineValue (n) modelValue (n) analyticHash | Annotation Source Protobuf |
+
+## Protobuf Values for Annotation Sources
+
+Each annotation source identifies an engine and model that were used to generate an annotation in addition to identifiers,
+configuration details and metadata.
+
+* analyticSourceHash: a 128-bit murmur hash that provides a globally unique identifier for the annotation soruce
+* analyticHash: a 32-bit murmur hash designed to provide field grouping for individual objects. 
+* engine: a string representing the engine name.
+* model: a string representing the model used in the engine. Models are expected to change over time, sometime frequently.
+* configuration: a map of key/value pairs representing the configuration used for the engine when producing annotations, may change independently of engine and model.
+* metadata: metadata about the source (e.g., 'visibility' and 'created_date' are mandatory)
 
 # Protobuf Compiler, Supporting Libraries and Tools
 

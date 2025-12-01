@@ -20,10 +20,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         shard_ = "";
         dataType_ = "";
         uid_ = "";
-        annotationType_ = "";
         annotationId_ = "";
-        analyticHash_ = "";
         documentId_ = "";
+        annotationType_ = "";
+        analyticSourceHash_ = "";
         segments_ = java.util.Collections.emptyList();
     }
 
@@ -199,53 +199,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
     }
 
-    public static final int ANNOTATIONTYPE_FIELD_NUMBER = 4;
-    private volatile java.lang.Object annotationType_;
-
-    /**
-     * <pre>
-     * the type of this annotation
-     * </pre>
-     *
-     * <code>string annotationType = 4;</code>
-     *
-     * @return The annotationType.
-     */
-    @java.lang.Override
-    public java.lang.String getAnnotationType() {
-        java.lang.Object ref = annotationType_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            annotationType_ = s;
-            return s;
-        }
-    }
-
-    /**
-     * <pre>
-     * the type of this annotation
-     * </pre>
-     *
-     * <code>string annotationType = 4;</code>
-     *
-     * @return The bytes for annotationType.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getAnnotationTypeBytes() {
-        java.lang.Object ref = annotationType_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            annotationType_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
-        }
-    }
-
-    public static final int ANNOTATIONID_FIELD_NUMBER = 5;
+    public static final int ANNOTATIONID_FIELD_NUMBER = 4;
     private volatile java.lang.Object annotationId_;
 
     /**
@@ -253,7 +207,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
      * the hash that identifies this annotation
      * </pre>
      *
-     * <code>string annotationId = 5;</code>
+     * <code>string annotationId = 4;</code>
      *
      * @return The annotationId.
      */
@@ -275,7 +229,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
      * the hash that identifies this annotation
      * </pre>
      *
-     * <code>string annotationId = 5;</code>
+     * <code>string annotationId = 4;</code>
      *
      * @return The bytes for annotationId.
      */
@@ -291,96 +245,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         }
     }
 
-    public static final int ANALYTICHASH_FIELD_NUMBER = 6;
-    private volatile java.lang.Object analyticHash_;
-
-    /**
-     * <pre>
-     * the analytic hash that identifies this annotation's source
-     * </pre>
-     *
-     * <code>string analyticHash = 6;</code>
-     *
-     * @return The analyticHash.
-     */
-    @java.lang.Override
-    public java.lang.String getAnalyticHash() {
-        java.lang.Object ref = analyticHash_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            analyticHash_ = s;
-            return s;
-        }
-    }
-
-    /**
-     * <pre>
-     * the analytic hash that identifies this annotation's source
-     * </pre>
-     *
-     * <code>string analyticHash = 6;</code>
-     *
-     * @return The bytes for analyticHash.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getAnalyticHashBytes() {
-        java.lang.Object ref = analyticHash_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            analyticHash_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
-        }
-    }
-
-    public static final int SOURCE_FIELD_NUMBER = 7;
-    private datawave.annotation.protobuf.v1.AnnotationSource source_;
-
-    /**
-     * <pre>
-     * the source details for this annotation.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
-     *
-     * @return Whether the source field is set.
-     */
-    @java.lang.Override
-    public boolean hasSource() {
-        return ((bitField0_ & 0x00000001) != 0);
-    }
-
-    /**
-     * <pre>
-     * the source details for this annotation.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
-     *
-     * @return The source.
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.AnnotationSource getSource() {
-        return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
-    }
-
-    /**
-     * <pre>
-     * the source details for this annotation.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
-     */
-    @java.lang.Override
-    public datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder() {
-        return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
-    }
-
-    public static final int DOCUMENTID_FIELD_NUMBER = 8;
+    public static final int DOCUMENTID_FIELD_NUMBER = 5;
     private volatile java.lang.Object documentId_;
 
     /**
@@ -388,7 +253,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
      * the external identifier for this annotations source document.
      * </pre>
      *
-     * <code>string documentId = 8;</code>
+     * <code>string documentId = 5;</code>
      *
      * @return The documentId.
      */
@@ -410,7 +275,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
      * the external identifier for this annotations source document.
      * </pre>
      *
-     * <code>string documentId = 8;</code>
+     * <code>string documentId = 5;</code>
      *
      * @return The bytes for documentId.
      */
@@ -424,6 +289,141 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         } else {
             return (com.google.protobuf.ByteString) ref;
         }
+    }
+
+    public static final int ANNOTATIONTYPE_FIELD_NUMBER = 6;
+    private volatile java.lang.Object annotationType_;
+
+    /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
+     * <code>string annotationType = 6;</code>
+     *
+     * @return The annotationType.
+     */
+    @java.lang.Override
+    public java.lang.String getAnnotationType() {
+        java.lang.Object ref = annotationType_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            annotationType_ = s;
+            return s;
+        }
+    }
+
+    /**
+     * <pre>
+     * the type of this annotation
+     * </pre>
+     *
+     * <code>string annotationType = 6;</code>
+     *
+     * @return The bytes for annotationType.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getAnnotationTypeBytes() {
+        java.lang.Object ref = annotationType_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            annotationType_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+
+    public static final int ANALYTICSOURCEHASH_FIELD_NUMBER = 7;
+    private volatile java.lang.Object analyticSourceHash_;
+
+    /**
+     * <pre>
+     * the analytic hash that identifies this annotation's source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 7;</code>
+     *
+     * @return The analyticSourceHash.
+     */
+    @java.lang.Override
+    public java.lang.String getAnalyticSourceHash() {
+        java.lang.Object ref = analyticSourceHash_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            analyticSourceHash_ = s;
+            return s;
+        }
+    }
+
+    /**
+     * <pre>
+     * the analytic hash that identifies this annotation's source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 7;</code>
+     *
+     * @return The bytes for analyticSourceHash.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getAnalyticSourceHashBytes() {
+        java.lang.Object ref = analyticSourceHash_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            analyticSourceHash_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+
+    public static final int SOURCE_FIELD_NUMBER = 8;
+    private datawave.annotation.protobuf.v1.AnnotationSource source_;
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
+     *
+     * @return Whether the source field is set.
+     */
+    @java.lang.Override
+    public boolean hasSource() {
+        return ((bitField0_ & 0x00000001) != 0);
+    }
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
+     *
+     * @return The source.
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.AnnotationSource getSource() {
+        return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
+    }
+
+    /**
+     * <pre>
+     * the source details for this annotation.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder() {
+        return source_ == null ? datawave.annotation.protobuf.v1.AnnotationSource.getDefaultInstance() : source_;
     }
 
     public static final int SEGMENTS_FIELD_NUMBER = 20;
@@ -594,20 +594,20 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         if (!getUidBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 3, uid_);
         }
-        if (!getAnnotationTypeBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 4, annotationType_);
-        }
         if (!getAnnotationIdBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 5, annotationId_);
-        }
-        if (!getAnalyticHashBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 6, analyticHash_);
-        }
-        if (((bitField0_ & 0x00000001) != 0)) {
-            output.writeMessage(7, getSource());
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 4, annotationId_);
         }
         if (!getDocumentIdBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 8, documentId_);
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 5, documentId_);
+        }
+        if (!getAnnotationTypeBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 6, annotationType_);
+        }
+        if (!getAnalyticSourceHashBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 7, analyticSourceHash_);
+        }
+        if (((bitField0_ & 0x00000001) != 0)) {
+            output.writeMessage(8, getSource());
         }
         for (int i = 0; i < segments_.size(); i++) {
             output.writeMessage(20, segments_.get(i));
@@ -632,20 +632,20 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         if (!getUidBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, uid_);
         }
-        if (!getAnnotationTypeBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, annotationType_);
-        }
         if (!getAnnotationIdBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, annotationId_);
-        }
-        if (!getAnalyticHashBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, analyticHash_);
-        }
-        if (((bitField0_ & 0x00000001) != 0)) {
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(7, getSource());
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, annotationId_);
         }
         if (!getDocumentIdBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, documentId_);
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, documentId_);
+        }
+        if (!getAnnotationTypeBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, annotationType_);
+        }
+        if (!getAnalyticSourceHashBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, analyticSourceHash_);
+        }
+        if (((bitField0_ & 0x00000001) != 0)) {
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(8, getSource());
         }
         for (int i = 0; i < segments_.size(); i++) {
             size += com.google.protobuf.CodedOutputStream.computeMessageSize(20, segments_.get(i));
@@ -676,11 +676,13 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             return false;
         if (!getUid().equals(other.getUid()))
             return false;
-        if (!getAnnotationType().equals(other.getAnnotationType()))
-            return false;
         if (!getAnnotationId().equals(other.getAnnotationId()))
             return false;
-        if (!getAnalyticHash().equals(other.getAnalyticHash()))
+        if (!getDocumentId().equals(other.getDocumentId()))
+            return false;
+        if (!getAnnotationType().equals(other.getAnnotationType()))
+            return false;
+        if (!getAnalyticSourceHash().equals(other.getAnalyticSourceHash()))
             return false;
         if (hasSource() != other.hasSource())
             return false;
@@ -688,8 +690,6 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             if (!getSource().equals(other.getSource()))
                 return false;
         }
-        if (!getDocumentId().equals(other.getDocumentId()))
-            return false;
         if (!getSegmentsList().equals(other.getSegmentsList()))
             return false;
         if (!internalGetMetadata().equals(other.internalGetMetadata()))
@@ -712,18 +712,18 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
         hash = (53 * hash) + getDataType().hashCode();
         hash = (37 * hash) + UID_FIELD_NUMBER;
         hash = (53 * hash) + getUid().hashCode();
-        hash = (37 * hash) + ANNOTATIONTYPE_FIELD_NUMBER;
-        hash = (53 * hash) + getAnnotationType().hashCode();
         hash = (37 * hash) + ANNOTATIONID_FIELD_NUMBER;
         hash = (53 * hash) + getAnnotationId().hashCode();
-        hash = (37 * hash) + ANALYTICHASH_FIELD_NUMBER;
-        hash = (53 * hash) + getAnalyticHash().hashCode();
+        hash = (37 * hash) + DOCUMENTID_FIELD_NUMBER;
+        hash = (53 * hash) + getDocumentId().hashCode();
+        hash = (37 * hash) + ANNOTATIONTYPE_FIELD_NUMBER;
+        hash = (53 * hash) + getAnnotationType().hashCode();
+        hash = (37 * hash) + ANALYTICSOURCEHASH_FIELD_NUMBER;
+        hash = (53 * hash) + getAnalyticSourceHash().hashCode();
         if (hasSource()) {
             hash = (37 * hash) + SOURCE_FIELD_NUMBER;
             hash = (53 * hash) + getSource().hashCode();
         }
-        hash = (37 * hash) + DOCUMENTID_FIELD_NUMBER;
-        hash = (53 * hash) + getDocumentId().hashCode();
         if (getSegmentsCount() > 0) {
             hash = (37 * hash) + SEGMENTS_FIELD_NUMBER;
             hash = (53 * hash) + getSegmentsList().hashCode();
@@ -879,11 +879,13 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
 
             uid_ = "";
 
-            annotationType_ = "";
-
             annotationId_ = "";
 
-            analyticHash_ = "";
+            documentId_ = "";
+
+            annotationType_ = "";
+
+            analyticSourceHash_ = "";
 
             if (sourceBuilder_ == null) {
                 source_ = null;
@@ -891,8 +893,6 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 sourceBuilder_.clear();
             }
             bitField0_ = (bitField0_ & ~0x00000001);
-            documentId_ = "";
-
             if (segmentsBuilder_ == null) {
                 segments_ = java.util.Collections.emptyList();
             } else {
@@ -931,9 +931,10 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             result.shard_ = shard_;
             result.dataType_ = dataType_;
             result.uid_ = uid_;
-            result.annotationType_ = annotationType_;
             result.annotationId_ = annotationId_;
-            result.analyticHash_ = analyticHash_;
+            result.documentId_ = documentId_;
+            result.annotationType_ = annotationType_;
+            result.analyticSourceHash_ = analyticSourceHash_;
             if (((from_bitField0_ & 0x00000001) != 0)) {
                 if (sourceBuilder_ == null) {
                     result.source_ = source_;
@@ -942,7 +943,6 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 }
                 to_bitField0_ |= 0x00000001;
             }
-            result.documentId_ = documentId_;
             if (segmentsBuilder_ == null) {
                 if (((bitField0_ & 0x00000002) != 0)) {
                     segments_ = java.util.Collections.unmodifiableList(segments_);
@@ -1014,24 +1014,24 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 uid_ = other.uid_;
                 onChanged();
             }
-            if (!other.getAnnotationType().isEmpty()) {
-                annotationType_ = other.annotationType_;
-                onChanged();
-            }
             if (!other.getAnnotationId().isEmpty()) {
                 annotationId_ = other.annotationId_;
                 onChanged();
             }
-            if (!other.getAnalyticHash().isEmpty()) {
-                analyticHash_ = other.analyticHash_;
+            if (!other.getDocumentId().isEmpty()) {
+                documentId_ = other.documentId_;
+                onChanged();
+            }
+            if (!other.getAnnotationType().isEmpty()) {
+                annotationType_ = other.annotationType_;
+                onChanged();
+            }
+            if (!other.getAnalyticSourceHash().isEmpty()) {
+                analyticSourceHash_ = other.analyticSourceHash_;
                 onChanged();
             }
             if (other.hasSource()) {
                 mergeSource(other.getSource());
-            }
-            if (!other.getDocumentId().isEmpty()) {
-                documentId_ = other.documentId_;
-                onChanged();
             }
             if (segmentsBuilder_ == null) {
                 if (!other.segments_.isEmpty()) {
@@ -1098,28 +1098,28 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                             break;
                         } // case 26
                         case 34: {
-                            annotationType_ = input.readStringRequireUtf8();
+                            annotationId_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 34
                         case 42: {
-                            annotationId_ = input.readStringRequireUtf8();
+                            documentId_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 42
                         case 50: {
-                            analyticHash_ = input.readStringRequireUtf8();
+                            annotationType_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 50
                         case 58: {
-                            input.readMessage(getSourceFieldBuilder().getBuilder(), extensionRegistry);
-                            bitField0_ |= 0x00000001;
+                            analyticSourceHash_ = input.readStringRequireUtf8();
+
                             break;
                         } // case 58
                         case 66: {
-                            documentId_ = input.readStringRequireUtf8();
-
+                            input.readMessage(getSourceFieldBuilder().getBuilder(), extensionRegistry);
+                            bitField0_ |= 0x00000001;
                             break;
                         } // case 66
                         case 162: {
@@ -1462,108 +1462,6 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             return this;
         }
 
-        private java.lang.Object annotationType_ = "";
-
-        /**
-         * <pre>
-         * the type of this annotation
-         * </pre>
-         *
-         * <code>string annotationType = 4;</code>
-         *
-         * @return The annotationType.
-         */
-        public java.lang.String getAnnotationType() {
-            java.lang.Object ref = annotationType_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                annotationType_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * the type of this annotation
-         * </pre>
-         *
-         * <code>string annotationType = 4;</code>
-         *
-         * @return The bytes for annotationType.
-         */
-        public com.google.protobuf.ByteString getAnnotationTypeBytes() {
-            java.lang.Object ref = annotationType_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                annotationType_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * the type of this annotation
-         * </pre>
-         *
-         * <code>string annotationType = 4;</code>
-         *
-         * @param value
-         *            The annotationType to set.
-         * @return This builder for chaining.
-         */
-        public Builder setAnnotationType(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-
-            annotationType_ = value;
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * the type of this annotation
-         * </pre>
-         *
-         * <code>string annotationType = 4;</code>
-         *
-         * @return This builder for chaining.
-         */
-        public Builder clearAnnotationType() {
-
-            annotationType_ = getDefaultInstance().getAnnotationType();
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * the type of this annotation
-         * </pre>
-         *
-         * <code>string annotationType = 4;</code>
-         *
-         * @param value
-         *            The bytes for annotationType to set.
-         * @return This builder for chaining.
-         */
-        public Builder setAnnotationTypeBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            checkByteStringIsUtf8(value);
-
-            annotationType_ = value;
-            onChanged();
-            return this;
-        }
-
         private java.lang.Object annotationId_ = "";
 
         /**
@@ -1571,7 +1469,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the hash that identifies this annotation
          * </pre>
          *
-         * <code>string annotationId = 5;</code>
+         * <code>string annotationId = 4;</code>
          *
          * @return The annotationId.
          */
@@ -1592,7 +1490,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the hash that identifies this annotation
          * </pre>
          *
-         * <code>string annotationId = 5;</code>
+         * <code>string annotationId = 4;</code>
          *
          * @return The bytes for annotationId.
          */
@@ -1612,7 +1510,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the hash that identifies this annotation
          * </pre>
          *
-         * <code>string annotationId = 5;</code>
+         * <code>string annotationId = 4;</code>
          *
          * @param value
          *            The annotationId to set.
@@ -1633,7 +1531,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the hash that identifies this annotation
          * </pre>
          *
-         * <code>string annotationId = 5;</code>
+         * <code>string annotationId = 4;</code>
          *
          * @return This builder for chaining.
          */
@@ -1649,7 +1547,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the hash that identifies this annotation
          * </pre>
          *
-         * <code>string annotationId = 5;</code>
+         * <code>string annotationId = 4;</code>
          *
          * @param value
          *            The bytes for annotationId to set.
@@ -1666,23 +1564,227 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
             return this;
         }
 
-        private java.lang.Object analyticHash_ = "";
+        private java.lang.Object documentId_ = "";
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 5;</code>
+         *
+         * @return The documentId.
+         */
+        public java.lang.String getDocumentId() {
+            java.lang.Object ref = documentId_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                documentId_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 5;</code>
+         *
+         * @return The bytes for documentId.
+         */
+        public com.google.protobuf.ByteString getDocumentIdBytes() {
+            java.lang.Object ref = documentId_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                documentId_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 5;</code>
+         *
+         * @param value
+         *            The documentId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setDocumentId(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+
+            documentId_ = value;
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 5;</code>
+         *
+         * @return This builder for chaining.
+         */
+        public Builder clearDocumentId() {
+
+            documentId_ = getDefaultInstance().getDocumentId();
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the external identifier for this annotations source document.
+         * </pre>
+         *
+         * <code>string documentId = 5;</code>
+         *
+         * @param value
+         *            The bytes for documentId to set.
+         * @return This builder for chaining.
+         */
+        public Builder setDocumentIdBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+
+            documentId_ = value;
+            onChanged();
+            return this;
+        }
+
+        private java.lang.Object annotationType_ = "";
+
+        /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
+         * <code>string annotationType = 6;</code>
+         *
+         * @return The annotationType.
+         */
+        public java.lang.String getAnnotationType() {
+            java.lang.Object ref = annotationType_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                annotationType_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
+         * <code>string annotationType = 6;</code>
+         *
+         * @return The bytes for annotationType.
+         */
+        public com.google.protobuf.ByteString getAnnotationTypeBytes() {
+            java.lang.Object ref = annotationType_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                annotationType_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
+         * <code>string annotationType = 6;</code>
+         *
+         * @param value
+         *            The annotationType to set.
+         * @return This builder for chaining.
+         */
+        public Builder setAnnotationType(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+
+            annotationType_ = value;
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
+         * <code>string annotationType = 6;</code>
+         *
+         * @return This builder for chaining.
+         */
+        public Builder clearAnnotationType() {
+
+            annotationType_ = getDefaultInstance().getAnnotationType();
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the type of this annotation
+         * </pre>
+         *
+         * <code>string annotationType = 6;</code>
+         *
+         * @param value
+         *            The bytes for annotationType to set.
+         * @return This builder for chaining.
+         */
+        public Builder setAnnotationTypeBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+
+            annotationType_ = value;
+            onChanged();
+            return this;
+        }
+
+        private java.lang.Object analyticSourceHash_ = "";
 
         /**
          * <pre>
          * the analytic hash that identifies this annotation's source
          * </pre>
          *
-         * <code>string analyticHash = 6;</code>
+         * <code>string analyticSourceHash = 7;</code>
          *
-         * @return The analyticHash.
+         * @return The analyticSourceHash.
          */
-        public java.lang.String getAnalyticHash() {
-            java.lang.Object ref = analyticHash_;
+        public java.lang.String getAnalyticSourceHash() {
+            java.lang.Object ref = analyticSourceHash_;
             if (!(ref instanceof java.lang.String)) {
                 com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
                 java.lang.String s = bs.toStringUtf8();
-                analyticHash_ = s;
+                analyticSourceHash_ = s;
                 return s;
             } else {
                 return (java.lang.String) ref;
@@ -1694,15 +1796,15 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the analytic hash that identifies this annotation's source
          * </pre>
          *
-         * <code>string analyticHash = 6;</code>
+         * <code>string analyticSourceHash = 7;</code>
          *
-         * @return The bytes for analyticHash.
+         * @return The bytes for analyticSourceHash.
          */
-        public com.google.protobuf.ByteString getAnalyticHashBytes() {
-            java.lang.Object ref = analyticHash_;
+        public com.google.protobuf.ByteString getAnalyticSourceHashBytes() {
+            java.lang.Object ref = analyticSourceHash_;
             if (ref instanceof String) {
                 com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                analyticHash_ = b;
+                analyticSourceHash_ = b;
                 return b;
             } else {
                 return (com.google.protobuf.ByteString) ref;
@@ -1714,18 +1816,18 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the analytic hash that identifies this annotation's source
          * </pre>
          *
-         * <code>string analyticHash = 6;</code>
+         * <code>string analyticSourceHash = 7;</code>
          *
          * @param value
-         *            The analyticHash to set.
+         *            The analyticSourceHash to set.
          * @return This builder for chaining.
          */
-        public Builder setAnalyticHash(java.lang.String value) {
+        public Builder setAnalyticSourceHash(java.lang.String value) {
             if (value == null) {
                 throw new NullPointerException();
             }
 
-            analyticHash_ = value;
+            analyticSourceHash_ = value;
             onChanged();
             return this;
         }
@@ -1735,13 +1837,13 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the analytic hash that identifies this annotation's source
          * </pre>
          *
-         * <code>string analyticHash = 6;</code>
+         * <code>string analyticSourceHash = 7;</code>
          *
          * @return This builder for chaining.
          */
-        public Builder clearAnalyticHash() {
+        public Builder clearAnalyticSourceHash() {
 
-            analyticHash_ = getDefaultInstance().getAnalyticHash();
+            analyticSourceHash_ = getDefaultInstance().getAnalyticSourceHash();
             onChanged();
             return this;
         }
@@ -1751,19 +1853,19 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the analytic hash that identifies this annotation's source
          * </pre>
          *
-         * <code>string analyticHash = 6;</code>
+         * <code>string analyticSourceHash = 7;</code>
          *
          * @param value
-         *            The bytes for analyticHash to set.
+         *            The bytes for analyticSourceHash to set.
          * @return This builder for chaining.
          */
-        public Builder setAnalyticHashBytes(com.google.protobuf.ByteString value) {
+        public Builder setAnalyticSourceHashBytes(com.google.protobuf.ByteString value) {
             if (value == null) {
                 throw new NullPointerException();
             }
             checkByteStringIsUtf8(value);
 
-            analyticHash_ = value;
+            analyticSourceHash_ = value;
             onChanged();
             return this;
         }
@@ -1776,7 +1878,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          *
          * @return Whether the source field is set.
          */
@@ -1789,7 +1891,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          *
          * @return The source.
          */
@@ -1806,7 +1908,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          */
         public Builder setSource(datawave.annotation.protobuf.v1.AnnotationSource value) {
             if (sourceBuilder_ == null) {
@@ -1827,7 +1929,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          */
         public Builder setSource(datawave.annotation.protobuf.v1.AnnotationSource.Builder builderForValue) {
             if (sourceBuilder_ == null) {
@@ -1845,7 +1947,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          */
         public Builder mergeSource(datawave.annotation.protobuf.v1.AnnotationSource value) {
             if (sourceBuilder_ == null) {
@@ -1867,7 +1969,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          */
         public Builder clearSource() {
             if (sourceBuilder_ == null) {
@@ -1885,7 +1987,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          */
         public datawave.annotation.protobuf.v1.AnnotationSource.Builder getSourceBuilder() {
             bitField0_ |= 0x00000001;
@@ -1898,7 +2000,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          */
         public datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder getSourceOrBuilder() {
             if (sourceBuilder_ != null) {
@@ -1913,7 +2015,7 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
          * the source details for this annotation.
          * </pre>
          *
-         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 7;</code>
+         * <code>.datawave.annotation.protobuf.v1.AnnotationSource source = 8;</code>
          */
         private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.AnnotationSource,datawave.annotation.protobuf.v1.AnnotationSource.Builder,datawave.annotation.protobuf.v1.AnnotationSourceOrBuilder> getSourceFieldBuilder() {
             if (sourceBuilder_ == null) {
@@ -1922,108 +2024,6 @@ public final class Annotation extends com.google.protobuf.GeneratedMessageV3 imp
                 source_ = null;
             }
             return sourceBuilder_;
-        }
-
-        private java.lang.Object documentId_ = "";
-
-        /**
-         * <pre>
-         * the external identifier for this annotations source document.
-         * </pre>
-         *
-         * <code>string documentId = 8;</code>
-         *
-         * @return The documentId.
-         */
-        public java.lang.String getDocumentId() {
-            java.lang.Object ref = documentId_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                documentId_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * the external identifier for this annotations source document.
-         * </pre>
-         *
-         * <code>string documentId = 8;</code>
-         *
-         * @return The bytes for documentId.
-         */
-        public com.google.protobuf.ByteString getDocumentIdBytes() {
-            java.lang.Object ref = documentId_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                documentId_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * the external identifier for this annotations source document.
-         * </pre>
-         *
-         * <code>string documentId = 8;</code>
-         *
-         * @param value
-         *            The documentId to set.
-         * @return This builder for chaining.
-         */
-        public Builder setDocumentId(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-
-            documentId_ = value;
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * the external identifier for this annotations source document.
-         * </pre>
-         *
-         * <code>string documentId = 8;</code>
-         *
-         * @return This builder for chaining.
-         */
-        public Builder clearDocumentId() {
-
-            documentId_ = getDefaultInstance().getDocumentId();
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * the external identifier for this annotations source document.
-         * </pre>
-         *
-         * <code>string documentId = 8;</code>
-         *
-         * @param value
-         *            The bytes for documentId to set.
-         * @return This builder for chaining.
-         */
-        public Builder setDocumentIdBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            checkByteStringIsUtf8(value);
-
-            documentId_ = value;
-            onChanged();
-            return this;
         }
 
         private java.util.List<datawave.annotation.protobuf.v1.Segment> segments_ = java.util.Collections.emptyList();
