@@ -1,15 +1,21 @@
 package datawave.annotation.data.v1;
 
-import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.ANALYTIC_HASH_KEY;
-import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.DOCUMENT_ID_KEY;
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.DOCUMENT_CQ_FRAGMENT;
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.METADATA_CQ_FRAGMENT;
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.NULL;
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.SEGMENT_CQ_FRAGMENT;
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.SOURCE_CQ_FRAGMENT;
+import static datawave.annotation.data.v1.AccumuloAnnotationSerializer.VALID_CQ_FRAGMENTS;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationsEqual;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertMetadataEqual;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertSegmentsEqual;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotation;
+import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotationSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,6 +33,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.annotation.data.AnnotationSerializationException;
 import datawave.annotation.data.AnnotationSerializer;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.v1.AnnotationUtils;
 
@@ -36,10 +43,15 @@ public class AccumuloAnnotationSerializerTest {
 
     @Test
     public void testAnnotationSerializerDeserialize() throws AnnotationSerializationException, InvalidProtocolBufferException {
-        Annotation testAnnotation = generateTestAnnotation();
+        Annotation baseAnnotation = generateTestAnnotation();
+        AnnotationSource baseSource = generateTestAnnotationSource();
+
+        AnnotationSource testSource = AnnotationUtils.injectAnnotationSourceHashes(baseSource);
+        Annotation testAnnotation = AnnotationUtils.injectAnnotationSource(baseAnnotation, testSource);
+
         // an id must be assigned to serialize/deserialize an annotation - typically this is handled by the data
         // access object.
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
 
         AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
         Iterator<Map.Entry<Key,Value>> results = serializer.serialize(expectedAnnotation);
@@ -67,11 +79,11 @@ public class AccumuloAnnotationSerializerTest {
         Annotation baseAnnotation = generateTestAnnotation();
 
         // enrich the base annotation with a document id and a source id.
-        Annotation testAnnotation = baseAnnotation.toBuilder().setDocumentId("a-good-document").setAnalyticHash("a-good-source").build();
+        Annotation testAnnotation = baseAnnotation.toBuilder().setDocumentId("a-good-document").setAnalyticSourceHash("a-good-source").build();
 
         // an id must be assigned to serialize/deserialize an annotation - typically this is handled by the data
         // access object.
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
 
         AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
         Iterator<Map.Entry<Key,Value>> results = serializer.serialize(expectedAnnotation);
@@ -95,6 +107,9 @@ public class AccumuloAnnotationSerializerTest {
     }
 
     private void assertSerialization(Annotation expected, Iterator<Map.Entry<Key,Value>> results) throws InvalidProtocolBufferException {
+        final Segment expectedSegment = expected.getSegments(0);
+        final String expectedCf = expected.getDataType() + NULL + expected.getUid() + NULL + expected.getAnnotationType();
+
         final List<Map.Entry<String,String>> observedMetadata = new ArrayList<>();
         final List<Segment> observedSegments = new ArrayList<>();
 
@@ -105,35 +120,37 @@ public class AccumuloAnnotationSerializerTest {
             log.debug("Iterated key: '{}'", e.getKey());
 
             Value value = e.getValue();
+            assertEquals(expected.getShard(), key.getRow().toString(), "Row id mismatch");
+            assertEquals(expectedCf, key.getColumnFamily().toString(), "Column family mismatch");
 
-            assertEquals("20250704_249", key.getRow().toString(), "Row id mismatch");
-            assertEquals("testDataType\0abcde.fghij.klmno\0testAnnotationType", key.getColumnFamily().toString(), "Column family mismatch");
             String cq = key.getColumnQualifier().toString();
-            String[] parts = cq.split("\0");
-            assertTrue(parts.length >= 2, "Column qualifier incorrect length");
-            String annotationId = parts[0];
-            assertEquals("ddf5715c", annotationId, "Annotation id mismatch");
-            if (parts.length == 2) {
-                String segmentId = parts[1];
-                assertEquals("fa389252", segmentId);
+            String[] cqParts = cq.split("\0");
+            assertTrue(cqParts.length >= 3, "Column qualifier too short");
+            assertTrue(cqParts.length <= 4, "Column qualifier too long");
 
-                // the value must be decode-able into SegmentData.
-                Segment segment = Segment.parseFrom(value.get());
-                observedSegments.add(segment);
+            String annotationHash = cqParts[0];
+            assertEquals(expected.getAnnotationId(), annotationHash, "Annotation hash mismatch");
+            assertTrue(VALID_CQ_FRAGMENTS.contains(cqParts[1]), "Observed invalid column qualifier fragment: " + cqParts[1]);
 
+            switch (cqParts[1]) {
+                case SOURCE_CQ_FRAGMENT:
+                    assertEquals(expected.getAnalyticSourceHash(), cqParts[2]);
+                    break;
+                case DOCUMENT_CQ_FRAGMENT:
+                    assertEquals(expected.getDocumentId(), cqParts[2]);
+                    break;
+                case METADATA_CQ_FRAGMENT:
+                    observedMetadata.add(Map.entry(cqParts[2], cqParts[3]));
+                    break;
+                case SEGMENT_CQ_FRAGMENT:
+                    assertEquals(expectedSegment.getSegmentHash(), cqParts[2]);
+                    Segment segment = Segment.parseFrom(value.get());
+                    observedSegments.add(segment);
+                    break;
+                default:
+                    fail("Unexpected column qualifier fragment in key " + key);
             }
-            if (parts.length == 3) {
-                switch (parts[1]) {
-                    case ANALYTIC_HASH_KEY:
-                        assertEquals("a-good-source", parts[2]);
-                        break;
-                    case DOCUMENT_ID_KEY:
-                        assertEquals("a-good-document", parts[2]);
-                        break;
-                    default:
-                        observedMetadata.add(Map.entry(parts[1], parts[2]));
-                }
-            }
+
         }
 
         assertSegmentsEqual(expected.getSegmentsList(), observedSegments);

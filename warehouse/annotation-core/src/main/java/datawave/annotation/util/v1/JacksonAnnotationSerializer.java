@@ -1,7 +1,5 @@
 package datawave.annotation.util.v1;
 
-import static datawave.annotation.util.v1.AnnotationUtils.injectSegmentBoundaryTypes;
-
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -17,6 +15,6 @@ public class JacksonAnnotationSerializer extends JsonSerializer<Annotation> {
 
     @Override
     public void serialize(Annotation annotation, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeRawValue(protobufJsonPrinter.print(injectSegmentBoundaryTypes(annotation)));
+        jsonGenerator.writeRawValue(protobufJsonPrinter.print(annotation));
     }
 }
