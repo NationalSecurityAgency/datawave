@@ -144,18 +144,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-map-reduce</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-map-reduce-status</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-metrics</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
@@ -304,14 +292,6 @@
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-atom</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>gov.nsa.datawave.webservices</groupId>
-                            <artifactId>datawave-ws-map-reduce</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>gov.nsa.datawave.webservices</groupId>
-                            <artifactId>datawave-ws-map-reduce-status</artifactId>
                         </ejbModule>
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -731,11 +711,6 @@
                                         <artifactItem>
                                             <groupId>xerces</groupId>
                                             <artifactId>xercesImpl</artifactId>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>gov.nsa.datawave.webservices</groupId>
-                                            <artifactId>datawave-ws-map-reduce-embedded</artifactId>
-                                            <version>${project.version}</version>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

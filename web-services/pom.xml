@@ -18,9 +18,6 @@
         <module>query</module>
         <module>client</module>
         <module>cached-results</module>
-        <module>map-reduce</module>
-        <module>map-reduce-status</module>
-        <module>map-reduce-embedded</module>
         <module>metrics</module>
         <module>atom</module>
         <module>query-websocket</module>
