@@ -21,6 +21,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
     }
 
     private SegmentValue() {
+        valueHash_ = "";
         value_ = "";
     }
 
@@ -43,7 +44,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
     @java.lang.Override
     protected com.google.protobuf.MapField internalGetMapField(int number) {
         switch (number) {
-            case 3:
+            case 4:
                 return internalGetExtension();
             default:
                 throw new RuntimeException("Invalid map field number: " + number);
@@ -57,7 +58,53 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                                         datawave.annotation.protobuf.v1.SegmentValue.Builder.class);
     }
 
-    public static final int VALUE_FIELD_NUMBER = 1;
+    public static final int VALUEHASH_FIELD_NUMBER = 1;
+    private volatile java.lang.Object valueHash_;
+
+    /**
+     * <pre>
+     * the 32-bit value hash used for grouping.
+     * </pre>
+     *
+     * <code>string valueHash = 1;</code>
+     *
+     * @return The valueHash.
+     */
+    @java.lang.Override
+    public java.lang.String getValueHash() {
+        java.lang.Object ref = valueHash_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            valueHash_ = s;
+            return s;
+        }
+    }
+
+    /**
+     * <pre>
+     * the 32-bit value hash used for grouping.
+     * </pre>
+     *
+     * <code>string valueHash = 1;</code>
+     *
+     * @return The bytes for valueHash.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getValueHashBytes() {
+        java.lang.Object ref = valueHash_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            valueHash_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+
+    public static final int VALUE_FIELD_NUMBER = 2;
     private volatile java.lang.Object value_;
 
     /**
@@ -65,7 +112,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * e.g., label
      * </pre>
      *
-     * <code>string value = 1;</code>
+     * <code>string value = 2;</code>
      *
      * @return The value.
      */
@@ -87,7 +134,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * e.g., label
      * </pre>
      *
-     * <code>string value = 1;</code>
+     * <code>string value = 2;</code>
      *
      * @return The bytes for value.
      */
@@ -103,24 +150,24 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         }
     }
 
-    public static final int SCORE_FIELD_NUMBER = 2;
-    private double score_;
+    public static final int SCORE_FIELD_NUMBER = 3;
+    private float score_;
 
     /**
      * <pre>
      * e.g., confidence
      * </pre>
      *
-     * <code>double score = 2;</code>
+     * <code>float score = 3;</code>
      *
      * @return The score.
      */
     @java.lang.Override
-    public double getScore() {
+    public float getScore() {
         return score_;
     }
 
-    public static final int EXTENSION_FIELD_NUMBER = 3;
+    public static final int EXTENSION_FIELD_NUMBER = 4;
 
     private static final class ExtensionDefaultEntryHolder {
         static final com.google.protobuf.MapEntry<java.lang.String,java.lang.String> defaultEntry = com.google.protobuf.MapEntry.<java.lang.String,java.lang.String> newDefaultInstance(
@@ -146,7 +193,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
 
     @java.lang.Override
@@ -171,7 +218,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
     @java.lang.Override
 
@@ -184,7 +231,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
     @java.lang.Override
 
@@ -201,7 +248,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      * type-specific data
      * </pre>
      *
-     * <code>map&lt;string, string&gt; extension = 3;</code>
+     * <code>map&lt;string, string&gt; extension = 4;</code>
      */
     @java.lang.Override
 
@@ -232,13 +279,16 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
+        if (!getValueHashBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, valueHash_);
+        }
         if (!getValueBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, value_);
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 2, value_);
         }
-        if (score_ != 0D) {
-            output.writeDouble(2, score_);
+        if (score_ != 0F) {
+            output.writeFloat(3, score_);
         }
-        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetExtension(), ExtensionDefaultEntryHolder.defaultEntry, 3);
+        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetExtension(), ExtensionDefaultEntryHolder.defaultEntry, 4);
         getUnknownFields().writeTo(output);
     }
 
@@ -249,16 +299,19 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             return size;
 
         size = 0;
-        if (!getValueBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, value_);
+        if (!getValueHashBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, valueHash_);
         }
-        if (score_ != 0D) {
-            size += com.google.protobuf.CodedOutputStream.computeDoubleSize(2, score_);
+        if (!getValueBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, value_);
+        }
+        if (score_ != 0F) {
+            size += com.google.protobuf.CodedOutputStream.computeFloatSize(3, score_);
         }
         for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetExtension().getMap().entrySet()) {
             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> extension__ = ExtensionDefaultEntryHolder.defaultEntry.newBuilderForType()
                             .setKey(entry.getKey()).setValue(entry.getValue()).build();
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, extension__);
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(4, extension__);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -275,9 +328,11 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         }
         datawave.annotation.protobuf.v1.SegmentValue other = (datawave.annotation.protobuf.v1.SegmentValue) obj;
 
+        if (!getValueHash().equals(other.getValueHash()))
+            return false;
         if (!getValue().equals(other.getValue()))
             return false;
-        if (java.lang.Double.doubleToLongBits(getScore()) != java.lang.Double.doubleToLongBits(other.getScore()))
+        if (java.lang.Float.floatToIntBits(getScore()) != java.lang.Float.floatToIntBits(other.getScore()))
             return false;
         if (!internalGetExtension().equals(other.internalGetExtension()))
             return false;
@@ -293,10 +348,12 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         }
         int hash = 41;
         hash = (19 * hash) + getDescriptor().hashCode();
+        hash = (37 * hash) + VALUEHASH_FIELD_NUMBER;
+        hash = (53 * hash) + getValueHash().hashCode();
         hash = (37 * hash) + VALUE_FIELD_NUMBER;
         hash = (53 * hash) + getValue().hashCode();
         hash = (37 * hash) + SCORE_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getScore()));
+        hash = (53 * hash) + java.lang.Float.floatToIntBits(getScore());
         if (!internalGetExtension().getMap().isEmpty()) {
             hash = (37 * hash) + EXTENSION_FIELD_NUMBER;
             hash = (53 * hash) + internalGetExtension().hashCode();
@@ -402,7 +459,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMapField(int number) {
             switch (number) {
-                case 3:
+                case 4:
                     return internalGetExtension();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
@@ -412,7 +469,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMutableMapField(int number) {
             switch (number) {
-                case 3:
+                case 4:
                     return internalGetMutableExtension();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
@@ -439,9 +496,11 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         @java.lang.Override
         public Builder clear() {
             super.clear();
+            valueHash_ = "";
+
             value_ = "";
 
-            score_ = 0D;
+            score_ = 0F;
 
             internalGetMutableExtension().clear();
             return this;
@@ -470,6 +529,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         public datawave.annotation.protobuf.v1.SegmentValue buildPartial() {
             datawave.annotation.protobuf.v1.SegmentValue result = new datawave.annotation.protobuf.v1.SegmentValue(this);
             int from_bitField0_ = bitField0_;
+            result.valueHash_ = valueHash_;
             result.value_ = value_;
             result.score_ = score_;
             result.extension_ = internalGetExtension();
@@ -521,11 +581,15 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         public Builder mergeFrom(datawave.annotation.protobuf.v1.SegmentValue other) {
             if (other == datawave.annotation.protobuf.v1.SegmentValue.getDefaultInstance())
                 return this;
+            if (!other.getValueHash().isEmpty()) {
+                valueHash_ = other.valueHash_;
+                onChanged();
+            }
             if (!other.getValue().isEmpty()) {
                 value_ = other.value_;
                 onChanged();
             }
-            if (other.getScore() != 0D) {
+            if (other.getScore() != 0F) {
                 setScore(other.getScore());
             }
             internalGetMutableExtension().mergeFrom(other.internalGetExtension());
@@ -554,21 +618,26 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                             done = true;
                             break;
                         case 10: {
-                            value_ = input.readStringRequireUtf8();
+                            valueHash_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 10
-                        case 17: {
-                            score_ = input.readDouble();
+                        case 18: {
+                            value_ = input.readStringRequireUtf8();
 
                             break;
-                        } // case 17
-                        case 26: {
+                        } // case 18
+                        case 29: {
+                            score_ = input.readFloat();
+
+                            break;
+                        } // case 29
+                        case 34: {
                             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> extension__ = input
                                             .readMessage(ExtensionDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
                             internalGetMutableExtension().getMutableMap().put(extension__.getKey(), extension__.getValue());
                             break;
-                        } // case 26
+                        } // case 34
                         default: {
                             if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                                 done = true; // was an endgroup tag
@@ -587,6 +656,108 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
         private int bitField0_;
 
+        private java.lang.Object valueHash_ = "";
+
+        /**
+         * <pre>
+         * the 32-bit value hash used for grouping.
+         * </pre>
+         *
+         * <code>string valueHash = 1;</code>
+         *
+         * @return The valueHash.
+         */
+        public java.lang.String getValueHash() {
+            java.lang.Object ref = valueHash_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                valueHash_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the 32-bit value hash used for grouping.
+         * </pre>
+         *
+         * <code>string valueHash = 1;</code>
+         *
+         * @return The bytes for valueHash.
+         */
+        public com.google.protobuf.ByteString getValueHashBytes() {
+            java.lang.Object ref = valueHash_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                valueHash_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the 32-bit value hash used for grouping.
+         * </pre>
+         *
+         * <code>string valueHash = 1;</code>
+         *
+         * @param value
+         *            The valueHash to set.
+         * @return This builder for chaining.
+         */
+        public Builder setValueHash(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+
+            valueHash_ = value;
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the 32-bit value hash used for grouping.
+         * </pre>
+         *
+         * <code>string valueHash = 1;</code>
+         *
+         * @return This builder for chaining.
+         */
+        public Builder clearValueHash() {
+
+            valueHash_ = getDefaultInstance().getValueHash();
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the 32-bit value hash used for grouping.
+         * </pre>
+         *
+         * <code>string valueHash = 1;</code>
+         *
+         * @param value
+         *            The bytes for valueHash to set.
+         * @return This builder for chaining.
+         */
+        public Builder setValueHashBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+
+            valueHash_ = value;
+            onChanged();
+            return this;
+        }
+
         private java.lang.Object value_ = "";
 
         /**
@@ -594,7 +765,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * e.g., label
          * </pre>
          *
-         * <code>string value = 1;</code>
+         * <code>string value = 2;</code>
          *
          * @return The value.
          */
@@ -615,7 +786,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * e.g., label
          * </pre>
          *
-         * <code>string value = 1;</code>
+         * <code>string value = 2;</code>
          *
          * @return The bytes for value.
          */
@@ -635,7 +806,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * e.g., label
          * </pre>
          *
-         * <code>string value = 1;</code>
+         * <code>string value = 2;</code>
          *
          * @param value
          *            The value to set.
@@ -656,7 +827,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * e.g., label
          * </pre>
          *
-         * <code>string value = 1;</code>
+         * <code>string value = 2;</code>
          *
          * @return This builder for chaining.
          */
@@ -672,7 +843,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * e.g., label
          * </pre>
          *
-         * <code>string value = 1;</code>
+         * <code>string value = 2;</code>
          *
          * @param value
          *            The bytes for value to set.
@@ -689,19 +860,19 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             return this;
         }
 
-        private double score_;
+        private float score_;
 
         /**
          * <pre>
          * e.g., confidence
          * </pre>
          *
-         * <code>double score = 2;</code>
+         * <code>float score = 3;</code>
          *
          * @return The score.
          */
         @java.lang.Override
-        public double getScore() {
+        public float getScore() {
             return score_;
         }
 
@@ -710,13 +881,13 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * e.g., confidence
          * </pre>
          *
-         * <code>double score = 2;</code>
+         * <code>float score = 3;</code>
          *
          * @param value
          *            The score to set.
          * @return This builder for chaining.
          */
-        public Builder setScore(double value) {
+        public Builder setScore(float value) {
 
             score_ = value;
             onChanged();
@@ -728,13 +899,13 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * e.g., confidence
          * </pre>
          *
-         * <code>double score = 2;</code>
+         * <code>float score = 3;</code>
          *
          * @return This builder for chaining.
          */
         public Builder clearScore() {
 
-            score_ = 0D;
+            score_ = 0F;
             onChanged();
             return this;
         }
@@ -769,7 +940,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>map&lt;string, string&gt; extension = 3;</code>
+         * <code>map&lt;string, string&gt; extension = 4;</code>
          */
 
         @java.lang.Override
@@ -794,7 +965,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>map&lt;string, string&gt; extension = 3;</code>
+         * <code>map&lt;string, string&gt; extension = 4;</code>
          */
         @java.lang.Override
 
@@ -807,7 +978,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>map&lt;string, string&gt; extension = 3;</code>
+         * <code>map&lt;string, string&gt; extension = 4;</code>
          */
         @java.lang.Override
 
@@ -824,7 +995,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>map&lt;string, string&gt; extension = 3;</code>
+         * <code>map&lt;string, string&gt; extension = 4;</code>
          */
         @java.lang.Override
 
@@ -849,7 +1020,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>map&lt;string, string&gt; extension = 3;</code>
+         * <code>map&lt;string, string&gt; extension = 4;</code>
          */
 
         public Builder removeExtension(java.lang.String key) {
@@ -873,7 +1044,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>map&lt;string, string&gt; extension = 3;</code>
+         * <code>map&lt;string, string&gt; extension = 4;</code>
          */
         public Builder putExtension(java.lang.String key, java.lang.String value) {
             if (key == null) {
@@ -891,7 +1062,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * type-specific data
          * </pre>
          *
-         * <code>map&lt;string, string&gt; extension = 3;</code>
+         * <code>map&lt;string, string&gt; extension = 4;</code>
          */
 
         public Builder putAllExtension(java.util.Map<java.lang.String,java.lang.String> values) {

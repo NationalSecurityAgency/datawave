@@ -453,11 +453,11 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     @GET
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentId}")
+    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentHash}")
     @Produces("application/json")
     @Override
     public Response getAnnotationSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
-                    @PathParam("segmentId") String segmentId) {
+                    @PathParam("segmentHash") String segmentHash) {
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
             if (metadata.isEmpty()) {
@@ -472,7 +472,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (annotationResults.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentId);
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentHash);
             }
 
             final Map<Metadata,Collection<Segment>> results = new HashMap<>();
@@ -480,7 +480,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 // now select only the segments that were requested.
                 List<Segment> matchingSegments = new ArrayList<>();
                 for (Segment s : entry.getValue().getSegmentsList()) {
-                    if (s.getSegmentId().equals(segmentId)) {
+                    if (s.getSegmentHash().equals(segmentHash)) {
                         matchingSegments.add(s);
                     }
                 }
@@ -490,7 +490,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (results.isEmpty()) {
-                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentId);
+                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentHash);
             }
             return jsonOk(results);
         } catch (QueryException e) {
@@ -525,7 +525,7 @@ public class AnnotationManagerBean implements AnnotationManager {
 
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
             annotationDataAccess.addSegment(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(), annotationId, segment);
-            return jsonOk(segment.getSegmentId());
+            return jsonOk(segment.getSegmentHash());
         } catch (InvalidProtocolBufferException e) {
             final String message = String.format("Invalid annotation json: %s", e.getMessage());
             log.error(message, e);
@@ -538,13 +538,13 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     @PUT
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentId}")
+    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentHash}")
     @Consumes("application/json")
     @Produces("application/json")
     @RolesAllowed({"AnnotationWriter"})
     @Override
     public Response updateSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
-                    @PathParam("segmentId") String segmentId, String body) {
+                    @PathParam("segmentHash") String segmentHash, String body) {
         // TODO: determine update semantics.
         return jsonError("Not implemented");
     }
@@ -596,18 +596,18 @@ public class AnnotationManagerBean implements AnnotationManager {
         // no need to inject a source if we already have one.
         if (a.hasSource()) {
             log.warn("Strange, this annotation already has a source. Annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
-                            a.getAnnotationId(), a.getAnalyticHash());
+                            a.getAnnotationId(), a.getAnalyticSourceHash());
             return a;
         }
 
-        if (StringUtils.isBlank(a.getAnalyticHash())) {
+        if (StringUtils.isBlank(a.getAnalyticSourceHash())) {
             log.warn("Strange, this annotation does not have an analytic hash. Annotation {}/{}/{} {}", a.getShard(), a.getDataType(), a.getUid(),
                             a.getAnnotationId());
             return a;
         }
 
         // do the deed and cache the results.
-        final String analyticHash = a.getAnalyticHash();
+        final String analyticHash = a.getAnalyticSourceHash();
         final Optional<AnnotationSource> result = retrievedSourcesCache.computeIfAbsent(analyticHash,
                         key -> annotationDataAccess.getAnnotationSource(analyticHash));
 
@@ -615,7 +615,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             return injectAnnotationSource(a, result.get());
         } else {
             log.debug("No analytic source found for annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
-                            a.getAnnotationId(), a.getAnalyticHash());
+                            a.getAnnotationId(), a.getAnalyticSourceHash());
             return a;
         }
     }
@@ -640,7 +640,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     private static Response jsonNotFound(String objectType, String idType, String id, String internalId, String annotationType, String annotationId,
-                    String segmentId) {
+                    String segmentHash) {
         String message = id.contains(internalId) ? String.format("No %s found for identifier: '%s:%s'", objectType, idType, id)
                         : String.format("No %s found for identifier '%s:%s', internalId: '%s'", objectType, idType, id, internalId);
 
@@ -650,8 +650,8 @@ public class AnnotationManagerBean implements AnnotationManager {
         if (!StringUtils.isEmpty(annotationId)) {
             message += String.format(", annotationId '%s'", annotationId);
         }
-        if (!StringUtils.isEmpty(segmentId)) {
-            message += String.format(", segmentId '%s'", segmentId);
+        if (!StringUtils.isEmpty(segmentHash)) {
+            message += String.format(", segmentHash '%s'", segmentHash);
         }
 
         return jsonNotFound(message);

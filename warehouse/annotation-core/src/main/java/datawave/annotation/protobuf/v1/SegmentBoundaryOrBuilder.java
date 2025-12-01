@@ -9,118 +9,69 @@ public interface SegmentBoundaryOrBuilder extends
 
     /**
      * <pre>
-     * currently 'all', 'points', 'times', 'characters', should match the name of the field where data is stored.
+     * currently 'ALL', 'POINTS', 'TIME_MILLI', 'TEXT_CHAR'.
      * </pre>
      *
-     * <code>string boundaryType = 1;</code>
+     * <code>.datawave.annotation.protobuf.v1.BoundaryType boundaryType = 1;</code>
+     *
+     * @return The enum numeric value on the wire for boundaryType.
+     */
+    int getBoundaryTypeValue();
+
+    /**
+     * <pre>
+     * currently 'ALL', 'POINTS', 'TIME_MILLI', 'TEXT_CHAR'.
+     * </pre>
+     *
+     * <code>.datawave.annotation.protobuf.v1.BoundaryType boundaryType = 1;</code>
      *
      * @return The boundaryType.
      */
-    java.lang.String getBoundaryType();
+    datawave.annotation.protobuf.v1.BoundaryType getBoundaryType();
 
     /**
      * <pre>
-     * currently 'all', 'points', 'times', 'characters', should match the name of the field where data is stored.
+     * an start boundary for spans, the unit is implied by the boundaryType (used for TIME and TEXT spans).
      * </pre>
      *
-     * <code>string boundaryType = 1;</code>
+     * <code>int32 start = 21;</code>
      *
-     * @return The bytes for boundaryType.
+     * @return Whether the start field is set.
      */
-    com.google.protobuf.ByteString getBoundaryTypeBytes();
+    boolean hasStart();
 
     /**
      * <pre>
-     * the entire object.
+     * an start boundary for spans, the unit is implied by the boundaryType (used for TIME and TEXT spans).
      * </pre>
      *
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
+     * <code>int32 start = 21;</code>
      *
-     * @return Whether the all field is set.
+     * @return The start.
      */
-    boolean hasAll();
+    int getStart();
 
     /**
      * <pre>
-     * the entire object.
+     * an end boundary for spans, the unit is implied by the boundaryType (used for TIME and TEXT spans).
      * </pre>
      *
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
+     * <code>int32 end = 22;</code>
      *
-     * @return The all.
+     * @return Whether the end field is set.
      */
-    datawave.annotation.protobuf.v1.All getAll();
+    boolean hasEnd();
 
     /**
      * <pre>
-     * the entire object.
+     * an end boundary for spans, the unit is implied by the boundaryType (used for TIME and TEXT spans).
      * </pre>
      *
-     * <code>.datawave.annotation.protobuf.v1.All all = 20;</code>
+     * <code>int32 end = 22;</code>
+     *
+     * @return The end.
      */
-    datawave.annotation.protobuf.v1.AllOrBuilder getAllOrBuilder();
-
-    /**
-     * <pre>
-     * a start and end time span.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds timeSpan = 21;</code>
-     *
-     * @return Whether the timeSpan field is set.
-     */
-    boolean hasTimeSpan();
-
-    /**
-     * <pre>
-     * a start and end time span.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds timeSpan = 21;</code>
-     *
-     * @return The timeSpan.
-     */
-    datawave.annotation.protobuf.v1.TimeSpanSeconds getTimeSpan();
-
-    /**
-     * <pre>
-     * a start and end time span.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TimeSpanSeconds timeSpan = 21;</code>
-     */
-    datawave.annotation.protobuf.v1.TimeSpanSecondsOrBuilder getTimeSpanOrBuilder();
-
-    /**
-     * <pre>
-     * a start and end character.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characterSpan = 22;</code>
-     *
-     * @return Whether the characterSpan field is set.
-     */
-    boolean hasCharacterSpan();
-
-    /**
-     * <pre>
-     * a start and end character.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characterSpan = 22;</code>
-     *
-     * @return The characterSpan.
-     */
-    datawave.annotation.protobuf.v1.TextSpanChars getCharacterSpan();
-
-    /**
-     * <pre>
-     * a start and end character.
-     * </pre>
-     *
-     * <code>.datawave.annotation.protobuf.v1.TextSpanChars characterSpan = 22;</code>
-     */
-    datawave.annotation.protobuf.v1.TextSpanCharsOrBuilder getCharacterSpanOrBuilder();
+    int getEnd();
 
     /**
      * <pre>

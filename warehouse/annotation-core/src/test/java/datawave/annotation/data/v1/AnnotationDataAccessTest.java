@@ -45,7 +45,6 @@ import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
-import datawave.annotation.protobuf.v1.TextSpanChars;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.data.hash.HashUID;
@@ -117,7 +116,7 @@ public class AnnotationDataAccessTest {
         dao.addAnnotation(sourceAnnotation);
 
         // we expect the test annotation to have the same id injected as the annotation retuned from the dao.
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(sourceAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(sourceAnnotation);
 
         List<Annotation> annotation = dao.getAnnotations(sourceAnnotation.getShard(), sourceAnnotation.getDataType(), sourceAnnotation.getUid());
         assertFalse(annotation.isEmpty());
@@ -230,7 +229,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
-        String annotationUid = "dcf2d066";
+        String annotationUid = "989FC696";
 
         Optional<Annotation> annotationOptional = dao.getAnnotation(row, dataType, documentUid, annotationType, annotationUid);
         assertFalse(annotationOptional.isEmpty());
@@ -258,13 +257,13 @@ public class AnnotationDataAccessTest {
         AnnotationSource sourceAnnotationSource = generateTestAnnotationSource();
         Optional<AnnotationSource> addedAnnotationSource = dao.addAnnotationSource(sourceAnnotationSource);
         assertFalse(addedAnnotationSource.isEmpty());
-        assertTrue(StringUtils.isNotBlank(addedAnnotationSource.get().getAnalyticHash()));
+        assertTrue(StringUtils.isNotBlank(addedAnnotationSource.get().getAnalyticSourceHash()));
 
         // we expect the test annotation to have the same id injected as the annotation retuned from the dao.
-        AnnotationSource expectedAnnotationSource = AnnotationUtils.injectAnnotationSourceId(sourceAnnotationSource);
-        assertEquals(addedAnnotationSource.get().getAnalyticHash(), expectedAnnotationSource.getAnalyticHash());
+        AnnotationSource expectedAnnotationSource = AnnotationUtils.injectAnnotationSourceHashes(sourceAnnotationSource);
+        assertEquals(addedAnnotationSource.get().getAnalyticSourceHash(), expectedAnnotationSource.getAnalyticSourceHash());
 
-        Optional<AnnotationSource> annotationSource = dao.getAnnotationSource(expectedAnnotationSource.getAnalyticHash());
+        Optional<AnnotationSource> annotationSource = dao.getAnnotationSource(expectedAnnotationSource.getAnalyticSourceHash());
         assertFalse(annotationSource.isEmpty());
         AnnotationSource resultAnnotationSource = annotationSource.get();
         assertAnnotationSourcesEqual(expectedAnnotationSource, resultAnnotationSource);
@@ -272,13 +271,34 @@ public class AnnotationDataAccessTest {
 
     @Test
     public void testGetAnnotationSource() {
-        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("58590657");
+        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("07826DD26F8CE2594B46BD7338F135D8");
         assertFalse(annotationOptional.isEmpty());
         AnnotationSource as = annotationOptional.get();
         assertEquals("v6", as.getEngine());
         assertEquals("avalon", as.getModel());
-        assertEquals("toyota", as.getSourceLabel());
-        assertExpectedAnnotationSourceConfig(as.getConfigurationMap());
+
+        final String[] expectedConfigKeys = {"normalization"};
+        final String[] expectedConfigValues = {"circular"};
+        assertMapEntries(expectedConfigKeys, expectedConfigValues, as.getConfigurationMap());
+
+        final String[] expectedMetadataKeys = {"visibility", "created_date", "provenance"};
+        final String[] expectedMetadataValues = {"PUBLIC", "2025-10-01T00:00:00Z", "v6/avalon"};
+        assertMapEntries(expectedMetadataKeys, expectedMetadataValues, as.getMetadataMap());
+
+    }
+
+    public void assertMapEntries(String[] expectedKeys, String[] expectedValues, Map<String,String> observedMap) {
+        assertEquals(expectedKeys.length, observedMap.size());
+        for (int i = 0; i < expectedKeys.length; i++) {
+            String observedValue = observedMap.get(expectedKeys[i]);
+            //@formatter:off
+            assertEquals(expectedValues[i], observedValue,
+                    "expected value " + expectedValues[i] +
+                            " for key " + expectedKeys[i] +
+                            " but saw " + observedValue
+            );
+            //@formatter:on
+        }
     }
 
     @Test
@@ -286,18 +306,6 @@ public class AnnotationDataAccessTest {
         String row = "aaaaaaaa";
         Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource(row);
         assertTrue(annotationOptional.isEmpty());
-    }
-
-    public void assertExpectedAnnotationSourceConfig(Map<String,String> configuration) {
-        assertEquals(4, configuration.size());
-
-        final String[] expectedKeys = {"normalization", "provenance", "visibility", "created_date"};
-        final String[] expectedValues = {"circular", "v6/avalon/toyota", "PUBLIC", "2025-10-01T00:00:00Z"};
-
-        for (int i = 0; i < expectedKeys.length; i++) {
-            String observedValue = configuration.get(expectedKeys[i]);
-            assertEquals(expectedValues[i], observedValue, "expected value " + expectedValues[i] + " for key " + expectedKeys[i] + " but saw " + observedValue);
-        }
     }
 
     @AfterAll
@@ -346,10 +354,9 @@ public class AnnotationDataAccessTest {
      *            the list of segments to check
      */
     public static void assertExpectedTextSegments(List<Segment> segments) {
-
         // TODO: make this less sensitive to order
-        final String[] expectedWords = {"the", "fox", "brown", "<eos>", "caught", "rabbit", "the", "quick", "brown"};
-        final int[] expectedStarts = {27, 16, 10, 38, 20, 31, 0, 4};
+        final String[] expectedWords = {"rabbit", "quick", "brown", "fox", "<eos>", "caught", "the", "the"};
+        final int[] expectedStarts = {31, 4, 10, 16, 38, 20, 0, 27};
 
         assertFalse(segments.isEmpty());
         assertEquals(8, segments.size());
@@ -358,21 +365,19 @@ public class AnnotationDataAccessTest {
         List<String> errorMessages = new ArrayList<>();
 
         for (Segment segment : segments) {
-            // TODO: test extensions
             SegmentValue expectedValue = SegmentValue.newBuilder().setValue(expectedWords[pos]).setScore(1.0f).build();
-            TextSpanChars expectedSpan = TextSpanChars.newBuilder().setStartCharacter(expectedStarts[pos])
-                            .setEndCharacter(expectedStarts[pos] + expectedWords[pos].length()).build();
+            SegmentBoundary expectedBoundary = SegmentBoundary.newBuilder().setStart(expectedStarts[pos])
+                            .setEnd(expectedStarts[pos] + expectedWords[pos].length()).build();
             pos++;
 
             List<SegmentValue> observedValues = segment.getValuesList();
             assertFalse(observedValues.isEmpty());
             assertEquals(1, observedValues.size());
             SegmentValue observedValue = observedValues.get(0);
-            SegmentBoundary bounds = segment.getBoundary();
-            TextSpanChars observedSpan = bounds.getCharacterSpan();
-
+            SegmentBoundary observedBounds = segment.getBoundary();
+            log.debug("pos: {} value: {} bounds: {}", pos, observedValue, observedBounds);
             // we want to see all errors, so don't stop on the first failure.
-            evaluateTextSegmentMatch(errorMessages, expectedValue, expectedSpan, observedValue, observedSpan);
+            evaluateTextSegmentMatch(errorMessages, expectedValue, expectedBoundary, observedValue, observedBounds);
         }
 
         assertEquals("[]", errorMessages.toString());
@@ -393,13 +398,13 @@ public class AnnotationDataAccessTest {
      * @param observedBoundary
      *            the boundary to check.
      */
-    public static void evaluateTextSegmentMatch(List<String> errorMessages, SegmentValue expectedValue, TextSpanChars expectedBoundary,
-                    SegmentValue observedValue, TextSpanChars observedBoundary) {
+    public static void evaluateTextSegmentMatch(List<String> errorMessages, SegmentValue expectedValue, SegmentBoundary expectedBoundary,
+                    SegmentValue observedValue, SegmentBoundary observedBoundary) {
         String expectedWord = expectedValue.getValue();
-        long expectedStart = expectedBoundary.getStartCharacter();
+        long expectedStart = expectedBoundary.getStart();
 
         String observedWord = observedValue.getValue();
-        long observedStart = observedBoundary.getStartCharacter();
+        long observedStart = observedBoundary.getStart();
 
         if (!(expectedWord.equals(observedWord) && expectedStart == observedStart)) {
             String message = String.format("Segment mismatch: value: '%s', expected value: '%s',  start: %s, expected start: %s\n", observedWord, expectedWord,

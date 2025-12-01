@@ -15,6 +15,6 @@ public class JacksonSegmentSerializer extends JsonSerializer<Segment> {
 
     @Override
     public void serialize(Segment segment, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeRawValue(protobufJsonPrinter.print(AnnotationUtils.injectBoundaryType(segment)));
+        jsonGenerator.writeRawValue(protobufJsonPrinter.print(segment));
     }
 }

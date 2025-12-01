@@ -1,16 +1,31 @@
 {
-  "shard": "20251017_0",
+  "shard": "20160426_0",
   "dataType": "annotation",
-  "uid": "-1111.1111.-1111",
+  "uid": "2222.2222.-2222",
+  "documentId": "testDocumentId1",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2016-04-26T01:00:53Z"
+    }
+  },
   "metadata": {
     "visibility": "PUBLIC",
-    "created_date": "2016-04-26T01:31:53Z"
+    "created_date": "2016-04-26T01:00:53Z"
   },
   "segments": [
     {
-      "segmentId": "testSegmentId1",
+      "segmentHash": "testSegmentId1",
       "values": [
         {
           "value": "test1a",
@@ -36,20 +51,20 @@
       "metadata": {
       },
       "boundary": {
-        "boundaryType": "POINT_LIST",
+        "boundaryType": "POINTS",
         "points": [
           {
-            "x": -78087840.7337584,
-            "y": 56815415.1987268,
+            "x": -78087840,
+            "y": 56815415,
             "label": "testPointLabel1"
           }
         ]
       }
     },
     {
-      "segmentId": "testSegmentId2",
+      "segmentHash": "testSegmentId2",
       "boundary": {
-        "boundaryType": "POINT_LIST",
+        "boundaryType": "POINTS",
         "points": [
           {
             "label": "testPointLabel2a"
@@ -61,23 +76,23 @@
       }
     },
     {
-      "segmentId": "testSegmentId3",
+      "segmentHash": "testSegmentId3",
       "values": [],
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
       "boundary": {
-        "boundaryType": "POINT_LIST"
+        "boundaryType": "POINTS"
       }
     },
     {
-      "segmentId": "testSegmentId3",
+      "segmentHash": "testSegmentId3",
       "values": [],
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },
       "boundary": {
-        "boundaryType": "POINT_LIST"
+        "boundaryType": "POINTS"
       }
     }
   ]
@@ -86,15 +101,30 @@
   "shard": "20160426_0",
   "dataType": "annotation",
   "uid": "2222.2222.-2222",
+  "documentId": "testDocumentId2",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
   "metadata": {
     "visibility": "PUBLIC",
     "created_date": "2016-04-26T01:00:53Z"
   },
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2016-04-26T01:00:53Z"
+    }
+  },
   "segments": [
     {
-      "segmentId": "testSegmentId1",
+      "segmentHash": "testSegmentId1",
       "values": [
         {
           "value": "test1a",
@@ -120,20 +150,20 @@
       "metadata": {
       },
       "boundary": {
-        "boundaryType": "POINT_LIST",
+        "boundaryType": "POINTS",
         "points": [
           {
-            "x": -78087840.7337584,
-            "y": 56815415.1987268,
+            "x": -78087840,
+            "y": 56815415,
             "label": "testPointLabel1"
           }
         ]
       }
     },
     {
-      "segmentId": "testSegmentId2",
+      "segmentHash": "testSegmentId2",
       "boundary": {
-        "boundaryType": "POINT_LIST",
+        "boundaryType": "POINTS",
         "points": [
           {
             "label": "testPointLabel2a"
@@ -145,23 +175,23 @@
       }
     },
     {
-      "segmentId": "testSegmentId3",
+      "segmentHash": "testSegmentId3",
       "values": [],
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
-      "boundaryType": "POINT_LIST",
-      "bounds": {
+      "boundary": {
+        "boundaryType": "POINTS"
       }
     },
     {
-      "segmentId": "testSegmentId3",
+      "segmentHash": "testSegmentId3",
       "values": [],
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },
-      "bounds": {
-        "boundaryType": "POINT_LIST"
+      "boundary": {
+        "boundaryType": "POINTS"
       }
     }
   ]
