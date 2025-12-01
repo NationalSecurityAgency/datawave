@@ -4,12 +4,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-import org.springframework.stereotype.Component;
-
 /**
- * Configuration bean for {@link QueryLimitConfiguration}. In practice, this should be a singleton.
+ * Configuration for query limits.
  */
-@Component("queryLimitProviderConfig")
 public class QueryLimitConfiguration {
 
     private int defaultUserQueryLimit;
@@ -18,24 +15,6 @@ public class QueryLimitConfiguration {
     private List<UserLimitConfiguration> userConfigs;
     private List<SystemLimitConfiguration> systemConfigs;
     private List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs;
-
-    public QueryLimitConfiguration() {
-        this(-1, -1, null, null, null);
-    }
-
-    public QueryLimitConfiguration(QueryLimitConfiguration config) {
-        this(config.getDefaultUserQueryLimit(), config.getDefaultSystemQueryLimit(), config.getUserConfigs(), config.getSystemConfigs(),
-                        config.getQueryLogicGroupConfigs());
-    }
-
-    public QueryLimitConfiguration(int defaultUserQueryLimit, int defaultSystemQueryLimit, List<UserLimitConfiguration> userConfigs,
-                    List<SystemLimitConfiguration> systemConfigs, List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs) {
-        this.defaultUserQueryLimit = defaultUserQueryLimit;
-        this.defaultSystemQueryLimit = defaultSystemQueryLimit;
-        this.userConfigs = userConfigs == null ? List.of() : List.copyOf(userConfigs);
-        this.systemConfigs = systemConfigs == null ? List.of() : List.copyOf(systemConfigs);
-        this.queryLogicGroupConfigs = queryLogicGroupConfigs == null ? List.of() : List.copyOf(queryLogicGroupConfigs);
-    }
 
     public int getDefaultUserQueryLimit() {
         return defaultUserQueryLimit;

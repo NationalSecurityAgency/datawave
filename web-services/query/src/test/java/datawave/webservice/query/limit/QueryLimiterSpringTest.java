@@ -25,7 +25,7 @@ class QueryLimiterSpringTest {
     @Test
     void testCreation() {
         assertThat(limiter).isNotNull();
-        assertThat(limiter.getZookeeperConfig()).isEqualTo("fakeZookeeperConfig");
+        assertThat(limiter.getZookeeperConfig()).isEqualTo("localhost:2181");
 
         QueryLimitConfiguration config = limiter.getConfiguration();
         assertThat(config).isNotNull();

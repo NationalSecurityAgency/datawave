@@ -7,16 +7,15 @@ import javax.annotation.PostConstruct;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import com.google.common.base.Strings;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
  * submitted.
  */
 @Component("queryLimiter")
+@Scope("prototype")
 public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
@@ -35,22 +34,12 @@ public class QueryLimiter {
     }
 
     public void setZookeeperConfig(String zookeeperConfig) {
+        log.info("Setting zookeeper to " + zookeeperConfig);
         this.zookeeperConfig = zookeeperConfig;
     }
 
-    public ActiveQueryTracker getActiveQueryTracker() throws QuorumPeerConfig.ConfigException {
-        if (this.activeQueryTracker == null) {
-            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig, 120000L);
-        }
-        return this.activeQueryTracker;
-    }
-
-    public void setActiveQueryTracker(ActiveQueryTracker activeQueryTracker) {
-        this.activeQueryTracker = activeQueryTracker;
-    }
-
-    @Autowired
     public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
+        log.info("Setting configuration to " + configuration);
         this.configuration = queryLimitConfiguration;
     }
 
@@ -74,13 +63,10 @@ public class QueryLimiter {
      * Validate the configuration and extract the query limits to enforce.
      */
     @PostConstruct
-    protected void postConstruct() {
-        if (log.isTraceEnabled()) {
-            log.trace("Initializing with config: " + configuration);
-        }
-
-        if (Strings.isNullOrEmpty(zookeeperConfig)) {
-            throw new IllegalArgumentException("zookeeperConfig is required");
+    public void setup() {
+        if (log.isDebugEnabled()) {
+            log.debug("zookeeper config: '" + zookeeperConfig + "'");
+            log.debug("query limit config: " + configuration);
         }
 
         if (configuration.getDefaultUserQueryLimit() < 1) {
@@ -261,5 +247,17 @@ public class QueryLimiter {
      */
     public QueryHeartbeat createHeartbeat(String queryId) throws QuorumPeerConfig.ConfigException {
         return getActiveQueryTracker().createHeartbeat(queryId);
+    }
+
+    /**
+     * Return the {@link ActiveQueryTracker} instance, initializing it if needed.
+     *
+     * @return the active query tracker
+     */
+    private ActiveQueryTracker getActiveQueryTracker() throws QuorumPeerConfig.ConfigException {
+        if (this.activeQueryTracker == null) {
+            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig, 120000L);
+        }
+        return this.activeQueryTracker;
     }
 }

@@ -159,7 +159,6 @@ public class SystemLimitProvider {
 
             // Create a matchable set for the query logic group limits.
             SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-            System.out.println(systemConfig.getQueryLogicGroupLimits());
             for (Map.Entry<String,Integer> entry : systemConfig.getQueryLogicGroupLimits().entrySet()) {
                 groupLimits.add(new MatchableLimit(entry.getKey(), entry.getValue()));
             }
