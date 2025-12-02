@@ -4,8 +4,10 @@ import static datawave.query.jexl.JexlASTHelper.deconstructIdentifier;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
@@ -54,7 +56,7 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
                     log.warn("failed to extract score for field: " + baseField + " on doc: " + docId + " Defaulting score: " + score, e);
                 }
 
-                if (Double.parseDouble(score) > this.minScore) {
+                if (Double.parseDouble(score) >= this.minScore) {
                     List<String> values = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
                     for (String value : values) {
                         extractedFields.put(value, Double.parseDouble(score));
@@ -137,6 +139,20 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
 
     public List<String> getFields() {
         return fields;
+    }
+
+    /**
+     * Get all fields needed by this extractor to work correctly. This will include the fields any required scoring fields
+     *
+     * @return
+     */
+    public List<String> getNeededFields() {
+        Set<String> neededFields = fields != null ? new HashSet<>(fields) : new HashSet<>();
+        if (fieldToScoreField != null) {
+            neededFields.addAll(fieldToScoreField.values());
+        }
+
+        return new ArrayList<>(neededFields);
     }
 
     public void setFieldToScoreField(Map<String,String> fieldToScoreField) {

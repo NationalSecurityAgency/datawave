@@ -229,7 +229,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         String responseVersion = settings.findParameter(TAG_CLOUD_VERSION).getParameterValue().trim();
         setResponseVersion(responseVersion);
 
-        if (!settings.getQuery().isEmpty()) {
+        if (settings.getQuery() != null && !settings.getQuery().isEmpty()) {
             // Execute the query logic.
             final Collection<String> queryTerms = extractQueryTerms(settings);
 
@@ -266,7 +266,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         try {
             final IteratorChain<Entry<Key,Value>> iteratorChain = new IteratorChain<>();
 
-            if (genericConfig.getQuery() != null && !genericConfig.getQuery().getQuery().isEmpty()) {
+            if (genericConfig.getQuery() != null && genericConfig.getQuery().getQuery() != null && !genericConfig.getQuery().getQuery().isEmpty()) {
                 final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
                                 config.getQuery());
                 scanner.setRanges(config.getState().getRanges());
