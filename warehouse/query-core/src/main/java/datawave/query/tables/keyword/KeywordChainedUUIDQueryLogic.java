@@ -1,6 +1,7 @@
 package datawave.query.tables.keyword;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -8,6 +9,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -16,6 +18,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.tables.chained.ChainedQueryTable;
+import datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor;
 
 /**
  * Pairs the lookupUUID logic with the keyword extraction logic to create the ability to extract keywords given a set of document identifiers.
@@ -25,6 +28,7 @@ public class KeywordChainedUUIDQueryLogic extends ChainedQueryTable<Entry<Key,Va
     private static final Logger log = Logger.getLogger(KeywordChainedUUIDQueryLogic.class);
 
     private Query keywordExtractionQuery = null;
+    private List<FieldedTagCloudInputExtractor> extractors;
 
     public KeywordChainedUUIDQueryLogic() {
         super();
@@ -57,6 +61,14 @@ public class KeywordChainedUUIDQueryLogic extends ChainedQueryTable<Entry<Key,Va
             settings.addParameter(QueryParameters.RETURN_FIELDS, "LANGUAGE");
         } else {
             returnFieldsParam.setParameterValue("LANGUAGE");
+        }
+
+        // add any required fields for extractors
+        if (extractors != null) {
+            returnFieldsParam = settings.findParameter(QueryParameters.RETURN_FIELDS);
+            for (FieldedTagCloudInputExtractor extractor : extractors) {
+                returnFieldsParam.setParameterValue(returnFieldsParam.getParameterValue() + "," + StringUtils.join(extractor.getNeededFields(), ","));
+            }
         }
 
         QueryImpl.Parameter querySyntaxParam = settings.findParameter(QueryParameters.QUERY_SYNTAX);
@@ -113,5 +125,9 @@ public class KeywordChainedUUIDQueryLogic extends ChainedQueryTable<Entry<Key,Va
     @Override
     public Set<String> getExampleQueries() {
         return Set.of();
+    }
+
+    public void setExtractors(List<FieldedTagCloudInputExtractor> extractors) {
+        this.extractors = extractors;
     }
 }

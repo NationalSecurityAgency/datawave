@@ -15,7 +15,7 @@ import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
 
 public class KeywordResultsTransformer implements TagCloudInputTransformer<KeywordResults> {
-    public static final String LABEL = "keywords";
+    public static final String LABEL = "keyword";
 
     private boolean languagePartitioned = true;
     private Map<String,String> identifierMap = new HashMap<>();

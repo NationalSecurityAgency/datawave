@@ -88,11 +88,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
         q.setQueryAuthorizations(initialQuery.getQueryAuthorizations());
         q.setUserDN(initialQuery.getUserDN());
 
-        q.addParameter(KeywordQueryLogic.TAG_CLOUD_CREATE, initialQuery.findParameter(KeywordQueryLogic.TAG_CLOUD_CREATE).getParameterValue());
-        q.addParameter(KeywordQueryLogic.PREFERRED_VIEW_NAMES, initialQuery.findParameter(KeywordQueryLogic.PREFERRED_VIEW_NAMES).getParameterValue());
-        q.addParameter(KeywordQueryLogic.TAG_CLOUD_MAX, initialQuery.findParameter(KeywordQueryLogic.TAG_CLOUD_MAX).getParameterValue());
-        q.addParameter(KeywordQueryLogic.TAG_CLOUD_LANGUAGE, initialQuery.findParameter(KeywordQueryLogic.TAG_CLOUD_LANGUAGE).getParameterValue());
-
+        q.setParameters(initialQuery.getParameters());
         return q;
     }
 

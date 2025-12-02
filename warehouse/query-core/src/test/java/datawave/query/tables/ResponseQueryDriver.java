@@ -20,13 +20,13 @@ public class ResponseQueryDriver<K> {
 
     public BaseQueryResponse drive(GenericQueryConfiguration config) {
         List<K> results = new ArrayList<>();
-        QueryLogicTransformer transformer = logic.getTransformer(config.getQuery());
         TransformIterator transformerIterator = logic.getTransformIterator(config.getQuery());
         while (transformerIterator.hasNext()) {
             K o = (K) transformerIterator.next();
             results.add(o);
         }
         ResultsPage<K> resultsPage = new ResultsPage<>(results);
+        QueryLogicTransformer transformer = logic.getTransformer(config.getQuery());
         return transformer.createResponse(resultsPage);
     }
 }
