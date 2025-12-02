@@ -562,14 +562,20 @@ public class AnnotationManagerBean implements AnnotationManager {
      *             if the id is malformed.
      */
     private List<Metadata> lookupDocumentIdentifier(String idType, String id) throws QueryException {
+        // If the idType is RECORD_ID or DOCUMENT, treat the id provided as an internal id and perform a direct lookup
+        // against the annotations table, if that's enabled.
         if (idType.equals("DOCUMENT") || idType.equals("RECORD_ID")) {
-            // If the idType is RECORD_ID or DOCUMENT treat the id provided is an internal id.
+            if (!config.isEnableInternalIdLookup()) {
+                final String message = String.format("Internal identifier lookup is disabled for '%s:%s' please use a valid document id type.", idType, id);
+                throw new QueryException(message);
+            }
+
             return parseDocumentIdentifier(id);
-        } else {
-            // Otherwise, perform a lookup to find the internal id.
-            final LookupUUIDService lookup = initializeLookupUUIDService();
-            return lookup.executeLookupUUIDQuery(idType, id);
         }
+
+        // Otherwise, use the lookup uuid service to perform a lookup to find the internal id in the shard table.
+        final LookupUUIDService lookup = initializeLookupUUIDService();
+        return lookup.executeLookupUUIDQuery(idType, id);
     }
 
     /**
@@ -670,5 +676,10 @@ public class AnnotationManagerBean implements AnnotationManager {
     private static Response jsonOk(Object responseObject) {
         // TODO: do we want to return more? (e.g., include fields like internal id, etc..
         return Response.ok(responseObject, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8")).build();
+    }
+
+    @VisibleForTesting
+    protected AnnotationManagerConfig getConfig() {
+        return config;
     }
 }

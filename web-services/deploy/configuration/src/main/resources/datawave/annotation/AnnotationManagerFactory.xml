@@ -22,6 +22,7 @@
         <property name="annotationTableName" value="${annotation.table.name}"/>
         <property name="annotationSourceTableName" value="${annotation.source.table.name}"/>
         <property name="connPoolName" value="WAREHOUSE" />
+        <property name="enableInternalIdLookup" value="true" />
         <property name="lookupUUIDQueryLogic">
             <bean scope="prototype" parent="BaseEventQuery">
                 <property name="auditType" value="NONE" />

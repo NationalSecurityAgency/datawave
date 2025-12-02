@@ -434,6 +434,21 @@ public class AnnotationManagerBeanFunctionalTest {
     }
 
     @Test
+    public void testGetAnnotationInternalIdDisabled() {
+        AnnotationManagerBean bean = (AnnotationManagerBean) annotationManager;
+        AnnotationManagerConfig config = bean.getConfig();
+        config.setEnableInternalIdLookup(false);
+
+        Annotation testAnnotation = generateTestAnnotation();
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+        Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "23BD91EC");
+        assertResponseStatus(500, response);
+        String errorResponse = assertExpectedEntity(String.class, response);
+        assertContains("Internal identifier lookup is disabled for", errorResponse);
+        assertContains("20250704_249/testDataType/abcde.fghij.klmno", errorResponse);
+    }
+
+    @Test
     public void testGetAnnotationMissingInternalId() {
         Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "aaaaaaaa");
         assertResponseStatus(404, response);
@@ -441,7 +456,6 @@ public class AnnotationManagerBeanFunctionalTest {
         assertContains("No annotations found for identifier", errorResponse);
         assertContains("20250704_249/testDataType/abcde.fghij.klmno", errorResponse);
         assertContains("aaaaaaaa", errorResponse);
-
     }
 
     @Test

@@ -9,6 +9,7 @@ public class AnnotationManagerConfig {
     private String annotationTableName;
     private String annotationSourceTableName;
     private String connPoolName;
+    private boolean enableInternalIdLookup = false;
     private ShardQueryLogic lookupUUIDQueryLogic;
     private LookupUUIDServiceConfig lookupUUIDServiceConfig;
     private AccumuloConnectionFactory.Priority priority = AccumuloConnectionFactory.Priority.LOW;
@@ -77,5 +78,13 @@ public class AnnotationManagerConfig {
 
     public void setVisibilityTransformer(VisibilityTransformer visibilityTransformer) {
         this.visibilityTransformer = visibilityTransformer;
+    }
+
+    public boolean isEnableInternalIdLookup() {
+        return enableInternalIdLookup;
+    }
+
+    public void setEnableInternalIdLookup(boolean enableInternalIdLookup) {
+        this.enableInternalIdLookup = enableInternalIdLookup;
     }
 }
