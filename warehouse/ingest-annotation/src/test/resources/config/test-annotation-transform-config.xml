@@ -50,7 +50,7 @@
             <!-- Copy any other fields that might exist -->
             <xsl:for-each select="map:keys($segment)">
                 <xsl:variable name="key" select="."/>
-                <xsl:if test="$key != 'segmentId' and $key != 'bounds' and $key != 'bounds'">
+                <xsl:if test="$key != 'segmentId' and $key != 'bounds'">
                     <xsl:map-entry key="$key" select="$segment($key)"/>
                 </xsl:if>
             </xsl:for-each>

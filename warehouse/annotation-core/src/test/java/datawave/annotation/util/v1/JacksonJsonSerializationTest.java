@@ -90,8 +90,7 @@ public class JacksonJsonSerializationTest {
         // boundary type and segment id generation are usually taken care of by the dao layer, we add them
         // here to create a simulation of that behavior.
         List<Annotation> testAnnotations = AnnotationTestDataUtil.generateManyTestAnnotations().stream()
-                .map(AnnotationUtils::injectSegmentBoundaryTypes)
-                .map(AnnotationUtils::injectAnnotationAndSegmentIds)
+                .map(AnnotationUtils::injectAllHashes)
                 .collect(Collectors.toList());
         //@formatter:on
         AnnotationList annotationList = AnnotationList.newBuilder().addAllAnnotations(testAnnotations).build();
@@ -113,7 +112,7 @@ public class JacksonJsonSerializationTest {
         } catch (IOException e) {
             log.debug("Reached end of file?", e);
         }
-        assertEquals(27, parsedAnnotations.size());
+        assertEquals(36, parsedAnnotations.size());
         // TODO more validation
     }
 }

@@ -18,9 +18,9 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
     private AnnotationSource() {
         analyticHash_ = "";
+        analyticSourceHash_ = "";
         engine_ = "";
         model_ = "";
-        sourceLabel_ = "";
     }
 
     @java.lang.Override
@@ -42,8 +42,10 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
     @java.lang.Override
     protected com.google.protobuf.MapField internalGetMapField(int number) {
         switch (number) {
-            case 50:
+            case 5:
                 return internalGetConfiguration();
+            case 50:
+                return internalGetMetadata();
             default:
                 throw new RuntimeException("Invalid map field number: " + number);
         }
@@ -61,7 +63,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
     /**
      * <pre>
-     * the analytic hash for this source
+     * the 32-bit hash used for grouping this source
      * </pre>
      *
      * <code>string analyticHash = 1;</code>
@@ -83,7 +85,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
     /**
      * <pre>
-     * the analytic hash for this source
+     * the 32-bit hash used for grouping this source
      * </pre>
      *
      * <code>string analyticHash = 1;</code>
@@ -102,7 +104,53 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         }
     }
 
-    public static final int ENGINE_FIELD_NUMBER = 2;
+    public static final int ANALYTICSOURCEHASH_FIELD_NUMBER = 2;
+    private volatile java.lang.Object analyticSourceHash_;
+
+    /**
+     * <pre>
+     * the 128-bit hash for this source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 2;</code>
+     *
+     * @return The analyticSourceHash.
+     */
+    @java.lang.Override
+    public java.lang.String getAnalyticSourceHash() {
+        java.lang.Object ref = analyticSourceHash_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            analyticSourceHash_ = s;
+            return s;
+        }
+    }
+
+    /**
+     * <pre>
+     * the 128-bit hash for this source
+     * </pre>
+     *
+     * <code>string analyticSourceHash = 2;</code>
+     *
+     * @return The bytes for analyticSourceHash.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getAnalyticSourceHashBytes() {
+        java.lang.Object ref = analyticSourceHash_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            analyticSourceHash_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+
+    public static final int ENGINE_FIELD_NUMBER = 3;
     private volatile java.lang.Object engine_;
 
     /**
@@ -110,7 +158,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * a string identifying the engine that produce the annotation
      * </pre>
      *
-     * <code>string engine = 2;</code>
+     * <code>string engine = 3;</code>
      *
      * @return The engine.
      */
@@ -132,7 +180,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * a string identifying the engine that produce the annotation
      * </pre>
      *
-     * <code>string engine = 2;</code>
+     * <code>string engine = 3;</code>
      *
      * @return The bytes for engine.
      */
@@ -148,7 +196,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         }
     }
 
-    public static final int MODEL_FIELD_NUMBER = 3;
+    public static final int MODEL_FIELD_NUMBER = 4;
     private volatile java.lang.Object model_;
 
     /**
@@ -156,7 +204,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * a string identifying the model that produced the annotation
      * </pre>
      *
-     * <code>string model = 3;</code>
+     * <code>string model = 4;</code>
      *
      * @return The model.
      */
@@ -178,7 +226,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * a string identifying the model that produced the annotation
      * </pre>
      *
-     * <code>string model = 3;</code>
+     * <code>string model = 4;</code>
      *
      * @return The bytes for model.
      */
@@ -194,53 +242,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         }
     }
 
-    public static final int SOURCELABEL_FIELD_NUMBER = 4;
-    private volatile java.lang.Object sourceLabel_;
-
-    /**
-     * <pre>
-     * a label for the engine/model/configuration combo
-     * </pre>
-     *
-     * <code>string sourceLabel = 4;</code>
-     *
-     * @return The sourceLabel.
-     */
-    @java.lang.Override
-    public java.lang.String getSourceLabel() {
-        java.lang.Object ref = sourceLabel_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            sourceLabel_ = s;
-            return s;
-        }
-    }
-
-    /**
-     * <pre>
-     * a label for the engine/model/configuration combo
-     * </pre>
-     *
-     * <code>string sourceLabel = 4;</code>
-     *
-     * @return The bytes for sourceLabel.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getSourceLabelBytes() {
-        java.lang.Object ref = sourceLabel_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            sourceLabel_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
-        }
-    }
-
-    public static final int CONFIGURATION_FIELD_NUMBER = 50;
+    public static final int CONFIGURATION_FIELD_NUMBER = 5;
 
     private static final class ConfigurationDefaultEntryHolder {
         static final com.google.protobuf.MapEntry<java.lang.String,java.lang.String> defaultEntry = com.google.protobuf.MapEntry.<java.lang.String,java.lang.String> newDefaultInstance(
@@ -266,7 +268,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
 
     @java.lang.Override
@@ -291,7 +293,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
     @java.lang.Override
 
@@ -304,7 +306,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
     @java.lang.Override
 
@@ -321,7 +323,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
      * key value pairs identifying the configuration for the source.
      * </pre>
      *
-     * <code>map&lt;string, string&gt; configuration = 50;</code>
+     * <code>map&lt;string, string&gt; configuration = 5;</code>
      */
     @java.lang.Override
 
@@ -330,6 +332,86 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             throw new java.lang.NullPointerException();
         }
         java.util.Map<java.lang.String,java.lang.String> map = internalGetConfiguration().getMap();
+        if (!map.containsKey(key)) {
+            throw new java.lang.IllegalArgumentException();
+        }
+        return map.get(key);
+    }
+
+    public static final int METADATA_FIELD_NUMBER = 50;
+
+    private static final class MetadataDefaultEntryHolder {
+        static final com.google.protobuf.MapEntry<java.lang.String,java.lang.String> defaultEntry = com.google.protobuf.MapEntry.<java.lang.String,java.lang.String> newDefaultInstance(
+                        datawave.annotation.protobuf.v1.AnnotationV1.internal_static_datawave_annotation_protobuf_v1_AnnotationSource_MetadataEntry_descriptor,
+                        com.google.protobuf.WireFormat.FieldType.STRING, "", com.google.protobuf.WireFormat.FieldType.STRING, "");
+    }
+
+    private com.google.protobuf.MapField<java.lang.String,java.lang.String> metadata_;
+
+    private com.google.protobuf.MapField<java.lang.String,java.lang.String> internalGetMetadata() {
+        if (metadata_ == null) {
+            return com.google.protobuf.MapField.emptyMapField(MetadataDefaultEntryHolder.defaultEntry);
+        }
+        return metadata_;
+    }
+
+    public int getMetadataCount() {
+        return internalGetMetadata().getMap().size();
+    }
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+
+    @java.lang.Override
+    public boolean containsMetadata(java.lang.String key) {
+        if (key == null) {
+            throw new java.lang.NullPointerException();
+        }
+        return internalGetMetadata().getMap().containsKey(key);
+    }
+
+    /**
+     * Use {@link #getMetadataMap()} instead.
+     */
+    @java.lang.Override
+    @java.lang.Deprecated
+    public java.util.Map<java.lang.String,java.lang.String> getMetadata() {
+        return getMetadataMap();
+    }
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+    @java.lang.Override
+
+    public java.util.Map<java.lang.String,java.lang.String> getMetadataMap() {
+        return internalGetMetadata().getMap();
+    }
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+    @java.lang.Override
+
+    public java.lang.String getMetadataOrDefault(java.lang.String key, java.lang.String defaultValue) {
+        if (key == null) {
+            throw new java.lang.NullPointerException();
+        }
+        java.util.Map<java.lang.String,java.lang.String> map = internalGetMetadata().getMap();
+        return map.containsKey(key) ? map.get(key) : defaultValue;
+    }
+
+    /**
+     * <code>map&lt;string, string&gt; metadata = 50;</code>
+     */
+    @java.lang.Override
+
+    public java.lang.String getMetadataOrThrow(java.lang.String key) {
+        if (key == null) {
+            throw new java.lang.NullPointerException();
+        }
+        java.util.Map<java.lang.String,java.lang.String> map = internalGetMetadata().getMap();
         if (!map.containsKey(key)) {
             throw new java.lang.IllegalArgumentException();
         }
@@ -355,16 +437,17 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         if (!getAnalyticHashBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 1, analyticHash_);
         }
+        if (!getAnalyticSourceHashBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 2, analyticSourceHash_);
+        }
         if (!getEngineBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 2, engine_);
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 3, engine_);
         }
         if (!getModelBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 3, model_);
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 4, model_);
         }
-        if (!getSourceLabelBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 4, sourceLabel_);
-        }
-        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetConfiguration(), ConfigurationDefaultEntryHolder.defaultEntry, 50);
+        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetConfiguration(), ConfigurationDefaultEntryHolder.defaultEntry, 5);
+        com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetMetadata(), MetadataDefaultEntryHolder.defaultEntry, 50);
         getUnknownFields().writeTo(output);
     }
 
@@ -378,19 +461,24 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         if (!getAnalyticHashBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, analyticHash_);
         }
+        if (!getAnalyticSourceHashBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, analyticSourceHash_);
+        }
         if (!getEngineBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, engine_);
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, engine_);
         }
         if (!getModelBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, model_);
-        }
-        if (!getSourceLabelBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, sourceLabel_);
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, model_);
         }
         for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetConfiguration().getMap().entrySet()) {
             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> configuration__ = ConfigurationDefaultEntryHolder.defaultEntry.newBuilderForType()
                             .setKey(entry.getKey()).setValue(entry.getValue()).build();
-            size += com.google.protobuf.CodedOutputStream.computeMessageSize(50, configuration__);
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(5, configuration__);
+        }
+        for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetMetadata().getMap().entrySet()) {
+            com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = MetadataDefaultEntryHolder.defaultEntry.newBuilderForType()
+                            .setKey(entry.getKey()).setValue(entry.getValue()).build();
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(50, metadata__);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -409,13 +497,15 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         if (!getAnalyticHash().equals(other.getAnalyticHash()))
             return false;
+        if (!getAnalyticSourceHash().equals(other.getAnalyticSourceHash()))
+            return false;
         if (!getEngine().equals(other.getEngine()))
             return false;
         if (!getModel().equals(other.getModel()))
             return false;
-        if (!getSourceLabel().equals(other.getSourceLabel()))
-            return false;
         if (!internalGetConfiguration().equals(other.internalGetConfiguration()))
+            return false;
+        if (!internalGetMetadata().equals(other.internalGetMetadata()))
             return false;
         if (!getUnknownFields().equals(other.getUnknownFields()))
             return false;
@@ -431,15 +521,19 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         hash = (19 * hash) + getDescriptor().hashCode();
         hash = (37 * hash) + ANALYTICHASH_FIELD_NUMBER;
         hash = (53 * hash) + getAnalyticHash().hashCode();
+        hash = (37 * hash) + ANALYTICSOURCEHASH_FIELD_NUMBER;
+        hash = (53 * hash) + getAnalyticSourceHash().hashCode();
         hash = (37 * hash) + ENGINE_FIELD_NUMBER;
         hash = (53 * hash) + getEngine().hashCode();
         hash = (37 * hash) + MODEL_FIELD_NUMBER;
         hash = (53 * hash) + getModel().hashCode();
-        hash = (37 * hash) + SOURCELABEL_FIELD_NUMBER;
-        hash = (53 * hash) + getSourceLabel().hashCode();
         if (!internalGetConfiguration().getMap().isEmpty()) {
             hash = (37 * hash) + CONFIGURATION_FIELD_NUMBER;
             hash = (53 * hash) + internalGetConfiguration().hashCode();
+        }
+        if (!internalGetMetadata().getMap().isEmpty()) {
+            hash = (37 * hash) + METADATA_FIELD_NUMBER;
+            hash = (53 * hash) + internalGetMetadata().hashCode();
         }
         hash = (29 * hash) + getUnknownFields().hashCode();
         memoizedHashCode = hash;
@@ -539,8 +633,10 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMapField(int number) {
             switch (number) {
-                case 50:
+                case 5:
                     return internalGetConfiguration();
+                case 50:
+                    return internalGetMetadata();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
             }
@@ -549,8 +645,10 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         @SuppressWarnings({"rawtypes"})
         protected com.google.protobuf.MapField internalGetMutableMapField(int number) {
             switch (number) {
-                case 50:
+                case 5:
                     return internalGetMutableConfiguration();
+                case 50:
+                    return internalGetMutableMetadata();
                 default:
                     throw new RuntimeException("Invalid map field number: " + number);
             }
@@ -578,13 +676,14 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             super.clear();
             analyticHash_ = "";
 
+            analyticSourceHash_ = "";
+
             engine_ = "";
 
             model_ = "";
 
-            sourceLabel_ = "";
-
             internalGetMutableConfiguration().clear();
+            internalGetMutableMetadata().clear();
             return this;
         }
 
@@ -612,11 +711,13 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             datawave.annotation.protobuf.v1.AnnotationSource result = new datawave.annotation.protobuf.v1.AnnotationSource(this);
             int from_bitField0_ = bitField0_;
             result.analyticHash_ = analyticHash_;
+            result.analyticSourceHash_ = analyticSourceHash_;
             result.engine_ = engine_;
             result.model_ = model_;
-            result.sourceLabel_ = sourceLabel_;
             result.configuration_ = internalGetConfiguration();
             result.configuration_.makeImmutable();
+            result.metadata_ = internalGetMetadata();
+            result.metadata_.makeImmutable();
             onBuilt();
             return result;
         }
@@ -668,6 +769,10 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                 analyticHash_ = other.analyticHash_;
                 onChanged();
             }
+            if (!other.getAnalyticSourceHash().isEmpty()) {
+                analyticSourceHash_ = other.analyticSourceHash_;
+                onChanged();
+            }
             if (!other.getEngine().isEmpty()) {
                 engine_ = other.engine_;
                 onChanged();
@@ -676,11 +781,8 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                 model_ = other.model_;
                 onChanged();
             }
-            if (!other.getSourceLabel().isEmpty()) {
-                sourceLabel_ = other.sourceLabel_;
-                onChanged();
-            }
             internalGetMutableConfiguration().mergeFrom(other.internalGetConfiguration());
+            internalGetMutableMetadata().mergeFrom(other.internalGetMetadata());
             this.mergeUnknownFields(other.getUnknownFields());
             onChanged();
             return this;
@@ -711,24 +813,30 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                             break;
                         } // case 10
                         case 18: {
-                            engine_ = input.readStringRequireUtf8();
+                            analyticSourceHash_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 18
                         case 26: {
-                            model_ = input.readStringRequireUtf8();
+                            engine_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 26
                         case 34: {
-                            sourceLabel_ = input.readStringRequireUtf8();
+                            model_ = input.readStringRequireUtf8();
 
                             break;
                         } // case 34
-                        case 402: {
+                        case 42: {
                             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> configuration__ = input
                                             .readMessage(ConfigurationDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
                             internalGetMutableConfiguration().getMutableMap().put(configuration__.getKey(), configuration__.getValue());
+                            break;
+                        } // case 42
+                        case 402: {
+                            com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = input
+                                            .readMessage(MetadataDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
+                            internalGetMutableMetadata().getMutableMap().put(metadata__.getKey(), metadata__.getValue());
                             break;
                         } // case 402
                         default: {
@@ -753,7 +861,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         /**
          * <pre>
-         * the analytic hash for this source
+         * the 32-bit hash used for grouping this source
          * </pre>
          *
          * <code>string analyticHash = 1;</code>
@@ -774,7 +882,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         /**
          * <pre>
-         * the analytic hash for this source
+         * the 32-bit hash used for grouping this source
          * </pre>
          *
          * <code>string analyticHash = 1;</code>
@@ -794,7 +902,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         /**
          * <pre>
-         * the analytic hash for this source
+         * the 32-bit hash used for grouping this source
          * </pre>
          *
          * <code>string analyticHash = 1;</code>
@@ -815,7 +923,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         /**
          * <pre>
-         * the analytic hash for this source
+         * the 32-bit hash used for grouping this source
          * </pre>
          *
          * <code>string analyticHash = 1;</code>
@@ -831,7 +939,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         /**
          * <pre>
-         * the analytic hash for this source
+         * the 32-bit hash used for grouping this source
          * </pre>
          *
          * <code>string analyticHash = 1;</code>
@@ -851,6 +959,108 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             return this;
         }
 
+        private java.lang.Object analyticSourceHash_ = "";
+
+        /**
+         * <pre>
+         * the 128-bit hash for this source
+         * </pre>
+         *
+         * <code>string analyticSourceHash = 2;</code>
+         *
+         * @return The analyticSourceHash.
+         */
+        public java.lang.String getAnalyticSourceHash() {
+            java.lang.Object ref = analyticSourceHash_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                analyticSourceHash_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the 128-bit hash for this source
+         * </pre>
+         *
+         * <code>string analyticSourceHash = 2;</code>
+         *
+         * @return The bytes for analyticSourceHash.
+         */
+        public com.google.protobuf.ByteString getAnalyticSourceHashBytes() {
+            java.lang.Object ref = analyticSourceHash_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                analyticSourceHash_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * the 128-bit hash for this source
+         * </pre>
+         *
+         * <code>string analyticSourceHash = 2;</code>
+         *
+         * @param value
+         *            The analyticSourceHash to set.
+         * @return This builder for chaining.
+         */
+        public Builder setAnalyticSourceHash(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+
+            analyticSourceHash_ = value;
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the 128-bit hash for this source
+         * </pre>
+         *
+         * <code>string analyticSourceHash = 2;</code>
+         *
+         * @return This builder for chaining.
+         */
+        public Builder clearAnalyticSourceHash() {
+
+            analyticSourceHash_ = getDefaultInstance().getAnalyticSourceHash();
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * the 128-bit hash for this source
+         * </pre>
+         *
+         * <code>string analyticSourceHash = 2;</code>
+         *
+         * @param value
+         *            The bytes for analyticSourceHash to set.
+         * @return This builder for chaining.
+         */
+        public Builder setAnalyticSourceHashBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+
+            analyticSourceHash_ = value;
+            onChanged();
+            return this;
+        }
+
         private java.lang.Object engine_ = "";
 
         /**
@@ -858,7 +1068,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the engine that produce the annotation
          * </pre>
          *
-         * <code>string engine = 2;</code>
+         * <code>string engine = 3;</code>
          *
          * @return The engine.
          */
@@ -879,7 +1089,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the engine that produce the annotation
          * </pre>
          *
-         * <code>string engine = 2;</code>
+         * <code>string engine = 3;</code>
          *
          * @return The bytes for engine.
          */
@@ -899,7 +1109,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the engine that produce the annotation
          * </pre>
          *
-         * <code>string engine = 2;</code>
+         * <code>string engine = 3;</code>
          *
          * @param value
          *            The engine to set.
@@ -920,7 +1130,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the engine that produce the annotation
          * </pre>
          *
-         * <code>string engine = 2;</code>
+         * <code>string engine = 3;</code>
          *
          * @return This builder for chaining.
          */
@@ -936,7 +1146,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the engine that produce the annotation
          * </pre>
          *
-         * <code>string engine = 2;</code>
+         * <code>string engine = 3;</code>
          *
          * @param value
          *            The bytes for engine to set.
@@ -960,7 +1170,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the model that produced the annotation
          * </pre>
          *
-         * <code>string model = 3;</code>
+         * <code>string model = 4;</code>
          *
          * @return The model.
          */
@@ -981,7 +1191,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the model that produced the annotation
          * </pre>
          *
-         * <code>string model = 3;</code>
+         * <code>string model = 4;</code>
          *
          * @return The bytes for model.
          */
@@ -1001,7 +1211,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the model that produced the annotation
          * </pre>
          *
-         * <code>string model = 3;</code>
+         * <code>string model = 4;</code>
          *
          * @param value
          *            The model to set.
@@ -1022,7 +1232,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the model that produced the annotation
          * </pre>
          *
-         * <code>string model = 3;</code>
+         * <code>string model = 4;</code>
          *
          * @return This builder for chaining.
          */
@@ -1038,7 +1248,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * a string identifying the model that produced the annotation
          * </pre>
          *
-         * <code>string model = 3;</code>
+         * <code>string model = 4;</code>
          *
          * @param value
          *            The bytes for model to set.
@@ -1051,108 +1261,6 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             checkByteStringIsUtf8(value);
 
             model_ = value;
-            onChanged();
-            return this;
-        }
-
-        private java.lang.Object sourceLabel_ = "";
-
-        /**
-         * <pre>
-         * a label for the engine/model/configuration combo
-         * </pre>
-         *
-         * <code>string sourceLabel = 4;</code>
-         *
-         * @return The sourceLabel.
-         */
-        public java.lang.String getSourceLabel() {
-            java.lang.Object ref = sourceLabel_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                sourceLabel_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * a label for the engine/model/configuration combo
-         * </pre>
-         *
-         * <code>string sourceLabel = 4;</code>
-         *
-         * @return The bytes for sourceLabel.
-         */
-        public com.google.protobuf.ByteString getSourceLabelBytes() {
-            java.lang.Object ref = sourceLabel_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                sourceLabel_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-
-        /**
-         * <pre>
-         * a label for the engine/model/configuration combo
-         * </pre>
-         *
-         * <code>string sourceLabel = 4;</code>
-         *
-         * @param value
-         *            The sourceLabel to set.
-         * @return This builder for chaining.
-         */
-        public Builder setSourceLabel(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-
-            sourceLabel_ = value;
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * a label for the engine/model/configuration combo
-         * </pre>
-         *
-         * <code>string sourceLabel = 4;</code>
-         *
-         * @return This builder for chaining.
-         */
-        public Builder clearSourceLabel() {
-
-            sourceLabel_ = getDefaultInstance().getSourceLabel();
-            onChanged();
-            return this;
-        }
-
-        /**
-         * <pre>
-         * a label for the engine/model/configuration combo
-         * </pre>
-         *
-         * <code>string sourceLabel = 4;</code>
-         *
-         * @param value
-         *            The bytes for sourceLabel to set.
-         * @return This builder for chaining.
-         */
-        public Builder setSourceLabelBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            checkByteStringIsUtf8(value);
-
-            sourceLabel_ = value;
             onChanged();
             return this;
         }
@@ -1187,7 +1295,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * key value pairs identifying the configuration for the source.
          * </pre>
          *
-         * <code>map&lt;string, string&gt; configuration = 50;</code>
+         * <code>map&lt;string, string&gt; configuration = 5;</code>
          */
 
         @java.lang.Override
@@ -1212,7 +1320,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * key value pairs identifying the configuration for the source.
          * </pre>
          *
-         * <code>map&lt;string, string&gt; configuration = 50;</code>
+         * <code>map&lt;string, string&gt; configuration = 5;</code>
          */
         @java.lang.Override
 
@@ -1225,7 +1333,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * key value pairs identifying the configuration for the source.
          * </pre>
          *
-         * <code>map&lt;string, string&gt; configuration = 50;</code>
+         * <code>map&lt;string, string&gt; configuration = 5;</code>
          */
         @java.lang.Override
 
@@ -1242,7 +1350,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * key value pairs identifying the configuration for the source.
          * </pre>
          *
-         * <code>map&lt;string, string&gt; configuration = 50;</code>
+         * <code>map&lt;string, string&gt; configuration = 5;</code>
          */
         @java.lang.Override
 
@@ -1267,7 +1375,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * key value pairs identifying the configuration for the source.
          * </pre>
          *
-         * <code>map&lt;string, string&gt; configuration = 50;</code>
+         * <code>map&lt;string, string&gt; configuration = 5;</code>
          */
 
         public Builder removeConfiguration(java.lang.String key) {
@@ -1291,7 +1399,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * key value pairs identifying the configuration for the source.
          * </pre>
          *
-         * <code>map&lt;string, string&gt; configuration = 50;</code>
+         * <code>map&lt;string, string&gt; configuration = 5;</code>
          */
         public Builder putConfiguration(java.lang.String key, java.lang.String value) {
             if (key == null) {
@@ -1309,11 +1417,143 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
          * key value pairs identifying the configuration for the source.
          * </pre>
          *
-         * <code>map&lt;string, string&gt; configuration = 50;</code>
+         * <code>map&lt;string, string&gt; configuration = 5;</code>
          */
 
         public Builder putAllConfiguration(java.util.Map<java.lang.String,java.lang.String> values) {
             internalGetMutableConfiguration().getMutableMap().putAll(values);
+            return this;
+        }
+
+        private com.google.protobuf.MapField<java.lang.String,java.lang.String> metadata_;
+
+        private com.google.protobuf.MapField<java.lang.String,java.lang.String> internalGetMetadata() {
+            if (metadata_ == null) {
+                return com.google.protobuf.MapField.emptyMapField(MetadataDefaultEntryHolder.defaultEntry);
+            }
+            return metadata_;
+        }
+
+        private com.google.protobuf.MapField<java.lang.String,java.lang.String> internalGetMutableMetadata() {
+            onChanged();
+            ;
+            if (metadata_ == null) {
+                metadata_ = com.google.protobuf.MapField.newMapField(MetadataDefaultEntryHolder.defaultEntry);
+            }
+            if (!metadata_.isMutable()) {
+                metadata_ = metadata_.copy();
+            }
+            return metadata_;
+        }
+
+        public int getMetadataCount() {
+            return internalGetMetadata().getMap().size();
+        }
+
+        /**
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
+         */
+
+        @java.lang.Override
+        public boolean containsMetadata(java.lang.String key) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            return internalGetMetadata().getMap().containsKey(key);
+        }
+
+        /**
+         * Use {@link #getMetadataMap()} instead.
+         */
+        @java.lang.Override
+        @java.lang.Deprecated
+        public java.util.Map<java.lang.String,java.lang.String> getMetadata() {
+            return getMetadataMap();
+        }
+
+        /**
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
+         */
+        @java.lang.Override
+
+        public java.util.Map<java.lang.String,java.lang.String> getMetadataMap() {
+            return internalGetMetadata().getMap();
+        }
+
+        /**
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
+         */
+        @java.lang.Override
+
+        public java.lang.String getMetadataOrDefault(java.lang.String key, java.lang.String defaultValue) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            java.util.Map<java.lang.String,java.lang.String> map = internalGetMetadata().getMap();
+            return map.containsKey(key) ? map.get(key) : defaultValue;
+        }
+
+        /**
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
+         */
+        @java.lang.Override
+
+        public java.lang.String getMetadataOrThrow(java.lang.String key) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            java.util.Map<java.lang.String,java.lang.String> map = internalGetMetadata().getMap();
+            if (!map.containsKey(key)) {
+                throw new java.lang.IllegalArgumentException();
+            }
+            return map.get(key);
+        }
+
+        public Builder clearMetadata() {
+            internalGetMutableMetadata().getMutableMap().clear();
+            return this;
+        }
+
+        /**
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
+         */
+
+        public Builder removeMetadata(java.lang.String key) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            internalGetMutableMetadata().getMutableMap().remove(key);
+            return this;
+        }
+
+        /**
+         * Use alternate mutation accessors instead.
+         */
+        @java.lang.Deprecated
+        public java.util.Map<java.lang.String,java.lang.String> getMutableMetadata() {
+            return internalGetMutableMetadata().getMutableMap();
+        }
+
+        /**
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
+         */
+        public Builder putMetadata(java.lang.String key, java.lang.String value) {
+            if (key == null) {
+                throw new java.lang.NullPointerException();
+            }
+            if (value == null) {
+                throw new java.lang.NullPointerException();
+            }
+            internalGetMutableMetadata().getMutableMap().put(key, value);
+            return this;
+        }
+
+        /**
+         * <code>map&lt;string, string&gt; metadata = 50;</code>
+         */
+
+        public Builder putAllMetadata(java.util.Map<java.lang.String,java.lang.String> values) {
+            internalGetMutableMetadata().getMutableMap().putAll(values);
             return this;
         }
 
