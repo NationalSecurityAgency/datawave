@@ -42,7 +42,6 @@ public class QueryMetricHandlerProperties {
     protected String username;
     @NotBlank
     protected String password;
-    protected int accumuloClientPoolSize = 16;
     protected int numShards = 10;
     protected String shardTableName = "QueryMetrics_e";
     protected String indexTableName = "QueryMetrics_i";
@@ -258,14 +257,6 @@ public class QueryMetricHandlerProperties {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public int getAccumuloClientPoolSize() {
-        return accumuloClientPoolSize;
-    }
-
-    public void setAccumuloClientPoolSize(int accumuloClientPoolSize) {
-        this.accumuloClientPoolSize = accumuloClientPoolSize;
     }
 
     public int getNumShards() {

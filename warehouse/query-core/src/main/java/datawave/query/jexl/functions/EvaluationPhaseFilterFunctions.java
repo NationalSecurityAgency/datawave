@@ -1335,6 +1335,7 @@ public class EvaluationPhaseFilterFunctions {
                     "yyyy-MM-dd HH:mm:ssz",
                     "yyyy-MM-dd HH:mm:ss",
                     "yyyyMMdd HHmmss",
+                    "yyyy:MM:dd HH:mm:ss",
                     "yyyy-MM-dd'T'HH'|'mm",
                     "yyyy-MM-dd'T'HH':'mm':'ss'.'SSS'Z'",
                     "yyyy-MM-dd'T'HH':'mm':'ss'Z'",

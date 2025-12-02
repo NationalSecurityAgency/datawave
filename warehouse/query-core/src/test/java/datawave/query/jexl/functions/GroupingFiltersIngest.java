@@ -20,8 +20,7 @@ import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.util.DayIndexIngest;
-import datawave.query.util.YearIndexIngest;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.util.TableName;
 
 public class GroupingFiltersIngest {
@@ -45,6 +44,8 @@ public class GroupingFiltersIngest {
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
 
     private static final Authorizations auths = new Authorizations("ALL");
+
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     public static void writeItAll(AccumuloClient client, String range) throws Exception {
         writeItAll(client, Range.valueOf(range));
@@ -421,12 +422,7 @@ public class GroupingFiltersIngest {
             }
         }
 
-        DayIndexIngest dayIndexIngest = new DayIndexIngest();
-        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-
-        YearIndexIngest yearIndexIngest = new YearIndexIngest();
-        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
-
+        ingestUtil.write(client, auths);
     }
 
     private static Value getValueForBuilderFor(String... in) {

@@ -200,9 +200,9 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             if (inOrderUpdate && isChanged(updatedQueryMetric.getPlan(), combinedMetric.getPlan())) {
                 combinedMetric.setPlan(updatedQueryMetric.getPlan());
             }
-            // only update once
-            if (combinedMetric.getPredictions() == null && updatedQueryMetric.getPredictions() != null) {
-                combinedMetric.setPredictions(updatedQueryMetric.getPredictions());
+            // Set the predictions, but only if empty
+            if (combinedMetric.getPredictions().isEmpty()) {
+                combinedMetric.getPredictions().addAll(updatedQueryMetric.getPredictions());
             }
             // use the max numUpdates
             combinedMetric.setNumUpdates(Math.max(combinedMetric.getNumUpdates(), updatedQueryMetric.getNumUpdates()));

@@ -384,7 +384,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
                     throw e2;
                 } catch (WaitWindowOverrunException e) {
-                    log.warn(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
+                    log.debug(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                     throw e;
                 } catch (Exception e2) {
                     if (child.isNonEventField()) {
@@ -400,7 +400,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     throw e2;
                 }
             } catch (WaitWindowOverrunException e) {
-                log.warn(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
+                log.debug(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                 // When comparing possible yield keys in the AndIterator, we choose the highest
                 // key because the uids of the sources need to be equal to return a match
                 this.waitWindowObserver.propagateException(null, true, false, e);
@@ -541,7 +541,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     highest = transform;
                 }
             } catch (WaitWindowOverrunException wwoe) {
-                log.warn(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
+                log.debug(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
                 throw wwoe;
             } catch (IterationInterruptedException ie) {
                 // allow the QueryIterator to handle these exceptions
