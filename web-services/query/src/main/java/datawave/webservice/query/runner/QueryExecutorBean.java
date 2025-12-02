@@ -267,6 +267,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private ClosedQueryCache closedQueryCache;
 
     @Inject
+    @SpringBean(name = "queryLimiter")
     private QueryLimiter queryLimiter;
 
     @Inject
@@ -741,7 +742,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     throw new BadRequestException(qe, response);
                 }
             } catch (Exception e) {
-                log.error("Error checking concurrent query limits");
+                log.error("Error checking concurrent query limits", e);
                 QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
                 response.addException(qe);
                 throw qe;
@@ -937,7 +938,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 throw new BadRequestException(qe, response);
             }
         } catch (Exception e) {
-            log.error("Error checking concurrent query limits");
+            log.error("Error checking concurrent query limits", e);
             QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response, qe.getStatusCode());
@@ -1371,7 +1372,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     throw new BadRequestException(qe, response);
                 }
             } catch (Exception e) {
-                log.error("Error checking concurrent query limits");
+                log.error("Error checking concurrent query limits", e);
                 QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
                 response.addException(qe);
                 throw qe;

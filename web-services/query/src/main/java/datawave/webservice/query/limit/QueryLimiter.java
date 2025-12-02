@@ -4,11 +4,14 @@ import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import datawave.configuration.spring.SpringBean;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
@@ -34,12 +37,12 @@ public class QueryLimiter {
     }
 
     public void setZookeeperConfig(String zookeeperConfig) {
-        log.info("Setting zookeeper to " + zookeeperConfig);
         this.zookeeperConfig = zookeeperConfig;
     }
 
+    @Inject
+    @SpringBean(name = "queryLimitConfiguration")
     public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
-        log.info("Setting configuration to " + configuration);
         this.configuration = queryLimitConfiguration;
     }
 
@@ -95,6 +98,10 @@ public class QueryLimiter {
      * @return the response
      */
     public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
+        if (log.isTraceEnabled()) {
+            log.trace("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
+        }
+
         ActiveQuerySnapshot snapshot = getActiveQuerySnapshot(userDn, system, queryLogic);
 
         int totalQueriesForUser = getTotalQueriesThatCountAgainstLimit(snapshot);
