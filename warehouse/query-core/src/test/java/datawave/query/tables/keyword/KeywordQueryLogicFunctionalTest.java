@@ -1,6 +1,7 @@
 package datawave.query.tables.keyword;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.text.ParseException;
@@ -136,7 +137,7 @@ public class KeywordQueryLogicFunctionalTest {
         expectedCloud.setMarkings(Map.of("visibility", "[ALL]"));
         expectedCloud.setTags(entries);
         if (version.equals("1")) {
-            expectedCloud.setLanguage("keywords");
+            expectedCloud.setLanguage("keyword");
         } else {
             expectedCloud.setMetadata(Map.of("view", "CONTENT", "type", KeywordResultsTransformer.LABEL));
         }
@@ -285,6 +286,11 @@ public class KeywordQueryLogicFunctionalTest {
         runTestQuery(queryString);
     }
 
+    @Test
+    public void noHitTest() throws Exception {
+        runTestQuery("");
+    }
+
     private void addExpectedTagCloud(DefaultTagCloud expected) {
         expectedResults.add(expected);
     }
@@ -314,15 +320,19 @@ public class KeywordQueryLogicFunctionalTest {
         logic.setupQuery(config);
 
         DefaultTagCloudResponse response = (DefaultTagCloudResponse) queryDriver.drive(config);
-        assertEquals(expectedResults.size(), response.getTagClouds().size());
-
         // check the response clouds are expected
         List<TagCloudBase> found = new ArrayList<>();
-        for (TagCloudBase tagCloud : response.getTagClouds()) {
-            if (!expectedResults.contains(tagCloud)) {
-                fail("unexpected tag cloud: " + tagCloud);
+
+        if (!expectedResults.isEmpty()) {
+            assertEquals(expectedResults.size(), response.getTagClouds().size());
+            for (TagCloudBase tagCloud : response.getTagClouds()) {
+                if (!expectedResults.contains(tagCloud)) {
+                    fail("unexpected tag cloud: " + tagCloud);
+                }
+                found.add(tagCloud);
             }
-            found.add(tagCloud);
+        } else {
+            assertNull(response.getTagClouds());
         }
 
         // nothing still expected

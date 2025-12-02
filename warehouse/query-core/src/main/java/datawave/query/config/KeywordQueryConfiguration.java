@@ -39,6 +39,7 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
     public KeywordQueryConfiguration() {
         super();
         setQuery(new QueryImpl());
+        setState(new KeywordQueryState());
     }
 
     public KeywordQueryConfiguration(BaseQueryLogic<?> configuredLogic, Query query) {
