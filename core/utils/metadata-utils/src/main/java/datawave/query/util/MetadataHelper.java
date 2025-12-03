@@ -726,6 +726,7 @@ public class MetadataHelper {
      * @throws TableNotFoundException
      *             if the table does not exist
      */
+    @Cacheable(value = "getHiddenFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
 
         Multimap<String,String> hiddenFields = this.allFieldMetadataHelper.loadHiddenFields();
