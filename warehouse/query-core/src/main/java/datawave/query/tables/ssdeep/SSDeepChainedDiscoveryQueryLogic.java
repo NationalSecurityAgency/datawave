@@ -34,7 +34,11 @@ public class SSDeepChainedDiscoveryQueryLogic extends ChainedQueryTable<ScoredSS
 
     @Override
     public void close() {
+        this.logic2.close();
+        this.logic1.close();
         super.close();
+        this.logic2 = null;
+        this.logic1 = null;
     }
 
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
