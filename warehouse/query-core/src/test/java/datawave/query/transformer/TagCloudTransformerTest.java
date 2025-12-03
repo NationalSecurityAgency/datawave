@@ -151,7 +151,7 @@ public class TagCloudTransformerTest {
         assertEquals("vis", partition.getInputs().get(0).getVisibility());
         assertEquals("source", partition.getInputs().get(0).getSource());
         assertEquals(ENTITY_MAP, partition.getInputs().get(0).getEntities());
-        assertEquals(Map.of("view", "view", "language", "language", "type", "keywords"), partition.getInputs().get(0).getMetadata());
+        assertEquals(Map.of("view", "view", "language", "language", "type", "keyword"), partition.getInputs().get(0).getMetadata());
     }
 
     @Test
