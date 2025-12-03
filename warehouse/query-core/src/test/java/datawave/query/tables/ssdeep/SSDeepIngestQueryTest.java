@@ -98,6 +98,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         similarityQueryLogic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         similarityQueryLogic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
         similarityQueryLogic.setIndexBuckets(BUCKET_COUNT);
+        similarityQueryLogic.setNumRangesPerScanner(10);
 
         discoveryQueryLogic = new SSDeepDiscoveryQueryLogic();
         discoveryQueryLogic.setTableName("shardIndex");

@@ -10,6 +10,7 @@ import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -93,6 +94,7 @@ public class SSDeepSimilarityQueryTest {
         logic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         logic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
         logic.setIndexBuckets(BUCKET_COUNT);
+        logic.setNumRangesPerScanner(10);
 
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
@@ -150,6 +152,23 @@ public class SSDeepSimilarityQueryTest {
             log.debug(entry);
         }
         scanner.close();
+    }
+
+    @Test
+    public void testVariousNumRangesPerScanner() throws Exception {
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[0] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[1] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2]
+                        + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[3] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[4] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[5];
+
+        final int expectedEventCount = 9;
+
+        for (int numRangesPerScanner : Arrays.asList(1, 10, 100, 1000, 10000, 100000)) {
+            logic.setNumRangesPerScanner(numRangesPerScanner);
+            EventQueryResponseBase response = runSSDeepQuery(query, 0);
+            List<EventBase> events = response.getEvents();
+            int eventCount = events.size();
+
+            Assert.assertEquals(expectedEventCount, eventCount);
+        }
     }
 
     @SuppressWarnings("rawtypes")
