@@ -1,9 +1,10 @@
 package datawave.annotation.util;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -20,8 +21,11 @@ import java.util.function.Predicate;
  */
 public class Validator<T> {
 
-    /** the predicates to use for validation */
-    final Map<Predicate<T>,String> predicates = new HashMap<>();
+    /** the predicates to use for validation, we want to evaluate these in the order in which they were added */
+    final Map<Predicate<T>,String> predicates = new LinkedHashMap<>();
+
+    /** more predicates to validate members/fields of T */
+    final List<MemberValidation<T,?>> memberValidators = new ArrayList<>();
 
     /**
      * create a validator, type is inferred through assignment or cast, e.g.:
@@ -60,6 +64,39 @@ public class Validator<T> {
      */
     public Validator<T> addCheck(Predicate<T> predicate, String errorMessage) {
         predicates.put(predicate, errorMessage);
+        return this;
+    }
+
+    /**
+     * adds a validator for one of T's fields / members. The member field is provided by function that supplies the value.
+     *
+     * @param memberSupplier
+     *            the function to call on T to produce one or more U's to validate.
+     * @param validator
+     *            a validator for U's
+     * @return this validator for chaining rule creation.
+     * @param <U>
+     *            the type of member object we'll be validating
+     */
+    public <U> Validator<T> addMemberValidator(Function<T,List<U>> memberSupplier, Validator<U> validator) {
+        return addMemberValidator(memberSupplier, u -> validator);
+    }
+
+    /**
+     * adds a 'dynamic' validator for one of T's fields / members. Instead of a concrete validator, we provie a function that can generate a validator pased on
+     * a provided instance of U. This allows us to change validation rules based on properties of U. Practically, this is used to validate U differently based
+     * on it's type and allows us to work around the need for polymorphism in protobuf.
+     *
+     * @param memberSupplier
+     *            the function to supply the member to validate from T.
+     * @param validatorSupplier
+     *            the function to supply the validator based on the characteristics of U.
+     * @return this validator for chaining rule creation.
+     * @param <U>
+     *            the type of member object we'll be validating
+     */
+    public <U> Validator<T> addMemberValidator(Function<T,List<U>> memberSupplier, Function<U,Validator<U>> validatorSupplier) {
+        memberValidators.add(new MemberValidation<T,U>(memberSupplier, validatorSupplier));
         return this;
     }
 
@@ -104,6 +141,24 @@ public class Validator<T> {
                 }
             }
         }
+        return checkMembers(target, failFast, state);
+    }
+
+    /**
+     * Check the members of the target using any validators configured and fail fast or check each predicate, depending on the argument provided.
+     *
+     * @param target
+     *            the target to check
+     * @param failFast
+     *            whether to fail fast
+     * @param state
+     *            the validation state that will be updated based on these checks.
+     * @return the updated validation state.
+     */
+    protected ValidationState<T> checkMembers(T target, boolean failFast, final ValidationState<T> state) {
+        for (MemberValidation<T,?> mv : memberValidators) {
+            mv.check(target, failFast, state);
+        }
         return state;
     }
 
@@ -142,13 +197,50 @@ public class Validator<T> {
     }
 
     /**
-     * Utility method for checking whether that is string is not null and is not empty.
+     * Captures a member validator for T that validates type U. A single validator for T can check multiple U types because all of the logic for the specific
+     * type is contained here.
      *
-     * @param target
-     *            the String to check.
-     * @return true if the String is not null or empty.
+     * @param <T>
+     *            the parent type we're checking
+     * @param <U>
+     *            the member's type.
      */
-    public static boolean notNullOrEmpty(String target) {
-        return target != null && !target.isEmpty();
+    static class MemberValidation<T,U> {
+        final Function<T,List<U>> memberSupplier;
+        final Function<U,Validator<U>> validatorSupplier;
+
+        /**
+         * @param memberSupplier
+         *            a function that provides one or more members from part T as a list of the same time.
+         * @param validatorSupplier
+         *            a function that provides a validator for the member's type U.
+         */
+        MemberValidation(Function<T,List<U>> memberSupplier, Function<U,Validator<U>> validatorSupplier) {
+            this.memberSupplier = memberSupplier;
+            this.validatorSupplier = validatorSupplier;
+        }
+
+        /**
+         *
+         * @param target
+         *            the target to check
+         * @param failFast
+         *            whether we should fail on the first error or continue checking
+         * @param state
+         *            the target's validation state, errors found in the member validators will be copied here.
+         */
+        void check(T target, boolean failFast, ValidationState<T> state) {
+            List<U> members = memberSupplier.apply(target);
+            for (U member : members) {
+                final Validator<U> validator = validatorSupplier.apply(member);
+                ValidationState<U> memberState = validator.check(member, failFast);
+                if (memberState.isValid()) {
+                    continue;
+                }
+                for (String error : memberState.getErrors()) {
+                    state.addError(error);
+                }
+            }
+        }
     }
 }
