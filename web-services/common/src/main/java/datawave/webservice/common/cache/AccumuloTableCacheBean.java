@@ -27,14 +27,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.cache.AccumuloTableCacheImpl;
 import datawave.core.common.cache.AccumuloTableCacheProperties;
@@ -60,7 +58,6 @@ import datawave.webservice.result.VoidResponse;
 @Singleton
 // this is a singleton bean in the container
 @Lock(LockType.READ)
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloTableCacheBean implements AccumuloTableCache {
 
     private final Logger log = Logger.getLogger(this.getClass());

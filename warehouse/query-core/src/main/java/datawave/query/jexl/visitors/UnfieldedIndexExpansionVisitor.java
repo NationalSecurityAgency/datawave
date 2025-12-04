@@ -57,6 +57,9 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
 
         this.stage = "field";
+
+        // we are using the unfielded value expansion flag instead
+        this.expandValues = config.isExpandUnfieldedValues();
     }
 
     /**
@@ -83,7 +86,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     public static <T extends JexlNode> T expandUnfielded(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
                     throws IllegalAccessException, TableNotFoundException, InstantiationException {
         // if not expanding fields or values, then this is a noop
-        if (config.isExpandFields() || config.isExpandValues()) {
+        if (config.isExpandFields() || config.isExpandValues() || config.isExpandUnfieldedValues()) {
             UnfieldedIndexExpansionVisitor visitor = new UnfieldedIndexExpansionVisitor(config, scannerFactory, helper);
             return ensureTreeNotEmpty(visitor.expand(script));
         } else {

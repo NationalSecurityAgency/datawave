@@ -16,12 +16,10 @@ import javax.ws.rs.Produces;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.jboss.resteasy.annotations.GZIP;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.runner.RunningQuery;
@@ -38,7 +36,6 @@ import datawave.webservice.result.VoidResponse;
 @Lock(LockType.READ)
 // by default all methods are non-blocking
 @MBean
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryCacheBean {
 
     @Inject
