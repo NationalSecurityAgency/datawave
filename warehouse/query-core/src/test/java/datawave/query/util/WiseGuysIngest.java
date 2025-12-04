@@ -37,6 +37,7 @@ import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.util.TableName;
 
 public class WiseGuysIngest {
@@ -69,8 +70,7 @@ public class WiseGuysIngest {
     public static final String caponeChildUID = UID.builder().newId("Capone".getBytes(), (Date) null, "1").toString();
     public static final String tattagliaUID = UID.builder().newId("Tattaglia".getBytes(), (Date) null).toString();
 
-    private static final DayIndexIngest dayIndexIngest = new DayIndexIngest();
-    private static final YearIndexIngest yearIndexIngest = new YearIndexIngest();
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     protected static String normalizeColVal(Map.Entry<String,String> colVal) {
         switch (colVal.getKey()) {
@@ -1176,8 +1176,7 @@ public class WiseGuysIngest {
 
         // this is hacky and highlights an opportunity to improve the test framework
         Authorizations auths = new Authorizations("ALL");
-        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+        ingestUtil.write(client, auths);
     }
 
     private static Value getValueForBuilderFor(String... in) {

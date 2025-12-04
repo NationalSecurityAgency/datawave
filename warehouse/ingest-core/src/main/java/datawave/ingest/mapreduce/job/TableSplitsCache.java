@@ -205,7 +205,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     @Override
     public void writeCacheFile(FileSystem fs, Path tmpSplitsFile) throws IOException {
         initAccumuloHelper();
-        Map<String,Integer> splitsPerTable = new HashMap<>();
+        Map<Integer,Integer> splitsPerTable = new HashMap<>();
         Set<String> tableNames = getIngestTableNames();
 
         try {
@@ -225,7 +225,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 log.info("Retrieving splits for " + table);
                 Map<Text,String> splitLocations = getSplitsWithLocation(table);
                 List<Text> splits = new ArrayList<>(splitLocations.keySet());
-                splitsPerTable.put(table, splits.size());
+                splitsPerTable.put(tableCacheIds.get(table), splits.size());
 
                 log.info("Writing " + splits.size() + " splits.");
 
@@ -310,16 +310,21 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     }
 
-    private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) {
+    private boolean exceedsMaxSplitsDeviation(Map<Integer,Integer> tmpSplitsPerTable) {
         Map<Integer,Integer> currentSplitsPerTable = getCurrentSplitsPerTable();
         if (!currentSplitsPerTable.isEmpty()) {
             Set<Integer> currentTables = currentSplitsPerTable.keySet();
             for (int tableName : currentTables) {
-                if (tableExceedsMaxSplitDeviation(tmpSplitsPerTable.get(tableName), currentSplitsPerTable.get(tableName))) {
+                log.info("Validating " + tableName);
+                try {
+                    if (tableExceedsMaxSplitDeviation(tmpSplitsPerTable.get(tableName), currentSplitsPerTable.get(tableName))) {
 
-                    log.warn(tableName
-                                    + "Splits have decreased by greater than MAX_SPLIT_DECREASE or MAX_SPLIT_PERCENTAGE_DECREASE. Splits file will not be replaced. To force replacement, delete the current file and run generateSplitsFile.sh");
-                    return true;
+                        log.warn(tableName
+                                        + " Splits have decreased by greater than MAX_SPLIT_DECREASE or MAX_SPLIT_PERCENTAGE_DECREASE. Splits file will not be replaced. To force replacement, delete the current file and run generateSplitsFile.sh");
+                        return true;
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("Unable to validate tableId " + tableName);
                 }
             }
         }
