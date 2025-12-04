@@ -55,6 +55,7 @@ import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
@@ -76,8 +77,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 
 public class InMemoryTableOperations extends TableOperationsHelper {
     private static final Logger log = LoggerFactory.getLogger(InMemoryTableOperations.class);
@@ -560,9 +559,13 @@ public class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public Locations locate(String tableName, Collection<Range> ranges) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        InMemoryTabletLocator locator = new InMemoryTabletLocator();
-        List<Range> ignore = locator.binRanges(null, new ArrayList<>(ranges), binnedRanges);
+        List<Range> ignore = binRanges(new ArrayList<>(ranges), binnedRanges);
         return new LocationsImpl(binnedRanges);
+    }
+
+    private List<Range> binRanges(ArrayList<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
+        binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
+        return Collections.emptyList();
     }
 
     private static class LocationsImpl implements Locations {
