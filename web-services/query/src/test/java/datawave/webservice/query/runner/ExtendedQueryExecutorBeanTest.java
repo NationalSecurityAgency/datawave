@@ -1953,6 +1953,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.connectionFactory.getClient(userDN.toLowerCase(), new ArrayList<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.client);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
+        expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.client))
                         .andThrow(new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
         this.queryLogic1.close();
