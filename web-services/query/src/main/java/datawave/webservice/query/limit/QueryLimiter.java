@@ -1,5 +1,7 @@
 package datawave.webservice.query.limit;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,6 +15,20 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
+
+    // The server name used should be the hostname.
+    private static final String HOSTNAME;
+
+    static {
+        try {
+            HOSTNAME = InetAddress.getLocalHost().getCanonicalHostName();
+            if(log.isDebugEnabled()) {
+                log.debug("Set server hostname to '" + HOSTNAME + "'");
+            }
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Failed to fetch hostname", e);
+        }
+    }
 
     private String zookeeperConfig;
     private QueryLimitConfiguration configuration;
@@ -56,21 +72,43 @@ public class QueryLimiter {
      */
     public void setup() {
         if (log.isDebugEnabled()) {
-            log.debug("zookeeper config: '" + zookeeperConfig + "'");
-            log.debug("query limit config: " + configuration);
+            log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
         }
 
-        if (configuration.getDefaultUserQueryLimit() < 1) {
-            throw new IllegalArgumentException("Default user query limit must be greater than 0");
-        }
+        if (this.configuration != null) {
+            if (this.configuration.getDefaultUserQueryLimit() < 1) {
+                throw new IllegalArgumentException("Default user query limit must be greater than 0");
+            }
 
-        if (configuration.getDefaultSystemQueryLimit() < 1) {
-            throw new IllegalArgumentException("Default system query limit must be greater than 0");
-        }
+            if (this.configuration.getDefaultSystemQueryLimit() < 1) {
+                throw new IllegalArgumentException("Default system query limit must be greater than 0");
+            }
 
-        this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getQueryLogicGroupConfigs());
-        this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getUserConfigs());
-        this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getSystemConfigs());
+            this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(this.configuration.getQueryLogicGroupConfigs());
+            this.userLimitProvider = new UserLimitProvider(this.configuration.getDefaultUserQueryLimit(),
+                            this.configuration.getUserConfigs());
+            this.systemLimitProvider = new SystemLimitProvider(this.configuration.getDefaultSystemQueryLimit(),
+                            this.configuration.getSystemConfigs());
+        } else {
+            this.userLimitProvider = null;
+            this.systemLimitProvider = null;
+            this.queryLogicGroupLimitProvider = null;
+        }
+    }
+
+    /**
+     * Return whether submitting a new query for the given user, based on the given query logic, would exceed a configured concurrent query limit for the
+     * current system. The current system will be identified by the canonical hostname.
+     *
+     * @param userDn
+     *            the user DN
+     * @param queryLogic
+     *            the query logic
+     * @return the response
+     */
+    public QueryLimiterResponse checkForLimits(String userDn, String queryLogic) throws Exception {
+        String hostname = InetAddress.getLocalHost().getCanonicalHostName();
+        return checkForLimits(userDn, hostname, queryLogic);
     }
 
     /**
@@ -202,6 +240,22 @@ public class QueryLimiter {
     }
 
     /**
+     * Track the following information for the given query on Zookeeper for the current system. The system will be identified by the canonical hostname.
+     *
+     * @param queryId
+     *            the queryId
+     * @param userDn
+     *            the userDN of the user who submitted the query
+     * @param queryLogic
+     *            the queryLogic the query is based on
+     * @throws Exception
+     *             if an error occurs
+     */
+    public void trackQuery(String queryId, String userDn, String queryLogic) throws Exception {
+        trackQuery(queryId, userDn, getHostname(), queryLogic);
+    }
+
+    /**
      * Track the following information for the given query on Zookeeper.
      *
      * @param queryId
@@ -254,5 +308,9 @@ public class QueryLimiter {
             this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig, 120000L);
         }
         return this.activeQueryTracker;
+    }
+
+    private String getHostname() {
+        return HOSTNAME;
     }
 }

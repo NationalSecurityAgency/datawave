@@ -734,8 +734,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
             try {
                 // Check if submitting a new query would exceed any configured concurrent query limits.
-                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM),
-                                queryLogicName);
+                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryLogicName);
                 if (limiterResponse.exceedsLimit()) {
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                     response.addException(qe);
@@ -797,7 +796,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // Start tracking the query information in the query limiter.
-            queryLimiter.trackQuery(q.getId().toString(), qd.userDn, q.getSystemFrom(), q.getQueryLogicName());
+            queryLimiter.trackQuery(q.getId().toString(), qd.userDn, q.getQueryLogicName());
             // Fetch a heartbeat from the query limit to indicate this query is considered active, and store it in the heartbeat cache.
             QueryHeartbeat heartbeat = queryLimiter.createHeartbeat(q.getId().toString());
             queryHeartbeatCache.put(q.getId().toString(), heartbeat);
@@ -930,8 +929,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         try {
             // Check if submitting a new query would exceed any configured concurrent query limits.
-            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM),
-                            queryLogicName);
+            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryLogicName);
             if (limiterResponse.exceedsLimit()) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                 response.addException(qe);
@@ -1017,7 +1015,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // Start tracking the query information in the query limiter.
-            queryLimiter.trackQuery(q.getId().toString(), q.getUserDN(), q.getSystemFrom(), q.getQueryLogicName());
+            queryLimiter.trackQuery(q.getId().toString(), q.getUserDN(), q.getQueryLogicName());
             // Fetch a heartbeat from the query limit to indicate this query is considered active.
             heartbeat = queryLimiter.createHeartbeat(q.getId().toString());
 
@@ -1364,8 +1362,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 Query settings = query.getSettings();
                 // Check if submitting a new query would exceed any configured concurrent query limits.
-                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
-                                settings.getQueryLogicName());
+                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getQueryLogicName());
                 if (limiterResponse.exceedsLimit()) {
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                     response.addException(qe);
@@ -1436,7 +1433,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // Start tracking the query information in the query limiter.
             Query settings = query.getSettings();
 
-            queryLimiter.trackQuery(id, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
+            queryLimiter.trackQuery(id, settings.getUserDN(), settings.getQueryLogicName());
             // Fetch a heartbeat from the query limit to indicate this query is considered active, and store it in the heartbeat cache.
             heartbeat = queryLimiter.createHeartbeat(id);
             queryHeartbeatCache.put(id, heartbeat);

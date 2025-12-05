@@ -126,7 +126,6 @@ import datawave.webservice.result.GenericResponse;
 @PowerMockIgnore({"java.*", "javax.*", "com.*", "org.apache.*", "org.w3c.*", "net.sf.*"})
 public class QueryExecutorBeanTest {
     // Fields for building generic default queries
-    private final String systemFrom = "systemFrom";
     private final String queryLogicName = "EventQueryLogic";
     private final String queryName = "Something";
     private final String query = "FOO == BAR";
@@ -247,7 +246,6 @@ public class QueryExecutorBeanTest {
         q.setQueryAuthorizations(StringUtils.join(auths, ","));
         q.setQueryLogicName(queryLogicName);
         q.setUserDN(userDN);
-        q.setSystemFrom(systemFrom);
         q.setDnList(Collections.singletonList(userDN));
         q.setId(UUID.randomUUID());
 
@@ -267,7 +265,7 @@ public class QueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_STRING, query);
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persist.name());
         p.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "PRIVATE|PUBLIC");
-        p.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
+
         return p;
     }
 
@@ -367,7 +365,6 @@ public class QueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_STRING, query);
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persist.name());
         p.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "PRIVATE|PUBLIC");
-        p.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         InMemoryInstance instance = new InMemoryInstance();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
@@ -383,7 +380,7 @@ public class QueryExecutorBeanTest {
         List<String> dnList = Arrays.asList(dns);
 
         PowerMock.resetAll();
-        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
 
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         suppress(constructor(DefaultQueryParameters.class));
@@ -660,7 +657,6 @@ public class QueryExecutorBeanTest {
 
         final MultivaluedMap<String,String> queryParameters = createNewQueryParameterMap();
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, "EventQueryLogic");
-        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
 
         final Thread createQuery = new Thread(() -> {
             try {
@@ -691,10 +687,9 @@ public class QueryExecutorBeanTest {
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
 
         PowerMock.resetAll();
-        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit())
-                        .anyTimes();
+        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit()).anyTimes();
 
-        queryLimiter.trackQuery(q.getId().toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        queryLimiter.trackQuery(q.getId().toString(), userDN.toLowerCase(), queryLogicName);
         EasyMock.expectLastCall().anyTimes();
 
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
