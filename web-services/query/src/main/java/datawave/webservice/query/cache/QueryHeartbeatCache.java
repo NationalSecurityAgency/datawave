@@ -20,14 +20,12 @@ public class QueryHeartbeatCache {
 
     private static final Logger log = Logger.getLogger(QueryHeartbeatCache.class);
 
-    private Cache<String,QueryHeartbeat> cache;
-
-    @PostConstruct
-    public void init() {
-        cache = Caffeine.newBuilder().build();
-    }
+    private final Cache<String,QueryHeartbeat> cache = Caffeine.newBuilder().build();
 
     public void put(String queryId, QueryHeartbeat heartbeat) {
+        if (log.isDebugEnabled()) {
+            log.debug("Adding heartbeat for query " + queryId + " to QueryHeartbeatCache");
+        }
         cache.put(queryId, heartbeat);
     }
 
@@ -37,8 +35,14 @@ public class QueryHeartbeatCache {
 
     public void stopAndRemoveHeartbeat(String queryId) {
         QueryHeartbeat heartbeat = cache.asMap().remove(queryId);
+        if(log.isDebugEnabled()) {
+            log.debug("Removed heartbeat for query " + queryId + " from QueryHeartbeatCache");
+        }
         if (heartbeat != null) {
             try {
+                if (log.isDebugEnabled()) {
+                    log.debug("Stopping heartbeat for query " + queryId);
+                }
                 heartbeat.stop();
             } catch (IOException e) {
                 log.error("Error stopping query heartbeat", e);
@@ -47,6 +51,7 @@ public class QueryHeartbeatCache {
     }
 
     public void clear() {
+        log.debug("Clearing internal cache in QueryHeartbeatCache");
         cache.asMap().clear();
     }
 }
