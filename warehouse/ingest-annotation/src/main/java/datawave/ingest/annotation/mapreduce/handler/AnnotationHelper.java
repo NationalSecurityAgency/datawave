@@ -27,6 +27,7 @@ import datawave.annotation.data.AnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.data.hash.UID;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -286,7 +287,7 @@ public class AnnotationHelper {
 
         // when there are conflicts between properties generated from ingest and json source,
         // mergeFrom will collapse them in a way that preserves datawaveAnnotation
-        return annotationBuilder.mergeFrom(datawaveAnnotation).build();
+        return AnnotationUtils.injectAnnotationHash(annotationBuilder.mergeFrom(datawaveAnnotation).build());
     }
 
     /**

@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
@@ -82,11 +84,11 @@ public class AnnotationHelperTest {
     }
 
     @Test
-    public void testProcess() throws IOException, InterruptedException {
+    public void testProcess() throws IOException, InterruptedException, ParseException {
         // create test event record wrapper with minimum set of fields required for creating annotation mutations
         RawRecordContainer event = new EventWithShardId("20251107_1");
 
-        long time = System.currentTimeMillis();
+        long time = new SimpleDateFormat("yyyyMMdd").parse("20251107").getTime();
         event.setDataType(TypeRegistry.getType("annotation"));
         event.setTimestamp(time);
         event.setVisibility(new ColumnVisibility("TEST_VISIBILITY"));
@@ -100,7 +102,7 @@ public class AnnotationHelperTest {
         contextWriter.commit(ctx);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "A1FC9AA0\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
 
         BulkIngestKey expectedSourceKey = new BulkIngestKey(new Text("datawave.annotationSource"),
                         new Key("F1A0463C207B3778B472B506F3F8351A", "d", "testEngine\u00006.7\u0000testAnalyticHash", new ColumnVisibility("PRIVATE"), time));
@@ -113,11 +115,11 @@ public class AnnotationHelperTest {
     }
 
     @Test
-    public void testProcessSingleAnnotationWithoutSource() throws IOException, InterruptedException {
+    public void testProcessSingleAnnotationWithoutSource() throws IOException, InterruptedException, ParseException {
         // create test event record wrapper with minimum set of fields required for creating annotation mutations
         RawRecordContainer event = new EventWithShardId("20251107_1");
 
-        long time = System.currentTimeMillis();
+        long time = new SimpleDateFormat("yyyyMMdd").parse("20251107").getTime();
         event.setDataType(TypeRegistry.getType("annotation"));
         event.setTimestamp(time);
         event.setVisibility(new ColumnVisibility("TEST_VISIBILITY"));
@@ -130,11 +132,11 @@ public class AnnotationHelperTest {
     }
 
     @Test
-    public void testProcessBulk() throws IOException {
+    public void testProcessBulk() throws IOException, ParseException {
         // create test event record wrapper with minimum set of fields required for creating annotation mutations
         RawRecordContainer event = new EventWithShardId("20251107_1");
 
-        long time = System.currentTimeMillis();
+        long time = new SimpleDateFormat("yyyyMMdd").parse("20251107").getTime();
         event.setDataType(TypeRegistry.getType("annotation"));
         event.setTimestamp(time);
         event.setVisibility(new ColumnVisibility("TEST_VISIBILITY"));
@@ -148,7 +150,7 @@ public class AnnotationHelperTest {
                         .processBulk(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes(), event, fields);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "testAnnotationId\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "A1FC9AA0\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
         // checking to make sure the first segment BulkIngestKey is created
         assertTrue(bulkKeys.containsKey(expectedKey), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
 
