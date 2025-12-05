@@ -3,22 +3,13 @@ package datawave.webservice.query.limit;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-
-import datawave.configuration.spring.SpringBean;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
  * submitted.
  */
-@Component("queryLimiter")
-@Scope("prototype")
 public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
@@ -40,8 +31,6 @@ public class QueryLimiter {
         this.zookeeperConfig = zookeeperConfig;
     }
 
-    @Inject
-    @SpringBean(name = "queryLimitConfiguration")
     public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
         this.configuration = queryLimitConfiguration;
     }
@@ -65,7 +54,6 @@ public class QueryLimiter {
     /**
      * Validate the configuration and extract the query limits to enforce.
      */
-    @PostConstruct
     public void setup() {
         if (log.isDebugEnabled()) {
             log.debug("zookeeper config: '" + zookeeperConfig + "'");
