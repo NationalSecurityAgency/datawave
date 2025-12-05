@@ -72,10 +72,8 @@ public class QueryLimiter {
             }
 
             this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(this.configuration.getQueryLogicGroupConfigs());
-            this.userLimitProvider = new UserLimitProvider(this.configuration.getDefaultUserQueryLimit(),
-                            this.configuration.getUserConfigs());
-            this.systemLimitProvider = new SystemLimitProvider(this.configuration.getDefaultSystemQueryLimit(),
-                            this.configuration.getSystemConfigs());
+            this.userLimitProvider = new UserLimitProvider(this.configuration.getDefaultUserQueryLimit(), this.configuration.getUserConfigs());
+            this.systemLimitProvider = new SystemLimitProvider(this.configuration.getDefaultSystemQueryLimit(), this.configuration.getSystemConfigs());
         } else {
             this.userLimitProvider = null;
             this.systemLimitProvider = null;
@@ -286,7 +284,9 @@ public class QueryLimiter {
 
     /**
      * Set the hostname provider.
-     * @param provider the hostname provider
+     *
+     * @param provider
+     *            the hostname provider
      */
     public void setHostnameProvider(HostnameProvider provider) {
         this.hostnameProvider = provider;

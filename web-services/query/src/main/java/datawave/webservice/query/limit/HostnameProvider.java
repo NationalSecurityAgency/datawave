@@ -14,8 +14,10 @@ public interface HostnameProvider {
 
     /**
      * Return the canonical hostname.
+     *
      * @return the hostname
-     * @throws UnknownHostException if the hostname cannot be resolved
+     * @throws UnknownHostException
+     *             if the hostname cannot be resolved
      */
     String getCanonicalHostname() throws UnknownHostException;
 }

@@ -2,7 +2,6 @@ package datawave.webservice.query.cache;
 
 import java.io.IOException;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 
 import org.apache.log4j.Logger;
@@ -35,7 +34,7 @@ public class QueryHeartbeatCache {
 
     public void stopAndRemoveHeartbeat(String queryId) {
         QueryHeartbeat heartbeat = cache.asMap().remove(queryId);
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Removed heartbeat for query " + queryId + " from QueryHeartbeatCache");
         }
         if (heartbeat != null) {
