@@ -41,11 +41,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-annotation-core</artifactId>
+            <artifactId>datawave-in-memory-accumulo</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-in-memory-accumulo</artifactId>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-annotation</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
