@@ -63,6 +63,16 @@
     },
     {
       "segmentHash": "testSegmentId2",
+      "values": [
+        {
+          "value": "test2a",
+          "score": -83737019.1792235,
+          "extension": {
+            "extensionType": "testExentionType",
+            "barcodeType": "testBarcodeType"
+          }
+        }
+      ],
       "bounds": {
         "boundaryType": "POINTS",
         "points": [
@@ -77,22 +87,54 @@
     },
     {
       "segmentHash": "testSegmentId3",
-      "values": [],
+      "values": [
+        {
+          "value": "test3a",
+          "score": -83737019.1792235,
+          "extension": {
+            "extensionType": "testExentionType",
+            "barcodeType": "testBarcodeType"
+          }
+        }
+      ],
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
       "bounds": {
-        "boundaryType": "POINTS"
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": -78087840,
+            "y": 56815415,
+            "label": "testPointLabel1"
+          }
+        ]
       }
     },
     {
       "segmentHash": "testSegmentId3",
-      "values": [],
+      "values": [
+        {
+          "value": "test3a",
+          "score": -83737019.1792235,
+          "extension": {
+            "extensionType": "testExentionType",
+            "barcodeType": "testBarcodeType"
+          }
+        }
+      ],
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },
       "bounds": {
-        "boundaryType": "POINTS"
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": -78087840,
+            "y": 56815415,
+            "label": "testPointLabel1"
+          }
+        ]
       }
     }
   ]
