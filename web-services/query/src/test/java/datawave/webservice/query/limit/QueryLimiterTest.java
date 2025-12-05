@@ -7,6 +7,7 @@ import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -47,11 +48,15 @@ class QueryLimiterTest {
     @Mock
     private ActiveQuerySnapshot snapshot;
 
+    @Mock
+    private HostnameProvider hostnameProvider;
+
     /**
      * Verify that a user that meets their configured max user query limit results in an exceeds limit response.
      */
     @Test
     void testExceedsConfiguredUserQueryLimit() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         expectUserQueryLimit(UserQueryLimit.fromConfig(userDn, 100, new TreeSet<>()));
 
@@ -59,7 +64,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isTrue();
         assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max user query limit of 100");
 
@@ -71,6 +76,7 @@ class QueryLimiterTest {
      */
     @Test
     void testExceedsDefaultUserQueryLimit() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         expectUserQueryLimit(UserQueryLimit.fromDefaults(userDn, 100));
 
@@ -78,7 +84,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isTrue();
         assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max default user query limit of 100");
 
@@ -90,6 +96,7 @@ class QueryLimiterTest {
      */
     @Test
     void testExceedsUserQueryLogicGroupQueryLimit() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
         groupLimits.add(new MatchableLimit("TLD", 25));
@@ -101,7 +108,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isTrue();
         assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max user query limit of 25 for query logic TLDQueryLogic");
 
@@ -113,6 +120,7 @@ class QueryLimiterTest {
      */
     @Test
     void testExceedsConfiguredSystemQueryLimit() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
         groupLimits.add(new MatchableLimit("TLD", 25));
@@ -125,7 +133,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isTrue();
         assertThat(response.getMessage()).isEqualTo("System 'SYSTEM-01' has reached max system query limit of 100");
 
@@ -137,6 +145,7 @@ class QueryLimiterTest {
      */
     @Test
     void testExceedsDefaultSystemQueryLimit() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
         groupLimits.add(new MatchableLimit("TLD", 25));
@@ -149,7 +158,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isTrue();
         assertThat(response.getMessage()).isEqualTo("System 'SYSTEM-01' has reached max default system query limit of 1000");
 
@@ -161,6 +170,7 @@ class QueryLimiterTest {
      */
     @Test
     void testExceedsSystemQueryLogicGroupQueryLimit() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
         groupLimits.add(new MatchableLimit("TLD", 25));
@@ -177,7 +187,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isTrue();
         assertThat(response.getMessage()).isEqualTo("System 'SYSTEM-01' has reached max query limit of 200 for query logic TLDQueryLogic");
 
@@ -189,6 +199,7 @@ class QueryLimiterTest {
      */
     @Test
     void testExceedsDefaultQueryLogicGroupQueryLimit() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, new TreeSet<>());
         expectUserQueryLimit(userQueryLimit);
@@ -203,7 +214,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isTrue();
         assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max default query limit of 25 for query logic TLDQueryLogic");
 
@@ -215,6 +226,7 @@ class QueryLimiterTest {
      */
     @Test
     void testNoLimitsExceeded() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, new TreeSet<>());
         expectUserQueryLimit(userQueryLimit);
@@ -229,7 +241,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isFalse();
         assertThat(response.getMessage()).isNull();
 
@@ -241,6 +253,7 @@ class QueryLimiterTest {
      */
     @Test
     void testNoQueryLogicGroupLimitsFound() throws Exception {
+        expectHostname();
         expectTotalUserQueries(Map.of(system, 100), Set.of());
         UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, new TreeSet<>());
         expectUserQueryLimit(userQueryLimit);
@@ -255,7 +268,7 @@ class QueryLimiterTest {
 
         replayAll();
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
         assertThat(response.exceedsLimit()).isFalse();
         assertThat(response.getMessage()).isNull();
 
@@ -348,11 +361,15 @@ class QueryLimiterTest {
         }
     }
 
+    private void expectHostname() throws UnknownHostException {
+        expect(hostnameProvider.getCanonicalHostname()).andReturn(system);
+    }
+
     private void replayAll() {
-        replay(tracker, userLimitProvider, systemLimitProvider, queryLogicGroupLimitProvider, snapshot);
+        replay(tracker, userLimitProvider, systemLimitProvider, queryLogicGroupLimitProvider, snapshot, hostnameProvider);
     }
 
     private void verifyAll() {
-        verify(tracker, userLimitProvider, systemLimitProvider, queryLogicGroupLimitProvider, snapshot);
+        verify(tracker, userLimitProvider, systemLimitProvider, queryLogicGroupLimitProvider, snapshot, hostnameProvider);
     }
 }

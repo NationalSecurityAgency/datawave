@@ -1,7 +1,5 @@
 package datawave.webservice.query.limit;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -16,19 +14,8 @@ public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
 
-    // The server name used should be the hostname.
-    private static final String HOSTNAME;
-
-    static {
-        try {
-            HOSTNAME = InetAddress.getLocalHost().getCanonicalHostName();
-            if(log.isDebugEnabled()) {
-                log.debug("Set server hostname to '" + HOSTNAME + "'");
-            }
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Failed to fetch hostname", e);
-        }
-    }
+    // Default to using InetAddress
+    private HostnameProvider hostnameProvider = HostnameProvider.getInetAddressProvider();
 
     private String zookeeperConfig;
     private QueryLimitConfiguration configuration;
@@ -107,8 +94,7 @@ public class QueryLimiter {
      * @return the response
      */
     public QueryLimiterResponse checkForLimits(String userDn, String queryLogic) throws Exception {
-        String hostname = InetAddress.getLocalHost().getCanonicalHostName();
-        return checkForLimits(userDn, hostname, queryLogic);
+        return checkForLimits(userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
     }
 
     /**
@@ -252,7 +238,7 @@ public class QueryLimiter {
      *             if an error occurs
      */
     public void trackQuery(String queryId, String userDn, String queryLogic) throws Exception {
-        trackQuery(queryId, userDn, getHostname(), queryLogic);
+        trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
     }
 
     /**
@@ -299,6 +285,14 @@ public class QueryLimiter {
     }
 
     /**
+     * Set the hostname provider.
+     * @param provider the hostname provider
+     */
+    public void setHostnameProvider(HostnameProvider provider) {
+        this.hostnameProvider = provider;
+    }
+
+    /**
      * Return the {@link ActiveQueryTracker} instance, initializing it if needed.
      *
      * @return the active query tracker
@@ -308,9 +302,5 @@ public class QueryLimiter {
             this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig, 120000L);
         }
         return this.activeQueryTracker;
-    }
-
-    private String getHostname() {
-        return HOSTNAME;
     }
 }

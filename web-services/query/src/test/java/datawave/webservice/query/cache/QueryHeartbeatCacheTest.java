@@ -18,7 +18,6 @@ class QueryHeartbeatCacheTest {
     @BeforeEach
     void setUp() {
         cache = new QueryHeartbeatCache();
-        cache.init();
     }
 
     /**
