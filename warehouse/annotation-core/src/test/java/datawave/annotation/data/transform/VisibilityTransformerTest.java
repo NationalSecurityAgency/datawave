@@ -18,6 +18,7 @@ import datawave.annotation.data.AnnotationSerializationException;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
+import datawave.annotation.util.v1.AnnotationUtils;
 
 public class VisibilityTransformerTest {
 
@@ -31,7 +32,8 @@ public class VisibilityTransformerTest {
     @Test
     public void testDefaultVisibilityTransformer() throws AnnotationSerializationException {
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        Annotation partialAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("visibility", "PUBLIC");
         metadata.put("owner", "dad");
@@ -59,7 +61,8 @@ public class VisibilityTransformerTest {
         VisibilityTransformer visibilityTransformer = new TestAnnotationVisibilityTransformer();
         TimestampTransformer timestampTransformer = new DefaultTimestampTransformer();
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer(visibilityTransformer, timestampTransformer);
-        Annotation partialAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("visibility", "PUBLIC");
         metadata.put("owner", "dad");

@@ -18,6 +18,7 @@ import datawave.annotation.data.AnnotationSerializationException;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
+import datawave.annotation.util.v1.AnnotationUtils;
 
 public class TimestampTransformerTest {
 
@@ -31,7 +32,8 @@ public class TimestampTransformerTest {
     @Test
     public void testDefaultTimestampTransformer() throws AnnotationSerializationException {
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
-        Annotation partialAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("created_date", "2025-10-14T20:17:46.384Z");
         metadata.put("updated_date", "2025-10-15T09:32:19.483Z");
@@ -57,7 +59,8 @@ public class TimestampTransformerTest {
         VisibilityTransformer visibilityTransformer = new DefaultVisibilityTransformer();
         TimestampTransformer timestampTransformer = new TestTimestampTransformer();
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer(visibilityTransformer, timestampTransformer);
-        Annotation partialAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("created_date", "2025-10-14T20:17:46.384Z");
         metadata.put("updated_date", "2025-10-15T09:32:19.483Z");

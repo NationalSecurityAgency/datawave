@@ -102,7 +102,7 @@ public class AnnotationHelperTest {
         contextWriter.commit(ctx);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "A1FC9AA0\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "87C7ABE2\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
 
         BulkIngestKey expectedSourceKey = new BulkIngestKey(new Text("datawave.annotationSource"),
                         new Key("F1A0463C207B3778B472B506F3F8351A", "d", "testEngine\u00006.7\u0000testAnalyticHash", new ColumnVisibility("PRIVATE"), time));
@@ -150,7 +150,7 @@ public class AnnotationHelperTest {
                         .processBulk(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes(), event, fields);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "A1FC9AA0\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "87C7ABE2\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
         // checking to make sure the first segment BulkIngestKey is created
         assertTrue(bulkKeys.containsKey(expectedKey), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
 
