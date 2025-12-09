@@ -59,6 +59,9 @@ public class TypeFactoryTest {
         Type<?> typeFour = factory.createType(LcType.class.getName());
         assertNotSame(typeOne, typeFour);
 
+        //  trigger maintenance tasks (i.e., eviction of old entries)
+        factory.cleanup();
+
         assertEquals(1, factory.getCacheSize());
     }
 

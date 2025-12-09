@@ -65,4 +65,13 @@ public class TypeFactory {
     public long getCacheSize() {
         return typeCache.estimatedSize();
     }
+
+    /**
+     * Perform pending maintenance tasks, which tasks are performed are implementation specific.
+     * <p>
+     * <b>Note:</b> there should be no need to call this method in production code. This is useful for unit tests.
+     */
+    public void cleanup() {
+        typeCache.cleanUp();
+    }
 }
