@@ -1,5 +1,7 @@
 package datawave.annotation.data.transform;
 
+import static datawave.annotation.data.transform.MetadataTransformerBase.maybeMergeSingleValue;
+
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
@@ -20,7 +22,7 @@ public class DefaultTimestampTransformer implements TimestampTransformer {
      *             if the created_date key is present but can't be parsed.
      */
     @Override
-    public long toTimestamp(Map<String,String> metadataMap) throws AnnotationTransformException {
+    public Long fromMetadataMap(Map<String,String> metadataMap) throws AnnotationTransformException {
         try {
             String createdDateString = metadataMap.get(CREATED_DATE_METADATA_KEY);
             return Instant.parse(createdDateString).toEpochMilli();
@@ -39,7 +41,7 @@ public class DefaultTimestampTransformer implements TimestampTransformer {
      *             if the timestamp can't be parsed into zulu time format.
      */
     @Override
-    public Map<String,String> toMetadataMap(long timestamp) throws AnnotationTransformException {
+    public Map<String,String> toMetadataMap(Long timestamp) throws AnnotationTransformException {
         try {
             String iso8601 = Instant.ofEpochMilli(timestamp).toString();
             return Map.of(CREATED_DATE_METADATA_KEY, iso8601);
@@ -49,12 +51,25 @@ public class DefaultTimestampTransformer implements TimestampTransformer {
     }
 
     /**
-     * Return the fields that are used to calculate the timestamp. Certain serializers may decide to drop these from the metadata map
+     * Return the fields that are used to calculate the timestamp.
      *
      * @return a set of timestamp field names.
      */
     @Override
-    public Set<String> getTimestampFields() {
+    public Set<String> getMetadataFields() {
         return TIMESTAMP_FIELDS;
+    }
+
+    @Override
+    public Map<String,String> mergeMetadataMaps(Map<String,String> first, Map<String,String> second) {
+        Map<String,String> result = maybeMergeSingleValue(CREATED_DATE_METADATA_KEY, first, second);
+        if (result == null) {
+            final String firstValue = first.get(CREATED_DATE_METADATA_KEY);
+            final String secondValue = second.get(CREATED_DATE_METADATA_KEY);
+            final long firstTime = Instant.parse(firstValue).toEpochMilli();
+            final long secondTime = Instant.parse(secondValue).toEpochMilli();
+            result = Map.of(CREATED_DATE_METADATA_KEY, firstTime > secondTime ? firstValue : secondValue);
+        }
+        return result;
     }
 }

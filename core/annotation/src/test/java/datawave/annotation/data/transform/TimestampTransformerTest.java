@@ -78,7 +78,7 @@ public class TimestampTransformerTest {
     /** Non-trivial test transformer with no type/error checking, could be used as a template for more complex implementations */
     static class TestTimestampTransformer implements TimestampTransformer {
         @Override
-        public long toTimestamp(Map<String,String> metadataMap) throws AnnotationTransformException {
+        public Long fromMetadataMap(Map<String,String> metadataMap) throws AnnotationTransformException {
             String createdDateString = metadataMap.get("updated_date");
             try {
                 return Instant.parse(createdDateString).toEpochMilli();
@@ -88,13 +88,18 @@ public class TimestampTransformerTest {
         }
 
         @Override
-        public Map<String,String> toMetadataMap(long timestamp) throws AnnotationTransformException {
+        public Map<String,String> toMetadataMap(Long timestamp) {
             String iso8601 = Instant.ofEpochMilli(timestamp).toString();
             return Map.of("updated_date", iso8601);
         }
 
-        public Set<String> getTimestampFields() {
+        public Set<String> getMetadataFields() {
             return Set.of("updated_date");
+        }
+
+        @Override
+        public Map<String,String> mergeMetadataMaps(Map<String,String> first, Map<String,String> second) {
+            return Map.of("updated_date", first.get("updated_date"));
         }
     }
 }
