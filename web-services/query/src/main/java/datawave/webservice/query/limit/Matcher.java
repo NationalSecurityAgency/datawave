@@ -47,14 +47,16 @@ public interface Matcher {
     Set<String> getMatches(Collection<String> values);
 
     /**
-     * Construct and return a {@link Matcher} based off the given string. The type of returned matcher will depend on the string provided: <u>
+     * Construct and return a {@link Matcher} based off the given string. The type of returned matcher will depend on the string provided:
+     * <ul>
      * <li>If the string {@code "*"} or {@code ".*"} is provided, a {@link WildcardMatcher} will be returned.</li>
      * <li>If the string is a regex pattern that does not consist solely of literals and escaped literals, a {@link PatternMatcher} will be returned that will
      * match against the compiled pattern.</li>
      * <li>If the string is a regex pattern that consists solely of literals and escaped literals, a {@link StringMatcher} will be returned that will match
      * against the unescaped form of the regex pattern. For instance, {@code "abc\\k"} will result in a {@link StringMatcher} that will match against {@code
      * "abck"}.</li>
-     * <li>Otherwise, a {@link StringMatcher} will be returned that will match against the string.</li> </u>
+     * <li>Otherwise, a {@link StringMatcher} will be returned that will match against the string.</li>
+     * </ul>
      *
      * @param str
      *            the string

@@ -41,6 +41,9 @@ public class QueryHeartbeat {
 
     /**
      * Stop and delete the heartbeat.
+     *
+     * @throws IOException
+     *             if an error occurs while deleting the heartbeat.
      */
     public void stop() throws IOException {
         node.close();

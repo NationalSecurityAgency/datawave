@@ -158,7 +158,7 @@ public class ActiveQueryTracker implements AutoCloseable {
      * /users/&lt;userDn&gt;/&lt;queryId&gt;
      * /systems/&lt;systemName&gt;/&lt;queryId&gt;
      * /queryLogics/&lt;queryLogic&gt;/&lt;queryId&gt;
-     * /distinctQueryLogics/&lt;queryLogic&gt
+     * /distinctQueryLogics/&lt;queryLogic&gt;
      * /queries/&lt;queryId&gt;
      * /queries/&lt;queryId&gt;/user           [data = byte[] value of userDn]
      * /queries/&lt;queryId&gt;/system         [data = byte[] value of systemName]
