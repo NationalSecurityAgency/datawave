@@ -1,375 +1,475 @@
 package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.mock;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
 
-import java.net.UnknownHostException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.UUID;
 
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
-import org.easymock.TestSubject;
+import org.apache.curator.test.TestingServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Test cases for testing the functionality of {@link QueryLimiter}.
  */
-@ExtendWith(EasyMockExtension.class)
 class QueryLimiterTest {
 
-    private static final String userDn = "cn=testuser, c=us";
-    private static final String system = "SYSTEM-01";
-    private static final String queryLogic = "TLDQueryLogic";
+    private static final String userA = "cn=testuserA, c=us";
+    private static final String userB = "cn=testuserB, c=us";
+    private static final String system1 = "SYSTEM-01";
+    private static final String system2 = "SYSTEM-02";
+    private static final String tldQueryLogic = "TLDQueryLogic";
+    private static final String eventQueryLogic = "EventQueryLogic";
 
-    @TestSubject
-    private final QueryLimiter limiter = new QueryLimiter();
+    private final Map<String,QueryLimiter> systemToLimiter = new HashMap<>();
+    private final Map<String,QueryHeartbeat> heartbeats = new HashMap<>();
+    private QueryLimitConfiguration config;
+    private TestingServer server;
 
-    @Mock
-    private ActiveQueryTracker tracker;
+    @BeforeEach
+    void setUp() throws Exception {
+        server = new TestingServer();
+    }
 
-    @Mock
-    private UserLimitProvider userLimitProvider;
-
-    @Mock
-    private SystemLimitProvider systemLimitProvider;
-
-    @Mock
-    private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
-
-    @Mock
-    private ActiveQuerySnapshot snapshot;
-
-    @Mock
-    private HostnameProvider hostnameProvider;
-
-    /**
-     * Verify that a user that meets their configured max user query limit results in an exceeds limit response.
-     */
-    @Test
-    void testExceedsConfiguredUserQueryLimit() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        expectUserQueryLimit(UserQueryLimit.fromConfig(userDn, 100, new TreeSet<>()));
-
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
-
-        replayAll();
-
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isTrue();
-        assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max user query limit of 100");
-
-        verifyAll();
+    @AfterEach
+    void tearDown() throws IOException {
+        heartbeats.clear();
+        systemToLimiter.clear();
+        config = null;
+        if (server != null) {
+            server.close();
+        }
     }
 
     /**
-     * Verify that a user that meets their default max user query limit results in an exceeds limit response.
+     * Verify that a user meeting the default max user query limit results in a met limit response.
      */
     @Test
-    void testExceedsDefaultUserQueryLimit() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        expectUserQueryLimit(UserQueryLimit.fromDefaults(userDn, 100));
+    void testDefaultUserQueryLimitMet() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(5);
+        givenConfig(config);
 
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
+        startQueries(1, userA, system1, tldQueryLogic);
+        startQueries(1, userA, system1, eventQueryLogic);
+        startQueries(1, userA, system2, tldQueryLogic);
+        startQueries(1, userA, system2, eventQueryLogic);
 
-        replayAll();
+        // Verify that four active queries for the same user do not meet a limit.
+        assertLimitNotMet(userA, system1, tldQueryLogic);
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isTrue();
-        assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max default user query limit of 100");
+        startQueries(1, userA, system2, tldQueryLogic);
 
-        verifyAll();
+        // Verify that after we've created five queries for the same user (across different servers and query logics), we have met a limit.
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 5 running queries");
     }
 
     /**
-     * Verify that a user that meets their max user query limit for an overridden query logic group limit results in an exceeds limit response.
+     * Verify that a system meeting the default max user query limit results in a met limit response.
      */
     @Test
-    void testExceedsUserQueryLogicGroupQueryLimit() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 25));
-        UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, groupLimits);
-        expectUserQueryLimit(userQueryLimit);
-        expectOverriddenQueryLogicLimit(userQueryLimit, QueryLogicGroupQueryLimit.fromConfig("TLD", 25), 25);
+    void testDefaultSystemQueryLimitMet() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(8);
+        config.setDefaultUserQueryLimit(5);
+        givenConfig(config);
 
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
+        startQueries(2, userA, system1, tldQueryLogic);
+        startQueries(2, userA, system1, eventQueryLogic);
+        startQueries(3, userB, system1, tldQueryLogic);
 
-        replayAll();
+        // Verify that seven active queries for the same system do not meet a limit.
+        assertLimitNotMet(userA, system1, tldQueryLogic);
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isTrue();
-        assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max user query limit of 25 for query logic TLDQueryLogic");
+        startQueries(1, userB, system1, tldQueryLogic);
 
-        verifyAll();
+        // Verify that after we've created seven queries for the same system (across different users and query logics), we have met a limit.
+        assertLimitMet(userA, system1, tldQueryLogic, "System 'SYSTEM-01' has reached limit of 8 running queries");
     }
 
     /**
-     * Verify that a system that meets their configured max query limit results in an exceeds limit response.
+     * Verify that a user meeting a query logic group limit results in a met limit response.
      */
     @Test
-    void testExceedsConfiguredSystemQueryLimit() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 25));
-        UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, groupLimits);
-        expectUserQueryLimit(userQueryLimit);
-        expectOverriddenQueryLogicLimit(userQueryLimit, QueryLogicGroupQueryLimit.fromConfig("TLD", 25), 20);
-        expectTotalSystemQueries(SystemQueryLimit.fromConfig("SYSTEM-01", 100, true, new TreeSet<>()), 100);
+    void testDefaultQueryLogicGroupLimit() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(10);
 
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
+        // Set a default limit of 3 TLDQueryLogic queries per user.
+        QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
+        groupLimitConfig.setGroupName("TLD");
+        groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
+        groupLimitConfig.setQueryLimit(3);
+        config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
+        givenConfig(config);
 
-        replayAll();
+        startQueries(1, userA, system1, tldQueryLogic);
+        startQueries(1, userA, system2, tldQueryLogic);
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isTrue();
-        assertThat(response.getMessage()).isEqualTo("System 'SYSTEM-01' has reached max system query limit of 100");
+        // Verify that two active TLDQueryLogics queries for userA do not meet a limit.
+        assertLimitNotMet(userA, system1, tldQueryLogic);
 
-        verifyAll();
+        startQueries(1, userA, system2, tldQueryLogic);
+
+        // Verify that after we've created three queries for userA (across different servers), we have met a limit.
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'");
+
+        // Assert that the user could still create queries for the EventQueryLogic.
+        assertLimitNotMet(userA, system1, eventQueryLogic);
     }
 
     /**
-     * Verify that a system that meets their default max query limit results in an exceeds limit response.
+     * Verify that a user meeting a custom max user query limit results in a met limit response.
      */
     @Test
-    void testExceedsDefaultSystemQueryLimit() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 25));
-        UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, groupLimits);
-        expectUserQueryLimit(userQueryLimit);
-        expectOverriddenQueryLogicLimit(userQueryLimit, QueryLogicGroupQueryLimit.fromConfig("TLD", 25), 20);
-        expectTotalSystemQueries(SystemQueryLimit.fromDefaults("SYSTEM-01", 1000), 1000);
+    void testCustomUserQueryLimitMet() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(5);
 
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
+        // Set a custom limit of 8 queries for userA.
+        UserLimitConfiguration userConfig = new UserLimitConfiguration();
+        userConfig.setUserDn(userA);
+        userConfig.setQueryLimit(8);
+        config.setUserConfigs(List.of(userConfig));
+        givenConfig(config);
 
-        replayAll();
+        startQueries(3, userA, system1, tldQueryLogic);
+        startQueries(4, userA, system2, eventQueryLogic);
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isTrue();
-        assertThat(response.getMessage()).isEqualTo("System 'SYSTEM-01' has reached max default system query limit of 1000");
+        // Verify that three active TLDQueryLogics queries for userA do not meet a limit.
+        assertLimitNotMet(userA, system1, tldQueryLogic);
 
-        verifyAll();
+        startQueries(1, userA, system2, tldQueryLogic);
+
+        // Verify that after we've created four TLDQueryLogic queries for userA (across different servers), we have met a limit.
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 8 running queries");
+
+        startQueries(5, userB, system1, eventQueryLogic);
+
+        // Verify that userB, who has no custom limit, may not have more than 5 queries.
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries");
     }
 
     /**
-     * Verify that a system that meets their max query limit for an overridden query logic group limit results in an exceeds limit response.
+     * Verify that a user meeting a custom query logic group limit results in a met limit response.
      */
     @Test
-    void testExceedsSystemQueryLogicGroupQueryLimit() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 25));
-        UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, groupLimits);
-        expectUserQueryLimit(userQueryLimit);
-        expectOverriddenQueryLogicLimit(userQueryLimit, QueryLogicGroupQueryLimit.fromConfig("TLD", 25), 20);
-        groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 200));
-        SystemQueryLimit systemQueryLimit = SystemQueryLimit.fromConfig("SYSTEM-01", 1000, true, groupLimits);
-        expectTotalSystemQueries(systemQueryLimit, 500);
-        expectOverriddenQueryLogicLimit(systemQueryLimit, QueryLogicGroupQueryLimit.fromConfig("TLD", 200), 200);
+    void testCustomUserQueryLogicGroupLimitMet() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(10);
 
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
+        // Set a default limit of 5 TLDQueryLogic queries per user.
+        QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
+        groupLimitConfig.setGroupName("TLD");
+        groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
+        groupLimitConfig.setQueryLimit(5);
+        config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
 
-        replayAll();
+        // Set a custom limit of 3 TLDQueryLogic queries for userA.
+        UserLimitConfiguration userConfig = new UserLimitConfiguration();
+        userConfig.setUserDn(userA);
+        userConfig.setQueryLogicGroupLimits(Map.of("TLD", 3));
+        config.setUserConfigs(List.of(userConfig));
+        givenConfig(config);
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isTrue();
-        assertThat(response.getMessage()).isEqualTo("System 'SYSTEM-01' has reached max query limit of 200 for query logic TLDQueryLogic");
+        startQueries(1, userA, system1, tldQueryLogic);
+        startQueries(1, userA, system2, tldQueryLogic);
 
-        verifyAll();
+        // Verify that two active TLDQueryLogic queries for userA do not meet a limit.
+        assertLimitNotMet(userA, system1, tldQueryLogic);
+
+        startQueries(1, userA, system2, tldQueryLogic);
+
+        // Verify that after we've created three TLDQueryLogic queries for userA (across different servers), we have met a limit.
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'");
+
+        // Verify that userB, who has no custom limit, may have up to 5 TLDQueryLogic queries.
+        startQueries(4, userB, system1, tldQueryLogic);
+
+        assertLimitNotMet(userB, system1, tldQueryLogic);
+
+        startQueries(1, userB, system1, tldQueryLogic);
+
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries for query logic group 'TLD'");
     }
 
     /**
-     * Verify that meets the default user query limit for a query logic group that they do not override results in an exceeds limit response.
+     * Verify that a system meeting a custom query limit results in a met limit response.
      */
     @Test
-    void testExceedsDefaultQueryLogicGroupQueryLimit() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, new TreeSet<>());
-        expectUserQueryLimit(userQueryLimit);
-        SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 200));
-        SystemQueryLimit systemQueryLimit = SystemQueryLimit.fromConfig("SYSTEM-01", 1000, true, groupLimits);
-        expectTotalSystemQueries(systemQueryLimit, 500);
-        expectOverriddenQueryLogicLimit(systemQueryLimit, QueryLogicGroupQueryLimit.fromConfig("TLD", 200), 150);
-        expectQueryLogicLimit(QueryLogicGroupQueryLimit.fromConfig("TLD", 25), 25);
+    void testCustomServerQueryLimit() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(25);
 
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
+        // Set a limit of 10 queries for system2.
+        SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
+        systemConfig.setSystemPattern(system2);
+        systemConfig.setQueryLimit(10);
+        config.setSystemConfigs(List.of(systemConfig));
+        givenConfig(config);
 
-        replayAll();
+        startQueries(4, userA, system2, tldQueryLogic);
+        startQueries(5, userB, system2, eventQueryLogic);
 
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isTrue();
-        assertThat(response.getMessage()).isEqualTo("User 'cn=testuser, c=us' has reached max default query limit of 25 for query logic TLDQueryLogic");
+        // Verify that the nine active queries on system2 do not meet a limit.
+        assertLimitNotMet(userA, system2, tldQueryLogic);
 
-        verifyAll();
+        startQueries(1, userA, system2, eventQueryLogic);
+
+        // Verify that after we've created ten queries for system2 (across different users), we have met a limit.
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries");
+
+        // Verify that system1 is not bound to the same limit as system2.
+        startQueries(15, userB, system1, eventQueryLogic);
+        assertLimitNotMet(userB, system1, tldQueryLogic);
     }
 
     /**
-     * Verify that when no limits are exceeded, the response reflects that.
+     * Verify that a system meeting a custom query logic group limit results in a met limit response.
      */
     @Test
-    void testNoLimitsExceeded() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, new TreeSet<>());
-        expectUserQueryLimit(userQueryLimit);
-        SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 200));
-        SystemQueryLimit systemQueryLimit = SystemQueryLimit.fromConfig("SYSTEM-01", 1000, true, groupLimits);
-        expectTotalSystemQueries(systemQueryLimit, 500);
-        expectOverriddenQueryLogicLimit(systemQueryLimit, QueryLogicGroupQueryLimit.fromConfig("TLD", 200), 150);
-        expectQueryLogicLimit(QueryLogicGroupQueryLimit.fromConfig("TLD", 25), 15);
+    void testCustomServerQueryLogicGroupLimit() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(50);
 
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
+        // Set a default limit of 20 TLDQueryLogic queries per user.
+        QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
+        groupLimitConfig.setGroupName("TLD");
+        groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
+        groupLimitConfig.setQueryLimit(20);
+        config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
 
-        replayAll();
+        // Set a limit of 10 queries for system2.
+        SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
+        systemConfig.setSystemPattern(system2);
+        systemConfig.setQueryLogicGroupLimits(Map.of("TLD", 10));
+        config.setSystemConfigs(List.of(systemConfig));
+        givenConfig(config);
 
+        startQueries(4, userA, system2, tldQueryLogic);
+        startQueries(5, userB, system2, tldQueryLogic);
+
+        // Verify that nine active TLDQueryLogic queries for system2 do not meet a limit.
+        assertLimitNotMet(userA, system2, tldQueryLogic);
+
+        startQueries(1, userA, system2, tldQueryLogic);
+
+        // Verify that after we've created ten TLDQueryLogic queries on system2 (across different users), we have met a limit.
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'");
+
+        // Verify that system1, which has no custom limit, will not enforce any system-wide limits for TLDQueryLogic queries. TLDQueryLogic query limits outside
+        // system2 only apply to individual users
+
+        // Create enough queries for userA and userB to reach their individual limits for TLDQueryLogic queries.
+        startQueries(15, userA, system1, tldQueryLogic);
+        startQueries(15, userB, system1, tldQueryLogic);
+
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
+    }
+
+    /**
+     * Verify that even if a system does not count against the user query limit, the system meeting a custom query limit results in a met limit response.
+     */
+    @Test
+    void testCustomServerQueryLimitWhereServerDoesNotCountAgainstUserLimit() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(25);
+
+        // Set a limit of 10 queries for system2.
+        SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
+        systemConfig.setSystemPattern(system2);
+        systemConfig.setQueryLimit(10);
+        systemConfig.setCountsAgainstsUserLimit(false);
+        config.setSystemConfigs(List.of(systemConfig));
+        givenConfig(config);
+
+        startQueries(4, userA, system2, tldQueryLogic);
+        startQueries(5, userB, system2, eventQueryLogic);
+
+        // Verify that the nine active queries on system2 do not meet a limit.
+        assertLimitNotMet(userA, system2, tldQueryLogic);
+
+        startQueries(1, userA, system2, eventQueryLogic);
+
+        // Verify that after we've created ten queries for system2 (across different users), we have met a limit.
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries");
+
+        // Verify that system1 is not bound to the same limit as system2.
+        startQueries(15, userB, system1, eventQueryLogic);
+        assertLimitNotMet(userB, system1, tldQueryLogic);
+    }
+
+    /**
+     * Verify that even if a system does not count against the user query limit, the system meeting a custom query logic group limit results in a met limit
+     * response.
+     */
+    @Test
+    void testCustomServerQueryLogicGroupLimitWhereServerDoesNotCountAgainstUserLimit() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(50);
+
+        // Set a default limit of 20 TLDQueryLogic queries per user.
+        QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
+        groupLimitConfig.setGroupName("TLD");
+        groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
+        groupLimitConfig.setQueryLimit(20);
+        config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
+
+        // Set a limit of 10 TLDQueryLogic queries for system2.
+        SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
+        systemConfig.setSystemPattern(system2);
+        systemConfig.setCountsAgainstsUserLimit(false);
+        systemConfig.setQueryLogicGroupLimits(Map.of("TLD", 10));
+        config.setSystemConfigs(List.of(systemConfig));
+        givenConfig(config);
+
+        startQueries(4, userA, system2, tldQueryLogic);
+        startQueries(5, userB, system2, tldQueryLogic);
+
+        // Verify that nine active TLDQueryLogic queries for system2 do not meet a limit.
+        assertLimitNotMet(userA, system2, tldQueryLogic);
+
+        startQueries(1, userA, system2, tldQueryLogic);
+
+        // Verify that after we've created ten TLDQueryLogic queries on system2 (across different users), we have met a limit.
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'");
+
+        // Verify that system1, which has no custom limit, will not enforce any system-wide limits for TLDQueryLogic queries. TLDQueryLogic query limits outside
+        // system2 only apply to individual users, and system2 queries do not count against the user limit.
+
+        // Create 19 queries on system1. We should still be under the TLDQueryLogic limit since all previous queries do not count against the limit.
+        startQueries(19, userA, system1, tldQueryLogic);
+        startQueries(19, userB, system1, tldQueryLogic);
+
+        assertLimitNotMet(userA, system1, tldQueryLogic);
+        assertLimitNotMet(userB, system1, tldQueryLogic);
+
+        // Create the 20th TLDQueryLogic query for each user on system1. This should meet the limit.
+        startQueries(1, userA, system1, tldQueryLogic);
+        startQueries(1, userB, system1, tldQueryLogic);
+
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
+    }
+
+    /**
+     * Verify that if a system does not count against the user query limit, that it does not count towards any limits other than:
+     * <ul>
+     * <li>The query limit specified for the system (custom if specified, or default otherwise).</li>
+     * <li>Any custom query logic group limits specified for the limit.</li>
+     * </ul>
+     */
+    @Test
+    void testServerThatDoesNotCountAgainstUserLimit() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(20);
+
+        // Set a default limit of 20 TLDQueryLogic queries per user.
+        QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
+        groupLimitConfig.setGroupName("TLD");
+        groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
+        groupLimitConfig.setQueryLimit(10);
+        config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
+
+        // Establish that system2 does not count against the user query limit.
+        SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
+        systemConfig.setSystemPattern(system2);
+        systemConfig.setCountsAgainstsUserLimit(false);
+        config.setSystemConfigs(List.of(systemConfig));
+        givenConfig(config);
+
+        // Verify that after creating 25 TLDQueryLogic queries on system2, that we do not meet any limits since system2 does not count towards user limits.
+        startQueries(25, userA, system2, tldQueryLogic);
+
+        assertLimitNotMet(userA, system1, tldQueryLogic);
+        assertLimitNotMet(userA, system2, tldQueryLogic);
+
+        // Verify that after creating 10 TLDQueryLogic queries on system1 for userA, we meet the TLDQueryLogicLimit.
+        startQueries(10, userA, system1, tldQueryLogic);
+
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries for query logic group 'TLD'");
+    }
+
+    /**
+     * Verify that after meeting a limit, if we stop a query, we can create another query.
+     */
+    @Test
+    void testCreatingQueryAfterStoppingQueryThatMetLimit() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(10);
+        givenConfig(config);
+
+        startQueries(10, userA, system1, tldQueryLogic);
+
+        // Verify that 10 queries for userA meets a limit.
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries");
+
+        // Stop one of the queries. Doesn't matter which, they're all for userA.
+        String queryId = heartbeats.entrySet().iterator().next().getKey();
+        QueryHeartbeat heartbeat = heartbeats.get(queryId);
+        heartbeat.stop();
+        heartbeats.remove(queryId);
+
+        // Verify that after stopping one of the queries, we no longer meet a limit.
+        assertLimitNotMet(userA, system1, tldQueryLogic);
+
+    }
+
+    private QueryLimiter getLimiter(String system) {
+        if (systemToLimiter.containsKey(system)) {
+            return systemToLimiter.get(system);
+        } else {
+            QueryLimiter limiter = new QueryLimiter();
+            limiter.setZookeeperConfig(server.getConnectString());
+            limiter.setConfiguration(config);
+            limiter.setHostnameProvider(() -> system);
+            limiter.setup();
+            systemToLimiter.put(system, limiter);
+            return limiter;
+        }
+    }
+
+    private void startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
+        QueryLimiter limiter = getLimiter(system);
+        for (int i = 0; i < numQueries; i++) {
+            String queryId = UUID.randomUUID().toString();
+            limiter.trackQuery(userDn, queryLogic, queryId);
+            limiter.trackQuery(queryId, userDn, queryLogic);
+            QueryHeartbeat heartbeat = limiter.createHeartbeat(queryId);
+            this.heartbeats.put(queryId, heartbeat);
+        }
+    }
+
+    private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
+        QueryLimiter limiter = getLimiter(system);
         QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isFalse();
         assertThat(response.getMessage()).isNull();
-
-        verifyAll();
+        assertThat(response.metLimit()).isFalse();
     }
 
-    /**
-     * Verify that when no matching query logic group limits are found, no issues occur.
-     */
-    @Test
-    void testNoQueryLogicGroupLimitsFound() throws Exception {
-        expectHostname();
-        expectTotalUserQueries(Map.of(system, 100), Set.of());
-        UserQueryLimit userQueryLimit = UserQueryLimit.fromConfig(userDn, 200, new TreeSet<>());
-        expectUserQueryLimit(userQueryLimit);
-        SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-        groupLimits.add(new MatchableLimit("TLD", 200));
-        SystemQueryLimit systemQueryLimit = SystemQueryLimit.fromConfig("SYSTEM-01", 1000, true, groupLimits);
-        expectTotalSystemQueries(systemQueryLimit, 500);
-        expectOverriddenQueryLogicLimit(systemQueryLimit, null, 150);
-        expectQueryLogicLimit(null, 15);
-
-        expect(tracker.getSnapshot(userDn, system, queryLogic)).andReturn(snapshot);
-
-        replayAll();
-
+    private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
+        QueryLimiter limiter = getLimiter(system);
         QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
-        assertThat(response.exceedsLimit()).isFalse();
-        assertThat(response.getMessage()).isNull();
-
-        verifyAll();
+        assertThat(response.getMessage()).isEqualTo(message);
+        assertThat(response.metLimit()).isTrue();
     }
 
-    /**
-     * Verify that tracking a query is delegated to the inner {@link ActiveQueryTracker}.
-     */
-    @Test
-    void testTrackingQuery() throws Exception {
-        tracker.trackQuery("queryId", "userDn", "system", "queryLogic");
-        expectLastCall();
-
-        replayAll();
-
-        limiter.trackQuery("queryId", "userDn", "system", "queryLogic");
-
-        verifyAll();
-    }
-
-    /**
-     * Verify that stopping the tracking of a query is delegated to the inner {@link ActiveQueryTracker}.
-     */
-    @Test
-    void testStopTrackingQuery() throws Exception {
-        tracker.stopTrackingQuery("queryId");
-        expectLastCall();
-
-        replayAll();
-
-        limiter.stopTrackingQuery("queryId");
-
-        verifyAll();
-    }
-
-    /**
-     * Verify that creating a heartbeat is delegated to the inner {@link ActiveQueryTracker}.
-     */
-    @Test
-    void testCreatingHeartbeat() throws Exception {
-        QueryHeartbeat heartbeat = mock(QueryHeartbeat.class);
-        expect(tracker.createHeartbeat("queryId")).andReturn(heartbeat);
-
-        replayAll();
-
-        QueryHeartbeat actual = limiter.createHeartbeat("queryId");
-
-        verifyAll();
-        assertThat(actual).isEqualTo(heartbeat);
-    }
-
-    private void expectTotalUserQueries(Map<String,Integer> userQueriesPerSystem, Set<String> systemsNotCountingTowardsUserLimits) {
-        expect(snapshot.getTotalUserQueriesPerSystem()).andReturn(userQueriesPerSystem);
-        for (String system : userQueriesPerSystem.keySet()) {
-            expect(systemLimitProvider.countsAgainstUserLimit(system)).andReturn(!systemsNotCountingTowardsUserLimits.contains(system));
-        }
-    }
-
-    private void expectUserQueryLimit(UserQueryLimit userQueryLimit) {
-        expect(userLimitProvider.getLimit(userDn)).andReturn(userQueryLimit);
-    }
-
-    private void expectOverriddenQueryLogicLimit(UserQueryLimit userQueryLimit, QueryLogicGroupQueryLimit groupLimit, int totalUserQueriesForQueryLogic) {
-        Optional<QueryLogicGroupQueryLimit> optional = Optional.ofNullable(groupLimit);
-        expect(queryLogicGroupLimitProvider.getOverriddenLimit(userDn, queryLogic, userQueryLimit.getQueryLogicGroupLimits())).andReturn(optional);
-        if (optional.isPresent()) {
-            expect(snapshot.getTotalUserQueriesForQueryLogic()).andReturn(totalUserQueriesForQueryLogic);
-        }
-    }
-
-    private void expectTotalSystemQueries(SystemQueryLimit systemQueryLimit, int totalSystemQueries) {
-        expect(systemLimitProvider.getLimit(system)).andReturn(systemQueryLimit);
-        expect(snapshot.getTotalSystemQueries()).andReturn(totalSystemQueries);
-    }
-
-    private void expectOverriddenQueryLogicLimit(SystemQueryLimit userQueryLimit, QueryLogicGroupQueryLimit groupLimit, int totalSystemQueriesForQueryLogic) {
-        Optional<QueryLogicGroupQueryLimit> optional = Optional.ofNullable(groupLimit);
-        expect(queryLogicGroupLimitProvider.getOverriddenLimit(system, queryLogic, userQueryLimit.getQueryLogicGroupLimits())).andReturn(optional);
-        if (optional.isPresent()) {
-            expect(snapshot.getTotalSystemQueriesForQueryLogic()).andReturn(totalSystemQueriesForQueryLogic);
-        }
-    }
-
-    private void expectQueryLogicLimit(QueryLogicGroupQueryLimit groupLimit, int totalUserQueriesForQueryLogic) {
-        Optional<QueryLogicGroupQueryLimit> optional = Optional.ofNullable(groupLimit);
-        expect(queryLogicGroupLimitProvider.getLimit(queryLogic)).andReturn(optional);
-        if (optional.isPresent()) {
-            expect(snapshot.getTotalUserQueriesForQueryLogic()).andReturn(totalUserQueriesForQueryLogic);
-        }
-    }
-
-    private void expectHostname() throws UnknownHostException {
-        expect(hostnameProvider.getCanonicalHostname()).andReturn(system);
-    }
-
-    private void replayAll() {
-        replay(tracker, userLimitProvider, systemLimitProvider, queryLogicGroupLimitProvider, snapshot, hostnameProvider);
-    }
-
-    private void verifyAll() {
-        verify(tracker, userLimitProvider, systemLimitProvider, queryLogicGroupLimitProvider, snapshot, hostnameProvider);
+    private void givenConfig(QueryLimitConfiguration config) {
+        this.config = config;
     }
 }

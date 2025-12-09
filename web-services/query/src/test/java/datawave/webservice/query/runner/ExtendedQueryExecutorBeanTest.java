@@ -751,7 +751,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -918,7 +918,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -1085,7 +1085,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -1281,7 +1281,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -1809,7 +1809,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -2003,7 +2003,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -2147,7 +2147,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -3749,7 +3749,7 @@ public class ExtendedQueryExecutorBeanTest {
         auditMap.putAll(map);
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
 
         this.queryLimiter.trackQuery(queryName, userDN, queryLogicName);
         expectLastCall();
@@ -3906,7 +3906,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userSid, queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userSid, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
 
         queryHeartbeatCache.stopAndRemoveHeartbeat(queryName);
         expectLastCall();
@@ -4371,7 +4371,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN, queryLogicName);
         expectLastCall();
 
@@ -4526,7 +4526,7 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
         // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.doesNotExceedLimit());
+        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
         this.queryLimiter.trackQuery(queryId.toString(), userDN, queryLogicName);
         expectLastCall();
 

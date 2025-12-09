@@ -1,36 +1,70 @@
 package datawave.webservice.query.limit;
 
 import java.util.Collection;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import datawave.query.parser.JavaRegexAnalyzer;
 
 /**
- * A matcher is intended to determine if it matches against a string.
+ * This class defines the behavior for a matcher that can
  */
 public interface Matcher {
 
     enum Type {
-        // Do not reorder these. The ordinal value is important for use when sorting query limits.
+        // Do not reorder these. The ordinal value is important for use when sorting query limits by best match.
         EXACT, PARTIAL, ALL
     }
 
     Type getType();
 
+    /**
+     * Return whether this {@link Matcher} finds a match for the given string.
+     *
+     * @param value
+     *            the string to match
+     * @return true if there is a match, or false otherwise
+     */
     boolean matches(String value);
 
+    /**
+     * Return whether this {@link Matcher} finds a match for any of the elements in the given collection.
+     *
+     * @param values
+     *            the collection to evaluate
+     * @return true if there is a match, or false otherwise
+     */
     boolean matchesAnyOf(Collection<String> values);
 
     /**
-     * Construct and return a {@link Matcher} based off the given string.
+     * Return a {@link Set} containing the elements in the given collection that match against this {@link Matcher}. Possibly empty, but never null.
+     *
+     * @param values
+     *            the collection to evaluate
+     * @return the set of matches
+     */
+    Set<String> getMatches(Collection<String> values);
+
+    /**
+     * Construct and return a {@link Matcher} based off the given string. The type of returned matcher will depend on the string provided: <u>
+     * <li>If the string {@code "*"} or {@code ".*"} is provided, a {@link WildcardMatcher} will be returned.</li>
+     * <li>If the string is a regex pattern that does not consist solely of literals and escaped literals, a {@link PatternMatcher} will be returned that will
+     * match against the compiled pattern.</li>
+     * <li>If the string is a regex pattern that consists solely of literals and escaped literals, a {@link StringMatcher} will be returned that will match
+     * against the unescaped form of the regex pattern. For instance, {@code "abc\\k"} will result in a {@link StringMatcher} that will match against {@code
+     * "abck"}.</li>
+     * <li>Otherwise, a {@link StringMatcher} will be returned that will match against the string.</li> </u>
      *
      * @param str
      *            the string
      * @return the matcher
      */
     static Matcher getMatcher(String str) {
+        Objects.requireNonNull(str, "Parameter str cannot be null");
+
         if (QueryLimitConstants.wildcardOnlyPattern.matcher(str).matches()) {
-            return new WildcardMatcher();
+            return WildcardMatcher.of();
         } else {
             // Analyze the regex to determine what, if any, regex constructs are present.
             JavaRegexAnalyzer analyzer;
@@ -42,6 +76,7 @@ public interface Matcher {
             JavaRegexAnalyzer.RegexPart[] regexParts = analyzer.getRegexParts();
             boolean escapedLiteralsSeen = false;
             boolean regexSeen = false;
+
             // Determine if the regex contains any escaped literals or non-literal regex constructs.
             for (JavaRegexAnalyzer.RegexPart regexPart : regexParts) {
                 JavaRegexAnalyzer.RegexType type = regexPart.getType();
@@ -53,6 +88,7 @@ public interface Matcher {
                     break;
                 }
             }
+
             // If a non-literal regex construct was seen, use a Pattern matcher that falls into the 'partial-match' bucket.
             if (regexSeen) {
                 return new PatternMatcher(Pattern.compile(str));

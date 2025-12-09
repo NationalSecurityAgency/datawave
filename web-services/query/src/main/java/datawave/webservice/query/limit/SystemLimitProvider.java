@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -18,29 +19,27 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
- * This class is responsible for extracting the limits from {@link SystemLimitConfiguration} instances and then identifying the query limits to enforce for
- * individual systems, overridden or otherwise.
+ * This class is responsible for identifying and providing limits that should be enforced for systems.
  */
 public class SystemLimitProvider {
 
     private static final Logger log = Logger.getLogger(SystemLimitProvider.class);
 
+    private final Cache<String,Optional<SystemLimits>> systemLimitCache;
+
     private final int defaultSystemQueryLimit;
 
-    // Cache of systems to their best limit.
-    private final Cache<String,SystemQueryLimit> limitCache = Caffeine.newBuilder().build();
-    // Cache of systems to whether queries submitted on them should count against user query limits.
-    private final Cache<String,Boolean> countsAgainstUserLimitCache = Caffeine.newBuilder().build();
-    // The set of query limits in sorted order of best match to worst.
-    private SortedSet<SystemMatchableLimit> configuredLimits;
+    private SortedSet<SortableSystemLimit> sortedSystemLimits;
 
-    SystemLimitProvider(int defaultSystemQueryLimit, Collection<SystemLimitConfiguration> configs) {
+    SystemLimitProvider(int defaultSystemQueryLimit, Collection<SystemLimitConfiguration> configs, QueryLogicGroupLimitProvider groupLimitProvider) {
         this.defaultSystemQueryLimit = defaultSystemQueryLimit;
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
-            populateLimits(configs);
+            populateLimits(configs, groupLimitProvider);
+            this.systemLimitCache = Caffeine.newBuilder().maximumSize(100).build();
         } else {
-            this.configuredLimits = Collections.emptySortedSet();
+            this.sortedSystemLimits = Collections.emptySortedSet();
+            this.systemLimitCache = null;
         }
     }
 
@@ -137,141 +136,122 @@ public class SystemLimitProvider {
      * @param configs
      *            the configs to populate the limits from
      */
-    private void populateLimits(Collection<SystemLimitConfiguration> configs) {
-        SortedSet<SystemMatchableLimit> configuredLimits = new TreeSet<>();
-        for (SystemLimitConfiguration systemConfig : configs) {
+    private void populateLimits(Collection<SystemLimitConfiguration> configs, QueryLogicGroupLimitProvider groupLimitProvider) {
+        SortedSet<SortableSystemLimit> systemLimits = new TreeSet<>();
+        for (SystemLimitConfiguration config : configs) {
 
             // Identify the best matching strategy to use for matching system names.
-            String systemPattern = systemConfig.getSystemPattern();
+            String systemPattern = config.getSystemPattern();
             Matcher matcher = Matcher.getMatcher(systemPattern);
 
             // If the query limit given for the system was null or less than zero, use the default system query limit.
-            Integer queryLimit = systemConfig.getQueryLimit();
-            if (queryLimit == null || queryLimit < 0) {
-                queryLimit = defaultSystemQueryLimit;
+            Integer customQueryLimit = config.getQueryLimit();
+            Map<String,Integer> customGroupLimits = config.getQueryLogicGroupLimits();
+            Boolean customCountsAgainstUserLimit = config.getCountsAgainstsUserLimit();
+
+            if (customQueryLimit == null && customGroupLimits == null && (customCountsAgainstUserLimit == null || customCountsAgainstUserLimit)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Custom limits provided for systems matching '" + systemPattern + "' do not override any defaults, skipping.");
+                }
+                continue;
             }
 
-            // If countsAgainstUserLimit is null, use the default.
-            Boolean countsAgainstUserLimit = systemConfig.getCountsAgainstsUserLimit();
-            if (countsAgainstUserLimit == null) {
-                countsAgainstUserLimit = true;
+            // If the custom query limit is null or less than zero, use the default system limit.
+            if (customQueryLimit == null || customQueryLimit < 0) {
+                customQueryLimit = defaultSystemQueryLimit;
             }
 
-            // Create a matchable set for the query logic group limits.
-            SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-            for (Map.Entry<String,Integer> entry : systemConfig.getQueryLogicGroupLimits().entrySet()) {
-                groupLimits.add(new MatchableLimit(entry.getKey(), entry.getValue()));
+            // If the custom counts against user limits is null, default to true.
+            if (customCountsAgainstUserLimit == null) {
+                customCountsAgainstUserLimit = Boolean.TRUE;
             }
 
-            configuredLimits.add(new SystemMatchableLimit(matcher, systemPattern, queryLimit, countsAgainstUserLimit, groupLimits));
+            // If any custom group limits were given, construct the map of group limits to use.
+            SortedSet<QueryLogicGroupLimit> groupLimitOverrides = null;
+            if (customGroupLimits != null && !customGroupLimits.isEmpty()) {
+                groupLimitOverrides = groupLimitProvider.createOverrides(config.getQueryLogicGroupLimits(), false);
+            }
+
+            systemLimits.add(new SortableSystemLimit(matcher, systemPattern, customQueryLimit, customCountsAgainstUserLimit, groupLimitOverrides));
         }
-        this.configuredLimits = Collections.unmodifiableSortedSet(configuredLimits);
+        this.sortedSystemLimits = Collections.unmodifiableSortedSet(systemLimits);
     }
 
     /**
-     * Return the best matching {@link SystemQueryLimit} to use for the given system. If no match was found to a configured limit, then default limits will be
-     * returned.
+     * Return the default maximum number of queries that may be running on any particular system.
      *
-     * @param system
-     *            the system name
-     * @return the {@link SystemQueryLimit}
+     * @return the default system query limit
      */
-    public SystemQueryLimit getLimit(String system) {
-        // Check if we have the best match already cached.
-        SystemQueryLimit limit = limitCache.getIfPresent(system);
-        if (limit == null) {
-            // If not, attempt to find one from configured limits. The first matching limit will be the best one due to how the limits are sorted, which is:
-            // 1. First by matching type: EXACT, then PARTIAL, then ALL
-            // 2. Then by query limit, from lowest to highest.
-            // 3. Then by whether queries should apply to the user query limit, from true to false.
-            // 4. Then by system pattern.
-            for (SystemMatchableLimit matchableLimit : configuredLimits) {
-                if (matchableLimit.matcher.matches(system)) {
-                    limit = SystemQueryLimit.fromConfig(matchableLimit.systemPattern, matchableLimit.queryLimit, matchableLimit.countsAgainstUserLimit,
-                                    matchableLimit.queryLogicGroupLimits);
-                    break;
-                }
-            }
-
-            // If a matching configured limit was not found, construct one from the default limits.
-            if (limit == null) {
-                limit = SystemQueryLimit.fromDefaults(system, defaultSystemQueryLimit);
-            }
-
-            // Cache it.
-            if (log.isTraceEnabled()) {
-                log.trace("Caching system query limit for '" + system + "': " + limit);
-            }
-            limitCache.put(system, limit);
-        }
-        return limit;
+    public int getDefaultSystemQueryLimit() {
+        return defaultSystemQueryLimit;
     }
 
     /**
-     * Return whether queries count against the user query limit when submitted on the given system.
+     * Return the custom limits (if any found) to enforce for the given system.
      *
      * @param system
-     *            the system name
-     * @return true if queries count against the user query limit, or false otherwise
+     *            the system
+     * @return the optional system, possibly empty
      */
-    public boolean countsAgainstUserLimit(String system) {
-        // Check if we already have an evaluation for this cached.
-        Boolean countsAgainstUserLimit = countsAgainstUserLimitCache.getIfPresent(system);
-        if (countsAgainstUserLimit == null) {
-            // If not, attempt to determine whether query limits apply based on the configured limits.
-            for (SystemMatchableLimit matchableLimit : configuredLimits) {
-                // Wildcard system patterns are not allowed to override countsAgainstUserLimit to false. If we encounter match type ALL, all remaining
-                // limits have wildcard system patterns and can be skipped.
-                if (matchableLimit.matcher.getType() == Matcher.Type.ALL) {
-                    break;
-                }
-
-                // If we found a match, update the counts against user limit. If countsAgainstUserLimit is true or this is an exact match, we do not need
-                // to evaluate any other matches.
-                if (matchableLimit.matcher.matches(system)) {
-                    countsAgainstUserLimit = matchableLimit.countsAgainstUserLimit;
-                    if (countsAgainstUserLimit || matchableLimit.matcher.getType() == Matcher.Type.EXACT) {
+    public Optional<SystemLimits> getCustomLimits(String system) {
+        if (systemLimitCache != null) {
+            Optional<SystemLimits> optional = systemLimitCache.getIfPresent(system);
+            if (optional == null) {
+                // The candidates are sorted in best-match order. The first match we find is the one we should use for the system going forward.
+                for (SortableSystemLimit candidate : sortedSystemLimits) {
+                    if (candidate.matcher.matches(system)) {
+                        SystemLimits systemLimits = new SystemLimits(candidate.systemPattern, candidate.queryLimit, candidate.countsAgainstUserLimit,
+                                        candidate.groupLimitOverrides);
+                        optional = Optional.of(systemLimits);
                         break;
                     }
                 }
+                // If no match was found, cache an empty optional.
+                if (optional == null) {
+                    optional = Optional.empty();
+                }
+                systemLimitCache.put(system, optional);
             }
-
-            // If we did not find any configured limit for the system, use the default value.
-            if (countsAgainstUserLimit == null) {
-                countsAgainstUserLimit = true;
-            }
-
-            // Cache it.
-            if (log.isTraceEnabled()) {
-                log.trace("Caching countsAgainstUserLimitCache for '" + system + "': " + countsAgainstUserLimitCache);
-            }
-            countsAgainstUserLimitCache.put(system, countsAgainstUserLimit);
+            return optional;
+        } else {
+            return Optional.empty();
         }
-        return countsAgainstUserLimit;
+    }
+
+    /**
+     * Return whether queries on the given system counts against the user limit.
+     *
+     * @param system
+     *            the system
+     * @return true if queries on the system count towards a user's query limit, or false otherwise
+     */
+    public boolean countsAgainstUserLimit(String system) {
+        Optional<SystemLimits> customLimit = getCustomLimits(system);
+        return customLimit.map(SystemLimits::countsAgainstUserLimit).orElse(true);
     }
 
     /**
      * This class represents a sortable system pattern and its limit configuration.
      */
-    private class SystemMatchableLimit implements Comparable<SystemMatchableLimit> {
+    private static class SortableSystemLimit implements Comparable<SortableSystemLimit> {
+
         private final Matcher matcher;
         private final String systemPattern;
-        private final int queryLimit;
-        private final boolean countsAgainstUserLimit;
-        private final SortedSet<MatchableLimit> queryLogicGroupLimits;
+        private final Integer queryLimit;
+        private final Boolean countsAgainstUserLimit;
+        private final SortedSet<QueryLogicGroupLimit> groupLimitOverrides;
 
-        public SystemMatchableLimit(Matcher matcher, String systemPattern, int queryLimit, boolean countsAgainstUserLimit,
-                        SortedSet<MatchableLimit> queryLogicGroupLimits) {
+        public SortableSystemLimit(Matcher matcher, String systemPattern, Integer queryLimit, Boolean countsAgainstUserLimit,
+                        SortedSet<QueryLogicGroupLimit> groupLimitOverrides) {
             this.matcher = matcher;
             this.systemPattern = systemPattern;
             this.queryLimit = queryLimit;
             this.countsAgainstUserLimit = countsAgainstUserLimit;
-            this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Collections.emptySortedSet()
-                            : Collections.unmodifiableSortedSet(queryLogicGroupLimits);
+            this.groupLimitOverrides = groupLimitOverrides;
         }
 
         @Override
-        public int compareTo(SystemMatchableLimit o) {
+        public int compareTo(SortableSystemLimit o) {
             // First sort by the type, sorting in order EXACT, PARTIAL, then ALL.
             int comparison = matcher.getType().compareTo(o.matcher.getType());
 
@@ -280,14 +260,14 @@ public class SystemLimitProvider {
                 comparison = Integer.compare(queryLimit, o.queryLimit);
             }
 
+            // Finally, sort by whether there are any query logic limit overrides.
+            if (comparison == 0) {
+                comparison = Boolean.compare(groupLimitOverrides != null, o.groupLimitOverrides != null);
+            }
+
             // Then sort by whether queries count against the user limit, true to false.
             if (comparison == 0) {
                 comparison = Boolean.compare(o.countsAgainstUserLimit, countsAgainstUserLimit);
-            }
-
-            // Then sort by the system pattern. In practice, this should always be unique.
-            if (comparison == 0) {
-                comparison = systemPattern.compareTo(o.systemPattern);
             }
 
             return comparison;

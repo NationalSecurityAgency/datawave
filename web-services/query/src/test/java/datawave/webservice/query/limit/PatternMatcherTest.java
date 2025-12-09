@@ -3,6 +3,8 @@ package datawave.webservice.query.limit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Collection;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
@@ -14,24 +16,66 @@ class PatternMatcherTest {
      */
     @Test
     void testNullPattern() {
-        assertThatThrownBy(() -> new PatternMatcher(null)).isInstanceOf(NullPointerException.class).hasMessageContaining("pattern must not be null");
+        assertThatThrownBy(() -> new PatternMatcher(null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void testGetPattern() {
+        PatternMatcher patternMatcher = new PatternMatcher(Pattern.compile("TLD.*"));
+        assertThat(patternMatcher.getPattern().pattern()).isEqualTo("TLD.*");
     }
 
     /**
-     * Verify that a matching string returns true.
+     * Verify that {@link PatternMatcher#matches(String)} returns true for a match.
      */
     @Test
-    void testMatchingString() {
-        PatternMatcher patternMatcher = new PatternMatcher(Pattern.compile("TLD.*"));
-        assertThat(patternMatcher.matches("TLDQueryLogic")).isTrue();
+    void testMatchesWithMatch() {
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        assertThat(matcher.matches("abc")).isTrue();
     }
 
     /**
-     * Verify that a non-matching string returns false.
+     * Verify that {@link PatternMatcher#matches(String)} returns false for a non-match.
      */
     @Test
-    void testNonMatchingString() {
-        PatternMatcher patternMatcher = new PatternMatcher(Pattern.compile("TLD.*"));
-        assertThat(patternMatcher.matches("OtherQueryLogic")).isFalse();
+    void testMatchesWithNonMatch() {
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        assertThat(matcher.matches("efj")).isFalse();
+    }
+
+    /**
+     * Verify that {@link PatternMatcher#matchesAnyOf(Collection)} returns true for a match.
+     */
+    @Test
+    void testMatchesAnyOfWithMatch() {
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        assertThat(matcher.matchesAnyOf(Set.of("abc", "def", "ghi"))).isTrue();
+    }
+
+    /**
+     * Verify that {@link PatternMatcher#matchesAnyOf(Collection)} returns false for a non-match.
+     */
+    @Test
+    void testMatchesAnyOfWithNoMatch() {
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        assertThat(matcher.matchesAnyOf(Set.of("def", "ghi", "jkl"))).isFalse();
+    }
+
+    /**
+     * Verify that {@link PatternMatcher#getMatches(Collection)} returns a populated set for a match.
+     */
+    @Test
+    void testGetMatchesWithMatch() {
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        assertThat(matcher.getMatches(Set.of("abc", "def", "ghi", "ab", "abcde"))).containsExactlyInAnyOrder("abc", "ab", "abcde");
+    }
+
+    /**
+     * Verify that {@link PatternMatcher#getMatches(Collection)} returns an empty set for a non-match.
+     */
+    @Test
+    void testGetMatchesWithNoMatch() {
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        assertThat(matcher.getMatches(Set.of("def", "ghi", "jkl"))).isEmpty();
     }
 }

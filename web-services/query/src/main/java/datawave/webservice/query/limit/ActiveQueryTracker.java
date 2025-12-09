@@ -81,51 +81,30 @@ public class ActiveQueryTracker implements AutoCloseable {
         return zookeeperConfig;
     }
 
-    /**
-     * Return a snapshot of all queries considered to be active that either:
-     * <ul>
-     * <li>Were submitted by the user associated with the given userDn.</li>
-     * <li>Were submitted on the given system.</li>
-     * <li>Were submitted as the given query logic.</li>
-     * </ul>
-     *
-     * @param userDn
-     *            the user dn
-     * @param system
-     *            the system name
-     * @param queryLogic
-     *            the query logic
-     * @return the snapshot
-     * @throws Exception
-     *             if an error occurs
-     */
-    public ActiveQuerySnapshot getSnapshot(String userDn, String system, String queryLogic) throws Exception {
-        // Normalize the userDN, system, and queryLogic.
-        userDn = userDn.trim().toLowerCase();
-        system = system.trim().toLowerCase();
-        queryLogic = queryLogic.trim().toLowerCase();
-
+    public ActiveQuerySnapshot getSnapshot(String userDn, String system, Set<String> queryLogics) throws Exception {
         if (log.isTraceEnabled()) {
-            log.trace("Fetching snapshot for userDn=" + userDn + ", system=" + system + ", queryLogic=" + queryLogic + ")");
+            log.trace("Fetching snapshot for userDn=" + userDn + ", system=" + system + ", queryLogics=" + queryLogics + ")");
         }
         clientLock.lock();
         try {
             long currentTimeMillis = System.currentTimeMillis();
             initClient();
-            Set<String> queryIds = new HashSet<>();
 
+            Set<String> queryIds = new HashSet<>();
             // Fetch the ids of all queries submitted by the user.
             queryIds.addAll(getQueryIds(client, "/users/" + userDn));
             // Fetch the ids of all queries submitted on the system.
             queryIds.addAll(getQueryIds(client, "/systems/" + system));
-            // Fetch the ids of all queries that have the query logic.
-            queryIds.addAll(getQueryIds(client, "/queryLogics/" + queryLogic));
-
-            if (log.isTraceEnabled()) {
-                log.trace("Found " + queryIds.size() + " potentially active related queries");
+            // Fetch the ids of all queries that have related query logics.
+            for (String queryLogic : queryLogics) {
+                queryIds.addAll(getQueryIds(client, "/queryLogics/" + queryLogic));
             }
 
-            ActiveQuerySnapshot.Builder builder = ActiveQuerySnapshot.builder(userDn, system, queryLogic).withTimestamp(currentTimeMillis);
+            if (log.isTraceEnabled()) {
+                log.trace("Found " + queryIds.size() + " active potentially related queries");
+            }
+
+            ActiveQuerySnapshot.Builder builder = ActiveQuerySnapshot.builder(userDn, system, queryLogics).withTimestamp(currentTimeMillis);
             // Fetch the metadata of each query and capture them if considered to be active.
             for (String queryId : queryIds) {
                 String queryIdPath = "/queries/" + queryId;
@@ -141,7 +120,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                     // If a NoNodeException occurred when fetching the metadata for a particular query ID, it is likely that the query was untracked by another
                     // ActiveQueryTracker instance in the time between obtaining the query and now. Simply skip over it.
                     if (log.isTraceEnabled()) {
-                        log.trace("Skipping capturing queryId=" + queryId + " in snapshot, nodes potentially deleted during scan");
+                        log.trace("Skipping capture of queryId=" + queryId + " in snapshot, nodes potentially deleted during scan");
                     }
                 }
             }
@@ -156,15 +135,15 @@ public class ActiveQueryTracker implements AutoCloseable {
      *
      * @param client
      *            the client
-     * @param container
+     * @param containerPath
      *            the path to the container
      * @return the list of query ids
      * @throws Exception
      *             if an error occurs
      */
-    private List<String> getQueryIds(CuratorFramework client, String container) throws Exception {
+    private List<String> getQueryIds(CuratorFramework client, String containerPath) throws Exception {
         try {
-            return client.getChildren().forPath(container);
+            return client.getChildren().forPath(containerPath);
         } catch (KeeperException.NoNodeException e) {
             // If a NoNodeException was thrown here, it occurred because there are no queries being tracked anymore, and the container node was automatically
             // cleaned up as a result of having no children. Simply return an empty list.
@@ -179,13 +158,14 @@ public class ActiveQueryTracker implements AutoCloseable {
      * /users/&lt;userDn&gt;/&lt;queryId&gt;
      * /systems/&lt;systemName&gt;/&lt;queryId&gt;
      * /queryLogics/&lt;queryLogic&gt;/&lt;queryId&gt;
+     * /distinctQueryLogics/&lt;queryLogic&gt
      * /queries/&lt;queryId&gt;
      * /queries/&lt;queryId&gt;/user           [data = byte[] value of userDn]
      * /queries/&lt;queryId&gt;/system         [data = byte[] value of systemName]
      * /queries/&lt;queryId&gt;/queryLogic     [data = byte[] value of queryLogic]
      * /queries/&lt;queryId&gt;/heartbeats
      * </pre>
-     *
+     * <p>
      * The paths
      *
      * <pre>
@@ -193,8 +173,9 @@ public class ActiveQueryTracker implements AutoCloseable {
      * /systems/&lt;systemName&gt;/&lt;queryId&gt;
      * /queryLogics/&lt;queryLogic&gt;/&lt;queryId&gt;
      * /queries/&lt;queryId&gt;
+     * /distinctQueryLogics
      * </pre>
-     *
+     * <p>
      * will be created as containers, and thus will become eligible for cleanup when they have no children.
      *
      * @param queryId
@@ -209,17 +190,18 @@ public class ActiveQueryTracker implements AutoCloseable {
     public void trackQuery(String queryId, String userDn, String system, String queryLogic) {
         // Normalize the userDN, system, and queryLogic.
         userDn = userDn.trim().toLowerCase();
-        system = system.trim().toLowerCase();
-        queryLogic = queryLogic.trim().toLowerCase();
+        system = system.trim();
+        queryLogic = queryLogic.trim();
 
         if (log.isTraceEnabled()) {
-            log.trace("Tracking query: queryId=" + queryId + ", user=" + userDn + " " + system + " " + queryLogic + " " + queryId);
+            log.trace("Tracking query: queryId=" + queryId + ", user='" + userDn + "', system=" + system + ", queryLogic=" + queryLogic);
         }
 
         clientLock.lock();
         try {
             // Initialize the client if needed.
             initClient();
+
             try {
                 String queryIdPath = "/queries/" + queryId;
                 Stat stat = client.checkExists().forPath(queryIdPath);
@@ -229,6 +211,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                     client.createContainers("/systems/" + system);
                     client.createContainers("/users/" + userDn);
                     client.createContainers("/queryLogics/" + queryLogic);
+                    client.createContainers("/distinctQueryLogics");
 
                     // Populate the information for the specific query ID atomically as a single transaction.
                     CuratorOp addQueryIdToUsers = client.transactionOp().create().forPath("/users/" + userDn + "/" + queryId);
@@ -238,8 +221,19 @@ public class ActiveQueryTracker implements AutoCloseable {
                     CuratorOp addSystemData = client.transactionOp().create().forPath(queryIdPath + "/system", system.getBytes());
                     CuratorOp addQueryLogicData = client.transactionOp().create().forPath(queryIdPath + "/queryLogic", queryLogic.getBytes());
                     CuratorOp addHeartbeatsNode = client.transactionOp().create().forPath(queryIdPath + "/heartbeats");
+
                     client.transaction().forOperations(addQueryIdToUsers, addQueryIdToSystems, addQueryIdToQueryLogics, addUserData, addSystemData,
                                     addQueryLogicData, addHeartbeatsNode);
+
+                    // Track the query logic as a distinct query logic if it isn't already.
+                    try {
+                        Stat distinctQueryLogicStat = client.checkExists().forPath("/distinctQueryLogics/" + queryLogic);
+                        if (distinctQueryLogicStat == null) {
+                            client.create().forPath("/distinctQueryLogics/" + queryLogic);
+                        }
+                    } catch (KeeperException.NodeExistsException e) {
+                        // Do nothing, the node was created on another thread.
+                    }
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Unable to track query " + queryId, e);
@@ -276,7 +270,9 @@ public class ActiveQueryTracker implements AutoCloseable {
 
         clientLock.lock();
         try {
+            // Initialize the client if needed.
             initClient();
+
             String queryIdPath = "/queries/" + queryId;
             Stat stat = client.checkExists().forPath(queryIdPath);
             // If the query id node exists, delete all information for the relevant
@@ -329,8 +325,10 @@ public class ActiveQueryTracker implements AutoCloseable {
         if (log.isTraceEnabled()) {
             log.trace("Obtaining heartbeat for queryId=" + queryId);
         }
+
         clientLock.lock();
         try {
+            // Initialize the client if needed.
             initClient();
 
             // Make sure the query is being tracked.
@@ -344,14 +342,15 @@ public class ActiveQueryTracker implements AutoCloseable {
             String heartbeatPath = queryIdPath + "/heartbeats/heartbeat_";
             CuratorFramework client = createClient();
             PersistentNode node = new PersistentNode(client, CreateMode.EPHEMERAL_SEQUENTIAL, true, heartbeatPath, "".getBytes(), false);
-            if (log.isTraceEnabled()) {
-                log.trace("Created heartbeat " + node.getActualPath() + " for queryId=" + queryId);
-            }
 
             // Create the actual node, with the given wait for creation if needed. This will block until the node creation from start() exceeds, or until the
             // wait time elapses, whichever comes first.
             node.start();
             node.waitForInitialCreate(5, TimeUnit.SECONDS);
+
+            if (log.isTraceEnabled()) {
+                log.trace("Created heartbeat node " + node.getActualPath() + " for queryId=" + queryId);
+            }
             return new QueryHeartbeat(queryId, node);
         } catch (ActiveQueryException e) {
             log.error("Failed to create heartbeat for queryId=" + queryId, e);
@@ -359,6 +358,35 @@ public class ActiveQueryTracker implements AutoCloseable {
         } catch (Exception e) {
             log.error("Failed to create heartbeat for queryId=" + queryId, e);
             throw new ActiveQueryException("Unable to obtain heartbeat for queryId=" + queryId, e);
+        } finally {
+            clientLock.unlock();
+        }
+    }
+
+    /**
+     * Return the set of distinct query logics that have been tracked at some point while Zookeeper has been up.
+     *
+     * @return the query logics
+     */
+    public Set<String> getDistinctQueryLogics() {
+        if (log.isTraceEnabled()) {
+            log.trace("Obtaining distinct query logics");
+        }
+        clientLock.lock();
+        try {
+            // Initialize the client if needed.
+            initClient();
+            // If any query logics were tracked, return them.
+            Stat stat = client.checkExists().forPath("/distinctQueryLogics");
+            if (stat != null) {
+                return Set.copyOf(client.getChildren().forPath("/distinctQueryLogics"));
+            } else {
+                // Otherwise return an empty set.
+                return Set.of();
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch distinct query logics", e);
+            throw new ActiveQueryException(e);
         } finally {
             clientLock.unlock();
         }

@@ -6,19 +6,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-
 /**
- * This class is responsible for extracting the limits from {@link UserLimitConfiguration} instances and then identifying the query limits to enforce for
- * individual users, overridden or otherwise.
+ * This class is responsible for identifying and providing limits that should be enforced for users.
  */
 public class UserLimitProvider {
 
@@ -26,19 +21,15 @@ public class UserLimitProvider {
 
     private final int defaultUserQueryLimit;
 
-    // Cache of user dns to their query limits.
-    private final Cache<String,UserQueryLimit> cache = Caffeine.newBuilder().build();
+    private Map<String,UserLimits> customLimits = new HashMap<>();
 
-    // Map of user dns to configured query limits.
-    private Map<String,UserQueryLimit> configuredLimits;
-
-    UserLimitProvider(int defaultUserQueryLimit, Collection<UserLimitConfiguration> configs) {
+    UserLimitProvider(int defaultUserQueryLimit, Collection<UserLimitConfiguration> configs, QueryLogicGroupLimitProvider groupLimitProvider) {
         this.defaultUserQueryLimit = defaultUserQueryLimit;
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
-            populateLimits(configs);
+            populateLimits(configs, groupLimitProvider);
         } else {
-            this.configuredLimits = Map.of();
+            this.customLimits = Map.of();
         }
     }
 
@@ -99,51 +90,49 @@ public class UserLimitProvider {
      * @param configs
      *            the configs to populate the limits from
      */
-    private void populateLimits(Collection<UserLimitConfiguration> configs) {
-        Map<String,UserQueryLimit> configuredLimits = new HashMap<>();
+    private void populateLimits(Collection<UserLimitConfiguration> configs, QueryLogicGroupLimitProvider groupLimitProvider) {
+        Map<String,UserLimits> configuredLimits = new HashMap<>();
         for (UserLimitConfiguration config : configs) {
-            // If the query limit given for the user was null or less than zero, use the default user query limit.
-            Integer queryLimit = config.getQueryLimit();
-            if (queryLimit == null || queryLimit < 0) {
-                queryLimit = defaultUserQueryLimit;
+            Integer customQueryLimit = config.getQueryLimit();
+            Map<String,Integer> customGroupLimits = config.getQueryLogicGroupLimits();
+
+            String userDn = config.getUserDn().trim().toLowerCase();
+
+            if (customQueryLimit == null && (customGroupLimits == null || customGroupLimits.isEmpty())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Custom limits provided for user '" + userDn + "' do not override any defaults, skipping.");
+                }
+                continue;
             }
 
-            // Create a matchable set for the query logic group limits.
-            SortedSet<MatchableLimit> groupLimits = new TreeSet<>();
-            for (Map.Entry<String,Integer> entry : config.getQueryLogicGroupLimits().entrySet()) {
-                groupLimits.add(new MatchableLimit(entry.getKey(), entry.getValue()));
+            // If the custom query limit is null or less than zero, use the default query limit.
+            if (customQueryLimit == null || customQueryLimit < 0) {
+                if (log.isDebugEnabled()) {
+                    log.trace("Using default user query limit of " + defaultUserQueryLimit + " for user '" + userDn + "'");
+                }
+                customQueryLimit = defaultUserQueryLimit;
             }
 
-            configuredLimits.put(config.getUserDn(), UserQueryLimit.fromConfig(config.getUserDn(), queryLimit, groupLimits));
+            // If any custom group limits were given, construct the map of group limits to use.
+            SortedSet<QueryLogicGroupLimit> groupLimitOverrides = null;
+            if (customGroupLimits != null && !customGroupLimits.isEmpty()) {
+                groupLimitOverrides = groupLimitProvider.createOverrides(config.getQueryLogicGroupLimits(), true);
+            }
+
+            configuredLimits.put(userDn, new UserLimits(userDn, customQueryLimit, groupLimitOverrides));
         }
-        this.configuredLimits = Map.copyOf(configuredLimits);
+        this.customLimits = Map.copyOf(configuredLimits);
     }
 
-    /**
-     * Return the best matching {@link UserQueryLimit} to use when enforcing limits for the given user. If no match was found to a configured limit, then
-     * default limits will be returned.
-     *
-     * @param userDn
-     *            the user DN
-     * @return the {@link QueryLogicGroupQueryLimit} if found
-     */
-    public UserQueryLimit getLimit(String userDn) {
-        // Fetch the limits from the cache if present.
-        UserQueryLimit limit = cache.getIfPresent(userDn);
-        if (limit == null) {
-            // Otherwise attempt to get it from the map of configured limits.
-            limit = configuredLimits.get(userDn);
-            // If no match was found, use the default user query limit.
-            if (limit == null) {
-                limit = UserQueryLimit.fromDefaults(userDn, defaultUserQueryLimit);
-            }
+    public int getDefaultUserQueryLimit() {
+        return defaultUserQueryLimit;
+    }
 
-            // Put it in the cache.
-            if (log.isTraceEnabled()) {
-                log.trace("Caching user query limit for '" + userDn + "': " + limit);
-            }
-            cache.put(userDn, limit);
-        }
-        return limit;
+    public boolean hasCustomLimits(String userDn) {
+        return customLimits.containsKey(userDn);
+    }
+
+    public UserLimits getCustomLimits(String userDn) {
+        return customLimits.get(userDn);
     }
 }

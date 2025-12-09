@@ -735,7 +735,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 // Check if submitting a new query would exceed any configured concurrent query limits.
                 QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryLogicName);
-                if (limiterResponse.exceedsLimit()) {
+                if (limiterResponse.metLimit()) {
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                     response.addException(qe);
                     throw new BadRequestException(qe, response);
@@ -930,7 +930,7 @@ public class QueryExecutorBean implements QueryExecutor {
         try {
             // Check if submitting a new query would exceed any configured concurrent query limits.
             QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryLogicName);
-            if (limiterResponse.exceedsLimit()) {
+            if (limiterResponse.metLimit()) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                 response.addException(qe);
                 throw new BadRequestException(qe, response);
@@ -1363,7 +1363,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 Query settings = query.getSettings();
                 // Check if submitting a new query would exceed any configured concurrent query limits.
                 QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getQueryLogicName());
-                if (limiterResponse.exceedsLimit()) {
+                if (limiterResponse.metLimit()) {
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                     response.addException(qe);
                     throw new BadRequestException(qe, response);

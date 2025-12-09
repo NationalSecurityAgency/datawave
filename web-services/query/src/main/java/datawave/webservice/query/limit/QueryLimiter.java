@@ -1,7 +1,9 @@
 package datawave.webservice.query.limit;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
@@ -20,42 +22,80 @@ public class QueryLimiter {
     private String zookeeperConfig;
     private QueryLimitConfiguration configuration;
 
+    private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
     private UserLimitProvider userLimitProvider;
     private SystemLimitProvider systemLimitProvider;
-    private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
 
     private ActiveQueryTracker activeQueryTracker;
 
+    /**
+     * Return the zookeeper connection string.
+     *
+     * @return the zookeeper connection string
+     */
     public String getZookeeperConfig() {
         return zookeeperConfig;
     }
 
+    /**
+     * Set the zookeeper connection string
+     *
+     * @param zookeeperConfig
+     *            the zookeeper connection string
+     */
     public void setZookeeperConfig(String zookeeperConfig) {
         this.zookeeperConfig = zookeeperConfig;
     }
 
+    /**
+     * Set the configuration to use to set up this {@link QueryLimiter}
+     *
+     * @param queryLimitConfiguration
+     *            the config
+     */
     public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
         this.configuration = queryLimitConfiguration;
     }
 
+    /**
+     * Return the configuration used to set up this {@link QueryLimiter}
+     *
+     * @return the config
+     */
     public QueryLimitConfiguration getConfiguration() {
         return configuration;
     }
 
-    public UserLimitProvider getUserLimitProvider() {
+    /**
+     * Return the {@link UserLimitProvider} instantiated after the last time {@link #setup()} was called.
+     *
+     * @return the user limit provider
+     */
+    UserLimitProvider getUserLimitProvider() {
         return userLimitProvider;
     }
 
-    public SystemLimitProvider getSystemLimitProvider() {
+    /**
+     * Return the {@link SystemLimitProvider} instantiated after the last time {@link #setup()} was called.
+     *
+     * @return the system limit provider
+     */
+    SystemLimitProvider getSystemLimitProvider() {
         return systemLimitProvider;
     }
 
-    public QueryLogicGroupLimitProvider getQueryLogicGroupLimitProvider() {
+    /**
+     * Return the {@link QueryLogicGroupLimitProvider} instantiated after the last time {@link #setup()} was called.
+     *
+     * @return the query logic group limit provider
+     */
+    QueryLogicGroupLimitProvider getQueryLogicGroupLimitProvider() {
         return queryLogicGroupLimitProvider;
     }
 
     /**
-     * Validate the configuration and extract the query limits to enforce.
+     * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
+     * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
      */
     public void setup() {
         if (log.isDebugEnabled()) {
@@ -71,134 +111,55 @@ public class QueryLimiter {
                 throw new IllegalArgumentException("Default system query limit must be greater than 0");
             }
 
-            this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(this.configuration.getQueryLogicGroupConfigs());
-            this.userLimitProvider = new UserLimitProvider(this.configuration.getDefaultUserQueryLimit(), this.configuration.getUserConfigs());
-            this.systemLimitProvider = new SystemLimitProvider(this.configuration.getDefaultSystemQueryLimit(), this.configuration.getSystemConfigs());
+            this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getQueryLogicGroupConfigs());
+            this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getUserConfigs(),
+                            queryLogicGroupLimitProvider);
+            this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getSystemConfigs(),
+                            queryLogicGroupLimitProvider);
         } else {
+            this.queryLogicGroupLimitProvider = null;
             this.userLimitProvider = null;
             this.systemLimitProvider = null;
-            this.queryLogicGroupLimitProvider = null;
         }
     }
 
     /**
-     * Return whether submitting a new query for the given user, based on the given query logic, would exceed a configured concurrent query limit for the
-     * current system. The current system will be identified by the canonical hostname.
+     * Check if the user is allowed to create another query based on the given query logic on the current system.
      *
      * @param userDn
      *            the user DN
      * @param queryLogic
      *            the query logic
      * @return the response
+     * @throws Exception
+     *             if an exception occurs
      */
     public QueryLimiterResponse checkForLimits(String userDn, String queryLogic) throws Exception {
-        return checkForLimits(userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
-    }
+        // Cast the user DN to lowercase to ensure a consistent format.
+        userDn = userDn.trim().toLowerCase();
 
-    /**
-     * Return whether submitting a new query for the given user, on the given system, based on the given query logic, would exceed a configured concurrent query
-     * limit.
-     *
-     * @param userDn
-     *            the user DN
-     * @param system
-     *            the system name
-     * @param queryLogic
-     *            the query logic
-     * @return the response
-     */
-    public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
+        // Do not cast the system or query logic to lowercase, they will be getting matched against regex patterns.
+        String system = hostnameProvider.getCanonicalHostname();
+        queryLogic = queryLogic.trim();
+
         if (log.isTraceEnabled()) {
             log.trace("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
         }
 
+        // Fetch the snapshot of actively running queries that are related to the user, system, and query logic.
         ActiveQuerySnapshot snapshot = getActiveQuerySnapshot(userDn, system, queryLogic);
-
-        int totalQueriesForUser = getTotalQueriesThatCountAgainstLimit(snapshot);
-        boolean userOverrodeQueryLogicLimit = false;
-
-        // Check if the user has reached their max concurrent query limit across all systems.
-        UserQueryLimit userLimit = userLimitProvider.getLimit(userDn);
-        if (totalQueriesForUser >= userLimit.getQueryLimit()) {
-            String message = "User '" + userDn + "' has reached max " + (userLimit.getSource() == LimitSource.DEFAULTS ? "default " : "")
-                            + "user query limit of " + userLimit.getQueryLimit();
-            return QueryLimiterResponse.exceedsLimit(message);
+        if (log.isTraceEnabled()) {
+            log.trace("Checking limits - snapshot: " + snapshot);
         }
 
-        // Check if the user has reached their max concurrent query limit for any overridden query logic groups.
-        if (userLimit.overridesAnyQueryLogicLimits()) {
-            Optional<QueryLogicGroupQueryLimit> optionalGroupLimit = queryLogicGroupLimitProvider.getOverriddenLimit(userDn, queryLogic,
-                            userLimit.getQueryLogicGroupLimits());
-            if (optionalGroupLimit.isPresent()) {
-                userOverrodeQueryLogicLimit = true;
-                QueryLogicGroupQueryLimit groupLimit = optionalGroupLimit.get();
-                if (snapshot.getTotalUserQueriesForQueryLogic() >= groupLimit.getQueryLimit()) {
-                    String message = "User '" + userDn + "' has reached max user query limit of " + groupLimit.getQueryLimit() + " for query logic "
-                                    + queryLogic;
-                    return QueryLimiterResponse.exceedsLimit(message);
-                }
-            }
+        // Check if the snapshot reveals that any limits have been met.
+        LimitChecker checker = new LimitChecker(userDn, system, queryLogic, snapshot);
+        checker.checkLimits();
+        if (checker.metLimit) {
+            return QueryLimiterResponse.metLimit(checker.message);
+        } else {
+            return QueryLimiterResponse.hasNotMetLimit();
         }
-
-        // Check if the system has reached its max concurrent query limit.
-        SystemQueryLimit systemLimit = systemLimitProvider.getLimit(system);
-        if (snapshot.getTotalSystemQueries() >= systemLimit.getQueryLimit()) {
-            String message = "System '" + system + "' has reached max " + (systemLimit.getSource() == LimitSource.DEFAULTS ? "default " : "")
-                            + "system query limit of " + systemLimit.getQueryLimit();
-            return QueryLimiterResponse.exceedsLimit(message);
-        }
-
-        // Check if the system has reached its max concurrent query limit for any overridden query logic groups.
-        if (systemLimit.overridesAnyQueryLogicLimits()) {
-            Optional<QueryLogicGroupQueryLimit> optionalGroupLimit = queryLogicGroupLimitProvider.getOverriddenLimit(system, queryLogic,
-                            systemLimit.getQueryLogicGroupLimits());
-            if (optionalGroupLimit.isPresent()) {
-                QueryLogicGroupQueryLimit groupLimit = optionalGroupLimit.get();
-                if (snapshot.getTotalSystemQueriesForQueryLogic() >= groupLimit.getQueryLimit()) {
-                    String message = "System '" + system + "' has reached max query limit of " + groupLimit.getQueryLimit() + " for query logic " + queryLogic;
-                    return QueryLimiterResponse.exceedsLimit(message);
-                }
-            }
-        }
-
-        // If the user did not have any overridden query logic groups that matched the query logic, check if the user has reached the max concurrent query limit
-        // for a query logic group's default limit.
-        if (!userOverrodeQueryLogicLimit) {
-            Optional<QueryLogicGroupQueryLimit> optionalGroupLimit = queryLogicGroupLimitProvider.getLimit(queryLogic);
-            if (optionalGroupLimit.isPresent()) {
-                QueryLogicGroupQueryLimit groupLimit = optionalGroupLimit.get();
-                if (snapshot.getTotalUserQueriesForQueryLogic() >= groupLimit.getQueryLimit()) {
-                    String message = "User '" + userDn + "' has reached max default query limit of " + groupLimit.getQueryLimit() + " for query logic "
-                                    + queryLogic;
-                    return QueryLimiterResponse.exceedsLimit(message);
-                }
-            }
-        }
-
-        // The query can be submitted.
-        return QueryLimiterResponse.doesNotExceedLimit();
-    }
-
-    /**
-     * Return the total queries the user has running that count towards their query limit.
-     *
-     * @param snapshot
-     *            the snapshot to extract query metrics from
-     * @return the total queries
-     */
-    private int getTotalQueriesThatCountAgainstLimit(ActiveQuerySnapshot snapshot) {
-        // The total number of queries a user has running, and the total number of those queries that count towards the user's query limit may differ. It
-        // depends on the systems the queries were submitted on, and whether queries on the systems count towards the user's query limit. Evaluate each system
-        // that the user has queries on, and only sum up the queries on systems that count towards the user's query limit.
-        int totalQueries = 0;
-        Map<String,Integer> totalUserQueriesPerSystem = snapshot.getTotalUserQueriesPerSystem();
-        for (Map.Entry<String,Integer> entry : totalUserQueriesPerSystem.entrySet()) {
-            String system = entry.getKey();
-            if (systemLimitProvider.countsAgainstUserLimit(system)) {
-                totalQueries += entry.getValue();
-            }
-        }
-        return totalQueries;
     }
 
     /**
@@ -220,7 +181,12 @@ public class QueryLimiter {
      *             if an error occurs
      */
     private ActiveQuerySnapshot getActiveQuerySnapshot(String userDn, String system, String queryLogic) throws Exception {
-        return getActiveQueryTracker().getSnapshot(userDn, system, queryLogic);
+        ActiveQueryTracker tracker = getActiveQueryTracker();
+
+        Set<String> recordedQueryLogics = tracker.getDistinctQueryLogics();
+        Set<String> relevantQueryLogics = queryLogicGroupLimitProvider.getRelevantQueryLogics(queryLogic, recordedQueryLogics);
+
+        return tracker.getSnapshot(userDn, system, relevantQueryLogics);
     }
 
     /**
@@ -236,25 +202,10 @@ public class QueryLimiter {
      *             if an error occurs
      */
     public void trackQuery(String queryId, String userDn, String queryLogic) throws Exception {
-        trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
-    }
+        userDn = userDn.trim().toLowerCase();
+        queryLogic = queryLogic.trim();
 
-    /**
-     * Track the following information for the given query on Zookeeper.
-     *
-     * @param queryId
-     *            the queryId
-     * @param userDn
-     *            the userDN of the user who submitted the query
-     * @param system
-     *            the system the query was submitted from
-     * @param queryLogic
-     *            the queryLogic the query is based on
-     * @throws Exception
-     *             if an error occurs
-     */
-    public void trackQuery(String queryId, String userDn, String system, String queryLogic) throws Exception {
-        getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic);
+        getActiveQueryTracker().trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
     }
 
     /**
@@ -283,7 +234,7 @@ public class QueryLimiter {
     }
 
     /**
-     * Set the hostname provider.
+     * Set the hostname provider. This only needs to be done for testing purposes when we want to avoid using {@link InetHostnameProvider}.
      *
      * @param provider
      *            the hostname provider
@@ -302,5 +253,264 @@ public class QueryLimiter {
             this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig, 120000L);
         }
         return this.activeQueryTracker;
+    }
+
+    /**
+     * Evaluates a {@link ActiveQuerySnapshot} to see if it meets any limits.
+     */
+    private class LimitChecker {
+
+        private final String userDn;
+        private final String system;
+        private final String queryLogic;
+        private final ActiveQuerySnapshot snapshot;
+
+        // Whether the user has a custom query logic group limit.
+        private boolean userOverrodeQueryLogicLimit;
+
+        // Whether a limit was met.
+        private boolean metLimit;
+
+        // The message to return.
+        private String message;
+
+        public LimitChecker(String userDn, String system, String queryLogic, ActiveQuerySnapshot snapshot) {
+            this.userDn = userDn;
+            this.system = system;
+            this.queryLogic = queryLogic;
+            this.snapshot = snapshot;
+        }
+
+        /**
+         * Check the limits against the snapshot.
+         */
+        public void checkLimits() {
+            // Check limits configured for the user.
+            checkUserLimits();
+            if (metLimit) {
+                return;
+            }
+
+            // Check limits configured for the system.
+            checkSystemLimits();
+            if (metLimit) {
+                return;
+            }
+
+            // Check limits configured for the query logic.
+            checkQueryLogicLimits();
+        }
+
+        /**
+         * Check if the user has met any limits.
+         */
+        private void checkUserLimits() {
+            // If custom limits were configured for the user, check them.
+            if (userLimitProvider.hasCustomLimits(userDn)) {
+                checkCustomUserLimits();
+            } else {
+                // Otherwise, check if the user has met the default maximum number of concurrent queries for users.
+                checkUserQueryLimits(userLimitProvider.getDefaultUserQueryLimit());
+            }
+        }
+
+        /**
+         * Check if any custom limits for the user were met.
+         */
+        private void checkCustomUserLimits() {
+            UserLimits customLimits = userLimitProvider.getCustomLimits(userDn);
+
+            // Check if the user has met their query limit.
+            checkUserQueryLimits(customLimits.getQueryLimit());
+            // Return early if we've met a limit.
+            if (this.metLimit) {
+                return;
+            }
+
+            // Check if the user has met a limit for a query logic group.
+            if (customLimits.overridesAnyGroupLimits()) {
+                // Mark that we've checked query logic group limits so that we don't check again with the default limits for query logic groups.
+                this.userOverrodeQueryLogicLimit = true;
+                // Check if another query in the query logic would exceed any query logic group limits for the user.
+                // It is possible for the query logic to match against one of the following:
+                // - A single exact match for a group.
+                // - A single wildcard match for a group.
+                // - Multiple partial regex matches for a group.
+                // The map of groups to limit will always be sorted in with the lowest limit first. In the case of multiple partial regex matches, we must check
+                // against the limit for each group in case we meet the limit for one that is more inclusive than the other.
+                Map<String,Integer> groupLimits = customLimits.getRelevantGroupLimits(queryLogic);
+                checkUserQueryLogicLimits(groupLimits);
+            }
+        }
+
+        /**
+         * Check if another query by the user would exceed the given limit.
+         *
+         * @param limit
+         *            the limit to respect
+         */
+        private void checkUserQueryLimits(int limit) {
+            // When counting queries by the user, we must only count queries running on systems that count against the user query limit.
+            int totalQueries = getTotalUserQueriesThatCountAgainstLimit();
+            if (totalQueries >= limit) {
+                this.message = "User '" + userDn + "' has reached limit of " + limit + " running queries";
+                this.metLimit = true;
+            }
+        }
+
+        /**
+         * Return the total queries the user has running that count towards their query limit.
+         */
+        private int getTotalUserQueriesThatCountAgainstLimit() {
+            // The total number of queries a user has running, and the total number of those queries that count towards the user's query limit may differ. It
+            // depends on the systems the queries were submitted on, and whether queries on the systems count towards the user's query limit. Evaluate each
+            // system
+            // that the user has queries on, and only sum up the queries on systems that count towards the user's query limit.
+            int totalQueries = 0;
+            Map<String,Integer> totalUserQueriesPerSystem = snapshot.getUserQueriesPerSystem();
+            for (Map.Entry<String,Integer> entry : totalUserQueriesPerSystem.entrySet()) {
+                String system = entry.getKey();
+                if (systemLimitProvider.countsAgainstUserLimit(system)) {
+                    totalQueries += entry.getValue();
+                }
+            }
+            return totalQueries;
+        }
+
+        /**
+         * Check the system has met any limits.
+         */
+        private void checkSystemLimits() {
+            // Fetch the best-matching custom system limit for the system.
+            Optional<SystemLimits> customLimits = systemLimitProvider.getCustomLimits(system);
+            // If we found a custom limit, check the limits defined therein.
+            if (customLimits.isPresent()) {
+                checkCustomSystemLimits(customLimits.get());
+            } else {
+                // If no custom limits were defined for the system, then at least check if the system has met the default number of running queries.
+                checkSystemQueryLimits(systemLimitProvider.getDefaultSystemQueryLimit());
+            }
+        }
+
+        /**
+         * Check if any custom limits for the system were met.
+         *
+         * @param systemLimits
+         *            the system limits
+         */
+        private void checkCustomSystemLimits(SystemLimits systemLimits) {
+            // Check if the system has reached its overall query limit.
+            checkSystemQueryLimits(systemLimits.getQueryLimit());
+            // If so, return early.
+            if (this.metLimit) {
+                return;
+            }
+
+            // Check if the system has reached a limit for a query logic group.
+            if (systemLimits.overridesAnyGroupLimits()) {
+                // It is possible for the query logic to match against one of the following:
+                // - A single exact match for a group.
+                // - A single wildcard match for a group.
+                // - Multiple partial regex matches for a group.
+                // The map of groups to limit will always be sorted in with the lowest limit first. In the case of multiple partial regex matches, we must check
+                // against the limit for each group in case we meet the limit for one that is more inclusive than the other.
+                Map<String,Integer> groupLimits = systemLimits.getRelevantGroupLimits(queryLogic);
+                if (!groupLimits.isEmpty()) {
+                    Map<String,Integer> groupCounts = getTotalSystemQueriesForGroups(groupLimits.keySet());
+                    for (String group : groupLimits.keySet()) {
+                        int limit = groupLimits.get(group);
+                        int total = groupCounts.get(group);
+                        if (total >= limit) {
+                            this.message = "System '" + system + "' has reached limit of " + limit + " running queries for query logic group '" + group + "'";
+                            this.metLimit = true;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        private Map<String,Integer> getTotalSystemQueriesForGroups(Set<String> groups) {
+            Map<String,Matcher> groupMatchers = queryLogicGroupLimitProvider.getGroupMatchers(groups);
+            Map<String,Integer> groupCounts = new HashMap<>();
+            Map<String,Integer> queryLogicCounts = snapshot.getTotalSystemQueriesPerQueryLogic();
+            countGroupQueries(groupMatchers, groupCounts, queryLogicCounts);
+            return groupCounts;
+        }
+
+        /**
+         * Check if another query on the system would exceed the given limit.
+         *
+         * @param limit
+         *            the limit to respect
+         */
+        private void checkSystemQueryLimits(int limit) {
+            int totalQueries = snapshot.getTotalSystemQueries();
+            if (totalQueries >= limit) {
+                this.message = "System '" + system + "' has reached limit of " + limit + " running queries";
+                this.metLimit = true;
+            }
+        }
+
+        /**
+         * Check if another query by the user for the query logic group would exceed any default query logic group limits.
+         */
+        private void checkQueryLogicLimits() {
+            // Only perform this check if we did not previously have custom group limits defined for the user.
+            if (!userOverrodeQueryLogicLimit) {
+                Map<String,Integer> groupLimits = queryLogicGroupLimitProvider.getRelevantGroupLimits(queryLogic);
+                checkUserQueryLogicLimits(groupLimits);
+            }
+        }
+
+        /**
+         * Check if another query by the user for the query logic would exceed any of the given limits for the given groups.
+         *
+         * @param groupLimits
+         *            the group limits
+         */
+        private void checkUserQueryLogicLimits(Map<String,Integer> groupLimits) {
+            if (!groupLimits.isEmpty()) {
+                // Get a map of groups to the total number of actively running queries based on query logics that match against the group.
+                Map<String,Integer> groupCounts = getTotalUserQueriesForGroupsThatCountAgainstLimit(groupLimits.keySet());
+                // Check if any limits were exceeded.
+                for (String group : groupLimits.keySet()) {
+                    int limit = groupLimits.get(group);
+                    int total = groupCounts.getOrDefault(group, 0);
+                    if (total >= limit) {
+                        this.message = "User '" + userDn + "' has reached limit of " + limit + " running queries for query logic group '" + group + "'";
+                        this.metLimit = true;
+                        return;
+                    }
+                }
+            }
+        }
+
+        private Map<String,Integer> getTotalUserQueriesForGroupsThatCountAgainstLimit(Set<String> groups) {
+            Map<String,Matcher> groupMatchers = queryLogicGroupLimitProvider.getGroupMatchers(groups);
+            Map<String,Integer> groupCounts = new HashMap<>();
+            Map<String,Map<String,Integer>> totalUserQueriesPerSystemPerQueryLogic = snapshot.getTotalUserQueriesPerSystemPerQueryLogic();
+
+            for (String system : totalUserQueriesPerSystemPerQueryLogic.keySet()) {
+                // We only want to count queries on systems that count against the user limits.
+                if (systemLimitProvider.countsAgainstUserLimit(system)) {
+                    Map<String,Integer> queryLogicCounts = totalUserQueriesPerSystemPerQueryLogic.get(system);
+                    countGroupQueries(groupMatchers, groupCounts, queryLogicCounts);
+                }
+            }
+            return groupCounts;
+        }
+
+        private void countGroupQueries(Map<String,Matcher> groupMatchers, Map<String,Integer> groupCounts, Map<String,Integer> queryLogicCounts) {
+            for (String queryLogic : queryLogicCounts.keySet()) {
+                for (String group : groupMatchers.keySet()) {
+                    Matcher matcher = groupMatchers.get(group);
+                    if (matcher.matches(queryLogic)) {
+                        int queryLogicCount = queryLogicCounts.get(queryLogic);
+                        groupCounts.compute(group, (k, v) -> v == null ? queryLogicCount : v + queryLogicCount);
+                    }
+                }
+            }
+        }
     }
 }

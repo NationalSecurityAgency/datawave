@@ -2,6 +2,7 @@ package datawave.webservice.query.limit;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 
 /**
@@ -33,6 +34,16 @@ public class StringMatcher implements Matcher {
     @Override
     public boolean matchesAnyOf(Collection<String> values) {
         return values.contains(this.value);
+    }
+
+    @Override
+    public Set<String> getMatches(Collection<String> values) {
+        for (String value : values) {
+            if (matches(value)) {
+                return Set.of(this.value);
+            }
+        }
+        return Set.of();
     }
 
     @Override

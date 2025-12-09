@@ -2,7 +2,10 @@ package datawave.webservice.query.limit;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -13,12 +16,16 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  */
 public class PatternMatcher implements Matcher {
 
-    private final Cache<String,Boolean> cache = Caffeine.newBuilder().build();
+    private final Cache<String,Boolean> cache = Caffeine.newBuilder().maximumSize(100).build();
     private final Pattern pattern;
 
     public PatternMatcher(Pattern pattern) {
         Objects.requireNonNull(pattern, "pattern must not be null");
         this.pattern = pattern;
+    }
+
+    public Pattern getPattern() {
+        return pattern;
     }
 
     @Override
@@ -48,5 +55,29 @@ public class PatternMatcher implements Matcher {
             }
         }
         return false;
+    }
+
+    @Override
+    public Set<String> getMatches(Collection<String> values) {
+        return values.stream().filter(this::matches).collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PatternMatcher that = (PatternMatcher) o;
+        return Objects.equals(pattern, that.pattern);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pattern);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", PatternMatcher.class.getSimpleName() + "[", "]").add("pattern=" + pattern).toString();
     }
 }

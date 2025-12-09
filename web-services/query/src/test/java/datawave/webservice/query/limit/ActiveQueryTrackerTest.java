@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -50,8 +51,8 @@ class ActiveQueryTrackerTest {
 
         String queryId = UUID.randomUUID().toString();
         String user = "cn=test a. user, ou=example developers, o=example corp, c=us";
-        String system = "server-01";
-        String queryLogic = "shardquerylogic";
+        String system = "SERVER-01";
+        String queryLogic = "ShardQueryLogic";
 
         @Nested
         @DisplayName("After tracking")
@@ -59,8 +60,7 @@ class ActiveQueryTrackerTest {
 
             @BeforeEach
             void setUp() {
-                // Pass in the userDN, system, and queryLogic as uppercase with whitespace to verify they are trimmed and cast to lowercase.
-                tracker.trackQuery(queryId, " " + user.toUpperCase() + " ", " " + system.toUpperCase() + " ", " " + queryLogic.toUpperCase() + " ");
+                tracker.trackQuery(queryId, user, system, queryLogic);
             }
 
             @Test
@@ -71,9 +71,10 @@ class ActiveQueryTrackerTest {
 
                 // Verify that the nodes were created as expected in Zookeeper.
                 assertThat(client.checkExists().forPath("/users/" + user + "/" + queryId)).isNotNull();
-                assertThat(client.checkExists().forPath("/systems/server-01/" + queryId)).isNotNull();
-                assertThat(client.checkExists().forPath("/queryLogics/shardquerylogic/" + queryId)).isNotNull();
+                assertThat(client.checkExists().forPath("/systems/SERVER-01/" + queryId)).isNotNull();
+                assertThat(client.checkExists().forPath("/queryLogics/ShardQueryLogic/" + queryId)).isNotNull();
                 assertThat(client.checkExists().forPath("/queries/" + queryId)).isNotNull();
+                assertThat(client.checkExists().forPath("/distinctQueryLogics/" + queryLogic)).isNotNull();
                 assertThat(new String(client.getData().forPath("/queries/" + queryId + "/user"))).isEqualTo(user);
                 assertThat(new String(client.getData().forPath("/queries/" + queryId + "/system"))).isEqualTo(system);
                 assertThat(new String(client.getData().forPath("/queries/" + queryId + "/queryLogic"))).isEqualTo(queryLogic);
@@ -86,6 +87,12 @@ class ActiveQueryTrackerTest {
             @DisplayName("A failure will not occur if tracked again")
             void allowsTrackingAgain() {
                 assertThatNoException().isThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic));
+            }
+
+            @Test
+            @DisplayName("The query logic is returned within the distinct query logics")
+            void canFetchQueryLogics() {
+                assertThat(tracker.getDistinctQueryLogics()).contains(queryLogic);
             }
 
             @Nested
@@ -105,7 +112,7 @@ class ActiveQueryTrackerTest {
 
                     // Verify that the nodes were deleted as expected in Zookeeper.
                     assertThat(client.checkExists().forPath("/users/" + user + "/" + queryId)).isNull();
-                    assertThat(client.checkExists().forPath("/systems/server-01/" + queryId)).isNull();
+                    assertThat(client.checkExists().forPath("/systems/SERVER-01/" + queryId)).isNull();
                     assertThat(client.checkExists().forPath("/queryLogics/ShardQueryLogic/" + queryId)).isNull();
                     assertThat(client.checkExists().forPath("/queries/" + queryId)).isNull();
                 }
@@ -121,6 +128,12 @@ class ActiveQueryTrackerTest {
                 void cannotObtainHeartbeat() {
                     assertThatThrownBy(() -> tracker.createHeartbeat(queryId)).isInstanceOf(ActiveQueryException.class)
                                     .hasMessage("Query " + queryId + " is not being tracked");
+                }
+
+                @Test
+                @DisplayName("The query logic is not deleted from the set of distinct query logics")
+                void queryLogicIsNotDeletedFromDistinctQueryLogics() {
+                    assertThat(tracker.getDistinctQueryLogics()).contains(queryLogic);
                 }
             }
 
@@ -185,115 +198,118 @@ class ActiveQueryTrackerTest {
                     @Test
                     @DisplayName("It is captured for a matching userDn")
                     void isCapturedForMatchingUser() throws Exception {
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, "otherSystem", "otherQueryLogic");
+                        Set<String> queryLogics = Set.of("otherQueryLogic");
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, "otherSystem", queryLogics);
 
                         assertThat(snapshot.getUserDn()).isEqualTo(user);
-                        assertThat(snapshot.getSystemName()).isEqualTo("othersystem");
-                        assertThat(snapshot.getQueryLogic()).isEqualTo("otherquerylogic");
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(0);
+                        assertThat(snapshot.getSystem()).isEqualTo("otherSystem");
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of("server-01", 1));
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
+                        // @formatter:off
+                        assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
+                                        "SERVER-01", Map.of("ShardQueryLogic", 1)));
+                        // @formatter:on
+                        assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEmpty();
                     }
 
                     @Test
                     @DisplayName("It is captured for a matching system")
                     void isCapturedForMatchingSystem() throws Exception {
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", system, "otherQueryLogic");
+                        Set<String> queryLogics = Set.of("otherQueryLogic");
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", system, queryLogics);
 
-                        assertThat(snapshot.getUserDn()).isEqualTo("otheruser");
-                        assertThat(snapshot.getSystemName()).isEqualTo(system);
-                        assertThat(snapshot.getQueryLogic()).isEqualTo("otherquerylogic");
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(0);
+                        assertThat(snapshot.getUserDn()).isEqualTo("otherUser");
+                        assertThat(snapshot.getSystem()).isEqualTo(system);
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of());
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
+                        assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEmpty();
+                        assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
                     }
 
                     @Test
                     @DisplayName("It is captured for a matching query logic")
                     void isCapturedForMatchingQueryLogic() throws Exception {
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", "otherSystem", queryLogic);
+                        Set<String> queryLogics = Set.of(queryLogic);
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", "otherSystem", queryLogics);
 
-                        assertThat(snapshot.getUserDn()).isEqualTo("otheruser");
-                        assertThat(snapshot.getSystemName()).isEqualTo("othersystem");
-                        assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(0);
+                        assertThat(snapshot.getUserDn()).isEqualTo("otherUser");
+                        assertThat(snapshot.getSystem()).isEqualTo("otherSystem");
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(1);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of());
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
+                        assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEmpty();
+                        assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEmpty();
                     }
 
                     @Test
                     @DisplayName("It is captured for a matching userDn and system")
-                    void isCapturedForMatchinguserandSystem() throws Exception {
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, "otherQueryLogic");
+                    void isCapturedForMatchingUserAndSystem() throws Exception {
+                        Set<String> queryLogics = Set.of("otherQueryLogic");
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
 
                         assertThat(snapshot.getUserDn()).isEqualTo(user);
-                        assertThat(snapshot.getSystemName()).isEqualTo(system);
-                        assertThat(snapshot.getQueryLogic()).isEqualTo("otherquerylogic");
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(1);
-                        assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(0);
+                        assertThat(snapshot.getSystem()).isEqualTo(system);
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of("server-01", 1));
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
+                        // @formatter:off
+                        assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
+                                        "SERVER-01", Map.of("ShardQueryLogic", 1)));
+                        // @formatter:on
+                        assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
                     }
 
                     @Test
                     @DisplayName("It is captured for a matching userDn and queryLogic")
-                    void isCapturedForMatchinguserandQueryLogic() throws Exception {
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, "otherSystem", queryLogic);
+                    void isCapturedForMatchingUserAndQueryLogic() throws Exception {
+                        Set<String> queryLogics = Set.of(queryLogic);
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, "otherSystem", queryLogics);
 
                         assertThat(snapshot.getUserDn()).isEqualTo(user);
-                        assertThat(snapshot.getSystemName()).isEqualTo("othersystem");
-                        assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(1);
+                        assertThat(snapshot.getSystem()).isEqualTo("otherSystem");
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(1);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of("server-01", 1));
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
+                        // @formatter:off
+                        assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
+                                        "SERVER-01", Map.of("ShardQueryLogic", 1)));
+                        // @formatter:on
+                        assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEmpty();
                     }
 
                     @Test
                     @DisplayName("It is captured for a matching system and queryLogic")
                     void isCapturedForMatchingSystemAndQueryLogic() throws Exception {
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", system, queryLogic);
+                        Set<String> queryLogics = Set.of(queryLogic);
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", system, queryLogics);
 
-                        assertThat(snapshot.getUserDn()).isEqualTo("otheruser");
-                        assertThat(snapshot.getSystemName()).isEqualTo(system);
-                        assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(0);
+                        assertThat(snapshot.getUserDn()).isEqualTo("otherUser");
+                        assertThat(snapshot.getSystem()).isEqualTo(system);
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(1);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(1);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of());
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
+                        assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEmpty();
+                        assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
                     }
 
                     @Test
                     @DisplayName("It is captured for a matching userDn, system, and queryLogic")
-                    void isCapturedForMatchinguserandSystemAndQueryLogic() throws Exception {
-                        // Pass in the userDN, system, and queryLogic as uppercase with whitespace to verify they are trimmed and cast to lowercase.
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(" " + user.toUpperCase() + " ", " " + system.toUpperCase() + " ",
-                                        " " + queryLogic.toUpperCase() + " ");
-
+                    void isCapturedForMatchingUserAndSystemAndQueryLogic() throws Exception {
+                        Set<String> queryLogics = Set.of("otherQueryLogic");
+                        // Pass in the userDN as uppercase and the system and query logic with whitespace to verify they are cleaned up.
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
                         assertThat(snapshot.getUserDn()).isEqualTo(user);
-                        assertThat(snapshot.getSystemName()).isEqualTo(system);
-                        assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(1);
-                        assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(1);
+                        assertThat(snapshot.getSystem()).isEqualTo(system);
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(1);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(1);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of("server-01", 1));
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
+                        // @formatter:off
+                        assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
+                                        "SERVER-01", Map.of("ShardQueryLogic", 1)));
+                        // @formatter:on
+                        assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
                     }
                 }
 
@@ -344,18 +360,15 @@ class ActiveQueryTrackerTest {
                     @Test
                     @DisplayName("It is not captured in snapshot")
                     void isNotCapturedInSnapshot() throws Exception {
-                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogic);
+                        Set<String> queryLogics = Set.of(queryLogic);
+                        ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
 
                         assertThat(snapshot).isNotNull();
                         assertThat(snapshot.getUserDn()).isEqualTo(user);
-                        assertThat(snapshot.getSystemName()).isEqualTo(system);
-                        assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                        assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
+                        assertThat(snapshot.getSystem()).isEqualTo(system);
+                        assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                         assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                        assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
-                        assertThat(snapshot.getTotalUserQueriesPerSystem()).isEmpty();
+                        assertThat(snapshot.getUserQueriesPerSystem()).isEmpty();
                     }
 
                     @Test
@@ -368,7 +381,7 @@ class ActiveQueryTrackerTest {
 
                         // Verify that the nodes were deleted as expected in Zookeeper.
                         assertThat(client.checkExists().forPath("/users/" + user + "/" + queryId)).isNull();
-                        assertThat(client.checkExists().forPath("/systems/server-01/" + queryId)).isNull();
+                        assertThat(client.checkExists().forPath("/systems/SERVER-01/" + queryId)).isNull();
                         assertThat(client.checkExists().forPath("/queryLogics/ShardQueryLogic/" + queryId)).isNull();
                         assertThat(client.checkExists().forPath("/queries/" + queryId)).isNull();
                     }
@@ -401,17 +414,14 @@ class ActiveQueryTrackerTest {
                     heartbeats.get(0).stop();
                     heartbeats.get(1).stop();
 
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogic);
+                    Set<String> queryLogics = Set.of(queryLogic);
+                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
 
                     assertThat(snapshot.getUserDn()).isEqualTo(user);
-                    assertThat(snapshot.getSystemName()).isEqualTo(system);
-                    assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                    assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(1);
-                    assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(1);
+                    assertThat(snapshot.getSystem()).isEqualTo(system);
+                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                     assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                    assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(1);
-                    assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(1);
-                    assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of("server-01", 1));
+                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
                 }
 
                 @Test
@@ -421,17 +431,14 @@ class ActiveQueryTrackerTest {
                     heartbeats.get(1).stop();
                     heartbeats.get(2).stop();
 
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogic);
+                    Set<String> queryLogics = Set.of(queryLogic);
+                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
 
                     assertThat(snapshot.getUserDn()).isEqualTo(user);
-                    assertThat(snapshot.getSystemName()).isEqualTo(system);
-                    assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                    assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                    assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(0);
+                    assertThat(snapshot.getSystem()).isEqualTo(system);
+                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                     assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                    assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                    assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
-                    assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of());
+                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
                 }
             }
         }
@@ -450,23 +457,26 @@ class ActiveQueryTrackerTest {
             @Test
             @DisplayName("It is not captured in snapshot")
             void isNotCapturedInSnapshot() throws Exception {
-                ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogic);
+                Set<String> queryLogics = Set.of(queryLogic);
+                ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
 
                 assertThat(snapshot.getUserDn()).isEqualTo(user);
-                assertThat(snapshot.getSystemName()).isEqualTo(system);
-                assertThat(snapshot.getQueryLogic()).isEqualTo(queryLogic);
-                assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(0);
-                assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
+                assertThat(snapshot.getSystem()).isEqualTo(system);
+                assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
                 assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(0);
-                assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(0);
-                assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of());
+                assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
             }
 
             @Test
             @DisplayName("A failure will not occur if explicitly untracked")
             void allowsUntrackingAgain() {
                 assertThatNoException().isThrownBy(() -> tracker.stopTrackingQuery(queryId));
+            }
+
+            @Test
+            @DisplayName("There are no distinct query logics")
+            void noDistinctQueryLogics() {
+                assertThat(tracker.getDistinctQueryLogics()).isEmpty();
             }
         }
     }
@@ -480,47 +490,31 @@ class ActiveQueryTrackerTest {
         @BeforeEach
         void setUp() {
             // The following data assumes that we will be fetching a snapshot for user usera, on system SYSTEM-01, for query logic TLDQueryLogic.
-
-            // Counts towards totals for user, system, and query logic.
+            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
+            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "EventQueryLogic");
             createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
             createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
-
-            // Counts towards totals for system and query logic.
+            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "EventQueryLogic");
             createActiveQuery("cn=userb, c=us", "SYSTEM-01", "TLDQueryLogic");
             createActiveQuery("cn=userb, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "TLDQueryLogic");
-
-            // Counts towards totals for user and system.
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "OtherQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "OtherQueryLogic");
-
-            // Counts towards totals for system.
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "OtherQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "OtherQueryLogic");
-
-            // Counts towards totals for user and query logic.
+            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "EdgeQueryLogic");
+            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "EdgeQueryLogic");
+            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "EdgeQueryLogic");
+            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "EventQueryLogic");
             createActiveQuery("cn=usera, c=us", "SYSTEM-02", "TLDQueryLogic");
             createActiveQuery("cn=usera, c=us", "SYSTEM-02", "TLDQueryLogic");
             createActiveQuery("cn=usera, c=us", "SYSTEM-02", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "TLDQueryLogic");
-
-            // Counts towards totals for query logic.
+            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "EventQueryLogic");
             createActiveQuery("cn=userb, c=us", "SYSTEM-02", "TLDQueryLogic");
             createActiveQuery("cn=userb, c=us", "SYSTEM-02", "TLDQueryLogic");
             createActiveQuery("cn=userb, c=us", "SYSTEM-02", "TLDQueryLogic");
-
-            // Counts towards totals for user.
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "OtherQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "OtherQueryLogic");
-
-            // These entries should not count towards any totals.
-            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "OtherQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "OtherQueryLogic");
-            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "OtherQueryLogic");
-            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "OtherQueryLogic");
-            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "OtherQueryLogic");
+            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "EventQueryLogic");
+            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "EventQueryLogic");
+            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "EdgeQueryLogic");
+            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "EdgeQueryLogic");
+            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "EdgeQueryLogic");
+            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "EventQueryLogic");
+            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "EdgeQueryLogic");
         }
 
         private void createActiveQuery(String userDn, String system, String queryLogic) {
@@ -532,18 +526,32 @@ class ActiveQueryTrackerTest {
 
         @Test
         @DisplayName("All relevant queries are captured in snapshot")
-        void isCapturedInSnapshot() throws Exception {
-            ActiveQuerySnapshot snapshot = tracker.getSnapshot("cn=usera, c=us", "system-01", "tldquerylogic");
+        void capturesEventForSingleQueryLogicInSnapshot() throws Exception {
+            ActiveQuerySnapshot snapshot = tracker.getSnapshot("cn=usera, c=us", "SYSTEM-01", Set.of("TLDQueryLogic"));
 
             assertThat(snapshot.getUserDn()).isEqualTo("cn=usera, c=us");
-            assertThat(snapshot.getSystemName()).isEqualTo("system-01");
-            assertThat(snapshot.getQueryLogic()).isEqualTo("tldquerylogic");
-            assertThat(snapshot.getTotalUserQueriesPerSystem()).isEqualTo(Map.of("system-01", 6, "system-02", 6));
-            assertThat(snapshot.getTotalUserQueriesOnSystem()).isEqualTo(6);
-            assertThat(snapshot.getTotalUserQueriesForQueryLogic()).isEqualTo(8);
+            assertThat(snapshot.getSystem()).isEqualTo("SYSTEM-01");
+            assertThat(snapshot.getQueryLogics()).containsExactly("TLDQueryLogic");
+            assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SYSTEM-01", 6, "SYSTEM-02", 6));
             assertThat(snapshot.getTotalSystemQueries()).isEqualTo(11);
-            assertThat(snapshot.getTotalSystemQueriesForQueryLogic()).isEqualTo(7);
-            assertThat(snapshot.getTotalQueriesForQueryLogic()).isEqualTo(14);
+        }
+
+        @Test
+        @DisplayName("All relevant queries are captured in snapshot")
+        void capturesEventForMultipleQueryLogicsInSnapshot() throws Exception {
+            ActiveQuerySnapshot snapshot = tracker.getSnapshot("cn=usera, c=us", "SYSTEM-01", Set.of("TLDQueryLogic", "EventQueryLogic"));
+
+            assertThat(snapshot.getUserDn()).isEqualTo("cn=usera, c=us");
+            assertThat(snapshot.getSystem()).isEqualTo("SYSTEM-01");
+            assertThat(snapshot.getQueryLogics()).containsExactlyInAnyOrder("TLDQueryLogic", "EventQueryLogic");
+            assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SYSTEM-01", 6, "SYSTEM-02", 6));
+            assertThat(snapshot.getTotalSystemQueries()).isEqualTo(11);
+        }
+
+        @Test
+        @DisplayName("All distinct query logics were tracked")
+        void retainedDistinctQueryLogics() {
+            assertThat(tracker.getDistinctQueryLogics()).containsExactlyInAnyOrder("TLDQueryLogic", "EdgeQueryLogic", "EventQueryLogic");
         }
 
         @AfterEach

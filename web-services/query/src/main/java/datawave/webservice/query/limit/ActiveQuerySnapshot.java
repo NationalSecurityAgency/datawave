@@ -16,104 +16,136 @@ public class ActiveQuerySnapshot {
     private final String userDn;
 
     // The system name the query was submitted on.
-    private final String systemName;
+    private final String system;
 
-    // The query logic the query is based on.
-    private final String queryLogic;
-
-    // The total number of active queries for the user across all systems based on the query logic.
-    private final int totalUserQueriesForQueryLogic;
+    // The query logics targeted for capture in this snapshot.
+    private final Set<String> queryLogics;
 
     // The total queries the user has running per system.
     private final Map<String,Integer> totalUserQueriesPerSystem;
 
+    private final Map<String,Map<String,Integer>> totalUserQueriesPerSystemPerQueryLogic;
+
     // The total active queries on the system.
     private final int totalSystemQueries;
 
-    // The total queries the system has based on the query logic.
-    private final int totalSystemQueriesForQueryLogic;
+    // A map of query logics to non-zero counts of active queries for the user.
+    private final Map<String,Integer> totalUserQueriesPerQueryLogic;
 
-    // The total queries across all systems based on the query logic.
-    private final int totalQueriesForQueryLogic;
+    // A map of query logics to non-zero counts of active queries for the system.
+    private final Map<String,Integer> totalSystemQueriesPerQueryLogic;
 
     // The timestamp when this snapshot was captured.
     private final long timestamp;
 
-    public static Builder builder(String userDn, String systemName, String queryLogic) {
-        return new Builder(userDn, systemName, queryLogic);
+    public static Builder builder(String userDn, String systemName, Set<String> queryLogics) {
+        return new Builder(userDn, systemName, queryLogics);
     }
 
     protected ActiveQuerySnapshot(Builder builder) {
         this.userDn = builder.userDn;
-        this.systemName = builder.systemName;
-        this.queryLogic = builder.queryLogic;
-        this.totalUserQueriesForQueryLogic = builder.userQueriesForQueryLogic;
+        this.system = builder.system;
+        this.queryLogics = builder.queryLogics;
         this.totalUserQueriesPerSystem = Map.copyOf(builder.userQueriesPerSystem);
+        this.totalUserQueriesPerSystemPerQueryLogic = Map.copyOf(builder.userQueriesPerSystemPerQueryLogic);
         this.totalSystemQueries = builder.systemQueries;
-        this.totalSystemQueriesForQueryLogic = builder.systemQueriesForQueryLogic;
-        this.totalQueriesForQueryLogic = builder.queriesForQueryLogic;
+        this.totalUserQueriesPerQueryLogic = Map.copyOf(builder.userQueriesPerQueryLogic);
+        this.totalSystemQueriesPerQueryLogic = Map.copyOf(builder.systemQueriesPerQueryLogic);
         this.timestamp = builder.timestamp;
     }
 
+    /**
+     * Return the user the candidate query was submitted by.
+     *
+     * @return the user DN
+     */
     public String getUserDn() {
         return userDn;
     }
 
-    public String getSystemName() {
-        return systemName;
+    /**
+     * Return the system the candidate query was submitted on.
+     *
+     * @return the system
+     */
+    public String getSystem() {
+        return system;
     }
 
-    public String getQueryLogic() {
-        return queryLogic;
+    /**
+     * Return the set of query logics that match against the best-matching groups for the query logic of the candidate query.
+     *
+     * @return the query logics
+     */
+    public Set<String> getQueryLogics() {
+        return queryLogics;
     }
 
-    public int getTotalUserQueriesOnSystem() {
-        return totalUserQueriesPerSystem.getOrDefault(systemName, 0);
-    }
-
-    public int getTotalUserQueriesForQueryLogic() {
-        return totalUserQueriesForQueryLogic;
-    }
-
-    public Map<String,Integer> getTotalUserQueriesPerSystem() {
+    /**
+     * Return a map of systems to the total number of queries the user has actively running on the system.
+     *
+     * @return the map
+     */
+    public Map<String,Integer> getUserQueriesPerSystem() {
         return totalUserQueriesPerSystem;
     }
 
+    /**
+     * Return a map of systems to a map of query logics to the total number of queries the user has actively running per query logic per system.
+     *
+     * @return the map
+     */
+    public Map<String,Map<String,Integer>> getTotalUserQueriesPerSystemPerQueryLogic() {
+        return totalUserQueriesPerSystemPerQueryLogic;
+    }
+
+    /**
+     * Return the total number of queries actively running on the system.
+     *
+     * @return the total
+     */
     public int getTotalSystemQueries() {
         return totalSystemQueries;
     }
 
-    public int getTotalSystemQueriesForQueryLogic() {
-        return totalSystemQueriesForQueryLogic;
+    /**
+     * Return a map of query logics to the total number of actively running queries for those query logics on the system
+     *
+     * @return the map
+     */
+    public Map<String,Integer> getTotalSystemQueriesPerQueryLogic() {
+        return totalSystemQueriesPerQueryLogic;
     }
 
-    public int getTotalQueriesForQueryLogic() {
-        return totalQueriesForQueryLogic;
-    }
-
+    /**
+     * Return the timestamp of when this snapshot was collected
+     *
+     * @return the snapshot timestamp
+     */
     public long getTimestamp() {
         return timestamp;
     }
 
     public static class Builder {
+
         private final String userDn;
-        private final String systemName;
-        private final String queryLogic;
+        private final String system;
+        private final Set<String> queryLogics;
         private final Set<String> alreadyCapturedQueryIds = new HashSet<>();
 
         private final Map<String,Integer> userQueriesPerSystem = new HashMap<>();
+        private final Map<String,Map<String,Integer>> userQueriesPerSystemPerQueryLogic = new HashMap<>();
+        private final Map<String,Integer> userQueriesPerQueryLogic = new HashMap<>();
+        private final Map<String,Integer> systemQueriesPerQueryLogic = new HashMap<>();
 
-        private int userQueriesForQueryLogic;
         private int systemQueries;
-        private int systemQueriesForQueryLogic;
-        private int queriesForQueryLogic;
 
         private long timestamp = System.currentTimeMillis();
 
-        public Builder(String userDn, String systemName, String queryLogic) {
+        public Builder(String userDn, String system, Set<String> queryLogics) {
             this.userDn = userDn;
-            this.systemName = systemName;
-            this.queryLogic = queryLogic;
+            this.system = system;
+            this.queryLogics = queryLogics;
         }
 
         public Builder withTimestamp(long timestamp) {
@@ -124,25 +156,15 @@ public class ActiveQuerySnapshot {
         public Builder capture(String queryId, String userDn, String systemName, String queryLogic) {
             boolean notYetCaptured = alreadyCapturedQueryIds.add(queryId);
             if (notYetCaptured) {
-                boolean userMatch = this.userDn.equals(userDn);
-                boolean systemMatch = this.systemName.equals(systemName);
-                boolean queryLogicMatch = this.queryLogic.equals(queryLogic);
-
-                if (userMatch) {
+                if (this.userDn.equals(userDn)) {
                     userQueriesPerSystem.compute(systemName, (key, value) -> value == null ? 1 : value + 1);
-
-                    if (queryLogicMatch) {
-                        userQueriesForQueryLogic++;
-                    }
+                    userQueriesPerQueryLogic.compute(queryLogic, (key, value) -> value == null ? 1 : value + 1);
+                    Map<String,Integer> queryLogicCounts = userQueriesPerSystemPerQueryLogic.computeIfAbsent(systemName, key -> new HashMap<>());
+                    queryLogicCounts.compute(queryLogic, (key, value) -> value == null ? 1 : value + 1);
                 }
-                if (systemMatch) {
+                if (this.system.equals(systemName)) {
                     systemQueries++;
-                    if (queryLogicMatch) {
-                        systemQueriesForQueryLogic++;
-                    }
-                }
-                if (queryLogicMatch) {
-                    queriesForQueryLogic++;
+                    systemQueriesPerQueryLogic.compute(queryLogic, (key, value) -> value == null ? 1 : value + 1);
                 }
             }
             return this;
@@ -158,26 +180,27 @@ public class ActiveQuerySnapshot {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ActiveQuerySnapshot snapshot = (ActiveQuerySnapshot) o;
-        return totalUserQueriesForQueryLogic == snapshot.totalUserQueriesForQueryLogic && totalSystemQueries == snapshot.totalSystemQueries
-                        && totalSystemQueriesForQueryLogic == snapshot.totalSystemQueriesForQueryLogic
-                        && totalQueriesForQueryLogic == snapshot.totalQueriesForQueryLogic && timestamp == snapshot.timestamp
-                        && Objects.equals(userDn, snapshot.userDn) && Objects.equals(systemName, snapshot.systemName)
-                        && Objects.equals(queryLogic, snapshot.queryLogic) && Objects.equals(totalUserQueriesPerSystem, snapshot.totalUserQueriesPerSystem);
+        ActiveQuerySnapshot that = (ActiveQuerySnapshot) o;
+        return totalSystemQueries == that.totalSystemQueries && timestamp == that.timestamp && Objects.equals(userDn, that.userDn)
+                        && Objects.equals(system, that.system) && Objects.equals(queryLogics, that.queryLogics)
+                        && Objects.equals(totalUserQueriesPerSystem, that.totalUserQueriesPerSystem)
+                        && Objects.equals(totalUserQueriesPerSystemPerQueryLogic, that.totalUserQueriesPerSystemPerQueryLogic)
+                        && Objects.equals(totalUserQueriesPerQueryLogic, that.totalUserQueriesPerQueryLogic)
+                        && Objects.equals(totalSystemQueriesPerQueryLogic, that.totalSystemQueriesPerQueryLogic);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userDn, systemName, queryLogic, totalUserQueriesForQueryLogic, totalUserQueriesPerSystem, totalSystemQueries,
-                        totalSystemQueriesForQueryLogic, totalQueriesForQueryLogic, timestamp);
+        return Objects.hash(userDn, system, queryLogics, totalUserQueriesPerSystem, totalUserQueriesPerSystemPerQueryLogic, totalSystemQueries,
+                        totalUserQueriesPerQueryLogic, totalSystemQueriesPerQueryLogic, timestamp);
     }
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", ActiveQuerySnapshot.class.getSimpleName() + "[", "]").add("userDn='" + userDn + "'")
-                        .add("systemName='" + systemName + "'").add("queryLogic='" + queryLogic + "'")
-                        .add("totalUserQueriesForQueryLogic=" + totalUserQueriesForQueryLogic).add("totalUserQueriesPerSystem=" + totalUserQueriesPerSystem)
-                        .add("totalSystemQueries=" + totalSystemQueries).add("totalSystemQueriesForQueryLogic=" + totalSystemQueriesForQueryLogic)
-                        .add("totalQueriesForQueryLogic=" + totalQueriesForQueryLogic).add("timestamp=" + timestamp).toString();
+        return new StringJoiner(", ", ActiveQuerySnapshot.class.getSimpleName() + "[", "]").add("userDn='" + userDn + "'").add("systemName='" + system + "'")
+                        .add("queryLogics=" + queryLogics).add("totalUserQueriesPerSystem=" + totalUserQueriesPerSystem)
+                        .add("totalUserQueriesPerSystemPerQueryLogic=" + totalUserQueriesPerSystemPerQueryLogic).add("totalSystemQueries=" + totalSystemQueries)
+                        .add("totalUserQueriesPerQueryLogic=" + totalUserQueriesPerQueryLogic)
+                        .add("totalSystemQueriesPerQueryLogic=" + totalSystemQueriesPerQueryLogic).add("timestamp=" + timestamp).toString();
     }
 }
