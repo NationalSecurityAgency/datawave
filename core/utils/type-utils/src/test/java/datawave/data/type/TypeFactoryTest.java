@@ -46,15 +46,21 @@ public class TypeFactoryTest {
         TypeFactory factory = new TypeFactory(1, 15);
 
         Type<?> typeOne = factory.createType(LcType.class.getName());
-        Type<?> typeTwo = factory.createType(IpAddressType.class.getName());
-        Type<?> typeThree = factory.createType(IpAddressType.class.getName());
+
+        // the Caffeine cache is not immediately consistent so give the eviction thread time to do its job.
+        for (int i = 0; i < 50; i++) {
+            Type<?> left = factory.createType(IpAddressType.class.getName());
+            Type<?> right = factory.createType(IpAddressType.class.getName());
+            // same type created in a row with a cache size of one will return the same type instance
+            assertSame(left, right);
+        }
+
+        // creating a new LcType should return a new instance due to the low cache size
         Type<?> typeFour = factory.createType(LcType.class.getName());
-
-        // same type created in a row with a cache size of one will return the same type instance
-        assertSame(typeTwo, typeThree);
-
-        // same type created with other types between will return different instances
         assertNotSame(typeOne, typeFour);
+
+        // trigger maintenance tasks (i.e., eviction of old entries)
+        factory.cleanup();
 
         assertEquals(1, factory.getCacheSize());
     }
