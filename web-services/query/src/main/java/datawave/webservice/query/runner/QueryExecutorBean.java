@@ -811,6 +811,7 @@ public class QueryExecutorBean implements QueryExecutor {
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             rq.setClient(client);
+            rq.setHeartbeat(heartbeat);
 
             // Put in the cache by id. Don't put the cache in by name because multiple users may use the same name
             // and only the last one will be in the cache.
@@ -1391,6 +1392,7 @@ public class QueryExecutorBean implements QueryExecutor {
             queryHeartbeatCache.put(id, heartbeat);
 
             query.setClient(client);
+            query.setHeartbeat(heartbeat);
             response.addMessage(id + " reset.");
             CreateQuerySessionIDFilter.QUERY_ID.set(id);
             return response;
