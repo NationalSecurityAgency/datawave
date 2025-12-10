@@ -1,6 +1,7 @@
 package datawave.webservice.query.limit;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -146,47 +147,14 @@ public class QueryLimiter {
             log.trace("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
         }
 
-        // Fetch the snapshot of actively running queries that are related to the user, system, and query logic.
-        ActiveQuerySnapshot snapshot = getActiveQuerySnapshot(userDn, system, queryLogic);
-        if (log.isTraceEnabled()) {
-            log.trace("Checking limits - snapshot: " + snapshot);
-        }
-
         // Check if the snapshot reveals that any limits have been met.
-        LimitChecker checker = new LimitChecker(userDn, system, queryLogic, snapshot);
+        LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
         checker.checkLimits();
         if (checker.metLimit) {
             return QueryLimiterResponse.metLimit(checker.message);
         } else {
             return QueryLimiterResponse.hasNotMetLimit();
         }
-    }
-
-    /**
-     * Fetch a snapshot of active queries currently running that meet at least one of the following criteria:
-     * <ul>
-     * <li>Were submitted by the given user.</li>
-     * <li>Were submitted on the given system.</li>
-     * <li>Are based off the given queryLogic.</li>
-     * </ul>
-     *
-     * @param userDn
-     *            the userDn
-     * @param system
-     *            the system
-     * @param queryLogic
-     *            the queryLogic
-     * @return the snapshot
-     * @throws Exception
-     *             if an error occurs
-     */
-    private ActiveQuerySnapshot getActiveQuerySnapshot(String userDn, String system, String queryLogic) throws Exception {
-        ActiveQueryTracker tracker = getActiveQueryTracker();
-
-        Set<String> recordedQueryLogics = tracker.getDistinctQueryLogics();
-        Set<String> relevantQueryLogics = queryLogicGroupLimitProvider.getRelevantQueryLogics(queryLogic, recordedQueryLogics);
-
-        return tracker.getSnapshot(userDn, system, relevantQueryLogics);
     }
 
     /**
@@ -263,7 +231,7 @@ public class QueryLimiter {
         private final String userDn;
         private final String system;
         private final String queryLogic;
-        private final ActiveQuerySnapshot snapshot;
+        private ActiveQuerySnapshot snapshot;
 
         // Whether the user has a custom query logic group limit.
         private boolean userOverrodeQueryLogicLimit;
@@ -274,17 +242,18 @@ public class QueryLimiter {
         // The message to return.
         private String message;
 
-        public LimitChecker(String userDn, String system, String queryLogic, ActiveQuerySnapshot snapshot) {
+        public LimitChecker(String userDn, String system, String queryLogic) {
             this.userDn = userDn;
             this.system = system;
             this.queryLogic = queryLogic;
-            this.snapshot = snapshot;
         }
 
         /**
          * Check the limits against the snapshot.
          */
-        public void checkLimits() {
+        public void checkLimits() throws Exception {
+            loadSnapshot();
+
             // Check limits configured for the user.
             checkUserLimits();
             if (metLimit) {
@@ -299,6 +268,76 @@ public class QueryLimiter {
 
             // Check limits configured for the query logic.
             checkQueryLogicLimits();
+        }
+
+        /**
+         * Load the snapshot of relevant active queries.
+         *
+         * @throws Exception
+         *             if an error occurs while fetching the snapshot.
+         */
+        private void loadSnapshot() throws Exception {
+            // When fetching the snapshot of query activity, we need to include queries for any query logics that may count towards a query logic group limit
+            // applicable for the candidate user, system, and query logic. The applicable query logic groups depend on the default query logic group limits,
+            // along with any custom limits defined for the user or system.
+            Set<String> queryLogics = getQueryLogicsToFetchInSnapshot();
+            this.snapshot = getActiveQueryTracker().getSnapshot(userDn, system, queryLogics);
+            if (log.isTraceEnabled()) {
+                log.trace("Loaded snapshot: " + snapshot);
+            }
+        }
+
+        /**
+         * Return the set of query logics to filter on when loading the snapshot.
+         */
+        private Set<String> getQueryLogicsToFetchInSnapshot() throws QuorumPeerConfig.ConfigException {
+            Set<String> groups = new HashSet<>();
+
+            // If the user has custom group limits, find the best matching groups for the query logic, and include them. The best-matching groups may differ
+            // between the default limits and custom user limits, so check the custom limits first.
+            boolean userOverrodeGroupLimits = false;
+            if (userLimitProvider.hasCustomLimits(userDn)) {
+                UserLimits userLimits = userLimitProvider.getCustomLimits(userDn);
+                if (userLimits.overridesAnyGroupLimits()) {
+                    userOverrodeGroupLimits = true;
+                    Map<String,Integer> groupLimits = userLimits.getRelevantGroupLimits(queryLogic);
+                    groups.addAll(groupLimits.keySet());
+                }
+            }
+
+            // If there were no custom group limits for the user, then check against the default group limits.
+            if (!userOverrodeGroupLimits) {
+                Map<String,Integer> groupLimits = queryLogicGroupLimitProvider.getGroupLimits(queryLogic);
+                groups.addAll(groupLimits.keySet());
+            }
+
+            // If the system has custom limits, include any groups they override that match against the query logic.
+            Optional<SystemLimits> systemLimits = systemLimitProvider.getCustomLimits(system);
+            if (systemLimits.isPresent()) {
+                SystemLimits systemLimit = systemLimits.get();
+                if (systemLimit.overridesAnyGroupLimits()) {
+                    Map<String,Integer> groupLimits = systemLimit.getRelevantGroupLimits(queryLogic);
+                    groups.addAll(groupLimits.keySet());
+                }
+            }
+
+            // If we found no relevant groups, return a set consisting of the query logics.
+            Set<String> queryLogics = new HashSet<>();
+            // Ensure we always at least return the original query logic.
+            queryLogics.add(queryLogic);
+            // If any relevant groups were found, include any other query logics that match against at least one of the relevant groups.
+            if (!groups.isEmpty()) {
+                // We track query logics that we have seen before (on this system and others) in Zookeeper.
+                Set<String> distinctQueryLogics = getActiveQueryTracker().getDistinctQueryLogics();
+                Map<String,Matcher> groupMatchers = queryLogicGroupLimitProvider.getGroupMatchers(groups);
+                for (String group : groups) {
+                    // Include any query logics that match against a group.
+                    Matcher matcher = groupMatchers.get(group);
+                    queryLogics.addAll(matcher.getMatches(distinctQueryLogics));
+                }
+            }
+
+            return queryLogics;
         }
 
         /**
@@ -428,6 +467,7 @@ public class QueryLimiter {
                     }
                 }
             }
+
         }
 
         private Map<String,Integer> getTotalSystemQueriesForGroups(Set<String> groups) {
@@ -458,7 +498,7 @@ public class QueryLimiter {
         private void checkQueryLogicLimits() {
             // Only perform this check if we did not previously have custom group limits defined for the user.
             if (!userOverrodeQueryLogicLimit) {
-                Map<String,Integer> groupLimits = queryLogicGroupLimitProvider.getRelevantGroupLimits(queryLogic);
+                Map<String,Integer> groupLimits = queryLogicGroupLimitProvider.getGroupLimits(queryLogic);
                 checkUserQueryLogicLimits(groupLimits);
             }
         }

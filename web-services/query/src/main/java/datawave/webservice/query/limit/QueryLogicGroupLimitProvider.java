@@ -25,11 +25,14 @@ public class QueryLogicGroupLimitProvider {
 
     private Map<String,QueryLogicGroupLimit> groupsToLimits = Map.of();
 
+    private GroupLimitCache groupLimitCache;
+
     public QueryLogicGroupLimitProvider(Collection<QueryLogicGroupLimitConfiguration> configs) {
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
             populateLimits(configs);
         } else {
+            this.groupLimitCache = new GroupLimitCache(null);
             this.groupsToLimits = Map.of();
         }
 
@@ -106,11 +109,22 @@ public class QueryLogicGroupLimitProvider {
             groupLimits.put(config.getGroupName(), new QueryLogicGroupLimit(config.getGroupName(), matcher, config.getQueryLimit()));
         }
 
+        SortedSet<QueryLogicGroupLimit> limits = new TreeSet<>(groupLimits.values());
+        this.groupLimitCache = new GroupLimitCache(limits);
         // @formatter:off
         this.groupsToLimits = Collections.unmodifiableMap(getMapSortedByValue(groupLimits));
         // @formatter:on
     }
 
+    /**
+     * Return a set of {@link QueryLogicGroupLimit} that represent a set of overridden group limits.
+     *
+     * @param groupOverrides
+     *            a map of groups to their overridden limits
+     * @param includeNonOverriddenGroups
+     *            if true, include any default group limits that were not overridden in the returned set
+     * @return the constructed overrides
+     */
     public SortedSet<QueryLogicGroupLimit> createOverrides(Map<String,Integer> groupOverrides, boolean includeNonOverriddenGroups) {
         SortedSet<MatchableOverride> matchableOverrides = new TreeSet<>();
         groupOverrides.forEach((key, value) -> matchableOverrides.add(new MatchableOverride(Matcher.getMatcher(key), value)));
@@ -141,44 +155,8 @@ public class QueryLogicGroupLimitProvider {
         // @formatter:on
     }
 
-    public Set<String> getRelevantQueryLogics(String queryLogic, Set<String> recordedQueryLogics) {
-        Set<String> relevantQueryLogics = new HashSet<>();
-        relevantQueryLogics.add(queryLogic);
-
-        Set<String> queryLogics = new HashSet<>(recordedQueryLogics);
-
-        for (Map.Entry<String,QueryLogicGroupLimit> entry : groupsToLimits.entrySet()) {
-            Matcher matcher = entry.getValue().getMatcher();
-            if (matcher.matches(queryLogic)) {
-                Set<String> matches = matcher.getMatches(recordedQueryLogics);
-                relevantQueryLogics.addAll(matches);
-                queryLogics.removeAll(matches);
-                if (queryLogics.isEmpty()) {
-                    break;
-                }
-            }
-        }
-
-        return relevantQueryLogics;
-    }
-
-    public Map<String,Integer> getRelevantGroupLimits(String queryLogic) {
-        // Maintain insertion order. This will result in the lowest limit being sorted first.
-        Map<String,Integer> relevantGroupLimits = new LinkedHashMap<>();
-        for (Map.Entry<String,QueryLogicGroupLimit> entry : groupsToLimits.entrySet()) {
-            QueryLogicGroupLimit limit = entry.getValue();
-            Matcher matcher = limit.getMatcher();
-            if (!relevantGroupLimits.isEmpty() && matcher.getType() == Matcher.Type.ALL) {
-                break;
-            }
-            if (matcher.matches(queryLogic)) {
-                relevantGroupLimits.put(entry.getKey(), limit.getQueryLimit());
-                if (matcher.getType() != Matcher.Type.PARTIAL) {
-                    break;
-                }
-            }
-        }
-        return relevantGroupLimits;
+    public Map<String,Integer> getGroupLimits(String queryLogic) {
+        return groupLimitCache.getGroupLimits(queryLogic);
     }
 
     public Map<String,Matcher> getGroupMatchers(Set<String> groups) {
