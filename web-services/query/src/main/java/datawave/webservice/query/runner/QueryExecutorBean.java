@@ -796,9 +796,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // Start tracking the query information in the query limiter.
-            queryLimiter.trackQuery(q.getId().toString(), qd.userDn, q.getQueryLogicName());
-            // Fetch a heartbeat from the query limit to indicate this query is considered active, and store it in the heartbeat cache.
-            QueryHeartbeat heartbeat = queryLimiter.createHeartbeat(q.getId().toString());
+            QueryHeartbeat heartbeat = queryLimiter.trackQuery(q.getId().toString(), qd.userDn, q.getQueryLogicName());
             queryHeartbeatCache.put(q.getId().toString(), heartbeat);
 
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
@@ -856,13 +854,6 @@ public class QueryExecutorBean implements QueryExecutor {
                     queryHeartbeatCache.stopAndRemoveHeartbeat(q.getId().toString());
                 } catch (Exception e) {
                     log.error("Error stopping query heartbeat in cache", e);
-                }
-
-                // Stop tracking the query in Zookeeper.
-                try {
-                    queryLimiter.stopTrackingQuery(q.getId().toString());
-                } catch (Exception e) {
-                    log.error("Failed to stop tracking query '" + q.getId() + "' via Query Limiter ", e);
                 }
             }
 
@@ -927,25 +918,9 @@ public class QueryExecutorBean implements QueryExecutor {
 
         GenericResponse<String> response = new GenericResponse<>();
 
-        try {
-            // Check if submitting a new query would exceed any configured concurrent query limits.
-            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(qd.userDn, queryLogicName);
-            if (limiterResponse.metLimit()) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
-                response.addException(qe);
-                throw new BadRequestException(qe, response);
-            }
-        } catch (Exception e) {
-            log.error("Error checking concurrent query limits", e);
-            QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
-            response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response, qe.getStatusCode());
-        }
-
         Query q = null;
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
-        QueryHeartbeat heartbeat = null;
         try {
             // Default hasResults to true.
             response.setHasResults(true);
@@ -1014,11 +989,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
 
-            // Start tracking the query information in the query limiter.
-            queryLimiter.trackQuery(q.getId().toString(), q.getUserDN(), q.getQueryLogicName());
-            // Fetch a heartbeat from the query limit to indicate this query is considered active.
-            heartbeat = queryLimiter.createHeartbeat(q.getId().toString());
-
             // the query principal is our local principal unless the query logic has a different user operations
             if (qp.getAuths() != null) {
                 qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
@@ -1062,22 +1032,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Failed to close connection for " + q.getId(), e);
                 }
-            }
-
-            // Stop the query heartbeat.
-            if (heartbeat != null) {
-                try {
-                    heartbeat.stop();
-                } catch (IOException e) {
-                    log.error("Error stopping query heartbeat", e);
-                }
-            }
-
-            // Stop tracking the query in Zookeeper.
-            try {
-                queryLimiter.stopTrackingQuery(q.getId().toString());
-            } catch (Exception e) {
-                log.error("Failed to stop tracking query '" + q.getId() + "' via Query Limiter ", e);
             }
 
             // close the logic on exception
@@ -1430,12 +1384,10 @@ public class QueryExecutorBean implements QueryExecutor {
             } finally {
                 accumuloConnectionRequestBean.requestEnd(id);
             }
-            // Start tracking the query information in the query limiter.
-            Query settings = query.getSettings();
 
-            queryLimiter.trackQuery(id, settings.getUserDN(), settings.getQueryLogicName());
-            // Fetch a heartbeat from the query limit to indicate this query is considered active, and store it in the heartbeat cache.
-            heartbeat = queryLimiter.createHeartbeat(id);
+            // Start tracking the query information in the query limiter and cache the heartbeat.
+            Query settings = query.getSettings();
+            heartbeat = queryLimiter.trackQuery(id, settings.getUserDN(), settings.getQueryLogicName());
             queryHeartbeatCache.put(id, heartbeat);
 
             query.setClient(client);
@@ -1475,13 +1427,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 queryHeartbeatCache.stopAndRemoveHeartbeat(id);
             } catch (Exception e2) {
                 log.error("Error stopping heartbeat in cache", e2);
-            }
-
-            // Stop tracking the query in Zookeeper.
-            try {
-                queryLimiter.stopTrackingQuery(id);
-            } catch (Exception e2) {
-                log.error("Failed to stop tracking query '" + id + "' via Query Limiter ", e2);
             }
 
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_RESET_ERROR, e);
@@ -2465,13 +2410,6 @@ public class QueryExecutorBean implements QueryExecutor {
                     } catch (Exception e) {
                         log.error("Error occurred while stopping heartbeat", e);
                     }
-
-                    // Stop tracking this query for the query limiter.
-                    try {
-                        queryLimiter.stopTrackingQuery(id);
-                    } catch (Exception e) {
-                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
-                    }
                 }
             }
 
@@ -2541,13 +2479,6 @@ public class QueryExecutorBean implements QueryExecutor {
                         queryHeartbeatCache.stopAndRemoveHeartbeat(id);
                     } catch (Exception e) {
                         log.error("Error occurred while stopping heartbeat", e);
-                    }
-
-                    // Stop tracking this query for the query limiter.
-                    try {
-                        queryLimiter.stopTrackingQuery(id);
-                    } catch (Exception e) {
-                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
                     }
                 }
             }
@@ -2653,13 +2584,6 @@ public class QueryExecutorBean implements QueryExecutor {
                     } catch (Exception e) {
                         log.error("Error occurred while stopping heartbeat", e);
                     }
-
-                    // Stop tracking this query for the query limiter.
-                    try {
-                        queryLimiter.stopTrackingQuery(id);
-                    } catch (Exception e) {
-                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
-                    }
                 }
             }
 
@@ -2730,13 +2654,6 @@ public class QueryExecutorBean implements QueryExecutor {
                         queryHeartbeatCache.stopAndRemoveHeartbeat(id);
                     } catch (Exception e) {
                         log.error("Error occurred while stopping heartbeat", e);
-                    }
-
-                    // Stop tracking this query for the query limiter.
-                    try {
-                        queryLimiter.stopTrackingQuery(id);
-                    } catch (Exception e) {
-                        log.error("Error occurred while stopping tracking of query in queryLimiter", e);
                     }
                 }
             }

@@ -2,6 +2,7 @@ package datawave.webservice.query.runner;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -689,19 +690,13 @@ public class QueryExecutorBeanTest {
         PowerMock.resetAll();
         EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit()).anyTimes();
 
-        queryLimiter.trackQuery(q.getId().toString(), userDN.toLowerCase(), queryLogicName);
-        EasyMock.expectLastCall().anyTimes();
-
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        EasyMock.expect(queryLimiter.createHeartbeat(q.getId().toString())).andReturn(heartbeat).anyTimes();
+        expect(queryLimiter.trackQuery(q.getId().toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(q.getId().toString(), heartbeat);
         expectLastCall().anyTimes();
 
         queryHeartbeatCache.stopAndRemoveHeartbeat(q.getId().toString());
-        EasyMock.expectLastCall().anyTimes();
-
-        queryLimiter.stopTrackingQuery(q.getId().toString());
         EasyMock.expectLastCall().anyTimes();
 
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();

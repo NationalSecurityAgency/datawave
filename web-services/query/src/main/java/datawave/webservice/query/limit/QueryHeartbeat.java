@@ -1,9 +1,11 @@
 package datawave.webservice.query.limit;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
+import org.apache.log4j.Logger;
 
 /**
  * Represents a heartbeat for an active query. As long as the connection to Zookeeper is not disrupted, the heartbeat will persist and indicate that a query is
@@ -11,14 +13,16 @@ import org.apache.curator.framework.recipes.nodes.PersistentNode;
  */
 public class QueryHeartbeat {
 
-    private final String queryId;
-    private final PersistentNode node;
+    private static final Logger log = Logger.getLogger(QueryHeartbeat.class);
 
-    public QueryHeartbeat(String queryId, PersistentNode node) {
+    private final String queryId;
+    private final List<PersistentNode> nodes;
+
+    public QueryHeartbeat(String queryId, List<PersistentNode> nodes) {
         Objects.requireNonNull(queryId, "Parameter queryId must not be null");
-        Objects.requireNonNull(node, "Parameter node must not be null");
+        Objects.requireNonNull(nodes, "Parameter node must not be null");
         this.queryId = queryId;
-        this.node = node;
+        this.nodes = List.copyOf(nodes);
     }
 
     /**
@@ -31,21 +35,18 @@ public class QueryHeartbeat {
     }
 
     /**
-     * Return the path to the heartbeat node. Possibly null if the node no longer exists.
-     *
-     * @return the path
-     */
-    public String getPath() {
-        return node.getActualPath();
-    }
-
-    /**
      * Stop and delete the heartbeat.
      *
      * @throws IOException
      *             if an error occurs while deleting the heartbeat.
      */
     public void stop() throws IOException {
-        node.close();
+        for (PersistentNode node : nodes) {
+            try {
+                node.close();
+            } catch (Exception e) {
+                log.error("Error closing persistent node", e);
+            }
+        }
     }
 }

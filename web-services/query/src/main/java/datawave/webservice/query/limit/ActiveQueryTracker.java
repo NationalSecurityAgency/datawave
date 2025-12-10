@@ -2,6 +2,7 @@ package datawave.webservice.query.limit;
 
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,7 +14,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.api.transaction.CuratorOp;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.hadoop.fs.Path;
@@ -32,6 +32,9 @@ public class ActiveQueryTracker implements AutoCloseable {
     public static final String ZOOKEEPER_NAMESPACE = "ActiveQueries";
 
     private static final Logger log = Logger.getLogger(ActiveQueryTracker.class);
+
+    private static final String NULL_BYTE = "\0";
+    private static final byte[] EMPTY_DATA = new byte[0];
 
     private final String zookeeperConfig;
     private final long cleanUpClientInterval;
@@ -81,6 +84,24 @@ public class ActiveQueryTracker implements AutoCloseable {
         return zookeeperConfig;
     }
 
+    /**
+     * Fetch a snapshot of actively running queries that meet at least one of the following criteria:
+     * <ul>
+     * <li>Submitted by the given user</li>
+     * <li>Submitted on the given system</li>
+     * <li>Submitted as one of the given query logics</li>
+     * </ul>
+     *
+     * @param userDn
+     *            the user DN
+     * @param system
+     *            the system
+     * @param queryLogics
+     *            the query logics to filter on
+     * @return the snapshot
+     * @throws Exception
+     *             if an error occurs while compiling the snapshot
+     */
     public ActiveQuerySnapshot getSnapshot(String userDn, String system, Set<String> queryLogics) throws Exception {
         if (log.isTraceEnabled()) {
             log.trace("Fetching snapshot for userDn=" + userDn + ", system=" + system + ", queryLogics=" + queryLogics + ")");
@@ -109,16 +130,15 @@ public class ActiveQueryTracker implements AutoCloseable {
             for (String queryId : queryIds) {
                 String queryIdPath = "/queries/" + queryId;
                 try {
-                    // Only capture the current query ID as an active query if there is at least one heartbeat.
-                    if (!client.getChildren().forPath(queryIdPath + "/heartbeats").isEmpty()) {
-                        String userData = new String(client.getData().forPath(queryIdPath + "/user"));
-                        String systemData = new String(client.getData().forPath(queryIdPath + "/system"));
-                        String queryLogicData = new String(client.getData().forPath(queryIdPath + "/queryLogic"));
-                        builder.capture(queryId, userData, systemData, queryLogicData);
-                    }
+                    String data = new String(client.getData().forPath(queryIdPath));
+                    String[] parts = data.split(NULL_BYTE);
+                    String userData = parts[0];
+                    String systemData = parts[1];
+                    String queryLogicData = parts[2];
+                    builder.capture(queryId, userData, systemData, queryLogicData);
                 } catch (KeeperException.NoNodeException e) {
-                    // If a NoNodeException occurred when fetching the metadata for a particular query ID, it is likely that the query was untracked by another
-                    // ActiveQueryTracker instance in the time between obtaining the query and now. Simply skip over it.
+                    // If a NoNodeException occurred when fetching the metadata for a particular query ID, it is likely that the nodes were deleted on a
+                    // different after the query was considered no longer active.
                     if (log.isTraceEnabled()) {
                         log.trace("Skipping capture of queryId=" + queryId + " in snapshot, nodes potentially deleted during scan");
                     }
@@ -152,31 +172,34 @@ public class ActiveQueryTracker implements AutoCloseable {
     }
 
     /**
-     * Begin tracking an active query. The following ZNodes will be created in Zookeeper under the namespace {@value ZOOKEEPER_NAMESPACE}:
+     * Begin tracking an active query. All nodes will be created under the namespace {@value ZOOKEEPER_NAMESPACE}. The following nodes will be created as
+     * containers.
      *
      * <pre>
-     * /users/&lt;userDn&gt;/&lt;queryId&gt;
-     * /systems/&lt;systemName&gt;/&lt;queryId&gt;
-     * /queryLogics/&lt;queryLogic&gt;/&lt;queryId&gt;
-     * /distinctQueryLogics/&lt;queryLogic&gt;
-     * /queries/&lt;queryId&gt;
-     * /queries/&lt;queryId&gt;/user           [data = byte[] value of userDn]
-     * /queries/&lt;queryId&gt;/system         [data = byte[] value of systemName]
-     * /queries/&lt;queryId&gt;/queryLogic     [data = byte[] value of queryLogic]
-     * /queries/&lt;queryId&gt;/heartbeats
-     * </pre>
-     * <p>
-     * The paths
-     *
-     * <pre>
-     * /users/&lt;userDn&gt;/&lt;queryId&gt;
-     * /systems/&lt;systemName&gt;/&lt;queryId&gt;
-     * /queryLogics/&lt;queryLogic&gt;/&lt;queryId&gt;
-     * /queries/&lt;queryId&gt;
+     * /users/&lt;userDn&gt;
+     * /systems/&lt;systemName&gt;
+     * /queryLogics/&lt;queryLogic&gt;
+     * /queries
      * /distinctQueryLogics
      * </pre>
+     *
+     * The following node will be created if it does not exist.
+     *
+     * <pre>
+     * /distinctQueryLogics/&lt;queryLogic&gt;
+     * </pre>
+     *
+     * The following nodes will be created as ephemeral nodes and will be closeable by the returned {@link QueryHeartbeat}.
+     *
+     * <pre>
+     * /users/&lt;userDn&gt;/&lt;queryId&gt;
+     * /systems/&lt;systemName&gt;/&lt;queryId&gt;
+     * /queryLogics/&lt;queryLogic&gt;/&lt;queryId&gt;
+     * /queries/&lt;queryId&gt;
+     * </pre>
      * <p>
-     * will be created as containers, and thus will become eligible for cleanup when they have no children.
+     *
+     * The node /queries/&lt;queryId&gt; will have the data "&lt;userDn&gt;\0&lt;system&gt;\0&lt;queryLogic&gt;"
      *
      * @param queryId
      *            the query's id
@@ -187,11 +210,13 @@ public class ActiveQueryTracker implements AutoCloseable {
      * @param queryLogic
      *            the query logic of the query
      */
-    public void trackQuery(String queryId, String userDn, String system, String queryLogic) {
+    public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic) throws Exception {
         // Normalize the userDN, system, and queryLogic.
         userDn = userDn.trim().toLowerCase();
         system = system.trim();
         queryLogic = queryLogic.trim();
+
+        QueryHeartbeat heartbeat;
 
         if (log.isTraceEnabled()) {
             log.trace("Tracking query: queryId=" + queryId + ", user='" + userDn + "', system=" + system + ", queryLogic=" + queryLogic);
@@ -207,23 +232,11 @@ public class ActiveQueryTracker implements AutoCloseable {
                 Stat stat = client.checkExists().forPath(queryIdPath);
                 if (stat == null) {
                     // Ensure that we create following container nodes.
-                    client.createContainers(queryIdPath);
+                    client.createContainers("/queries/");
                     client.createContainers("/systems/" + system);
                     client.createContainers("/users/" + userDn);
                     client.createContainers("/queryLogics/" + queryLogic);
                     client.createContainers("/distinctQueryLogics");
-
-                    // Populate the information for the specific query ID atomically as a single transaction.
-                    CuratorOp addQueryIdToUsers = client.transactionOp().create().forPath("/users/" + userDn + "/" + queryId);
-                    CuratorOp addQueryIdToSystems = client.transactionOp().create().forPath("/systems/" + system + "/" + queryId);
-                    CuratorOp addQueryIdToQueryLogics = client.transactionOp().create().forPath("/queryLogics/" + queryLogic + "/" + queryId);
-                    CuratorOp addUserData = client.transactionOp().create().forPath(queryIdPath + "/user", userDn.getBytes());
-                    CuratorOp addSystemData = client.transactionOp().create().forPath(queryIdPath + "/system", system.getBytes());
-                    CuratorOp addQueryLogicData = client.transactionOp().create().forPath(queryIdPath + "/queryLogic", queryLogic.getBytes());
-                    CuratorOp addHeartbeatsNode = client.transactionOp().create().forPath(queryIdPath + "/heartbeats");
-
-                    client.transaction().forOperations(addQueryIdToUsers, addQueryIdToSystems, addQueryIdToQueryLogics, addUserData, addSystemData,
-                                    addQueryLogicData, addHeartbeatsNode);
 
                     // Track the query logic as a distinct query logic if it isn't already.
                     try {
@@ -232,135 +245,40 @@ public class ActiveQueryTracker implements AutoCloseable {
                             client.create().forPath("/distinctQueryLogics/" + queryLogic);
                         }
                     } catch (KeeperException.NodeExistsException e) {
-                        // Do nothing, the node was created on another thread.
+                        // Do nothing, the queryLogic was tracked on another thread.
                     }
+
+                    // Create ephemeral nodes that track information about the query. These nodes will not persist beyond the lifetime of the client created
+                    // here.
+                    CuratorFramework client = createClient();
+
+                    List<PersistentNode> nodes = new ArrayList<>();
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, "/users/" + userDn + "/" + queryId, EMPTY_DATA, false));
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, "/systems/" + system + "/" + queryId, EMPTY_DATA, false));
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, "/queryLogics/" + queryLogic + "/" + queryId, EMPTY_DATA, false));
+
+                    String data = userDn + NULL_BYTE + system + NULL_BYTE + queryLogic;
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, queryIdPath, data.getBytes(), false));
+
+                    // Persist each node to Zookeeper.
+                    for (PersistentNode node : nodes) {
+                        node.start();
+                        node.waitForInitialCreate(1, TimeUnit.SECONDS);
+                    }
+
+                    // Return the heartbeat.
+                    heartbeat = new QueryHeartbeat(queryId, nodes);
+                } else {
+                    throw new QueryAlreadyTrackedException(queryId);
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Unable to track query " + queryId, e);
+                log.error("Failed to track query " + queryId, e);
+                throw e;
             }
         } finally {
             clientLock.unlock();
         }
-    }
-
-    /**
-     * Stop tracking a query that is no longer considered to be active. The following ZNodes will be deleted in Zookeeper under the namespace
-     * {@value ZOOKEEPER_NAMESPACE}:
-     *
-     * <pre>
-     * /queries/&lt;queryId&gt;
-     * /queries/&lt;queryId&gt;/user
-     * /queries/&lt;queryId&gt;/system
-     * /queries/&lt;queryId&gt;/queryLogic
-     * /queries/&lt;queryId&gt;/heartbeats
-     * /users/&lt;userDn&gt;/&lt;queryId&gt;
-     * /systems/&lt;systemName&gt;/&lt;queryId&gt;
-     * /queryLogics/&lt;queryLogic&gt;/&lt;queryId&gt;
-     * </pre>
-     *
-     * @param queryId
-     *            the query's id
-     * @throws ActiveQueryException
-     *             if the node {@code /queries/<queryId>/heartbeats} has any children indicating that the query is considered to be active
-     */
-    public void stopTrackingQuery(String queryId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Stopping tracking of query: queryId=" + queryId);
-        }
-
-        clientLock.lock();
-        try {
-            // Initialize the client if needed.
-            initClient();
-
-            String queryIdPath = "/queries/" + queryId;
-            Stat stat = client.checkExists().forPath(queryIdPath);
-            // If the query id node exists, delete all information for the relevant
-            if (stat != null) {
-                // Do not allow the query to be untracked if any heartbeat nodes current exist.
-                String heartbeatsPath = queryIdPath + "/heartbeats";
-                Stat heartbeatsStat = client.checkExists().forPath(heartbeatsPath);
-                if (heartbeatsStat != null && heartbeatsStat.getNumChildren() > 0) {
-                    throw new ActiveQueryException("Cannot stop tracking query " + queryId + ", " + heartbeatsStat.getNumChildren() + " heartbeat(s) exist");
-                }
-
-                // Delete the information for the specific query ID atomically as a single transaction.
-                String userDn = new String(client.getData().forPath(queryIdPath + "/user"));
-                String system = new String(client.getData().forPath(queryIdPath + "/system"));
-                String queryLogic = new String(client.getData().forPath(queryIdPath + "/queryLogic"));
-
-                CuratorOp deleteQueryInUsers = client.transactionOp().delete().forPath("/users/" + userDn + "/" + queryId);
-                CuratorOp deleteQueryInSystems = client.transactionOp().delete().forPath("/systems/" + system + "/" + queryId);
-                CuratorOp deleteQueryInQueryLogics = client.transactionOp().delete().forPath("/queryLogics/" + queryLogic + "/" + queryId);
-                CuratorOp deleteQueryHeartbeats = client.transactionOp().delete().forPath(heartbeatsPath);
-                CuratorOp deleteQueryUser = client.transactionOp().delete().forPath(queryIdPath + "/user");
-                CuratorOp deleteQuerySystem = client.transactionOp().delete().forPath(queryIdPath + "/system");
-                CuratorOp deleteQueryQueryLogic = client.transactionOp().delete().forPath(queryIdPath + "/queryLogic");
-                CuratorOp deleteQueryIdNode = client.transactionOp().delete().forPath(queryIdPath);
-                client.transaction().forOperations(deleteQueryInUsers, deleteQueryInSystems, deleteQueryInQueryLogics, deleteQueryHeartbeats, deleteQueryUser,
-                                deleteQuerySystem, deleteQueryQueryLogic, deleteQueryIdNode);
-            }
-        } catch (ActiveQueryException e) {
-            log.error("Failed to stop tracking query " + queryId, e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to stop tracking of query: queryId=" + queryId, e);
-            throw new ActiveQueryException("Failed to clean up nodes for query " + queryId, e);
-        } finally {
-            clientLock.unlock();
-        }
-    }
-
-    /**
-     * Return a new {@link QueryHeartbeat} for the given queryId. This will result in the creation of a new sequential, ephemeral node as a child of the node
-     * {@code /queries/<queryId>/heartbeats} under the namespace {@value ZOOKEEPER_NAMESPACE}.
-     *
-     * @param queryId
-     *            the queryId
-     * @return the heartbeat
-     * @throws ActiveQueryException
-     *             if the query is not being tracked
-     */
-    public QueryHeartbeat createHeartbeat(String queryId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Obtaining heartbeat for queryId=" + queryId);
-        }
-
-        clientLock.lock();
-        try {
-            // Initialize the client if needed.
-            initClient();
-
-            // Make sure the query is being tracked.
-            String queryIdPath = "/queries/" + queryId;
-            Stat stat = client.checkExists().forPath(queryIdPath);
-            if (stat == null) {
-                throw new ActiveQueryException("Query " + queryId + " is not being tracked");
-            }
-
-            // Prepare the heartbeat node.
-            String heartbeatPath = queryIdPath + "/heartbeats/heartbeat_";
-            CuratorFramework client = createClient();
-            PersistentNode node = new PersistentNode(client, CreateMode.EPHEMERAL_SEQUENTIAL, true, heartbeatPath, "".getBytes(), false);
-
-            // Create the actual node, with the given wait for creation if needed. This will block until the node creation from start() exceeds, or until the
-            // wait time elapses, whichever comes first.
-            node.start();
-            node.waitForInitialCreate(5, TimeUnit.SECONDS);
-
-            if (log.isTraceEnabled()) {
-                log.trace("Created heartbeat node " + node.getActualPath() + " for queryId=" + queryId);
-            }
-            return new QueryHeartbeat(queryId, node);
-        } catch (ActiveQueryException e) {
-            log.error("Failed to create heartbeat for queryId=" + queryId, e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to create heartbeat for queryId=" + queryId, e);
-            throw new ActiveQueryException("Unable to obtain heartbeat for queryId=" + queryId, e);
-        } finally {
-            clientLock.unlock();
-        }
+        return heartbeat;
     }
 
     /**

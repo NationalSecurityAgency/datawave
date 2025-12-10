@@ -752,11 +752,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
-        expectLastCall();
-
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryId.toString(), heartbeat);
         expectLastCall();
@@ -919,11 +916,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
-        expectLastCall();
-
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryId.toString(), heartbeat);
         expectLastCall();
@@ -1086,11 +1080,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
-        expectLastCall();
-
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryId.toString(), heartbeat);
         expectLastCall();
@@ -1282,11 +1273,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
-        expectLastCall();
-
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryId.toString(), heartbeat);
         expectLastCall();
@@ -1810,11 +1798,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
-        expectLastCall();
-
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryId.toString(), heartbeat);
         expectLastCall();
@@ -2004,16 +1989,11 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
-        expectLastCall();
 
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryId.toString(), heartbeat);
-        expectLastCall();
-
-        queryLimiter.stopTrackingQuery(queryId.toString());
         expectLastCall();
 
         queryHeartbeatCache.stopAndRemoveHeartbeat(queryId.toString());
@@ -2148,11 +2128,9 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName);
-        expectLastCall();
 
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryId.toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryId.toString(), heartbeat);
         expectLastCall();
@@ -3751,11 +3729,8 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
 
-        this.queryLimiter.trackQuery(queryName, userDN, queryLogicName);
-        expectLastCall();
-
         QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryName)).andReturn(heartbeat);
+        expect(this.queryLimiter.trackQuery(queryName, userDN, queryLogicName)).andReturn(heartbeat);
 
         queryHeartbeatCache.put(queryName, heartbeat);
         expectLastCall();
@@ -3909,9 +3884,6 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLimiter.checkForLimits(userSid, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
 
         queryHeartbeatCache.stopAndRemoveHeartbeat(queryName);
-        expectLastCall();
-
-        queryLimiter.stopTrackingQuery(queryName);
         expectLastCall();
 
         // Run the test
@@ -4370,20 +4342,6 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
 
-        // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN, queryLogicName);
-        expectLastCall();
-
-        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
-
-        heartbeat.stop();
-        expectLastCall();
-
-        queryLimiter.stopTrackingQuery(queryId.toString());
-        expectLastCall();
-
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
@@ -4524,20 +4482,6 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
-
-        // Set expectations of the query limiter.
-        expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.trackQuery(queryId.toString(), userDN, queryLogicName);
-        expectLastCall();
-
-        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.createHeartbeat(queryId.toString())).andReturn(heartbeat);
-
-        heartbeat.stop();
-        expectLastCall();
-
-        queryLimiter.stopTrackingQuery(queryId.toString());
-        expectLastCall();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);

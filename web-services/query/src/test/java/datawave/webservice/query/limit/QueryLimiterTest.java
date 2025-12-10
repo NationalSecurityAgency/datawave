@@ -448,9 +448,7 @@ class QueryLimiterTest {
         QueryLimiter limiter = getLimiter(system);
         for (int i = 0; i < numQueries; i++) {
             String queryId = UUID.randomUUID().toString();
-            limiter.trackQuery(userDn, queryLogic, queryId);
-            limiter.trackQuery(queryId, userDn, queryLogic);
-            QueryHeartbeat heartbeat = limiter.createHeartbeat(queryId);
+            QueryHeartbeat heartbeat = limiter.trackQuery(queryId, userDn, queryLogic);
             this.heartbeats.put(queryId, heartbeat);
         }
     }

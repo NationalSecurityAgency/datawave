@@ -473,8 +473,7 @@ class QueryLimiterConcurrencyTest {
                     } else {
                         // Otherwise 'create' a query and store the heartbeat to keep it alive until stopped.
                         String queryId = UUID.randomUUID().toString();
-                        queryLimiter.trackQuery(queryId, request.userDn, request.queryLogic);
-                        QueryHeartbeat heartbeat = queryLimiter.createHeartbeat(queryId);
+                        QueryHeartbeat heartbeat = queryLimiter.trackQuery(queryId, request.userDn, request.queryLogic);
                         log.trace("Created query " + queryId);
                         attempts.add(QueryCreationAttempt.succeeded(request, queryId, heartbeat));
                     }

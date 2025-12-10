@@ -169,36 +169,11 @@ public class QueryLimiter {
      * @throws Exception
      *             if an error occurs
      */
-    public void trackQuery(String queryId, String userDn, String queryLogic) throws Exception {
+    public QueryHeartbeat trackQuery(String queryId, String userDn, String queryLogic) throws Exception {
         userDn = userDn.trim().toLowerCase();
         queryLogic = queryLogic.trim();
 
-        getActiveQueryTracker().trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
-    }
-
-    /**
-     * Delete any information used for tracking the query status of the given query on Zookeeper.
-     *
-     * @param queryId
-     *            the queryId
-     * @throws Exception
-     *             if an error occurs
-     */
-    public void stopTrackingQuery(String queryId) throws Exception {
-        getActiveQueryTracker().stopTrackingQuery(queryId);
-    }
-
-    /**
-     * Return a new heartbeat connected to Zookeeper for the given queryId.
-     *
-     * @param queryId
-     *            the queryId
-     * @return the heartbeat
-     * @throws QuorumPeerConfig.ConfigException
-     *             if an error occurs
-     */
-    public QueryHeartbeat createHeartbeat(String queryId) throws QuorumPeerConfig.ConfigException {
-        return getActiveQueryTracker().createHeartbeat(queryId);
+        return getActiveQueryTracker().trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
     }
 
     /**
