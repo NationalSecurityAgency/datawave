@@ -52,7 +52,9 @@ public class TypeFactoryTest {
         // same type created in a row with a cache size of one will return the same type instance
         assertSame(left, right);
 
-        // trigger maintenance task to evict the LcType
+        // at this point the cache could contain both the LcType and the IpAddressType if the eviction thread
+        // has not run. Triggering the eviction thread will evict the oldest type (the LcType) leaving just
+        // the IpAddressType. This sets the condition for creating a new instance of the LcType below.
         factory.cleanup();
 
         // creating a new LcType should return a new instance due to the low cache size
