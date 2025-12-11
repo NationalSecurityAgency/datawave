@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.ingest.table.aggregator.CombinerConfiguration;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 import datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator;
@@ -27,6 +28,7 @@ import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
 import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
+import datawave.util.TableName;
 
 public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
@@ -56,13 +58,15 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected Logger log;
 
     public enum ShardTableType {
-        SHARD, GIDX, GRIDX, DINDX
+        SHARD, GIDX, GRIDX, GLOBAL_DAY_INDEX, GLOBAL_YEAR_INDEX, DINDX
     }
 
     protected Configuration conf;
     protected String tableName;
     protected String shardTableName; // shard table
     protected String shardGidxTableName; // global index
+    protected String shardDayIndexTableName; // global day index
+    protected String shardYearIndexTableName; // global year index
     protected String shardGridxTableName; // global reverse index
     protected String shardDictionaryTableName;
     protected ShardTableType tableType;
@@ -75,12 +79,15 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         shardTableName = conf.get(ShardedDataTypeHandler.SHARD_TNAME, null);
         shardGidxTableName = conf.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, null);
+        shardDayIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
+        shardYearIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME, null);
         shardGridxTableName = conf.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, null);
         shardDictionaryTableName = conf.get(ShardedDataTypeHandler.SHARD_DINDX_NAME, null);
         markingsSetupIteratorEnabled = conf.getBoolean(MARKINGS_SETUP_ITERATOR_ENABLED, markingsSetupIteratorEnabled);
         markingsSetupIteratorConfig = conf.get(MARKINGS_SETUP_ITERATOR_CONFIG, markingsSetupIteratorConfig);
 
-        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardDictionaryTableName == null) {
+        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardDayIndexTableName == null
+                        && shardYearIndexTableName == null && shardDictionaryTableName == null) {
             throw new IllegalArgumentException("No Shard Tables Defined");
         }
 
@@ -125,13 +132,17 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         }
 
-        if (shardTableName != null && tableName.equals(shardTableName)) {
+        if (tableName.equals(shardTableName)) {
             this.tableType = ShardTableType.SHARD;
-        } else if (shardGidxTableName != null && tableName.equals(shardGidxTableName)) {
+        } else if (tableName.equals(shardGidxTableName)) {
             this.tableType = ShardTableType.GIDX;
-        } else if (shardGridxTableName != null && tableName.equals(shardGridxTableName)) {
+        } else if (tableName.equals(shardGridxTableName)) {
             this.tableType = ShardTableType.GRIDX;
-        } else if (shardDictionaryTableName != null && tableName.equals(shardDictionaryTableName)) {
+        } else if (tableName.equals(shardDayIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_DAY_INDEX;
+        } else if (tableName.equals(shardYearIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_YEAR_INDEX;
+        } else if (tableName.equals(shardDictionaryTableName)) {
             this.tableType = ShardTableType.DINDX;
         } else {
             throw new IllegalArgumentException("Invalid Shard Table Definition For: " + tableName);
@@ -152,10 +163,12 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             case GRIDX:
                 configureGridxTable(tops);
                 break;
-
+            case GLOBAL_DAY_INDEX:
+            case GLOBAL_YEAR_INDEX:
+                configureBitSetTable(tops);
+                break;
             case DINDX:
                 configureDictionaryTable(tops);
-
                 break;
             default:
                 // Technically, this is dead code. If 'Configure' is called prior to 'Setup'
@@ -264,5 +277,42 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         setLocalityGroupConfigurationIfNecessary(tableName, localityGroups, tops, log);
 
+    }
+
+    /**
+     * Configure the {@link BitSetCombiner} on a bitset index table. Should only be applied to the {@link TableName#SHARD_DAY_INDEX} or
+     * {@link TableName#SHARD_YEAR_INDEX}
+     *
+     * @param tops
+     *            a {@link TableOperations} instance
+     * @throws AccumuloException
+     *             if something goes wrong with accumulo
+     * @throws AccumuloSecurityException
+     *             if the helper is not authorized to do the operation
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    protected void configureBitSetTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        for (IteratorScope scope : IteratorScope.values()) {
+            String aggregatorClass = BitSetCombiner.class.getName();
+
+            String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "bits");
+            setPropertyIfNecessary(tableName, stem, "19," + aggregatorClass, tops, log);
+
+            stem += ".opt.*";
+            setPropertyIfNecessary(tableName, stem, aggregatorClass, tops, log);
+
+            if (markingsSetupIteratorEnabled) {
+                // we want the markings setup iterator init method to be called up front
+                stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "MarkingsLoader");
+                setPropertyIfNecessary(tableName, stem, markingsSetupIteratorConfig, tops, log);
+            }
+        }
+
+        // Set up the bloom filters for faster queries on the index portion
+        if (enableBloomFilters) {
+            setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_KEY_FUNCTOR.getKey(), ShardIndexKeyFunctor.class.getName(), tops, log);
+        }
+        setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_ENABLED.getKey(), Boolean.toString(enableBloomFilters), tops, log);
     }
 }

@@ -551,7 +551,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                             message.versionMap = new TreeMap<>();
                         }
                         String encoded = input.readString();
-                        String[] split = StringUtils.split(encoded, "\0");
+                        String[] split = encoded.split("\0");
                         if (split.length == 2) {
                             message.versionMap.put(split[0], split[1]);
                         }

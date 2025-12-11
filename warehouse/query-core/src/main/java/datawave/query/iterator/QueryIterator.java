@@ -125,7 +125,6 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.TupleToEntry;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -410,7 +409,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
                 // see if we have a count in the cf
                 Key startKey = range.getStartKey();
-                String[] parts = StringUtils.split(startKey.getColumnFamily().toString(), '\0');
+                String[] parts = startKey.getColumnFamily().toString().split("\0");
                 if (parts.length == 3) {
                     resultCount = NumericalEncoder.decode(parts[0]).longValue();
                     // remove the count from the range

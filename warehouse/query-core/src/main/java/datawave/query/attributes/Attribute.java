@@ -21,6 +21,8 @@ import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.core.cache.CaffeineClassCache;
+import datawave.core.cache.ClassCache;
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveJexlContext;
 
@@ -40,6 +42,9 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     // cache computation to avoid repeated calculation
     protected int hashcode = Integer.MIN_VALUE;
     protected long sizeInBytes = Long.MIN_VALUE;
+
+    // used by Document, Attributes and TypeAttribute
+    protected static final ThreadLocal<ClassCache> classCache = ThreadLocal.withInitial(CaffeineClassCache::new);
 
     public Attribute() {}
 
@@ -238,7 +243,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         if (!(o instanceof Attribute)) {
             return false;
         }
-        Attribute other = (Attribute) o;
+        Attribute<?> other = (Attribute<?>) o;
         EqualsBuilder equals = new EqualsBuilder().append(this.isMetadataSet(), other.isMetadataSet());
         if (this.isMetadataSet()) {
             equals.append(this.getMetadata(), other.getMetadata());

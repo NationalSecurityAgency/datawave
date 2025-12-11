@@ -78,7 +78,7 @@ public class AuthorizeHttpsAllowedCallerTest {
         @Bean
         public CachedDatawaveUserService cachedDatawaveUserService(CacheManager cacheManager,
                         @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory) {
-            return new AuthorizationTestUserService(Collections.EMPTY_MAP, true);
+            return new AuthorizationTestUserService(Collections.emptyMap(), true);
         }
 
         @Bean

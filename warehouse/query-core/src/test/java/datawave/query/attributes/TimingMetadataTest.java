@@ -1,7 +1,6 @@
 package datawave.query.attributes;
 
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.junit.jupiter.api.Test;
@@ -11,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+
+import datawave.next.stats.StatUtil;
 
 public class TimingMetadataTest {
 
@@ -28,7 +29,7 @@ public class TimingMetadataTest {
         TimingMetadata metadata = createTimingMetadata();
         long totalRead = readKryo(metadata);
         long totalWrite = writeKryo(metadata);
-        log.info("single standard read: {} write: {}", totalRead, totalWrite);
+        log.info("single standard read: {} write: {}", StatUtil.formatNanos(totalRead), StatUtil.formatNanos(totalWrite));
     }
 
     @Test
@@ -36,7 +37,7 @@ public class TimingMetadataTest {
         TimingMetadata metadata = createRandomTimingMetadata();
         long totalRead = readKryo(metadata);
         long totalWrite = writeKryo(metadata);
-        log.info("single random read: {} write: {}", totalRead, totalWrite);
+        log.info("single random read: {} write: {}", StatUtil.formatNanos(totalRead), StatUtil.formatNanos(totalWrite));
     }
 
     @Test
@@ -48,7 +49,7 @@ public class TimingMetadataTest {
             totalRead += readKryo(metadata);
             totalWrite += writeKryo(metadata);
         }
-        log.info("bulk standard read: {} write: {}", totalRead, totalWrite);
+        log.info("bulk standard read: {} write: {}", StatUtil.formatNanos(totalRead), StatUtil.formatNanos(totalWrite));
     }
 
     @Test
@@ -60,7 +61,7 @@ public class TimingMetadataTest {
             totalRead += readKryo(metadata);
             totalWrite += writeKryo(metadata);
         }
-        log.info("bulk random read: {} write: {}", totalRead, totalWrite);
+        log.info("bulk random read: {} write: {}", StatUtil.formatNanos(totalRead), StatUtil.formatNanos(totalWrite));
     }
 
     private TimingMetadata createTimingMetadata() {
@@ -107,7 +108,7 @@ public class TimingMetadataTest {
             metadata.write(kryo, output);
             elapsed += System.nanoTime() - start;
         }
-        return TimeUnit.NANOSECONDS.toMillis(elapsed);
+        return elapsed;
     }
 
     /**
@@ -137,6 +138,6 @@ public class TimingMetadataTest {
                 elapsed += System.nanoTime() - start;
             }
         }
-        return TimeUnit.NANOSECONDS.toMillis(elapsed);
+        return elapsed;
     }
 }

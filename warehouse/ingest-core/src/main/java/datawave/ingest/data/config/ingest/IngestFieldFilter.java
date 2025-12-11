@@ -55,8 +55,8 @@ public class IngestFieldFilter {
 
     public static final String FILTER_FIELD_NAME_SUFFIX = ".data.fieldname.filter";
     public static final String FILTER_FIELD_VALUE_SUFFIX = ".data.fieldvalue.filter";
-    public static final char PAIR_DELIM = ',';
-    public static final char VALUE_DELIM = ':';
+    public static final String PAIR_DELIM = ",";
+    public static final String VALUE_DELIM = ":";
     public static final char FIELD_DELIM = '&';
 
     private final Type dataType;
@@ -331,9 +331,9 @@ public class IngestFieldFilter {
          */
         public void load(String fieldsStr, boolean fieldCountMustMatch) throws IllegalArgumentException {
             if (StringUtils.isNotBlank(fieldsStr)) {
-                for (String pair : StringUtils.split(fieldsStr, PAIR_DELIM)) {
+                for (String pair : fieldsStr.split(PAIR_DELIM)) {
                     if (!StringUtils.isBlank(pair)) {
-                        String[] tokens = StringUtils.split(pair, VALUE_DELIM);
+                        String[] tokens = pair.split(VALUE_DELIM);
                         if (tokens.length == 2) {
                             List<String> left = parseFields(tokens[0]);
                             List<String> right = parseFields(tokens[1]);

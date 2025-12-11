@@ -105,7 +105,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
                 LOGGER.debug("Setting configuration {} to use {} based on UID type {} and machine ID {}", config.hashCode(),
                                 SnowflakeUIDBuilder.class.getSimpleName(), uidType, machineId);
                 config.setInt(CONFIG_MACHINE_ID_KEY, machineId);
-            } else if (LOGGER.isDebugEnabled()) {
+            } else {
                 LOGGER.warn("Unable to set configuration to use {} based on UID type {} with machine ID {}", SnowflakeUIDBuilder.class.getSimpleName(), uidType,
                                 machineId);
                 config.set(CONFIG_UID_TYPE_KEY, HashUID.class.getSimpleName(), this.getClass().getName());

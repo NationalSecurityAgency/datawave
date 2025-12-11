@@ -110,6 +110,10 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
             return total;
         }
 
+        public boolean isEmpty() {
+            return tservers.isEmpty();
+        }
+
         /**
          * If there are 1000 tablets and there are 40 hosts with 5 tservers and 10 hosts with 4 tservers then this function will do the following
          *
@@ -147,7 +151,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
                 }
             }
 
-            Preconditions.checkState(tabletsLeft == 0);
+            Preconditions.checkState(tabletsLeft == 0, tabletsLeft + " tablets are unassigned. Ensure the tserver regex patterns are correct");
 
             return counts;
         }
@@ -183,13 +187,15 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         tabletsToAssign.forEach((tabletGroup, tablets) -> {
             TServers tserversForGroup = computedTservers.computeIfAbsent(tabletGroup, g -> new TServers(tabletServerPartitioner.apply(tabletGroup)));
 
-            // Must pass the set of all tablets for the group to compute the desired location, not just the subset of tablets being assigned
-            var allTablets = allTabletsGrouped.get(tabletGroup);
-            Map<TabletId,TabletServerId> desiredLocs = getDesiredLocationsForTabletGroup(tabletGroup, allTablets, tserversForGroup, allLocations);
+            if (!tserversForGroup.isEmpty()) {
+                // Must pass the set of all tablets for the group to compute the desired location, not just the subset of tablets being assigned
+                var allTablets = allTabletsGrouped.get(tabletGroup);
+                Map<TabletId,TabletServerId> desiredLocs = getDesiredLocationsForTabletGroup(tabletGroup, allTablets, tserversForGroup, allLocations);
 
-            tablets.forEach(tabletId -> {
-                assignmentParameters.addAssignment(tabletId, desiredLocs.get(tabletId));
-            });
+                tablets.forEach(tabletId -> {
+                    assignmentParameters.addAssignment(tabletId, desiredLocs.get(tabletId));
+                });
+            } // else there are no tservers so can not assign
         });
 
     }
@@ -242,23 +248,25 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
             List<TabletId> tablets = tpgEntry.getValue();
             TServers tserversForGroup = computedTservers.computeIfAbsent(tabletGroup, g -> new TServers(tabletServerPartitioner.apply(tabletGroup)));
 
-            Map<TabletId,TabletServerId> desiredLocs = getDesiredLocationsForTabletGroup(tabletGroup, tablets, tserversForGroup, allLocations);
+            if (!tserversForGroup.isEmpty()) {
+                Map<TabletId,TabletServerId> desiredLocs = getDesiredLocationsForTabletGroup(tabletGroup, tablets, tserversForGroup, allLocations);
 
-            for (var dlEntry : desiredLocs.entrySet()) {
-                TabletId tabletId = dlEntry.getKey();
-                TabletServerId tabletServerId = dlEntry.getValue();
-                // This code could handle assigning tablets w/o a location, however the balancer framework does not support this so ignore tablets w/o a
-                // location. Normally accumulo will only call the balancer when all tablets are assigned. However if a tablet becomes unassigned during
-                // balancing a null location may be seen.
-                var currTsever = allLocations.get(tabletId);
-                if (currTsever != null && !currTsever.equals(tabletServerId)) {
-                    balanceParameters.migrationsOut().add(new TabletMigration(tabletId, currTsever, tabletServerId));
-                    migrationsAdded++;
-                    if (migrationsAdded >= maxMigrations) {
-                        break outer;
+                for (var dlEntry : desiredLocs.entrySet()) {
+                    TabletId tabletId = dlEntry.getKey();
+                    TabletServerId tabletServerId = dlEntry.getValue();
+                    // This code could handle assigning tablets w/o a location, however the balancer framework does not support this so ignore tablets w/o a
+                    // location. Normally accumulo will only call the balancer when all tablets are assigned. However if a tablet becomes unassigned during
+                    // balancing a null location may be seen.
+                    var currTsever = allLocations.get(tabletId);
+                    if (currTsever != null && !currTsever.equals(tabletServerId)) {
+                        balanceParameters.migrationsOut().add(new TabletMigration(tabletId, currTsever, tabletServerId));
+                        migrationsAdded++;
+                        if (migrationsAdded >= maxMigrations) {
+                            break outer;
+                        }
                     }
                 }
-            }
+            } // else there are not tservers so can not balance
         }
 
         lastRunTime = System.currentTimeMillis();

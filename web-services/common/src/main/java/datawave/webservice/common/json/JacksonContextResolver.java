@@ -2,6 +2,7 @@ package datawave.webservice.common.json;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -10,7 +11,15 @@ import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+
+import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.util.v1.JacksonAnnotationDeserializer;
+import datawave.annotation.util.v1.JacksonAnnotationSerializer;
+import datawave.annotation.util.v1.JacksonSegmentDeserializer;
+import datawave.annotation.util.v1.JacksonSegmentSerializer;
 
 /**
  * Configures JSON serialization via Jackson to honor JAXB annotations. This provider must be listed in the value of a {@code resteasy.providers} servlet
@@ -20,7 +29,7 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
     public JacksonContextResolver() {
         mapper = new ObjectMapper();
@@ -28,6 +37,17 @@ public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
         mapper.setAnnotationIntrospector(
                         AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
         mapper.setSerializationInclusion(Include.NON_NULL);
+
+        final SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addDeserializer(MultivaluedMap.class, new MultivaluedMapDeserializer());
+
+        // Added for Annotation and Segment serialization and deserialization.
+        simpleModule.addDeserializer(Annotation.class, new JacksonAnnotationDeserializer());
+        simpleModule.addSerializer(Annotation.class, new JacksonAnnotationSerializer());
+        simpleModule.addDeserializer(Segment.class, new JacksonSegmentDeserializer());
+        simpleModule.addSerializer(Segment.class, new JacksonSegmentSerializer());
+
+        mapper.registerModule(simpleModule);
     }
 
     @Override

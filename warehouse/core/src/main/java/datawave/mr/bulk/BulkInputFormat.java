@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +17,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
@@ -40,7 +40,6 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ClientInfo;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -57,10 +56,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonManager;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -83,7 +82,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
@@ -406,12 +404,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         ArgumentChecker.notNull(columnFamilyColumnQualifierPairs);
         ArrayList<String> columnStrings = new ArrayList<>(columnFamilyColumnQualifierPairs.size());
         for (Pair<Text,Text> column : columnFamilyColumnQualifierPairs) {
-            if (column.getFirst() == null)
+            if (column.getLeft() == null)
                 throw new IllegalArgumentException("Column family can not be null");
 
-            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getFirst())));
-            if (column.getSecond() != null)
-                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getSecond())));
+            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getLeft())));
+            if (column.getRight() != null)
+                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getRight())));
             columnStrings.add(col);
         }
         conf.setStrings(COLUMNS, columnStrings.toArray(new String[columnStrings.size()]));
@@ -576,7 +574,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             int idx = col.indexOf(':');
             Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
             Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
-            columns.add(new Pair<>(cf, cq));
+            columns.add(Pair.of(cf, cq));
         }
         return columns;
     }
@@ -882,12 +880,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
             // setup a scanner within the bounds of this split
             for (Pair<Text,Text> c : getFetchedColumns(conf)) {
-                if (c.getSecond() != null) {
-                    log.debug("Fetching column {}:{}", c.getFirst(), c.getSecond());
-                    scanner.fetchColumn(c.getFirst(), c.getSecond());
+                if (c.getRight() != null) {
+                    log.debug("Fetching column {}:{}", c.getLeft(), c.getRight());
+                    scanner.fetchColumn(c.getLeft(), c.getRight());
                 } else {
-                    log.debug("Fetching column family {}", c.getFirst());
-                    scanner.fetchColumnFamily(c.getFirst());
+                    log.debug("Fetching column family {}", c.getLeft());
+                    scanner.fetchColumnFamily(c.getLeft());
                 }
             }
 
@@ -1047,27 +1045,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         return new DefaultLocationStrategy();
     }
 
-    /**
-     * Initializes an Accumulo {@link TabletLocator} based on the configuration.
-     *
-     * @param conf
-     *            the Hadoop configuration object
-     * @return an accumulo tablet locator
-     * @throws TableNotFoundException
-     *             if the table name set on the configuration doesn't exist
-     * @throws IOException
-     *             if the input format is unable to read the password file from the FileSystem
-     */
-    protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
-        if (conf.getBoolean(MOCK, false))
-            return new InMemoryTabletLocator();
-        String tableName = getTablename(conf);
-        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
-                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
-        ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                        Threads.UEH);
-        return TabletLocator.getLocator(context, context.getTableId(tableName));
+    public List<Range> binRanges(ClientContext context, List<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
+        return Collections.emptyList();
     }
 
     /**
@@ -1090,7 +1071,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         // get the metadata information for these ranges
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        TabletLocator tl;
+
         try {
             if (isOfflineScan(job.getConfiguration())) {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
@@ -1102,13 +1083,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     TableId tableId = null;
-                    tl = getTabletLocator(job.getConfiguration());
-                    // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                    tl.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
                     ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
                                     ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-                    while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
+                    while (!binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
                                 tableId = context.getTableId(tableName);
@@ -1120,7 +1098,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
                         TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                        tl.invalidateCache();
                     }
 
                     clipRanges(binnedRanges);
@@ -1166,13 +1143,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         log.info("There are approximately {} values ", map.size());
 
         for (RangeSplit split : map.keySet()) {
-            // Iterable<List<Range>> rangeIter = splitter.partition(map.get(split));
-            // for (List<Range> rangeList : rangeIter) {
-            // RangeSplit newSplit = (RangeSplit) split.clone();
-            // newSplit.addRanges(rangeList);
+
             split.addRanges(map.get(split));
             splits.add(split);
-            // }
 
         }
 

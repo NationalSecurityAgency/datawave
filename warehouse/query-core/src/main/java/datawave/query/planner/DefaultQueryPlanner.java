@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -61,19 +62,26 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.DateType;
+import datawave.data.type.RawDateType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.next.stats.StatUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ScanHintRule;
@@ -88,7 +96,9 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.index.lookup.IndexStream.StreamContext;
+import datawave.query.index.day.DayIndexStream;
+import datawave.query.index.lookup.IndexStream;
+import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -170,6 +180,8 @@ import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
+import datawave.query.planner.rules.FieldTransformRule;
+import datawave.query.planner.rules.FieldTransformRuleVisitor;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -350,6 +362,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
 
+    /**
+     * Verify that a lower bound sorts before a range's upper bound
+     */
+    protected boolean validateBoundedRanges = false;
+
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
 
@@ -429,6 +446,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return dateIndexHelper;
     }
 
+    /**
+     * This is the main processing endpoint for the planner. Basically the processing is split into 2 pieces: updateQueryTree which will do all of the planning,
+     * and startRangeProcessing which will create the iterable of query data objects that need to be executed.
+     *
+     * @param genericConfig
+     *            the query configuration config
+     * @param query
+     *            the query string
+     * @param settings
+     *            the query settings
+     * @param scannerFactory
+     *            the scanner factory
+     * @return the iterable of query data objects
+     * @throws DatawaveQueryException
+     */
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
@@ -449,7 +481,32 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveQueryException("Failed to mark query as started" + settings.getId(), e);
         }
 
-        return process(scannerFactory, getMetadataHelper(config), getDateIndexHelper(config), config, query, settings);
+        settingFuture = null;
+
+        IteratorSetting cfg = null;
+
+        if (preloadOptions) {
+            cfg = getQueryIterator(metadataHelper, config, "", false, true);
+        }
+
+        try {
+            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings));
+        } catch (StackOverflowError e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Stack trace for overflow " + e);
+            }
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
+            log.warn(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (NoResultsException e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Definitively determined that no results exist from the indexes");
+            }
+
+            return DefaultQueryPlanner.emptyCloseableIterator();
+        }
+
+        return startRangeProcessing(scannerFactory, metadataHelper, config, settings, cfg);
     }
 
     /**
@@ -493,32 +550,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         ivaratorCacheDirFuture = executor.submit(ivaratorCacheDirCallable);
     }
 
-    protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
-        settingFuture = null;
-
-        IteratorSetting cfg = null;
-
-        if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, "", false, true);
-        }
-
-        try {
-            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings));
-        } catch (StackOverflowError e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Stack trace for overflow " + e);
-            }
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (NoResultsException e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Definitively determined that no results exist from the indexes");
-            }
-
-            return DefaultQueryPlanner.emptyCloseableIterator();
-        }
+    protected CloseableIterable<QueryData> startRangeProcessing(ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config,
+                    Query settings, IteratorSetting cfg) throws DatawaveQueryException {
 
         boolean isFullTable = false;
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;
@@ -599,11 +632,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {
@@ -626,13 +655,25 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         startConcurrentExecution(config);
 
         settingFuture = null;
+
         IteratorSetting cfg = null;
+
         if (preloadOptions) {
             cfg = getQueryIterator(metadataHelper, config, "", false, true);
         }
 
+        // in the rare case that we are generating a plan only, and we are not expanding fields but are expanding values,
+        // then it is possible we need to rerun the any-field expansion to get the expanded values at this point.
+        if (config.isGeneratePlanOnly() && !config.isExpandFields() && config.isExpandValues()) {
+            if (!disableAnyFieldLookup) {
+                final QueryStopwatch timers = config.getTimers();
+                config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
+                config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
+            }
+        }
+
         try {
-            config.setQueryTree(reprocessTree(config, metadataHelper, config.getTimers(), scannerFactory));
+            config.setQueryTree(expandPushdownPullup(config, metadataHelper, config.getTimers(), scannerFactory));
         } catch (StackOverflowError e) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + e);
@@ -648,95 +689,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return DefaultQueryPlanner.emptyCloseableIterator();
         }
 
-        boolean isFullTable = false;
-        Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;
-
-        if (!config.isGeneratePlanOnly()) {
-            queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, config.getQueryTree());
-
-            // a full table scan is required if
-            isFullTable = queryRanges.second();
-
-            // abort if we cannot handle full table scans
-            if (isFullTable && !config.getFullTableScanEnabled()) {
-                PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
-                throw new FullTableScansDisallowedException(qe);
-            }
-        }
-
-        final QueryStopwatch timers = config.getTimers();
-
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
-
-        // Set the final query after we're done mucking with it
-        String newQueryString = JexlStringBuildingVisitor.buildQuery(config.getQueryTree());
-        if (log.isTraceEnabled())
-            log.trace("newQueryString is " + newQueryString);
-        if (StringUtils.isBlank(newQueryString)) {
-            stopwatch.stop();
-            QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
-            throw new DatawaveFatalQueryException(qe);
-        }
-
-        stopwatch.stop();
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
-
-        if (!config.isGeneratePlanOnly()) {
-            while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, "", false, false);
-            }
-            configureIterator(config, cfg, newQueryString, isFullTable);
-        }
-
-        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg));
-
-        stopwatch.stop();
-
-        this.plannedScript = newQueryString;
-        config.setQueryString(this.plannedScript);
-
-        if (logConcurrentStageExecution) {
-            logTimeSavedViaConcurrentExecution();
-        }
-
-        if (!config.isGeneratePlanOnly()) {
-            // add the geo query comparator to sort by geo range granularity if this is a geo query
-            List<Comparator<QueryPlan>> queryPlanComparators = null;
-            if (config.isSortGeoWaveQueryRanges()) {
-                List<String> geoFields = new ArrayList<>();
-                for (String fieldName : config.getIndexedFields()) {
-                    for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
-                        if (type instanceof AbstractGeometryType) {
-                            geoFields.add(fieldName);
-                            break;
-                        }
-                    }
-                }
-
-                if (!geoFields.isEmpty()) {
-                    queryPlanComparators = new ArrayList<>();
-                    queryPlanComparators.add(new GeoWaveQueryPlanComparator(geoFields));
-                    queryPlanComparators.add(new DefaultQueryPlanComparator());
-                }
-            }
-
-            // @formatter:off
-            return new ThreadedRangeBundler.Builder()
-                    .setOriginal(queryData)
-                    .setQueryTree(config.getQueryTree())
-                    .setRanges(queryRanges.first())
-                    .setMaxRanges(maxRangesPerQueryPiece())
-                    .setSettings(settings)
-                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
-                    .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
-                    .build();
-            // @formatter:on
-        } else {
-            return null;
-        }
+        return startRangeProcessing(scannerFactory, metadataHelper, config, settings, cfg);
     }
 
     private void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
@@ -1015,6 +968,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
 
+        // Verify that any fields specified for unique with temporal granularities such as unique_by_hour are date-time fields.
+        validateUniqueFields(config.getUniqueFields());
+
+        // Verify that any fields specified for grouping with temporal granularities such as #GROUP(FIELD[HOUR]) are date-time fields.
+        validateGroupFields(config.getGroupFields());
+
         Set<String> indexOnlyFields = getIndexOnlyFields();
 
         if (!indexOnlyFields.isEmpty()) {
@@ -1056,31 +1015,78 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, timers, queryModel));
 
-        // ExpandCompositeTerms was here
-
-        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
-
-            // Figure out if the query contained any index only terms so we know
-            // if we have to force it down the field-index path with event-specific
-            // ranges
-            timedCheckForIndexOnlyFieldsInQuery(timers, "Check for Index-Only Fields", config.getQueryTree(), config, indexOnlyFields);
-        }
-
-        timedCheckForCompositeFields(timers, "Check for Composite Fields", config, metadataHelper);
-
-        timedCheckForSortedUids(timers, "Check for Sorted UIDs", config);
-
-        // check the query for any fields that are term frequencies
-        // if any exist, populate the shard query config with these fields
-        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config);
-
-        if (reduceQuery) {
-            config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
-        }
-
         timeScanHintRules(timers, "Apply scan hint rules", config);
 
         return config.getQueryTree();
+    }
+
+    // The set of date time field types.
+    protected static final Set<String> dateTypes = Set.of(DateType.class.getName(), RawDateType.class.getName());
+
+    /**
+     * Verify that the given unique fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param uniqueFields
+     *            the unique fields to validate
+     */
+    protected void validateUniqueFields(UniqueFields uniqueFields) {
+        if (uniqueFields != null && !uniqueFields.isEmpty()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(uniqueFields.getFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException(
+                                "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: " + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Verify that the given grouping fields do not contain any non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param groupFields
+     *            the grouping fields
+     */
+    protected void validateGroupFields(GroupFields groupFields) {
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            Set<String> nonTemporalFields = getNonTemporalFields(groupFields.getGroupByFieldMap());
+            if (!nonTemporalFields.isEmpty()) {
+                throw new DatawaveFatalQueryException("The following group-by fields are not date fields and cannot be used with temporal truncation: "
+                                + String.join(", ", nonTemporalFields));
+            }
+        }
+    }
+
+    /**
+     * Return the set of non-datetime fields mapped to a temporal granularity other than {@link TemporalGranularity#ALL}.
+     *
+     * @param fields
+     *            the fields to check
+     * @return the set of non-datetime fields
+     */
+    protected Set<String> getNonTemporalFields(TreeMultimap<String,TemporalGranularity> fields) {
+        // Get the set of all fields mapped to a temporal granularity other than ALL.
+        Set<String> fieldsToCheck = new HashSet<>();
+        for (String field : fields.keySet()) {
+            NavigableSet<TemporalGranularity> granularities = fields.get(field);
+            if (!granularities.isEmpty() && !(granularities.size() == 1 && granularities.contains(TemporalGranularity.ALL))) {
+                fieldsToCheck.add(field);
+            }
+        }
+
+        Set<String> invalidFields = new HashSet<>();
+
+        // Check the field types.
+        if (!fieldsToCheck.isEmpty()) {
+            TypeMetadata typeMetadata = getTypeMetadata();
+            for (String field : fieldsToCheck) {
+                Set<String> fieldTypes = typeMetadata.getNormalizerNamesForField(field);
+                // If field types were returned, verify that they contain one of the date time types. Otherwise, add it as an invalid field.
+                if (!fieldTypes.isEmpty() && Sets.intersection(fieldTypes, dateTypes).isEmpty()) {
+                    invalidFields.add(field);
+                }
+            }
+        }
+
+        return invalidFields;
     }
 
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
@@ -1123,6 +1129,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
         }
 
+        // Enforce unique terms within an AND or OR expression. For some reason we get duplicate expanded terms from the ExpandAnyFieldRegex. Dedupe them here
+        // until we fix that.
+        config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
+
+        if (null != config.getFieldRuleClassName()) {
+            FieldTransformRule rule = new FieldTransformRule();
+            rule.setupRules(config);
+            config.setQueryTree(FieldTransformRuleVisitor.transform(config.getQueryTree(), Collections.singletonList(rule), config, metadataHelper));
+        }
+
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query After ANYFIELD Expansions", config.getQueryTree()));
         }
@@ -1148,16 +1164,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedMarkIndexValueGaps(timers, config.getQueryTree(), config, metadataHelper));
         }
 
-        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
-        Set<String> indexedFields = null;
-        Set<String> indexOnlyFields = null;
-        Set<String> nonEventFields = null;
-        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
-            indexedFields = getIndexedFields();
-            indexOnlyFields = getIndexOnlyFields();
-            nonEventFields = getNonEventFields();
-        }
-
         // apply the node transform rules
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Pushdown/Pullup Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
@@ -1169,6 +1175,46 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(timedForceFieldToFieldComparison(timers, config.getQueryTree()));
 
+        if (!config.isDeferPushdownPullup()) {
+            // Now do all of the index expansion, pullup, pushdown logic to get us executability
+            // This part of the processing is pulled into a separate method so that it might be called
+            // from the reprocess logic used by the DatePartitionedQueryPlanner
+            expandPushdownPullup(config, metadataHelper, timers, scannerFactory);
+        }
+
+        return config.getQueryTree();
+    }
+
+    /**
+     * This is used to reprocess a query plan to ensure it is executable. I may expand pulled up unexpanded regex or ranges if required.
+     *
+     * @param config
+     * @param metadataHelper
+     * @param timers
+     * @param scannerFactory
+     * @return An adjusted query tree.
+     * @throws DatawaveQueryException
+     * @see DatePartitionedQueryPlanner
+     */
+    protected ASTJexlScript expandPushdownPullup(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers,
+                    ScannerFactory scannerFactory) throws DatawaveQueryException {
+
+        TraceStopwatch stopwatch = null;
+
+        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
+        Set<String> indexedFields = null;
+        Set<String> indexOnlyFields = null;
+        Set<String> nonEventFields = null;
+        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
+            indexedFields = getIndexedFields();
+            indexOnlyFields = getIndexOnlyFields();
+            nonEventFields = getNonEventFields();
+        }
+
+        // Look for any composite fields to make. Doing this before the regex expansion as we can
+        // create composite fields where the second portion is a regex. This will not combine
+        // multiple regexes together into a composite field, and hence we call this visitor
+        // again below.
         if (!disableCompositeFields) {
             config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
         }
@@ -1253,84 +1299,33 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // whether bounded ranges were expanded or not, validate all ranges
-        timedValidateBoundedRanges(timers, config.getQueryTree());
+        timedCheckForCompositeFields(timers, "Check for Composite Fields", config, metadataHelper);
 
-        // fields may have been added or removed from the query, need to update the field to type map
-        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
 
-        return config.getQueryTree();
-    }
-
-    /**
-     * This is used to reprocess a query plan to ensure it is executable. I may expand pulled up unexpanded regex or ranges if required.
-     *
-     * @param config
-     * @param metadataHelper
-     * @param timers
-     * @param scannerFactory
-     * @return An adjusted query tree.
-     * @throws DatawaveQueryException
-     * @see DatePartitionedQueryPlanner
-     */
-    protected ASTJexlScript reprocessTree(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers, ScannerFactory scannerFactory)
-                    throws DatawaveQueryException {
-
-        TraceStopwatch stopwatch = null;
-
-        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
-        Set<String> indexedFields = null;
-        Set<String> indexOnlyFields = null;
-        Set<String> nonEventFields = null;
-        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
-            indexedFields = getIndexedFields();
-            indexOnlyFields = getIndexOnlyFields();
-            nonEventFields = getNonEventFields();
+            // Figure out if the query contained any index only terms so we know
+            // if we have to force it down the field-index path with event-specific
+            // ranges
+            timedCheckForIndexOnlyFieldsInQuery(timers, "Check for Index-Only Fields", config.getQueryTree(), config, indexOnlyFields);
         }
 
-        LinkedList<String> debugOutput = null;
-        if (log.isDebugEnabled()) {
-            debugOutput = new LinkedList<>();
-        }
+        timedCheckForSortedUids(timers, "Check for Sorted UIDs", config);
 
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pull, Expand, Push (reprocess)");
-
-        try {
-            // Unless config.isExpandAllTerms is true, this may set some of
-            // the terms to be delayed.
-            if (!ExecutableDeterminationVisitor.isExecutable(config.getQueryTree(), config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
-                            metadataHelper)) {
-
-                Map<String,IndexLookup> indexLookupMap = new HashMap<>();
-                // if we now have an unexecutable tree because of delayed
-                // predicates, then remove delayed predicates as needed and
-                // reexpand
-                config.setQueryTree(timedRemoveDelayedPredicates(timers, "Remove Delayed Predicates", config.getQueryTree(), config, metadataHelper,
-                                indexedFields, indexOnlyFields, nonEventFields, indexLookupMap, scannerFactory, metadataHelper, debugOutput));
-            }
-
-            // if we now have an unexecutable tree because of missing
-            // delayed predicates, then add delayed predicates where
-            // possible
-            config.setQueryTree(timedAddDelayedPredicates(timers, "Add Delayed Predicates", config.getQueryTree(), config, metadataHelper, indexedFields,
-                            indexOnlyFields, nonEventFields, debugOutput));
-        } catch (TableNotFoundException e) {
-            stopwatch.stop();
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException) {
-                throw (DoNotPerformOptimizedQueryException) e.getCause();
-            }
-            QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
-            throw new DatawaveFatalQueryException(qe);
-        }
+        // check the query for any fields that are term frequencies
+        // if any exist, populate the shard query config with these fields
+        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config);
 
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
         }
 
-        stopwatch.stop();
+        if (validateBoundedRanges) {
+            // whether bounded ranges were expanded or not, validate all ranges
+            timedValidateBoundedRanges(timers, config.getQueryTree());
+        }
+
+        // fields may have been added or removed from the query, need to update the field to type map
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
 
         return config.getQueryTree();
     }
@@ -2439,6 +2434,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
                 addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
             }
+            addOption(cfg, QueryOptions.MAX_YIELDS, Integer.toString(config.getMaxYields()), false);
 
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
@@ -2455,8 +2451,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 false);
             }
 
-            String datatypeFilter = config.getDatatypeFilterAsString();
-            addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
+            // only serialize the filter if not empty
+            if (!config.getDatatypeFilter().isEmpty()) {
+                cfg.addOption(QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString());
+            }
 
             addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, getContentExpansionFields(), false);
 
@@ -2920,6 +2918,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new InvalidQueryException(qe);
             }
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
+            if (config.getQuery().getUncaughtExceptionHandler() != null) {
+                config.getQuery().getUncaughtExceptionHandler().addMessage(state.reason);
+                config.getQuery().getUncaughtExceptionHandler().addMessage(
+                                "After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
+            }
             needsFullTable = true;
             fullTableScanReason = state.reason;
         }
@@ -3023,21 +3026,22 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Begin stream of ranges from inverted index");
 
-            RangeStream stream = initializeRangeStream(config, scannerFactory, metadataHelper);
-
+            QueryPlanStream stream = getQueryPlanStream(config, scannerFactory, metadataHelper);
             ranges = stream.streamPlans(queryTree);
 
-            if (log.isTraceEnabled()) {
-                log.trace("query stream is " + stream.context());
-            }
+            if (stream instanceof RangeStream) {
+                RangeStream rangeStream = (RangeStream) stream;
 
-            // the context here doesn't actually matter because the range stream was initialized but the underlying scanners
-            // have not been started via the concurrent scanner initializer. This is just a quick check for known bad states
-            if (stream.context().equals(StreamContext.DELAYED)) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Full table scan required because query consists of only delayed expressions");
+                    log.debug("range stream context: " + rangeStream.context());
                 }
-                needsFullTable = true;
+
+                if (rangeStream.context().equals(IndexStream.StreamContext.DELAYED)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because query consists of only delayed expressions");
+                    }
+                    needsFullTable = true;
+                }
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
@@ -3093,6 +3097,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
+    private QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+
+        if (config.isUseShardedIndex()) {
+            return getDayIndexStream(config);
+        } else {
+            return initializeRangeStream(config, scannerFactory, metadataHelper);
+        }
+    }
+
     /**
      * Initializes the range stream, whether it is configured to be a different class than the Default Range stream or not.
      *
@@ -3112,12 +3125,28 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
                             scannerFactory, metadataHelper);
 
-            return stream.setUidIntersector(uidIntersector).setLimitScanners(limitScanners).setCreateUidsIteratorClass(createUidsIteratorClass);
+            //  @formatter:off
+            return stream.setUidIntersector(uidIntersector)
+                            .setLimitScanners(limitScanners)
+                            .setCreateUidsIteratorClass(createUidsIteratorClass)
+                            .setMaxLinesToPrint(config.getMaxLinesToPrint());
+            //  @formatter:on
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                         | NoSuchMethodException | SecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Get a {@link DayIndexStream} built from the {@link ShardQueryConfiguration}.
+     *
+     * @param config
+     *            the ShardQueryConfiguration
+     * @return a DayIndexStream
+     */
+    private QueryPlanStream getDayIndexStream(ShardQueryConfiguration config) {
+        return new DayIndexStream(config);
     }
 
     public boolean isLimitScanners() {
@@ -3474,6 +3503,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return compositeMetadata;
     }
 
+    protected void setTypeMetadata(TypeMetadata typeMetadata) {
+        this.typeMetadata = typeMetadata;
+    }
+
     protected TypeMetadata getTypeMetadata() {
         if (typeMetadata == null && typeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(typeMetadataCallable.stageName());
@@ -3621,9 +3654,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.info(execution + "\t\t" + get + "\t\t" + saved + "\t\t" + stageName);
         }
 
-        log.info("Total concurrent execution time: " + TimeUnit.NANOSECONDS.toMillis(totalExecution) + " ms");
-        log.info("Total get future time: " + TimeUnit.NANOSECONDS.toMillis(totalGetFuture) + " ms");
-        log.info("Total time saved: " + TimeUnit.NANOSECONDS.toMillis(totalTimeSaved) + " ms");
+        log.info("Total concurrent execution time: " + StatUtil.formatNanos(totalExecution));
+        log.info("Total get future time: " + StatUtil.formatNanos(totalGetFuture));
+        log.info("Total time saved: " + StatUtil.formatNanos(totalTimeSaved));
     }
 
     /**
@@ -3658,5 +3691,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public void setConcurrentTimeoutMillis(int concurrentTimeoutMillis) {
         this.concurrentTimeoutMillis = concurrentTimeoutMillis;
+    }
+
+    public boolean isValidateBoundedRanges() {
+        return validateBoundedRanges;
+    }
+
+    public void setValidateBoundedRanges(boolean validateBoundedRanges) {
+        this.validateBoundedRanges = validateBoundedRanges;
     }
 }

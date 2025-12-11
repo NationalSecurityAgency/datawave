@@ -26,7 +26,7 @@ The id of the server matters, and should match what is used in the datawave pare
 To perform a full (non-release) 'dev' build  without unit tests:
 
 ```bash
-mvn -Pdev -Ddeploy -Dtar -DskipTests -DskipITs clean install
+mvn -Ddeploy -Dtar -DskipTests -DskipITs clean install
 ```
 
 This command will produce the following deployment archives:
@@ -39,7 +39,7 @@ This command will produce the following deployment archives:
 In order to build a release, you must also define the dist variable by adding `-Ddist` to the command-line as follows:
 
 ```bash
-mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
+mvn -Pexamples -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 ```
 
 ### Building a Docker web image
@@ -47,7 +47,7 @@ mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 In order to build a Docker container for the web services, you can run with the following maven profiles: `-Pdeploy-ws,docker`
 
 ```bash
-mvn clean package -Pdev,assemble,deploy-ws -Pdocker -DskipTests -DskipITs  
+mvn clean package -Passemble,deploy-ws -Pdocker -DskipTests -DskipITs
 ```
 
 Note that this will build javadocs and source jars.
@@ -57,7 +57,7 @@ Note that this will build javadocs and source jars.
 To build the RPM specify both the assemble and rpm profiles should be specified, as follows:
 
 ```bash
-mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
+mvn -Passemble,rpm -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 ```
 
 # Building Microservices

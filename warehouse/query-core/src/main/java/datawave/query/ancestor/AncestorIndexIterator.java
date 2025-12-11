@@ -7,6 +7,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.tld.TLD;
 
 public class AncestorIndexIterator extends IndexIterator {
@@ -36,7 +37,10 @@ public class AncestorIndexIterator extends IndexIterator {
         String startCf = (start == null || start.getColumnFamily() == null ? "" : start.getColumnFamily().toString());
 
         // if the start key is inclusive, and contains a datatype/0UID, then move back to the top level ancestor
-        if (r.isStartKeyInclusive() && !startCf.isEmpty()) {
+        // Note that on iterator rebuild, AncestorQueryIterator advances past the event in the seek range
+        // colFam and makes the range startKey inclusive
+        // If we have yielded to the beginning of an event (YIELD_AT_BEGIN), we also want to use this logic
+        if ((r.isStartKeyInclusive() || WaitWindowObserver.hasBeginMarker(r.getStartKey())) && !startCf.isEmpty()) {
             // parse out the uid and replace with the root parent uid
             int index = startCf.indexOf('\0');
             if (index > 0) {
