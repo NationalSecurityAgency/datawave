@@ -465,10 +465,11 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(5);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate, encodeCount("20140402", 1L));
         assertContainsMetadataTableEntry("FIELD_1", "wcd", "xyzabc" + DELIMITER + "20140402", eventDate, NULL_VALUE);
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, eventDate,
+                        encodeCount("20140402", 1L));
     }
 
     /**
@@ -498,11 +499,15 @@ public class EventMetadataTest {
         collectBulkEntries();
         assertTotalBulkEntries(7);
         assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", laterEventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", earlierEventDate, encodeCount(1L));
-        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20150512", laterEventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, earlierEventDate,
+                        encodeCount("20140402", 1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, laterEventDate,
+                        encodeCount("20150512", 1L));
         assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", laterEventDate, NULL_VALUE);
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", earlierEventDate, encodeCount(1L));
-        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20150512", laterEventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, earlierEventDate,
+                        encodeCount("20140402", 1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + FrequencyMetadataAggregator.AGGREGATED, laterEventDate,
+                        encodeCount("20150512", 1L));
         // Whindex entry (wcd) only created for FIELD_1 with earliest event date
         assertContainsMetadataTableEntry("FIELD_1", "wcd", "xyzabc" + DELIMITER + "20140402", earlierEventDate, NULL_VALUE);
     }
