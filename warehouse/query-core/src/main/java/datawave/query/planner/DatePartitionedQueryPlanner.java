@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,10 +58,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 
-    // we want a unique set of plans, but maintain insertion order (facilitates easier testing)
-    private final Set<String> plans = new LinkedHashSet<>();
     private DefaultQueryPlanner queryPlanner;
-    private String initialPlan;
     private String plannedScript;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
@@ -93,7 +89,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      */
     public DatePartitionedQueryPlanner(DatePartitionedQueryPlanner other) {
         this.queryPlanner = other.queryPlanner != null ? other.queryPlanner.clone() : null;
-        this.initialPlan = other.initialPlan;
         this.plannedScript = other.plannedScript;
     }
 
@@ -124,16 +119,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      */
     @Override
     public String getPlannedScript() {
-        return this.plannedScript;
-    }
-
-    /**
-     * Return the initial planned script prior to pushing down index holes. Used for testing purposes.
-     *
-     * @return initialPlan
-     */
-    public String getInitialPlan() {
-        return initialPlan;
+        return plannedScript;
     }
 
     /**
@@ -295,40 +281,45 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
         // Reset the planned script.
         this.plannedScript = null;
-        this.plans.clear();
 
         if (log.isDebugEnabled()) {
             log.debug("Federated query: " + query);
         }
 
-        ShardQueryConfiguration planningConfig = (ShardQueryConfiguration) genericConfig;
+        ShardQueryConfiguration shardQueryConfig = (ShardQueryConfiguration) genericConfig;
         if (log.isDebugEnabled()) {
-            log.debug("Query's original date range " + dateFormat.format(planningConfig.getBeginDate()) + "-" + dateFormat.format(planningConfig.getEndDate()));
+            log.debug("Query's original date range " + dateFormat.format(shardQueryConfig.getBeginDate()) + "-"
+                            + dateFormat.format(shardQueryConfig.getEndDate()));
         }
 
         // Let's do the planning with the delegate planner first to ensure we have a final date range
         // and appropriately expanded unfielded terms etc.
-        boolean generatePlanOnly = planningConfig.isGeneratePlanOnly();
-        planningConfig.setGeneratePlanOnly(true);
-        boolean expandValues = planningConfig.isExpandValues();
+        boolean generatePlanOnly = shardQueryConfig.isGeneratePlanOnly();
+        shardQueryConfig.setGeneratePlanOnly(true);
+        boolean expandValues = shardQueryConfig.isExpandValues();
         // we do NOT want to expand any values yet as they may not be dependable
         // note we are expanding unfielded values (different flag)
-        planningConfig.setExpandValues(false);
-        boolean deferPushdownPullup = planningConfig.isDeferPushdownPullup();
-        planningConfig.setDeferPushdownPullup(true);
+        shardQueryConfig.setExpandValues(false);
+        boolean deferPushdownPullup = shardQueryConfig.isDeferPushdownPullup();
+        shardQueryConfig.setDeferPushdownPullup(true);
 
         // now let's do the initial planning
         DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
-        initialPlanner.process(planningConfig, query, settings, scannerFactory);
-        this.initialPlan = initialPlanner.plannedScript;
+        initialPlanner.process(shardQueryConfig, query, settings, scannerFactory);
+
+        // our initial planned script is the initial planned script
+        this.plannedScript = initialPlanner.plannedScript;
 
         // and reset the expansion flags to what we had previously
-        planningConfig.setGeneratePlanOnly(generatePlanOnly);
-        planningConfig.setExpandValues(expandValues);
-        planningConfig.setDeferPushdownPullup(deferPushdownPullup);
+        shardQueryConfig.setGeneratePlanOnly(generatePlanOnly);
+        shardQueryConfig.setExpandValues(expandValues);
+        shardQueryConfig.setDeferPushdownPullup(deferPushdownPullup);
 
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
-        SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(planningConfig);
+        SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(shardQueryConfig);
+
+        // create a clone of the config for the sub plan callables as the planningConfig may be updated dynamically
+        ShardQueryConfiguration planningConfig = new ShardQueryConfiguration(shardQueryConfig);
 
         // Create a callable for each suhb plan
         List<SubPlanCallable> futures = new ArrayList<>();
@@ -337,9 +328,15 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             futures.add(subPlan);
         }
 
+        // create a listener for plan updates and update our planned script and the configuration
+        PlanListener listener = plan -> {
+            plannedScript = plan;
+            genericConfig.setQueryString(plan);
+        };
+
         // Return an iterable out of the callables
-        DatePartitionedQueryIterable iterable = new DatePartitionedQueryIterable(futures, planningConfig);
-        plannedScript = iterable.getPlannedScript();
+        DatePartitionedQueryIterable iterable = new DatePartitionedQueryIterable(futures, shardQueryConfig, listener);
+
         return iterable;
     }
 

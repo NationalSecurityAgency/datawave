@@ -27,14 +27,22 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(DatePartitionedQueryIterable.class);
     private final List<SubPlanCallable> subPlanGenerators;
-    private final ShardQueryConfiguration planningConfig;
+    private final ShardQueryConfiguration shardQueryConfig;
+    private final String initialPlan;
     private Iter iterator;
+    private List<PlanListener> listeners = new ArrayList<>();
 
-    public DatePartitionedQueryIterable(List<SubPlanCallable> subPlansGenerators, ShardQueryConfiguration planningConfig)
+    public DatePartitionedQueryIterable(List<SubPlanCallable> subPlansGenerators, ShardQueryConfiguration shardQueryConfig, PlanListener listener)
                     throws DatawaveQueryException, DatawaveFatalQueryException {
         this.subPlanGenerators = subPlansGenerators;
-        this.planningConfig = planningConfig;
+        this.shardQueryConfig = shardQueryConfig;
+        this.initialPlan = shardQueryConfig.getQueryString();
+        this.listeners.add(listener);
         this.iterator = new Iter();
+    }
+
+    public void addListener(PlanListener listener) {
+        this.listeners.add(listener);
     }
 
     /**
@@ -154,10 +162,16 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
                     ShardQueryConfiguration subPlanConfig = callable.getSubPlanConfig();
 
                     // append the new timers for logging at the end
-                    planningConfig.appendTimers(subPlanConfig.getTimers());
+                    shardQueryConfig.appendTimers(subPlanConfig.getTimers());
 
                     // Add to the set of plans
                     plans.add(subPlanConfig.getQueryString());
+
+                    // notify the listeners that the plan has changed
+                    String plan = getPlannedScript();
+                    for (PlanListener listener : listeners) {
+                        listener.planUpdated(plan);
+                    }
                 }
             }
         }
@@ -168,24 +182,19 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
          */
         public String getPlannedScript() {
             String plannedScript;
-            if (plans.size() == subPlanGenerators.size()) {
-                if (plans.isEmpty()) {
-                    plannedScript = planningConfig.getQueryString();
-                } else if (plans.size() == 1) {
-                    plannedScript = plans.iterator().next();
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    int i = 0;
-                    for (String plan : plans) {
-                        if (sb.length() > 0) {
-                            sb.append(" || ");
-                        }
-                        sb.append("((plan = ").append(++i).append(") && (").append(plan).append("))");
-                    }
-                    plannedScript = sb.toString();
-                }
+            if (plans.isEmpty()) {
+                plannedScript = initialPlan;
+            } else if (plans.size() == 1 && plans.iterator().next().equals(initialPlan)) {
+                plannedScript = initialPlan;
             } else {
-                plannedScript = planningConfig.getQueryString();
+                StringBuilder sb = new StringBuilder();
+                sb.append("((plan = 'base') && (").append(initialPlan).append("))");
+                int i = 0;
+                for (String plan : plans) {
+                    sb.append(" || ");
+                    sb.append("((plan = ").append(++i).append(") && (").append(plan).append("))");
+                }
+                plannedScript = sb.toString();
             }
             return plannedScript;
         }
@@ -206,7 +215,7 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
                         throw (DatawaveQueryException) e;
                     }
                 } else {
-                    DatawaveFatalQueryException e = new DatawaveFatalQueryException("Query failed creation for " + planningConfig.getQuery().getId());
+                    DatawaveFatalQueryException e = new DatawaveFatalQueryException("Query failed creation for " + shardQueryConfig.getQuery().getId());
                     for (Throwable reason : exceptions) {
                         e.addSuppressed(reason);
                     }
