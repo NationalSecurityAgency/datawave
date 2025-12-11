@@ -116,7 +116,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         AccumuloClient c = null;
         try {
             c = pool.borrowObject(new HashMap<>());
-            Pair<String,PasswordToken> pair = instances.get("mock-instance-id"); // c.instanceOperations().getInstanceId().canonical()
+            Pair<String,PasswordToken> pair = instances.get("mock-instance-id");
             String user = "root";
             SecurityOperations security = new InMemoryAccumuloClient(user, cache.getInstance()).securityOperations();
             Set<String> users = security.listLocalUsers();
