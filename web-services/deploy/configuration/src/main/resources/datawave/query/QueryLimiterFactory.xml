@@ -11,9 +11,126 @@
     http://www.springframework.org/schema/util
     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
+    <!-- Configuration for query logic group limits. -->
+
+
+    <!--
+    Sample configuration for query logic groups.
+
+        - groupName: The unique name for the group.
+        - queryLimit: The default maximum number of concurrent active queries that a user based off matching query
+         logics across all systems that count towards the user's limit. This can be overridden per user or per system.
+        - queryLogicPattern: A regex pattern matching against query logics. '*' is supported.
+    -->
+    <!--
+    <bean id="TLDLogicGroup" class="datawave.webservice.query.limit.QueryLogicGroupLimitConfiguration">
+        <property name="groupName" value="TLD_QUERIES"/>
+        <property name="queryLimit" value="50"/>
+        <property name="queryLogicPattern" value="TLD.*"/>
+    </bean>
+
+    <bean id="EventLogicGroup" class="datawave.webservice.query.limit.QueryLogicGroupLimitConfiguration">
+        <property name="groupName" value="EVENT_QUERIES"/>
+        <property name="queryLimit" value="25"/>
+        <property name="queryLogicPattern" value="EVENT.*"/>
+    </bean>
+    -->
+
+
+    <!--
+    Sample configuration for an individual user.
+
+        - userDn: The DN of the user
+        - queryLimit: The maximum number of concurrent active queries that this user may have actively running across
+            all systems that count towards the user's limit.
+        - queryLogicGroupLimits: A map of custom limits this user has for query logic groups, where the keys of the map
+            are regex patterns matching against group names, and the values are the maximum number of queries based off
+            any matching query logics that the user may have concurrently active across all systems that count towards
+            the user's limit.
+
+            !!NOTE!! The default limits for any query logic groups that do not match an overridden group limit will
+            still apply. For example, the default limit of 25 for the EVENT_QUERIES group still applies to the user
+            below.
+    -->
+    <!--
+    <bean id="TestUserLimits" class="datawave.webservice.query.limit.UserLimitConfiguration">
+        <property name="userDn" value="cn=test a. user, ou=example developers, o=example corp, c=us, system"/>
+        <property name="queryLimit" value="250"/>
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="TLD_QUERIES.*" value="10"/>
+            </map>
+        </property>
+    </bean>
+    -->
+
+
+    <!--
+    Sample configuration for systems.
+
+        - systemPattern: A regex pattern matching the canonical hostnames of systems (typically k8 pod names).
+        - queryLimit: The maximum number of active queries allowed to be concurrently running on the system.
+        - countsAgainstUserLimit: Whether queries on the system count towards a user's active query limit. The default
+            is true. If false, any queries on this system will not count towards a user's limit, but will still count
+            towards the overall system limit and any overridden query logic group limits established in this
+            configuration.
+        - queryLogicGroupLimits: A map of custom limits the system has for query logic groups, where the keys of the map
+            are regex patterns matching against group names, and the values are the maximum number of queries based off
+            any matching query logics that the system may have concurrently active.
+
+            !!NOTE!! Unlike for users, the limit for any non-overridden query logic groups will NOT apply to the system.
+            For example, the default limit of 25 for the EVENT_QUERIES group will be ignored for the system below, and
+            only apply on a per-user level.
+    -->
+    <!--
+    <bean id="GreekSystems" class="datawave.webservice.query.limit.SystemLimitConfiguration">
+        <property name="systemPattern" value="athena|zeus|ares"/>
+        <property name="queryLimit" value="1000"/>
+        <property name="countsAgainstUserLimit" value="false">
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="TLD.*" value="200"/>
+            </map>
+        </property>
+    </bean>
+    -->
+
+
+    <!-- Sample configuration for the query limit configuration. This is a required, singleton bean.
+
+        - defaultSystemQueryLimit: The default number of active concurrent queries that may be running on a system.
+        - defaultUserQueryLimit: The default maximum number of concurrent active queries a user may have across all
+            systems that count towards the user's query limit.
+        - queryLogicGroupConfigs: The query logic group configurations to use.
+        - systemConfigs: The per-system configurations to use.
+        - userConfigs: The user configurations to use.
+    -->
+    <!--
+    <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
+        <property name="defaultSystemQueryLimit" value="5000"/>
+        <property name="defaultUserQueryLimit" value="100"/>
+        <property name="queryLogicGroupConfigs">
+            <list>
+                <ref bean="TLDLogicGroup"/>
+                <ref bean="EventLogicGroup"/>
+            </list>
+        </property>
+        <property name="userConfigs">
+            <list>
+                <ref bean="TestUserLimits"/>
+            </list>
+        </property>
+        <property name="systemConfigs">
+            <list>
+                <ref bean="GreekSystems"/>
+            </list>
+        </property>
+    </bean>
+    -->
+
     <!-- Configuration for the QueryLimitProvider. -->
     <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
-        <property name="defaultSystemQueryLimit" value="20000"/>
+        <property name="defaultSystemQueryLimit" value="5000"/>
         <property name="defaultUserQueryLimit" value="100"/>
     </bean>
 
