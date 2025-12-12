@@ -15,8 +15,7 @@ public class PartitionedPlanVisitor extends BaseVisitor {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         Plans plans = new Plans();
         new PartitionedPlanVisitor().visit(script, plans);
-        if (plans.getInitialPlan() == null) {
-            plans.setInitialPlan(queryString);
+        if (plans.getPlans().isEmpty()) {
             plans.addPlan(queryString);
         }
         return plans;
@@ -27,11 +26,7 @@ public class PartitionedPlanVisitor extends BaseVisitor {
         QueryPropertyMarker.Instance type = QueryPropertyMarker.findInstance(node);
         if (type.isType(QueryPropertyMarker.MarkerType.PLAN)) {
             Plans plans = (Plans) data;
-            if (plans.getInitialPlan() == null) {
-                plans.setInitialPlan(JexlStringBuildingVisitor.buildQuery(type.getSource()));
-            } else {
-                plans.addPlan(JexlStringBuildingVisitor.buildQuery(type.getSource()));
-            }
+            plans.addPlan(JexlStringBuildingVisitor.buildQuery(type.getSource()));
             return data;
         } else {
             return super.visit(node, data);

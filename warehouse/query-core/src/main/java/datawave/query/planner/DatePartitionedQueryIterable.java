@@ -182,16 +182,22 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
          */
         public String getPlannedScript() {
             String plannedScript;
+            // if no plans yet, then our plan is the initial plan
             if (plans.isEmpty()) {
                 plannedScript = initialPlan;
-            } else if (plans.size() == 1 && (plans.iterator().next().equals(initialPlan) || subPlanGenerators.size() == 1)) {
+            }
+            // if only one plan, then use that
+            else if (plans.size() == 1) {
                 plannedScript = plans.iterator().next();
-            } else {
+            }
+            // else concatenate the plans
+            else {
                 StringBuilder sb = new StringBuilder();
-                sb.append("((plan = 'base') && (").append(initialPlan).append("))");
                 int i = 0;
                 for (String plan : plans) {
-                    sb.append(" || ");
+                    if (sb.length() > 0) {
+                        sb.append(" || ");
+                    }
                     sb.append("((plan = ").append(++i).append(") && (").append(plan).append("))");
                 }
                 plannedScript = sb.toString();

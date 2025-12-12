@@ -59,6 +59,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 
     private DefaultQueryPlanner queryPlanner;
+    private String initialPlan;
     private String plannedScript;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
@@ -89,6 +90,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      */
     public DatePartitionedQueryPlanner(DatePartitionedQueryPlanner other) {
         this.queryPlanner = other.queryPlanner != null ? other.queryPlanner.clone() : null;
+        this.initialPlan = other.initialPlan;
         this.plannedScript = other.plannedScript;
     }
 
@@ -120,6 +122,16 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     @Override
     public String getPlannedScript() {
         return plannedScript;
+    }
+
+    /**
+     * Return the initial plan
+     *
+     * @return the initial plan
+     */
+    @Override
+    public String getInitialPlan() {
+        return initialPlan;
     }
 
     /**
@@ -279,7 +291,8 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
 
-        // Reset the planned script.
+        // Reset the initial and planned script.
+        this.initialPlan = null;
         this.plannedScript = null;
 
         if (log.isDebugEnabled()) {
@@ -308,7 +321,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         initialPlanner.process(shardQueryConfig, query, settings, scannerFactory);
 
         // our initial planned script is the initial planned script
-        this.plannedScript = initialPlanner.plannedScript;
+        this.initialPlan = this.plannedScript = initialPlanner.getPlannedScript();
 
         // and reset the expansion flags to what we had previously
         shardQueryConfig.setGeneratePlanOnly(generatePlanOnly);
@@ -328,7 +341,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             futures.add(subPlan);
         }
 
-        // create a listener for plan updates and update our planned script and the configuration
+        // create a listener for plan updates and update the configuration
         PlanListener listener = plan -> {
             plannedScript = plan;
             genericConfig.setQueryString(plan);

@@ -437,7 +437,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
 
         Plans actualPlans = PartitionedPlanVisitor.getPlans(config.getQueryString());
-        assertPlanEquals(initialPlan, actualPlans.getInitialPlan());
+        assertPlanEquals(initialPlan, logic.getQueryPlanner().getInitialPlan());
 
         Set<String> expectedFinalPlans = expectedPlans.values().stream().map(e -> e.getRight()).collect(Collectors.toSet());
         assertPlanEquals(expectedFinalPlans, actualPlans.getPlans());
