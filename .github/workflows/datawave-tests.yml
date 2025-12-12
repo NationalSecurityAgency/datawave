@@ -24,24 +24,6 @@ env:
   GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
-  configure-runner:
-    runs-on: ubuntu-latest
-    steps:
-      - id: set_output_step # at least one step is required in a job
-        run: |
-          echo "Determining runner to be ${{vars.RUNNER_TYPE}}"
-          echo "runner=${{vars.RUNNER_TYPE}}" >> $GITHUB_OUTPUT
-          if [[ "${{ vars.RUNNER_TYPE }}" == "self-hosted" ]]; then
-            echo "runner is self-hosted"
-            echo "cache_settings=-Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
-          else
-            echo "runner is not self-hosted"
-            echo cache_settings="" >> $GITHUB_OUTPUT
-          fi
-          echo $GITHUB_OUTPUT
-    outputs:
-      runner:  ${{ steps.set_output_step.outputs.runner }}
-      cache_settings:  ${{ steps.set_output_step.outputs.cache_settings }}
   # Runs the pom sorter and code formatter to ensure that the code
   # is formatted and poms are sorted according to project rules. If changes are found,
   # they are committed back to the branch
