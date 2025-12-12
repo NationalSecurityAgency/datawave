@@ -99,7 +99,7 @@ public class SystemLimitProvider {
 
             // Safeguard against allowing a configuration to potentially set whether queries on a system counts against user limits to false for all
             // systems. Only allow this to be done for exact system names, or non-wildcard-only patterns.
-            if (QueryLimitConstants.wildcardOnlyPattern.matcher(systemPattern).matches() && !config.getCountsAgainstsUserLimit()) {
+            if (QueryLimitConstants.wildcardOnlyPattern.matcher(systemPattern).matches() && !config.getCountsAgainstUserLimit()) {
                 throw new IllegalArgumentException("System pattern '" + systemPattern
                                 + "' is wildcard-only and may not be used to override whether queries count against user limits to false");
             }
@@ -147,7 +147,7 @@ public class SystemLimitProvider {
             // If the query limit given for the system was null or less than zero, use the default system query limit.
             Integer customQueryLimit = config.getQueryLimit();
             Map<String,Integer> customGroupLimits = config.getQueryLogicGroupLimits();
-            Boolean customCountsAgainstUserLimit = config.getCountsAgainstsUserLimit();
+            Boolean customCountsAgainstUserLimit = config.getCountsAgainstUserLimit();
 
             if (customQueryLimit == null && customGroupLimits == null && (customCountsAgainstUserLimit == null || customCountsAgainstUserLimit)) {
                 if (log.isDebugEnabled()) {

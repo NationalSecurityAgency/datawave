@@ -162,8 +162,8 @@ public class QueryLimiter {
         String system = hostnameProvider.getCanonicalHostname();
         queryLogic = queryLogic.trim();
 
-        if (log.isTraceEnabled()) {
-            log.trace("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
+        if (log.isDebugEnabled()) {
+            log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
         }
 
         // Check if the snapshot reveals that any limits have been met.
@@ -190,6 +190,10 @@ public class QueryLimiter {
      *             if an error occurs
      */
     public void countQueryTowardsLimits(String queryId, String userDn, String queryLogic) throws Exception {
+        if (log.isDebugEnabled()) {
+            log.debug("Start counting query " + queryId + " towards limits");
+        }
+
         userDn = userDn.trim().toLowerCase();
         queryLogic = queryLogic.trim();
 
@@ -205,6 +209,9 @@ public class QueryLimiter {
      *            the query ID
      */
     public void stopCountingQueryTowardsLimits(String queryId) {
+        if (log.isDebugEnabled()) {
+            log.debug("Stop counting query " + queryId + " towards limits");
+        }
         heartbeatCache.stopAndRemoveHeartbeat(queryId);
     }
 

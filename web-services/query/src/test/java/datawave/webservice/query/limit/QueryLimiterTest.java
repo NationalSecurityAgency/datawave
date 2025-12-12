@@ -293,7 +293,7 @@ class QueryLimiterTest {
         SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
         systemConfig.setSystemPattern(system2);
         systemConfig.setQueryLimit(10);
-        systemConfig.setCountsAgainstsUserLimit(false);
+        systemConfig.setCountsAgainstUserLimit(false);
         config.setSystemConfigs(List.of(systemConfig));
         givenConfig(config);
 
@@ -333,7 +333,7 @@ class QueryLimiterTest {
         // Set a limit of 10 TLDQueryLogic queries for system2.
         SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
         systemConfig.setSystemPattern(system2);
-        systemConfig.setCountsAgainstsUserLimit(false);
+        systemConfig.setCountsAgainstUserLimit(false);
         systemConfig.setQueryLogicGroupLimits(Map.of("TLD", 10));
         config.setSystemConfigs(List.of(systemConfig));
         givenConfig(config);
@@ -390,7 +390,7 @@ class QueryLimiterTest {
         // Establish that system2 does not count against the user query limit.
         SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
         systemConfig.setSystemPattern(system2);
-        systemConfig.setCountsAgainstsUserLimit(false);
+        systemConfig.setCountsAgainstUserLimit(false);
         config.setSystemConfigs(List.of(systemConfig));
         givenConfig(config);
 

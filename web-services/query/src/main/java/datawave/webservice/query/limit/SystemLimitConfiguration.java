@@ -13,7 +13,7 @@ public class SystemLimitConfiguration {
     private String systemPattern;
 
     // Whether queries submitted on matching systems should count against a user's query limit.
-    private Boolean countsAgainstsUserLimit;
+    private Boolean countsAgainstUserLimit;
 
     // The maximum number of queries that can run concurrently on matching systems.
     private Integer queryLimit;
@@ -26,9 +26,9 @@ public class SystemLimitConfiguration {
         this(null, null, null, null);
     }
 
-    public SystemLimitConfiguration(String systemPattern, Boolean countsAgainstsUserLimit, Integer queryLimit, Map<String,Integer> queryLogicGroupLimits) {
+    public SystemLimitConfiguration(String systemPattern, Boolean countsAgainstUserLimit, Integer queryLimit, Map<String,Integer> queryLogicGroupLimits) {
         this.systemPattern = systemPattern;
-        this.countsAgainstsUserLimit = countsAgainstsUserLimit;
+        this.countsAgainstUserLimit = countsAgainstUserLimit;
         this.queryLimit = queryLimit;
         this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Map.of() : Map.copyOf(queryLogicGroupLimits);
     }
@@ -41,12 +41,12 @@ public class SystemLimitConfiguration {
         this.systemPattern = systemPattern;
     }
 
-    public Boolean getCountsAgainstsUserLimit() {
-        return countsAgainstsUserLimit;
+    public Boolean getCountsAgainstUserLimit() {
+        return countsAgainstUserLimit;
     }
 
-    public void setCountsAgainstsUserLimit(Boolean countsAgainstsUserLimit) {
-        this.countsAgainstsUserLimit = countsAgainstsUserLimit;
+    public void setCountsAgainstUserLimit(Boolean countsAgainstUserLimit) {
+        this.countsAgainstUserLimit = countsAgainstUserLimit;
     }
 
     public Integer getQueryLimit() {
@@ -71,19 +71,19 @@ public class SystemLimitConfiguration {
             return false;
         }
         SystemLimitConfiguration that = (SystemLimitConfiguration) o;
-        return Objects.equals(systemPattern, that.systemPattern) && Objects.equals(countsAgainstsUserLimit, that.countsAgainstsUserLimit)
+        return Objects.equals(systemPattern, that.systemPattern) && Objects.equals(countsAgainstUserLimit, that.countsAgainstUserLimit)
                         && Objects.equals(queryLimit, that.queryLimit) && Objects.equals(queryLogicGroupLimits, that.queryLogicGroupLimits);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(systemPattern, countsAgainstsUserLimit, queryLimit, queryLogicGroupLimits);
+        return Objects.hash(systemPattern, countsAgainstUserLimit, queryLimit, queryLogicGroupLimits);
     }
 
     @Override
     public String toString() {
         return new StringJoiner(", ", SystemLimitConfiguration.class.getSimpleName() + "[", "]").add("systemPattern='" + systemPattern + "'")
-                        .add("countsAgainstsUserLimit=" + countsAgainstsUserLimit).add("queryLimit=" + queryLimit)
+                        .add("countsAgainstsUserLimit=" + countsAgainstUserLimit).add("queryLimit=" + queryLimit)
                         .add("queryLogicGroupLimits=" + queryLogicGroupLimits).toString();
     }
 }

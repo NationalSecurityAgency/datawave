@@ -39,7 +39,7 @@
 
     <bean id="systemConfig_2" class="datawave.webservice.query.limit.SystemLimitConfiguration">
         <property name="systemPattern" value="SYSTEM_FOO"/>
-        <property name="countsAgainstsUserLimit" value="false"/>
+        <property name="countsAgainstUserLimit" value="false"/>
         <property name="queryLogicGroupLimits">
             <map>
                 <entry key="GROUP_2" value="200"/>
