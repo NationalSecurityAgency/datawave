@@ -121,7 +121,7 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
                     String row = key.getRow().toString().toUpperCase();
 
                     if (reverse)
-                        row = new StringBuffer(row).reverse().toString();
+                        row = new StringBuilder(row).reverse().toString();
 
                     Multimap<String,Type<?>> typedNormalizers = entryCache.get(row);
 
