@@ -66,7 +66,9 @@ public class AnnotationDataAccess {
      * @param authorizations
      *            the authorizations used for these operations
      * @param annotationTableName
-     *            the accumulo table to use
+     *            the accumulo annotation table to use
+     * @param annotationSourceTableName
+     *            the accumulo annotation source table to use
      * @param annotationSerializer
      *            the serializer to transform protobuf to accumulo entries
      */

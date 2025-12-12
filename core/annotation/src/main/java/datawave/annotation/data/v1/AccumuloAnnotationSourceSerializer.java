@@ -192,12 +192,12 @@ public class AccumuloAnnotationSourceSerializer implements AnnotationSerializer<
     /**
      * Merge the metadata maps from two annotation sources, paying special attention to the fields that were added by the {@code visibilityTransformer} and
      * {@code timestampTransformer}.
-     * <p/>
+     * <p>
      * The visibilityTransformer and timestampTransformer each implement special logic for merging multiple metadata maps based on the fields the
      * implementations use and their values. All fields not managed by one of the transformers are simply copied as is to the merged map. When both maps contain
      * an entry with the same key, the first map takes precedence over the second map. This means that if a metadata entry exists in the first map and the same
      * key exists in the second map, we will take the first map's metadata entry.
-     * <p/>
+     * </p>
      * If the visibilityTransformer and timestampTransformer manage the same fields, the result is undefined - so implementations that so this should be aware.
      *
      * @param first

@@ -8,11 +8,12 @@ import java.util.Set;
  * Interface for implementations that transform data from the standard metadata format into a specific java type that corresponds to a portion of an Accumulo
  * key (e.g., ColumnVisibility or timestamp long). Typically implementations will be interested in specific values in the metadata map and only operate on those
  * values to generate the resulting object.
- * <p/>
+ * <p>
  * The contract implementation smust follow is that {@code toMetadataMap}/{@code fromMetadataMap} are symmetric - meaning that output from one can be provided
  * as input to the other and vice versa - without data loss. {@code getMetadataFields} must return the list of keys that will be written by @{code
  * toMetadataMap} and that any Maps returned by {@code toMetadataMap} or {@code mergeMetadataMaps} must only contain entries with keys returned by
  * {@code getMetadataFields}.
+ * </p>
  *
  * @param <T>
  *            the destination type.
@@ -63,9 +64,9 @@ public interface MetadataTransformerBase<T> {
     /**
      * Utility method to merge values associated with a specified key from two maps. This method expects that the specified key is not present in both maps and
      * will return null if the key is present in both. This indicates that a more complex merge algorithm is required.
-     * <p/>
+     * <p>
      * Note: the map returned by this method will contain zero or one entries for the specified key (e.g., only if it is present in one of the supplied maps)
-     * <p/>
+     * </p>
      * It is also worth noting that if this method returns null, we know that the specified field exists in both maps, is non-empty <i>and is different</i> in
      * both of the supplied maps.
      *
