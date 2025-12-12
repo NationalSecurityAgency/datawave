@@ -150,7 +150,6 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.limit.QueryHeartbeat;
 import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.metric.QueryMetricsBean;
@@ -1280,7 +1279,6 @@ public class QueryExecutorBean implements QueryExecutor {
 
         AccumuloClient client = null;
         RunningQuery query = null;
-        QueryHeartbeat heartbeat = null;
         try {
             ctx.getUserTransaction().begin();
 
@@ -1491,7 +1489,7 @@ public class QueryExecutorBean implements QueryExecutor {
         testForUncaughtException(query.getSettings(), resultsPage);
 
         // If the query is finished, stop counting it towards query limits.
-        if (query.isFinished()) {
+        if (resultsPage.getStatus() == ResultsPage.Status.COMPLETE || resultsPage.getStatus() == ResultsPage.Status.NONE) {
             markQueryAsInactive(queryId);
         }
 
