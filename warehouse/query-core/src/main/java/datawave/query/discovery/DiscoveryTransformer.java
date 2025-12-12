@@ -80,6 +80,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         }
 
         event.setFields(fields);
+        event.setSizeInBytes(fields.size() * 6L);
 
         Metadata metadata = new Metadata();
         metadata.setInternalId(""); // there is no UUID for a single index pointer

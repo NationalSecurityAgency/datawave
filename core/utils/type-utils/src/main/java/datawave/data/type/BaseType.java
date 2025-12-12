@@ -13,7 +13,7 @@ import datawave.webservice.query.data.ObjectSizeOf;
 
 public class BaseType<T extends Comparable<T> & Serializable> implements Serializable, Type<T>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 5354270429891763693L;
+    private static final long serialVersionUID = -3747720721391071135L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + Sizer.REFERENCE + Sizer.REFERENCE;
 
     protected T delegate;
@@ -34,7 +34,8 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
     }
 
     public void setDelegateFromString(String in) {
-        setDelegate(normalizer.denormalize(in));
+        T denormalized = normalizer.denormalize(in);
+        setDelegate(denormalized);
     }
 
     public void setDelegate(T delegate) {
@@ -91,7 +92,8 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
 
     @Override
     public void normalizeAndSetNormalizedValue(T valueToNormalize) {
-        setNormalizedValue(normalizer.normalizeDelegateType(valueToNormalize));
+        String normalized = normalizer.normalizeDelegateType(valueToNormalize);
+        setNormalizedValue(normalized);
     }
 
     public void validate() {
