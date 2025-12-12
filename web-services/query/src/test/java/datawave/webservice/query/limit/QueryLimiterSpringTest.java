@@ -9,6 +9,9 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -16,7 +19,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  * Test cases for testing the creation of a {@link QueryLimiter} via bean configurations.
  */
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(locations = {"classpath:TestQueryLimiterFactory.xml"})
+@ContextConfiguration()
 class QueryLimiterSpringTest {
 
     @Autowired
@@ -52,5 +55,18 @@ class QueryLimiterSpringTest {
         assertThat(limiter.getUserLimitProvider()).isNotNull();
         assertThat(limiter.getSystemLimitProvider()).isNotNull();
         assertThat(limiter.getQueryLogicGroupLimitProvider()).isNotNull();
+    }
+
+    @Configuration
+    @ImportResource(locations = "classpath:TestQueryLimiterFactory.xml")
+    public static class Config {
+
+        /**
+         * Provide a {@link QueryHeartbeatCache} required for injection into the {@link QueryLimiter} instance.
+         */
+        @Bean
+        QueryHeartbeatCache queryHeartbeatCache() {
+            return new QueryHeartbeatCache();
+        }
     }
 }

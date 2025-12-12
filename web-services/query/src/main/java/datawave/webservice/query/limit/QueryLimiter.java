@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
@@ -20,14 +22,26 @@ public class QueryLimiter {
     // Default to using InetAddress
     private HostnameProvider hostnameProvider = HostnameProvider.getInetAddressProvider();
 
+    // The string to use to connect to zookeeper.
     private String zookeeperConfig;
+
+    // The configuration to initialize the limit providers with.
     private QueryLimitConfiguration configuration;
 
+    // Provides configured limits for query logic groups.
     private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
+
+    // Provides configured limits for users.
     private UserLimitProvider userLimitProvider;
+
+    // Provides configured limits for systems.
     private SystemLimitProvider systemLimitProvider;
 
+    // The tracker responsible for interfacing with Zookeeper.
     private ActiveQueryTracker activeQueryTracker;
+
+    // A cache to store heartbeats of active queries within.
+    private QueryHeartbeatCache heartbeatCache;
 
     /**
      * Return the zookeeper connection string.
@@ -94,6 +108,11 @@ public class QueryLimiter {
         return queryLogicGroupLimitProvider;
     }
 
+    @Inject
+    public void setHeartbeatCache(QueryHeartbeatCache heartbeatCache) {
+        this.heartbeatCache = heartbeatCache;
+    }
+
     /**
      * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
      * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
@@ -158,10 +177,11 @@ public class QueryLimiter {
     }
 
     /**
-     * Track the following information for the given query on Zookeeper for the current system. The system will be identified by the canonical hostname.
+     * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits. The system
+     * will be identified by the canonical hostname.
      *
      * @param queryId
-     *            the queryId
+     *            the query ID
      * @param userDn
      *            the userDN of the user who submitted the query
      * @param queryLogic
@@ -169,11 +189,23 @@ public class QueryLimiter {
      * @throws Exception
      *             if an error occurs
      */
-    public QueryHeartbeat trackQuery(String queryId, String userDn, String queryLogic) throws Exception {
+    public void countQueryTowardsLimits(String queryId, String userDn, String queryLogic) throws Exception {
         userDn = userDn.trim().toLowerCase();
         queryLogic = queryLogic.trim();
 
-        return getActiveQueryTracker().trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
+        QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
+        // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
+        heartbeatCache.put(queryId, heartbeat);
+    }
+
+    /**
+     * Clear the information for the given query from Zookeeper, and stop counting it towards any configured query limits.
+     *
+     * @param queryId
+     *            the query ID
+     */
+    public void stopCountingQueryTowardsLimits(String queryId) {
+        heartbeatCache.stopAndRemoveHeartbeat(queryId);
     }
 
     /**

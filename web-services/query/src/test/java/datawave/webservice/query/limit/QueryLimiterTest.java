@@ -3,6 +3,7 @@ package datawave.webservice.query.limit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,18 +27,19 @@ class QueryLimiterTest {
     private static final String eventQueryLogic = "EventQueryLogic";
 
     private final Map<String,QueryLimiter> systemToLimiter = new HashMap<>();
-    private final Map<String,QueryHeartbeat> heartbeats = new HashMap<>();
+    private QueryHeartbeatCache heartbeatCache;
     private QueryLimitConfiguration config;
     private TestingServer server;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
+        heartbeatCache = new QueryHeartbeatCache();
     }
 
     @AfterEach
     void tearDown() throws IOException {
-        heartbeats.clear();
+        heartbeatCache.clear();
         systemToLimiter.clear();
         config = null;
         if (server != null) {
@@ -414,20 +416,16 @@ class QueryLimiterTest {
         config.setDefaultUserQueryLimit(10);
         givenConfig(config);
 
-        startQueries(10, userA, system1, tldQueryLogic);
+        List<String> queryIds = startQueries(10, userA, system1, tldQueryLogic);
 
         // Verify that 10 queries for userA meets a limit.
         assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries");
 
         // Stop one of the queries. Doesn't matter which, they're all for userA.
-        String queryId = heartbeats.entrySet().iterator().next().getKey();
-        QueryHeartbeat heartbeat = heartbeats.get(queryId);
-        heartbeat.stop();
-        heartbeats.remove(queryId);
+        getLimiter(system1).stopCountingQueryTowardsLimits(queryIds.get(0));
 
         // Verify that after stopping one of the queries, we no longer meet a limit.
         assertLimitNotMet(userA, system1, tldQueryLogic);
-
     }
 
     private QueryLimiter getLimiter(String system) {
@@ -438,19 +436,22 @@ class QueryLimiterTest {
             limiter.setZookeeperConfig(server.getConnectString());
             limiter.setConfiguration(config);
             limiter.setHostnameProvider(() -> system);
+            limiter.setHeartbeatCache(heartbeatCache);
             limiter.setup();
             systemToLimiter.put(system, limiter);
             return limiter;
         }
     }
 
-    private void startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
+    private List<String> startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
+        List<String> queryIds = new ArrayList<>(numQueries);
         QueryLimiter limiter = getLimiter(system);
         for (int i = 0; i < numQueries; i++) {
             String queryId = UUID.randomUUID().toString();
-            QueryHeartbeat heartbeat = limiter.trackQuery(queryId, userDn, queryLogic);
-            this.heartbeats.put(queryId, heartbeat);
+            limiter.countQueryTowardsLimits(queryId, userDn, queryLogic);
+            queryIds.add(queryId);
         }
+        return queryIds;
     }
 
     private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {

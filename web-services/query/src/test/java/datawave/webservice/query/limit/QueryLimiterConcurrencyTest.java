@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -64,6 +66,8 @@ class QueryLimiterConcurrencyTest {
     private final List<QueryCreationTask> tasks = new ArrayList<>();
 
     private QueryLimitConfiguration limitConfig;
+    private static final Map<String,QueryLimiter> serversToLimiters = new HashMap<>();
+    private final QueryHeartbeatCache heartbeatCache = new QueryHeartbeatCache();
     private List<QueryCreationAttempt> attempts;
     private TestingServer server;
 
@@ -83,6 +87,8 @@ class QueryLimiterConcurrencyTest {
         if (server != null) {
             server.close();
         }
+        heartbeatCache.clear();
+        serversToLimiters.clear();
         limitConfig = null;
         tasks.clear();
         attempts = null;
@@ -325,7 +331,6 @@ class QueryLimiterConcurrencyTest {
         // @formatter:off
         this.tasks.add(QueryCreationTask.builder()
                         .withForceStop(forceStop)
-                        .withQueryLimits(server.getConnectString(), this.limitConfig)
                         .withRequests(requests)
                         .build());
         // @formatter:on
@@ -406,26 +411,15 @@ class QueryLimiterConcurrencyTest {
     private static class QueryCreationTask implements Callable<List<QueryCreationAttempt>> {
 
         private final AtomicBoolean forceStop;
-        private final QueryLimiter queryLimiter;
         private final List<ClientRequest> requests;
         private final List<QueryCreationAttempt> attempts = new ArrayList<>();
 
         public static class Builder {
             private AtomicBoolean forceStop;
-            private QueryLimiter queryLimiter;
             private List<ClientRequest> requests;
 
             public Builder withForceStop(AtomicBoolean forceStop) {
                 this.forceStop = forceStop;
-                return this;
-            }
-
-            public Builder withQueryLimits(String zookeeperConfig, QueryLimitConfiguration config) {
-                QueryLimiter limiter = new QueryLimiter();
-                limiter.setZookeeperConfig(zookeeperConfig);
-                limiter.setConfiguration(config);
-                limiter.setup();
-                this.queryLimiter = limiter;
                 return this;
             }
 
@@ -435,7 +429,7 @@ class QueryLimiterConcurrencyTest {
             }
 
             public QueryCreationTask build() {
-                return new QueryCreationTask(this.forceStop, this.queryLimiter, this.requests);
+                return new QueryCreationTask(this.forceStop, this.requests);
             }
         }
 
@@ -443,9 +437,8 @@ class QueryLimiterConcurrencyTest {
             return new Builder();
         }
 
-        public QueryCreationTask(AtomicBoolean forceStop, QueryLimiter queryLimiter, List<ClientRequest> requests) {
+        public QueryCreationTask(AtomicBoolean forceStop, List<ClientRequest> requests) {
             this.forceStop = forceStop;
-            this.queryLimiter = queryLimiter;
             this.requests = requests;
         }
 
@@ -461,7 +454,7 @@ class QueryLimiterConcurrencyTest {
                 }
 
                 try {
-                    queryLimiter.setHostnameProvider(() -> request.system);
+                    QueryLimiter queryLimiter = serversToLimiters.get(request.system);
 
                     // Check if a limit has been met.
                     QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(request.userDn, request.queryLogic);
@@ -473,9 +466,9 @@ class QueryLimiterConcurrencyTest {
                     } else {
                         // Otherwise 'create' a query and store the heartbeat to keep it alive until stopped.
                         String queryId = UUID.randomUUID().toString();
-                        QueryHeartbeat heartbeat = queryLimiter.trackQuery(queryId, request.userDn, request.queryLogic);
+                        queryLimiter.countQueryTowardsLimits(queryId, request.userDn, request.queryLogic);
                         log.trace("Created query " + queryId);
-                        attempts.add(QueryCreationAttempt.succeeded(request, queryId, heartbeat));
+                        attempts.add(QueryCreationAttempt.succeeded(request, queryId));
                     }
 
                     // If there are any more 'requests', sleep for a random interval.
@@ -501,29 +494,26 @@ class QueryLimiterConcurrencyTest {
         private final ClientRequest clientRequest;
         private final String message;
         private final String queryId;
-        private final QueryHeartbeat heartbeat;
         private final long timestamp;
         private final Exception exception;
 
         public static QueryCreationAttempt failed(ClientRequest request, String message) {
-            return new QueryCreationAttempt(false, request, message, null, null, null);
+            return new QueryCreationAttempt(false, request, message, null, null);
         }
 
         public static QueryCreationAttempt failed(ClientRequest request, Exception exception) {
-            return new QueryCreationAttempt(false, request, exception.getMessage(), null, null, exception);
+            return new QueryCreationAttempt(false, request, exception.getMessage(), null, exception);
         }
 
-        public static QueryCreationAttempt succeeded(ClientRequest request, String queryId, QueryHeartbeat heartbeat) {
-            return new QueryCreationAttempt(true, request, null, queryId, heartbeat, null);
+        public static QueryCreationAttempt succeeded(ClientRequest request, String queryId) {
+            return new QueryCreationAttempt(true, request, null, queryId, null);
         }
 
-        private QueryCreationAttempt(boolean succeeded, ClientRequest clientRequest, String message, String queryId, QueryHeartbeat heartbeat,
-                        Exception exception) {
+        private QueryCreationAttempt(boolean succeeded, ClientRequest clientRequest, String message, String queryId, Exception exception) {
             this.succeeded = succeeded;
             this.clientRequest = clientRequest;
             this.message = message;
             this.queryId = queryId;
-            this.heartbeat = heartbeat;
             this.timestamp = System.currentTimeMillis();
             this.exception = exception;
         }
@@ -554,8 +544,8 @@ class QueryLimiterConcurrencyTest {
         @Override
         public String toString() {
             return new StringJoiner(", ", QueryCreationAttempt.class.getSimpleName() + "[", "]").add("succeeded=" + succeeded)
-                            .add("clientRequest=" + clientRequest).add("queryId='" + queryId + "'").add("heartbeat=" + heartbeat).add("timestamp=" + timestamp)
-                            .add("exception=" + exception).toString();
+                            .add("clientRequest=" + clientRequest).add("queryId='" + queryId + "'").add("timestamp=" + timestamp).add("exception=" + exception)
+                            .toString();
         }
     }
 
@@ -577,14 +567,28 @@ class QueryLimiterConcurrencyTest {
         }
     }
 
-    private List<ClientRequest> createRequests(int numRequests, List<String> users, List<String> servers, List<String> queryLogics) {
+    private List<ClientRequest> createRequests(int numRequests, List<String> users, List<String> systems, List<String> queryLogics) {
         List<ClientRequest> requests = new ArrayList<>(numRequests);
         for (int i = 0; i < numRequests; i++) {
             int userIdx = random.nextInt(users.size());
-            int serverIdx = random.nextInt(servers.size());
+            int systemIdx = random.nextInt(systems.size());
             int queryLogicIdx = random.nextInt(queryLogics.size());
-            requests.add(new ClientRequest(users.get(userIdx), servers.get(serverIdx), queryLogics.get(queryLogicIdx)));
+            String system = systems.get(systemIdx);
+            requests.add(new ClientRequest(users.get(userIdx), system, queryLogics.get(queryLogicIdx)));
+            ensureLimiterExistsFor(system);
         }
         return requests;
+    }
+
+    private void ensureLimiterExistsFor(String system) {
+        if (!serversToLimiters.containsKey(system)) {
+            QueryLimiter limiter = new QueryLimiter();
+            limiter.setZookeeperConfig(server.getConnectString());
+            limiter.setConfiguration(this.limitConfig);
+            limiter.setHeartbeatCache(this.heartbeatCache);
+            limiter.setHostnameProvider(() -> system);
+            limiter.setup();
+            serversToLimiters.put(system, limiter);
+        }
     }
 }

@@ -21,6 +21,7 @@ import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -52,6 +53,9 @@ public class QueryExpirationBean {
 
     @Inject
     private QueryMetricsBean metrics;
+
+    @Inject
+    private QueryLimiter queryLimiter;
 
     private boolean clearAll = false;
 
@@ -135,7 +139,16 @@ public class QueryExpirationBean {
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }
-                cache.remove(query.getSettings().getId().toString());
+
+                // Stop counting the query towards query limits.
+                String queryId = query.getSettings().getId().toString();
+                try {
+                    queryLimiter.stopCountingQueryTowardsLimits(queryId);
+                } catch (Exception e) {
+                    log.error("Error stopping heartbeat and removing from cache: " + queryId, e);
+                }
+
+                cache.remove(queryId);
                 count++;
                 if (log.isDebugEnabled()) {
                     log.debug("Entry evicted, connection returned.");

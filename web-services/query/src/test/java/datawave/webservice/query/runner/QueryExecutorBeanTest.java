@@ -2,8 +2,6 @@ package datawave.webservice.query.runner;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
@@ -108,13 +106,11 @@ import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryHeartbeatCache;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.limit.QueryHeartbeat;
 import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
@@ -164,7 +160,6 @@ public class QueryExecutorBeanTest {
     private MockHttpRequest request;
     private MockHttpResponse response;
     private QueryLimiter queryLimiter;
-    private QueryHeartbeatCache queryHeartbeatCache;
 
     @Before
     public void setup() throws Exception {
@@ -196,7 +191,6 @@ public class QueryExecutorBeanTest {
         connectionRequestBean = createStrictMock(AccumuloConnectionRequestBean.class);
         responseObjectFactory = createStrictMock(ResponseObjectFactory.class);
         queryLimiter = createStrictMock(QueryLimiter.class);
-        queryHeartbeatCache = createStrictMock(QueryHeartbeatCache.class);
         setInternalState(auditor, AuditService.class, auditService);
         setInternalState(auditor, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
         setInternalState(connectionRequestBean, EJBContext.class, ctx);
@@ -220,7 +214,6 @@ public class QueryExecutorBeanTest {
         setInternalState(bean, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(bean, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(bean, QueryLimiter.class, queryLimiter);
-        setInternalState(bean, QueryHeartbeatCache.class, queryHeartbeatCache);
         // RESTEasy mock stuff
         dispatcher = MockDispatcherFactory.createDispatcher();
         dispatcher.getRegistry().addSingletonResource(bean, "/DataWave/Query");
@@ -692,13 +685,10 @@ public class QueryExecutorBeanTest {
         PowerMock.resetAll();
         EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit()).anyTimes();
 
-        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
-        expect(queryLimiter.trackQuery(q.getId().toString(), userDN.toLowerCase(), queryLogicName)).andReturn(heartbeat);
+        queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDN.toLowerCase(), queryLogicName);
+        EasyMock.expectLastCall().anyTimes();
 
-        queryHeartbeatCache.put(q.getId().toString(), heartbeat);
-        expectLastCall().anyTimes();
-
-        queryHeartbeatCache.stopAndRemoveHeartbeat(q.getId().toString());
+        queryLimiter.stopCountingQueryTowardsLimits(q.getId().toString());
         EasyMock.expectLastCall().anyTimes();
 
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();

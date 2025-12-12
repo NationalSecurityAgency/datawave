@@ -4,11 +4,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.log4j.Logger;
-
-import datawave.webservice.query.cache.QueryHeartbeatCache;
 
 /**
  * Represents a heartbeat for an active query. As long as the connection to Zookeeper is not disrupted, the heartbeat will persist and indicate that a query is
@@ -82,5 +81,24 @@ public class QueryHeartbeat {
      */
     public void setListener(QueryHeartbeatCache.HeartbeatStoppedListener listener) {
         this.listener = listener;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass())
+            return false;
+        QueryHeartbeat heartbeat = (QueryHeartbeat) o;
+        return Objects.equals(queryId, heartbeat.queryId) && Objects.equals(nodes, heartbeat.nodes) && Objects.equals(listener, heartbeat.listener);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(queryId, nodes, listener);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", QueryHeartbeat.class.getSimpleName() + "[", "]").add("queryId=" + queryId).add("nodes=" + nodes)
+                        .add("listener=" + listener).toString();
     }
 }

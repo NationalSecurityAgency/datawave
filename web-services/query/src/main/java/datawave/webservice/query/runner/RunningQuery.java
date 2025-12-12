@@ -46,7 +46,6 @@ import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.limit.QueryHeartbeat;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -83,7 +82,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
     private boolean allowShortCircuitTimeouts = false;
-    private transient QueryHeartbeat heartbeat = null;
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -235,10 +233,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
-    }
-
-    public void setHeartbeat(QueryHeartbeat heartbeat) {
-        this.heartbeat = heartbeat;
     }
 
     /**
@@ -512,8 +506,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     if (null == o) {
                         log.debug("Null result encountered, no more results");
                         this.finished = true;
-                        // Stop the query heartbeat to unmark the query as active.
-                        stopHeartbeat();
                         terminateResultsThread();
                         break;
                     }
@@ -613,8 +605,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     public void cancel() {
         this.canceled = true;
 
-        // Stop the query heartbeat to unmark the query as active.
-        stopHeartbeat();
         terminateResultsThread();
 
         // change status to cancelled
@@ -713,9 +703,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 removeNDC();
             }
         }
-
-        // Stop the query heartbeat to unmark the query as active.
-        stopHeartbeat();
     }
 
     @Override
@@ -805,20 +792,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     throw ((QueryException) handler.getThrowable());
                 }
                 throw new QueryException(handler.getThrowable());
-            }
-        }
-    }
-
-    /**
-     * Stop the query heartbeat. This should be done when a query is done or canceled. This will unmark the query as active, and will not apply it towards any
-     * enforced limits.
-     */
-    private void stopHeartbeat() {
-        if (this.heartbeat != null) {
-            try {
-                this.heartbeat.stop();
-            } catch (Exception e) {
-                log.error("Failed to stop heartbeat", e);
             }
         }
     }

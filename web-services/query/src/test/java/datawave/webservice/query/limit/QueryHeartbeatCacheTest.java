@@ -1,4 +1,4 @@
-package datawave.webservice.query.cache;
+package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -17,8 +17,6 @@ import org.apache.zookeeper.CreateMode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import datawave.webservice.query.limit.QueryHeartbeat;
 
 class QueryHeartbeatCacheTest {
 

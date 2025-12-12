@@ -1,4 +1,4 @@
-package datawave.webservice.query.cache;
+package datawave.webservice.query.limit;
 
 import javax.inject.Singleton;
 
@@ -6,8 +6,6 @@ import org.apache.log4j.Logger;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-
-import datawave.webservice.query.limit.QueryHeartbeat;
 
 /**
  * A cache for storing query heartbeats of running queries.
@@ -29,11 +27,10 @@ public class QueryHeartbeatCache {
      *            the heartbeat
      */
     public void put(String queryId, QueryHeartbeat heartbeat) {
-        if (log.isDebugEnabled()) {
-            log.debug("Adding heartbeat for query " + queryId + " to QueryHeartbeatCache");
-        }
+        // Add a listener to the heartbeat that will automatically trigger the heartbeat's eviction if it is ever stopped outside the cache's stop and remove
+        // method.
         heartbeat.setListener(new HeartbeatStoppedListener(this));
-        cache.put(queryId, heartbeat);
+        this.cache.put(queryId, heartbeat);
     }
 
     /**
@@ -57,22 +54,16 @@ public class QueryHeartbeatCache {
     public void stopAndRemoveHeartbeat(String queryId) {
         QueryHeartbeat heartbeat = cache.asMap().remove(queryId);
         if (heartbeat != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Removed heartbeat for query " + queryId);
-            }
             try {
-                if (log.isDebugEnabled()) {
-                    log.debug("Stopping heartbeat for query " + queryId);
-                }
                 heartbeat.stopWithoutNotifyingListener();
             } catch (Exception e) {
-                log.error("Error stopping query heartbeat", e);
+                log.error("Error stopping heartbeat for query " + queryId, e);
             }
         }
     }
 
     /**
-     * Clear the cache.
+     * Clear the cache. This does not stop any of the heartbeats contained within the cache.
      */
     public void clear() {
         log.debug("Clearing internal cache");
