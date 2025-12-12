@@ -110,7 +110,6 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.limit.QueryHeartbeat;
 import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
@@ -1154,10 +1153,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
-        expect(this.runningQuery.isFinished()).andReturn(true);
         expect(this.queryLogic1.getEnrichedTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(2);
+        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(3);
         expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         this.baseResponse.setHasResults(true);
@@ -1867,10 +1865,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
-        expect(this.runningQuery.isFinished()).andReturn(true);
         expect(this.queryLogic1.getEnrichedTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(2);
+        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(3);
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
@@ -1972,7 +1969,6 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
 
-        QueryHeartbeat heartbeat = EasyMock.createMock(QueryHeartbeat.class);
         this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
 
@@ -2107,10 +2103,12 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
+
         this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), queryLogicName);
         expectLastCall();
+
         this.queryLimiter.stopCountingQueryTowardsLimits(queryId.toString());
-        expectLastCall();
+        expectLastCall().anyTimes();
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -2186,10 +2184,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.next()).andReturn(this.resultsPage);
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
-        expect(this.runningQuery.isFinished()).andReturn(false);
         expect(this.queryLogic1.getEnrichedTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.NONE).times(2);
+        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.NONE).times(4);
         this.baseResponse.setHasResults(false);
         this.baseResponse.setPageNumber(pageNumber);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
