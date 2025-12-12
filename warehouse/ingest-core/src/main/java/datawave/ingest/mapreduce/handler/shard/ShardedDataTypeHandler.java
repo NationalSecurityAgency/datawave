@@ -448,8 +448,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            the event
      * @return Shard id
      */
-    public byte[] getShardId(RawRecordContainer event) {
-        return shardIdFactory.getShardIdBytes(event);
+    public byte[] getShardId(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields) {
+        return shardIdFactory.getShardIdBytes(event, eventFields);
     }
 
     /**
@@ -501,7 +501,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         byte[] maskedVisibility = computeMaskedVisibility(event);
         MaskedFieldHelper maskedFieldHelper = createMaskedFieldHelper(helper, event);
 
-        byte[] shardId = shardIdFactory.getShardIdBytes(event);
+        byte[] shardId = shardIdFactory.getShardIdBytes(event, fields);
 
         if (null != fields && !fields.isEmpty() && null != shardTableName) {
             // Shard Event Table Structure

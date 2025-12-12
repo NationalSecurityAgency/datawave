@@ -125,7 +125,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                     throws IOException, InterruptedException {
 
         // Hold some event-specific variables to avoid re-processing
-        this.shardId = getShardId(event);
+        this.shardId = getShardId(event, eventFields);
 
         this.eventDataTypeName = event.getDataType().outputName();
         this.eventUid = event.getId().toString();

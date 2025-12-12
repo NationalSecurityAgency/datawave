@@ -237,8 +237,8 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
                 String type = entry.getKey();
                 String field = entry.getValue();
                 for (NormalizedContentInterface nci : eventFields.get(field)) {
-                    KeyValue keyValue = getDateIndexEntry(getShardId(event), event.getDataType().outputName(), type, field, nci.getIndexedFieldValue(),
-                                    event.getVisibility());
+                    KeyValue keyValue = getDateIndexEntry(getShardId(event, eventFields), event.getDataType().outputName(), type, field,
+                                    nci.getIndexedFieldValue(), event.getVisibility());
 
                     if (keyValue != null) {
                         if (log.isDebugEnabled()) {
@@ -325,8 +325,8 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      *            the event container
      * @return Shard id
      */
-    public String getShardId(RawRecordContainer event) {
-        return shardIdFactory.getShardId(event);
+    public String getShardId(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields) {
+        return shardIdFactory.getShardId(event, eventFields);
     }
 
     /**

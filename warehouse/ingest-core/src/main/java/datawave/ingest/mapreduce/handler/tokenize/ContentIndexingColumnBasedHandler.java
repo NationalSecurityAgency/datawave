@@ -150,7 +150,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             return null;
         }
 
-        this.shardId = getShardId(event);
+        this.shardId = getShardId(event, eventFields);
         this.eventDataTypeName = event.getDataType().outputName();
         this.eventUid = event.getId().toString();
 
