@@ -49,8 +49,8 @@ public class SimpleAnnotationIngestHelper extends BaseIngestHelper {
 
             event.setId(HashUID.parse(annotation.getUid()));
             event.setDataType(TypeRegistry.getType(annotation.getDataType()));
-            event.setTimestamp(DEFAULT_TIMESTAMP_TRANSFORMER.toTimestamp(annotation.getMetadataMap()));
-            event.setVisibility(DEFAULT_VISIBILITY_TRANSFORMER.toColumnVisibility(annotation.getMetadataMap()));
+            event.setTimestamp(DEFAULT_TIMESTAMP_TRANSFORMER.fromMetadataMap(annotation.getMetadataMap()));
+            event.setVisibility(DEFAULT_VISIBILITY_TRANSFORMER.fromMetadataMap(annotation.getMetadataMap()));
 
             for (Map.Entry<Descriptors.FieldDescriptor,Object> entry : annotation.getAllFields().entrySet()) {
                 fields.put(entry.getKey().getName(), new NormalizedFieldAndValue(entry.getKey().getName(), entry.getValue().toString()));

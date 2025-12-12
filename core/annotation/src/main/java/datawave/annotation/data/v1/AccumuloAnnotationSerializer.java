@@ -214,8 +214,8 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
     protected Key generateBaseKey(Annotation annotation) throws AnnotationSerializationException {
         String rowId = annotation.getShard();
         String columnFamily = annotation.getDataType() + NULL + annotation.getUid() + NULL + annotation.getAnnotationType();
-        ColumnVisibility cv = visibilityTransformer.toColumnVisibility(annotation.getMetadataMap());
-        long timestamp = timestampTransformer.toTimestamp(annotation.getMetadataMap());
+        ColumnVisibility cv = visibilityTransformer.fromMetadataMap(annotation.getMetadataMap());
+        long timestamp = timestampTransformer.fromMetadataMap(annotation.getMetadataMap());
 
         return Key.builder().row(rowId).family(columnFamily).visibility(cv).timestamp(timestamp).build();
     }
@@ -241,7 +241,7 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
             // use the source hash if set.
             serializeFieldEntry(baseKey, annotation.getAnnotationId(), SOURCE_CQ_FRAGMENT, annotation.getAnalyticSourceHash(), serializedResults);
         } else if (annotation.hasSource() && !StringUtils.isEmpty(annotation.getSource().getAnalyticHash())) {
-            // use the source's hash if set if source hash isn't set on the annotation.
+            // use the source's hash if the source hash field isn't present on the annotation.
             serializeFieldEntry(baseKey, annotation.getAnnotationId(), SOURCE_CQ_FRAGMENT, annotation.getSource().getAnalyticSourceHash(), serializedResults);
         } else {
             throw new AnnotationSerializationException("Could not find source hash for annotation: " + annotation.getAnnotationId());
