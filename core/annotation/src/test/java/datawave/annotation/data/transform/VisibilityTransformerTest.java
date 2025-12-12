@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -105,7 +106,7 @@ public class VisibilityTransformerTest {
         }
 
         @Override
-        public ColumnVisibility toColumnVisibility(Map<String,String> visibilityMap) throws AnnotationTransformException {
+        public ColumnVisibility fromMetadataMap(Map<String,String> visibilityMap) throws AnnotationTransformException {
             StringBuilder b = new StringBuilder();
 
             SortedMap<String,String> sortedVisibilityParts = new TreeMap<>();
@@ -135,6 +136,18 @@ public class VisibilityTransformerTest {
             }
 
             return new ColumnVisibility(b.toString());
+        }
+
+        @Override
+        public Set<String> getMetadataFields() {
+            return Set.of("owner", "dist", "archive");
+        }
+
+        @Override
+        public Map<String,String> mergeMetadataMaps(Map<String,String> first, Map<String,String> second) {
+            // not really a meaningful implementation, would be better if we compared the various value from
+            // first and second and returned the 'best' ones.
+            return Map.of("owner", first.get("owner"), "dist", first.get("dist"), "archive", second.get("archive"));
         }
 
         private static String transformKeyForVisibilityMap(String key) {
