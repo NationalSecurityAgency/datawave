@@ -6,6 +6,7 @@ import static datawave.annotation.test.v1.AnnotationTestDataUtil.VISIBILITY;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotationSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,6 +65,67 @@ public class AccumuloAnnotationSourceSerializerTest {
         // Deserialize the serialized results back into an annotation and compare.
         AnnotationSource observedAnnotationSource = serializer.deserialize(savedResults.iterator());
         assertAnnotationSourcesEqual(expectedAnnotationSource, observedAnnotationSource);
+    }
+
+    @Test
+    public void testAnnotationSourceMultipleDeserialize() throws AnnotationSerializationException {
+
+        // create two sources with only a different visibility and timestamp
+        AnnotationSource partialAnnotationSourceOne = generateTestAnnotationSource();
+        String expectedDateOne = "2025-10-01T08:00:00Z";
+        String expectedVisibilityOne = "APPLES";
+        //@formatter:off
+        AnnotationSource testAnnotationSourceOne = partialAnnotationSourceOne.toBuilder()
+                .clearMetadata()
+                .putMetadata("visibility", expectedVisibilityOne)
+                .putMetadata("created_date",expectedDateOne)
+                .build();
+        //@formatter:on
+        AnnotationSource expectedAnnotationSourceOne = AnnotationUtils.injectAnnotationSourceHashes(testAnnotationSourceOne);
+
+        AnnotationSource partialAnnotationSourceTwo = generateTestAnnotationSource();
+        String expectedDateTwo = "2025-10-01T16:00:00Z";
+        String expectedVisibilityTwo = "ORANGES";
+        //@formatter:off
+        AnnotationSource testAnnotationSourceTwo = partialAnnotationSourceTwo.toBuilder()
+                .clearMetadata()
+                .putMetadata("visibility", expectedVisibilityTwo)
+                .putMetadata("created_date",expectedDateTwo)
+                .build();
+        //@formatter:on
+        AnnotationSource expectedAnnotationSourceTwo = AnnotationUtils.injectAnnotationSourceHashes(testAnnotationSourceTwo);
+
+        String expectedCombinedVisibility = "(APPLES|ORANGES)";
+
+        // validate that the hashes are the same, but the metadata isn't so that we
+        // have the correct conditions for the test.
+        assertEquals(expectedAnnotationSourceOne.getAnalyticSourceHash(), expectedAnnotationSourceTwo.getAnalyticSourceHash());
+        assertEquals(expectedAnnotationSourceOne.getAnalyticHash(), expectedAnnotationSourceTwo.getAnalyticHash());
+        assertNotEquals(expectedAnnotationSourceOne.getMetadataMap(), expectedAnnotationSourceTwo.getMetadataMap());
+
+        // set up the serializers that will be doing the work.
+        DefaultVisibilityTransformer visibilityTransformer = new DefaultVisibilityTransformer();
+        DefaultTimestampTransformer timestampTransformer = new DefaultTimestampTransformer();
+        AccumuloAnnotationSourceSerializer serializer = new AccumuloAnnotationSourceSerializer(visibilityTransformer, timestampTransformer);
+
+        // merge the serialization results into a single map to simulate an accumulo return.
+        Iterator<Map.Entry<Key,Value>> resultsOne = serializer.serialize(expectedAnnotationSourceOne);
+        Iterator<Map.Entry<Key,Value>> resultsTwo = serializer.serialize(expectedAnnotationSourceTwo);
+
+        List<Map.Entry<Key,Value>> merged = new ArrayList<>();
+        resultsOne.forEachRemaining(merged::add);
+        resultsTwo.forEachRemaining(merged::add);
+
+        // deserialize and check the results.
+        AnnotationSource observedSource = serializer.deserialize(merged.iterator());
+        assertEquals(expectedAnnotationSourceOne.getAnalyticSourceHash(), observedSource.getAnalyticSourceHash());
+        assertEquals(expectedAnnotationSourceOne.getAnalyticHash(), observedSource.getAnalyticHash());
+        assertNotEquals(expectedAnnotationSourceOne.getMetadataMap(), expectedAnnotationSourceTwo.getMetadataMap());
+        Map<String,String> observedMetadata = observedSource.getMetadataMap();
+        String observedVisibility = observedMetadata.get(DefaultVisibilityTransformer.VISIBILITY_METADATA_KEY);
+        assertEquals(expectedCombinedVisibility, observedVisibility, "Did not properly combine the visibilities");
+        String observedCreatedDate = observedMetadata.get(DefaultTimestampTransformer.CREATED_DATE_METADATA_KEY);
+        assertEquals(expectedDateTwo, observedCreatedDate, "Did not choose the most recent of the two created dates");
     }
 
     private void assertSerialization(AnnotationSource expected, Iterator<Map.Entry<Key,Value>> results) throws InvalidProtocolBufferException {
