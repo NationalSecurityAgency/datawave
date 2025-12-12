@@ -184,8 +184,8 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
             String plannedScript;
             if (plans.isEmpty()) {
                 plannedScript = initialPlan;
-            } else if (plans.size() == 1 && plans.iterator().next().equals(initialPlan)) {
-                plannedScript = initialPlan;
+            } else if (plans.size() == 1 && (plans.iterator().next().equals(initialPlan) || subPlanGenerators.size() == 1)) {
+                plannedScript = plans.iterator().next();
             } else {
                 StringBuilder sb = new StringBuilder();
                 sb.append("((plan = 'base') && (").append(initialPlan).append("))");
