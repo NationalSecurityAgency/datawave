@@ -20,10 +20,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-annotation-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <exclusions>
                 <exclusion>
@@ -44,6 +40,10 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-annotation</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -84,13 +84,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-annotation-core</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -120,6 +113,13 @@
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-annotation</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>

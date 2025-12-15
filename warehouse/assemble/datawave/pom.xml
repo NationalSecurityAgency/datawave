@@ -47,11 +47,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-annotation-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common</artifactId>
         </dependency>
         <dependency>
@@ -130,6 +125,11 @@
             <artifactId>datawave-query-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-annotation</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-annotations</artifactId>
             <version>${project.version}</version>
@@ -163,6 +163,10 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -712,12 +716,12 @@
                                             <include>${project.groupId}:datawave-data-dictionary-core</include>
                                             <include>${project.groupId}:datawave-edge-dictionary-core</include>
                                             <include>${project.groupId}:datawave-edge-model-configuration-core</include>
-                                            <include>${project.groupId}:datawave-annotation-core</include>
                                             <include>${project.groupId}:datawave-ingest-annotation</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>${project.groupId}:datawave-ingest-ssdeep</include>
                                             <include>${project.groupId}:datawave-keyword-common</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-annotation</include>
                                             <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>

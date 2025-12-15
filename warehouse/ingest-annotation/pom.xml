@@ -12,11 +12,6 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-annotation-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -35,9 +30,18 @@
             <artifactId>datawave-ingest-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-annotation</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
