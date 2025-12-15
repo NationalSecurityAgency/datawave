@@ -81,7 +81,7 @@
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
+        <version.datawave.query-metric-api>4.1.2</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
