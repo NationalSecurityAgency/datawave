@@ -226,7 +226,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 } catch (Exception ex) {
                     log.error("An unexpected exception occurred. Exiting", ex);
                     running = false;
-                    Thread.currentThread().interrupt();
                 }
             }
         } finally {
@@ -576,10 +575,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 if (fe != null && fe.isMoved()) {
                     entries.add(fe);
                 }
-            } catch (InterruptedException ex) {
-                ioex = new IOException("Failure during move", ex.getCause());
-                Thread.currentThread().interrupt();
-            } catch (ExecutionException ex) {
+            } catch (InterruptedException | ExecutionException ex) {
                 ioex = new IOException("Failure during move", ex.getCause());
             }
         }

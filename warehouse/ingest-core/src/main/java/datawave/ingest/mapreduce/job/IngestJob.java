@@ -422,7 +422,6 @@ public class IngestJob implements Tool {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
                     // do nothing
                 }
             }

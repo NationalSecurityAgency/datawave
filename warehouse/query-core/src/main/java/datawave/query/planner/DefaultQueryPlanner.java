@@ -2688,10 +2688,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (settingFuture.isDone()) {
             try {
                 return settingFuture.get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e.getCause());
-            } catch (ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
         } else {

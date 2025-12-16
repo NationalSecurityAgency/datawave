@@ -29,7 +29,6 @@ public class ThreadUtil {
             executor.awaitTermination(timeToWait, unit);
             return true;
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             logger.warn("Closed thread pool but not all threads completed successfully.");
             return false;
         }

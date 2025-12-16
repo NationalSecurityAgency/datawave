@@ -153,7 +153,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                             log.debug("{}: Got null result", Thread.currentThread().getName());
                         }
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                         // if this was on purpose, then just log and the loop will naturally exit
                         if (interrupted) {
                             log.warn("QueryLogic thread interrupted", e);
@@ -489,7 +488,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             try {
                 holder.join();
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
                 log.error("Error joining query logic thread", e);
                 throw new RuntimeException("Error joining query logic thread", e);
             }

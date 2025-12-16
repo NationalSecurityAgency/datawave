@@ -366,7 +366,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                     currentEntry = resultQueue.poll(getPollTime(), TimeUnit.MILLISECONDS);
 
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                     log.error(e);
                     throw new RuntimeException(e);
                 }
@@ -399,10 +398,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         Future future = myExecutor.submit(this);
         try {
             future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
@@ -438,7 +434,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 }
                 prevDay = null;
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
                 return 0;
             }
         }

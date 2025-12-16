@@ -78,10 +78,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
         List<InputSplit> inputSplits = Lists.newArrayList();
         try {
             inputSplits = computeSplitPoints(job, tableName, ranges);
-        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
-            throw new IOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException | InterruptedException e) {
             throw new IOException(e);
         }
 

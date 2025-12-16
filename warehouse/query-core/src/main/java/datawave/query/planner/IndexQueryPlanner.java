@@ -43,10 +43,7 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
         if (null == cfg) {
             try {
                 cfg = settingFuture.get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
         }

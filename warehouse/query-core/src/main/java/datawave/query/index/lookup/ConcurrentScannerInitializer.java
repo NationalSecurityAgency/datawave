@@ -74,10 +74,7 @@ public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
                     if (newStream != null) {
                         streams.add(newStream);
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    sawException = (Exception) e.getCause();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     sawException = (Exception) e.getCause();
                 }
 
@@ -86,7 +83,6 @@ public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
                 }
             }
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } finally {
             todo.clear();

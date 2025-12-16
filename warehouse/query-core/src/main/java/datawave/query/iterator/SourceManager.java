@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -28,7 +27,7 @@ import com.google.common.collect.Lists;
 public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     private static final Logger log = Logger.getLogger(SourceManager.class);
     protected volatile int sources = 0;
-    protected AtomicInteger deepCopiesCalled = new AtomicInteger(0);
+    protected volatile int deepCopiesCalled = 0;
 
     protected long initialSize = 0;
     protected long createdSize = 0;
@@ -231,7 +230,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
      * translate to realistic performance benefits.
      */
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
-        deepCopiesCalled.incrementAndGet();
+        deepCopiesCalled++;
         if (initialSize > 0) {
             Queue<SourceManager> queue = sourceQueue;
             SourceManager nextSource = null;

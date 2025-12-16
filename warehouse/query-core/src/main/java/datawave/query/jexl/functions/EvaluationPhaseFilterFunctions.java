@@ -54,8 +54,6 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static final String CASE_INSENSITIVE = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
 
-    public static final Object LOCK = new Object();
-
     private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
 
     public static boolean occurrence(Iterable<?> fieldValues, String operator, int count) {
@@ -1553,7 +1551,7 @@ public class EvaluationPhaseFilterFunctions {
      *             if the value failed to be parsed using the supplied format
      */
     public static long getTime(Object value, DateFormat format) throws ParseException {
-        synchronized (LOCK) {
+        synchronized (format) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
     }
