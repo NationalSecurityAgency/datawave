@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -35,6 +37,10 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
 
     @XmlElement(name = "language")
     private String language = null;
+
+    @XmlElement(name = "metadata")
+    @XmlJavaTypeAdapter(StringMapAdapter.class)
+    private Map<String,String> metadata = null;
 
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
@@ -66,6 +72,16 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     @Override
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    @Override
+    public void setMetadata(Map<String,String> metadata) {
+        this.metadata = metadata;
+    }
+
+    @Override
+    public Map<String,String> getMetadata() {
+        return metadata;
     }
 
     public List<DefaultTagCloudEntry> getTags() {
@@ -111,6 +127,10 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                 output.writeString(2, message.language, false);
             }
 
+            if (message.metadata != null) {
+                output.writeObject(3, message.metadata, MapSchema.SCHEMA, false);
+            }
+
             if (message.tags != null) {
                 Schema<DefaultTagCloudEntry> schema = null;
                 for (DefaultTagCloudEntry field : message.tags) {
@@ -118,7 +138,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                         if (schema == null) {
                             schema = field.cachedSchema();
                         }
-                        output.writeObject(3, field, schema, true);
+                        output.writeObject(4, field, schema, true);
                     }
                 }
             }
@@ -137,6 +157,10 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                         message.language = input.readString();
                         break;
                     case 3:
+                        message.metadata = new HashMap<>();
+                        input.mergeObject(message.metadata, MapSchema.SCHEMA);
+                        break;
+                    case 4:
                         if (message.tags == null)
                             message.tags = new ArrayList<>();
                         if (null == schema) {
@@ -160,6 +184,8 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                 case 2:
                     return "language";
                 case 3:
+                    return "metadata";
+                case 4:
                     return "tags";
                 default:
                     return null;
@@ -175,7 +201,29 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
         {
             fieldMap.put("markings", 1);
             fieldMap.put("language", 2);
-            fieldMap.put("tags", 3);
+            fieldMap.put("metadata", 3);
+            fieldMap.put("tags", 4);
         }
     };
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof DefaultTagCloud)) {
+            return false;
+        }
+
+        DefaultTagCloud otherCloud = (DefaultTagCloud) other;
+        return Objects.equals(this.markings, otherCloud.markings) && Objects.equals(this.language, otherCloud.language)
+                        && Objects.equals(this.metadata, otherCloud.metadata) && this.tags.size() == otherCloud.tags.size()
+                        && new HashSet<>(this.tags).containsAll(otherCloud.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(markings, language, metadata, tags);
+    }
 }

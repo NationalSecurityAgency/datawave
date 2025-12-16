@@ -11,8 +11,10 @@
     <bean id="AnnotationManager" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerBean"/>
 
     <bean id="AnnotationManagerConfig" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerConfig">
-        <property name="tableName" value="annotations"/>
+        <property name="annotationTableName" value="annotation"/>
+        <property name="annotationSourceTableName" value="annotationSource"/>
         <property name="connPoolName" value="WAREHOUSE" />
+        <property name="enableInternalIdLookup" value="true" />
         <property name="lookupUUIDQueryLogic">
             <bean scope="prototype" parent="BaseEventQuery">
                 <property name="auditType" value="NONE" />
@@ -27,6 +29,12 @@
         </property>
         <property name="lookupUUIDServiceConfig">
             <bean class="datawave.webservice.annotation.LookupUUIDServiceConfig"/>
+        </property>
+        <property name="visibilityTransformer">
+            <bean class="datawave.annotation.data.transform.DefaultVisibilityTransformer"/>
+        </property>
+        <property name="timestampTransformer">
+            <bean class="datawave.annotation.data.transform.DefaultTimestampTransformer"/>
         </property>
     </bean>
 </beans>

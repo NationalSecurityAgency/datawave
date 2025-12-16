@@ -115,12 +115,12 @@ public class Cardinality extends Attribute<Cardinality> {
                 return -1;
             }
         } else if (this.isMetadataSet()) {
-            byte[] cvBytes = this.getColumnVisibility().getExpression();
+            byte[] cvBytes = this.getColumnVisibilityBytes();
             if (null == cvBytes) {
                 cvBytes = Constants.EMPTY_BYTES;
             }
 
-            byte[] otherCVBytes = other.getColumnVisibility().getExpression();
+            byte[] otherCVBytes = other.getColumnVisibilityBytes();
             if (null == otherCVBytes) {
                 otherCVBytes = Constants.EMPTY_BYTES;
             }

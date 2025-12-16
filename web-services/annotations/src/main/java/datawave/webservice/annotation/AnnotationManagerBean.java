@@ -1,5 +1,7 @@
 package datawave.webservice.annotation;
 
+import static datawave.annotation.util.v1.AnnotationUtils.injectAnnotationSource;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +36,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +44,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.Validator;
-import datawave.annotation.util.v1.AnnotationUtils;
+import datawave.annotation.util.v1.AnnotationJsonUtils;
 import datawave.annotation.util.v1.AnnotationValidators;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -89,6 +93,10 @@ public class AnnotationManagerBean implements AnnotationManager {
     private AccumuloClient client;
     private LookupUUIDService lookupUUIDService;
     private AnnotationDataAccess annotationDataAccess;
+
+    // Per-request, cache lookups for unique analytic source hashes so we don't do them more than once.
+    // TODO: make this a proper cross-request cache?
+    private final Map<String,Optional<AnnotationSource>> retrievedSourcesCache = new HashMap<>();
 
     @VisibleForTesting
     public void setEJBContext(EJBContext ctx) {
@@ -166,9 +174,32 @@ public class AnnotationManagerBean implements AnnotationManager {
             final AccumuloClient client = initializeAccumuloClient();
             final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getVisibilityTransformer(),
                             config.getTimestampTransformer());
-            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getTableName(), annotationSerializer);
+            final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(config.getVisibilityTransformer(),
+                            config.getTimestampTransformer());
+            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationTableName(), config.getAnnotationSourceTableName(),
+                            annotationSerializer, annotationSourceSerializer);
         }
         return annotationDataAccess;
+    }
+
+    @GET
+    @Path("/source/{analyticHash}")
+    @Produces("application/json")
+    @Override
+    public Response getAnnotationSource(@PathParam("analyticHash") String analyticHash) {
+        try {
+            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            Optional<AnnotationSource> results = annotationDataAccess.getAnnotationSource(analyticHash);
+            if (results.isEmpty()) {
+                return jsonNotFound("No annotation source found for analyticHash: " + analyticHash);
+            }
+            return jsonOk(results.get());
+        } catch (Exception e) {
+            final String message = String.format("Internal error fetching annotation source: %s", e.getMessage());
+            log.error(message, e);
+            return jsonError(message);
+        }
+
     }
 
     @GET
@@ -218,7 +249,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             for (Metadata md : metadata) {
                 final List<Annotation> annotations = annotationDataAccess.getAnnotations(md.getRow(), md.getDataType(), md.getInternalId());
                 if (!annotations.isEmpty()) {
-                    results.addAll(annotations);
+                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(annotations);
+                    results.addAll(annotationsWithSources);
                 }
             }
             if (results.isEmpty()) {
@@ -250,7 +282,8 @@ public class AnnotationManagerBean implements AnnotationManager {
                 final List<Annotation> annotations = annotationDataAccess.getAnnotationsForType(md.getRow(), md.getDataType(), md.getInternalId(),
                                 annotationType);
                 if (!annotations.isEmpty()) {
-                    results.addAll(annotations);
+                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(annotations);
+                    results.addAll(annotationsWithSources);
                 }
             }
             if (results.isEmpty()) {
@@ -279,7 +312,10 @@ public class AnnotationManagerBean implements AnnotationManager {
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
                 final Optional<Annotation> annotations = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
-                annotations.ifPresent(results::add);
+                if (annotations.isPresent()) {
+                    Annotation annotationWithSource = lookupAndInjectAnnotationSource(annotations.get());
+                    results.add(annotationWithSource);
+                }
             }
             if (results.isEmpty()) {
                 return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
@@ -299,7 +335,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response addAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, String body) {
         try {
-            final Annotation rawAnnotation = AnnotationUtils.annotationFromJson(body);
+            final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
             final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
             final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
             if (!validationState.isValid()) {
@@ -362,7 +398,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response updateAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     String body) {
         try {
-            final Annotation rawAnnotation = AnnotationUtils.annotationFromJson(body);
+            final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
             final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
             final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
             if (!validationState.isValid()) {
@@ -417,11 +453,11 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     @GET
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentId}")
+    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentHash}")
     @Produces("application/json")
     @Override
     public Response getAnnotationSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
-                    @PathParam("segmentId") String segmentId) {
+                    @PathParam("segmentHash") String segmentHash) {
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
             if (metadata.isEmpty()) {
@@ -436,7 +472,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (annotationResults.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentId);
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentHash);
             }
 
             final Map<Metadata,Collection<Segment>> results = new HashMap<>();
@@ -444,7 +480,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 // now select only the segments that were requested.
                 List<Segment> matchingSegments = new ArrayList<>();
                 for (Segment s : entry.getValue().getSegmentsList()) {
-                    if (s.getSegmentId().equals(segmentId)) {
+                    if (s.getSegmentHash().equals(segmentHash)) {
                         matchingSegments.add(s);
                     }
                 }
@@ -454,7 +490,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (results.isEmpty()) {
-                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentId);
+                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentHash);
             }
             return jsonOk(results);
         } catch (QueryException e) {
@@ -472,7 +508,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response addSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId, String body) {
         try {
-            Segment segment = AnnotationUtils.segmentFromJson(body);
+            Segment segment = AnnotationJsonUtils.segmentFromJson(body);
 
             final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
             if (metadataList.isEmpty()) {
@@ -489,7 +525,7 @@ public class AnnotationManagerBean implements AnnotationManager {
 
             final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
             annotationDataAccess.addSegment(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(), annotationId, segment);
-            return jsonOk(segment.getSegmentId());
+            return jsonOk(segment.getSegmentHash());
         } catch (InvalidProtocolBufferException e) {
             final String message = String.format("Invalid annotation json: %s", e.getMessage());
             log.error(message, e);
@@ -502,13 +538,13 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     @PUT
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentId}")
+    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentHash}")
     @Consumes("application/json")
     @Produces("application/json")
     @RolesAllowed({"AnnotationWriter"})
     @Override
     public Response updateSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
-                    @PathParam("segmentId") String segmentId, String body) {
+                    @PathParam("segmentHash") String segmentHash, String body) {
         // TODO: determine update semantics.
         return jsonError("Not implemented");
     }
@@ -526,13 +562,67 @@ public class AnnotationManagerBean implements AnnotationManager {
      *             if the id is malformed.
      */
     private List<Metadata> lookupDocumentIdentifier(String idType, String id) throws QueryException {
+        // If the idType is RECORD_ID or DOCUMENT, treat the id provided as an internal id and perform a direct lookup
+        // against the annotations table, if that's enabled.
         if (idType.equals("DOCUMENT") || idType.equals("RECORD_ID")) {
-            // If the idType is RECORD_ID or DOCUMENT treat the id provided is an internal id.
+            if (!config.isEnableInternalIdLookup()) {
+                final String message = String.format("Internal identifier lookup is disabled for '%s:%s' please use a valid document id type.", idType, id);
+                throw new QueryException(message);
+            }
+
             return parseDocumentIdentifier(id);
+        }
+
+        // Otherwise, use the lookup uuid service to perform a lookup to find the internal id in the shard table.
+        final LookupUUIDService lookup = initializeLookupUUIDService();
+        return lookup.executeLookupUUIDQuery(idType, id);
+    }
+
+    /**
+     * Given a list of annotations, retrieve the annotation source information that is referenced by their analyticHash. If an analyticHash is not found, we
+     * simply return the annotation without the source data injected. Currently, no errors are logged.
+     *
+     * @param annotations
+     *            the annotations to inject sources into
+     * @return return annotations with sources injected where possible.
+     */
+    private List<Annotation> lookupAndInjectAnnotationSources(List<Annotation> annotations) {
+        final List<Annotation> results = new ArrayList<>();
+        for (Annotation a : annotations) {
+            results.add(lookupAndInjectAnnotationSource(a));
+        }
+        return results;
+    }
+
+    /**
+     * Given an annotation, retrieve the annotation source information that is referenced by their analyticHash. Employs a per-request hash so we don't look up
+     * a single source multiple times.
+     */
+    private Annotation lookupAndInjectAnnotationSource(Annotation a) {
+        // no need to inject a source if we already have one.
+        if (a.hasSource()) {
+            log.warn("Strange, this annotation already has a source. Annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId(), a.getAnalyticSourceHash());
+            return a;
+        }
+
+        if (StringUtils.isBlank(a.getAnalyticSourceHash())) {
+            log.warn("Strange, this annotation does not have an analytic hash. Annotation {}/{}/{} {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId());
+            return a;
+        }
+
+        // do the deed and cache the results.
+        final String analyticHash = a.getAnalyticSourceHash();
+        final Optional<AnnotationSource> result = retrievedSourcesCache.computeIfAbsent(analyticHash,
+                        key -> annotationDataAccess.getAnnotationSource(analyticHash));
+
+        if (result.isPresent()) {
+            return injectAnnotationSource(a, result.get());
         } else {
-            // Otherwise, perform a lookup to find the internal id.
-            final LookupUUIDService lookup = initializeLookupUUIDService();
-            return lookup.executeLookupUUIDQuery(idType, id);
+            log.debug("No analytic source found for annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId(), a.getAnalyticSourceHash());
+            return a;
         }
     }
 
@@ -556,7 +646,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     private static Response jsonNotFound(String objectType, String idType, String id, String internalId, String annotationType, String annotationId,
-                    String segmentId) {
+                    String segmentHash) {
         String message = id.contains(internalId) ? String.format("No %s found for identifier: '%s:%s'", objectType, idType, id)
                         : String.format("No %s found for identifier '%s:%s', internalId: '%s'", objectType, idType, id, internalId);
 
@@ -566,8 +656,8 @@ public class AnnotationManagerBean implements AnnotationManager {
         if (!StringUtils.isEmpty(annotationId)) {
             message += String.format(", annotationId '%s'", annotationId);
         }
-        if (!StringUtils.isEmpty(segmentId)) {
-            message += String.format(", segmentId '%s'", segmentId);
+        if (!StringUtils.isEmpty(segmentHash)) {
+            message += String.format(", segmentHash '%s'", segmentHash);
         }
 
         return jsonNotFound(message);
@@ -586,5 +676,10 @@ public class AnnotationManagerBean implements AnnotationManager {
     private static Response jsonOk(Object responseObject) {
         // TODO: do we want to return more? (e.g., include fields like internal id, etc..
         return Response.ok(responseObject, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8")).build();
+    }
+
+    @VisibleForTesting
+    protected AnnotationManagerConfig getConfig() {
+        return config;
     }
 }
