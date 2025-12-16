@@ -28,6 +28,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.ListType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.util.TableName;
 
 /**
@@ -106,6 +107,8 @@ public class ShapesIngest {
     private static final LcNoDiacriticsListType list = new LcNoDiacriticsListType();
 
     private static final LongCombiner.VarLenEncoder encoder = new LongCombiner.VarLenEncoder();
+
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     protected static String normalizerForField(String field) {
         switch (field) {
@@ -621,6 +624,10 @@ public class ShapesIngest {
             m.put("ns", "20240101_1", new Value());
             bw.addMutation(m);
         }
+
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL");
+        ingestUtil.write(client, auths);
     }
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, RangeType type, String datatype, String uid)

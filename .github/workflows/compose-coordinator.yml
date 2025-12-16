@@ -2,12 +2,12 @@ name: Compose Coordinator
 
 on:
   push:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
     branches:
       - 'integration'
       - 'release/version*'
   pull_request:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
   merge_group:
   workflow_dispatch:
 
@@ -31,7 +31,7 @@ jobs:
         run: |
              echo "compose-tests: ${{ needs.call-compose-tests.result }}"
              echo "compose-tests-with-snapshots: ${{ needs.call-compose-tests-with-snapshots.result }}"
-      - name: Check a condition and fail if not met
+      - name: Checks that at least one of the compose jobs ran successfully
         if: ${{ !contains(needs.*.result, 'success') }}
         uses: actions/github-script@v6
         with:

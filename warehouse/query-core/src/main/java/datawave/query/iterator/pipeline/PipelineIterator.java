@@ -298,6 +298,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         for (Pair<Key,String> h : e.getYieldKeyHistory()) {
             log.debug(prefix + " yieldKeyHistory-" + n++ + ": " + h);
         }
+        log.trace(prefix, e);
     }
 
     /**

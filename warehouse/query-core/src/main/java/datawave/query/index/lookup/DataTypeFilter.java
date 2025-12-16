@@ -15,6 +15,8 @@ import org.apache.hadoop.io.Text;
 
 import com.google.common.collect.ImmutableMap;
 
+import datawave.core.common.util.TypeFilter;
+
 // column qualifier filter
 public class DataTypeFilter extends Filter {
     public static final String TYPES = "dtf.types";
@@ -33,7 +35,9 @@ public class DataTypeFilter extends Filter {
         allowed = new TreeSet<>();
         opts = ImmutableMap.copyOf(options);
         if (opts.containsKey(TYPES)) {
-            for (String type : opts.get(TYPES).split(",")) {
+            String option = opts.get(TYPES);
+            TypeFilter filter = TypeFilter.fromString(option);
+            for (String type : filter.getElements()) {
                 if (!type.isEmpty()) {
                     Text typeT = new Text(type);
                     allowed.add(new ArrayByteSequence(typeT.getBytes(), 0, typeT.getLength()));
