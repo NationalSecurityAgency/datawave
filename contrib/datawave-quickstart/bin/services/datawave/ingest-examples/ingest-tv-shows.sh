@@ -81,7 +81,7 @@ function configure() {
    [ -z "${TV_SHOW_LIST}" ] && error "TV show list can not be empty" && exit 1
    [ -z "${OUTPUT_STAGING_FILE}" ] && error "Output staging file path can not be empty" && exit 1
 
-   touch "${OUTPUT_STAGING_FILE}" || fatal "Can't access ${OUTPUT_STAGING_FILE}"
+   touch "${OUTPUT_STAGING_FILE}" || ( fatal "Can't access ${OUTPUT_STAGING_FILE}" && exit 1 )
 }
 
 function trim() {

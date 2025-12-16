@@ -43,6 +43,7 @@ public class ColumnBasedHandlerTestUtil {
     public static final Text shardTableName = new Text(TableName.SHARD);
     public static final Text shardIndexTableName = new Text(TableName.SHARD_INDEX);
     public static final Text shardReverseIndexTableName = new Text(TableName.SHARD_RINDEX);
+    public static final Text shardDayIndexTableName = new Text(TableName.SHARD_DAY_INDEX);
     public static final Text edgeTableName = new Text("edge");
     public static final String NB = "\u0000";
 
@@ -187,6 +188,7 @@ public class ColumnBasedHandlerTestUtil {
         Set<Key> shardKeys = new HashSet<>();
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
+        Set<Key> shardDayIndexKeys = new HashSet<>();
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
 
@@ -213,6 +215,8 @@ public class ColumnBasedHandlerTestUtil {
                 shardIndexKeys.add(bik.getKey());
             } else if (bik.getTableName().equals(shardReverseIndexTableName)) {
                 shardReverseIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardDayIndexTableName)) {
+                shardDayIndexKeys.add(bik.getKey());
             } else {
                 Assert.fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
             }

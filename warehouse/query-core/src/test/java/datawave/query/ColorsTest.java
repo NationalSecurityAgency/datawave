@@ -58,12 +58,14 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.ColorsIngest;
+import datawave.query.util.TestIndexTableNames;
 import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -73,7 +75,8 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  * <p>
  * Hit Term assertions are supported. Most queries should assert total documents returned and shards seen in the results.
  */
-public abstract class ColorsTest {
+@RunWith(Arquillian.class)
+public class ColorsTest {
 
     private static final Logger log = LoggerFactory.getLogger(ColorsTest.class);
     protected Authorizations auths = new Authorizations("ALL");
@@ -88,6 +91,9 @@ public abstract class ColorsTest {
 
     protected KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+
+    // this two client setup is a little odd, but it allows us to create tables once
+    protected static AccumuloClient client = null;
     private AccumuloClient clientForTest;
 
     public void setClientForTest(AccumuloClient client) {
@@ -109,51 +115,7 @@ public abstract class ColorsTest {
 
     private final HitTermAssertions assertHitTerms = new HitTermAssertions();
 
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends ColorsTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(ShardRange.class.getName());
-            client = new InMemoryAccumuloClient("", i);
-
-            ColorsIngest.writeData(client, ColorsIngest.RangeType.SHARD);
-
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void beforeEach() {
-            setClientForTest(client);
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends ColorsTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(DocumentRange.class.getName());
-            client = new InMemoryAccumuloClient("", i);
-
-            ColorsIngest.writeData(client, ColorsIngest.RangeType.DOCUMENT);
-
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void beforeEach() {
-            setClientForTest(client);
-        }
-    }
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -170,10 +132,27 @@ public abstract class ColorsTest {
         //  @formatter:on
     }
 
+    @BeforeClass
+    public static void setUp() throws Exception {
+        InMemoryInstance i = new InMemoryInstance(ColorsTest.class.getName());
+        client = new InMemoryAccumuloClient("", i);
+
+        ColorsIngest.writeData(client);
+
+        Authorizations auths = new Authorizations("ALL");
+
+        ingestUtil.write(client, auths);
+
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+    }
+
     @Before
     public void setup() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         resetState();
+        setClientForTest(client);
 
         URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
         Preconditions.checkNotNull(hadoopConfig);
@@ -224,16 +203,6 @@ public abstract class ColorsTest {
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
-    }
-
-    protected void runTestQuery(String query, Map<String,String> extraParameters, Set<String> expected) throws Exception {
-        withQuery(query);
-        withParameters(extraParameters);
-        withExpected(expected);
-        planQuery();
-        executeQuery();
-        // assertUuids();
-
     }
 
     public ColorsTest withQuery(String query) {
@@ -332,10 +301,55 @@ public abstract class ColorsTest {
         return this;
     }
 
+    /**
+     * Supports running the same query against multiple types of index tables
+     *
+     * @return this class
+     * @throws Exception
+     *             if something goes wrong
+     */
+    public ColorsTest planAndExecuteQueryAgainstMultipleIndices() throws Exception {
+        for (String indexTableName : TestIndexTableNames.names()) {
+            logic.setIndexTableName(indexTableName);
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    logic.setUseTruncatedIndex(true);
+                    break;
+                case TestIndexTableNames.SHARDED_DAY_INDEX:
+                case TestIndexTableNames.SHARDED_YEAR_INDEX:
+                    logic.setUseShardedIndex(true);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name " + indexTableName);
+            }
+
+            log.debug("=== using index: {} ===", indexTableName);
+            planAndExecuteQuery();
+
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    logic.setUseTruncatedIndex(false);
+                    break;
+                case TestIndexTableNames.SHARDED_DAY_INDEX:
+                case TestIndexTableNames.SHARDED_YEAR_INDEX:
+                    logic.setUseShardedIndex(false);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name " + indexTableName);
+            }
+        }
+        return this;
+    }
+
     public ColorsTest planAndExecuteQuery() throws Exception {
         planQuery();
         executeQuery();
-        // assertUuids();
         assertExpectedCount();
         assertExpectedShardsAndDays();
         assertHitTerms();
@@ -495,7 +509,7 @@ public abstract class ColorsTest {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
         withFullExpectedCount();
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -503,7 +517,7 @@ public abstract class ColorsTest {
         withQuery("COLOR == 'yellow'");
         withRequiredAllOf("COLOR:yellow");
         withFullExpectedCount();
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -511,7 +525,7 @@ public abstract class ColorsTest {
         withQuery("COLOR == 'blue'");
         withRequiredAllOf("COLOR:blue");
         withFullExpectedCount();
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -519,19 +533,19 @@ public abstract class ColorsTest {
         withQuery("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
         withOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
         withExpectedCount(3 * getTotalEventCount());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtFieldIndex() throws Exception {
-        withQuery("COLOR == 'red' && !COLOR == 'red'");
-        planAndExecuteQuery();
+        withQuery("COLOR == 'red' && !(COLOR == 'red')");
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtEvaluation() throws Exception {
         withQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -542,7 +556,7 @@ public abstract class ColorsTest {
         withExpectedCount(ColorsIngest.getNumShards());
         withExpectedDays("20250301");
         withExpectedShards("20250301", ColorsIngest.getNumShards());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -553,7 +567,7 @@ public abstract class ColorsTest {
         withExpectedCount(ColorsIngest.getNewShards());
         withExpectedDays("20250331");
         withExpectedShards("20250331", ColorsIngest.getNewShards());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -565,7 +579,7 @@ public abstract class ColorsTest {
         withExpectedDays("20250326", "20250327");
         withExpectedShards("20250326", ColorsIngest.getNumShards());
         withExpectedShards("20250327", ColorsIngest.getNewShards());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     // TODO: unique

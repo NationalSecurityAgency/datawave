@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -30,6 +29,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.NumberListType;
 import datawave.data.type.NumberType;
 import datawave.data.type.PointType;
+import datawave.next.stats.StatUtil;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.util.TypeMetadata;
@@ -84,42 +84,42 @@ public class DocumentTest {
     public void testDocumentWithLcType() {
         Attribute<?> attr = createAttribute("LC", "value");
         d.put("LC", attr);
-        roundTrip(MAX_ITERATIONS, 39);
+        roundTrip(MAX_ITERATIONS, 32);
     }
 
     @Test
     public void testDocumentWithLcNoDiacriticsType() {
         Attribute<?> attr = createAttribute("LC_ND", "value");
         d.put("LC_ND", attr);
-        roundTrip(MAX_ITERATIONS, 42);
+        roundTrip(MAX_ITERATIONS, 35);
     }
 
     @Test
     public void testDocumentWithHexType() {
         Attribute<?> attr = createAttribute("HEX", "a1b2c3");
         d.put("HEX", attr);
-        roundTrip(MAX_ITERATIONS, 47);
+        roundTrip(MAX_ITERATIONS, 40);
     }
 
     @Test
     public void testDocumentWithNumberType() {
         Attribute<?> attr = createAttribute("NUM", "12");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 43);
+        roundTrip(MAX_ITERATIONS, 36);
     }
 
     @Test
     public void testDocumentWithNumberTypeNormalizedValue() {
         Attribute<?> attr = createAttribute("NUM", "+bE1.2");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 43);
+        roundTrip(MAX_ITERATIONS, 36);
     }
 
     @Test
     public void testDocumentWithNumberTypeLargeValue() {
         Attribute<?> attr = createAttribute("NUM", "12456789.987654321");
         d.put("NUM", attr);
-        roundTrip(MAX_ITERATIONS, 74);
+        roundTrip(MAX_ITERATIONS, 67);
     }
 
     @Test
@@ -226,15 +226,14 @@ public class DocumentTest {
      */
     protected void roundTrip(String field, int documentSize, int maxIterations, int serializedLength) {
         long readTime = 0;
-        long writeTime = 0;
         Document d = createDocumentForField(field, documentSize);
 
         Entry<Key,Value> entry = null;
-        writeTime = System.nanoTime();
+        long writeTime = System.nanoTime();
         for (int i = 0; i < maxIterations; i++) {
             entry = serialize(d);
         }
-        writeTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - writeTime);
+        writeTime = System.nanoTime() - writeTime;
         assertNotNull(entry);
 
         if (serializedLength > 0) {
@@ -250,9 +249,7 @@ public class DocumentTest {
             Document d2 = result.getValue();
             assertEquals(d, d2);
         }
-        readTime = TimeUnit.NANOSECONDS.toMillis(readTime);
-
-        log.info("{} read: {} write: {}", field, readTime, writeTime);
+        log.info("{} read: {} write: {}", field, StatUtil.formatNanos(readTime), StatUtil.formatNanos(writeTime));
     }
 
     protected Document createDocumentForField(String field, int size) {

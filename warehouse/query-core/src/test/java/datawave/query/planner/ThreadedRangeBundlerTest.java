@@ -35,10 +35,6 @@ public class ThreadedRangeBundlerTest {
         assertNull(bundler.getSettings());
         assertNull(bundler.getQueryTree());
         assertNull(bundler.getQueryPlanComparators());
-        assertEquals(0, bundler.getNumRangesToBuffer());
-        assertEquals(0L, bundler.getRangeBufferTimeoutMillis());
-        assertEquals(100L, bundler.getRangeBufferPollMillis());
-        assertEquals(50L, bundler.getMaxRangeWaitMillis());
     }
 
     @Test
@@ -56,11 +52,7 @@ public class ThreadedRangeBundlerTest {
                         .setMaxRanges(100)
                         .setSettings(settings)
                         .setQueryTree(queryTree)
-                        .setMaxRangeWaitMillis(1)
                         .setQueryPlanComparators(queryPlanComparators)
-                        .setNumRangesToBuffer(1)
-                        .setRangeBufferTimeoutMillis(10)
-                        .setRangeBufferPollMillis(5)
                         .build();
         // @formatter:on
 
@@ -70,10 +62,6 @@ public class ThreadedRangeBundlerTest {
         assertEquals(settings, bundler.getSettings());
         assertEquals(queryTree, bundler.getQueryTree());
         assertEquals(queryPlanComparators, bundler.getQueryPlanComparators());
-        assertEquals(1, bundler.getNumRangesToBuffer());
-        assertEquals(10L, bundler.getRangeBufferTimeoutMillis());
-        assertEquals(5L, bundler.getRangeBufferPollMillis());
-        assertEquals(1L, bundler.getMaxRangeWaitMillis());
     }
 
     @Test

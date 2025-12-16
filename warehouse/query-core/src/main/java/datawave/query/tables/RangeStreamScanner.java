@@ -1,9 +1,7 @@
 package datawave.query.tables;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import static datawave.query.util.ValueSerializerType.KRYO;
+
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -29,7 +27,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.PeekingIterator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -46,6 +43,7 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.index.lookup.ShardEquality;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.query.util.ValueSerializer;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
@@ -90,6 +88,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
     protected ScannerFactory scannerFactory;
 
+    // Not thread-safe by default
+    protected ValueSerializer<IndexInfo> valueSerializer;
+
     @Override
     protected String serviceName() {
         String id = "NoQueryId";
@@ -97,17 +98,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             id = settings.getId().toString();
         }
         return "RangeStreamScanner (" + id + ")";
-    }
-
-    public RangeStreamScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings) {
-        super(tableName, auths, delegator, maxResults, settings);
-        delegatedResourceInitializer = BatchResource.class;
-        currentQueue = Queues.newArrayDeque();
-        readLock = queueLock.readLock();
-        writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.newDirectExecutorService();
-        if (null != stats)
-            initializeTimers();
     }
 
     public RangeStreamScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
@@ -118,8 +108,13 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
         myExecutor = MoreExecutors.newDirectExecutorService();
+        valueSerializer = ValueSerializer.newSerializer(IndexInfo.class, KRYO);
         if (null != stats)
             initializeTimers();
+    }
+
+    public RangeStreamScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings) {
+        this(tableName, auths, delegator, maxResults, settings, new SessionOptions(), null);
     }
 
     public RangeStreamScanner(ScannerSession other) {
@@ -509,34 +504,13 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
     public IndexInfo readInfoFromValue(Value value) {
         try {
-            IndexInfo info = new IndexInfo();
-            info.readFields(new DataInputStream(new ByteArrayInputStream(value.get())));
+            IndexInfo info = valueSerializer.deserialize(value, IndexInfo::new);
             if (log.isTraceEnabled()) {
                 for (IndexMatch match : info.uids()) {
-                    log.trace("match is " + StringUtils.split(match.getUid(), '\u0000')[1]);
+                    log.trace("match is " + match.getUid().split("\u0000")[1]);
                 }
             }
             return info;
-        } catch (IOException e) {
-            log.error(e);
-            throw new DatawaveFatalQueryException(e);
-        }
-    }
-
-    public Value writeInfoToValue() {
-        return writeInfoToValue(new IndexInfo(-1));
-    }
-
-    public Value writeInfoToValue(IndexInfo info) {
-        try {
-            ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
-            DataOutputStream outDataStream = new DataOutputStream(outByteStream);
-            info.write(outDataStream);
-
-            outDataStream.close();
-            outByteStream.close();
-
-            return new Value(outByteStream.toByteArray());
         } catch (IOException e) {
             log.error(e);
             throw new DatawaveFatalQueryException(e);

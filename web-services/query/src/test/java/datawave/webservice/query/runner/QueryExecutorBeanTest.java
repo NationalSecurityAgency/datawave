@@ -14,6 +14,7 @@ import static org.powermock.reflect.Whitebox.setInternalState;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,10 +35,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -620,8 +621,9 @@ public class QueryExecutorBeanTest {
 
     @Test
     public void testBeginDateAfterEndDate() throws Exception {
-        final Date beginDate = new Date(2018, 1, 2);
-        final Date endDate = new Date(2018, 1, 1);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        final Date beginDate = sdf.parse("2024-01-02");
+        final Date endDate = sdf.parse("2024-01-01");
 
         final MultivaluedMap<String,String> queryParameters = createNewQueryParameterMap();
         queryParameters.remove(QueryParameters.QUERY_BEGIN);
@@ -774,11 +776,11 @@ public class QueryExecutorBeanTest {
             Assert.assertNull(cachedRunningQuery);
             Pair<QueryLogic<?>,AccumuloClient> pair = qlCache.poll(q.getId().toString());
             Assert.assertNotNull(pair);
-            Assert.assertEquals(logic, pair.getFirst());
-            Assert.assertEquals(c, pair.getSecond());
+            Assert.assertEquals(logic, pair.getLeft());
+            Assert.assertEquals(c, pair.getRight());
 
             // Have to add these back because poll was destructive
-            qlCache.add(q.getId().toString(), principal.getShortName(), pair.getFirst(), pair.getSecond());
+            qlCache.add(q.getId().toString(), principal.getShortName(), pair.getLeft(), pair.getRight());
 
             // Call close
             bean.close(q.getId().toString());

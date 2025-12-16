@@ -30,7 +30,7 @@ public class SSDeepNGramOverlapScorerTest {
 
     @Test
     public void testCompare() {
-        SSDeepHashScorer<Set<NGramTuple>> scorer = new SSDeepNGramOverlapScorer(7, 3, 6);
+        SSDeepHashScorer<Set<NGramTuple>> scorer = new SSDeepNGramOverlapScorer(7);
         for (int i = 0; i < testData.length; i++) {
             SSDeepHash queryHash = SSDeepHash.parse(testData[i][0]);
             SSDeepHash targetHash = SSDeepHash.parse(testData[i][1]);

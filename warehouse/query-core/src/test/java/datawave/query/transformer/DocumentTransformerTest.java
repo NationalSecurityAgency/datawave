@@ -83,7 +83,7 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         EasyMock.expect(mockDeserializer.apply(entry)).andReturn(documentEntry);
         // EasyMock.expect(mockDocument.getDictionary()).andReturn(Collections.EMPTY_MAP);
         // mockDocument.debugDocumentSize(key);
-        EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.EMPTY_MAP);
+        EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.emptyMap());
         // EasyMock.expect(mockDocument.getDictionary()).andReturn(dictionary);
         // EasyMock.expect(mockNumeric.getData()).andReturn("5");
         EasyMock.expect(mockResponseFactory.getField()).andReturn(simpleField);
@@ -119,7 +119,7 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
 
         Map<String,List<String>> fieldMap = new HashMap<>();
-        List<String> fieldList = Collections.EMPTY_LIST;
+        List<String> fieldList = Collections.emptyList();
         fieldMap.put("field2", fieldList);
         Document d = new Document();
         basicExpects(d, key, entry);

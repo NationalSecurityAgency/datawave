@@ -351,7 +351,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
         log.info("Found edge definitions for " + edges.keySet().size() + " data types.");
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Data Types With Defined Edges: ");
         for (String t : edges.keySet()) {
             sb.append(t).append(" ");

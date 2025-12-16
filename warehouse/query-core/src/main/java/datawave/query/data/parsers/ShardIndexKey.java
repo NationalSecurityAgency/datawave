@@ -7,9 +7,6 @@ public class ShardIndexKey implements KeyParser {
 
     private Key key;
 
-    private ByteSequence cq;
-    private int cqSplit;
-
     private String field;
     private String value;
     private String datatype;
@@ -23,46 +20,20 @@ public class ShardIndexKey implements KeyParser {
 
     @Override
     public void clearState() {
-        this.cq = null;
-        this.cqSplit = -1;
-
         this.field = null;
         this.value = null;
         this.datatype = null;
         this.shard = null;
+
+        this.key = null;
     }
 
     @Override
     public String getDatatype() {
         if (datatype == null) {
-            if (cq == null) {
-                cq = key.getColumnQualifierData();
-                for (int i = cq.length() - 1; i > 0; i--) {
-                    if (cq.byteAt(i) == 0x00) {
-                        cqSplit = i;
-                        break;
-                    }
-                }
-            }
-            datatype = cq.subSequence(cqSplit + 1, cq.length()).toString();
+            parseColumnQualifier();
         }
         return datatype;
-    }
-
-    public String getShard() {
-        if (shard == null) {
-            if (cq == null) {
-                cq = key.getColumnQualifierData();
-                for (int i = 0; i < cq.length(); i++) {
-                    if (cq.byteAt(i) == 0x00) {
-                        cqSplit = i;
-                        break;
-                    }
-                }
-            }
-            shard = cq.subSequence(0, cqSplit).toString();
-        }
-        return shard;
     }
 
     @Override
@@ -94,5 +65,24 @@ public class ShardIndexKey implements KeyParser {
     @Override
     public Key getKey() {
         return key;
+    }
+
+    public String getShard() {
+        if (shard == null) {
+            parseColumnQualifier();
+        }
+        return shard;
+    }
+
+    private void parseColumnQualifier() {
+        ByteSequence bs = key.getColumnQualifierData();
+
+        for (int i = 0; i < bs.length(); i++) {
+            if (bs.byteAt(i) == 0x00) {
+                shard = bs.subSequence(0, i).toString();
+                datatype = bs.subSequence(i + 1, bs.length()).toString();
+                break;
+            }
+        }
     }
 }

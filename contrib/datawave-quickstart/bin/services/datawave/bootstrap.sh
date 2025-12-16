@@ -7,7 +7,7 @@
 
 # Current script dir
 
-DW_DATAWAVE_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DW_DATAWAVE_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
 # Source/repository root
 
@@ -29,8 +29,10 @@ source "${DW_DATAWAVE_SERVICE_DIR}/bootstrap-user.sh"
 
 DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
+DW_BUILD_CACHE_OPTIONS=${DW_BUILD_CACHE_OPTIONS:--Dmaven.build.cache.enabled=false}
+
 # Maven command
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipServices -DskipTests -DskipITs -Dmaven.build.cache.enabled=false clean package --builder smart -T1.0C}"
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -DskipTests -DskipITs ${DW_BUILD_CACHE_OPTIONS} clean package --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 
@@ -170,8 +172,6 @@ function setBuildPropertyOverrides() {
 
    echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
-   echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
-   echo "bulkResults.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "jboss.log.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
 
    echo "lock.file.dir=${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" >> ${BUILD_PROPERTIES_FILE}
@@ -181,8 +181,6 @@ function setBuildPropertyOverrides() {
    echo "jboss.managed.executor.service.default.max.threads=${DW_WILDFLY_EE_DEFAULT_MAX_THREADS:-48}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.cluster.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.system.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
-   echo "mapReduce.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
-   echo "bulkResults.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "EVENT_DISCARD_INTERVAL=0" >> ${BUILD_PROPERTIES_FILE}
    echo "EVENT_DISCARD_FUTURE_INTERVAL=0" >> ${BUILD_PROPERTIES_FILE}
    echo "ingest.data.types=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES},${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
@@ -256,11 +254,6 @@ function datawaveBuildSucceeded() {
 }
 
 function buildDataWave() {
-
-   if ! mavenIsInstalled ; then
-      ! mavenInstall && error "Maven install failed. Please correct" && return 1
-   fi
-
    [[ "$1" == "--verbose" ]] && local verbose=true
 
    ! setBuildPropertyOverrides && error "Aborting DataWave build" && return 1
@@ -342,6 +335,7 @@ function datawaveIsRunning() {
 }
 
 function datawaveStart() {
+    info "Starting Datawave"
     datawaveIngestStart
     datawaveWebStart
 }
@@ -370,8 +364,8 @@ function datawaveUninstall() {
 }
 
 function datawaveInstall() {
-   datawaveIngestInstall
-   datawaveWebInstall
+   datawaveIngestInstall || return 1
+   datawaveWebInstall || return 1
 }
 
 function datawavePrintenv() {

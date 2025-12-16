@@ -7,12 +7,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.security.AuthenticationManager;
 import org.jboss.security.CacheableManager;
 import org.jboss.security.JSSESecurityDomain;
-
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 
 /**
  * A producer class for generating server-security related artifacts. For one, we produce the server DN of the server that we are running inside of. We allso
@@ -21,7 +18,6 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
  * name the resource once.
  */
 @ApplicationScoped
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class SecurityDomainProducer {
     // Allow injection of JSSESecurityDomain without having to specify the JNDI name at each injection point.
     // Instead, users can simply do:

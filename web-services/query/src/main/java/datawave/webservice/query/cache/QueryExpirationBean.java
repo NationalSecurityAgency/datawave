@@ -13,10 +13,8 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
 
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.config.QueryExpirationProperties;
@@ -35,7 +33,6 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 @DependsOn({"QueryMetricsBean", "AccumuloConnectionFactoryBean"})
 @Lock(LockType.WRITE)
 // by default all methods are blocking
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryExpirationBean {
 
     private static final Logger log = Logger.getLogger(QueryExpirationBean.class);
