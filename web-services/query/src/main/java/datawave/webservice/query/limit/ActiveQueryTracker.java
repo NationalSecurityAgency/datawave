@@ -36,6 +36,12 @@ public class ActiveQueryTracker implements AutoCloseable {
     private static final String NULL_BYTE = "\0";
     private static final byte[] EMPTY_DATA = new byte[0];
 
+    private static final String DISTINCT_QUERY_LOGICS_CONTAINER_PATH = "/distinctQueryLogics";
+    private static final String SYSTEMS_CONTAINER_PATH = "/systems";
+    private static final String USERS_CONTAINER_PATH = "/users";
+    private static final String QUERY_LOGICS_CONTAINER_PATH = "/queryLogics";
+    private static final String QUERIES_CONTAINER_PATH = "/queries";
+
     private final String zookeeperConfig;
     private final long cleanUpClientInterval;
     private final Lock clientLock = new ReentrantLock();
@@ -113,12 +119,12 @@ public class ActiveQueryTracker implements AutoCloseable {
 
             Set<String> queryIds = new HashSet<>();
             // Fetch the ids of all queries submitted by the user.
-            queryIds.addAll(getQueryIds(client, "/users/" + userDn));
+            queryIds.addAll(getQueryIds(client, getUserPath(userDn)));
             // Fetch the ids of all queries submitted on the system.
-            queryIds.addAll(getQueryIds(client, "/systems/" + system));
+            queryIds.addAll(getQueryIds(client, getSystemPath(system)));
             // Fetch the ids of all queries that have related query logics.
             for (String queryLogic : queryLogics) {
-                queryIds.addAll(getQueryIds(client, "/queryLogics/" + queryLogic));
+                queryIds.addAll(getQueryIds(client, getQueryLogicPath(queryLogic)));
             }
 
             if (log.isTraceEnabled()) {
@@ -128,7 +134,7 @@ public class ActiveQueryTracker implements AutoCloseable {
             ActiveQuerySnapshot.Builder builder = ActiveQuerySnapshot.builder(userDn, system, queryLogics).withTimestamp(currentTimeMillis);
             // Fetch the metadata of each query and capture them if considered to be active.
             for (String queryId : queryIds) {
-                String queryIdPath = "/queries/" + queryId;
+                String queryIdPath = getQueryIdPath(queryId);
                 try {
                     String data = new String(client.getData().forPath(queryIdPath));
                     String[] parts = data.split(NULL_BYTE);
@@ -228,21 +234,27 @@ public class ActiveQueryTracker implements AutoCloseable {
             initClient();
 
             try {
-                String queryIdPath = "/queries/" + queryId;
+                String queryIdPath = getQueryIdPath(queryId);
                 Stat stat = client.checkExists().forPath(queryIdPath);
                 if (stat == null) {
+
+                    String userPath = getUserPath(userDn);
+                    String systemPath = getSystemPath(system);
+                    String queryLogicPath = getQueryLogicPath(queryLogic);
+
                     // Ensure that we create following container nodes.
-                    client.createContainers("/queries/");
-                    client.createContainers("/systems/" + system);
-                    client.createContainers("/users/" + userDn);
-                    client.createContainers("/queryLogics/" + queryLogic);
-                    client.createContainers("/distinctQueryLogics");
+                    client.createContainers(QUERIES_CONTAINER_PATH);
+                    client.createContainers(systemPath);
+                    client.createContainers(userPath);
+                    client.createContainers(queryLogicPath);
+                    client.createContainers(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
 
                     // Track the query logic as a distinct query logic if it isn't already.
                     try {
-                        Stat distinctQueryLogicStat = client.checkExists().forPath("/distinctQueryLogics/" + queryLogic);
+                        String distinctQueryLogicPath = getDistinctQueryLogicPath(queryLogic);
+                        Stat distinctQueryLogicStat = client.checkExists().forPath(distinctQueryLogicPath);
                         if (distinctQueryLogicStat == null) {
-                            client.create().forPath("/distinctQueryLogics/" + queryLogic);
+                            client.create().forPath(distinctQueryLogicPath);
                         }
                     } catch (KeeperException.NodeExistsException e) {
                         // Do nothing, the queryLogic was tracked on another thread.
@@ -253,9 +265,9 @@ public class ActiveQueryTracker implements AutoCloseable {
                     CuratorFramework client = createClient();
 
                     List<PersistentNode> nodes = new ArrayList<>();
-                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, "/users/" + userDn + "/" + queryId, EMPTY_DATA, false));
-                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, "/systems/" + system + "/" + queryId, EMPTY_DATA, false));
-                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, "/queryLogics/" + queryLogic + "/" + queryId, EMPTY_DATA, false));
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userPath + "/" + queryId, EMPTY_DATA, false));
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemPath + "/" + queryId, EMPTY_DATA, false));
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, queryLogicPath + "/" + queryId, EMPTY_DATA, false));
 
                     String data = userDn + NULL_BYTE + system + NULL_BYTE + queryLogic;
                     nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, queryIdPath, data.getBytes(), false));
@@ -295,9 +307,9 @@ public class ActiveQueryTracker implements AutoCloseable {
             // Initialize the client if needed.
             initClient();
             // If any query logics were tracked, return them.
-            Stat stat = client.checkExists().forPath("/distinctQueryLogics");
+            Stat stat = client.checkExists().forPath(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
             if (stat != null) {
-                return Set.copyOf(client.getChildren().forPath("/distinctQueryLogics"));
+                return Set.copyOf(client.getChildren().forPath(DISTINCT_QUERY_LOGICS_CONTAINER_PATH));
             } else {
                 // Otherwise return an empty set.
                 return Set.of();
@@ -308,6 +320,61 @@ public class ActiveQueryTracker implements AutoCloseable {
         } finally {
             clientLock.unlock();
         }
+    }
+
+    /**
+     * Return the path {@code /distinctQueryLogics/<queryLogic>}
+     *
+     * @param queryLogic
+     *            the query logic
+     * @return the path
+     */
+    private String getDistinctQueryLogicPath(String queryLogic) {
+        return DISTINCT_QUERY_LOGICS_CONTAINER_PATH + "/" + queryLogic;
+    }
+
+    /**
+     * Return the path {@code /users/<userDn>}
+     *
+     * @param userDn
+     *            the user DN
+     * @return the path
+     */
+    private String getUserPath(String userDn) {
+        return USERS_CONTAINER_PATH + "/" + userDn;
+    }
+
+    /**
+     * Return the path {@code /systems/<system>}
+     *
+     * @param system
+     *            the system
+     * @return the path
+     */
+    private String getSystemPath(String system) {
+        return SYSTEMS_CONTAINER_PATH + "/" + system;
+    }
+
+    /**
+     * Return the path {@code /queryLogics/<queryLogic>}
+     *
+     * @param queryLogic
+     *            the query logic
+     * @return the path
+     */
+    private String getQueryLogicPath(String queryLogic) {
+        return QUERY_LOGICS_CONTAINER_PATH + "/" + queryLogic;
+    }
+
+    /**
+     * Return the path {@code /queries/<queryId>}
+     *
+     * @param queryId
+     *            the query ID
+     * @return the path
+     */
+    private String getQueryIdPath(String queryId) {
+        return QUERIES_CONTAINER_PATH + "/" + queryId;
     }
 
     /**
@@ -400,6 +467,9 @@ public class ActiveQueryTracker implements AutoCloseable {
         }
     }
 
+    /**
+     * Close this {@link ActiveQueryTracker} and call {@link #cleanup()}.
+     */
     @Override
     public void close() {
         cleanup();
