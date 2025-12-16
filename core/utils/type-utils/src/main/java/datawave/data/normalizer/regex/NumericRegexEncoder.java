@@ -6,8 +6,6 @@ import java.util.regex.PatternSyntaxException;
 
 import org.apache.log4j.Logger;
 
-import com.google.common.base.CharMatcher;
-
 import datawave.data.normalizer.ZeroRegexStatus;
 import datawave.data.normalizer.regex.visitor.AlternationDeduper;
 import datawave.data.normalizer.regex.visitor.AnchorTrimmer;
@@ -100,14 +98,9 @@ public class NumericRegexEncoder {
     private static final Logger log = Logger.getLogger(NumericRegexEncoder.class);
 
     /**
-     * Matches against any letter except for the letter d
+     * Matches against any invalid character (anything besides reserved regex characters, numerics, and the letter d)
      */
-    private static final Pattern RESTRICTED_LETTERS_PATTERN = Pattern.compile(".*[\\p{Alpha}&&[^d]].*");
-
-    /**
-     * Matches against any non-ascii character
-     */
-    private static final Pattern RESTRICTED_NONASCII_PATTERN = Pattern.compile(".*[^\\p{ASCII}].*");
+    private static final Pattern RESTRICTED_CHAR_PATTERN = Pattern.compile(".*[^.{,}()<>*+=!?^$|\\[\\]\\-\\\\0-9d].*");
 
     /**
      * Matches any escaped character that is not \. \- or \d.
@@ -184,10 +177,9 @@ public class NumericRegexEncoder {
      */
     private void checkPatternForQuickFailures() {
         checkForBlankPattern();
-        checkForWhitespace();
+        checkForRestrictedLetters();
         checkForCompilation();
         checkForNonsense();
-        checkForRestrictedLetters();
         checkForRestrictedEscapedCharacters();
         checkForGroups();
         checkForQuantifiedDecimalPoints();
@@ -199,15 +191,6 @@ public class NumericRegexEncoder {
     private void checkForBlankPattern() {
         if (this.pattern.isEmpty()) {
             throw new IllegalArgumentException("Regex pattern may not be blank.");
-        }
-    }
-
-    /**
-     * Throws an exception if the regex contains any whitespace.
-     */
-    private void checkForWhitespace() {
-        if (CharMatcher.whitespace().matchesAnyOf(pattern)) {
-            throw new IllegalArgumentException("Regex pattern may not contain any whitespace.");
         }
     }
 
@@ -232,9 +215,8 @@ public class NumericRegexEncoder {
      * Throws an exception if the regex contains any letter other than an escaped lowercase d.
      */
     private void checkForRestrictedLetters() {
-        if (RESTRICTED_LETTERS_PATTERN.matcher(pattern).matches() || RESTRICTED_NONASCII_PATTERN.matcher(pattern).matches() || containsUnescapedLowercaseD()) {
-            throw new IllegalArgumentException(
-                            "Regex pattern may not contain any letters other than \\d to indicate a member of the digit character class 0-9.");
+        if (RESTRICTED_CHAR_PATTERN.matcher(pattern).matches() || containsUnescapedLowercaseD()) {
+            throw new IllegalArgumentException("Regex pattern may not contain any characters other than reserved regex characters, \\d, or numbers.");
         }
     }
 

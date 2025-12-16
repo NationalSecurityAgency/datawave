@@ -25,6 +25,7 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.query.MultiNormalizerIngest;
 import datawave.query.QueryParameters;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -47,6 +48,8 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         return logic;
     }
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @RunWith(Arquillian.class)
     public static class ShardRangeTest extends MultiNormalizerTest {
 
@@ -61,6 +64,9 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
             ingest.write(RangeType.SHARD);
 
             Authorizations auths = new Authorizations("ALL");
+
+            ingestUtil.write(client, auths);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, TableName.METADATA);
@@ -87,6 +93,9 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
             ingest.write(RangeType.DOCUMENT);
 
             Authorizations auths = new Authorizations("ALL");
+
+            ingestUtil.write(client, auths);
+
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, TableName.METADATA);
@@ -184,7 +193,7 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testRangeSizeOneToTwo() throws Exception {
+    public void testRangeSizeOneToTwo_firstDay() throws Exception {
         // range with text normalizer expands into value "10", while technically correct this is wrong for numeric data
         withQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         withDate("20250707");
@@ -192,15 +201,23 @@ public abstract class MultiNormalizerTest extends AbstractQueryTest {
         planAndExecuteQuery();
         assertResultCount(3);
         assertPlannedQuery("(SIZE == '1' || SIZE == '10' || SIZE == '2')");
+    }
 
+    @Test
+    public void testRangeSizeOneToTwo_lastDay() throws Exception {
         // range with numeric normalizer does not expand into "10". This is more correct.
+        withQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         withDate("20250708");
         withRequiredAnyOf("SIZE:1", "SIZE:2");
         planAndExecuteQuery();
         assertResultCount(2);
         assertPlannedQuery("(SIZE == '+aE1' || SIZE == '+aE2')");
+    }
 
+    @Test
+    public void testRangeSizeOneToTwo_bothDays() throws Exception {
         // range with both normalizers applied will expand into all values above, including the incorrect value "10"
+        withQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         withDate("20250707", "20250708");
         withRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
         planAndExecuteQuery();

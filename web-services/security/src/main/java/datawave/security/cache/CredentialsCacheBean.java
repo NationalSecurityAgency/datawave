@@ -29,7 +29,6 @@ import javax.ws.rs.QueryParam;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.jboss.security.CacheableManager;
@@ -37,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.configuration.ConfigurationEvent;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshLifecycle;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.DnList;
@@ -65,7 +63,6 @@ import datawave.webservice.result.GenericResponse;
 @RolesAllowed({"JBossAdministrator", "Administrator", "SecurityUser", "InternalUser"})
 @DeclareRoles({"JBossAdministrator", "Administrator", "SecurityUser", "InternalUser"})
 @MBean
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 // transactions not supported directly by this bean
 public class CredentialsCacheBean {

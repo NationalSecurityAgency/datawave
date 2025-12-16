@@ -1,10 +1,10 @@
 package datawave.query.tables.ssdeep;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
 
@@ -18,7 +18,7 @@ import datawave.util.ssdeep.SSDeepHashScorer;
 import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
 
 /** A function that transforms entries retrieved from Accumulo into Scored SSDeep hash matches */
-public class SSDeepScoringFunction implements Function<Map.Entry<NGramTuple,SSDeepHash>,Stream<ScoredSSDeepPair>> {
+public class SSDeepScoringFunction implements Function<Map.Entry<NGramTuple,SSDeepHash>,Collection<ScoredSSDeepPair>> {
 
     public static final String MIN_SSDEEP_SCORE_PARAMETER = "minScore";
     private static final Logger log = Logger.getLogger(SSDeepScoringFunction.class);
@@ -55,7 +55,7 @@ public class SSDeepScoringFunction implements Function<Map.Entry<NGramTuple,SSDe
      */
     private int readOptionalMinScoreThreshold(Query query) {
         QueryImpl.Parameter minScoreParameter = query.findParameter(MIN_SSDEEP_SCORE_PARAMETER);
-        if (minScoreParameter != null) {
+        if (minScoreParameter != null && !minScoreParameter.getParameterValue().isBlank()) {
             String minScoreString = minScoreParameter.getParameterValue();
             try {
                 int minScore = Integer.parseInt(minScoreString);
@@ -79,27 +79,29 @@ public class SSDeepScoringFunction implements Function<Map.Entry<NGramTuple,SSDe
      *
      * @param entry
      *            the function argument
-     * @return A Stream of scored SSDeep pairs related to the row returned by Accumulo.
+     * @return A Collection of scored SSDeep pairs related to the row returned by Accumulo.
      */
     @Override
-    public Stream<ScoredSSDeepPair> apply(Map.Entry<NGramTuple,SSDeepHash> entry) {
+    public Collection<ScoredSSDeepPair> apply(Map.Entry<NGramTuple,SSDeepHash> entry) {
         NGramTuple ngram = entry.getKey();
         SSDeepHash matchingHash = entry.getValue();
 
         // extract the query ssdeeps that contained this ngram from the query map.
         Collection<SSDeepHash> queryHashes = queryState.getQueryMap().get(ngram);
 
+        Collection<ScoredSSDeepPair> scoredSSDeepPairs = new HashSet<>();
+
         // score the match between each query ssdeep and matching hash, keep those that exceed the match
         // threshold.
-        return queryHashes.stream().flatMap(queryHash -> {
+        for (SSDeepHash queryHash : queryHashes) {
             Set<NGramTuple> overlappingNGrams = ngramOverlapScorer.apply(queryHash, matchingHash);
             int weightedScore = editDistanceScorer.apply(queryHash, matchingHash);
             if (minScoreThreshold <= 0 || weightedScore > minScoreThreshold) {
-                return Stream.of(new ScoredSSDeepPair(queryHash, matchingHash, overlappingNGrams, weightedScore));
-            } else {
-                return Stream.empty();
+                scoredSSDeepPairs.add(new ScoredSSDeepPair(queryHash, matchingHash, overlappingNGrams, weightedScore));
             }
-        });
+        }
+
+        return scoredSSDeepPairs;
     }
 
 }

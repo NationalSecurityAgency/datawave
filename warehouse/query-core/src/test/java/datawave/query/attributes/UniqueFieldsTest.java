@@ -374,9 +374,9 @@ public class UniqueFieldsTest {
     @Test
     public void testValueTransformation() {
         SortedSet<String> expected = Sets.newTreeSet();
-        expected.add("2020-01-12");
-        expected.add("2020-01-12T15");
-        expected.add("2020-01-12T15:30");
+        expected.add("2020-01-12T00:00:00.000");
+        expected.add("2020-01-12T15:00:00.000");
+        expected.add("2020-01-12T15:30:00.000");
         expected.add("2020-01-12 15:30:45");
         expected.add("nonDateValue");
 

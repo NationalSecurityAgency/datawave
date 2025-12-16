@@ -18,6 +18,7 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -34,6 +35,9 @@ import datawave.query.iterator.waitwindow.WaitWindowObserver;
  *            type cast
  */
 public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
+    // An id intended to be consistent across iterator rebuilds
+    private final String id;
+
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, contextIncludes, contextExcludes;
 
@@ -49,6 +53,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private Document prevDocument, document;
 
     private T evaluationContext;
+
+    private static final Logger log = Logger.getLogger(OrIterator.class);
 
     public OrIterator(Iterable<NestedIterator<T>> sources) {
         this(sources, null, null);
@@ -78,6 +84,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 contextExcludes.add(filter);
             }
         }
+        id = String.valueOf((long) includes.toString().hashCode() + contextIncludes.toString().hashCode() + contextExcludes.toString().hashCode());
     }
 
     /**
@@ -113,22 +120,22 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 // if prev != null then it's a match from the previous next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
                 // this shouldn't be possible during initialize
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, "prev in OrIterator.initialize()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, id + ": prev in OrIterator.initialize()"));
             } else if (next != null) {
                 // if next != null then it's a match from this next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
                 // this shouldn't be possible during initialize
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, "next in OrIterator.initialize()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, id + ": next in OrIterator.initialize()"));
             } else if (!includeHeads.isEmpty()) {
                 // choose the lowest key in includeHeads because a match in any candidate of an OrIterator can cause a valid result
                 possibleYieldKey = this.waitWindowObserver.createYieldKey((Key) includeHeads.keySet().first(), true,
-                                "lowest includeHead in OrIterator.initialize()");
+                                id + ": lowest includeHead in OrIterator.initialize()");
             } else {
                 // this is needed in case initSubtree did not complete so that we do not use a greater yieldKey from the exception while
                 // skipping over keys from sources that have not been initialized. We can not assume that the exception yieldKey is the lowest
                 // possible yieldKey. If the yieldKey Pair with a null reaches the top of the iterator chain, it will be replaced with the
                 // range start key in handleWaitWindowOverrun of SerialIterator/PipelineIterator
-                e.setYieldKey(Pair.of(null, "yield with no includeHeads in OrIterator.initialize()"));
+                e.setYieldKey(Pair.of(null, id + ": yield with no includeHeads in OrIterator.initialize()"));
             }
             // When comparing possible yield keys in the OrIterator, we choose the lowest
             // key because a match in any source is a match
@@ -153,6 +160,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public T next() {
         if (isContextRequired() && evaluationContext == null) {
             throw new IllegalStateException("evaluationContext must be set prior to calling next");
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
         }
 
         prev = next;
@@ -188,7 +199,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                         }
                     } catch (WaitWindowOverrunException e) {
                         // contextExcludes could be farther than the includes, so we don't want to use a yieldKey from the exception
-                        e.setYieldKey(Pair.of(null, "yield while advancing contextExcludes in OrIterator.next()"));
+                        e.setYieldKey(Pair.of(null, id + ": yield while advancing contextExcludes in OrIterator.next()"));
                         throw e;
                     }
                 }
@@ -224,18 +235,19 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             if (prev != null) {
                 // if prev != null then it's a match from the previous next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, "prev in OrIterator.next()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, id + ": prev in OrIterator.next()"));
             } else if (next != null) {
                 // if next != null then it's a match from this next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, "next in OrIterator.next()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, id + ": next in OrIterator.next()"));
             } else if (!includeHeads.keySet().isEmpty()) {
                 // Choose the lowest candidate because a match in any candidate of an OrIterator can cause a valid result
-                possibleYieldKey = this.waitWindowObserver.createYieldKey((Key) includeHeads.keySet().first(), true, "lowest includeHead in OrIterator.next()");
+                possibleYieldKey = this.waitWindowObserver.createYieldKey((Key) includeHeads.keySet().first(), true,
+                                id + ": lowest includeHead in OrIterator.next()");
             } else {
                 // We can not assume that the exception yieldKey is the lowest possible yieldKey. If the yieldKey Pair with a null reaches the top
                 // of the iterator chain, it will be replaced with the range start key in handleWaitWindowOverrun of SerialIterator/PipelineIterator
-                e.setYieldKey(Pair.of(null, "yield with no includeHeads in OrIterator.next()"));
+                e.setYieldKey(Pair.of(null, id + ": yield with no includeHeads in OrIterator.next()"));
             }
             // When comparing possible yield keys in the OrIterator, we choose the lowest
             // key because a match in any candidate of an OrIterator can cause a valid result
@@ -247,6 +259,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             next = null;
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
+        }
+
         return prev;
     }
 
@@ -254,12 +270,12 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         if (this.waitWindowObserver != null) {
             if (prev != null) {
                 // if prev != null then it's a match from the previous next() call that has not yet been returned
-                this.waitWindowObserver.checkWaitWindow((Key) prev, true, "prev in " + location);
+                this.waitWindowObserver.checkWaitWindow((Key) prev, true, id + ": prev in " + location);
             } else if (next != null) {
                 // if next != null then it's a match from this next() call that has not yet been returned
-                this.waitWindowObserver.checkWaitWindow((Key) next, true, "next in " + location);
+                this.waitWindowObserver.checkWaitWindow((Key) next, true, id + ": next in " + location);
             } else {
-                this.waitWindowObserver.checkWaitWindow((Key) key, true, keyDescription + " in " + location);
+                this.waitWindowObserver.checkWaitWindow((Key) key, true, id + ": " + keyDescription + " in " + location);
             }
         }
     }
@@ -276,6 +292,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public T move(T minimum) {
         if (null == includeHeads) {
             throw new IllegalStateException("initialize() was never called");
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moving to " + minimum);
         }
 
         // test preconditions
@@ -312,6 +332,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": seeking to " + range);
+        }
+
         try {
             for (NestedIterator<T> child : children()) {
                 child.seek(range, columnFamilies, inclusive);
@@ -319,16 +343,16 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         } catch (WaitWindowOverrunException e) {
             // Since OrIterator returns the lowest match, in order to use the exception yieldKey all children must complete seek
             // and populate and return next(). Since that didn't happen, we null out the yieldKey so that it is not used
-            e.setYieldKey(Pair.of(null, "yield before all children seeked in OrIterator.seek()"));
+            e.setYieldKey(Pair.of(null, id + ": yield before all children seeked in OrIterator.seek()"));
             Pair<Key,String> possibleYieldKey = null;
             if (prev != null) {
                 // if prev != null then it's a match from the previous next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, "prev in OrIterator.seek()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) prev, true, id + ": prev in OrIterator.seek()"));
             } else if (next != null) {
                 // if next != null then it's a match from this next() call that has not yet been returned
                 // set the exception yieldKey so that it is the only option to consider
-                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, "next in OrIterator.seek()"));
+                e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) next, true, id + ": next in OrIterator.seek()"));
             }
             this.waitWindowObserver.propagateException(possibleYieldKey, true, false, e);
         }
@@ -342,7 +366,11 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      *            a key
      * @return a sorted map
      */
-    protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
+    private TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": advancing to " + key + ": " + includeHeads.keySet());
+        }
+
         SortedSet<NestedIterator<T>> includedItrs = includeHeads.removeAll(key);
         try {
             transforms.remove(key);
@@ -359,8 +387,15 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // would have been the lowest if the operation completed, so we add back the key that was removed.
             // Since we are only concerned about the key and want the original value, skip the transform
             includeHeads.putAll(key, includedItrs);
+            // make sure the yield key is not past what we are moving to
+            e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) key, true, id + ": to in OrIterator.advanceIterators()"));
             throw e;
         }
+
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": advanced to " + key + ": " + includeHeads.keySet());
+        }
+
         return includeHeads;
     }
 
@@ -374,7 +409,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      *            another key to move
      * @return a tree map
      */
-    protected TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
+    private TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moving iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        }
         SortedSet<NestedIterator<T>> includedItrs = includeHeads.removeAll(key);
         try {
             transforms.remove(key);
@@ -391,8 +429,14 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // would have been the lowest if the operation completed, so we add back the key that was removed.
             // Since we are only concerned about the key and want the original value, skip the transform
             includeHeads.putAll(key, includedItrs);
+            // make sure the yield key is not past what we are moving to
+            e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) to, true, id + ": to in OrIterator.moveIterators()"));
             throw e;
         }
+        if (log.isDebugEnabled()) {
+            log.debug(id + ": moved iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        }
+
         return includeHeads;
     }
 
@@ -455,7 +499,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("OrIterator: ");
+        StringBuilder sb = new StringBuilder(id + ": OrIterator: ");
 
         sb.append("Includes: ");
         sb.append(includes);

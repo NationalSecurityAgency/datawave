@@ -11,11 +11,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -1066,8 +1072,63 @@ public class IteratorBuildingVisitorTest {
     }
 
     private static class TestIteratorEnvironment implements IteratorEnvironment {
+        @Override
+        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
+            return null;
+        }
+
+        @Override
+        public IteratorUtil.IteratorScope getIteratorScope() {
+            return null;
+        }
+
+        @Override
+        public boolean isFullMajorCompaction() {
+            return false;
+        }
+
+        @Override
+        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
+
+        }
+
+        @Override
+        public Authorizations getAuthorizations() {
+            return null;
+        }
+
+        @Override
+        public IteratorEnvironment cloneWithSamplingEnabled() {
+            return null;
+        }
+
         public boolean isSamplingEnabled() {
             return false;
+        }
+
+        @Override
+        public SamplerConfiguration getSamplerConfiguration() {
+            return null;
+        }
+
+        @Override
+        public boolean isUserCompaction() {
+            return false;
+        }
+
+        @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
+
+        @Override
+        public TableId getTableId() {
+            return null;
         }
     }
 }
