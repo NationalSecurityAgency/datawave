@@ -98,7 +98,7 @@ public class GeometryNormalizerTest {
 
         assertEquals(3746, allRanges.size());
 
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (ByteArrayRange range : allRanges) {
             result.append(Hex.encodeHexString(range.getStart()));
             result.append(Hex.encodeHexString(range.getEnd()));

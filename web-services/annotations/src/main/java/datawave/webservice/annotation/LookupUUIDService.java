@@ -21,7 +21,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 /**
@@ -68,16 +67,16 @@ public class LookupUUIDService {
      *            the type of id to query.
      * @param id
      *            the id value to query.
-     * @return a Metadata object with the internal shard, datatype, uid and table name of the corresponding document or null if no identifier could be found
-     *         using the authorizations and query logic employed by this class.
+     * @return a list of zero to many Metadata objects with the internal shard, datatype, uid and table name of the identifier(s) provided. The list will be
+     *         empty if no identifier could be found using the authorizations and query logic employed by this class.
      * @throws QueryException
      *             if exceptions are encountered performing the lookup.
      */
-    public Metadata executeLookupUUIDQuery(String idType, String id) throws QueryException {
+    public List<Metadata> executeLookupUUIDQuery(String idType, String id) throws QueryException {
         final String query = String.format("%s:%s", idType, id);
         final Map<String,String> queryParameters = new HashMap<>();
         queryParameters.put(QueryParameters.QUERY_SYNTAX, "LUCENE-UUID");
-        // TODO: setup other parameters.
+        // TODO: setup other parameters?
 
         Query settings = responseObjectFactory.getQueryImpl();
         settings.setBeginDate(config.getBeginAsDate());
@@ -100,18 +99,16 @@ public class LookupUUIDService {
         List<Metadata> metadataList = new ArrayList<>();
         while (iter.hasNext()) {
             EventBase<?,?> e = iter.next();
-            metadataList.add(e.getMetadata());
-        }
+            datawave.webservice.query.result.event.Metadata eventMetadata = e.getMetadata();
+            if (log.isDebugEnabled()) {
 
-        if (metadataList.isEmpty()) {
-            return null;
-        } else if (metadataList.size() > 1) {
-            throw new QueryException("Multiple metadata items returned for idType: " + idType + " id: " + id + " metadata items: " + metadataList);
+                String metadataMessage = String.format("%s/%s/%s [%s]", eventMetadata.getRow(), eventMetadata.getDataType(), eventMetadata.getInternalId(),
+                                eventMetadata.getTable());
+                log.debug("Found metadata {} for idType {}, id {}", metadataMessage, idType, id);
+            }
+            metadataList.add(new Metadata(eventMetadata));
         }
-
-        final Metadata md = metadataList.get(0);
-        log.debug("Found metadata {} for idType {}, id {}", md, idType, id);
-        return md;
+        return metadataList;
     }
 
     private static String getAuthorizationString(Set<Authorizations> authorizations) {

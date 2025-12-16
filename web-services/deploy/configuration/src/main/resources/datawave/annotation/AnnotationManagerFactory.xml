@@ -19,8 +19,10 @@
     <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
 
     <bean id="AnnotationManagerConfig" scope="prototype" class="datawave.webservice.annotation.AnnotationManagerConfig">
-        <property name="tableName" value="${annotation.table.name}"/>
+        <property name="annotationTableName" value="${annotation.table.name}"/>
+        <property name="annotationSourceTableName" value="${annotation.source.table.name}"/>
         <property name="connPoolName" value="WAREHOUSE" />
+        <property name="enableInternalIdLookup" value="true" />
         <property name="lookupUUIDQueryLogic">
             <bean scope="prototype" parent="BaseEventQuery">
                 <property name="auditType" value="NONE" />
