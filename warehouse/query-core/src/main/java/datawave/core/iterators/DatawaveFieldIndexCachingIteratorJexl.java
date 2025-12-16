@@ -990,10 +990,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                         yieldKey = this.waitWindowObserver.createYieldKey(this.lastRangeSeeked.getStartKey(), true,
                                         "DatawaveFieldIndexCachingIteratorJexl.fillSortedSets()");
                         throw new WaitWindowOverrunException(yieldKey);
-                    } catch (InterruptedException e) {
-                        exception = e;
-                        result = e;
-                        Thread.currentThread().interrupt();
                     } catch (Exception e) {
                         exception = e;
                         result = e;

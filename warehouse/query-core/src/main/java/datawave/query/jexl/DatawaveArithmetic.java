@@ -26,8 +26,6 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
 
     private static final Logger log = Logger.getLogger(DatawaveArithmetic.class);
 
-    private static final Object LOCK = new Object();
-
     /**
      * Default to being lenient so we don't have to add "null" for every field in the query that doesn't exist in the document
      */
@@ -319,7 +317,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         final IntsRefBuilder irBuilder = new IntsRefBuilder();
         Util.toUTF16(object.toString(), irBuilder);
         final IntsRef ints = irBuilder.get();
-        synchronized (LOCK) {
+        synchronized (fst) {
             return Util.get(fst, ints) != null;
         }
     }

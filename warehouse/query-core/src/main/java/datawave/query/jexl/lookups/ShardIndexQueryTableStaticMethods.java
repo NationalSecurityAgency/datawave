@@ -496,6 +496,9 @@ public class ShardIndexQueryTableStaticMethods {
         }
 
         IteratorSetting cfg = configureGlobalIndexDataTypeFilter(config, dataTypes);
+        if (cfg == null) {
+            return;
+        }
 
         bs.addScanIterator(cfg);
     }

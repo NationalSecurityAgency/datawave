@@ -112,9 +112,7 @@ public class QueryMetricsWriter {
             try {
                 Thread.sleep(200);
             } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
+
             }
         }
         this.shutDownMetricProcessors = true;
@@ -122,9 +120,7 @@ public class QueryMetricsWriter {
             try {
                 f.get(Math.max(500, maxShutDownMs - (System.currentTimeMillis() - start)), TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
+
             }
         }
         log.info(String.format("shut down with %d metric updates in queue", blockingQueue.size()));
@@ -201,7 +197,7 @@ public class QueryMetricsWriter {
                     metricHolderList.add(holder);
                 }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+
             }
         }
         if (metricHolderList.size() > 0 || blockingQueue.size() > 0) {
@@ -314,9 +310,6 @@ public class QueryMetricsWriter {
                         }
                     }
                 } catch (Exception e) {
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
                     log.error(e.getMessage(), e);
                 }
             }

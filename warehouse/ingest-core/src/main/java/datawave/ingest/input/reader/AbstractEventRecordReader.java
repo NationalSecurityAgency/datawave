@@ -177,9 +177,6 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
 
         try {
             event.setRawRecordNumber(getCurrentKey().get());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Unable to get current key", e);
         } catch (Exception e) {
             throw new RuntimeException("Unable to get current key", e);
         }

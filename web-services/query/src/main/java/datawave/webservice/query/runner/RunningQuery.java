@@ -255,7 +255,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                         throw new RuntimeException(e);
                     }
                 }
@@ -277,9 +276,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         } catch (Exception e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
             if (settings.getUncaughtExceptionHandler() != null) {
                 settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
             } else {
@@ -323,7 +319,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         hasNext.wait(timeout);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                         // if we got interrupted, then just return false
                         return false;
                     }
@@ -367,7 +362,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         gotNext.wait(timeout);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                         // if we got interrupted, then just return null
                         return null;
                     }

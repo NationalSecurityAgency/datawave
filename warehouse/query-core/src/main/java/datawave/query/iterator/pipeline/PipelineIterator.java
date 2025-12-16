@@ -179,9 +179,6 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         } catch (WaitWindowOverrunException e) {
             return handleWaitWindowOverrun(e);
         } catch (Exception e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
             if (yieldCallback != null && yieldCallback.hasYielded()) {
                 // if we yielded, then leave gracefully
                 return null;

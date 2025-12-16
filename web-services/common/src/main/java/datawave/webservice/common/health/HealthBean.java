@@ -207,7 +207,6 @@ public class HealthBean {
             try {
                 Thread.sleep(queryCompletionWaitIntervalMillis);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
                 LOG.warn("Interrupted while waiting for queries to complete.");
             }
         }

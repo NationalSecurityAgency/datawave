@@ -358,9 +358,6 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
                 }
             } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
                 // only propogate the exception if we weren't being shutdown.
                 if (running) {
                     throw new RuntimeException(e);

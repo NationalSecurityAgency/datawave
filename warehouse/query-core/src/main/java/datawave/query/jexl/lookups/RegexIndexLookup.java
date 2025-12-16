@@ -47,8 +47,6 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
  * An asynchronous index lookup which looks up concrete values for the specified regex term.
  */
 public class RegexIndexLookup extends AsyncIndexLookup {
-
-    private static final Object LOCK = new Object();
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexLookup.class);
 
     protected MetadataHelper helper;
@@ -315,7 +313,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                                 String field = holder.toString();
 
                                 // synchronize access to fieldsToValues
-                                synchronized (LOCK) {
+                                synchronized (indexLookupMap) {
                                     // We are only returning a mapping of field value to field name, no need to
                                     // determine cardinality and such at this point.
                                     indexLookupMap.put(field, term);
@@ -338,7 +336,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                         log.debug("Failed or Timed out " + e);
                     }
                     // synchronize access to fieldsToValues
-                    synchronized (LOCK) {
+                    synchronized (indexLookupMap) {
                         // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
                         if (!unfieldedLookup) {
                             for (String field : fields) {

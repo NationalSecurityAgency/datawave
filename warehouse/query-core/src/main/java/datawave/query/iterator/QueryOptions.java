@@ -288,8 +288,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_COUNTS = "term.counts";
     public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
 
-    public static final Object LOCK = new Object();
-
     protected Map<String,String> options;
 
     protected String scanId;
@@ -2337,7 +2335,7 @@ public class QueryOptions implements OptionDescriber {
     public QueryStatsDClient getStatsdClient() {
         if (statsdHostAndPort != null && queryId != null) {
             if (statsdClient == null) {
-                synchronized (LOCK) {
+                synchronized (queryId) {
                     if (statsdClient == null) {
                         setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort),
                                         getStatsdMaxQueueSize()));

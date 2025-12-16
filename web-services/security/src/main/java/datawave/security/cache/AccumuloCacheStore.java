@@ -191,10 +191,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             } catch (MutationsRejectedException e) {
                 throw new PersistenceException("Unable to write cache value to Accumulo", e);
             }
-        } catch (IOException e) {
-            throw new PersistenceException("Unable to serialize key: " + key, e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (IOException | InterruptedException e) {
             throw new PersistenceException("Unable to serialize key: " + key, e);
         }
     }
@@ -212,10 +209,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             scanner.setRange(new Range(new Text(keyBytes)));
         } catch (TableNotFoundException e) {
             throw new PersistenceException(e);
-        } catch (IOException e) {
-            throw new PersistenceException("Unable to serialize key " + key, e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (IOException | InterruptedException e) {
             throw new PersistenceException("Unable to serialize key " + key, e);
         }
 
@@ -302,9 +296,6 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
                             task.processEntry(marshalledEntry, taskContext);
                         }
                     } catch (Exception e) {
-                        if (e instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                        }
                         throw new PersistenceException(e);
                     }
                 }
