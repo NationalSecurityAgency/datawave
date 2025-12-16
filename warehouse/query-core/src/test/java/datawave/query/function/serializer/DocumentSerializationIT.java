@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -28,6 +29,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -56,6 +58,8 @@ public class DocumentSerializationIT {
     public void setup() {
         TypeMetadata metadata = new TypeMetadata();
         metadata.put("FIELD_A", datatype, LcNoDiacriticsType.class.getTypeName());
+        metadata.put("FIELD_B", datatype, LcNoDiacriticsType.class.getTypeName());
+        metadata.put("FIELD_C", datatype, LcNoDiacriticsType.class.getTypeName());
         metadata.put("NUM", datatype, NumberType.class.getTypeName());
         metadata.put("DATE", datatype, DateType.class.getTypeName());
 
@@ -143,9 +147,16 @@ public class DocumentSerializationIT {
 
     private Document createDocument() {
         Document doc = new Document();
-        doc.put("FIELD_A", createAttribute("FIELD_A", "some text"));
-        doc.put("FIELD_A", createAttribute("FIELD_A", "more text"));
-        doc.put("FIELD_A", createAttribute("FIELD_A", "less text"));
+        Set<String> fields = Set.of("FIELD_A", "FIELD_B", "FIELD_C");
+        for (String field : fields) {
+            for (int i = 0; i < 6; i++) {
+                doc.put(field, createAttribute(field, "some random text: " + i));
+            }
+        }
+        for (int i = 0; i < 10; i++) {
+            Content content = new Content("token " + i, documentKey, true);
+            doc.put("CONTENT", content);
+        }
         doc.put("NUM", createAttribute("NUM", "23"));
         doc.put("DATE", createAttribute("DATE", DateHelper.format(System.currentTimeMillis())));
 
