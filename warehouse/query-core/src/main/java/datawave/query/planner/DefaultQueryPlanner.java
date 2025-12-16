@@ -100,6 +100,8 @@ import datawave.query.index.day.DayIndexStream;
 import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.index.lookup.RangeStream;
+import datawave.query.index.lookup.TruncatedIndexIterator;
+import datawave.query.index.lookup.TruncatedRangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -3101,6 +3103,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
+        } else if (config.isUseTruncatedIndex()) {
+            this.rangeStreamClass = TruncatedRangeStream.class.getCanonicalName();
+            this.createUidsIteratorClass = TruncatedIndexIterator.class;
+            return initializeRangeStream(config, scannerFactory, metadataHelper);
         } else {
             return initializeRangeStream(config, scannerFactory, metadataHelper);
         }
