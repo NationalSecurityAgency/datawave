@@ -35,8 +35,8 @@ public class QueryParametersTest {
     private long nifiDate = 1470614400000l; // NiFi - Aug 8, 2016
 
     private String formatDateCheck = "20160807 000000.000";
-    @SuppressWarnings("deprecation")
-    private Date parseDateCheck = new Date("Sun Aug 7 00:00:00 GMT 2016");
+    // Aug 7, 2016 00:00:00 GMT (same as accumuloDate)
+    private Date parseDateCheck = new Date(1470528000000L);
 
     private String headerName = "Header-name1";
     private String headerValue = "headervalue1";

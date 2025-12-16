@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
 import org.apache.accumulo.core.data.Key;
@@ -20,7 +21,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class Content extends Attribute<Content> implements Serializable {
-    private static final long serialVersionUID = -642410227862723970L;
+    private static final long serialVersionUID = -7916992260001007223L;
 
     private static final Type<?> normalizer = new LcNoDiacriticsType();
 
@@ -157,13 +158,17 @@ public class Content extends Attribute<Content> implements Serializable {
         this.toKeep = input.readBoolean();
         boolean hasSource = input.readBoolean();
         if (hasSource) {
-            String clazz = input.readString();
-            Class sourceClass;
+            String className = null;
             try {
-                sourceClass = Class.forName(clazz);
-                source = (Attribute<?>) sourceClass.newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("could not parse source", e);
+                className = input.readString();
+                Class<?> clazz = classCache.get().get(className);
+                if(Attribute.class.isAssignableFrom(clazz)) {
+                    source = (Attribute<?>) clazz.getDeclaredConstructor().newInstance();
+                } else {
+                    throw new RuntimeException(className + " does not extend " + Attribute.class.getSimpleName());
+                }
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException("Could not instantiate " + className, e);
             }
 
             source.read(kryo, input);
