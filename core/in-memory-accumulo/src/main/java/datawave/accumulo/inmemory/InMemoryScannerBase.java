@@ -33,6 +33,7 @@ import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
@@ -45,6 +46,7 @@ import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 
 public class InMemoryScannerBase extends ScannerOptions {
 
@@ -90,6 +92,11 @@ public class InMemoryScannerBase extends ScannerOptions {
         }
 
         @Override
+        public TableId getTableId() {
+            return null;
+        }
+
+        @Override
         public IteratorScope getIteratorScope() {
             return IteratorScope.scan;
         }
@@ -101,6 +108,11 @@ public class InMemoryScannerBase extends ScannerOptions {
 
         public boolean isUserCompaction() {
             return false;
+        }
+
+        @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
         }
 
         private ArrayList<SortedKeyValueIterator<Key,Value>> topLevelIterators = new ArrayList<>();

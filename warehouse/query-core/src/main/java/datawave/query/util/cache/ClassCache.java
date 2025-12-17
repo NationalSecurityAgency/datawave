@@ -14,7 +14,10 @@ import datawave.query.attributes.TypeAttribute;
  * Cache for Class instances.
  * <p>
  * Used by {@link TypeAttribute} and {@link Attributes}
+ * <p>
+ * Replaced by {@link datawave.core.cache.CaffeineClassCache}
  */
+@Deprecated(forRemoval = true)
 public class ClassCache {
 
     //  @formatter:off

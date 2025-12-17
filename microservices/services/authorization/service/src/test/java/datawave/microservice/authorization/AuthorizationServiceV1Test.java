@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.function.Function;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -156,7 +155,7 @@ public class AuthorizationServiceV1Test {
         @Bean
         public CachedDatawaveUserService cachedDatawaveUserService(CacheManager cacheManager,
                         @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory) {
-            return new AuthorizationTestUserService(Collections.EMPTY_MAP, true);
+            return new AuthorizationTestUserService(Collections.emptyMap(), true);
         }
 
         @Bean

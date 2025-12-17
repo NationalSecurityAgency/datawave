@@ -30,6 +30,8 @@ public class ErrorShardTableConfigHelper extends ShardTableConfigHelper {
 
         this.shardTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_TNAME, null);
         this.shardGidxTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_GIDX_TNAME, null);
+        this.shardDayIndexTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
+        this.shardYearIndexTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
         this.shardGridxTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_GRIDX_TNAME, null);
         this.shardDictionaryTableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.SHARD_DINDX_NAME, null);
 
@@ -70,15 +72,18 @@ public class ErrorShardTableConfigHelper extends ShardTableConfigHelper {
 
         }
 
-        if (shardTableName != null && tableName.equals(shardTableName)) {
+        if (tableName.equals(shardTableName)) {
             this.tableType = ShardTableType.SHARD;
-        } else if (shardGidxTableName != null && tableName.equals(shardGidxTableName)) {
+        } else if (tableName.equals(shardGidxTableName)) {
             this.tableType = ShardTableType.GIDX;
-        } else if (shardGridxTableName != null && tableName.equals(shardGridxTableName)) {
+        } else if (tableName.equals(shardDayIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_DAY_INDEX;
+        } else if (tableName.equals(shardYearIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_YEAR_INDEX;
+        } else if (tableName.equals(shardGridxTableName)) {
             this.tableType = ShardTableType.GRIDX;
-        } else if (shardDictionaryTableName != null && tableName.equals(shardDictionaryTableName)) {
+        } else if (tableName.equals(shardDictionaryTableName)) {
             this.tableType = ShardTableType.DINDX;
-
         } else {
             throw new IllegalArgumentException("Invalid Shard Error Table Definition For: " + tableName);
         }

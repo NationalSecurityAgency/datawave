@@ -1,8 +1,11 @@
 package datawave.query.attributes;
 
+import static datawave.query.Constants.EMPTY_BYTES;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.accumulo.core.data.Key;
@@ -18,6 +21,8 @@ import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.core.cache.CaffeineClassCache;
+import datawave.core.cache.ClassCache;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
@@ -36,6 +41,9 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected int hashcode = Integer.MIN_VALUE;
     protected long sizeInBytes = Long.MIN_VALUE;
 
+    // used by Document, Attributes and TypeAttribute
+    public static final ThreadLocal<ClassCache> classCache = ThreadLocal.withInitial(CaffeineClassCache::new);
+
     public Attribute() {}
 
     public Attribute(boolean toKeep) {
@@ -51,12 +59,30 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         return metadata.isMetadataSet();
     }
 
+    /**
+     * Get a copy byte array that backs the {@link ColumnVisibility}. This avoids the expensive parse call found in the default constructor for the
+     * ColumnVisibility.
+     *
+     * @return a copy of the byte array that backs the column visibility
+     */
+    public byte[] getColumnVisibilityBytes() {
+        if (isMetadataSet()) {
+            byte[] data = metadata.getColumnVisibility().getExpression();
+            return Arrays.copyOf(data, data.length);
+        }
+        return EMPTY_BYTES;
+    }
+
     public Key getMetadata() {
         return metadata.getMetadata();
     }
 
     public void setMetadata(Key key) {
         metadata.setMetadata(key);
+    }
+
+    public void setMetadata(byte[] vis, long ts) {
+        metadata.setMetadata(vis, ts);
     }
 
     public void setMetadata(ColumnVisibility vis, long ts) {
@@ -89,7 +115,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void writeMetadata(DataOutput out) throws IOException {
         out.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
-            byte[] cvBytes = getColumnVisibility().getExpression();
+            byte[] cvBytes = getColumnVisibilityBytes();
 
             WritableUtils.writeVInt(out, cvBytes.length);
 
@@ -101,7 +127,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void writeMetadata(Kryo kryo, Output output) {
         output.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
-            byte[] cvBytes = getColumnVisibility().getExpression();
+            byte[] cvBytes = getColumnVisibilityBytes();
             output.writeInt(cvBytes.length, true);
             output.writeBytes(cvBytes);
             output.writeLong(getTimestamp());
@@ -125,8 +151,10 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void readMetadata(Kryo kryo, Input input) {
         if (input.readBoolean()) {
             int size = input.readInt(true);
-
-            this.setMetadata(new ColumnVisibility(input.readBytes(size)), input.readLong());
+            byte[] cvBytes = input.readBytes(size);
+            long timestamp = input.readLong();
+            // trust the column visibility from the payload
+            setMetadata(cvBytes, timestamp);
         } else {
             this.clearMetadata();
         }
@@ -159,7 +187,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         if (!(o instanceof Attribute)) {
             return false;
         }
-        Attribute other = (Attribute) o;
+        Attribute<?> other = (Attribute<?>) o;
         EqualsBuilder equals = new EqualsBuilder().append(this.isMetadataSet(), other.isMetadataSet());
         if (this.isMetadataSet()) {
             equals.append(this.getMetadata(), other.getMetadata());

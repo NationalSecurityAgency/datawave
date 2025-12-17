@@ -23,18 +23,15 @@ import com.esotericsoftware.kryo.io.Output;
 import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.util.cache.ClassCache;
 
 public class Attributes extends Attribute<Attributes> implements Serializable, AttributeBagMetadata.AttributesGetter {
 
-    private static final long serialVersionUID = 4677957768640489928L;
+    private static final long serialVersionUID = 6225336487950799972L;
     private static final Logger log = Logger.getLogger(Attributes.class);
     private final Set<Attribute<? extends Comparable<?>>> attributes = new LinkedHashSet();
     private int _count = 0;
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
-
-    private static final ClassCache classCache = new ClassCache();
 
     /**
      * Should sizes of documents be tracked
@@ -82,6 +79,16 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
     @Override
     public Set<Attribute<? extends Comparable<?>>> getAttributes() {
         return Collections.unmodifiableSet(this.attributes);
+    }
+
+    /**
+     * Access the raw values similar to {@link #getAttributes()} but without a collection copy
+     *
+     * @return the raw values
+     */
+    @Override
+    public Collection<Attribute<? extends Comparable<?>>> getRawAttributes() {
+        return attributes;
     }
 
     private Set<Attribute<? extends Comparable<?>>> _getAttributes() {
@@ -148,7 +155,7 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
             String attrClassName = WritableUtils.readString(in);
             Class<?> clz = null;
             try {
-                clz = classCache.get(attrClassName);
+                clz = classCache.get().get(attrClassName);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -233,7 +240,7 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(131, 127);
-        for (Attribute<?> a : getAttributes()) {
+        for (Attribute<?> a : _getAttributes()) {
             hcb.append(a);
         }
         return hcb.toHashCode();
@@ -242,7 +249,7 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
     @Override
     public Collection<ValueTuple> visit(Collection<String> fieldNames, DatawaveJexlContext context) {
         Set<ValueTuple> children = new FunctionalSet<>();
-        for (Attribute<?> attr : getAttributes()) {
+        for (Attribute<?> attr : _getAttributes()) {
             children.addAll(attr.visit(fieldNames, context));
         }
 
@@ -349,7 +356,7 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
         Class<?> clz;
         try {
             // Get the Class for the name of the class of the concrete Attribute
-            clz = classCache.get(clazzName);
+            clz = classCache.get().get(clazzName);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

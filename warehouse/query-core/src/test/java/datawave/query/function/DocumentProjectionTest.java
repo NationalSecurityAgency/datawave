@@ -105,7 +105,7 @@ public class DocumentProjectionTest {
 
         assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(0, result.getValue().size());
+        assertEquals(ALL_FIELDS, result.getValue().size());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class DocumentProjectionTest {
 
         assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(0, result.getValue().size());
+        assertEquals(ALL_FIELDS, result.getValue().size());
     }
 
     @Deprecated

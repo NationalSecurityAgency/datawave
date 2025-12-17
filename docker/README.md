@@ -4,6 +4,13 @@ It is recommended to read through these instructions in their entirety before at
 if you just want to get started and use this document as a reference, here's the short version (although we recommend checking 
 out the [prereqs](#prereqs) at a minimum):
 
+## System Environment
+The following versions are known to work.  
+RHEL 9.6+  
+Docker 28.5.1+  
+
+RHEL 8 does not seem to work. It interferes with the docker daemon in a way that prevents a successful build of the quickstart image.
+
 ## TLDR
 
 ```shell

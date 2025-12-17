@@ -24,6 +24,8 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
 
     public interface AttributesGetter {
         Collection<Attribute<? extends Comparable<?>>> getAttributes();
+
+        Collection<Attribute<? extends Comparable<?>>> getRawAttributes();
     }
 
     private final AttributesGetter attributes;
@@ -72,7 +74,7 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
         long ts = updateTimestamps();
         ColumnVisibility vis = super.getColumnVisibility();
         try {
-            vis = this.combineAndSetColumnVisibilities(attributes.getAttributes());
+            vis = this.combineAndSetColumnVisibilities(attributes.getRawAttributes());
         } catch (MarkingFunctions.Exception e) {
             log.error("got error combining visibilities", e);
         }
@@ -90,7 +92,7 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
 
     private long updateTimestamps() {
         MutableLong ts = new MutableLong(Long.MAX_VALUE);
-        for (Attribute<?> attribute : attributes.getAttributes()) {
+        for (Attribute<?> attribute : attributes.getRawAttributes()) {
             mergeTimestamps(attribute, ts);
         }
         return ts.longValue();
@@ -100,7 +102,7 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
         // if this is a set of attributes, then examine each one. Note not recursing on a Document as it should have already applied the shard time.
         if (other instanceof Attributes) {
             // recurse on the sub attributes
-            for (Attribute<?> attribute : ((Attributes) other).getAttributes()) {
+            for (Attribute<?> attribute : ((Attributes) other).getRawAttributes()) {
                 mergeTimestamps(attribute, ts);
             }
         } else if (other.isMetadataSet()) {

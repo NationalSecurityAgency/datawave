@@ -262,7 +262,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     public void setIndexOnlyMap(Map<String,String> map) {
         this.indexOnlyMap = HashMultimap.create();
         for (Map.Entry<String,String> entry : map.entrySet()) {
-            for (String value : StringUtils.split(entry.getValue(), ',')) {
+            for (String value : entry.getValue().split(",")) {
                 this.indexOnlyMap.put(entry.getKey(), value.trim());
             }
         }

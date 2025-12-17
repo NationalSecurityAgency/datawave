@@ -25,7 +25,6 @@ import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.query.Constants;
-import datawave.util.StringUtils;
 
 /**
  * Map/Reduce job for determining the cardinality and selectivity for each distinct field name/dataype pair that exists in the shard table. Due to the large
@@ -196,7 +195,7 @@ public class StatsJob extends IngestJob {
 
     private Set<Range> calculateRanges(Configuration conf) {
         final Set<Range> ranges = new HashSet<>();
-        String[] shardsAndDays = StringUtils.split(this.inputPaths, ',');
+        String[] shardsAndDays = this.inputPaths.split(",");
         this.inputPaths = "";
 
         // for each datatype of interest

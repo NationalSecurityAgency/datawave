@@ -1,5 +1,7 @@
 package datawave.query.attributes;
 
+import static datawave.query.Constants.EMPTY_BYTES;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -67,6 +69,23 @@ public class AttributeMetadata implements Comparable<AttributeMetadata>, Seriali
             metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), metadata.getColumnQualifier(), vis, ts);
         } else {
             metadata = new Key(EMPTY_TEXT, EMPTY_TEXT, EMPTY_TEXT, vis, ts);
+        }
+    }
+
+    /**
+     * Set the metadata for this attribute. This method allows a trusted caller to directly set the column visibility via a byte array. Assumes that the bytes
+     * came from a {@link ColumnVisibility} object which has already parsed, verified and flattened the visibility string.
+     *
+     * @param vis
+     *            the column visibility bytes
+     * @param ts
+     *            the timestamp
+     */
+    protected void setMetadata(byte[] vis, long ts) {
+        if (metadata != null) {
+            metadata = new Key(metadata.getRow().getBytes(), metadata.getColumnFamily().getBytes(), metadata.getColumnQualifier().getBytes(), vis, ts);
+        } else {
+            metadata = new Key(EMPTY_BYTES, EMPTY_BYTES, EMPTY_BYTES, vis, ts);
         }
     }
 

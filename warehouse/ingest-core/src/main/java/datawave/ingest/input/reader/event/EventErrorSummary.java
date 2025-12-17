@@ -30,7 +30,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.mapreduce.handler.error.ErrorDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 
 /**
@@ -122,7 +121,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
      */
     public void addKeyValue(Key key, Value value) {
         validateRow(key.getRow());
-        String[] jobAndTypeAndUid = StringUtils.split(key.getRow().toString(), '\0');
+        String[] jobAndTypeAndUid = key.getRow().toString().split("\0");
         this.jobName = jobAndTypeAndUid[0];
         this.datatype = jobAndTypeAndUid[1];
         this.uid = jobAndTypeAndUid[2];
@@ -136,9 +135,9 @@ public class EventErrorSummary implements Cloneable, JexlContext {
             // drop off the event date (which could be the empty string) to get the list of UUIDs
             String cq = key.getColumnQualifier().toString();
             int index = cq.indexOf('\0');
-            this.uuids.addAll(Arrays.asList(index >= 0 ? StringUtils.split(cq.substring(index + 1), '\0') : new String[0]));
+            this.uuids.addAll(Arrays.asList(index >= 0 ? cq.substring(index + 1).split("\0") : new String[0]));
         } else if (cf.equals(INFO)) {
-            String[] info = StringUtils.split(key.getColumnQualifier().toString(), '\0');
+            String[] info = key.getColumnQualifier().toString().split("\0");
             this.errors.put(info[0], (value.getSize() > 0 ? value.toString() : null));
             try {
                 // a little validation

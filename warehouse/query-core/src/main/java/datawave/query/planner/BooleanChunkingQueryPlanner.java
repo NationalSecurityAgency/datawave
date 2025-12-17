@@ -3,6 +3,7 @@ package datawave.query.planner;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -88,9 +89,10 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
     }
 
     @Override
-    protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
-        ASTJexlScript queryTree = updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings);
+    protected CloseableIterable<QueryData> startRangeProcessing(ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config,
+                    Query settings, IteratorSetting cfg) throws DatawaveQueryException {
+        ASTJexlScript queryTree = config.getQueryTree();
+
         if (queryTree == null) {
             return DefaultQueryPlanner.emptyCloseableIterator();
         }
