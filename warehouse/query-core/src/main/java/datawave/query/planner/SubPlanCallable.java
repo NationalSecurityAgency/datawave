@@ -21,7 +21,7 @@ import datawave.util.time.TraceStopwatch;
 /**
  * This callable will hold the state of one of the plans and the future used to generate that plan.
  */
-class SubPlanCallable implements Callable<CloseableIterable<QueryData>> {
+public class SubPlanCallable implements Callable<CloseableIterable<QueryData>> {
     private final ShardQueryConfiguration planningConfig;
     private final Map.Entry<Pair<Date,Date>,Set<String>> dateRange;
     private final DefaultQueryPlanner basePlanner;
