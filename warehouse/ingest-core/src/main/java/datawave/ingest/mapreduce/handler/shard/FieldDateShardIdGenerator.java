@@ -307,7 +307,7 @@ public class FieldDateShardIdGenerator implements ShardIdGenerator {
     }
 
     /**
-     * Determine is a record may match a field mapping in that it is the correct datatype
+     * Determine if a record may match a field mapping in that it is the correct datatype
      *
      * @param record
      *            The record
