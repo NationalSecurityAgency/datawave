@@ -8,6 +8,7 @@ import static datawave.data.ColumnFamilyConstants.COLF_RI;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -19,6 +20,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import datawave.accumulo.inmemory.InMemoryScanner;
+import datawave.accumulo.inmemory.InMemoryTable;
+import datawave.accumulo.inmemory.IteratorAdapter;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
@@ -28,6 +32,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.LongCombiner;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
@@ -484,6 +490,9 @@ public class FrequencyMetadataAggregatorTest {
 
         // Entries with legacy formats that should not be aggregated.
         givenMutation("AGE", COLF_I, "num", "BAR", 1400000005L, new Value());
+        givenDeleteMutation("AGE", COLF_I, "num" + NULL_BYTE + "nix.FakeTypeClassName", "FOO", 1700000004L);
+        givenMutation("AGE", COLF_I, "num" + NULL_BYTE + "nix.FakeTypeClassName", "FOO", 1500000004L, new Value());
+        givenMutation("AGE", COLF_I, "num" + NULL_BYTE + "dw.FakeTypeClassName", "FOO", 1500000004L, new Value());
         givenMutation("JOB", COLF_RI, "attr" + NULL_BYTE + "FakeTypeClassName", "FOO", 1500000004L, new Value());
 
         expect("AGE", COLF_F, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
@@ -492,6 +501,9 @@ public class FrequencyMetadataAggregatorTest {
         expect("AGE", COLF_I, "lifetime", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
         expect("AGE", COLF_I, "num", "BAR", 1400000005L, new Value());
         expect("AGE", COLF_I, "num", "FOO", 1500000004L, createDateFrequencyMap("20191225", 1L, "20200101", 2L, "20200102", 1L));
+        expect("AGE", COLF_I, "num" + NULL_BYTE + "dw.FakeTypeClassName", "FOO", 1500000004L, new Value());
+        //expect("AGE", COLF_I, "num" + NULL_BYTE + "nix.FakeTypeClassName", "FOO", 1500000004L, new Value());
+        expectDelete("AGE", COLF_I, "num" + NULL_BYTE + "nix.FakeTypeClassName", "FOO", 1700000004L);
         expect("GENDER", COLF_F, "text", "BAR", 1499999999L, createDateFrequencyMap("20200101", 1L, "20200102", 1L));
         expect("GENDER", COLF_F, "text", "FOO", 1500000004L, createDateFrequencyMap("20200101", 1L));
         expect("JOB", COLF_F, "attr", "FOO", 1500000004L, createDateFrequencyMap("20200101", 3L));
@@ -644,11 +656,78 @@ public class FrequencyMetadataAggregatorTest {
         assertCombinerResults();
     }
 
+    private Object getField(String name, Object obj) throws IllegalAccessException, NoSuchFieldException {
+        Class c = obj.getClass();
+        Field f = null;
+        try {
+            f = c.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+        }
+        while (c != null && f == null) {
+            c = c.getSuperclass();
+            if (c != null) {
+                try {
+                    f = c.getDeclaredField(name);
+                } catch (NoSuchFieldException e) {
+                }
+            }
+        }
+        if (f != null) {
+            f.setAccessible(true);
+            return f.get(obj);
+        }
+        throw new NoSuchFieldException();
+    }
+
+    private void setField(String name, Object obj, Object value) throws IllegalAccessException, NoSuchFieldException {
+        Class c = obj.getClass();
+        Field f = null;
+        try {
+            f = c.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+        }
+        while (c != null && f == null) {
+            c = c.getSuperclass();
+            if (c != null) {
+                try {
+                    f = c.getDeclaredField(name);
+                } catch (NoSuchFieldException e) {
+                }
+            }
+        }
+        if (f != null) {
+            f.setAccessible(true);
+            f.set(obj, value);
+            return;
+        }
+        throw new NoSuchFieldException();
+    }
+
     private void assertResults() throws TableNotFoundException {
         TestUtils.writeMutations(accumuloClient, TABLE_METADATA, mutations);
         Scanner scanner = createScanner();
+
         List<Map.Entry<Key,Value>> actual = new ArrayList<>();
-        for (Map.Entry<Key,Value> entry : scanner) {
+        Key last = null;
+        IteratorAdapter itr = (IteratorAdapter)scanner.iterator();
+        SortedKeyValueIterator child = null;
+        try {
+            child = (SortedKeyValueIterator) getField("inner", itr);
+            while (! (child instanceof DeletingIterator)) {
+                child = (SortedKeyValueIterator) getField("source", child);
+            }
+            setField("propagateDeletes", child, true);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
+
+        while (itr.hasNext()) {
+            Map.Entry<Key,Value> entry = itr.next();
+            if (last == null) {
+                last = entry.getKey();
+            } else {
+                Assertions.assertTrue(entry.getKey().compareTo(last) > 0);
+            }
             actual.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
         }
 
@@ -659,7 +738,7 @@ public class FrequencyMetadataAggregatorTest {
     }
 
     private Scanner createScanner() throws TableNotFoundException {
-        Scanner scanner = ScannerHelper.createScanner(accumuloClient, TABLE_METADATA, AUTHS_SET);
+        InMemoryScanner scanner = (InMemoryScanner)ScannerHelper.createScanner(accumuloClient, TABLE_METADATA, AUTHS_SET);
         scanner.setRange(new Range());
 
         IteratorSetting iteratorSetting = new IteratorSetting(12, "ReverseIndexCombiner", FrequencyMetadataAggregator.class);
@@ -793,6 +872,12 @@ public class FrequencyMetadataAggregatorTest {
         this.mutations.add(mutation);
     }
 
+    private void givenDeleteMutation(String row, Text colf, String colq, String colv, long timestamp) {
+        Mutation mutation = new Mutation(row);
+        mutation.putDelete(colf, new Text(colq), new ColumnVisibility(colv), timestamp);
+        this.mutations.add(mutation);
+    }
+
     private void expect(String row, Text colf, String datatype, String colv, long timestamp, DateFrequencyMap map) {
         expect(row, colf, datatype + NULL_BYTE + FrequencyMetadataAggregator.AGGREGATED, colv, timestamp, new Value(map.toBytes()));
     }
@@ -803,5 +888,9 @@ public class FrequencyMetadataAggregatorTest {
 
     private void expect(String row, Text colf, String colq, String colv, long timestamp, Value value) {
         expected.add(new AbstractMap.SimpleEntry<>(new Key(new Text(row), colf, new Text(colq), new ColumnVisibility(colv), timestamp), value));
+    }
+
+    private void expectDelete(String row, Text colf, String colq, String colv, long timestamp) {
+        expected.add(new AbstractMap.SimpleEntry<>(new Key(new Text(row).copyBytes(), colf.copyBytes(), new Text(colq).copyBytes(), new ColumnVisibility(colv).getExpression(), timestamp, true), new Value()));
     }
 }

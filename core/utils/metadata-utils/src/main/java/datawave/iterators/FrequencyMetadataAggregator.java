@@ -298,7 +298,8 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             if (super.hasTop()) {
                 // Check if the current key contains a column marked for aggregation, and is not deleted. If so, rebuild the cache with the relevant aggregated
                 // entries.
-                if (columns.contains(super.getTopKey()) && !super.getTopKey().isDeleted()) {
+                Key topKey = super.getTopKey();
+                if (columns.contains(topKey) && !topKey.isDeleted()) {
                     updateCache();
                     popCache();
                 }
