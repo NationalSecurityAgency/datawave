@@ -29,7 +29,7 @@ CONF_DIR=../../config
 DATAWAVE_INDEX_STATS_JAR=$(findJar datawave-index-stats)
 DATAWAVE_INGEST_CSV_JAR=$(findJar datawave-ingest-csv)
 DATAWAVE_INGEST_JSON_JAR=$(findJar datawave-ingest-json)
-DATAWAVE_ANNOTATION_CORE_JAR=$(findJar datawave-annotation-core)
+DATAWAVE_CORE_ANNOTATION_JAR=$(findJar datawave-core-annotation)
 DATAWAVE_INGEST_ANNOTATION_JAR=$(findJar datawave-ingest-annotation)
 DATAWAVE_INGEST_WIKIPEDIA_JAR=$(findJar datawave-ingest-wikipedia)
 DATAWAVE_INGEST_NYCTLC_JAR=$(findJar datawave-ingest-nyctlc)
@@ -121,6 +121,8 @@ MICROMETER_COMMONS_JAR=$(findJar micrometer-commons)
 #for annotation ingest
 PROTO_GOOGLE_COMMON_PROTOS_JAR=$(findJar proto-google-common-protos)
 PROTOBUF_JAVA_UTIL_JAR=$(findJar protobuf-java-util)
+XMLRESOLVER_JAR=$(findJar xmlresolver)
+SAXON_HE_JAR=$(findJar Saxon-HE)
 
 #for geo hilbert curve processing
 JTS_CORE_JAR=$(findJar jts-core)
