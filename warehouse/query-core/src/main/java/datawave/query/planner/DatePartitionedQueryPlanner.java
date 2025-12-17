@@ -320,7 +320,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
         initialPlanner.process(shardQueryConfig, query, settings, scannerFactory);
 
-        // our initial planned script is the initial planned script
+        // Our initial plan and planned script will both be the initial planned script
         this.initialPlan = this.plannedScript = initialPlanner.getPlannedScript();
 
         // and reset the expansion flags to what we had previously
