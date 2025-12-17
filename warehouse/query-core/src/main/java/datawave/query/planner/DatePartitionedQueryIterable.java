@@ -101,7 +101,7 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
 
         // Construct the iterator which will in turn find an available query data stream
         public Iter() throws DatawaveQueryException, DatawaveFatalQueryException {
-            // Lets make sure we have at least one valid query data stream
+            // Let's make sure we have at least one valid query data stream
             seekToNextAvailableQueryData();
 
             // if every plan failed, then pass an exception up
