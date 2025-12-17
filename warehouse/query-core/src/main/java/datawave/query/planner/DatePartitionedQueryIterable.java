@@ -30,7 +30,7 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
     private final ShardQueryConfiguration shardQueryConfig;
     private final String initialPlan;
     private Iter iterator;
-    private List<PlanListener> listeners = new ArrayList<>();
+    private final List<PlanListener> listeners = new ArrayList<>();
 
     public DatePartitionedQueryIterable(List<SubPlanCallable> subPlansGenerators, ShardQueryConfiguration shardQueryConfig, PlanListener listener)
                     throws DatawaveQueryException, DatawaveFatalQueryException {
