@@ -46,8 +46,8 @@ import datawave.util.time.DateHelper;
  *
  * In this case the shards for the day should be set to 45 and events that fall in the range of 20250101-20250103 will be processed as follows:
  *
- * an event with DT1 and FIELD1 matching REGEX1 will get mapped to shards 20-29. an event with DT2 and FIELD2 matching REGEX2 will get mapped
- * to shards 30-44 all other events will get mapped to shards 0-19
+ * an event with DT1 and FIELD1 matching REGEX1 will get mapped to shards 20-29. an event with DT2 and FIELD2 matching REGEX2 will get mapped to shards 30-44
+ * all other events will get mapped to shards 0-19
  *
  **/
 public class FieldDateShardIdGenerator implements ShardIdGenerator {
