@@ -1,6 +1,6 @@
 package datawave.microservice.querymetric.handler;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -380,7 +380,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         event.setRawRecordNumber(1000L);
         event.addAltId(updatedQueryMetric.getQueryId());
 
-        event.setId(uidBuilder.newId(updatedQueryMetric.getQueryId().getBytes(Charset.forName("UTF-8")), (Date) null));
+        event.setId(uidBuilder.newId(updatedQueryMetric.getQueryId().getBytes(StandardCharsets.UTF_8), (Date) null));
 
         final Multimap<String,NormalizedContentInterface> fields;
 
