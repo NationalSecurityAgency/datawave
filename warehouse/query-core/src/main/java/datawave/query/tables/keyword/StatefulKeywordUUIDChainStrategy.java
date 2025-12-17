@@ -139,6 +139,9 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
             if (runKeywordQuery) {
                 // run query term extraction for next logic if needed
                 queryTerms.add(extractKeywordQueryTerm(docId, documentData));
+                // TODO-crwill9 enrich the transformers with this information potentially move this up before the extractors run
+                // need the mapping to hit-term so that the docId can be mapped backwards and no reason to repeat the work
+                // as-is the docId is returned directly which doesn't match keyword
             }
 
             count++;
