@@ -334,7 +334,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // create a clone of the config for the sub plan callables as the planningConfig may be updated dynamically
         ShardQueryConfiguration planningConfig = new ShardQueryConfiguration(shardQueryConfig);
 
-        // Create a callable for each suhb plan
+        // Create a callable for each sub plan
         List<SubPlanCallable> futures = new ArrayList<>();
         for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
             SubPlanCallable subPlan = new SubPlanCallable(this.queryPlanner, planningConfig, dateRange, scannerFactory);
