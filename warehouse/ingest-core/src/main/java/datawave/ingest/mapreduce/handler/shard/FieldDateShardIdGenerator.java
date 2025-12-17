@@ -27,7 +27,8 @@ import datawave.util.time.DateHelper;
  *
  * So for example:
  *
- * @formatter:off
+ * <pre>
+ * {@code
  * shardIdFactory.generator.1 = datawave.ingest.mapreduce.handler.shard.FieldDateShardIdGenerator
  * shardIdFactory.generator.1.baseNumShards = 20
  * shardIdFactory.generator.1.startDate = 20250101000000
@@ -40,7 +41,8 @@ import datawave.util.time.DateHelper;
  * shardIdFactory.generator.1.field.2 = FIELD2
  * shardIdFactory.generator.1.regex.2 = REGEX2
  * shardIdFactory.generator.1.shards.2 = 15
- * @formatter:on
+ * }
+ * </pre>
  *
  * In this case the shards for the day should be set to 45 and events that fall in the range of 20250101-20250103 will be processed as follows:
  *
