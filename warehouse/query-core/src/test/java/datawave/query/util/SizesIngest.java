@@ -35,7 +35,6 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.PointType;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.util.AbstractQueryTest.RangeType;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 
@@ -95,10 +94,10 @@ public class SizesIngest {
         this.client = client;
     }
 
-    public void write(RangeType type) throws Exception {
+    public void write() throws Exception {
         createTables();
         loadMetadata();
-        writeEvents(type);
+        writeEvents();
         log.info("wrote {} events", numberOfEvents);
     }
 
@@ -130,22 +129,22 @@ public class SizesIngest {
         }
     }
 
-    private void writeEvents(RangeType type) throws Exception {
+    private void writeEvents() throws Exception {
         for (int i = 0; i < NUM_SHARDS; i++) {
             String shard = ROW + "_" + i;
-            writeEventsForShard(shard, type);
+            writeEventsForShard(shard);
         }
     }
 
-    private void writeEventsForShard(String shard, RangeType type) throws Exception {
+    private void writeEventsForShard(String shard) throws Exception {
         // each shard gets its own random events
         createRandomEvents();
-        writeShardIndex(shard, type);
+        writeShardIndex(shard);
         writeFieldIndex(shard);
         writeEvent(shard);
     }
 
-    private void writeShardIndex(String shard, RangeType type) throws Exception {
+    private void writeShardIndex(String shard) throws Exception {
         long ts = DateHelper.parse(ROW).getTime();
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD_INDEX)) {
             for (Multimap<String,String> event : events) {
@@ -154,7 +153,7 @@ public class SizesIngest {
                     Mutation m = new Mutation(value);
                     for (String field : inverted.get(value)) {
                         String uid = uidForEvent(shard, event.get("COUNTER").iterator().next());
-                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(type, uid));
+                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(uid));
                         bw.addMutation(m);
                     }
                 }
@@ -389,16 +388,11 @@ public class SizesIngest {
         return inverted;
     }
 
-    private static Value getValue(RangeType type, String uid) {
+    private static Value getValue(String uid) {
         Uid.List.Builder builder = Uid.List.newBuilder();
-        if (type.equals(RangeType.DOCUMENT)) {
-            builder.setIGNORE(false);
-            builder.setCOUNT(1L);
-            builder.addUID(uid);
-        } else {
-            builder.setIGNORE(true);
-            builder.setCOUNT(17L); // arbitrary prime number below the 20 max uid limit
-        }
+        builder.setIGNORE(false);
+        builder.setCOUNT(1L);
+        builder.addUID(uid);
         return new Value(builder.build().toByteArray());
     }
 

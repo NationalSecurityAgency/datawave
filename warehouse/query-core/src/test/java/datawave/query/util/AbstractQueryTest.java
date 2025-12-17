@@ -58,8 +58,8 @@ public abstract class AbstractQueryTest {
         DOCUMENT, SHARD
     }
 
-    protected Authorizations auths = new Authorizations("ALL");
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
+    protected static Authorizations auths = new Authorizations("ALL");
+    protected static Set<Authorizations> authSet = Collections.singleton(auths);
 
     protected final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
