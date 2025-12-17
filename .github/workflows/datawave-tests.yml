@@ -24,6 +24,11 @@ env:
   GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
+  # Runs the pom sorter and code formatter to ensure that the code
+  # is formatted and poms are sorted according to project rules. If changes are found,
+  # they are committed back to the branch
+
+  # Build the code and run the unit/integration tests.
   configure-runner:
     runs-on: ubuntu-latest
     steps:
@@ -42,11 +47,6 @@ jobs:
     outputs:
       runner:  ${{ steps.set_output_step.outputs.runner }}
       cache_settings:  ${{ steps.set_output_step.outputs.cache_settings }}
-  # Runs the pom sorter and code formatter to ensure that the code
-  # is formatted and poms are sorted according to project rules. If changes are found,
-  # they are committed back to the branch
-
-  # Build the code and run the unit/integration tests.
   build-and-test-microservices:
     runs-on: ubuntu-latest
     steps:

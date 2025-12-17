@@ -1,6 +1,9 @@
 package datawave.ingest.annotation.mapreduce.handler;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -14,13 +17,15 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.google.common.collect.Multimap;
 
 import datawave.ingest.annotation.mapreduce.input.SimpleAnnotationRecordReader;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 public class SimpleAnnotationIngestHelperTest {
     protected SimpleAnnotationIngestHelper ingestHelper;
@@ -29,11 +34,11 @@ public class SimpleAnnotationIngestHelperTest {
     protected TaskAttemptContext ctx = null;
     protected InputSplit split = null;
 
-    @Before
+    @BeforeEach
     public void setupIngestHelper() {
         conf = new Configuration();
-        conf.addResource(this.getClass().getClassLoader().getResource("config/ingest/all-config.xml"));
-        conf.addResource(this.getClass().getClassLoader().getResource("config/ingest/annotation-ingest-config.xml"));
+        conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
+        conf.addResource(ClassLoader.getSystemResource("config/test-annotation-ingest-config.xml"));
 
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
@@ -53,7 +58,7 @@ public class SimpleAnnotationIngestHelperTest {
                 data = fileObj.toURI().toURL();
             }
         }
-        assertNotNull("Did not find test resource", data);
+        assertNotNull(data, "Did not find test resource");
 
         File dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());
@@ -66,16 +71,21 @@ public class SimpleAnnotationIngestHelperTest {
         reader.initialize(split, ctx);
         reader.setInputDate(System.currentTimeMillis());
 
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
         RawRecordContainer e = reader.getEvent();
 
-        Assert.assertEquals("annotation", e.getDataType().outputName());
-        Assert.assertNotNull(e.getRawData());
-        Assert.assertTrue(reader.nextKeyValue());
+        assertEquals("myannotation", e.getDataType().outputName());
+        assertNotNull(e.getRawData());
+        assertFalse(e.fatalError());
+
+        Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(e);
+        assertTrue(reader.nextKeyValue());
         e = reader.getEvent();
 
-        Assert.assertEquals("annotation", e.getDataType().outputName());
-        Assert.assertNotNull(e.getRawData());
-        Assert.assertFalse(reader.nextKeyValue());
+        assertEquals("myannotation", e.getDataType().outputName());
+        assertNotNull(e.getRawData());
+        assertFalse(e.fatalError());
+
+        assertFalse(reader.nextKeyValue());
     }
 }

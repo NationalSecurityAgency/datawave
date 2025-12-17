@@ -12,11 +12,49 @@
         <name>data.name</name>
         <value>annotation</value>
         <description>This is the name of the datatype, which distinguishes it from other types for the purposes of
-            ingest
-            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype
-            of
-            some common data format, like CSV files for example, which could originate from any number of sources
+            ingest processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a
+            subtype of some common data format, like CSV files for example, which could originate from any number of
+            sources
         </description>
+    </property>
+
+    <property>
+        <name>annotation.output.name</name>
+        <value>myannotation</value>
+        <description>This is the name to use on the data in Accumulo. If not specified, 'data.name' is used by default
+        </description>
+    </property>
+
+    <property>
+        <name>annotation.table.name</name>
+        <value>datawave.annotation</value>
+    </property>
+
+    <property>
+        <name>annotation.table.loader.priority</name>
+        <value>50</value>
+    </property>
+
+    <property>
+        <name>annotation.source.table.name</name>
+        <value>datawave.annotationSource</value>
+    </property>
+
+    <property>
+        <name>annotation.source.table.loader.priority</name>
+        <value>60</value>
+    </property>
+
+    <property>
+        <name>annotation.source.visibility.inherit.event</name>
+        <value>false</value>
+        <description>enable setting the visibility for annotation source from event</description>
+    </property>
+
+    <property>
+        <name>annotation.source.visibility.default</name>
+        <value>PRIVATE</value>
+        <description>default visibility to use for storing annotation source</description>
     </property>
 
     <property>
@@ -31,8 +69,26 @@
 
     <property>
         <name>annotation.handler.classes</name>
-        <value>datawave.ingest.annotation.mapreduce.handler.SimpleAnnotationDataTypeHandler</value>
+        <value>datawave.ingest.annotation.mapreduce.handler.ShardedAnnotationDataTypeHandler</value>
         <description>List of classes that should process each event</description>
+    </property>
+
+    <property>
+        <name>annotation.raw.transform.enable</name>
+        <value>true</value>
+        <description>enable transformation of raw data using the defined xslt</description>
+    </property>
+
+    <property>
+        <name>annotation.raw.transform.config</name>
+        <value>config/annotation-transform-config.xml</value>
+        <description>used to transform raw annotation json view (xslt file with xml extension)</description>
+    </property>
+
+    <property>
+        <name>annotation.ignore.unknown.fields</name>
+        <value>false</value>
+        <description>ignore unknown fields when parsing the annotation json</description>
     </property>
 
     <property>
