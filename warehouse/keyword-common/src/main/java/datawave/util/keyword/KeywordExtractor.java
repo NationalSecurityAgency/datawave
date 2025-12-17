@@ -27,6 +27,7 @@ public class KeywordExtractor {
     public static final String MAX_KEYWORDS = "max.keyword.count";
     public static final String MAX_SCORE = "max.score";
     public static final String MAX_CONTENT_CHARS = "max.content.chars";
+    public static final String KEYWORD_TYPE = "keyword";
 
     private final List<Map.Entry<String,VisibleContent>> orderedContent;
 
