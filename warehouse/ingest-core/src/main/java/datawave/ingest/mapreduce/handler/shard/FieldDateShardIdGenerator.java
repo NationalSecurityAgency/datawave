@@ -21,7 +21,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.util.time.DateHelper;
 
 /**
- * FieldDateShardIdGenerator ia an implementation of {@link ShardIdGenerator} that will shift the range of shard IDs based on an event date range and fields
+ * FieldDateShardIdGenerator is an implementation of {@link ShardIdGenerator} that will shift the range of shard IDs based on an event date range and fields
  * within the record. For events that do not match one of the configured fields, they will be remapped to a base set of shards. It is expected that the
  * configured shards for that day will be set to the total number of shards possible for query purposes.
  *
