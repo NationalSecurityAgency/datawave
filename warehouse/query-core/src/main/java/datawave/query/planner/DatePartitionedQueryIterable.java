@@ -88,7 +88,7 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
         private final Set<String> plans = new LinkedHashSet<>();
 
         // the exceptions
-        private List<DatawaveQueryException> exceptions = new ArrayList<>();
+        private final List<DatawaveQueryException> exceptions = new ArrayList<>();
 
         // Iterator that traverses over the plans
         private final Iterator<SubPlanCallable> callableIterator = subPlanGenerators.iterator();
