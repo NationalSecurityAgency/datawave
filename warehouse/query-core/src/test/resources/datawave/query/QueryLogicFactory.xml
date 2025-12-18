@@ -635,6 +635,26 @@
         <property name="logicDescription" value="Query that returns data from the term frequency query table" />
     </bean>
 
+    <bean id="KeywordUUIDQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.keyword.KeywordChainedUUIDQueryLogic">
+        <property name="logic1">
+            <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+            </bean>
+        </property>
+        <property name="logic2" ref="KeywordQuery"/>
+        <property name="auditType" value="NONE"/>
+        <property name="chainStrategy">
+            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy"/>
+        </property>
+    </bean>
+
     <!-- Query Logic that returns returnd document keywords -->
     <bean id="KeywordQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.keyword.KeywordQueryLogic">
         <property name="tableName" value="shard" />

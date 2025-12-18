@@ -2,10 +2,13 @@ package datawave.query.function.serializer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +27,7 @@ import datawave.data.type.PointType;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.DocumentKey;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.util.TypeMetadata;
 
@@ -35,6 +39,7 @@ public abstract class KryoDocumentSerDeTest {
     protected final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
     protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
+    private final ColumnVisibility visibility = new ColumnVisibility("PUBLIC&(FOO|BAR)");
     private final String datatype = "datatype";
     private final Key documentKey = new Key("row", "datatype\0uid");
 
@@ -60,6 +65,9 @@ public abstract class KryoDocumentSerDeTest {
         d.put("NUM", createAttribute("NUM", "25"));
         d.put("NUM_LIST", createAttribute("NUM_LIST", "22,23,24"));
         d.put("POINT", createAttribute("POINT", "POINT(10 10)"));
+
+        Key metadata = new Key("row", "datatype\0uid", "", visibility, 0L);
+        d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(metadata, true));
     }
 
     private TypeMetadata getTypeMetadata() {
@@ -89,7 +97,7 @@ public abstract class KryoDocumentSerDeTest {
             int max = 1_000_000;
             for (int i = 1; i <= max; i++) {
                 byte[] bytes = serializer.serialize(d);
-                assertTrue(450 < bytes.length && bytes.length <= 460);
+                assertTrue(500 < bytes.length && bytes.length <= 510, "data length is: " + bytes.length);
             }
         }
     }
@@ -101,9 +109,13 @@ public abstract class KryoDocumentSerDeTest {
 
             int max = 1_000_000;
             for (int i = 1; i <= max; i++) {
-                ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                Document d = deserializer.deserialize(bais);
-                assertEquals(12, d.size());
+                try (var bais = new ByteArrayInputStream(data)) {
+                    Document d = deserializer.deserialize(bais);
+                    assertEquals(13, d.size());
+                } catch (IOException e) {
+                    fail("failed to deserialize document");
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
