@@ -9,11 +9,35 @@ import java.util.StringJoiner;
  */
 public class QueryLimitConfiguration {
 
+    /**
+     * The default maximum number of active concurrent queries a user may have across all systems.
+     */
     private int defaultUserQueryLimit;
+
+    /**
+     * The default maximum number of active concurrent queries that may be running on a system.
+     */
     private int defaultSystemQueryLimit;
 
+    /**
+     * The maximum size to use for internal caches in {@link GroupLimitCache} and {@link PatternMatcher}. This value should be large enough to hold the number
+     * of distinct query logics.
+     */
+    private long internalCacheMaxSize = 200;
+
+    /**
+     * The custom user limit configurations.
+     */
     private List<UserLimitConfiguration> userConfigs;
+
+    /**
+     * The custom system limit configurations.
+     */
     private List<SystemLimitConfiguration> systemConfigs;
+
+    /**
+     * The custom query logic group configurations.
+     */
     private List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs;
 
     public int getDefaultUserQueryLimit() {
@@ -30,6 +54,14 @@ public class QueryLimitConfiguration {
 
     public void setDefaultSystemQueryLimit(int defaultSystemQueryLimit) {
         this.defaultSystemQueryLimit = defaultSystemQueryLimit;
+    }
+
+    public long getInternalCacheMaxSize() {
+        return internalCacheMaxSize;
+    }
+
+    public void setInternalCacheMaxSize(long internalCacheMaxSize) {
+        this.internalCacheMaxSize = internalCacheMaxSize;
     }
 
     public List<UserLimitConfiguration> getUserConfigs() {
@@ -63,19 +95,20 @@ public class QueryLimitConfiguration {
         }
         QueryLimitConfiguration that = (QueryLimitConfiguration) o;
         return defaultUserQueryLimit == that.defaultUserQueryLimit && defaultSystemQueryLimit == that.defaultSystemQueryLimit
-                        && Objects.equals(userConfigs, that.userConfigs) && Objects.equals(systemConfigs, that.systemConfigs)
-                        && Objects.equals(queryLogicGroupConfigs, that.queryLogicGroupConfigs);
+                        && internalCacheMaxSize == that.internalCacheMaxSize && Objects.equals(userConfigs, that.userConfigs)
+                        && Objects.equals(systemConfigs, that.systemConfigs) && Objects.equals(queryLogicGroupConfigs, that.queryLogicGroupConfigs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(defaultUserQueryLimit, defaultSystemQueryLimit, userConfigs, systemConfigs, queryLogicGroupConfigs);
+        return Objects.hash(defaultUserQueryLimit, defaultSystemQueryLimit, internalCacheMaxSize, userConfigs, systemConfigs, queryLogicGroupConfigs);
     }
 
     @Override
     public String toString() {
         return new StringJoiner(", ", QueryLimitConfiguration.class.getSimpleName() + "[", "]").add("defaultUserQueryLimit=" + defaultUserQueryLimit)
-                        .add("defaultSystemQueryLimit=" + defaultSystemQueryLimit).add("userConfigs=" + userConfigs).add("systemConfigs=" + systemConfigs)
-                        .add("queryLogicGroupConfigs=" + queryLogicGroupConfigs).toString();
+                        .add("defaultSystemQueryLimit=" + defaultSystemQueryLimit).add("internalCacheMaxSize=" + internalCacheMaxSize)
+                        .add("userConfigs=" + userConfigs).add("systemConfigs=" + systemConfigs).add("queryLogicGroupConfigs=" + queryLogicGroupConfigs)
+                        .toString();
     }
 }

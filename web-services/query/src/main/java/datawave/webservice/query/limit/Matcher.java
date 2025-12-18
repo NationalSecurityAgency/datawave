@@ -60,9 +60,11 @@ public interface Matcher {
      *
      * @param str
      *            the string
+     * @param maxCacheSize
+     *            the maximum size for the internal cache if a {@link PatternMatcher} is returned
      * @return the matcher
      */
-    static Matcher getMatcher(String str) {
+    static Matcher getMatcher(String str, long maxCacheSize) {
         Objects.requireNonNull(str, "Parameter str cannot be null");
 
         if (QueryLimitConstants.wildcardOnlyPattern.matcher(str).matches()) {
@@ -93,7 +95,7 @@ public interface Matcher {
 
             // If a non-literal regex construct was seen, use a Pattern matcher that falls into the 'partial-match' bucket.
             if (regexSeen) {
-                return new PatternMatcher(Pattern.compile(str));
+                return new PatternMatcher(Pattern.compile(str), maxCacheSize);
             } else if (escapedLiteralsSeen) {
                 // If the pattern consists solely of literals and escaped literals, remove the escaping backslashes and use a string matcher that falls into the
                 // 'exact-match' bucket.

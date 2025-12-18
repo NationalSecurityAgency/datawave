@@ -131,11 +131,16 @@ public class QueryLimiter {
                 throw new IllegalArgumentException("Default system query limit must be greater than 0");
             }
 
-            this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getQueryLogicGroupConfigs());
-            this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getUserConfigs(),
-                            queryLogicGroupLimitProvider);
-            this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getSystemConfigs(),
-                            queryLogicGroupLimitProvider);
+            if (this.configuration.getInternalCacheMaxSize() < 1) {
+                throw new IllegalArgumentException("Internal cache max size must be greater than 0");
+            }
+
+            this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
+                            configuration.getQueryLogicGroupConfigs());
+            this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getInternalCacheMaxSize(),
+                            configuration.getUserConfigs(), queryLogicGroupLimitProvider);
+            this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
+                            configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
         } else {
             this.queryLogicGroupLimitProvider = null;
             this.userLimitProvider = null;

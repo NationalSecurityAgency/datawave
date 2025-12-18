@@ -12,13 +12,13 @@ class GroupLimitCacheTest {
 
     @Test
     void testNullLimits() {
-        GroupLimitCache cache = new GroupLimitCache(null);
+        GroupLimitCache cache = GroupLimitCache.of(null, 200);
         assertThat(cache.isEmpty()).isTrue();
     }
 
     @Test
     void testEmptyLimits() {
-        GroupLimitCache cache = new GroupLimitCache(new TreeSet<>());
+        GroupLimitCache cache = GroupLimitCache.of(new TreeSet<>(), 200);
         assertThat(cache.isEmpty()).isTrue();
     }
 
@@ -27,21 +27,21 @@ class GroupLimitCacheTest {
         SortedSet<QueryLogicGroupLimit> limits = new TreeSet<>();
 
         // We should only receive this when there is no match to any other group.
-        limits.add(new QueryLogicGroupLimit("Default_Wildcard", Matcher.getMatcher(".*"), 50));
+        limits.add(new QueryLogicGroupLimit("Default_Wildcard", Matcher.getMatcher(".*", 200), 50));
 
         // We should receive all of these since they are better than the wildcard match, but have no exact match to take precedence.
-        limits.add(new QueryLogicGroupLimit("Event_Partial_1", Matcher.getMatcher("Event.*"), 50));
-        limits.add(new QueryLogicGroupLimit("Event_Partial_2", Matcher.getMatcher("EventQuery.*"), 25));
-        limits.add(new QueryLogicGroupLimit("Event_Partial_3", Matcher.getMatcher("Eve.*"), 5));
+        limits.add(new QueryLogicGroupLimit("Event_Partial_1", Matcher.getMatcher("Event.*", 200), 50));
+        limits.add(new QueryLogicGroupLimit("Event_Partial_2", Matcher.getMatcher("EventQuery.*", 200), 25));
+        limits.add(new QueryLogicGroupLimit("Event_Partial_3", Matcher.getMatcher("Eve.*", 200), 5));
 
         // We should receive only TLD_Exact_2 as the exact match with the lowest limit.
-        limits.add(new QueryLogicGroupLimit("TLD_Partial_1", Matcher.getMatcher("TLD.*"), 30));
-        limits.add(new QueryLogicGroupLimit("TLD_Partial_2", Matcher.getMatcher("TL.*"), 20));
-        limits.add(new QueryLogicGroupLimit("TLD_Partial_3", Matcher.getMatcher("TLDQ.*"), 10));
-        limits.add(new QueryLogicGroupLimit("TLD_Exact_1", Matcher.getMatcher("TLDQueryLogic"), 25));
-        limits.add(new QueryLogicGroupLimit("TLD_Exact_2", Matcher.getMatcher("TLDQueryLogic"), 5));
+        limits.add(new QueryLogicGroupLimit("TLD_Partial_1", Matcher.getMatcher("TLD.*", 200), 30));
+        limits.add(new QueryLogicGroupLimit("TLD_Partial_2", Matcher.getMatcher("TL.*", 200), 20));
+        limits.add(new QueryLogicGroupLimit("TLD_Partial_3", Matcher.getMatcher("TLDQ.*", 200), 10));
+        limits.add(new QueryLogicGroupLimit("TLD_Exact_1", Matcher.getMatcher("TLDQueryLogic", 200), 25));
+        limits.add(new QueryLogicGroupLimit("TLD_Exact_2", Matcher.getMatcher("TLDQueryLogic", 200), 5));
 
-        GroupLimitCache cache = new GroupLimitCache(limits);
+        GroupLimitCache cache = GroupLimitCache.of(limits, 200);
         assertThat(cache.isEmpty()).isFalse();
 
         // Verify we got the exact match with the lowest limit for TLDQueryLogic.
@@ -58,9 +58,9 @@ class GroupLimitCacheTest {
     @Test
     void testNoMatch() {
         SortedSet<QueryLogicGroupLimit> limits = new TreeSet<>();
-        limits.add(new QueryLogicGroupLimit("TLD", Matcher.getMatcher("TLD.*"), 50));
+        limits.add(new QueryLogicGroupLimit("TLD", Matcher.getMatcher("TLD.*", 200), 50));
 
-        GroupLimitCache cache = new GroupLimitCache(limits);
+        GroupLimitCache cache = GroupLimitCache.of(limits, 200);
         assertThat(cache.isEmpty()).isFalse();
 
         // Verify we got an empty map due to no match against a group.

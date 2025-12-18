@@ -23,16 +23,19 @@ public class QueryLogicGroupLimitProvider {
 
     private static final Logger log = Logger.getLogger(QueryLogicGroupLimitProvider.class);
 
+    private final long maxCacheSize;
+
     private Map<String,QueryLogicGroupLimit> groupsToLimits = Map.of();
 
     private GroupLimitCache groupLimitCache;
 
-    public QueryLogicGroupLimitProvider(Collection<QueryLogicGroupLimitConfiguration> configs) {
+    public QueryLogicGroupLimitProvider(long maxCacheSize, Collection<QueryLogicGroupLimitConfiguration> configs) {
+        this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
             populateLimits(configs);
         } else {
-            this.groupLimitCache = new GroupLimitCache(null);
+            this.groupLimitCache = GroupLimitCache.emptyInstance();
             this.groupsToLimits = Map.of();
         }
 
@@ -100,7 +103,7 @@ public class QueryLogicGroupLimitProvider {
 
             // Identify the best matching strategy to use when matching query logics.
             String queryLogicPattern = config.getQueryLogicPattern();
-            Matcher matcher = Matcher.getMatcher(queryLogicPattern);
+            Matcher matcher = Matcher.getMatcher(queryLogicPattern, maxCacheSize);
 
             // Add a new matchable limit. The sorted set will be sorted in the following priority:
             // 1. First by matching type: EXACT, then PARTIAL, then ALL
@@ -110,7 +113,7 @@ public class QueryLogicGroupLimitProvider {
         }
 
         SortedSet<QueryLogicGroupLimit> limits = new TreeSet<>(groupLimits.values());
-        this.groupLimitCache = new GroupLimitCache(limits);
+        this.groupLimitCache = GroupLimitCache.of(limits, maxCacheSize);
         // @formatter:off
         this.groupsToLimits = Collections.unmodifiableMap(getMapSortedByValue(groupLimits));
         // @formatter:on
@@ -127,7 +130,7 @@ public class QueryLogicGroupLimitProvider {
      */
     public SortedSet<QueryLogicGroupLimit> createOverrides(Map<String,Integer> groupOverrides, boolean includeNonOverriddenGroups) {
         SortedSet<MatchableOverride> matchableOverrides = new TreeSet<>();
-        groupOverrides.forEach((key, value) -> matchableOverrides.add(new MatchableOverride(Matcher.getMatcher(key), value)));
+        groupOverrides.forEach((key, value) -> matchableOverrides.add(new MatchableOverride(Matcher.getMatcher(key, maxCacheSize), value)));
 
         SortedSet<QueryLogicGroupLimit> overrides = new TreeSet<>();
         for (String group : groupsToLimits.keySet()) {

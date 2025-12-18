@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 class SystemLimitProviderTest {
 
     private static final int defaultLimit = 5000;
+    private static final int maxCacheSize = 200;
     private SystemLimitProvider provider;
     private final List<SystemLimitConfiguration> systemConfigs = new ArrayList<>();
     private final List<QueryLogicGroupLimitConfiguration> groupConfigs = new ArrayList<>();
@@ -281,7 +282,7 @@ class SystemLimitProviderTest {
     }
 
     private void initProvider() {
-        QueryLogicGroupLimitProvider groupProvider = new QueryLogicGroupLimitProvider(groupConfigs);
-        this.provider = new SystemLimitProvider(defaultLimit, systemConfigs, groupProvider);
+        QueryLogicGroupLimitProvider groupProvider = new QueryLogicGroupLimitProvider(maxCacheSize, groupConfigs);
+        this.provider = new SystemLimitProvider(defaultLimit, maxCacheSize, systemConfigs, groupProvider);
     }
 }

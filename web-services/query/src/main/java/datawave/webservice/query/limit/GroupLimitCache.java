@@ -23,14 +23,28 @@ public class GroupLimitCache {
     // Internal cache for improved lookup efficiency.
     private final Cache<String,Map<String,Integer>> cache;
 
-    public GroupLimitCache(SortedSet<QueryLogicGroupLimit> groupsToLimits) {
-        if (groupsToLimits != null && !groupsToLimits.isEmpty()) {
-            this.cache = Caffeine.newBuilder().maximumSize(100).build();
-            this.groupLimits = Collections.unmodifiableSortedSet(new TreeSet<>(groupsToLimits));
+    public static GroupLimitCache of(SortedSet<QueryLogicGroupLimit> groupLimits, long maxCacheSize) {
+        if (groupLimits != null && !groupLimits.isEmpty()) {
+            return new GroupLimitCache(groupLimits, maxCacheSize);
         } else {
-            this.cache = null;
-            this.groupLimits = null;
+            return EMPTY_INSTANCE;
         }
+    }
+
+    private static final GroupLimitCache EMPTY_INSTANCE = new GroupLimitCache();
+
+    public static GroupLimitCache emptyInstance() {
+        return EMPTY_INSTANCE;
+    }
+
+    private GroupLimitCache(SortedSet<QueryLogicGroupLimit> groupsToLimits, long maxCacheSize) {
+        this.cache = Caffeine.newBuilder().maximumSize(maxCacheSize).build();
+        this.groupLimits = Collections.unmodifiableSortedSet(new TreeSet<>(groupsToLimits));
+    }
+
+    private GroupLimitCache() {
+        this.cache = null;
+        this.groupLimits = null;
     }
 
     /**

@@ -198,7 +198,7 @@ class QueryLogicGroupLimitProviderTest {
     }
 
     private void initProvider() {
-        provider = new QueryLogicGroupLimitProvider(configs);
+        provider = new QueryLogicGroupLimitProvider(200, configs);
     }
 
     private void givenConfig(String groupName, String queryLogicPattern, int queryLimit) {

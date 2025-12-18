@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 class UserLimitProviderTest {
 
     private static final int defaultLimit = 100;
+    private static final int maxCacheSize = 200;
     private UserLimitProvider provider;
     private final List<UserLimitConfiguration> userConfigs = new ArrayList<>();
     private final List<QueryLogicGroupLimitConfiguration> groupConfigs = new ArrayList<>();
@@ -156,7 +157,7 @@ class UserLimitProviderTest {
     }
 
     private void initProvider() {
-        QueryLogicGroupLimitProvider groupProvider = new QueryLogicGroupLimitProvider(groupConfigs);
-        this.provider = new UserLimitProvider(defaultLimit, userConfigs, groupProvider);
+        QueryLogicGroupLimitProvider groupProvider = new QueryLogicGroupLimitProvider(maxCacheSize, groupConfigs);
+        this.provider = new UserLimitProvider(defaultLimit, maxCacheSize, userConfigs, groupProvider);
     }
 }

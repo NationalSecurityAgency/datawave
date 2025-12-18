@@ -21,10 +21,14 @@ public class UserLimitProvider {
 
     private final int defaultUserQueryLimit;
 
+    private final long maxCacheSize;
+
     private Map<String,UserLimits> customLimits = new HashMap<>();
 
-    UserLimitProvider(int defaultUserQueryLimit, Collection<UserLimitConfiguration> configs, QueryLogicGroupLimitProvider groupLimitProvider) {
+    UserLimitProvider(int defaultUserQueryLimit, long maxCacheSize, Collection<UserLimitConfiguration> configs,
+                    QueryLogicGroupLimitProvider groupLimitProvider) {
         this.defaultUserQueryLimit = defaultUserQueryLimit;
+        this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
             populateLimits(configs, groupLimitProvider);
@@ -119,7 +123,7 @@ public class UserLimitProvider {
                 groupLimitOverrides = groupLimitProvider.createOverrides(config.getQueryLogicGroupLimits(), true);
             }
 
-            configuredLimits.put(userDn, new UserLimits(userDn, customQueryLimit, groupLimitOverrides));
+            configuredLimits.put(userDn, new UserLimits(userDn, customQueryLimit, groupLimitOverrides, maxCacheSize));
         }
         this.customLimits = Map.copyOf(configuredLimits);
     }

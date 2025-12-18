@@ -16,12 +16,13 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  */
 public class PatternMatcher implements Matcher {
 
-    private final Cache<String,Boolean> cache = Caffeine.newBuilder().maximumSize(100).build();
+    private final Cache<String,Boolean> cache;
     private final Pattern pattern;
 
-    public PatternMatcher(Pattern pattern) {
+    public PatternMatcher(Pattern pattern, long maxCacheSize) {
         Objects.requireNonNull(pattern, "pattern must not be null");
         this.pattern = pattern;
+        this.cache = Caffeine.newBuilder().maximumSize(maxCacheSize).build();
     }
 
     public Pattern getPattern() {

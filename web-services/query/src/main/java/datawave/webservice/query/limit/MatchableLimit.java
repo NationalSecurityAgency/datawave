@@ -6,9 +6,9 @@ public class MatchableLimit implements Comparable<MatchableLimit> {
     private final Matcher matcher;
     private final int queryLimit;
 
-    public MatchableLimit(String pattern, int queryLimit) {
+    public MatchableLimit(String pattern, int queryLimit, long maxCacheSize) {
         this.pattern = pattern;
-        this.matcher = Matcher.getMatcher(pattern);
+        this.matcher = Matcher.getMatcher(pattern, maxCacheSize);
         this.queryLimit = queryLimit;
     }
 

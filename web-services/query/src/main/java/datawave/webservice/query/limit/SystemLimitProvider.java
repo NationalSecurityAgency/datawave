@@ -29,10 +29,14 @@ public class SystemLimitProvider {
 
     private final int defaultSystemQueryLimit;
 
+    private final long maxCacheSize;
+
     private SortedSet<SortableSystemLimit> sortedSystemLimits;
 
-    SystemLimitProvider(int defaultSystemQueryLimit, Collection<SystemLimitConfiguration> configs, QueryLogicGroupLimitProvider groupLimitProvider) {
+    SystemLimitProvider(int defaultSystemQueryLimit, long maxCacheSize, Collection<SystemLimitConfiguration> configs,
+                    QueryLogicGroupLimitProvider groupLimitProvider) {
         this.defaultSystemQueryLimit = defaultSystemQueryLimit;
+        this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
             populateLimits(configs, groupLimitProvider);
@@ -76,7 +80,7 @@ public class SystemLimitProvider {
             }
 
             // Fetch the matcher that would be used for the system pattern.
-            Matcher matcher = Matcher.getMatcher(systemPattern);
+            Matcher matcher = Matcher.getMatcher(systemPattern, maxCacheSize);
 
             // Verify that we do not have an exact-matching pattern that is equivalent to a previously seen exact-matching pattern, such as 'SYSTEM-01' vs.
             // 'SYSTEM\\-01'.
@@ -142,7 +146,7 @@ public class SystemLimitProvider {
 
             // Identify the best matching strategy to use for matching system names.
             String systemPattern = config.getSystemPattern();
-            Matcher matcher = Matcher.getMatcher(systemPattern);
+            Matcher matcher = Matcher.getMatcher(systemPattern, maxCacheSize);
 
             // If the query limit given for the system was null or less than zero, use the default system query limit.
             Integer customQueryLimit = config.getQueryLimit();
@@ -201,7 +205,7 @@ public class SystemLimitProvider {
                 for (SortableSystemLimit candidate : sortedSystemLimits) {
                     if (candidate.matcher.matches(system)) {
                         SystemLimits systemLimits = new SystemLimits(candidate.systemPattern, candidate.queryLimit, candidate.countsAgainstUserLimit,
-                                        candidate.groupLimitOverrides);
+                                        candidate.groupLimitOverrides, maxCacheSize);
                         optional = Optional.of(systemLimits);
                         break;
                     }

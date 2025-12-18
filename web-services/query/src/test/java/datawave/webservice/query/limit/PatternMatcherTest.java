@@ -16,12 +16,12 @@ class PatternMatcherTest {
      */
     @Test
     void testNullPattern() {
-        assertThatThrownBy(() -> new PatternMatcher(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new PatternMatcher(null, 200)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void testGetPattern() {
-        PatternMatcher patternMatcher = new PatternMatcher(Pattern.compile("TLD.*"));
+        PatternMatcher patternMatcher = new PatternMatcher(Pattern.compile("TLD.*"), 200);
         assertThat(patternMatcher.getPattern().pattern()).isEqualTo("TLD.*");
     }
 
@@ -30,7 +30,7 @@ class PatternMatcherTest {
      */
     @Test
     void testMatchesWithMatch() {
-        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"), 200);
         assertThat(matcher.matches("abc")).isTrue();
     }
 
@@ -39,7 +39,7 @@ class PatternMatcherTest {
      */
     @Test
     void testMatchesWithNonMatch() {
-        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"), 200);
         assertThat(matcher.matches("efj")).isFalse();
     }
 
@@ -48,7 +48,7 @@ class PatternMatcherTest {
      */
     @Test
     void testMatchesAnyOfWithMatch() {
-        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"), 200);
         assertThat(matcher.matchesAnyOf(Set.of("abc", "def", "ghi"))).isTrue();
     }
 
@@ -57,7 +57,7 @@ class PatternMatcherTest {
      */
     @Test
     void testMatchesAnyOfWithNoMatch() {
-        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"), 200);
         assertThat(matcher.matchesAnyOf(Set.of("def", "ghi", "jkl"))).isFalse();
     }
 
@@ -66,7 +66,7 @@ class PatternMatcherTest {
      */
     @Test
     void testGetMatchesWithMatch() {
-        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"), 200);
         assertThat(matcher.getMatches(Set.of("abc", "def", "ghi", "ab", "abcde"))).containsExactlyInAnyOrder("abc", "ab", "abcde");
     }
 
@@ -75,7 +75,7 @@ class PatternMatcherTest {
      */
     @Test
     void testGetMatchesWithNoMatch() {
-        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"));
+        PatternMatcher matcher = new PatternMatcher(Pattern.compile("ab.*"), 200);
         assertThat(matcher.getMatches(Set.of("def", "ghi", "jkl"))).isEmpty();
     }
 }

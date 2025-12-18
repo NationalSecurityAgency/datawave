@@ -19,10 +19,10 @@ public class UserLimits {
     // The custom limits the user has for query logic groups.
     private final GroupLimitCache groupLimitOverrides;
 
-    public UserLimits(String userDn, int queryLimit, SortedSet<QueryLogicGroupLimit> groupLimitsOverrides) {
+    public UserLimits(String userDn, int queryLimit, SortedSet<QueryLogicGroupLimit> groupLimitsOverrides, long maxCacheSize) {
         this.userDn = userDn;
         this.queryLimit = queryLimit;
-        this.groupLimitOverrides = new GroupLimitCache(groupLimitsOverrides);
+        this.groupLimitOverrides = GroupLimitCache.of(groupLimitsOverrides, maxCacheSize);
     }
 
     /**

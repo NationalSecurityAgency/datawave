@@ -15,11 +15,12 @@ public class SystemLimits {
 
     private final GroupLimitCache groupLimitOverrides;
 
-    public SystemLimits(String systemPattern, Integer queryLimit, boolean countsAgainstUserLimit, SortedSet<QueryLogicGroupLimit> groupLimitOverrides) {
+    public SystemLimits(String systemPattern, Integer queryLimit, boolean countsAgainstUserLimit, SortedSet<QueryLogicGroupLimit> groupLimitOverrides,
+                    long maxCacheSize) {
         this.systemPattern = systemPattern;
         this.queryLimit = queryLimit;
         this.countsAgainstUserLimit = countsAgainstUserLimit;
-        this.groupLimitOverrides = new GroupLimitCache(groupLimitOverrides);
+        this.groupLimitOverrides = GroupLimitCache.of(groupLimitOverrides, maxCacheSize);
     }
 
     public boolean overridesQueryLimit() {
