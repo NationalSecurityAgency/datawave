@@ -101,6 +101,8 @@
         - defaultSystemQueryLimit: The default number of active concurrent queries that may be running on a system.
         - defaultUserQueryLimit: The default maximum number of concurrent active queries a user may have across all
             systems that count towards the user's query limit.
+        - internalCacheMaxSize: The default maximum size to enforce for internal caching purposes. This value should
+            be large enough to cover the maximum number of distinct query logics that may be seen. Defaults to 200.
         - queryLogicGroupConfigs: The query logic group configurations to use.
         - systemConfigs: The per-system configurations to use.
         - userConfigs: The user configurations to use.
@@ -109,6 +111,7 @@
     <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
         <property name="defaultSystemQueryLimit" value="5000"/>
         <property name="defaultUserQueryLimit" value="100"/>
+        <property name="internalCacheMaxSize" value="200"/>
         <property name="queryLogicGroupConfigs">
             <list>
                 <ref bean="TLDLogicGroup"/>

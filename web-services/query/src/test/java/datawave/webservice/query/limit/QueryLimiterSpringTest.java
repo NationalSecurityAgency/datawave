@@ -24,7 +24,7 @@ class QueryLimiterSpringTest {
 
     @Autowired
     private QueryLimiter limiter;
-
+    
     @Test
     void testCreation() {
         assertThat(limiter).isNotNull();
@@ -35,6 +35,7 @@ class QueryLimiterSpringTest {
 
         assertThat(config.getDefaultUserQueryLimit()).isEqualTo(100);
         assertThat(config.getDefaultSystemQueryLimit()).isEqualTo(5000);
+        assertThat(config.getInternalCacheMaxSize()).isEqualTo(300);
 
         List<UserLimitConfiguration> expectedUserConfigs = new ArrayList<>();
         expectedUserConfigs.add(new UserLimitConfiguration("cn=userA c=us", 250, Map.of("GROUP_1", 25, "GROUP_2", 75)));
