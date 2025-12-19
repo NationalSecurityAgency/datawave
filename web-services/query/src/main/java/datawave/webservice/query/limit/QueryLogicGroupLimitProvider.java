@@ -14,14 +14,11 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 /**
  * This class is responsible for identifying and providing limits that should be enforced for query logic groups.
  */
 public class QueryLogicGroupLimitProvider {
-
-    private static final Logger log = Logger.getLogger(QueryLogicGroupLimitProvider.class);
 
     private final long maxCacheSize;
 
@@ -37,10 +34,6 @@ public class QueryLogicGroupLimitProvider {
         } else {
             this.groupLimitCache = GroupLimitCache.emptyInstance();
             this.groupsToLimits = Map.of();
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Initalized with groupsToLimits: " + this.groupsToLimits);
         }
     }
 
