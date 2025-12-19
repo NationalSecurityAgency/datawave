@@ -19,7 +19,7 @@ public class QueryHeartbeat {
 
     private final String queryId;
     private final Collection<PersistentNode> nodes;
-
+    private boolean stopped = false;
     private QueryHeartbeatCache.HeartbeatStoppedListener listener;
 
     public QueryHeartbeat(String queryId, Collection<PersistentNode> nodes) {
@@ -64,13 +64,34 @@ public class QueryHeartbeat {
      * Stop and delete the heartbeat without notifying the internal listener. This is used by {@link QueryHeartbeatCache} to avoid necessary looping calls.
      */
     public void stopWithoutNotifyingListener() {
-        for (PersistentNode node : nodes) {
-            try {
-                node.close();
-            } catch (Exception e) {
-                log.error("Error closing ephemeral node", e);
+        if (!stopped) {
+            for (PersistentNode node : nodes) {
+                try {
+                    node.close();
+                } catch (Exception e) {
+                    log.error("Error closing ephemeral node", e);
+                }
             }
         }
+        stopped = true;
+    }
+
+    /**
+     * Return whether this {@link QueryHeartbeat} is considered stopped.
+     *
+     * @return true if the heartbeat is stopped, or false otherwise
+     */
+    public boolean isStopped() {
+        if (!stopped) {
+            // The heartbeat is stopped if none of the ephemeral nodes exist.
+            for (PersistentNode node : nodes) {
+                if (node.getActualPath() != null) {
+                    return false;
+                }
+            }
+            this.stopped = true;
+        }
+        return true;
     }
 
     /**

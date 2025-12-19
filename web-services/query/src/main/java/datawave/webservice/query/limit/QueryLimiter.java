@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+
+import com.google.common.base.Preconditions;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
@@ -19,29 +19,29 @@ public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
 
-    // Default to using InetAddress
-    private HostnameProvider hostnameProvider = HostnameProvider.getInetAddressProvider();
-
     // The string to use to connect to zookeeper.
-    private String zookeeperConfig;
+    private final String zookeeperConfig;
 
     // The configuration to initialize the limit providers with.
-    private QueryLimitConfiguration configuration;
+    private final QueryLimitConfiguration configuration;
+
+    // A cache to store heartbeats of active queries within.
+    private final QueryHeartbeatCache heartbeatCache;
+
+    // Default to using InetAddress
+    private final HostnameProvider hostnameProvider;
 
     // Provides configured limits for query logic groups.
-    private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
+    private final QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
 
     // Provides configured limits for users.
-    private UserLimitProvider userLimitProvider;
+    private final UserLimitProvider userLimitProvider;
 
     // Provides configured limits for systems.
-    private SystemLimitProvider systemLimitProvider;
+    private final SystemLimitProvider systemLimitProvider;
 
     // The tracker responsible for interfacing with Zookeeper.
     private ActiveQueryTracker activeQueryTracker;
-
-    // A cache to store heartbeats of active queries within.
-    private QueryHeartbeatCache heartbeatCache;
 
     /**
      * Return the zookeeper connection string.
@@ -50,26 +50,6 @@ public class QueryLimiter {
      */
     public String getZookeeperConfig() {
         return zookeeperConfig;
-    }
-
-    /**
-     * Set the zookeeper connection string
-     *
-     * @param zookeeperConfig
-     *            the zookeeper connection string
-     */
-    public void setZookeeperConfig(String zookeeperConfig) {
-        this.zookeeperConfig = zookeeperConfig;
-    }
-
-    /**
-     * Set the configuration to use to set up this {@link QueryLimiter}
-     *
-     * @param queryLimitConfiguration
-     *            the config
-     */
-    public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
-        this.configuration = queryLimitConfiguration;
     }
 
     /**
@@ -82,69 +62,70 @@ public class QueryLimiter {
     }
 
     /**
-     * Return the {@link UserLimitProvider} instantiated after the last time {@link #setup()} was called.
+     * Creates and returns a new {@link QueryLimiter}. An {@link InetHostnameProvider} will be used for resolving the server hostname.
      *
-     * @return the user limit provider
+     * @param zookeeperConfig
+     *            the connection string to use for Zookeeper
+     * @param configuration
+     *            the limit configurations
+     * @param heartbeatCache
+     *            the heartbeat cache
      */
-    UserLimitProvider getUserLimitProvider() {
-        return userLimitProvider;
+    public QueryLimiter(String zookeeperConfig, QueryLimitConfiguration configuration, QueryHeartbeatCache heartbeatCache) {
+        this(zookeeperConfig, configuration, heartbeatCache, HostnameProvider.getInetAddressProvider());
     }
 
     /**
-     * Return the {@link SystemLimitProvider} instantiated after the last time {@link #setup()} was called.
+     * Creates and returns a new {@link QueryLimiter}.
      *
-     * @return the system limit provider
+     * @param zookeeperConfig
+     *            the connection string to use for Zookeeper
+     * @param configuration
+     *            the limit configurations
+     * @param heartbeatCache
+     *            the heartbeat cache
+     * @param hostnameProvider
+     *            the hostname provider
      */
-    SystemLimitProvider getSystemLimitProvider() {
-        return systemLimitProvider;
-    }
+    public QueryLimiter(String zookeeperConfig, QueryLimitConfiguration configuration, QueryHeartbeatCache heartbeatCache, HostnameProvider hostnameProvider) {
+        Preconditions.checkNotNull(heartbeatCache, "heartbeat cache cannot be null");
+        Preconditions.checkNotNull(hostnameProvider, "hostname provider cannot be null");
+        Preconditions.checkArgument((zookeeperConfig != null && !zookeeperConfig.isEmpty()), "zookeeperConfig cannot be null or empty");
+        Preconditions.checkArgument(configuration != null, "configuration cannot be null");
+        Preconditions.checkArgument(configuration.getDefaultUserQueryLimit() > 0, "Default user query limit must be greater than 0");
+        Preconditions.checkArgument(configuration.getDefaultSystemQueryLimit() > 0, "Default system query limit must be greater than 0");
+        Preconditions.checkArgument(configuration.getInternalCacheMaxSize() > 0, "Internal cache max size must be greater than 0");
 
-    /**
-     * Return the {@link QueryLogicGroupLimitProvider} instantiated after the last time {@link #setup()} was called.
-     *
-     * @return the query logic group limit provider
-     */
-    QueryLogicGroupLimitProvider getQueryLogicGroupLimitProvider() {
-        return queryLogicGroupLimitProvider;
-    }
-
-    @Inject
-    public void setHeartbeatCache(QueryHeartbeatCache heartbeatCache) {
+        this.zookeeperConfig = zookeeperConfig;
+        this.configuration = configuration;
         this.heartbeatCache = heartbeatCache;
+        this.hostnameProvider = hostnameProvider;
+
+        this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
+                        configuration.getQueryLogicGroupConfigs());
+        this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getInternalCacheMaxSize(),
+                        configuration.getUserConfigs(), queryLogicGroupLimitProvider);
+        this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
+                        configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
     }
 
     /**
-     * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
-     * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
+     * Releases internal resources and cleans up connections and scheduled tasks.
      */
-    public void setup() {
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
+    public void shutdown() {
+        if (this.heartbeatCache != null) {
+            try {
+                this.heartbeatCache.shutdown();
+            } catch (Exception e) {
+                log.error("Error closing heartbeat cache", e);
+            }
         }
-
-        if (this.configuration != null) {
-            if (this.configuration.getDefaultUserQueryLimit() < 1) {
-                throw new IllegalArgumentException("Default user query limit must be greater than 0");
+        if (this.activeQueryTracker != null) {
+            try {
+                this.activeQueryTracker.close();
+            } catch (Exception e) {
+                log.error("Error closing active query tracker", e);
             }
-
-            if (this.configuration.getDefaultSystemQueryLimit() < 1) {
-                throw new IllegalArgumentException("Default system query limit must be greater than 0");
-            }
-
-            if (this.configuration.getInternalCacheMaxSize() < 1) {
-                throw new IllegalArgumentException("Internal cache max size must be greater than 0");
-            }
-
-            this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
-                            configuration.getQueryLogicGroupConfigs());
-            this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getInternalCacheMaxSize(),
-                            configuration.getUserConfigs(), queryLogicGroupLimitProvider);
-            this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
-                            configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
-        } else {
-            this.queryLogicGroupLimitProvider = null;
-            this.userLimitProvider = null;
-            this.systemLimitProvider = null;
         }
     }
 
@@ -204,7 +185,7 @@ public class QueryLimiter {
 
         QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic);
         // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
-        heartbeatCache.put(queryId, heartbeat);
+        heartbeatCache.put(heartbeat);
     }
 
     /**
@@ -218,16 +199,6 @@ public class QueryLimiter {
             log.debug("Stop counting query " + queryId + " towards limits");
         }
         heartbeatCache.stopAndRemoveHeartbeat(queryId);
-    }
-
-    /**
-     * Set the hostname provider. This only needs to be done for testing purposes when we want to avoid using {@link InetHostnameProvider}.
-     *
-     * @param provider
-     *            the hostname provider
-     */
-    public void setHostnameProvider(HostnameProvider provider) {
-        this.hostnameProvider = provider;
     }
 
     /**
@@ -486,7 +457,6 @@ public class QueryLimiter {
                     }
                 }
             }
-
         }
 
         private Map<String,Integer> getTotalSystemQueriesForGroups(Set<String> groups) {

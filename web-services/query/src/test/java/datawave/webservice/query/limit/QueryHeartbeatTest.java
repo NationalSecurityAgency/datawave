@@ -117,6 +117,19 @@ class QueryHeartbeatTest {
         EasyMock.verify(listener);
     }
 
+    /**
+     * Verify that {@link QueryHeartbeat#isStopped()} returns false for a non-stopped heartbeat, and true for a stopped heartbeat.
+     */
+    @Test
+    void testIsStopped() throws InterruptedException, IOException {
+        QueryHeartbeat heartbeat = createHeartbeat();
+        assertThat(heartbeat.isStopped()).isFalse();
+
+        heartbeat.stop();
+
+        assertThat(heartbeat.isStopped()).isTrue();
+    }
+
     private QueryHeartbeat createHeartbeat() throws InterruptedException {
         CuratorFramework client = getClient();
 

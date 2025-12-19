@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.curator.test.TestingServer;
@@ -67,7 +68,6 @@ class QueryLimiterConcurrencyTest {
 
     private QueryLimitConfiguration limitConfig;
     private static final Map<String,QueryLimiter> serversToLimiters = new HashMap<>();
-    private final QueryHeartbeatCache heartbeatCache = new QueryHeartbeatCache();
     private List<QueryCreationAttempt> attempts;
     private TestingServer server;
 
@@ -84,11 +84,13 @@ class QueryLimiterConcurrencyTest {
 
     @AfterEach
     void tearDown() throws IOException {
+        serversToLimiters.values().forEach(QueryLimiter::shutdown);
+        serversToLimiters.clear();
+
         if (server != null) {
             server.close();
         }
-        heartbeatCache.clear();
-        serversToLimiters.clear();
+
         limitConfig = null;
         tasks.clear();
         attempts = null;
@@ -582,12 +584,7 @@ class QueryLimiterConcurrencyTest {
 
     private void ensureLimiterExistsFor(String system) {
         if (!serversToLimiters.containsKey(system)) {
-            QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
-            limiter.setConfiguration(this.limitConfig);
-            limiter.setHeartbeatCache(this.heartbeatCache);
-            limiter.setHostnameProvider(() -> system);
-            limiter.setup();
+            QueryLimiter limiter = new QueryLimiter(server.getConnectString(), this.limitConfig, new QueryHeartbeatCache(5, TimeUnit.MINUTES), () -> system);
             serversToLimiters.put(system, limiter);
         }
     }

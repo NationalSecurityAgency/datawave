@@ -26,12 +26,14 @@ class QueryHeartbeatCacheTest {
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        cache = new QueryHeartbeatCache();
+        cache = new QueryHeartbeatCache(10, TimeUnit.MINUTES);
     }
 
     @AfterEach
-    void tearDown() throws IOException {
-        this.cache = null;
+    void tearDown() throws Exception {
+        if (this.cache != null) {
+            this.cache.shutdown();
+        }
         if (this.server != null) {
             this.server.close();
         }
@@ -43,7 +45,7 @@ class QueryHeartbeatCacheTest {
     @Test
     void testPut() throws InterruptedException {
         QueryHeartbeat heartbeat = createHeartbeat("queryId");
-        cache.put("queryId", heartbeat);
+        cache.put(heartbeat);
         assertThat(cache.get("queryId") == heartbeat).isTrue();
     }
 
@@ -53,7 +55,7 @@ class QueryHeartbeatCacheTest {
     @Test
     void testStoppingHeartbeatEvictsSelfFromCache() throws InterruptedException, IOException {
         QueryHeartbeat heartbeat = createHeartbeat("queryId");
-        cache.put("queryId", heartbeat);
+        cache.put(heartbeat);
 
         assertThat(cache.get("queryId")).isNotNull();
 
@@ -69,7 +71,7 @@ class QueryHeartbeatCacheTest {
     @Test
     void testStopAndRemoveHeartbeatWithMatch() throws InterruptedException {
         QueryHeartbeat heartbeat = createHeartbeat("queryId");
-        cache.put("queryId", heartbeat);
+        cache.put(heartbeat);
 
         cache.stopAndRemoveHeartbeat("queryId");
 
@@ -86,15 +88,89 @@ class QueryHeartbeatCacheTest {
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCache#clear()} clears the cache.
+     * Verify that {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} will remove any stopped heartbeats present in the cache.
      */
     @Test
-    void testClear() throws InterruptedException {
-        cache.put("queryId1", createHeartbeat("queryId1"));
-        cache.put("queryId2", createHeartbeat("queryId2"));
-        cache.put("queryId3", createHeartbeat("queryId3"));
+    void testRemoveAllStoppedHeartbeats() throws InterruptedException, IOException {
+        // Create heartbeats.
+        QueryHeartbeat heartbeat1 = createHeartbeat("queryId1");
+        QueryHeartbeat heartbeat2 = createHeartbeat("queryId2");
+        QueryHeartbeat heartbeat3 = createHeartbeat("queryId3");
+        QueryHeartbeat heartbeat4 = createHeartbeat("queryId4");
 
-        cache.clear();
+        // Add them to the cache.
+        cache.put(heartbeat1);
+        cache.put(heartbeat2);
+        cache.put(heartbeat3);
+        cache.put(heartbeat4);
+
+        // Nullify the listeners for the first two heartbeats and stop them. They will not evict themselves from the cache.
+        heartbeat1.setListener(null);
+        heartbeat1.stop();
+        heartbeat2.setListener(null);
+        heartbeat2.stop();
+
+        // Verify that we still see them in the cache.
+        assertThat(cache.get(heartbeat1.getQueryId())).isNotNull();
+        assertThat(cache.get(heartbeat2.getQueryId())).isNotNull();
+
+        cache.removeAllStoppedHeartbeats();
+
+        // Verify that we no longer see the stopped heartbeats in the cache, but do see the still-active heartbeats.
+        assertThat(cache.get(heartbeat1.getQueryId())).isNull();
+        assertThat(cache.get(heartbeat2.getQueryId())).isNull();
+        assertThat(cache.get(heartbeat3.getQueryId())).isNotNull();
+        assertThat(cache.get(heartbeat4.getQueryId())).isNotNull();
+    }
+
+    /**
+     * Verify that the scheduled cleanup task will remove any stopped heartbeats present in the cache.
+     */
+    @Test
+    void testTimedCleanupOfStoppedHeartbeats() throws IOException, InterruptedException {
+        // Create a cache with a cleanup interval of 1.5 seconds.
+        QueryHeartbeatCache cache = new QueryHeartbeatCache(1500, TimeUnit.MILLISECONDS);
+
+        // Create heartbeats.
+        QueryHeartbeat heartbeat1 = createHeartbeat("queryId1");
+        QueryHeartbeat heartbeat2 = createHeartbeat("queryId2");
+        QueryHeartbeat heartbeat3 = createHeartbeat("queryId3");
+        QueryHeartbeat heartbeat4 = createHeartbeat("queryId4");
+
+        // Add them to the cache.
+        cache.put(heartbeat1);
+        cache.put(heartbeat2);
+        cache.put(heartbeat3);
+        cache.put(heartbeat4);
+
+        // Nullify the listeners for the first two heartbeats and stop them. They will not evict themselves from the cache.
+        heartbeat1.setListener(null);
+        heartbeat1.stop();
+        heartbeat2.setListener(null);
+        heartbeat2.stop();
+
+        // Sleep 2 seconds.
+        Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+
+        // Verify that we no longer see the stopped heartbeats in the cache, but do see the still-active heartbeats.
+        assertThat(cache.get(heartbeat1.getQueryId())).isNull();
+        assertThat(cache.get(heartbeat2.getQueryId())).isNull();
+        assertThat(cache.get(heartbeat3.getQueryId())).isNotNull();
+        assertThat(cache.get(heartbeat4.getQueryId())).isNotNull();
+
+        cache.shutdown();
+    }
+
+    /**
+     * Verify that {@link QueryHeartbeatCache#shutdown()} clears the cache.
+     */
+    @Test
+    void testShutdown() throws InterruptedException {
+        cache.put(createHeartbeat("queryId1"));
+        cache.put(createHeartbeat("queryId2"));
+        cache.put(createHeartbeat("queryId3"));
+
+        cache.shutdown();
 
         assertThat(cache.get("queryId1")).isNull();
         assertThat(cache.get("queryId2")).isNull();

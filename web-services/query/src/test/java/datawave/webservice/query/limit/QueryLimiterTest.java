@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.test.TestingServer;
 import org.junit.jupiter.api.AfterEach;
@@ -28,19 +29,17 @@ class QueryLimiterTest {
     private static final String eventQueryLogic = "EventQueryLogic";
 
     private final Map<String,QueryLimiter> systemToLimiter = new HashMap<>();
-    private QueryHeartbeatCache heartbeatCache;
     private QueryLimitConfiguration config;
     private TestingServer server;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        heartbeatCache = new QueryHeartbeatCache();
     }
 
     @AfterEach
     void tearDown() throws IOException {
-        heartbeatCache.clear();
+        systemToLimiter.values().forEach(QueryLimiter::shutdown);
         systemToLimiter.clear();
         config = null;
         if (server != null) {
@@ -49,51 +48,42 @@ class QueryLimiterTest {
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if given a default user query limit less than 1.
+     * Verify that creating a {@link QueryLimiter} throws an exception if given a default user query limit less than 1.
      */
     @Test
     void testDefaultUserQueryLimitLessThanOne() {
-        QueryLimiter limiter = new QueryLimiter();
-        limiter.setZookeeperConfig(server.getConnectString());
-
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultUserQueryLimit(0);
-        limiter.setConfiguration(config);
 
-        assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Default user query limit must be greater than 0");
+        assertThatThrownBy(() -> new QueryLimiter(server.getConnectString(), config, new QueryHeartbeatCache(1, TimeUnit.MINUTES)))
+                        .isInstanceOf(IllegalArgumentException.class).hasMessage("Default user query limit must be greater than 0");
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if given a default system query limit less than 1.
+     * Verify that creating a {@link QueryLimiter} throws an exception if given a default system query limit less than 1.
      */
     @Test
     void testDefaultSystemQueryLimitLessThanOne() {
-        QueryLimiter limiter = new QueryLimiter();
-        limiter.setZookeeperConfig(server.getConnectString());
-
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultUserQueryLimit(100);
         config.setDefaultSystemQueryLimit(0);
-        limiter.setConfiguration(config);
 
-        assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Default system query limit must be greater than 0");
+        assertThatThrownBy(() -> new QueryLimiter(server.getConnectString(), config, new QueryHeartbeatCache(1, TimeUnit.MINUTES)))
+                        .isInstanceOf(IllegalArgumentException.class).hasMessage("Default system query limit must be greater than 0");
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if given a default internal max cache size less than 1.
+     * Verify that creating a {@link QueryLimiter} throws an exception if given a default internal max cache size less than 1.
      */
     @Test
     void testDefaultQueryLimitLessThanOne() {
-        QueryLimiter limiter = new QueryLimiter();
-        limiter.setZookeeperConfig(server.getConnectString());
-
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultUserQueryLimit(100);
         config.setDefaultSystemQueryLimit(5000);
         config.setInternalCacheMaxSize(0);
-        limiter.setConfiguration(config);
 
-        assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Internal cache max size must be greater than 0");
+        assertThatThrownBy(() -> new QueryLimiter(server.getConnectString(), config, new QueryHeartbeatCache(1, TimeUnit.MINUTES)))
+                        .isInstanceOf(IllegalArgumentException.class).hasMessage("Internal cache max size must be greater than 0");
     }
 
     /**
@@ -481,12 +471,7 @@ class QueryLimiterTest {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);
         } else {
-            QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
-            limiter.setConfiguration(config);
-            limiter.setHostnameProvider(() -> system);
-            limiter.setHeartbeatCache(heartbeatCache);
-            limiter.setup();
+            QueryLimiter limiter = new QueryLimiter(server.getConnectString(), config, new QueryHeartbeatCache(1, TimeUnit.MINUTES), () -> system);
             systemToLimiter.put(system, limiter);
             return limiter;
         }

@@ -2,17 +2,10 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:util="http://www.springframework.org/schema/util"
-       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
-    http://www.springframework.org/schema/context
-    http://www.springframework.org/schema/context/spring-context-4.0.xsd
-    http://www.springframework.org/schema/util
-    http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
-    <!-- Configuration for query logic group limits. -->
-
+    <!-- This file contains the required bean configurations for concurrent query limit enforcement. -->
 
     <!--
     Sample configuration for query logic groups.
@@ -96,7 +89,7 @@
     -->
 
 
-    <!-- Sample configuration for the query limit configuration. This is a required, singleton bean.
+    <!-- Sample configuration for the query limit configuration.
 
         - defaultSystemQueryLimit: The default number of active concurrent queries that may be running on a system.
         - defaultUserQueryLimit: The default maximum number of concurrent active queries a user may have across all
@@ -131,16 +124,26 @@
     </bean>
     -->
 
-    <!-- Configuration for the QueryLimitProvider. -->
+    <!-- Configuration for the QueryLimitConfiguration. -->
     <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
         <property name="defaultSystemQueryLimit" value="5000"/>
         <property name="defaultUserQueryLimit" value="100"/>
     </bean>
 
-    <!-- Configuration for the QueryLimiter. -->
-    <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" init-method="setup">
-        <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
-        <property name="configuration" ref="queryLimitConfiguration"/>
+    <!-- Configuration for the QueryHeartbeatCache.
+        - cleanupInterval: The interval for which the cache will periodically check and evict heartbeats that were stopped due to an error and not via the
+            QueryHeartbeat.stop() method.
+        - cleanupUnit: The cleanup time unit. This must resolve to a value of java.util.concurrent.TimeUnit.
+    -->
+    <bean id="queryHeartbeatCache" class="datawave.webservice.query.limit.QueryHeartbeatCache" destroy-method="shutdown">
+        <constructor-arg name="cleanupInterval" value="10"/>
+        <constructor-arg name="cleanupUnit" value="MINUTES"/>
     </bean>
 
+    <!-- Configuration for the QueryLimiter. -->
+    <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" destroy-method="shutdown" >
+        <constructor-arg name="zookeeperConfig" value="localhost:2181"/>
+        <constructor-arg name="configuration" ref="queryLimitConfiguration"/>
+        <constructor-arg name="heartbeatCache" ref="queryHeartbeatCache"/>
+    </bean>
 </beans>
