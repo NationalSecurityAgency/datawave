@@ -24,21 +24,38 @@ public class QueryHeartbeatCache {
         }
     }).build();
 
-    private final ScheduledExecutorService scheduler;
+    private long cleanupInterval = 10;
+    private TimeUnit cleanupUnit = TimeUnit.MINUTES;
+    private ScheduledExecutorService scheduler;
+
+    public long getCleanupInterval() {
+        return cleanupInterval;
+    }
+
+    public void setCleanupInterval(long cleanupInterval) {
+        this.cleanupInterval = cleanupInterval;
+    }
+
+    public TimeUnit getCleanupUnit() {
+        return cleanupUnit;
+    }
+
+    public void setCleanupUnit(TimeUnit cleanupUnit) {
+        this.cleanupUnit = cleanupUnit;
+    }
 
     /**
-     * Create a new {@link QueryHeartbeatCache} that will call {@link #removeAllStoppedHeartbeats()} at the provided rate.
-     *
-     * @param cleanupInterval
-     *            the cleanup interval
-     * @param cleanupUnit
-     *            the cleanup time unit
+     * Set up this heartbeat cache.
      */
-    public QueryHeartbeatCache(long cleanupInterval, TimeUnit cleanupUnit) {
+    public void setup() {
         // If the PersistentNodes within a QueryHeartbeat are ever stopped due to a connection failure, and not via to QueryHeartbeat.stop(), the heartbeat will
         // not automatically evict itself from the cache. Use a scheduled task to check for any heartbeats that were stopped and evict them to prevent bloating.
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.scheduler.scheduleAtFixedRate(this::removeAllStoppedHeartbeats, cleanupInterval, cleanupInterval, cleanupUnit);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing with cleanup schedule that will run every " + cleanupInterval + " " + cleanupUnit);
+        }
     }
 
     /**

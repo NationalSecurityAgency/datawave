@@ -26,7 +26,8 @@ class QueryHeartbeatCacheTest {
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        cache = new QueryHeartbeatCache(10, TimeUnit.MINUTES);
+        cache = new QueryHeartbeatCache();
+        cache.setup();
     }
 
     @AfterEach
@@ -129,7 +130,10 @@ class QueryHeartbeatCacheTest {
     @Test
     void testTimedCleanupOfStoppedHeartbeats() throws IOException, InterruptedException {
         // Create a cache with a cleanup interval of 1.5 seconds.
-        QueryHeartbeatCache cache = new QueryHeartbeatCache(1500, TimeUnit.MILLISECONDS);
+        QueryHeartbeatCache cache = new QueryHeartbeatCache();
+        cache.setCleanupInterval(1500);
+        cache.setCleanupUnit(TimeUnit.MILLISECONDS);
+        cache.setup();
 
         // Create heartbeats.
         QueryHeartbeat heartbeat1 = createHeartbeat("queryId1");

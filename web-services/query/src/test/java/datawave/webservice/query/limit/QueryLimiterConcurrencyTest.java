@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.curator.test.TestingServer;
@@ -584,7 +583,12 @@ class QueryLimiterConcurrencyTest {
 
     private void ensureLimiterExistsFor(String system) {
         if (!serversToLimiters.containsKey(system)) {
-            QueryLimiter limiter = new QueryLimiter(server.getConnectString(), this.limitConfig, new QueryHeartbeatCache(5, TimeUnit.MINUTES), () -> system);
+            QueryLimiter limiter = new QueryLimiter();
+            limiter.setZookeeperConfig(server.getConnectString());
+            limiter.setConfiguration(this.limitConfig);
+            limiter.setHeartbeatCache(new QueryHeartbeatCache());
+            limiter.setup();
+            limiter.setHostnameProvider(() -> system);
             serversToLimiters.put(system, limiter);
         }
     }
