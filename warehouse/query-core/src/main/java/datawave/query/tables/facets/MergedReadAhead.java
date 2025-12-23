@@ -1,6 +1,5 @@
 package datawave.query.tables.facets;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;

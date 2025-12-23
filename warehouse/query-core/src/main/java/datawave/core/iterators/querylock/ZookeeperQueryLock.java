@@ -227,11 +227,6 @@ public class ZookeeperQueryLock implements QueryLock {
         }
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        cleanup();
-    }
-
     public static class ZookeeperLockException extends Exception {
         private static final long serialVersionUID = 3715643514712028373L;
 

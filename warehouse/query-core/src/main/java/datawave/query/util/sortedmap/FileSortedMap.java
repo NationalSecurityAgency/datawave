@@ -41,7 +41,7 @@ import datawave.webservice.query.exception.QueryException;
  * @param <V>
  *            value of the map
  */
-public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, RewritableSortedMap<K,V>, AutoCloseable{
+public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, RewritableSortedMap<K,V>, AutoCloseable {
     private static final Logger log = Logger.getLogger(FileSortedMap.class);
     protected boolean persisted;
     protected K[] range;
@@ -716,6 +716,17 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         return new DefaultBoundedTypedSortedMapFileHandler();
     }
 
+    @Override
+    public void close() {
+        if (handler != null) {
+            handler.deleteFile();
+            handler = null;
+        }
+        if (map != null) {
+            map.clear();
+        }
+    }
+
     /**
      * This is the iterator for a persisted FileSortedMap
      */
@@ -775,7 +786,6 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         public void remove() {
             throw new UnsupportedOperationException("Iterator.remove() not supported on a persisted map.");
         }
-
 
         protected void close() throws Throwable {
             cleanup();
