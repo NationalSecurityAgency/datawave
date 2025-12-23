@@ -8,7 +8,6 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.accumulo.hadoop.mapreduce.OutputFormatBuilder;
-import org.apache.accumulo.hadoopImpl.mapreduce.lib.OutputConfigurator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -28,16 +27,13 @@ public class CBMutationOutputFormatter extends AccumuloOutputFormat {
     }
 
     public static Properties getClientProperties(Configuration conf) {
-        // Get any AccumuloClient property customizations (e.g., batch writer config overrides, etc)
-        Properties clientProps = OutputConfigurator.getClientProperties(AccumuloOutputFormat.class, conf);
         //@formatter:off
-        // Convert DW's connection conf keys into Accumulo-compatible keys as required
-        clientProps.putAll(Accumulo.newClientProperties()
+        // Build client properties directly from DataWave configuration
+        return Accumulo.newClientProperties()
                 .to(AccumuloHelper.getInstanceName(conf), AccumuloHelper.getZooKeepers(conf))
                 .as(AccumuloHelper.getUsername(conf), new PasswordToken(new String(AccumuloHelper.getPassword(conf))))
-                .build());
+                .build();
         //@formatter:on
-        return clientProps;
     }
 
     public static OutputFormatBuilder.OutputOptions<Job> configure(Configuration conf) {
