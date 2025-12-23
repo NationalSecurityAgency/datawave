@@ -27,7 +27,7 @@
 
     <property>
         <name>annotation.table.name</name>
-        <value>datawave.annotation</value>
+        <value>${table.name.annotation}</value>
     </property>
 
     <property>
@@ -37,7 +37,7 @@
 
     <property>
         <name>annotation.source.table.name</name>
-        <value>datawave.annotationSource</value>
+        <value>${table.name.annotation.source}</value>
     </property>
 
     <property>

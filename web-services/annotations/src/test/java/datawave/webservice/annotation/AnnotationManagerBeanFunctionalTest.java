@@ -214,6 +214,9 @@ public class AnnotationManagerBeanFunctionalTest {
         ).andReturn(client).anyTimes();
         //@formatter:on
 
+        connectionFactory.returnClient(EasyMock.anyObject());
+        EasyMock.expectLastCall().anyTimes();
+
         queryExecutorBean = EasyMock.createMock(QueryExecutorBean.class);
         queryLogicFactory = EasyMock.createMock(QueryLogicFactory.class);
         userOperations = EasyMock.createMock(UserOperations.class);
