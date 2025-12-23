@@ -15,7 +15,6 @@ import java.util.TreeMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
@@ -25,6 +24,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.ValueSerializerType;
+import datawave.test.util.SortedMapIterator;
 
 public class EntryParserTest {
     private final static ValueSerializerType SERIALIZER_TYPE = ValueSerializerType.WRITABLE;

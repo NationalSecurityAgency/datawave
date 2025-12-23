@@ -12,7 +12,6 @@ import java.util.TreeMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,6 +19,7 @@ import com.google.common.base.Predicates;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.aggregation.DocumentData;
+import datawave.test.util.SortedMapIterator;
 
 public class AccumuloTableIterableTest {
 

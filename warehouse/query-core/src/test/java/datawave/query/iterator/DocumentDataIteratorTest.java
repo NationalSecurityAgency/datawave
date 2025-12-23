@@ -14,9 +14,10 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import datawave.test.util.SortedMapIterator;
 
 public class DocumentDataIteratorTest {
 

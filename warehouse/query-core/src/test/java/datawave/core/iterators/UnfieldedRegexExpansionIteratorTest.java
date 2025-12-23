@@ -15,13 +15,13 @@ import java.util.TreeMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Joiner;
 
 import datawave.query.data.parsers.ShardIndexKey;
+import datawave.test.util.SortedMapIterator;
 
 /**
  * Unit tests for the {@link UnfieldedRegexExpansionIterator}

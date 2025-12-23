@@ -19,13 +19,13 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.query.iterator.SourceManagerTest.MockIteratorEnvironment;
+import datawave.test.util.SortedMapIterator;
 
 /**
  * Note: because this class doesn't use combiners each key must be distinct

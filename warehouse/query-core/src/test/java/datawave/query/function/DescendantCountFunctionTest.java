@@ -22,7 +22,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +30,7 @@ import com.google.common.collect.Lists;
 import datawave.data.hash.UID;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.Tuple3;
+import datawave.test.util.SortedMapIterator;
 
 /**
  * Tests for the {@link DescendantCountFunction}

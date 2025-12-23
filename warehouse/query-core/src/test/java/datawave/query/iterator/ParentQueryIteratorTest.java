@@ -15,7 +15,6 @@ import java.util.SortedMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
@@ -30,6 +29,7 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.predicate.ParentRangeProvider;
 import datawave.query.predicate.TimeFilter;
+import datawave.test.util.SortedMapIterator;
 
 public class ParentQueryIteratorTest {
 

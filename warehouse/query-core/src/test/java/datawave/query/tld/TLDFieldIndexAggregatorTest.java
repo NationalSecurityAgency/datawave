@@ -16,7 +16,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -29,6 +28,7 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
+import datawave.test.util.SortedMapIterator;
 
 public class TLDFieldIndexAggregatorTest {
     private TLDFieldIndexAggregator aggregator;
