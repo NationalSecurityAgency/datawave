@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -289,10 +288,13 @@ public class Scan implements Callable<Scan> {
                 if (log.isTraceEnabled())
                     log.trace("not finished?" + !finished());
             } while (!finished());
-        } catch (ScanTimedOutException e) {
-            // this is okay. This means that we are being timesliced.
-            myScan.addRange(currentRange);
         } catch (Exception e) {
+            // Check for ScanTimedOutException by class name to avoid non-public API import
+            if (isScanTimedOutException(e)) {
+                // this is okay. This means that we are being timesliced.
+                myScan.addRange(currentRange);
+                return this;
+            }
             if (isInterruptedException(e)) {
                 log.info("Scan interrupted");
             } else {
@@ -306,6 +308,13 @@ public class Scan implements Callable<Scan> {
         }
         return this;
 
+    }
+
+    /**
+     * Check if the throwable is a ScanTimedOutException by class name to avoid importing non-public Accumulo API.
+     */
+    private boolean isScanTimedOutException(Throwable t) {
+        return t != null && t.getClass().getName().equals("org.apache.accumulo.core.clientImpl.ThriftScanner$ScanTimedOutException");
     }
 
     private boolean isInterruptedException(Throwable t) {
