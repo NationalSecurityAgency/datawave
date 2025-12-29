@@ -4,6 +4,7 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
+import datawave.test.MacTestUtil;
 
 /**
  * Prototypical example of how these tests operate. Typical flow is
@@ -264,13 +266,18 @@ public class NoUidIndexTest extends IndexConversionUtils implements IndexConvers
     @Override
     protected void configureClonedTable(TableOperations tops, String tableName) {
         try {
+            List<String> additions = new ArrayList<>();
             for (var scope : IteratorUtil.IteratorScope.values()) {
                 String name = "table.iterator." + scope.name() + ".agg";
                 String opt = "table.iterator." + scope.name() + ".agg.opt.*";
 
                 tops.setProperty(getCloneTableName(), name, "19,datawave.iterators.TotalAggregatingIterator");
                 tops.setProperty(getCloneTableName(), opt, "datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator");
+                additions.add(name);
+                additions.add(opt);
             }
+
+            MacTestUtil.waitForPropertyAddition(tops, tableName, additions);
         } catch (Exception e) {
             fail("Failed to configure shard index", e);
         }

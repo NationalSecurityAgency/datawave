@@ -4,6 +4,7 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
@@ -12,6 +13,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.junit.jupiter.api.Test;
+
+import datawave.test.MacTestUtil;
 
 public class TruncatedIndexTest extends IndexConversionUtils implements IndexConversionTests {
 
@@ -250,20 +253,29 @@ public class TruncatedIndexTest extends IndexConversionUtils implements IndexCon
     @Override
     protected void configureClonedTable(TableOperations tops, String tableName) {
         try {
+            List<String> removals = new ArrayList<>();
+            List<String> additions = new ArrayList<>();
             for (var scope : IteratorUtil.IteratorScope.values()) {
                 String name = "table.iterator." + scope.name() + ".agg";
                 String opt = "table.iterator." + scope.name() + ".agg.opt.*";
                 tops.removeProperty(tableName, name);
                 tops.removeProperty(tableName, opt);
+                removals.add(name);
+                removals.add(opt);
 
                 String truncatedName = "table.iterator." + scope.name() + ".truncate";
                 tops.setProperty(tableName, truncatedName, "18,datawave.ingest.table.aggregator.TruncatedIndexConversionIterator");
+                additions.add(truncatedName);
 
                 String combinerName = "table.iterator." + scope.name() + ".bits";
                 String combinerOpt = "table.iterator." + scope.name() + ".bits.opt.all";
                 tops.setProperty(tableName, combinerName, "19,datawave.ingest.table.aggregator.BitSetCombiner");
                 tops.setProperty(tableName, combinerOpt, "true");
+                additions.add(combinerName);
+                additions.add(combinerOpt);
             }
+            MacTestUtil.waitForPropertyAddition(tops, tableName, additions);
+            MacTestUtil.waitForPropertyRemoval(tops, tableName, removals);
         } catch (Exception e) {
             fail("Failed to configure shard index", e);
         }

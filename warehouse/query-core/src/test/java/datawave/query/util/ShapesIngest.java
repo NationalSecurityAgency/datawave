@@ -5,6 +5,7 @@ import static datawave.util.TableName.SHARD;
 import static datawave.util.TableName.SHARD_INDEX;
 import static datawave.util.TableName.SHARD_RINDEX;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,7 @@ import datawave.data.type.ListType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.test.MacTestUtil;
 import datawave.util.TableName;
 
 /**
@@ -139,14 +141,18 @@ public class ShapesIngest {
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
 
+        List<String> additions = new ArrayList<>();
         IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
         for (IteratorUtil.IteratorScope scope : scopes) {
             String name = "table.iterator." + scope.name() + ".UIDAggregator";
             String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
 
-            client.tableOperations().setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
-            client.tableOperations().setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+            tops.setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
+            tops.setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+            additions.add(name);
+            additions.add(opt);
         }
+        MacTestUtil.waitForPropertyAddition(tops, SHARD_INDEX, additions);
 
         // grant root user all auths so they can scan the tables
         client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));
