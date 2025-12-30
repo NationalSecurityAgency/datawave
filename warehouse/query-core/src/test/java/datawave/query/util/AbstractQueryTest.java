@@ -78,7 +78,7 @@ public abstract class AbstractQueryTest {
     private final Set<String> expected = new HashSet<>();
     private final Set<Document> results = new HashSet<>();
 
-    //  additional variables for declarative assertions
+    // additional variables for declarative assertions
     private String plannedQuery = null;
     private int expectedResultCount = -1;
 
@@ -129,7 +129,7 @@ public abstract class AbstractQueryTest {
         hitTermAssertions.withRequiredAnyOf(hitTerms);
     }
 
-    public void withQueryPlan(String queryPlan){
+    public void withQueryPlan(String queryPlan) {
         this.plannedQuery = queryPlan;
     }
 

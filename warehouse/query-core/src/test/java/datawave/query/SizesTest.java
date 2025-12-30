@@ -2,7 +2,6 @@ package datawave.query;
 
 import javax.inject.Inject;
 
-import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -27,6 +26,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.SizesIngest;
 import datawave.query.util.TestIndexTableNames;
+import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
@@ -37,12 +37,12 @@ public class SizesTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(SizesTest.class);
 
-    //  static utilities for test
+    // static utilities for test
     private static final InMemoryInstance instance = new InMemoryInstance(SizesTest.class.getName());
     private static AccumuloClient clientForSetup;
     private static SizesIngest ingest;
 
-    //  utility for writing different index table structures
+    // utility for writing different index table structures
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     @Inject
@@ -119,7 +119,7 @@ public class SizesTest extends AbstractQueryTest {
             planQuery();
             executeQuery();
             assertPlannedQuery();
-            //  TODO: while generating random events also generate metadata so the framework can assert result counts
+            // TODO: while generating random events also generate metadata so the framework can assert result counts
 
             switch (indexTableName) {
                 case TestIndexTableNames.SHARD_INDEX:
