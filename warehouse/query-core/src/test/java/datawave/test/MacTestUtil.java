@@ -1,11 +1,8 @@
 package datawave.test;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -42,7 +39,6 @@ public class MacTestUtil {
             }
             tops.create(tableName);
         } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException | TableExistsException e) {
-            fail("Failed to delete/create table");
             throw new RuntimeException("Failed to delete/create table", e);
         }
     }
@@ -60,10 +56,30 @@ public class MacTestUtil {
             try {
                 tops.delete(tableName);
             } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException e) {
-                fail("Failed to delete: " + tableName, e);
                 throw new RuntimeException("Failed to delete table: " + tableName, e);
             }
         }
+    }
+
+    /**
+     * Remove a set of properties and wait for the changes to persist in ZooKeeper
+     *
+     * @param tops
+     *            the {@link TableOperations}
+     * @param tableName
+     *            the table name
+     * @param properties
+     *            the set of property names to remove
+     */
+    public static void removePropertiesAndWait(TableOperations tops, String tableName, Set<String> properties) {
+        for (String prop : properties) {
+            try {
+                tops.removeProperty(tableName, prop);
+            } catch (AccumuloException | AccumuloSecurityException e) {
+                throw new RuntimeException("Failed to add property", e);
+            }
+        }
+        waitForPropertyRemoval(tops, tableName, properties);
     }
 
     /**
@@ -78,7 +94,7 @@ public class MacTestUtil {
      *            the property to remove
      */
     public static void waitForPropertyRemoval(TableOperations tops, String tableName, String property) {
-        waitForPropertyRemoval(tops, tableName, Collections.singletonList(property));
+        waitForPropertyRemoval(tops, tableName, Set.of(property));
     }
 
     /**
@@ -90,13 +106,15 @@ public class MacTestUtil {
      * @param tableName
      *            the table name
      * @param properties
-     *            the list of removed properties
+     *            the set of removed properties
      */
-    public static void waitForPropertyRemoval(TableOperations tops, String tableName, List<String> properties) {
+    public static void waitForPropertyRemoval(TableOperations tops, String tableName, Set<String> properties) {
         try {
-            long start = System.currentTimeMillis();
+            int cycles = 0;
             boolean allRemoved = false;
+            long start = System.currentTimeMillis();
             while (!allRemoved) {
+                cycles++;
                 allRemoved = true;
                 Iterable<Map.Entry<String,String>> props = tops.getProperties(tableName);
                 for (Map.Entry<String,String> prop : props) {
@@ -107,11 +125,31 @@ public class MacTestUtil {
                 }
             }
             long elapsed = System.currentTimeMillis() - start;
-            log.trace("removed {} properties in {} ms", properties.size(), elapsed);
+            log.trace("removed {} properties in {} ms and {} cycles", properties.size(), elapsed, cycles);
         } catch (AccumuloException | TableNotFoundException e) {
-            fail("Exception while verifying property removal");
             throw new RuntimeException("Exception while verifying property removal", e);
         }
+    }
+
+    /**
+     * Add a set of properties and wait until the changes are persisted in ZooKeeper.
+     *
+     * @param tops
+     *            the {@link TableOperations}
+     * @param tableName
+     *            the table name
+     * @param properties
+     *            the map of option key-value pairs
+     */
+    public static void addPropertiesAndWait(TableOperations tops, String tableName, Map<String,String> properties) {
+        for (Map.Entry<String,String> prop : properties.entrySet()) {
+            try {
+                tops.setProperty(tableName, prop.getKey(), prop.getValue());
+            } catch (AccumuloException | AccumuloSecurityException e) {
+                throw new RuntimeException("Failed to add property", e);
+            }
+        }
+        waitForPropertyAddition(tops, tableName, properties.keySet());
     }
 
     /**
@@ -126,7 +164,7 @@ public class MacTestUtil {
      *            the property to remove
      */
     public static void waitForPropertyAddition(TableOperations tops, String tableName, String property) {
-        waitForPropertyAddition(tops, tableName, Collections.singletonList(property));
+        waitForPropertyAddition(tops, tableName, Set.of(property));
     }
 
     /**
@@ -138,28 +176,27 @@ public class MacTestUtil {
      * @param tableName
      *            the table name
      * @param properties
-     *            the list of removed properties
+     *            the set of removed properties
      */
-    public static void waitForPropertyAddition(TableOperations tops, String tableName, List<String> properties) {
+    public static void waitForPropertyAddition(TableOperations tops, String tableName, Set<String> properties) {
         try {
-            long start = System.currentTimeMillis();
+            int cycles = 0;
             boolean allAdded = false;
+            long start = System.currentTimeMillis();
             while (!allAdded) {
-                List<String> additions = new ArrayList<>();
+                cycles++;
+                Set<String> additions = new HashSet<>();
                 Iterable<Map.Entry<String,String>> props = tops.getProperties(tableName);
                 for (Map.Entry<String,String> prop : props) {
                     if (properties.contains(prop.getKey())) {
                         additions.add(prop.getKey());
                     }
                 }
-                Collections.sort(additions);
-                Collections.sort(properties);
                 allAdded = additions.equals(properties);
             }
             long elapsed = System.currentTimeMillis() - start;
-            log.trace("added {} properties in {} ms", properties.size(), elapsed);
+            log.trace("added {} properties in {} ms and {} cycles", properties.size(), elapsed, cycles);
         } catch (AccumuloException | TableNotFoundException e) {
-            fail("Exception while verifying property addition");
             throw new RuntimeException("Exception while verifying property addition", e);
         }
     }

@@ -5,9 +5,10 @@ import static datawave.util.TableName.SHARD;
 import static datawave.util.TableName.SHARD_INDEX;
 import static datawave.util.TableName.SHARD_RINDEX;
 
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -141,7 +142,7 @@ public class ShapesIngest {
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
 
-        List<String> additions = new ArrayList<>();
+        Set<String> additions = new HashSet<>();
         IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
         for (IteratorUtil.IteratorScope scope : scopes) {
             String name = "table.iterator." + scope.name() + ".UIDAggregator";

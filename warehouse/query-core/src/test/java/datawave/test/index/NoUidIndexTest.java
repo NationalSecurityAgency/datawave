@@ -4,8 +4,9 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
@@ -266,7 +267,7 @@ public class NoUidIndexTest extends IndexConversionUtils implements IndexConvers
     @Override
     protected void configureClonedTable(TableOperations tops, String tableName) {
         try {
-            List<String> additions = new ArrayList<>();
+            Set<String> additions = new HashSet<>();
             for (var scope : IteratorUtil.IteratorScope.values()) {
                 String name = "table.iterator." + scope.name() + ".agg";
                 String opt = "table.iterator." + scope.name() + ".agg.opt.*";
