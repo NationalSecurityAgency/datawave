@@ -330,6 +330,10 @@ public class SizesIngest {
         return NUM_SHARDS;
     }
 
+    public int getNumEventsPerShard() {
+        return EVENTS_PER_SHARD;
+    }
+
     protected String normalizerNameForField(String field) {
         switch (field) {
             case "COLOR":
