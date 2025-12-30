@@ -117,7 +117,7 @@ import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.transformer.AllHitsTransformer;
+import datawave.query.transformer.AnnotationHitsTransformer;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
@@ -783,15 +783,16 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
 
-            if (getConfig().isAllHitsEnabled()) {
+            if (getConfig().isAnnotationHitsEnabled()) {
                 // since this may be called multiple times always rebuild
                 // TODO may need to inject options to serializers
                 AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer();
                 AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
                 AnnotationDataAccess annotationDataAccess = new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(),
                                 getAnnotationTableName(), getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
-                ((DocumentTransformer) this.transformerInstance).addTransform(new AllHitsTransformer(annotationDataAccess, getAllHitsContextLength(),
-                                getAllHitsValidTypes(), getAllHitsValidQueryFields(), getAllHitsTargetField()));
+                ((DocumentTransformer) this.transformerInstance)
+                                .addTransform(new AnnotationHitsTransformer(annotationDataAccess, getAnnotationHitsContextLength(),
+                                                getAnnotationHitsValidTypes(), getAnnotationHitsValidQueryFields(), getAnnotationHitsTargetField()));
             }
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
@@ -3520,44 +3521,44 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxLinesToPrint(maxLinesToPrint);
     }
 
-    public boolean isAllHitsEnabled() {
-        return getConfig().isAllHitsEnabled();
+    public boolean isAnnotationHitsEnabled() {
+        return getConfig().isAnnotationHitsEnabled();
     }
 
-    public void setAllHitsEnabled(boolean allHitsEnabled) {
-        getConfig().setAllHitsEnabled(allHitsEnabled);
+    public void setAnnotationHitsEnabled(boolean allHitsEnabled) {
+        getConfig().setAnnotationHitsEnabled(allHitsEnabled);
     }
 
-    public int getAllHitsContextLength() {
-        return getConfig().getAllHitsContextLength();
+    public int getAnnotationHitsContextLength() {
+        return getConfig().getAnnotationHitsContextLength();
     }
 
-    public void setAllHitsContextLength(int allHitsContextLength) {
-        getConfig().setAllHitsContextLength(allHitsContextLength);
+    public void setAnnotationHitsContextLength(int allHitsContextLength) {
+        getConfig().setAnnotationHitsContextLength(allHitsContextLength);
     }
 
-    public Set<String> getAllHitsValidTypes() {
-        return getConfig().getAllHitsValidTypes();
+    public Set<String> getAnnotationHitsValidTypes() {
+        return getConfig().getAnnotationHitsValidTypes();
     }
 
-    public void setAllHitsValidTypes(Set<String> validTypes) {
-        getConfig().setAllHitsValidTypes(validTypes);
+    public void setAnnotationHitsValidTypes(Set<String> validTypes) {
+        getConfig().setAnnotationHitsValidTypes(validTypes);
     }
 
-    public Set<String> getAllHitsValidQueryFields() {
-        return getConfig().getAllHitsValidQueryFields();
+    public Set<String> getAnnotationHitsValidQueryFields() {
+        return getConfig().getAnnotationHitsValidQueryFields();
     }
 
-    public void setAllHitsValidQueryFields(Set<String> allHitsValidQueryFields) {
-        getConfig().setAllHitsValidQueryFields(allHitsValidQueryFields);
+    public void setAnnotationHitsValidQueryFields(Set<String> allHitsValidQueryFields) {
+        getConfig().setAnnotationHitsValidQueryFields(allHitsValidQueryFields);
     }
 
-    public String getAllHitsTargetField() {
-        return getConfig().getAllHitsTargetField();
+    public String getAnnotationHitsTargetField() {
+        return getConfig().getAnnotationHitsTargetField();
     }
 
-    public void setAllHitsTargetField(String allHitsTargetField) {
-        getConfig().setAllHitsTargetField(allHitsTargetField);
+    public void setAnnotationHitsTargetField(String allHitsTargetField) {
+        getConfig().setAnnotationHitsTargetField(allHitsTargetField);
     }
 
     public String getAnnotationTableName() {

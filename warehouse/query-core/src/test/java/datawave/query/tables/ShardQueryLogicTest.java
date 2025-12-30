@@ -510,8 +510,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsNoAnnotationsTest() throws Exception {
-        withAllHits();
+    public void annotationHitsNoAnnotationsTest() throws Exception {
+        withAnnotationHits();
 
         givenQuery("UUID=='CAPONE'");
         givenStartDate("20091231");
@@ -525,8 +525,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsSingleHitNoContextWindowTest() throws Exception {
-        withAllHits();
+    public void annotationHitsSingleHitNoContextWindowTest() throws Exception {
+        withAnnotationHits();
 
         givenAnnotation(buildAnnotation(S1));
 
@@ -543,8 +543,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsSingleHit1ContextWindowTest() throws Exception {
-        withAllHits();
+    public void annotationHitsSingleHit1ContextWindowTest() throws Exception {
+        withAnnotationHits();
 
         givenAnnotation(buildAnnotation(S1, S2, S6));
 
@@ -561,8 +561,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsSingleHit2ContextWindowTest() throws Exception {
-        withAllHits();
+    public void annotationHitsSingleHit2ContextWindowTest() throws Exception {
+        withAnnotationHits();
 
         givenAnnotation(buildAnnotation(S1, S2, S3, S6, S7));
 
@@ -579,8 +579,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsSingleHit3ContextWindowTest() throws Exception {
-        withAllHits();
+    public void annotationHitsSingleHit3ContextWindowTest() throws Exception {
+        withAnnotationHits();
 
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S6, S7, S8));
 
@@ -597,8 +597,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsSingleHitTest() throws Exception {
-        withAllHits();
+    public void annotationHitsSingleHitTest() throws Exception {
+        withAnnotationHits();
 
         givenAnnotation(buildAnnotation(S5, S2, S3, S4, S1));
 
@@ -616,8 +616,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsSingleHitFullWindowTest() throws Exception {
-        withAllHits();
+    public void annotationHitsSingleHitFullWindowTest() throws Exception {
+        withAnnotationHits();
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE'");
@@ -634,8 +634,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsMultiHitSameBoundaryTest() throws Exception {
-        withAllHits();
+    public void annotationHitsMultiHitSameBoundaryTest() throws Exception {
+        withAnnotationHits();
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE' || UUID=='CARL'");
@@ -652,8 +652,8 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
-    public void allHitsMultiHitTest() throws Exception {
-        withAllHits();
+    public void annotationHitsMultiHitTest() throws Exception {
+        withAnnotationHits();
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE' || UUID=='w1' || UUID=='d1'");
@@ -703,17 +703,17 @@ public abstract class ShardQueryLogicTest {
 
     }
 
-    private void withAllHits() {
-        logic.setAllHitsEnabled(true);
-        logic.setAllHitsContextLength(3);
-        logic.setAllHitsValidQueryFields(Set.of("FOO", "BAR", "UUID"));
-        logic.setAllHitsTargetField("ALL_HITS_RESULTS");
-        logic.setAllHitsValidTypes(Set.of("ANNO1"));
+    private void withAnnotationHits() {
+        logic.setAnnotationHitsEnabled(true);
+        logic.setAnnotationHitsContextLength(3);
+        logic.setAnnotationHitsValidQueryFields(Set.of("FOO", "BAR", "UUID"));
+        logic.setAnnotationHitsTargetField("ALL_HITS_RESULTS");
+        logic.setAnnotationHitsValidTypes(Set.of("ANNO1"));
         logic.setAnnotationTableName("annotations");
         logic.setAnnotationSourceTableName("annotationsSource");
     }
 
-    private String getExpectedAllHits() {
+    private String getExpectedAnnotationHits() {
         // TODO
         return null;
     }

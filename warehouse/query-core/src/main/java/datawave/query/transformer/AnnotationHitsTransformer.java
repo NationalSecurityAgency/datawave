@@ -41,8 +41,8 @@ import datawave.query.jexl.JexlASTHelper;
 /**
  * This iterator will lookup and search annotations for hits as well as provide context
  */
-public class AllHitsTransformer extends DocumentTransform.DefaultDocumentTransform {
-    private static final Logger log = Logger.getLogger(AllHitsTransformer.class);
+public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocumentTransform {
+    private static final Logger log = Logger.getLogger(AnnotationHitsTransformer.class);
     private static final AllHits EMPTY_ALL_HITS = new AllHits();
 
     private final AnnotationDataAccess annotationDataAccess;
@@ -54,7 +54,7 @@ public class AllHitsTransformer extends DocumentTransform.DefaultDocumentTransfo
     private Set<String> searchHitTerms;
     private ObjectMapper objectMapper;
 
-    public AllHitsTransformer(AnnotationDataAccess annotationDataAccess, int contextBoundary, Set<String> validTypes, Set<String> validQueryFields,
+    public AnnotationHitsTransformer(AnnotationDataAccess annotationDataAccess, int contextBoundary, Set<String> validTypes, Set<String> validQueryFields,
                     String targetField) {
         this.annotationDataAccess = annotationDataAccess;
         this.contextBoundary = contextBoundary;

@@ -561,27 +561,27 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Enable the all hits transformer
      */
-    private boolean allHitsEnabled = false;
+    private boolean annotationHitsEnabled = false;
 
     /**
      * Number of terms to buffer when fetching all hits before and after the target term
      */
-    private int allHitsContextLength = 4;
+    private int annotationHitsContextLength = 4;
 
     /**
      * annotation types to be used with all hits
      */
-    private Set<String> allHitsValidTypes;
+    private Set<String> annotationHitsValidTypes;
 
     /**
      * fields from the query that should be searched for all hits
      */
-    private Set<String> allHitsValidQueryFields;
+    private Set<String> annotationHitsValidQueryFields;
 
     /**
      * field to write all hits data to
      */
-    private String allHitsTargetField;
+    private String annotationHitsTargetField;
 
     private String annotationTableName;
     private String annotationSourceTableName;
@@ -841,11 +841,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
-        this.setAllHitsEnabled(other.isAllHitsEnabled());
-        this.setAllHitsContextLength(other.getAllHitsContextLength());
-        this.setAllHitsValidTypes(other.getAllHitsValidTypes());
-        this.setAllHitsValidQueryFields(other.getAllHitsValidQueryFields());
-        this.setAllHitsTargetField(other.getAllHitsTargetField());
+        this.setAnnotationHitsEnabled(other.isAnnotationHitsEnabled());
+        this.setAnnotationHitsContextLength(other.getAnnotationHitsContextLength());
+        this.setAnnotationHitsValidTypes(other.getAnnotationHitsValidTypes());
+        this.setAnnotationHitsValidQueryFields(other.getAnnotationHitsValidQueryFields());
+        this.setAnnotationHitsTargetField(other.getAnnotationHitsTargetField());
         this.setAnnotationTableName(other.getAnnotationTableName());
         this.setAnnotationSourceTableName(other.getAnnotationSourceTableName());
     }
@@ -3461,20 +3461,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxLinesToPrint = maxLinesToPrint;
     }
 
-    public boolean isAllHitsEnabled() {
-        return allHitsEnabled;
+    public boolean isAnnotationHitsEnabled() {
+        return annotationHitsEnabled;
     }
 
-    public void setAllHitsEnabled(boolean allHitsEnabled) {
-        this.allHitsEnabled = allHitsEnabled;
+    public void setAnnotationHitsEnabled(boolean annotationHitsEnabled) {
+        this.annotationHitsEnabled = annotationHitsEnabled;
     }
 
-    public int getAllHitsContextLength() {
-        return allHitsContextLength;
+    public int getAnnotationHitsContextLength() {
+        return annotationHitsContextLength;
     }
 
-    public void setAllHitsContextLength(int allHitsContextLength) {
-        this.allHitsContextLength = allHitsContextLength;
+    public void setAnnotationHitsContextLength(int annotationHitsContextLength) {
+        this.annotationHitsContextLength = annotationHitsContextLength;
     }
 
     public String getAnnotationTableName() {
@@ -3493,27 +3493,27 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.annotationSourceTableName = annotationSourceTableName;
     }
 
-    public Set<String> getAllHitsValidTypes() {
-        return allHitsValidTypes;
+    public Set<String> getAnnotationHitsValidTypes() {
+        return annotationHitsValidTypes;
     }
 
-    public void setAllHitsValidTypes(Set<String> allHitsValidTypes) {
-        this.allHitsValidTypes = allHitsValidTypes;
+    public void setAnnotationHitsValidTypes(Set<String> annotationHitsValidTypes) {
+        this.annotationHitsValidTypes = annotationHitsValidTypes;
     }
 
-    public Set<String> getAllHitsValidQueryFields() {
-        return allHitsValidQueryFields;
+    public Set<String> getAnnotationHitsValidQueryFields() {
+        return annotationHitsValidQueryFields;
     }
 
-    public void setAllHitsValidQueryFields(Set<String> allHitsValidQueryFields) {
-        this.allHitsValidQueryFields = allHitsValidQueryFields;
+    public void setAnnotationHitsValidQueryFields(Set<String> annotationHitsValidQueryFields) {
+        this.annotationHitsValidQueryFields = annotationHitsValidQueryFields;
     }
 
-    public String getAllHitsTargetField() {
-        return allHitsTargetField;
+    public String getAnnotationHitsTargetField() {
+        return annotationHitsTargetField;
     }
 
-    public void setAllHitsTargetField(String allHitsTargetField) {
-        this.allHitsTargetField = allHitsTargetField;
+    public void setAnnotationHitsTargetField(String annotationHitsTargetField) {
+        this.annotationHitsTargetField = annotationHitsTargetField;
     }
 }
