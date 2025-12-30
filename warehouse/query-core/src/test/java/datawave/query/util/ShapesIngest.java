@@ -6,9 +6,9 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static datawave.util.TableName.SHARD_RINDEX;
 
 import java.util.Date;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -142,18 +142,16 @@ public class ShapesIngest {
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
 
-        Set<String> additions = new HashSet<>();
+        Map<String,String> additions = new HashMap<>();
         IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
         for (IteratorUtil.IteratorScope scope : scopes) {
             String name = "table.iterator." + scope.name() + ".UIDAggregator";
             String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
 
-            tops.setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
-            tops.setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
-            additions.add(name);
-            additions.add(opt);
+            additions.put(name, "19,datawave.iterators.TotalAggregatingIterator");
+            additions.put(opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
         }
-        MacTestUtil.waitForPropertyAddition(tops, SHARD_INDEX, additions);
+        MacTestUtil.addPropertiesAndWait(tops, SHARD_INDEX, additions);
 
         // grant root user all auths so they can scan the tables
         client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));

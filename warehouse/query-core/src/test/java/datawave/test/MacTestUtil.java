@@ -90,25 +90,10 @@ public class MacTestUtil {
      *            an instance of {@link TableOperations}
      * @param tableName
      *            the table name
-     * @param property
-     *            the property to remove
-     */
-    public static void waitForPropertyRemoval(TableOperations tops, String tableName, String property) {
-        waitForPropertyRemoval(tops, tableName, Set.of(property));
-    }
-
-    /**
-     * When a property is removed from accumulo the test must wait until the change is persisted in ZooKeeper. Otherwise, test may execute with an incorrect set
-     * of assumptions.
-     *
-     * @param tops
-     *            an instance of {@link TableOperations}
-     * @param tableName
-     *            the table name
      * @param properties
      *            the set of removed properties
      */
-    public static void waitForPropertyRemoval(TableOperations tops, String tableName, Set<String> properties) {
+    private static void waitForPropertyRemoval(TableOperations tops, String tableName, Set<String> properties) {
         try {
             int cycles = 0;
             boolean allRemoved = false;
@@ -160,25 +145,10 @@ public class MacTestUtil {
      *            an instance of {@link TableOperations}
      * @param tableName
      *            the table name
-     * @param property
-     *            the property to remove
-     */
-    public static void waitForPropertyAddition(TableOperations tops, String tableName, String property) {
-        waitForPropertyAddition(tops, tableName, Set.of(property));
-    }
-
-    /**
-     * When a property is added to accumulo the test must wait until the change is persisted in ZooKeeper. Otherwise, test may execute with an incorrect set of
-     * assumptions.
-     *
-     * @param tops
-     *            an instance of {@link TableOperations}
-     * @param tableName
-     *            the table name
      * @param properties
      *            the set of removed properties
      */
-    public static void waitForPropertyAddition(TableOperations tops, String tableName, Set<String> properties) {
+    private static void waitForPropertyAddition(TableOperations tops, String tableName, Set<String> properties) {
         try {
             int cycles = 0;
             boolean allAdded = false;

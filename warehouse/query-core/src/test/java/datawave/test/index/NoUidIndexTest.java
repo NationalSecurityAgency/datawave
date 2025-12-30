@@ -4,9 +4,9 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
@@ -267,18 +267,16 @@ public class NoUidIndexTest extends IndexConversionUtils implements IndexConvers
     @Override
     protected void configureClonedTable(TableOperations tops, String tableName) {
         try {
-            Set<String> additions = new HashSet<>();
+            Map<String,String> additions = new HashMap<>();
             for (var scope : IteratorUtil.IteratorScope.values()) {
                 String name = "table.iterator." + scope.name() + ".agg";
                 String opt = "table.iterator." + scope.name() + ".agg.opt.*";
 
-                tops.setProperty(getCloneTableName(), name, "19,datawave.iterators.TotalAggregatingIterator");
-                tops.setProperty(getCloneTableName(), opt, "datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator");
-                additions.add(name);
-                additions.add(opt);
+                additions.put(name, "19,datawave.iterators.TotalAggregatingIterator");
+                additions.put(opt, "datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator");
             }
 
-            MacTestUtil.waitForPropertyAddition(tops, tableName, additions);
+            MacTestUtil.addPropertiesAndWait(tops, tableName, additions);
         } catch (Exception e) {
             fail("Failed to configure shard index", e);
         }
