@@ -559,6 +559,34 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxLinesToPrint = -1;
 
     /**
+     * Enable the all hits transformer
+     */
+    private boolean allHitsEnabled = false;
+
+    /**
+     * Number of terms to buffer when fetching all hits before and after the target term
+     */
+    private int allHitsContextLength = 4;
+
+    /**
+     * annotation types to be used with all hits
+     */
+    private Set<String> allHitsValidTypes;
+
+    /**
+     * fields from the query that should be searched for all hits
+     */
+    private Set<String> allHitsValidQueryFields;
+
+    /**
+     * field to write all hits data to
+     */
+    private String allHitsTargetField;
+
+    private String annotationTableName;
+    private String annotationSourceTableName;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -813,6 +841,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setAllHitsEnabled(other.isAllHitsEnabled());
+        this.setAllHitsContextLength(other.getAllHitsContextLength());
+        this.setAllHitsValidTypes(other.getAllHitsValidTypes());
+        this.setAllHitsValidQueryFields(other.getAllHitsValidQueryFields());
+        this.setAllHitsTargetField(other.getAllHitsTargetField());
+        this.setAnnotationTableName(other.getAnnotationTableName());
+        this.setAnnotationSourceTableName(other.getAnnotationSourceTableName());
     }
 
     /**
@@ -3424,5 +3459,61 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         this.maxLinesToPrint = maxLinesToPrint;
+    }
+
+    public boolean isAllHitsEnabled() {
+        return allHitsEnabled;
+    }
+
+    public void setAllHitsEnabled(boolean allHitsEnabled) {
+        this.allHitsEnabled = allHitsEnabled;
+    }
+
+    public int getAllHitsContextLength() {
+        return allHitsContextLength;
+    }
+
+    public void setAllHitsContextLength(int allHitsContextLength) {
+        this.allHitsContextLength = allHitsContextLength;
+    }
+
+    public String getAnnotationTableName() {
+        return annotationTableName;
+    }
+
+    public void setAnnotationTableName(String annotationTableName) {
+        this.annotationTableName = annotationTableName;
+    }
+
+    public String getAnnotationSourceTableName() {
+        return annotationSourceTableName;
+    }
+
+    public void setAnnotationSourceTableName(String annotationSourceTableName) {
+        this.annotationSourceTableName = annotationSourceTableName;
+    }
+
+    public Set<String> getAllHitsValidTypes() {
+        return allHitsValidTypes;
+    }
+
+    public void setAllHitsValidTypes(Set<String> allHitsValidTypes) {
+        this.allHitsValidTypes = allHitsValidTypes;
+    }
+
+    public Set<String> getAllHitsValidQueryFields() {
+        return allHitsValidQueryFields;
+    }
+
+    public void setAllHitsValidQueryFields(Set<String> allHitsValidQueryFields) {
+        this.allHitsValidQueryFields = allHitsValidQueryFields;
+    }
+
+    public String getAllHitsTargetField() {
+        return allHitsTargetField;
+    }
+
+    public void setAllHitsTargetField(String allHitsTargetField) {
+        this.allHitsTargetField = allHitsTargetField;
     }
 }

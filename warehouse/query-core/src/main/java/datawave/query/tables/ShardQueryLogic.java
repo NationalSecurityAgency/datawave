@@ -47,6 +47,12 @@ import com.google.common.collect.TreeMultimap;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import datawave.annotation.data.AnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
+import datawave.annotation.data.v1.AnnotationDataAccess;
+import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -111,6 +117,7 @@ import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
+import datawave.query.transformer.AllHitsTransformer;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
@@ -775,6 +782,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
+
+            if (getConfig().isAllHitsEnabled()) {
+                // since this may be called multiple times always rebuild
+                // TODO may need to inject options to serializers
+                AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer();
+                AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+                AnnotationDataAccess annotationDataAccess = new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(),
+                                getAnnotationTableName(), getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
+                ((DocumentTransformer) this.transformerInstance).addTransform(new AllHitsTransformer(annotationDataAccess, getAllHitsContextLength(),
+                                getAllHitsValidTypes(), getAllHitsValidQueryFields(), getAllHitsTargetField()));
+            }
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
@@ -3500,5 +3518,61 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         getConfig().setMaxLinesToPrint(maxLinesToPrint);
+    }
+
+    public boolean isAllHitsEnabled() {
+        return getConfig().isAllHitsEnabled();
+    }
+
+    public void setAllHitsEnabled(boolean allHitsEnabled) {
+        getConfig().setAllHitsEnabled(allHitsEnabled);
+    }
+
+    public int getAllHitsContextLength() {
+        return getConfig().getAllHitsContextLength();
+    }
+
+    public void setAllHitsContextLength(int allHitsContextLength) {
+        getConfig().setAllHitsContextLength(allHitsContextLength);
+    }
+
+    public Set<String> getAllHitsValidTypes() {
+        return getConfig().getAllHitsValidTypes();
+    }
+
+    public void setAllHitsValidTypes(Set<String> validTypes) {
+        getConfig().setAllHitsValidTypes(validTypes);
+    }
+
+    public Set<String> getAllHitsValidQueryFields() {
+        return getConfig().getAllHitsValidQueryFields();
+    }
+
+    public void setAllHitsValidQueryFields(Set<String> allHitsValidQueryFields) {
+        getConfig().setAllHitsValidQueryFields(allHitsValidQueryFields);
+    }
+
+    public String getAllHitsTargetField() {
+        return getConfig().getAllHitsTargetField();
+    }
+
+    public void setAllHitsTargetField(String allHitsTargetField) {
+        getConfig().setAllHitsTargetField(allHitsTargetField);
+    }
+
+    public String getAnnotationTableName() {
+        return getConfig().getAnnotationTableName();
+    }
+
+    public void setAnnotationTableName(String annotationTableName) {
+        getConfig().setAnnotationTableName(annotationTableName);
+    }
+
+    public String getAnnotationSourceTableName() {
+        return getConfig().getAnnotationSourceTableName();
+    }
+
+    public void setAnnotationSourceTableName(String annotationSourceTableName) {
+        getConfig().setAnnotationSourceTableName(annotationSourceTableName);
     }
 }
