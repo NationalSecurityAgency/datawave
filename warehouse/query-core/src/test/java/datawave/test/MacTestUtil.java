@@ -43,7 +43,7 @@ public class MacTestUtil {
             tops.create(tableName);
         } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException | TableExistsException e) {
             fail("Failed to delete/create table");
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to delete/create table", e);
         }
     }
 
@@ -109,6 +109,7 @@ public class MacTestUtil {
             long elapsed = System.currentTimeMillis() - start;
             log.trace("removed {} properties in {} ms", properties.size(), elapsed);
         } catch (AccumuloException | TableNotFoundException e) {
+            fail("Exception while verifying property removal");
             throw new RuntimeException("Exception while verifying property removal", e);
         }
     }
@@ -158,6 +159,7 @@ public class MacTestUtil {
             long elapsed = System.currentTimeMillis() - start;
             log.trace("added {} properties in {} ms", properties.size(), elapsed);
         } catch (AccumuloException | TableNotFoundException e) {
+            fail("Exception while verifying property addition");
             throw new RuntimeException("Exception while verifying property addition", e);
         }
     }
