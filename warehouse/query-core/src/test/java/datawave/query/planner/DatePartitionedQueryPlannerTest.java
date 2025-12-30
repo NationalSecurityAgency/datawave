@@ -421,9 +421,6 @@ public abstract class DatePartitionedQueryPlannerTest {
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
 
-        Set<String> actualPlans = new HashSet<>();
-        actualPlans.addAll(PartitionedPlanVisitor.getPlans(config.getQueryString()));
-
         // Run the query and retrieve the response.
         DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
         List<Object> eventList = Lists.newArrayList(new DatawaveTransformIterator<>(logic.iterator(), transformer));
@@ -439,9 +436,11 @@ public abstract class DatePartitionedQueryPlannerTest {
 
         Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
 
-        assertPlanEquals(initialPlan, ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getInitialPlan());
+        Plans actualPlans = PartitionedPlanVisitor.getPlans(config.getQueryString());
+        assertPlanEquals(initialPlan, logic.getQueryPlanner().getInitialPlan());
+
         Set<String> expectedFinalPlans = expectedPlans.values().stream().map(e -> e.getRight()).collect(Collectors.toSet());
-        assertPlanEquals(expectedFinalPlans, actualPlans);
+        assertPlanEquals(expectedFinalPlans, actualPlans.getPlans());
 
         // verify that the full table scan was actually required
         if (successMode != ExpectedSuccess.ALL) {
