@@ -117,7 +117,6 @@ import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.transformer.AnnotationHitsTransformer;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
@@ -125,6 +124,8 @@ import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.QueryValidationResultTransformer;
 import datawave.query.transformer.UniqueTransform;
+import datawave.query.transformer.annotation.AllHitsFactory;
+import datawave.query.transformer.annotation.AnnotationHitsTransformer;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
@@ -790,8 +791,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
                 AnnotationDataAccess annotationDataAccess = new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(),
                                 getAnnotationTableName(), getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
+                AllHitsFactory allHitsFactory = new AllHitsFactory();
                 ((DocumentTransformer) this.transformerInstance)
-                                .addTransform(new AnnotationHitsTransformer(annotationDataAccess, getAnnotationHitsContextLength(),
+                                .addTransform(new AnnotationHitsTransformer(annotationDataAccess, allHitsFactory, getAnnotationHitsContextLength(),
                                                 getAnnotationHitsValidTypes(), getAnnotationHitsValidQueryFields(), getAnnotationHitsTargetField()));
             }
 

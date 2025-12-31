@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -44,6 +45,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 
 import datawave.annotation.data.AnnotationSerializer;
@@ -68,6 +71,11 @@ import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.transformer.annotation.AllHitsFactory;
+import datawave.query.transformer.annotation.AnnotationHitsTransformer;
+import datawave.query.transformer.annotation.BoundaryComparator;
+import datawave.query.transformer.annotation.SegmentValueComparator;
+import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -534,8 +542,12 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":0.3,\"oneBestContext\":[{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]}]");
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S1.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
+        String expectedAnnotationHits = getExpectedAnnotationHits("03AE6355", List.of(hit), context);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
@@ -552,9 +564,12 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":0.3,\"oneBestContext\":[{\"label\":\"w2\",\"confidence\":1.0,\"timeRange\":{\"startTime\":2.0,\"endTime\":3.0}},{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]}]");
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S2.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S6);
+        String expectedAnnotationHits = getExpectedAnnotationHits("565A3AED", List.of(hit), context);
 
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
         runTestQuery(expected);
@@ -570,8 +585,12 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":0.3,\"oneBestContext\":[{\"label\":\"w2\",\"confidence\":1.0,\"timeRange\":{\"startTime\":2.0,\"endTime\":3.0}},{\"label\":\"x2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":4.0,\"endTime\":5.0}},{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}},{\"label\":\"b1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":80.0,\"endTime\":100.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]}]");
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S3.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S6, S7);
+        String expectedAnnotationHits = getExpectedAnnotationHits("1D6AAA19", List.of(hit), context);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
@@ -588,8 +607,12 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":0.3,\"oneBestContext\":[{\"label\":\"w2\",\"confidence\":1.0,\"timeRange\":{\"startTime\":2.0,\"endTime\":3.0}},{\"label\":\"x2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":4.0,\"endTime\":5.0}},{\"label\":\"y1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":8.0,\"endTime\":10.0}},{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}},{\"label\":\"b1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":80.0,\"endTime\":100.0}},{\"label\":\"c2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":100.0,\"endTime\":110.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]}]");
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S4.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S6, S7, S8);
+        String expectedAnnotationHits = getExpectedAnnotationHits("816EDD11", List.of(hit), context);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
@@ -606,9 +629,13 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S4.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
+        String expectedAnnotationHits = getExpectedAnnotationHits("8382B062", List.of(hit), context);
+
         // omit segment 5 because it is beyond the window
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":0.3,\"oneBestContext\":[{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}},{\"label\":\"b1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":80.0,\"endTime\":100.0}},{\"label\":\"c2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":100.0,\"endTime\":110.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]}]");
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
@@ -624,9 +651,13 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S4.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
+        String expectedAnnotationHits = getExpectedAnnotationHits("40AD77A3", List.of(hit), context);
+
         // omit edge segments beyond the window
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":0.3,\"oneBestContext\":[{\"label\":\"x2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":4.0,\"endTime\":5.0}},{\"label\":\"y1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":8.0,\"endTime\":10.0}},{\"label\":\"z2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":10.0,\"endTime\":11.0}},{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}},{\"label\":\"b1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":80.0,\"endTime\":100.0}},{\"label\":\"c2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":100.0,\"endTime\":110.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]}]");
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
@@ -642,9 +673,14 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        // omit edge segments beyond the window
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":1.0,\"oneBestContext\":[{\"label\":\"x2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":4.0,\"endTime\":5.0}},{\"label\":\"y1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":8.0,\"endTime\":10.0}},{\"label\":\"z2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":10.0,\"endTime\":11.0}},{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}},{\"label\":\"b1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":80.0,\"endTime\":100.0}},{\"label\":\"c2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":100.0,\"endTime\":110.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"termLabel\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]}]");
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S4.getBoundary());
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 1);
+        hit2.setContextEnd(S4.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
+        String expectedAnnotationHits = getExpectedAnnotationHits("40AD77A3", List.of(hit1, hit2), context);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
@@ -660,9 +696,16 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        // omit edge segments beyond the window
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"confidence\":0.9,\"oneBestContext\":[{\"label\":\"w2\",\"confidence\":1.0,\"timeRange\":{\"startTime\":2.0,\"endTime\":3.0}},{\"label\":\"x2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":4.0,\"endTime\":5.0}},{\"label\":\"y1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":8.0,\"endTime\":10.0}},{\"label\":\"z2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":10.0,\"endTime\":11.0}}],\"termHits\":[{\"termLabel\":\"w1\",\"confidence\":0.9,\"timeRange\":{\"startTime\":2.0,\"endTime\":3.0}}]},{\"confidence\":0.3,\"oneBestContext\":[{\"label\":\"x2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":4.0,\"endTime\":5.0}},{\"label\":\"y1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":8.0,\"endTime\":10.0}},{\"label\":\"z2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":10.0,\"endTime\":11.0}},{\"label\":\"carl\",\"confidence\":1.0,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}},{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}},{\"label\":\"b1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":80.0,\"endTime\":100.0}},{\"label\":\"c2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":100.0,\"endTime\":110.0}}],\"termHits\":[{\"termLabel\":\"capone\",\"confidence\":0.3,\"timeRange\":{\"startTime\":20.0,\"endTime\":30.0}}]},{\"confidence\":0.6,\"oneBestContext\":[{\"label\":\"a2\",\"confidence\":0.9,\"timeRange\":{\"startTime\":40.0,\"endTime\":50.0}},{\"label\":\"b1\",\"confidence\":0.5,\"timeRange\":{\"startTime\":80.0,\"endTime\":100.0}},{\"label\":\"c2\",\"confidence\":0.7,\"timeRange\":{\"startTime\":100.0,\"endTime\":110.0}},{\"label\":\"d1\",\"confidence\":0.6,\"timeRange\":{\"startTime\":120.0,\"endTime\":250.0}}],\"termHits\":[{\"termLabel\":\"d1\",\"confidence\":0.6,\"timeRange\":{\"startTime\":120.0,\"endTime\":250.0}}]}]");
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S4.getBoundary());
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        hit2.setContextEnd(S9.getBoundary());
+        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        hit3.setContextEnd(S5.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
+        String expectedAnnotationHits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit1, hit3), context);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
@@ -693,6 +736,7 @@ public abstract class ShardQueryLogicTest {
             AccumuloAnnotationSourceSerializer sourceSerializer = new AccumuloAnnotationSourceSerializer();
             AnnotationDataAccess dataAccess = new AnnotationDataAccess(client, authSet, "annotations", "annotationsSource", serializer, sourceSerializer);
             for (Annotation annotation : annotations) {
+                // if we really want to validate the annotation id matches pull it here
                 dataAccess.addAnnotation(annotation);
             }
             writer.flush();
@@ -713,9 +757,25 @@ public abstract class ShardQueryLogicTest {
         logic.setAnnotationSourceTableName("annotationsSource");
     }
 
-    private String getExpectedAnnotationHits() {
-        // TODO
-        return null;
+    private String getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,
+                    TreeMap<SegmentBoundary,List<SegmentValue>> context) throws JsonProcessingException {
+        AllHitsFactory factory = new AllHitsFactory();
+        AllHits expected = factory.create(annotationId, sortedHits, context);
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.writeValueAsString(expected);
+    }
+
+    private TreeMap<SegmentBoundary,List<SegmentValue>> buildSortedContext(Segment... segments) {
+        TreeMap<SegmentBoundary,List<SegmentValue>> sortedContext = new TreeMap<>(new BoundaryComparator());
+        for (Segment segment : segments) {
+            SegmentBoundary boundary = segment.getBoundary();
+            List<SegmentValue> values = segment.getValuesList();
+            List<SegmentValue> sortedValues = new ArrayList<>(values);
+            Collections.sort(sortedValues, new SegmentValueComparator());
+            sortedContext.put(boundary, sortedValues);
+        }
+
+        return sortedContext;
     }
 
     private Annotation buildAnnotation(Segment... segments) {

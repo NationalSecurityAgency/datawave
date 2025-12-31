@@ -633,6 +633,21 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("maxLinesToPrint", -1);
         updatedValues.put("maxLinesToPrint", 150);
+
+        defaultValues.put("annotationHitsEnabled", false);
+        updatedValues.put("annotationHitsEnabled", true);
+        defaultValues.put("annotationHitsContextLength", 4);
+        updatedValues.put("annotationHitsContextLength", 3);
+        defaultValues.put("annotationHitsValidTypes", null);
+        updatedValues.put("annotationHitsValidTypes", Set.of("a", "b", "c"));
+        defaultValues.put("annotationHitsValidQueryFields", null);
+        updatedValues.put("annotationHitsValidQueryFields", Set.of("d", "e"));
+        defaultValues.put("annotationHitsTargetField", null);
+        updatedValues.put("annotationHitsTargetField", "target_field");
+        defaultValues.put("annotationTableName", "annotation");
+        updatedValues.put("annotationTableName", "datawave.annotation");
+        defaultValues.put("annotationSourceTableName", "annotationSource");
+        updatedValues.put("annotationSourceTableName", "datawave.annotationSource");
     }
 
     private Query createQuery(String query) {

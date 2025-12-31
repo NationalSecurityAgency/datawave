@@ -583,8 +583,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private String annotationHitsTargetField;
 
-    private String annotationTableName;
-    private String annotationSourceTableName;
+    private String annotationTableName = "annotation";
+    private String annotationSourceTableName = "annotationSource";
 
     /**
      * Default constructor
