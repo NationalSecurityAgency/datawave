@@ -14,7 +14,6 @@ import java.util.TreeMap;
 
 import javax.annotation.Nullable;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -22,6 +21,7 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import datawave.annotation.data.v1.AnnotationDataAccess;
@@ -107,9 +107,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                         // this annotation supports allHits
                         TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
                         List<SegmentHit> hits = search(sortedSegments);
-                        AllHits results = allHitsFactory.create(annotation.getAnnotationId(), hits, sortedSegments);
-                        // TODO might be multi-valued
-                        updateDocument(keyDocumentEntry, results);
+                        try {
+                            AllHits results = allHitsFactory.create(annotation.getAnnotationId(), hits, sortedSegments);
+                            updateDocument(keyDocumentEntry, results);
+                        } catch (AllHitsException e) {
+                            log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
+                        }
                     } else {
                         // TODO
                     }

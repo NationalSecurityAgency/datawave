@@ -71,6 +71,7 @@ import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.transformer.annotation.AllHitsException;
 import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.AnnotationHitsTransformer;
 import datawave.query.transformer.annotation.BoundaryComparator;
@@ -811,7 +812,7 @@ public abstract class ShardQueryLogicTest {
     }
 
     private AllHits getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,
-                    TreeMap<SegmentBoundary,List<SegmentValue>> context) {
+                    TreeMap<SegmentBoundary,List<SegmentValue>> context) throws AllHitsException {
         AllHitsFactory factory = new AllHitsFactory();
         return factory.create(annotationId, sortedHits, context);
     }

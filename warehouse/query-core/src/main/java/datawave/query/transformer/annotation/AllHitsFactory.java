@@ -16,7 +16,8 @@ import datawave.query.transformer.annotation.model.TermHit;
 public class AllHitsFactory {
     private static final AllHits EMPTY_ALL_HITS = new AllHits();
 
-    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> hits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments) {
+    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> hits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments)
+                    throws AllHitsException {
         if (hits.isEmpty()) {
             return EMPTY_ALL_HITS;
         }
@@ -41,6 +42,11 @@ public class AllHitsFactory {
 
             // both the start and end are inclusive
             SortedMap<SegmentBoundary,List<SegmentValue>> contextView = sortedSegments.subMap(hit.getContextStart(), true, hit.getContextEnd(), true);
+            if (contextView.isEmpty()) {
+                // no context means the hit missed the available data
+                return EMPTY_ALL_HITS;
+            }
+
             if (allHit.getOneBestContext().isEmpty()) {
                 // convert to an iterator to build the best context window
                 Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> itr = contextView.entrySet().iterator();
@@ -82,10 +88,15 @@ public class AllHitsFactory {
      * @param contextIterator
      */
     private void applyContextAndHit(AllHit allHit, AnnotationHitsTransformer.SegmentHit segmentHit,
-                    Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> contextIterator) {
+                    Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> contextIterator) throws AllHitsException {
         while (contextIterator.hasNext()) {
             Map.Entry<SegmentBoundary,List<SegmentValue>> contextEntry = contextIterator.next();
             SegmentBoundary boundary = contextEntry.getKey();
+
+            if (contextEntry.getValue().isEmpty()) {
+                throw new AllHitsException("cannot have a segment with no values");
+            }
+
             // highest score will be last
             SegmentValue firstValue = contextEntry.getValue().get(contextEntry.getValue().size() - 1);
             Term t = new Term();
@@ -97,6 +108,10 @@ public class AllHitsFactory {
 
             // now check if this segment also contains the hit
             if (segmentHit.getHitBoundary() == boundary) {
+                if (contextEntry.getValue().size() <= segmentHit.getValueHitIndex()) {
+                    throw new AllHitsException("hit index outside of available values for segment. SegmentValues:" + contextEntry.getValue().size() + " index:"
+                                    + segmentHit.getValueHitIndex());
+                }
                 applyHit(allHit, segmentHit, contextEntry.getValue().get(segmentHit.getValueHitIndex()));
             }
         }

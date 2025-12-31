@@ -11,6 +11,14 @@ import datawave.annotation.protobuf.v1.SegmentBoundary;
 public class BoundaryComparator implements Comparator<SegmentBoundary> {
     @Override
     public int compare(SegmentBoundary o1, SegmentBoundary o2) {
+        if (o1 == null && o2 == null) {
+            return 0;
+        } else if (o1 == null) {
+            return 1;
+        } else if (o2 == null) {
+            return -1;
+        }
+
         if (o1.getBoundaryTypeValue() != o2.getBoundaryTypeValue()) {
             if (o1.getBoundaryTypeValue() > 0 && o2.getBoundaryTypeValue() > 0) {
                 // lower number sorts first
