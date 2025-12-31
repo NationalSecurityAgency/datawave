@@ -545,7 +545,8 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S1.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
-        String expectedAnnotationHits = getExpectedAnnotationHits("03AE6355", List.of(hit), context);
+        AllHits hits = getExpectedAnnotationHits("03AE6355", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
@@ -567,7 +568,8 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S2.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S6);
-        String expectedAnnotationHits = getExpectedAnnotationHits("565A3AED", List.of(hit), context);
+        AllHits hits = getExpectedAnnotationHits("565A3AED", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
         Set<Set<String>> expected = new HashSet<>();
@@ -588,7 +590,8 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S3.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S6, S7);
-        String expectedAnnotationHits = getExpectedAnnotationHits("1D6AAA19", List.of(hit), context);
+        AllHits hits = getExpectedAnnotationHits("1D6AAA19", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
@@ -610,7 +613,8 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S6, S7, S8);
-        String expectedAnnotationHits = getExpectedAnnotationHits("816EDD11", List.of(hit), context);
+        AllHits hits = getExpectedAnnotationHits("816EDD11", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
@@ -632,7 +636,8 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
-        String expectedAnnotationHits = getExpectedAnnotationHits("8382B062", List.of(hit), context);
+        AllHits hits = getExpectedAnnotationHits("8382B062", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         // omit segment 5 because it is beyond the window
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
@@ -654,7 +659,8 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
-        String expectedAnnotationHits = getExpectedAnnotationHits("40AD77A3", List.of(hit), context);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         // omit edge segments beyond the window
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
@@ -678,7 +684,8 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
-        String expectedAnnotationHits = getExpectedAnnotationHits("40AD77A3", List.of(hit1, hit2), context);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit1, hit2), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
@@ -703,7 +710,53 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
         hit3.setContextEnd(S5.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
-        String expectedAnnotationHits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit1, hit3), context);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit1, hit3), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsWrongTypeTest() throws Exception {
+        withAnnotationHits();
+        givenAnnotation(buildAnnotation("ANNO2", "capone", "abc", S1));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsMultipleAnnotationsTest() throws Exception {
+        withAnnotationHits();
+        givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
+        givenAnnotation(buildAnnotation("ANNO1", "capone2", "abcd", S1, S2));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit2.setContextEnd(S2.getBoundary());
+
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
+        AllHits hits1 = getExpectedAnnotationHits("03AE6355", List.of(hit1), context);
+        context = buildSortedContext(S1, S2);
+        AllHits hits2 = getExpectedAnnotationHits("DCC5F4AB", List.of(hit2), context);
+
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits1, hits2);
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
@@ -757,12 +810,15 @@ public abstract class ShardQueryLogicTest {
         logic.setAnnotationSourceTableName("annotationsSource");
     }
 
-    private String getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,
-                    TreeMap<SegmentBoundary,List<SegmentValue>> context) throws JsonProcessingException {
+    private AllHits getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,
+                    TreeMap<SegmentBoundary,List<SegmentValue>> context) {
         AllHitsFactory factory = new AllHitsFactory();
-        AllHits expected = factory.create(annotationId, sortedHits, context);
+        return factory.create(annotationId, sortedHits, context);
+    }
+
+    private String getExpectedALlHitsRollup(AllHits... hits) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.writeValueAsString(expected);
+        return mapper.writeValueAsString(hits);
     }
 
     private TreeMap<SegmentBoundary,List<SegmentValue>> buildSortedContext(Segment... segments) {
@@ -778,19 +834,23 @@ public abstract class ShardQueryLogicTest {
         return sortedContext;
     }
 
-    private Annotation buildAnnotation(Segment... segments) {
+    private Annotation buildAnnotation(String annotationType, String documentId, String sourceHash, Segment... segments) {
         // @formatter:off
         return Annotation.newBuilder()
                 .setShard("20130101_0")
                 .setDataType("test")
                 .setUid(WiseGuysIngest.caponeUID)
-                .setAnnotationType("ANNO1")
-                .setDocumentId("CAPONE")
-                .setAnalyticSourceHash("abc")
+                .setAnnotationType(annotationType)
+                .setDocumentId(documentId)
+                .setAnalyticSourceHash(sourceHash)
                 .putAllMetadata(Map.of("visibility", "ALL", "created_date", "2025-12-29T00:00:00Z"))
                 .addAllSegments(List.of(segments))
                 .build();
         // @formatter:on
+    }
+
+    private Annotation buildAnnotation(Segment... segments) {
+        return buildAnnotation("ANNO1", "CAPONE", "abc", segments);
     }
 
     private void givenAnnotation(Annotation annotation) {

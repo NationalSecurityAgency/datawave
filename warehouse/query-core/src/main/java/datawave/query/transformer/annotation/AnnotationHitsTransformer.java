@@ -10,13 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-//import java.util.SortedMap;
 import java.util.TreeMap;
 
 import javax.annotation.Nullable;
 
-//import datawave.query.transformer.annotation.model.Term;
-//import datawave.query.transformer.annotation.model.TermHit;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -37,7 +35,6 @@ import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.transformer.DocumentTransform;
-//import datawave.query.transformer.annotation.model.AllHit;
 import datawave.query.transformer.annotation.model.AllHits;
 
 /**
@@ -45,7 +42,6 @@ import datawave.query.transformer.annotation.model.AllHits;
  */
 public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocumentTransform {
     private static final Logger log = Logger.getLogger(AnnotationHitsTransformer.class);
-    // private static final AllHits EMPTY_ALL_HITS = new AllHits();
 
     private final AnnotationDataAccess annotationDataAccess;
     private final AllHitsFactory allHitsFactory;
@@ -128,109 +124,35 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return keyDocumentEntry;
     }
 
-    // private void applyHit(AllHit allHit, SegmentHit segmentHit, SegmentValue hitValue) {
-    // TermHit th = new TermHit();
-    // th.setTermLabel(hitValue.getValue());
-    // th.setConfidence(hitValue.getScore());
-    // th.getTimeRange().setStartTime(segmentHit.getHitBoundary().getStart());
-    // th.getTimeRange().setEndTime(segmentHit.getHitBoundary().getEnd());
-    // allHit.getTermHits().add(th);
-    //
-    // // rollup confidence
-    // if (allHit.getConfidence() < th.getConfidence()) {
-    // allHit.setConfidence(th.getConfidence());
-    // }
-    // }
-    //
-    // /**
-    // * Build the allHit oneBestContext while also applying the hit to the allHit in a single pass
-    // * @param allHit the to be updated
-    // * @param segmentHit
-    // * @param contextIterator
-    // */
-    // private void applyContextAndHit(AllHit allHit, SegmentHit segmentHit, Iterator<Entry<SegmentBoundary,List<SegmentValue>>> contextIterator) {
-    // while (contextIterator.hasNext()) {
-    // Entry<SegmentBoundary,List<SegmentValue>> contextEntry = contextIterator.next();
-    // SegmentBoundary boundary = contextEntry.getKey();
-    // // highest score will be last
-    // SegmentValue firstValue = contextEntry.getValue().get(contextEntry.getValue().size() - 1);
-    // Term t = new Term();
-    // t.setLabel(firstValue.getValue());
-    // t.setConfidence(firstValue.getScore());
-    // t.getTimeRange().setStartTime(boundary.getStart());
-    // t.getTimeRange().setEndTime(boundary.getEnd());
-    // allHit.getOneBestContext().add(t);
-    //
-    // // now check if this segment also contains the hit
-    // if (segmentHit.getHitBoundary() == boundary) {
-    // applyHit(allHit, segmentHit, contextEntry.getValue().get(segmentHit.getValueHitIndex()));
-    // }
-    // }
-    // }
-    //
-    // private void addAllHit(AllHits allHits, AllHit allHit) {
-    // allHits.getKeywordResultList().add(allHit);
-    // if (allHits.getMaxTermHitConfidence() < allHit.getConfidence()) {
-    // allHits.setMaxTermHitConfidence(allHit.getConfidence());
-    // }
-    // }
-    //
-    // private AllHits assembleResults(String annotationId, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, List<SegmentHit> hits) {
-    // if (hits.isEmpty()) {
-    // return EMPTY_ALL_HITS;
-    // }
-    //
-    // // contains all hits across all boundaries
-    // AllHits allHits = new AllHits();
-    // allHits.setAnnotationId(annotationId);
-    //
-    // // contains all hits across a single boundary
-    // AllHit allHit = new AllHit();
-    //
-    // // extract hits and convert to pojo
-    // for (SegmentHit hit : hits) {
-    // if (allHit.getHitBoundary() != null && !allHit.getHitBoundary().equals(hit.hitBoundary)) {
-    // // create a new allHit
-    // addAllHit(allHits, allHit);
-    // allHit = new AllHit();
-    // }
-    //
-    // // track the current boundary this hit will cover, this is not output, but keeps things organized
-    // allHit.setHitBoundary(hit.hitBoundary);
-    //
-    // // both the start and end are inclusive
-    // SortedMap<SegmentBoundary,List<SegmentValue>> contextView = sortedSegments.subMap(hit.getContextStart(), true, hit.getContextEnd(), true);
-    // if (allHit.getOneBestContext().isEmpty()) {
-    // // convert to an iterator to build the best context window
-    // Iterator<Entry<SegmentBoundary,List<SegmentValue>>> itr = contextView.entrySet().iterator();
-    // applyContextAndHit(allHit, hit, itr);
-    // } else {
-    // // just write the new TermHit
-    // SegmentBoundary hitBoundary = hit.getHitBoundary();
-    // SegmentValue hitValue = sortedSegments.get(hitBoundary).get(hit.getValueHitIndex());
-    // applyHit(allHit, hit, hitValue);
-    // }
-    // }
-    //
-    // // add last allHit to allHits
-    // addAllHit(allHits, allHit);
-    //
-    // return allHits;
-    // }
-
     private void updateDocument(Entry<Key,Document> entry, AllHits allHits) {
+        // check for an existing value
+        Content attr = (Content) entry.getValue().get(targetField);
+        List<AllHits> rollup = null;
+        if (attr != null) {
+            try {
+                rollup = objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (rollup == null) {
+            rollup = new ArrayList<>();
+        }
+
+        rollup.add(allHits);
+
         // convert pojo to json
         String json = null;
         try {
-            json = objectMapper.writeValueAsString(allHits);
+            json = objectMapper.writeValueAsString(rollup);
         } catch (JsonProcessingException e) {
             log.warn("Failed to write json for all hits for document: " + entry.getKey(), e);
         }
 
         if (json != null) {
-            // TODO merge up any existing value in this field
             // update the document
-            entry.getValue().put(targetField, new Content(json, entry.getKey(), true));
+            entry.getValue().replace(targetField, new Content(json, entry.getKey(), true), false);
         }
     }
 
