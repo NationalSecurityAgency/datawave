@@ -51,6 +51,7 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
+import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
@@ -644,6 +645,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("annotationHitsValidQueryFields", Set.of("d", "e"));
         defaultValues.put("annotationHitsTargetField", null);
         updatedValues.put("annotationHitsTargetField", "target_field");
+        defaultValues.put("annotationHitsFactoryClass", AllHitsFactory.class.getCanonicalName());
+        updatedValues.put("annotationHitsFactoryClass", "some.new.class");
         defaultValues.put("annotationTableName", "annotation");
         updatedValues.put("annotationTableName", "datawave.annotation");
         defaultValues.put("annotationSourceTableName", "annotationSource");

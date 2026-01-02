@@ -4,6 +4,7 @@ import static datawave.query.jexl.functions.QueryFunctions.GROUPBY_FUNCTION;
 import static datawave.query.jexl.functions.QueryFunctions.UNIQUE_FUNCTION;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -791,7 +792,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
                 AnnotationDataAccess annotationDataAccess = new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(),
                                 getAnnotationTableName(), getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
-                AllHitsFactory allHitsFactory = new AllHitsFactory();
+                AllHitsFactory allHitsFactory = null;
+                try {
+                    Class<?> annotationHitsFactoryClass = Class.forName(getAnnotationHitsFactoryClass());
+                    Class<? extends AllHitsFactory> subClass = annotationHitsFactoryClass.asSubclass(AllHitsFactory.class);
+                    allHitsFactory = subClass.getDeclaredConstructor().newInstance();
+                } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+                    throw new QueryException("cannot instantiate allHitsFactory", e);
+                }
                 ((DocumentTransformer) this.transformerInstance)
                                 .addTransform(new AnnotationHitsTransformer(annotationDataAccess, allHitsFactory, getAnnotationHitsContextLength(),
                                                 getAnnotationHitsValidTypes(), getAnnotationHitsValidQueryFields(), getAnnotationHitsTargetField()));
@@ -3561,6 +3569,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setAnnotationHitsTargetField(String allHitsTargetField) {
         getConfig().setAnnotationHitsTargetField(allHitsTargetField);
+    }
+
+    public String getAnnotationHitsFactoryClass() {
+        return getConfig().getAnnotationHitsFactoryClass();
+    }
+
+    public void setAnnotationHitsFactoryClass(String clazz) {
+        getConfig().setAnnotationHitsFactoryClass(clazz);
     }
 
     public String getAnnotationTableName() {

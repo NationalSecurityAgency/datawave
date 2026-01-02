@@ -1,7 +1,10 @@
 package datawave.query.transformer.annotation;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +39,7 @@ import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.annotation.model.AllHits;
+import datawave.query.transformer.annotation.model.AllHitsError;
 
 /**
  * This iterator will lookup and search annotations for hits as well as provide context
@@ -43,21 +47,35 @@ import datawave.query.transformer.annotation.model.AllHits;
 public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocumentTransform {
     private static final Logger log = Logger.getLogger(AnnotationHitsTransformer.class);
 
+    public static final String ENABLED_PARAMETER = "annotation.all.hits";
+    public static final String CONTEXT_SIZE_PARAMETER = "annotation.all.hits.contextSize";
+    public static final String MIN_SCORE_PARAMETER = "annotation.all.hits.minScore";
+    public static final String KEYWORDS_PARAMETER = "annotation.all.hits.keywords";
+    public static final String KEYWORD_DELIMITER = ";";
+
+    private static final boolean DEFAULT_ENABLED = false;
+    private static final int DEFAULT_CONTEXT_SIZE = 3;
+    private static final float DEFAULT_MIN_SCORE = 0;
+
     private final AnnotationDataAccess annotationDataAccess;
     private final AllHitsFactory allHitsFactory;
-    private final int contextBoundary;
+    private final int maxContextBoundary;
     private final Set<String> validTypes;
     private final Set<String> validQueryFields;
     private final String targetField;
 
+    private boolean enabled = DEFAULT_ENABLED;
+    private int contextSize = DEFAULT_CONTEXT_SIZE;
+    private float minScore = DEFAULT_MIN_SCORE;
+
     private Set<String> searchHitTerms;
     private ObjectMapper objectMapper;
 
-    public AnnotationHitsTransformer(AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int contextBoundary, Set<String> validTypes,
+    public AnnotationHitsTransformer(AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary, Set<String> validTypes,
                     Set<String> validQueryFields, String targetField) {
         this.annotationDataAccess = annotationDataAccess;
         this.allHitsFactory = allHitsFactory;
-        this.contextBoundary = contextBoundary;
+        this.maxContextBoundary = maxContextBoundary;
         this.validTypes = validTypes;
         this.validQueryFields = validQueryFields;
         this.targetField = targetField;
@@ -67,14 +85,62 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     public void initialize(Query settings, MarkingFunctions markingFunctions) {
         super.initialize(settings, markingFunctions);
 
-        // extract terms to lookup hits on
-        try {
-            this.searchHitTerms = extractSearchHitTerms(settings);
-        } catch (ParseException e) {
-            log.debug("no valid search terms detected for query, skipping all hits");
+        // handle query parameters for configuration overrides
+        String enabledStr = settings.findParameter(ENABLED_PARAMETER).getParameterValue();
+        if (!enabledStr.isBlank()) {
+            this.enabled = Boolean.parseBoolean(enabledStr);
+        }
+        // go no further if not enabled, searchHitTerms will be null so the transformer will never do anything
+        if (!this.enabled) {
+            return;
         }
 
-        objectMapper = new ObjectMapper();
+        String contextBoundaryStr = settings.findParameter(CONTEXT_SIZE_PARAMETER).getParameterValue();
+        if (!contextBoundaryStr.isBlank()) {
+            this.contextSize = Integer.parseInt(contextBoundaryStr);
+        }
+        if (this.contextSize > this.maxContextBoundary) {
+            log.warn("contextBoundary requested: " + this.contextSize + " max configured: " + this.maxContextBoundary + " Automatically reducing to max");
+            this.contextSize = this.maxContextBoundary;
+            log.info("all hits contextSize: " + this.contextSize);
+        } else if (this.contextSize < 0) {
+            log.warn("contextBoundary requested: " + this.contextSize + " below min context: 0 Automatically increasing to min");
+            this.contextSize = 0;
+        }
+
+        String minScoreStr = settings.findParameter(MIN_SCORE_PARAMETER).getParameterValue();
+        if (!minScoreStr.isBlank()) {
+            this.minScore = Float.parseFloat(minScoreStr);
+            log.info("all hits minScore: " + this.minScore);
+        }
+
+        this.objectMapper = new ObjectMapper();
+
+        String keywordStr = settings.findParameter(KEYWORDS_PARAMETER).getParameterValue();
+        if (!keywordStr.isBlank()) {
+            // check for json
+            String[] keywords;
+            try {
+                // decode the string
+                String decoded = URLDecoder.decode(keywordStr, StandardCharsets.UTF_8);
+                // convert from json
+                keywords = this.objectMapper.readValue(decoded, String[].class);
+            } catch (JsonProcessingException e) {
+                log.info("keywordStr provided, but not json, falling back to ; delimited parsing for: " + keywordStr);
+                // basic parsing
+                keywords = keywordStr.split(KEYWORD_DELIMITER);
+            }
+            searchHitTerms = new HashSet<>();
+            searchHitTerms.addAll(Arrays.asList(keywords));
+        } else {
+            // extract terms to lookup hits on
+            try {
+                this.searchHitTerms = extractSearchHitTerms(settings);
+            } catch (ParseException e) {
+                log.debug("no valid search terms detected for query, skipping all hits");
+            }
+        }
+
     }
 
     /**
@@ -87,7 +153,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
-        if (searchHitTerms == null || searchHitTerms.isEmpty()) {
+        if (!this.enabled || this.searchHitTerms == null || this.searchHitTerms.isEmpty()) {
             // no search terms, no-op
             return keyDocumentEntry;
         }
@@ -106,12 +172,16 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                     if (validTypes.contains(annotationType)) {
                         // this annotation supports allHits
                         TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
-                        List<SegmentHit> hits = search(sortedSegments);
+                        List<SegmentHit> hits = search(sortedSegments, contextSize, minScore);
                         try {
                             AllHits results = allHitsFactory.create(annotation.getAnnotationId(), hits, sortedSegments);
                             updateDocument(keyDocumentEntry, results);
                         } catch (AllHitsException e) {
                             log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
+                            AllHitsError error = new AllHitsError();
+                            error.setAnnotationId(annotation.getAnnotationId());
+                            error.setErrorMessage(e.getMessage());
+                            updateDocument(keyDocumentEntry, error);
                         }
                     } else {
                         // TODO
@@ -127,13 +197,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return keyDocumentEntry;
     }
 
-    private void updateDocument(Entry<Key,Document> entry, AllHits allHits) {
-        // check for an existing value
-        Content attr = (Content) entry.getValue().get(targetField);
+    private List<AllHits> getCurrentAllHitsValue(Entry<Key,Document> entry) {
+        Content attr = (Content) entry.getValue().get(this.targetField);
         List<AllHits> rollup = null;
         if (attr != null) {
             try {
-                rollup = objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
+                rollup = this.objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -143,6 +212,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             rollup = new ArrayList<>();
         }
 
+        return rollup;
+    }
+
+    private void updateDocument(Entry<Key,Document> entry, AllHits allHits) {
+        List<AllHits> rollup = getCurrentAllHitsValue(entry);
         rollup.add(allHits);
 
         // convert pojo to json
@@ -181,11 +255,13 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
      * Make a single pass through the segments finding matches and creating context for each hit
      *
      * @param segments
+     * @param contextSize
+     * @param minScore
      */
-    private List<SegmentHit> search(TreeMap<SegmentBoundary,List<SegmentValue>> segments) {
+    private List<SegmentHit> search(TreeMap<SegmentBoundary,List<SegmentValue>> segments, int contextSize, float minScore) {
         // keep a list of recent boundaries for context
         // window has to include context + 1 so that on the hit it still has the full window available
-        int maxWindow = contextBoundary + 1;
+        int maxWindow = contextSize + 1;
         ArrayDeque<SegmentBoundary> window = new ArrayDeque<>(maxWindow);
 
         final Iterator<SegmentBoundary> itr = segments.navigableKeySet().iterator();
@@ -205,10 +281,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
 
             List<SegmentValue> values = segments.get(boundary);
             for (int i = 0; i < values.size(); i++) {
-                String normalizedTerm = normalize(values.get(i).getValue());
-                if (searchHitTerms.contains(normalizedTerm)) {
+                SegmentValue segmentValue = values.get(i);
+                String normalizedTerm = normalize(segmentValue.getValue());
+                if (segmentValue.getScore() >= minScore && searchHitTerms.contains(normalizedTerm)) {
                     // partial hits index is the location in the window where the hit is complete
-                    List<SegmentHit> hits = partialHits.computeIfAbsent(segmentIndex + contextBoundary, x -> new ArrayList<>());
+                    List<SegmentHit> hits = partialHits.computeIfAbsent(segmentIndex + contextSize, x -> new ArrayList<>());
                     hits.add(new SegmentHit(window.getFirst(), boundary, i));
                 }
             }

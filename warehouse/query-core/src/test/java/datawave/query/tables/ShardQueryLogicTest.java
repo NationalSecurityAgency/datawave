@@ -1,9 +1,15 @@
 package datawave.query.tables;
 
+import static datawave.query.transformer.annotation.AnnotationHitsTransformer.CONTEXT_SIZE_PARAMETER;
+import static datawave.query.transformer.annotation.AnnotationHitsTransformer.ENABLED_PARAMETER;
+import static datawave.query.transformer.annotation.AnnotationHitsTransformer.KEYWORDS_PARAMETER;
+import static datawave.query.transformer.annotation.AnnotationHitsTransformer.MIN_SCORE_PARAMETER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -73,6 +79,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.annotation.AllHitsException;
 import datawave.query.transformer.annotation.AllHitsFactory;
+import datawave.query.transformer.annotation.AllHitsFactoryErrorOnly;
 import datawave.query.transformer.annotation.AnnotationHitsTransformer;
 import datawave.query.transformer.annotation.BoundaryComparator;
 import datawave.query.transformer.annotation.SegmentValueComparator;
@@ -557,6 +564,25 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
+    public void annotationHitsNotEnabledByQueryParamTest() throws Exception {
+        withAnnotationHits();
+        // disable the transformer via query param
+        givenQueryParameter(ENABLED_PARAMETER, "");
+
+        givenAnnotation(buildAnnotation(S1));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
     public void annotationHitsSingleHit1ContextWindowTest() throws Exception {
         withAnnotationHits();
 
@@ -722,6 +748,226 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
+    public void annotationHitsFromSimpleKeywordParamTest() throws Exception {
+        withAnnotationHits();
+        givenQueryParameter(KEYWORDS_PARAMETER, "w1;d1");
+        givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        hit2.setContextEnd(S9.getBoundary());
+        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        hit3.setContextEnd(S5.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsFromJsonKeywordParamTest() throws Exception {
+        withAnnotationHits();
+        givenQueryParameter(KEYWORDS_PARAMETER, "[\"w1\", \"d1\"]");
+        givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        hit2.setContextEnd(S9.getBoundary());
+        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        hit3.setContextEnd(S5.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsFromEncodedJsonKeywordParamTest() throws Exception {
+        withAnnotationHits();
+
+        givenQueryParameter(KEYWORDS_PARAMETER, URLEncoder.encode("[\"w1\", \"d1\"]", StandardCharsets.UTF_8));
+        givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        hit2.setContextEnd(S9.getBoundary());
+        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        hit3.setContextEnd(S5.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsMultiHitRestrictedByMinScoreTest() throws Exception {
+        withAnnotationHits();
+        givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
+
+        givenQuery("UUID=='CAPONE' || UUID=='w1' || UUID=='d1'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+        givenQueryParameter(MIN_SCORE_PARAMETER, ".6");
+
+        // eliminates hit 1 because it is lower than .6
+        // .9 > .6
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        hit2.setContextEnd(S9.getBoundary());
+        // .6 == .6
+        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        hit3.setContextEnd(S5.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsMultiHitRestrictedByMinScoreBoundaryTest() throws Exception {
+        withAnnotationHits();
+        givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
+
+        givenQuery("UUID=='CAPONE' || UUID=='w1' || UUID=='d1'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+        givenQueryParameter(MIN_SCORE_PARAMETER, ".61");
+
+        // eliminates hit 1 because it is lower than .6
+        // eliminates hit 3 because it is lower than .61
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        hit2.setContextEnd(S9.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
+        AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationsHitsWithReducedContext() throws Exception {
+        withAnnotationHits();
+
+        givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+        givenQueryParameter(CONTEXT_SIZE_PARAMETER, "1");
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S9.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S2.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
+        AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationsHitsWithNegativeContext() throws Exception {
+        withAnnotationHits();
+
+        givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+        givenQueryParameter(CONTEXT_SIZE_PARAMETER, "-1");
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S1.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
+        AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationsHitsAboveMaxContext() throws Exception {
+        withAnnotationHits();
+
+        givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+        givenQueryParameter(CONTEXT_SIZE_PARAMETER, "4");
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S4.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
+        AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationsHitsFactoryErrorTest() throws Exception {
+        withAnnotationHits();
+        logic.setAnnotationHitsFactoryClass(AllHitsFactoryErrorOnly.class.getCanonicalName());
+
+        givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
+                        "[{\"annotationId\":\"71D4C8BE\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"errorMessage\":\"test failure\"}]");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
     public void annotationHitsWrongTypeTest() throws Exception {
         withAnnotationHits();
         givenAnnotation(buildAnnotation("ANNO2", "capone", "abc", S1));
@@ -809,6 +1055,7 @@ public abstract class ShardQueryLogicTest {
         logic.setAnnotationHitsValidTypes(Set.of("ANNO1"));
         logic.setAnnotationTableName("annotations");
         logic.setAnnotationSourceTableName("annotationsSource");
+        givenQueryParameter(ENABLED_PARAMETER, "true");
     }
 
     private AllHits getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,

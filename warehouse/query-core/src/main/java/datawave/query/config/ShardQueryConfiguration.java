@@ -63,6 +63,7 @@ import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
@@ -583,6 +584,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private String annotationHitsTargetField;
 
+    private String annotationHitsFactoryClass = AllHitsFactory.class.getCanonicalName();
+
     private String annotationTableName = "annotation";
     private String annotationSourceTableName = "annotationSource";
 
@@ -846,6 +849,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAnnotationHitsValidTypes(other.getAnnotationHitsValidTypes());
         this.setAnnotationHitsValidQueryFields(other.getAnnotationHitsValidQueryFields());
         this.setAnnotationHitsTargetField(other.getAnnotationHitsTargetField());
+        this.setAnnotationHitsFactoryClass(other.getAnnotationHitsFactoryClass());
         this.setAnnotationTableName(other.getAnnotationTableName());
         this.setAnnotationSourceTableName(other.getAnnotationSourceTableName());
     }
@@ -3515,5 +3519,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setAnnotationHitsTargetField(String annotationHitsTargetField) {
         this.annotationHitsTargetField = annotationHitsTargetField;
+    }
+
+    public String getAnnotationHitsFactoryClass() {
+        return annotationHitsFactoryClass;
+    }
+
+    public void setAnnotationHitsFactoryClass(String annotationHitsFactoryClass) {
+        this.annotationHitsFactoryClass = annotationHitsFactoryClass;
     }
 }
