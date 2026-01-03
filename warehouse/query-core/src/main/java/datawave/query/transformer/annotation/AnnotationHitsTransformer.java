@@ -172,9 +172,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                     if (validTypes.contains(annotationType)) {
                         // this annotation supports allHits
                         TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
-                        List<SegmentHit> hits = search(sortedSegments, contextSize, minScore);
+                        List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
                         try {
-                            AllHits results = allHitsFactory.create(annotation.getAnnotationId(), hits, sortedSegments);
+                            AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments);
                             updateDocument(keyDocumentEntry, results);
                         } catch (AllHitsException e) {
                             log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
@@ -252,19 +252,24 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     }
 
     /**
-     * Make a single pass through the segments finding matches and creating context for each hit
+     * Make a single pass through the sortedSegments finding matches and creating context for each hit
      *
-     * @param segments
+     * @param sortedSegments
+     *            the sorted set of all SegmentBoundary to consider for the search. All SegmentValue will appear in ascending order
      * @param contextSize
+     *            the window of adjacent terms +/- from the hit term to include in the hit
      * @param minScore
+     *            the minimum score a term must have to register a hit
+     * @return non-null List of hits ordered by the segmentBoundary they hit on. Hit order guaranteed to be ascending SegmentBoundary, no second order sort is
+     *         applied. Hits for the same SegmentBoundary will appear in the order they were found.
      */
-    private List<SegmentHit> search(TreeMap<SegmentBoundary,List<SegmentValue>> segments, int contextSize, float minScore) {
+    private List<SegmentHit> search(TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, int contextSize, float minScore) {
         // keep a list of recent boundaries for context
         // window has to include context + 1 so that on the hit it still has the full window available
         int maxWindow = contextSize + 1;
         ArrayDeque<SegmentBoundary> window = new ArrayDeque<>(maxWindow);
 
-        final Iterator<SegmentBoundary> itr = segments.navigableKeySet().iterator();
+        final Iterator<SegmentBoundary> itr = sortedSegments.navigableKeySet().iterator();
         List<SegmentHit> finishedHits = new ArrayList<>();
         Map<Integer,List<SegmentHit>> partialHits = new HashMap<>();
         int segmentIndex = 0;
@@ -279,7 +284,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             }
             window.add(boundary);
 
-            List<SegmentValue> values = segments.get(boundary);
+            List<SegmentValue> values = sortedSegments.get(boundary);
             for (int i = 0; i < values.size(); i++) {
                 SegmentValue segmentValue = values.get(i);
                 String normalizedTerm = normalize(segmentValue.getValue());

@@ -16,9 +16,21 @@ import datawave.query.transformer.annotation.model.TermHit;
 public class AllHitsFactory {
     private static final AllHits EMPTY_ALL_HITS = new AllHits();
 
-    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> hits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments)
-                    throws AllHitsException {
-        if (hits.isEmpty()) {
+    /**
+     *
+     * @param annotationId
+     *            the annotation id to attribute the hits to
+     * @param orderedHits
+     *            hits ordered by the SegmentBoundary they occur in
+     * @param sortedSegments
+     *            a non-null sorted map of segments to produce hits with context from. sortedSegments must be sorted by SegmentBoundary. The values must be
+     *            sorted in ascending order as well
+     * @return
+     * @throws AllHitsException
+     */
+    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
+                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments) throws AllHitsException {
+        if (orderedHits.isEmpty()) {
             return EMPTY_ALL_HITS;
         }
 
@@ -30,7 +42,7 @@ public class AllHitsFactory {
         AllHit allHit = new AllHit();
 
         // extract hits and convert to pojo
-        for (AnnotationHitsTransformer.SegmentHit hit : hits) {
+        for (AnnotationHitsTransformer.SegmentHit hit : orderedHits) {
             if (allHit.getHitBoundary() != null && !allHit.getHitBoundary().equals(hit.getHitBoundary())) {
                 // create a new allHit
                 addAllHit(allHits, allHit);
@@ -39,6 +51,10 @@ public class AllHitsFactory {
 
             // track the current boundary this hit will cover, this is not output, but keeps things organized
             allHit.setHitBoundary(hit.getHitBoundary());
+
+            if (hit.getContextEnd() == null) {
+                throw new AllHitsException("hit end context not set");
+            }
 
             // both the start and end are inclusive
             SortedMap<SegmentBoundary,List<SegmentValue>> contextView = sortedSegments.subMap(hit.getContextStart(), true, hit.getContextEnd(), true);
