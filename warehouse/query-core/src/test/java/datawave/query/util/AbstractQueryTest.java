@@ -1,6 +1,7 @@
 package datawave.query.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -77,6 +78,10 @@ public abstract class AbstractQueryTest {
     private final Set<String> expected = new HashSet<>();
     private final Set<Document> results = new HashSet<>();
 
+    // additional variables for declarative assertions
+    private String plannedQuery = null;
+    private int expectedResultCount = -1;
+
     public abstract ShardQueryLogic getLogic();
 
     @After
@@ -87,6 +92,8 @@ public abstract class AbstractQueryTest {
         parameters.clear();
         expected.clear();
         results.clear();
+        plannedQuery = null;
+        expectedResultCount = -1;
     }
 
     public void withQuery(String query) {
@@ -120,6 +127,14 @@ public abstract class AbstractQueryTest {
      */
     public void withRequiredAnyOf(String... hitTerms) {
         hitTermAssertions.withRequiredAnyOf(hitTerms);
+    }
+
+    public void withQueryPlan(String queryPlan) {
+        this.plannedQuery = queryPlan;
+    }
+
+    public void withResultCount(int expectedResultCount) {
+        this.expectedResultCount = expectedResultCount;
     }
 
     public void planAndExecuteQuery() throws Exception {
@@ -160,7 +175,12 @@ public abstract class AbstractQueryTest {
         log.info("query retrieved {} results", results.size());
     }
 
+    public void assertResultCount() {
+        assertResultCount(expectedResultCount);
+    }
+
     public void assertResultCount(int expected) {
+        assertNotEquals("Expected result count not set", -1, expected);
         assertEquals(expected, results.size());
     }
 
@@ -171,6 +191,11 @@ public abstract class AbstractQueryTest {
             assertEquals(hitTermAssertions.hitTermExpected(), validated);
         }
         hitTermAssertions.resetState();
+    }
+
+    public void assertPlannedQuery() {
+        assertNotNull("Expected query plan not set", plannedQuery);
+        assertPlannedQuery(plannedQuery);
     }
 
     public void assertPlannedQuery(String query) {

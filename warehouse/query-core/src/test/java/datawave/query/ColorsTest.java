@@ -318,10 +318,6 @@ public class ColorsTest {
                 case TestIndexTableNames.TRUNCATED_INDEX:
                     logic.setUseTruncatedIndex(true);
                     break;
-                case TestIndexTableNames.SHARDED_DAY_INDEX:
-                case TestIndexTableNames.SHARDED_YEAR_INDEX:
-                    logic.setUseShardedIndex(true);
-                    break;
                 default:
                     throw new IllegalStateException("Unknown index table name " + indexTableName);
             }
@@ -335,10 +331,6 @@ public class ColorsTest {
                     break;
                 case TestIndexTableNames.TRUNCATED_INDEX:
                     logic.setUseTruncatedIndex(false);
-                    break;
-                case TestIndexTableNames.SHARDED_DAY_INDEX:
-                case TestIndexTableNames.SHARDED_YEAR_INDEX:
-                    logic.setUseShardedIndex(false);
                     break;
                 default:
                     throw new IllegalStateException("Unknown index table name " + indexTableName);
