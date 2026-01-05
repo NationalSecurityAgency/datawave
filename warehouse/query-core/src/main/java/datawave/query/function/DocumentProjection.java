@@ -35,19 +35,7 @@ public class DocumentProjection implements DocumentPermutation {
     /**
      * should track document sizes
      */
-    private boolean trackSizes = true;
-
-    @Deprecated
-    public DocumentProjection() {
-        this(false, false);
-    }
-
-    @Deprecated
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse) {
-        this.includeGroupingContext = includeGroupingContext;
-        this.reducedResponse = reducedResponse;
-        this.projection = new Projection();
-    }
+    private boolean trackSizes;
 
     public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes, Set<String> projections,
                     Projection.ProjectionType projectionType) {
@@ -57,34 +45,11 @@ public class DocumentProjection implements DocumentPermutation {
         this.trackSizes = trackSizes;
     }
 
-    /*
-     * This contstructor will not include the grouping context and will not reduce the document
-     */
-    @Deprecated
-    public DocumentProjection(Set<String> projections, Projection.ProjectionType projectionType) {
-        this(false, false, projections, projectionType);
-    }
-
-    @Deprecated
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, Set<String> projections, Projection.ProjectionType projectionType) {
-        this(includeGroupingContext, reducedResponse, true, projections, projectionType);
-    }
-
     public DocumentProjection(boolean includeGroupingContext, boolean isReducedResponse, boolean isTrackSizes, Projection projection) {
         this.includeGroupingContext = includeGroupingContext;
         this.reducedResponse = isReducedResponse;
         this.trackSizes = isTrackSizes;
         this.projection = projection;
-    }
-
-    @Deprecated
-    public void setIncludes(Set<String> includes) {
-        this.projection.setIncludes(includes);
-    }
-
-    @Deprecated
-    public void setExcludes(Set<String> excludes) {
-        this.projection.setExcludes(excludes);
     }
 
     public Projection getProjection() {

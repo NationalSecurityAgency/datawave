@@ -21,41 +21,6 @@ public final class KeyProjection implements PeekingPredicate<Entry<Key,String>> 
         projection = new Projection(projections, projectionType);
     }
 
-    public KeyProjection(KeyProjection other) {
-        projection = other.getProjection();
-    }
-
-    @Deprecated
-    public KeyProjection() {
-        projection = new Projection();
-    }
-
-    /**
-     * Set the delegate {@link Projection} with the fields to include
-     *
-     * @param includes
-     *            a set of fields to retain
-     */
-    @Deprecated
-    public void setIncludes(Set<String> includes) {
-        projection.setIncludes(includes);
-    }
-
-    /**
-     * Set the delegate {@link Projection} with the fields to exclude
-     *
-     * @param excludes
-     *            a set of fields to exclude
-     */
-    public void setExcludes(Set<String> excludes) {
-        projection.setExcludes(excludes);
-    }
-
-    @Deprecated
-    public Projection getProjection() {
-        return projection;
-    }
-
     /*
      * (non-Javadoc)
      *
