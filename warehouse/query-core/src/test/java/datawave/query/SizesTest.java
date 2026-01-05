@@ -26,6 +26,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.SizesIngest;
 import datawave.query.util.TestIndexTableNames;
+import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
@@ -36,9 +37,13 @@ public class SizesTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(SizesTest.class);
 
-    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
-
+    // static utilities for test
+    private static final InMemoryInstance instance = new InMemoryInstance(SizesTest.class.getName());
     private static AccumuloClient clientForSetup;
+    private static SizesIngest ingest;
+
+    // utility for writing different index table structures
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     @Inject
     @SpringBean(name = "EventQuery")
@@ -66,10 +71,9 @@ public class SizesTest extends AbstractQueryTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(SizesTest.class.getName());
         clientForSetup = new InMemoryAccumuloClient("", instance);
 
-        SizesIngest ingest = new SizesIngest(clientForSetup);
+        ingest = new SizesIngest(clientForSetup);
         ingest.write();
 
         ingestUtil.write(clientForSetup, auths);
@@ -99,14 +103,13 @@ public class SizesTest extends AbstractQueryTest {
             logic.setIndexTableName(indexTableName);
             switch (indexTableName) {
                 case TestIndexTableNames.SHARD_INDEX:
+                    logic.setIndexTableName(TableName.SHARD_INDEX);
+                    break;
                 case TestIndexTableNames.NO_UID_INDEX:
+                    logic.setIndexTableName(TestIndexTableNames.NO_UID_INDEX);
                     break;
                 case TestIndexTableNames.TRUNCATED_INDEX:
                     logic.setUseTruncatedIndex(true);
-                    break;
-                case TestIndexTableNames.SHARDED_DAY_INDEX:
-                case TestIndexTableNames.SHARDED_YEAR_INDEX:
-                    logic.setUseShardedIndex(true);
                     break;
                 default:
                     throw new IllegalStateException("Unknown index table name " + indexTableName);
@@ -115,7 +118,8 @@ public class SizesTest extends AbstractQueryTest {
             log.debug("=== using index: {} ===", indexTableName);
             planQuery();
             executeQuery();
-            // TODO: assert based on test metadata
+            assertPlannedQuery();
+            // TODO: while generating random events also generate metadata so the framework can assert result counts
 
             switch (indexTableName) {
                 case TestIndexTableNames.SHARD_INDEX:
@@ -123,10 +127,6 @@ public class SizesTest extends AbstractQueryTest {
                     break;
                 case TestIndexTableNames.TRUNCATED_INDEX:
                     logic.setUseTruncatedIndex(false);
-                    break;
-                case TestIndexTableNames.SHARDED_DAY_INDEX:
-                case TestIndexTableNames.SHARDED_YEAR_INDEX:
-                    logic.setUseShardedIndex(false);
                     break;
                 default:
                     throw new IllegalStateException("Unknown index table name " + indexTableName);
@@ -137,60 +137,73 @@ public class SizesTest extends AbstractQueryTest {
     @Test
     public void testSizeSmall() throws Exception {
         withQuery("SIZE == 'small'");
+        withQueryPlan("SIZE == 'small'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeSmallAndUniqueColor() throws Exception {
         withQuery("SIZE == 'small' && f:unique(COLOR)");
+        withQueryPlan("SIZE == 'small'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeMediumAndUniqueColor() throws Exception {
         withQuery("SIZE == 'medium' && f:unique(COLOR)");
+        withQueryPlan("SIZE == 'medium'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeLargeAndUniqueColor() throws Exception {
         withQuery("SIZE == 'large' && f:unique(COLOR)");
+        withQueryPlan("SIZE == 'large'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeSmallAndGroupByColorShape() throws Exception {
         withQuery("SIZE == 'small' && f:groupby(COLOR,SHAPE)");
+        withQueryPlan("SIZE == 'small'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testAllSizesAndGroupByColorShapeSize() throws Exception {
         withQuery("(SIZE == 'small' || SIZE == 'medium' || SIZE == 'large') && f:groupby(COLOR,SHAPE,SIZE)");
+        withQueryPlan("(SIZE == 'small' || SIZE == 'medium' || SIZE == 'large')");
+        withResultCount(ingest.getNumShards() * ingest.getNumEventsPerShard());
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeMedium() throws Exception {
         withQuery("SIZE == 'medium'");
+        withQueryPlan("SIZE == 'medium'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeLarge() throws Exception {
         withQuery("SIZE == 'large'");
+        withQueryPlan("SIZE == 'large'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testAllSizes() throws Exception {
         withQuery("SIZE == 'small' || SIZE == 'medium' ||  SIZE == 'large'");
+        withQueryPlan("SIZE == 'small' || SIZE == 'medium' ||  SIZE == 'large'");
+        withResultCount(ingest.getNumShards() * ingest.getNumEventsPerShard());
         planAndExecuteQuery();
     }
 
     @Test
     public void testRandomQuery() throws Exception {
         withQuery("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
+        withQueryPlan("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
+        withResultCount(0);
         planAndExecuteQuery();
     }
 }
