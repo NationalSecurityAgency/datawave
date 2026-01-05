@@ -36,6 +36,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.annotation.model.AllHits;
@@ -57,6 +58,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private static final int DEFAULT_CONTEXT_SIZE = 3;
     private static final float DEFAULT_MIN_SCORE = 0;
 
+    private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
     private final AllHitsFactory allHitsFactory;
     private final int maxContextBoundary;
@@ -71,8 +73,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private Set<String> searchHitTerms;
     private ObjectMapper objectMapper;
 
-    public AnnotationHitsTransformer(AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary, Set<String> validTypes,
-                    Set<String> validQueryFields, String targetField) {
+    public AnnotationHitsTransformer(ShardQueryConfiguration shardQueryConfig, AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory,
+                    int maxContextBoundary, Set<String> validTypes, Set<String> validQueryFields, String targetField) {
+        this.shardQueryConfig = shardQueryConfig;
         this.annotationDataAccess = annotationDataAccess;
         this.allHitsFactory = allHitsFactory;
         this.maxContextBoundary = maxContextBoundary;
@@ -132,13 +135,6 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             }
             searchHitTerms = new HashSet<>();
             searchHitTerms.addAll(Arrays.asList(keywords));
-        } else {
-            // extract terms to lookup hits on
-            try {
-                this.searchHitTerms = extractSearchHitTerms(settings);
-            } catch (ParseException e) {
-                log.debug("no valid search terms detected for query, skipping all hits");
-            }
         }
 
     }
@@ -153,7 +149,16 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
-        if (!this.enabled || this.searchHitTerms == null || this.searchHitTerms.isEmpty()) {
+        // extract terms to lookup hits on if they haven't been extracted yet
+        if (this.searchHitTerms == null) {
+            try {
+                this.searchHitTerms = extractSearchHitTerms(this.shardQueryConfig, this.settings);
+            } catch (ParseException e) {
+                log.debug("no valid search terms detected for query, skipping all hits");
+            }
+        }
+
+        if (!this.enabled || this.searchHitTerms.isEmpty()) {
             // no search terms, no-op
             return keyDocumentEntry;
         }
@@ -325,12 +330,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return finishedHits;
     }
 
-    private Set<String> extractSearchHitTerms(Query settings) throws ParseException {
+    private Set<String> extractSearchHitTerms(ShardQueryConfiguration shardQueryConfig, Query settings) throws ParseException {
         Set<String> searchTerms = new HashSet<>();
 
-        String query = settings.getQuery();
-        if (query != null) {
-            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        if (shardQueryConfig != null && shardQueryConfig.getQueryTree() != null) {
+            ASTJexlScript script = shardQueryConfig.getQueryTree();
             List<ASTEQNode> eqNodes = JexlASTHelper.getEQNodes(script);
             if (!eqNodes.isEmpty()) {
                 for (ASTEQNode eqNode : eqNodes) {

@@ -792,7 +792,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
                 AnnotationDataAccess annotationDataAccess = new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(),
                                 getAnnotationTableName(), getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
-                AllHitsFactory allHitsFactory = null;
+                AllHitsFactory allHitsFactory;
                 try {
                     Class<?> annotationHitsFactoryClass = Class.forName(getAnnotationHitsFactoryClass());
                     Class<? extends AllHitsFactory> subClass = annotationHitsFactoryClass.asSubclass(AllHitsFactory.class);
@@ -801,7 +801,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                     throw new QueryException("cannot instantiate allHitsFactory", e);
                 }
                 ((DocumentTransformer) this.transformerInstance)
-                                .addTransform(new AnnotationHitsTransformer(annotationDataAccess, allHitsFactory, getAnnotationHitsContextLength(),
+                                .addTransform(new AnnotationHitsTransformer(getConfig(), annotationDataAccess, allHitsFactory, getAnnotationHitsContextLength(),
                                                 getAnnotationHitsValidTypes(), getAnnotationHitsValidQueryFields(), getAnnotationHitsTargetField()));
             }
 

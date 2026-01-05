@@ -1012,6 +1012,59 @@ public abstract class ShardQueryLogicTest {
         runTestQuery(expected);
     }
 
+    @Test
+    public void annotationHitsFromWildcardKeywordTest() throws Exception {
+        withAnnotationHits();
+        givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
+
+        // capo.* is expanded in query planning to capone
+        givenQuery("UUID =~ 'CAPO.*'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
+        AllHits hits1 = getExpectedAnnotationHits("03AE6355", List.of(hit1), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsFromNonIndexedWildcardKeywordTest() throws Exception {
+        withAnnotationHits();
+
+        // create a new segment which would match the original wildcard if it weren't expanded in planning
+        Segment wildcard = Segment.newBuilder().addValues(SegmentValue.newBuilder().setValue("cap").setScore(0.3f).build())
+                        .addValues(SegmentValue.newBuilder().setValue("ca").setScore(1.0f).build())
+                        .setBoundary(SegmentBoundary.newBuilder().setBoundaryType(BoundaryType.TIME_MILLI).setStart(30).setEnd(40).build()).build();
+        givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1, wildcard));
+
+        // cap.* is expanded to capone in query planning, so capone is the only thing searched
+        givenQuery("UUID =~ 'CAP.*'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(wildcard.getBoundary());
+
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, wildcard);
+        AllHits hits1 = getExpectedAnnotationHits("5F8B7BC3", List.of(hit1), context);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
     private void setupAnnotationsTables(AccumuloClient client) {
         try {
             // drop existing tables if they exist
