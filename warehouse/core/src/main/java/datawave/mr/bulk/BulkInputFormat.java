@@ -37,9 +37,6 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientConfConverter;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.ClientInfo;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -49,15 +46,12 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.singletons.SingletonManager;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
-import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
@@ -1045,7 +1039,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         return new DefaultLocationStrategy();
     }
 
-    public List<Range> binRanges(ClientContext context, List<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges)
+    public List<Range> binRanges(List<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
         return Collections.emptyList();
@@ -1083,16 +1077,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     TableId tableId = null;
-                    ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
-                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-                    while (!binRanges(context, ranges, binnedRanges).isEmpty()) {
+
+                    while (!binRanges(ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
-                                tableId = context.getTableId(tableName);
-                            if (!context.tableNodeExists(tableId))
+                                tableId = TableId.of(client.tableOperations().tableIdMap().get(tableName));// TABLE ID todo:ensure this is correct
+                            if (!client.tableOperations().tableIdMap().containsKey(tableName))// CHECK IF TABLE ID EXISTS //todo same
                                 throw new TableDeletedException(tableId.canonical());
-                            if (context.getTableState(tableId) == TableState.OFFLINE)
+                            if (!client.tableOperations().isOnline(tableName)) // CHECK IF TABLE ID OFFLInE //todo same
                                 throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
                         }
                         binnedRanges.clear();
