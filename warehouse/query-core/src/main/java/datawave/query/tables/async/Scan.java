@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -289,16 +288,17 @@ public class Scan implements Callable<Scan> {
                 if (log.isTraceEnabled())
                     log.trace("not finished?" + !finished());
             } while (!finished());
-        } catch (ScanTimedOutException e) {
-            // this is okay. This means that we are being timesliced.
-            myScan.addRange(currentRange);
         } catch (Exception e) {
-            if (isInterruptedException(e)) {
+            if (isScanTimedOutException(e)) {
+                // this is okay. This means that we are being timesliced.
+                myScan.addRange(currentRange);
+            } else if (isInterruptedException(e)) {
                 log.info("Scan interrupted");
+                throw e;
             } else {
                 log.error("Scan failed", e);
+                throw e;
             }
-            throw e;
         } finally {
             if (null != delegatedResource) {
                 delegatorReference.close(delegatedResource);
@@ -314,6 +314,16 @@ public class Scan implements Callable<Scan> {
             t = t.getCause();
         }
         return t != null;
+    }
+
+    private boolean isScanTimedOutException(Throwable t) {
+        while (t != null) {
+            if (t.getClass().getName().equals("org.apache.accumulo.core.clientImpl.ThriftScanner$ScanTimedOutException")) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
     }
 
     static final AtomicLong scanIdFactory = new AtomicLong(0);
