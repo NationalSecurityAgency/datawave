@@ -55,10 +55,6 @@ public abstract class AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractQueryTest.class);
 
-    public enum RangeType {
-        DOCUMENT, SHARD
-    }
-
     protected static Authorizations auths = new Authorizations("ALL");
     protected static Set<Authorizations> authSet = Collections.singleton(auths);
 
@@ -67,7 +63,7 @@ public abstract class AbstractQueryTest {
 
     protected final HitTermAssertions hitTermAssertions = new HitTermAssertions();
 
-    protected AccumuloClient clientForTest;
+    private AccumuloClient clientForTest;
 
     // variables that support declarative style tests
     private String query;
