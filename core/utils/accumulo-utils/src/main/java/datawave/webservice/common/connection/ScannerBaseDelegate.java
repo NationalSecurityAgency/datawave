@@ -1,35 +1,39 @@
 package datawave.webservice.common.connection;
 
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.IteratorSetting.Column;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
-import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.dataImpl.thrift.IterInfo;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
 /**
  * A simple wrapper around a {@link ScannerBase} that overrides the methods that configure iterators.
- *
- * @see ScannerOptionsHelper
+ * <p>
+ * This class tracks "system" iterators locally to protect them from being cleared or removed by user code. System iterators are prefixed with
+ * {@link #SYSTEM_ITERATOR_NAME_PREFIX}.
  */
 public class ScannerBaseDelegate implements ScannerBase {
     private static final Logger log = LoggerFactory.getLogger(ScannerBaseDelegate.class);
     private static final String SYSTEM_ITERATOR_NAME_PREFIX = "sys_";
 
     protected final ScannerBase delegate;
+
+    /** Tracks the names of system iterators added via {@link #addSystemScanIterator(IteratorSetting)} */
+    private final Set<String> systemIteratorNames = new HashSet<>();
+
+    /** Tracks the names of user iterators added via {@link #addScanIterator(IteratorSetting)} */
+    private final Set<String> userIteratorNames = new HashSet<>();
 
     public ScannerBaseDelegate(ScannerBase delegate) {
         this.delegate = delegate;
@@ -51,6 +55,7 @@ public class ScannerBaseDelegate implements ScannerBase {
             throw new IllegalArgumentException("Non-system iterators' names cannot start with " + SYSTEM_ITERATOR_NAME_PREFIX);
         } else {
             delegate.addScanIterator(cfg);
+            userIteratorNames.add(cfg.getName());
         }
     }
 
@@ -68,6 +73,7 @@ public class ScannerBaseDelegate implements ScannerBase {
             cfg.setName(SYSTEM_ITERATOR_NAME_PREFIX + cfg.getName());
         }
         delegate.addScanIterator(cfg);
+        systemIteratorNames.add(cfg.getName());
     }
 
     @Override
@@ -76,6 +82,7 @@ public class ScannerBaseDelegate implements ScannerBase {
             throw new IllegalArgumentException("DATAWAVE system iterator " + iteratorName + " cannot be removed");
         } else {
             delegate.removeScanIterator(iteratorName);
+            userIteratorNames.remove(iteratorName);
         }
     }
 
@@ -90,6 +97,7 @@ public class ScannerBaseDelegate implements ScannerBase {
             iteratorName = SYSTEM_ITERATOR_NAME_PREFIX + iteratorName;
         }
         delegate.removeScanIterator(iteratorName);
+        systemIteratorNames.remove(iteratorName);
     }
 
     @Override
@@ -140,16 +148,11 @@ public class ScannerBaseDelegate implements ScannerBase {
 
     @Override
     public void clearScanIterators() {
-        if (delegate instanceof ScannerOptions) {
-            ScannerOptionsHelper opts = new ScannerOptionsHelper((ScannerOptions) delegate);
-            for (IteratorSetting iteratorSetting : opts.getIterators()) {
-                if (!iteratorSetting.getName().startsWith(SYSTEM_ITERATOR_NAME_PREFIX)) {
-                    delegate.removeScanIterator(iteratorSetting.getName());
-                }
-            }
-        } else {
-            throw new UnsupportedOperationException("Cannot clear scan iterators on a non-ScannerOptions class! (" + delegate.getClass() + ")");
+        // Remove all user iterators (tracked locally), preserving system iterators
+        for (String iteratorName : userIteratorNames) {
+            delegate.removeScanIterator(iteratorName);
         }
+        userIteratorNames.clear();
     }
 
     /**
@@ -157,6 +160,8 @@ public class ScannerBaseDelegate implements ScannerBase {
      */
     public void clearSystemScanIterators() {
         delegate.clearScanIterators();
+        systemIteratorNames.clear();
+        userIteratorNames.clear();
     }
 
     @Override
@@ -234,24 +239,6 @@ public class ScannerBaseDelegate implements ScannerBase {
 
     public String getContext() {
         return delegate.getClassLoaderContext();
-    }
-
-    private static class ScannerOptionsHelper extends ScannerOptions {
-
-        public ScannerOptionsHelper(ScannerOptions other) {
-            super(other);
-        }
-
-        public Collection<IteratorSetting> getIterators() {
-            Collection<IteratorSetting> settings = Lists.newArrayList();
-            for (IterInfo iter : serverSideIteratorList) {
-                IteratorSetting setting = new IteratorSetting(iter.getPriority(), iter.getIterName(), iter.getClassName());
-                setting.addOptions(serverSideIteratorOptions.get(iter.getIterName()));
-                settings.add(setting);
-            }
-            return settings;
-        }
-
     }
 
     @Override
