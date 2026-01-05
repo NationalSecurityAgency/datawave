@@ -312,14 +312,11 @@ public class ColorsTest {
         for (String indexTableName : TestIndexTableNames.names()) {
             logic.setIndexTableName(indexTableName);
             switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
                 case TestIndexTableNames.NO_UID_INDEX:
                     break;
                 case TestIndexTableNames.TRUNCATED_INDEX:
-                    // TODO: not yet implemented
-                    continue;
-                case TestIndexTableNames.SHARDED_DAY_INDEX:
-                case TestIndexTableNames.SHARDED_YEAR_INDEX:
-                    logic.setUseShardedIndex(true);
+                    logic.setUseTruncatedIndex(true);
                     break;
                 default:
                     throw new IllegalStateException("Unknown index table name " + indexTableName);
@@ -329,14 +326,11 @@ public class ColorsTest {
             planAndExecuteQuery();
 
             switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
                 case TestIndexTableNames.NO_UID_INDEX:
                     break;
                 case TestIndexTableNames.TRUNCATED_INDEX:
                     logic.setUseTruncatedIndex(false);
-                    break;
-                case TestIndexTableNames.SHARDED_DAY_INDEX:
-                case TestIndexTableNames.SHARDED_YEAR_INDEX:
-                    logic.setUseShardedIndex(false);
                     break;
                 default:
                     throw new IllegalStateException("Unknown index table name " + indexTableName);
@@ -507,7 +501,7 @@ public class ColorsTest {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
         withFullExpectedCount();
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -515,7 +509,7 @@ public class ColorsTest {
         withQuery("COLOR == 'yellow'");
         withRequiredAllOf("COLOR:yellow");
         withFullExpectedCount();
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -523,7 +517,7 @@ public class ColorsTest {
         withQuery("COLOR == 'blue'");
         withRequiredAllOf("COLOR:blue");
         withFullExpectedCount();
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -531,19 +525,19 @@ public class ColorsTest {
         withQuery("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
         withOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
         withExpectedCount(3 * getTotalEventCount());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtFieldIndex() throws Exception {
-        withQuery("COLOR == 'red' && !COLOR == 'red'");
-        planAndExecuteQuery();
+        withQuery("COLOR == 'red' && !(COLOR == 'red')");
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtEvaluation() throws Exception {
         withQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -554,7 +548,7 @@ public class ColorsTest {
         withExpectedCount(ColorsIngest.getNumShards());
         withExpectedDays("20250301");
         withExpectedShards("20250301", ColorsIngest.getNumShards());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -565,7 +559,7 @@ public class ColorsTest {
         withExpectedCount(ColorsIngest.getNewShards());
         withExpectedDays("20250331");
         withExpectedShards("20250331", ColorsIngest.getNewShards());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
@@ -577,7 +571,7 @@ public class ColorsTest {
         withExpectedDays("20250326", "20250327");
         withExpectedShards("20250326", ColorsIngest.getNumShards());
         withExpectedShards("20250327", ColorsIngest.getNewShards());
-        planAndExecuteQuery();
+        planAndExecuteQueryAgainstMultipleIndices();
     }
 
     // TODO: unique
