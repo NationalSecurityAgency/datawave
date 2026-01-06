@@ -749,7 +749,7 @@ public class CachedResultsBean {
                 try {
                     queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
                 } catch (Exception e) {
-                    log.error("Failed to stop counting query " + query.getSettings().getId().toString() + "towards limits", e);
+                    log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
                 }
             } else if (client != null) {
                 try {
