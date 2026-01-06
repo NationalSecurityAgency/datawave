@@ -35,6 +35,7 @@ import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
@@ -179,9 +180,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         }
 
         Key key = keyDocumentEntry.getKey();
-        if (key == null) {
-            // this shouldn't happen, but in case it does, it means there is no possibility of looking up the annotation
-            log.warn("Cannot apply all hits to result. Null key");
+        Document document = keyDocumentEntry.getValue();
+        if (key == null || document == null || !document.isToKeep()) {
+            // either missing information that is critical or is transient
+            return keyDocumentEntry;
+        } else if (document.get(targetField) != null) {
+            log.warn("Document: " + key + " already contains field: " + targetField + " skipping");
             return keyDocumentEntry;
         }
 
@@ -246,18 +250,27 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
      * @return the extracted non-null list of AllHits, or an empty List
      */
     private List<AllHits> getCurrentAllHitsValue(Entry<Key,Document> entry) {
-        Content attr = (Content) entry.getValue().get(targetField);
-        List<AllHits> rollup = null;
-        if (attr != null) {
-            try {
-                rollup = objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+        Attribute<?> attr = entry.getValue().get(targetField);
+        List<AllHits> rollup = new ArrayList<>();
+
+        if (attr == null) {
+            return rollup;
         }
 
-        if (rollup == null) {
-            rollup = new ArrayList<>();
+        if (!(attr instanceof Content)) {
+            // targetField has to not exist before handling annotation hits. Seeing this means something has happened internally to this code that was
+            // unexpected
+            log.error("Unexpected Attribute in: " + entry.getKey() + " targetField: " + targetField + " is type " + attr.getClass().getCanonicalName()
+                            + " with value " + attr.getData() + " will be overwritten");
+            return rollup;
+        }
+
+        // must be Content
+        Content content = (Content) attr;
+        try {
+            rollup = objectMapper.readValue(content.getContent(), new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            log.error("Failed to process existing AllHits as json: " + content.getContent(), e);
         }
 
         return rollup;
