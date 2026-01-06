@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,6 +60,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private static final int DEFAULT_CONTEXT_SIZE = 3;
     private static final float DEFAULT_MIN_SCORE = 0;
     private static final TimeUnit DEFAULT_TIMEUNIT = TimeUnit.MILLISECONDS;
+    private static final SegmentValueByScoreComparator SEGMENT_VALUE_BY_SCORE_COMPARATOR = new SegmentValueByScoreComparator();
 
     private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
@@ -287,7 +287,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         for (Segment segment : segments) {
             // make a copy so they can be sorted
             List<SegmentValue> segmentValues = new ArrayList<>(segment.getValuesList());
-            Collections.sort(segmentValues, new SegmentValueByScoreComparator());
+            segmentValues.sort(SEGMENT_VALUE_BY_SCORE_COMPARATOR);
             orderedSegments.put(segment.getBoundary(), segmentValues);
         }
 
