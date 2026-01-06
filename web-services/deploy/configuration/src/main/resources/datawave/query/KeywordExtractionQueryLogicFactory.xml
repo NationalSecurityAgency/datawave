@@ -19,6 +19,8 @@
                     </util:set>
                 </property>
                 <property name="connPoolName" value="UUID" />
+                <!-- required for field extraction -->
+                <property name="includeGroupingContext" value="true" />
             </bean>
         </property>
         <property name="logic2" ref="KeywordQuery"/>

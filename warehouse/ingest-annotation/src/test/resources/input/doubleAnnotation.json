@@ -1,19 +1,32 @@
 {
-  "shard": "20251017_0",
-  "dataType": "testDataType",
-  "uid": "111.111.111",
+  "shard": "20160426_0",
+  "dataType": "annotation",
+  "uid": "2222.2222.-2222",
+  "documentId": "testDocumentId1",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2016-04-26T01:00:53Z"
+    }
+  },
   "metadata": {
     "visibility": "PUBLIC",
-    "created_date": "2025-10-17T10:30:00.0Z"
+    "created_date": "2016-04-26T01:00:53Z"
   },
   "segments": [
     {
-      "segmentId": "testSegmentId1",
-      "createTime": "2025-10-17T11:30:00.0Z",
-      "eTag": "testETag1",
-      "segmentValue": [
+      "segmentHash": "testSegmentId1",
+      "values": [
         {
           "value": "test1a",
           "score": -83737019.1792235
@@ -37,23 +50,22 @@
       ],
       "metadata": {
       },
-      "boundaryType": "testBoundaryType1",
-      "pointList": {
-        "point": [
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
           {
-            "x": -78087840.7337584,
-            "y": 56815415.1987268,
+            "x": -78087840,
+            "y": 56815415,
             "label": "testPointLabel1"
           }
         ]
       }
     },
     {
-      "segmentId": "testSegmentId2",
-      "eTag": "testETag2",
-      "boundaryType": "testBoundaryType2",
-      "pointList": {
-        "point": [
+      "segmentHash": "testSegmentId2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
           {
             "label": "testPointLabel2a"
           },
@@ -64,45 +76,56 @@
       }
     },
     {
-      "segmentId": "testSegmentId3",
-      "eTag": "testETag3",
-      "segmentValue": [],
+      "segmentHash": "testSegmentId3",
+      "values": [],
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
-      "boundaryType": "testBoundaryType3",
-      "pointList": {
+      "boundary": {
+        "boundaryType": "POINTS"
       }
     },
     {
-      "segmentId": "testSegmentId3",
-      "eTag": "testETag3",
-      "segmentValue": [],
+      "segmentHash": "testSegmentId3",
+      "values": [],
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },
-      "boundaryType": "testBoundaryType4",
-      "pointList": {
+      "boundary": {
+        "boundaryType": "POINTS"
       }
     }
   ]
 }
 {
-  "shard": "20251017_1",
-  "dataType": "testDataType",
-  "uid": "222.222.222",
+  "shard": "20160426_0",
+  "dataType": "annotation",
+  "uid": "2222.2222.-2222",
+  "documentId": "testDocumentId2",
   "annotationType": "testAnnotationType",
   "annotationId": "testAnnotationId",
   "metadata": {
     "visibility": "PUBLIC",
-    "created_date": "2025-10-17T10:30:00.0Z"
+    "created_date": "2016-04-26T01:00:53Z"
+  },
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2016-04-26T01:00:53Z"
+    }
   },
   "segments": [
     {
-      "segmentId": "testSegmentId1",
-      "createTime": "2025-10-17T11:30:00.0Z",
-      "eTag": "testETag1",
-      "segmentValue": [
+      "segmentHash": "testSegmentId1",
+      "values": [
         {
           "value": "test1a",
           "score": -83737019.1792235
@@ -126,23 +149,22 @@
       ],
       "metadata": {
       },
-      "boundaryType": "testBoundaryType1",
-      "pointList": {
-        "point": [
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
           {
-            "x": -78087840.7337584,
-            "y": 56815415.1987268,
+            "x": -78087840,
+            "y": 56815415,
             "label": "testPointLabel1"
           }
         ]
       }
     },
     {
-      "segmentId": "testSegmentId2",
-      "eTag": "testETag2",
-      "boundaryType": "testBoundaryType2",
-      "pointList": {
-        "point": [
+      "segmentHash": "testSegmentId2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
           {
             "label": "testPointLabel2a"
           },
@@ -153,25 +175,23 @@
       }
     },
     {
-      "segmentId": "testSegmentId3",
-      "eTag": "testETag3",
-      "segmentValue": [],
+      "segmentHash": "testSegmentId3",
+      "values": [],
       "metadata": {
         "testMetadataKey3": "testMetadataValue3"
       },
-      "boundaryType": "testBoundaryType3",
-      "pointList": {
+      "boundary": {
+        "boundaryType": "POINTS"
       }
     },
     {
-      "segmentId": "testSegmentId3",
-      "eTag": "testETag3",
-      "segmentValue": [],
+      "segmentHash": "testSegmentId3",
+      "values": [],
       "metadata": {
         "testMetadataKey4": "testMetadataValue4"
       },
-      "boundaryType": "testBoundaryType4",
-      "pointList": {
+      "boundary": {
+        "boundaryType": "POINTS"
       }
     }
   ]
