@@ -54,7 +54,7 @@ public class ActiveQueryTracker implements AutoCloseable {
      * @param zookeeperConfig
      *            the zookeeper config
      * @param clientCleanupInterval
-     *            the interval in milliseconds after which the zookeeper client should be cleaned up since its last access\
+     *            the interval in milliseconds after which the zookeeper client should be cleaned up since its last access
      * @throws QuorumPeerConfig.ConfigException
      *             if an error occurs when verifying the zookeeper configuration
      */
