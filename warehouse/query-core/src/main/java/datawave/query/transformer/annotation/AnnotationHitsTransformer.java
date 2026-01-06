@@ -159,6 +159,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
+        // check null and enabled status
+        if (keyDocumentEntry == null || !this.enabled) {
+            return keyDocumentEntry;
+        }
+
         // extract terms to lookup hits on if they haven't been extracted yet
         if (this.searchHitTerms == null) {
             try {
@@ -168,7 +173,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             }
         }
 
-        if (!this.enabled || this.searchHitTerms.isEmpty()) {
+        if (this.searchHitTerms.isEmpty()) {
             // no search terms, no-op
             return keyDocumentEntry;
         }
