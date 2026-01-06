@@ -95,39 +95,39 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         // handle query parameters for configuration overrides
         String enabledStr = settings.findParameter(ENABLED_PARAMETER).getParameterValue();
         if (!enabledStr.isBlank()) {
-            this.enabled = Boolean.parseBoolean(enabledStr);
+            enabled = Boolean.parseBoolean(enabledStr);
         }
         // go no further if not enabled, searchHitTerms will be null so the transformer will never do anything
-        if (!this.enabled) {
+        if (!enabled) {
             return;
         }
 
         String contextBoundaryStr = settings.findParameter(CONTEXT_SIZE_PARAMETER).getParameterValue();
         if (!contextBoundaryStr.isBlank()) {
-            this.contextSize = Integer.parseInt(contextBoundaryStr);
+            contextSize = Integer.parseInt(contextBoundaryStr);
         }
-        if (this.contextSize > this.maxContextBoundary) {
-            log.warn("contextBoundary requested: " + this.contextSize + " max configured: " + this.maxContextBoundary + " Automatically reducing to max");
-            this.contextSize = this.maxContextBoundary;
-            log.info("all hits contextSize: " + this.contextSize);
-        } else if (this.contextSize < 0) {
-            log.warn("contextBoundary requested: " + this.contextSize + " below min context: 0 Automatically increasing to min");
-            this.contextSize = 0;
+        if (contextSize > maxContextBoundary) {
+            log.warn("contextBoundary requested: " + contextSize + " max configured: " + maxContextBoundary + " Automatically reducing to max");
+            contextSize = maxContextBoundary;
+            log.info("all hits contextSize: " + contextSize);
+        } else if (contextSize < 0) {
+            log.warn("contextBoundary requested: " + contextSize + " below min context: 0 Automatically increasing to min");
+            contextSize = 0;
         }
 
         String minScoreStr = settings.findParameter(MIN_SCORE_PARAMETER).getParameterValue();
         if (!minScoreStr.isBlank()) {
-            this.minScore = Float.parseFloat(minScoreStr);
-            log.info("all hits minScore: " + this.minScore);
+            minScore = Float.parseFloat(minScoreStr);
+            log.info("all hits minScore: " + minScore);
         }
 
         String timeUnitStr = settings.findParameter(TIMEUNIT_PARAMETER).getParameterValue();
         if (!timeUnitStr.isBlank()) {
-            this.timeUnit = TimeUnit.valueOf(timeUnitStr);
-            log.info("all hits timeUnit: " + this.timeUnit);
+            timeUnit = TimeUnit.valueOf(timeUnitStr);
+            log.info("all hits timeUnit: " + timeUnit);
         }
 
-        this.objectMapper = new ObjectMapper();
+        objectMapper = new ObjectMapper();
 
         String keywordStr = settings.findParameter(KEYWORDS_PARAMETER).getParameterValue();
         if (!keywordStr.isBlank()) {
@@ -137,7 +137,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 // decode the string
                 String decoded = URLDecoder.decode(keywordStr, StandardCharsets.UTF_8);
                 // convert from json
-                keywords = this.objectMapper.readValue(decoded, String[].class);
+                keywords = objectMapper.readValue(decoded, String[].class);
             } catch (JsonProcessingException e) {
                 log.info("keywordStr provided, but not json, falling back to ; delimited parsing for: " + keywordStr);
                 // basic parsing
@@ -160,20 +160,20 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         // check null and enabled status
-        if (keyDocumentEntry == null || !this.enabled) {
+        if (keyDocumentEntry == null || !enabled) {
             return keyDocumentEntry;
         }
 
         // extract terms to lookup hits on if they haven't been extracted yet
-        if (this.searchHitTerms == null) {
+        if (searchHitTerms == null) {
             try {
-                this.searchHitTerms = extractSearchHitTerms(this.shardQueryConfig, this.settings);
+                searchHitTerms = extractSearchHitTerms(shardQueryConfig, settings);
             } catch (ParseException e) {
                 log.debug("no valid search terms detected for query, skipping all hits");
             }
         }
 
-        if (this.searchHitTerms.isEmpty()) {
+        if (searchHitTerms.isEmpty()) {
             // no search terms, no-op
             return keyDocumentEntry;
         }
@@ -205,7 +205,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
                 List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
                 try {
-                    AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, this.timeUnit);
+                    AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
                     updateDocument(keyDocumentEntry, results);
                 } catch (AllHitsException e) {
                     log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
@@ -240,15 +240,17 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
 
     /**
      * Deserialize the current targetField value from json to an object
-     * @param entry the entry to extract any previously generated AllHits from
+     *
+     * @param entry
+     *            the entry to extract any previously generated AllHits from
      * @return the extracted non-null list of AllHits, or an empty List
      */
     private List<AllHits> getCurrentAllHitsValue(Entry<Key,Document> entry) {
-        Content attr = (Content) entry.getValue().get(this.targetField);
+        Content attr = (Content) entry.getValue().get(targetField);
         List<AllHits> rollup = null;
         if (attr != null) {
             try {
-                rollup = this.objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
+                rollup = objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
