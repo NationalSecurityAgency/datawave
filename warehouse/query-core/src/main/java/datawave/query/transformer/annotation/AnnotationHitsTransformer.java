@@ -179,39 +179,42 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         }
 
         Key key = keyDocumentEntry.getKey();
-        if (key != null) {
-            String shard = key.getRow().toString();
-            String cf = key.getColumnFamily().toString();
-            String[] parts = cf.split("\u0000");
-            if (parts.length == 2) {
-                String dataType = parts[0];
-                String uid = parts[1];
-                List<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
-                for (Annotation annotation : annotations) {
-                    String annotationType = annotation.getAnnotationType();
-                    if (validTypes.contains(annotationType)) {
-                        // this annotation supports allHits
-                        TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
-                        List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
-                        try {
-                            AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, this.timeUnit);
-                            updateDocument(keyDocumentEntry, results);
-                        } catch (AllHitsException e) {
-                            log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
-                            AllHitsError error = new AllHitsError();
-                            error.setAnnotationId(annotation.getAnnotationId());
-                            error.setErrorMessage(e.getMessage());
-                            updateDocument(keyDocumentEntry, error);
-                        }
-                    } else {
-                        // TODO
-                    }
+        if (key == null) {
+            // this shouldn't happen, but in case it does, it means there is no possibility of looking up the annotation
+            log.warn("Cannot apply all hits to result. Null key");
+            return keyDocumentEntry;
+        }
+
+        String shard = key.getRow().toString();
+        String cf = key.getColumnFamily().toString();
+        String[] parts = cf.split("\u0000");
+
+        if (parts.length != 2) {
+            // unexpected doc key
+            log.warn("Cannot apply all hits to result. Unexpected doc key: " + key);
+            return keyDocumentEntry;
+        }
+
+        String dataType = parts[0];
+        String uid = parts[1];
+        List<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
+        for (Annotation annotation : annotations) {
+            String annotationType = annotation.getAnnotationType();
+            if (validTypes.contains(annotationType)) {
+                // this annotation supports allHits
+                TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
+                List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
+                try {
+                    AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, this.timeUnit);
+                    updateDocument(keyDocumentEntry, results);
+                } catch (AllHitsException e) {
+                    log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
+                    AllHitsError error = new AllHitsError();
+                    error.setAnnotationId(annotation.getAnnotationId());
+                    error.setErrorMessage(e.getMessage());
+                    updateDocument(keyDocumentEntry, error);
                 }
-            } else {
-                // TODO
             }
-        } else {
-            // TODO
         }
 
         return keyDocumentEntry;
