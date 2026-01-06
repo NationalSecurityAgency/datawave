@@ -145,7 +145,7 @@ class SystemLimitProviderTest {
         assertThat(systemLimits.getSystemPattern()).isEqualTo("SYSTEM_01");
         assertThat(systemLimits.getQueryLimit()).isEqualTo(100);
         assertThat(systemLimits.countsAgainstUserLimit()).isFalse();
-        assertThat(systemLimits.getRelevantGroupLimits("TLDQueryLogic")).containsExactly(Map.entry("TLD", 20));
+        assertThat(systemLimits.getBestGroupLimits("TLDQueryLogic")).containsExactly(Map.entry("TLD", 20));
     }
 
     /**

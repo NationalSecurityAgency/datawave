@@ -43,7 +43,7 @@ public class SystemLimits {
         return !groupLimitOverrides.isEmpty();
     }
 
-    public Map<String,Integer> getRelevantGroupLimits(String queryLogic) {
+    public Map<String,Integer> getBestGroupLimits(String queryLogic) {
         return groupLimitOverrides.getBestGroupLimits(queryLogic);
     }
 

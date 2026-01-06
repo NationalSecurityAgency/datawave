@@ -86,7 +86,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("TLDQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("TLDQueryLogic");
         assertThat(groupLimits).hasSize(1);
         assertThat(groupLimits).containsEntry("ImpliedWildcard", 25);
     }
@@ -100,7 +100,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("TLDQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("TLDQueryLogic");
         assertThat(groupLimits).hasSize(1);
         assertThat(groupLimits).containsEntry("ExplicitWildcard", 25);
     }
@@ -115,7 +115,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("TLDQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("TLDQueryLogic");
         assertThat(groupLimits).hasSize(1);
         assertThat(groupLimits).containsEntry("LowerLimit", 10);
     }
@@ -130,7 +130,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("TLDQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("TLDQueryLogic");
         assertThat(groupLimits).hasSize(1);
         assertThat(groupLimits).containsEntry("PartialMatch", 40);
     }
@@ -146,7 +146,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("TLDQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("TLDQueryLogic");
         assertThat(groupLimits).hasSize(3);
         assertThat(groupLimits).containsExactly(MapEntry.entry("PartialMatch3", 15), Map.entry("PartialMatch1", 25), Map.entry("PartialMatch2", 40));
     }
@@ -162,7 +162,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("TLDQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("TLDQueryLogic");
         assertThat(groupLimits).hasSize(1);
         assertThat(groupLimits).containsEntry("ExactMatch", 55);
     }
@@ -178,7 +178,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("TLDQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("TLDQueryLogic");
         assertThat(groupLimits).hasSize(1);
         assertThat(groupLimits).containsEntry("ExactMatch1", 25);
     }
@@ -193,7 +193,7 @@ class QueryLogicGroupLimitProviderTest {
 
         initProvider();
 
-        Map<String,Integer> groupLimits = provider.getGroupLimits("OtherQueryLogic");
+        Map<String,Integer> groupLimits = provider.getBestGroupLimits("OtherQueryLogic");
         assertThat(groupLimits).isEmpty();
     }
 

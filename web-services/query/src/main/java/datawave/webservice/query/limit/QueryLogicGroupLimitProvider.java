@@ -151,7 +151,7 @@ public class QueryLogicGroupLimitProvider {
         // @formatter:on
     }
 
-    public Map<String,Integer> getGroupLimits(String queryLogic) {
+    public Map<String,Integer> getBestGroupLimits(String queryLogic) {
         return groupLimitCache.getBestGroupLimits(queryLogic);
     }
 

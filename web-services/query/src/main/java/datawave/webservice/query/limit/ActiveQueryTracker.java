@@ -99,6 +99,7 @@ public class ActiveQueryTracker implements AutoCloseable {
      * </pre>
      *
      * The following node will be created if it does not exist.
+     *
      * <pre>
      * /distinctQueryLogics/&lt;queryLogic&gt;
      * </pre>
@@ -109,11 +110,17 @@ public class ActiveQueryTracker implements AutoCloseable {
      * /users/&lt;userDn&gt;/&lt;queryLogic&gt;/&lt;queryId&gt; (Created only if systemCountsAgainstUserLimit is true)
      * /systems/&lt;systemName&gt;/&lt;queryLogic&gt;/&lt;queryId&gt;
      * </pre>
-     * @param queryId the query's ID
-     * @param userDn the DN of the user who submitted the query
-     * @param system the system the query was submitted on
-     * @param queryLogic the query logic of the query
-     * @param systemCountsAgainstUserLimit whether queries on the system count towards the user limit
+     *
+     * @param queryId
+     *            the query's ID
+     * @param userDn
+     *            the DN of the user who submitted the query
+     * @param system
+     *            the system the query was submitted on
+     * @param queryLogic
+     *            the query logic of the query
+     * @param systemCountsAgainstUserLimit
+     *            whether queries on the system count towards the user limit
      * @return a new query heartbeat that can close the ephemeral nodes associated with the query
      */
     public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic, boolean systemCountsAgainstUserLimit) throws Exception {
@@ -121,13 +128,13 @@ public class ActiveQueryTracker implements AutoCloseable {
         userDn = userDn.trim().toLowerCase();
         system = system.trim();
         queryLogic = queryLogic.trim();
-        
+
         QueryHeartbeat heartbeat;
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Tracking query: queryId=" + queryId + ", user='" + userDn + "', system='" + system + "', queryLogic='" + queryLogic + "'");
         }
-        
+
         clientLock.lock();
         try {
             // Initialize the client if needed.
@@ -139,7 +146,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 if (stat != null) {
                     throw new QueryAlreadyTrackedException(queryId);
                 }
-                
+
                 // Ensure we create the following container nodes.
                 client.createContainers(getSystemQueryLogicPath(system, queryLogic));
                 client.createContainers(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
@@ -147,7 +154,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 if (systemCountsAgainstUserLimit) {
                     client.createContainers(getUserQueryLogicPath(userDn, queryLogic));
                 }
-                
+
                 // Track the query logic as a distinct query logic if it isn't already.
                 try {
                     String distinctQueryLogicPath = getDistinctQueryLogicPath(queryLogic);
@@ -158,7 +165,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 } catch (KeeperException.NodeExistsException e) {
                     // Do nothing, the queryLogic was tracked on another thread.
                 }
-                
+
                 // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the client created here.
                 CuratorFramework client = createClient();
                 List<PersistentNode> nodes = new ArrayList<>();
@@ -167,77 +174,88 @@ public class ActiveQueryTracker implements AutoCloseable {
                     String userQueryIdPath = getUserQueryIdPath(userDn, queryLogic, queryId);
                     nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
                 }
-                
+
                 // Persist each node to Zookeeper.
                 for (PersistentNode node : nodes) {
                     node.start();
                     node.waitForInitialCreate(1, TimeUnit.SECONDS);
                 }
-                
+
                 // Initialize the heartbeat.
                 heartbeat = new QueryHeartbeat(queryId, nodes);
-                
+
             } catch (Exception e) {
                 log.error("Failed to track query " + queryId, e);
                 throw e;
             }
-            
+
         } finally {
             clientLock.unlock();
         }
-        
+
         return heartbeat;
     }
 
     /**
      * Return the total number of active running queries (on systems that count towards the user limit) for the given query logic that were submitted by the
      * given user.
-     * @param userDn the user DN
-     * @param queryLogic the query logic
+     *
+     * @param userDn
+     *            the user DN
+     * @param queryLogic
+     *            the query logic
      * @return the total active running queries
-     * @throws Exception if an error occurs while scanning nodes
+     * @throws Exception
+     *             if an error occurs while scanning nodes
      */
     public int getTotalUserQueriesForQueryLogic(String userDn, String queryLogic) throws Exception {
         // Normalize the user DN.
         userDn = userDn.trim().toLowerCase();
-        
-        if(log.isTraceEnabled()) {
+
+        if (log.isTraceEnabled()) {
             log.trace("Fetching total queries for user='" + userDn + "', queryLogic='" + queryLogic + "'");
         }
-        
+
         return getTotalChildrenWithLock(getUserQueryLogicPath(userDn, queryLogic));
     }
-    
+
     /**
      * Return the total number of active running queries for the given query logic that were submitted on the given system.
-     * @param system the system
-     * @param queryLogic the query logic
+     *
+     * @param system
+     *            the system
+     * @param queryLogic
+     *            the query logic
      * @return the total active running queries
-     * @throws Exception if an error occurs while scanning nodes
+     * @throws Exception
+     *             if an error occurs while scanning nodes
      */
     public int getTotalSystemQueriesForQueryLogic(String system, String queryLogic) throws Exception {
         // Normalize the system.
         system = system.trim();
-        
-        if(log.isTraceEnabled()) {
+
+        if (log.isTraceEnabled()) {
             log.trace("Fetching total queries for system='" + system + "', queryLogic='" + queryLogic + "'");
         }
-        
+
         return getTotalChildrenWithLock(getSystemQueryLogicPath(system, queryLogic));
     }
-    
+
     /**
      * Obtain a lock for the client and return the total children for the given path. If the path does not exist, 0 will be returned.
-     * @param path the node path
+     *
+     * @param path
+     *            the node path
      * @return the total children
-     * @throws Exception if an error occurs while scanning nodes
+     * @throws Exception
+     *             if an error occurs while scanning nodes
      */
     private int getTotalChildrenWithLock(String path) throws Exception {
         clientLock.lock();
         try {
             // Initialize the client if needed.
             initClient();
-            
+
             return getTotalChildren(path);
         } catch (Exception e) {
             log.error("Failed to get total children for path " + path, e);
@@ -246,79 +264,99 @@ public class ActiveQueryTracker implements AutoCloseable {
             clientLock.unlock();
         }
     }
-    
+
     /**
      * Determine whether the total active queries for the given user meets or exceeds the given limit.
-     * @param userDn the user DN
-     * @param queryLimit the query limit
-     * @param queryLogicsAlreadyCounted the set of query logics that have already been counted towards the initial total
-     * @param initialTotal the initial total already calculated previously when checking query logic limits
+     *
+     * @param userDn
+     *            the user DN
+     * @param queryLimit
+     *            the query limit
+     * @param queryLogicsAlreadyCounted
+     *            the set of query logics that have already been counted towards the initial total
+     * @param initialTotal
+     *            the initial total already calculated previously when checking query logic limits
      * @return true if the total active queries meets or exceeds the given limit, or false otherwise
-     * @throws Exception if an error occurs while scanning nodes
+     * @throws Exception
+     *             if an error occurs while scanning nodes
      */
     public boolean totalUserQueriesMeetsLimit(String userDn, int queryLimit, Set<String> queryLogicsAlreadyCounted, int initialTotal) throws Exception {
         // Normalize the user DN.
         userDn = userDn.trim().toLowerCase();
-        
-        if(log.isTraceEnabled()) {
+
+        if (log.isTraceEnabled()) {
             log.trace("Checking if total queries meets limit for user='" + userDn + "', queryLimit=" + queryLimit + ", queryLogicsAlreadyCounted="
                             + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
         }
-        
+
         return totalQueriesMeetsLimit(userDn, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getUserPath, this::getUserQueryLogicPath);
     }
-    
+
     /**
      * Determine whether the total active queries for the given system meets or exceeds the given limit.
-     * @param system the system
-     * @param queryLimit the query limit
-     * @param queryLogicsAlreadyCounted the set of query logics that have already been counted towards the initial total
-     * @param initialTotal the initial total already calculated previously when checking query logic limits
+     *
+     * @param system
+     *            the system
+     * @param queryLimit
+     *            the query limit
+     * @param queryLogicsAlreadyCounted
+     *            the set of query logics that have already been counted towards the initial total
+     * @param initialTotal
+     *            the initial total already calculated previously when checking query logic limits
      * @return true if the total active queries meets or exceeds the given limit, or false otherwise
-     * @throws Exception if an error occurs while scanning nodes
+     * @throws Exception
+     *             if an error occurs while scanning nodes
      */
     public boolean totalSystemQueriesMeetsLimit(String system, int queryLimit, Set<String> queryLogicsAlreadyCounted, int initialTotal) throws Exception {
         // Normalize the system.
         system = system.trim();
-        
-        if(log.isTraceEnabled()) {
+
+        if (log.isTraceEnabled()) {
             log.trace("Checking if total queries meets limit for system='" + system + "', queryLimit=" + queryLimit + ", queryLogicsAlreadyCounted="
                             + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
         }
-        
+
         return totalQueriesMeetsLimit(system, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getSystemPath, this::getSystemQueryLogicPath);
     }
-    
+
     /**
      * Determine whether the total active queries for the given owner meets or exceeds the given limit.
-     * @param owner the owner ID, either a user DN or a system host name
-     * @param limit the query limit
-     * @param queryLogicsAlreadyCounted the set of query logics that have already been counted towards the initial total
-     * @param initialTotal the initial total already calculated previously when checking query logic limits
-     * @param ownerPathFunction the function to obtain the zookeeper path for the owner node
-     * @param queryLogicPathFunction the function to obtain the zookeeper path for the query logic node under the owner node
+     *
+     * @param owner
+     *            the owner ID, either a user DN or a system host name
+     * @param limit
+     *            the query limit
+     * @param queryLogicsAlreadyCounted
+     *            the set of query logics that have already been counted towards the initial total
+     * @param initialTotal
+     *            the initial total already calculated previously when checking query logic limits
+     * @param ownerPathFunction
+     *            the function to obtain the zookeeper path for the owner node
+     * @param queryLogicPathFunction
+     *            the function to obtain the zookeeper path for the query logic node under the owner node
      * @return true if the total active queries meets or exceeds the given limit, or false otherwise
-     * @throws Exception if an error occurs while scanning nodes
+     * @throws Exception
+     *             if an error occurs while scanning nodes
      */
     private boolean totalQueriesMeetsLimit(String owner, int limit, Set<String> queryLogicsAlreadyCounted, int initialTotal,
-                    Function<String, String> ownerPathFunction, BiFunction<String, String, String> queryLogicPathFunction) throws Exception {
+                    Function<String,String> ownerPathFunction, BiFunction<String,String,String> queryLogicPathFunction) throws Exception {
         clientLock.lock();
         try {
             // Initialize the client if needed.
             initClient();
-            
+
             try {
                 int total = initialTotal;
                 // Get the set of query logic nodes underneath the owner node.
                 List<String> queryLogics = client.getChildren().forPath(ownerPathFunction.apply(owner));
-                for(String queryLogic : queryLogics) {
+                for (String queryLogic : queryLogics) {
                     // If we have not already previously counted the total queries underneath the current query logic, increment the total by the number of
                     // queries for the current query logic.
-                    if(!queryLogicsAlreadyCounted.contains(queryLogic)) {
+                    if (!queryLogicsAlreadyCounted.contains(queryLogic)) {
                         String queryLogicPath = queryLogicPathFunction.apply(owner, queryLogic);
                         total += getTotalChildren(queryLogicPath);
                         // If the total is equal to or greater than the limit, return true.
-                        if(total >= limit) {
+                        if (total >= limit) {
                             return true;
                         }
                     }
@@ -333,15 +371,18 @@ public class ActiveQueryTracker implements AutoCloseable {
         } finally {
             clientLock.unlock();
         }
-        
+
         return false;
     }
-    
+
     /**
      * Return the total number of children for the path. If the path does not exist, 0 will be returned.
-     * @param path the path
+     *
+     * @param path
+     *            the path
      * @return the total number of children
-     * @throws Exception if an error occurs while scanning nodes
+     * @throws Exception
+     *             if an error occurs while scanning nodes
      */
     private int getTotalChildren(String path) throws Exception {
         try {
@@ -356,7 +397,7 @@ public class ActiveQueryTracker implements AutoCloseable {
             throw e;
         }
     }
-    
+
     /**
      * Return the set of distinct query logics that have been tracked at some point while Zookeeper has been up.
      *
@@ -389,7 +430,8 @@ public class ActiveQueryTracker implements AutoCloseable {
     /**
      * Return the path {@code /distinctQueryLogics/<queryLogic>}
      *
-     * @param queryLogic the query logic
+     * @param queryLogic
+     *            the query logic
      * @return the path
      */
     private String getDistinctQueryLogicPath(String queryLogic) {
@@ -399,69 +441,81 @@ public class ActiveQueryTracker implements AutoCloseable {
     /**
      * Return the path {@code /users/<userDn>}
      *
-     * @param userDn the user DN
+     * @param userDn
+     *            the user DN
      * @return the path
      */
     private String getUserPath(String userDn) {
         return USERS_CONTAINER_PATH + "/" + userDn;
     }
-    
+
     /**
      * Return the path {@code /users/<userDn>/<queryLogic>}
      *
-     * @param userDn the user DN
-     * @param queryLogic the query logic
+     * @param userDn
+     *            the user DN
+     * @param queryLogic
+     *            the query logic
      * @return the path
      */
     private String getUserQueryLogicPath(String userDn, String queryLogic) {
         return getUserPath(userDn) + "/" + queryLogic;
     }
-    
+
     /**
      * Return the path {@code /users/<userDn>/<queryLogic>/<queryId>}
      *
-     * @param userDn the user DN
-     * @param queryLogic the query logic
-     * @param queryId the query ID
+     * @param userDn
+     *            the user DN
+     * @param queryLogic
+     *            the query logic
+     * @param queryId
+     *            the query ID
      * @return the path
      */
     private String getUserQueryIdPath(String userDn, String queryLogic, String queryId) {
         return getUserQueryLogicPath(userDn, queryLogic) + "/" + queryId;
     }
-    
+
     /**
      * Return the path {@code /systems/<system>}
      *
-     * @param system the system
+     * @param system
+     *            the system
      * @return the path
      */
     private String getSystemPath(String system) {
         return SYSTEMS_CONTAINER_PATH + "/" + system;
     }
-    
+
     /**
      * Return the path {@code /systems/<system>/<queryLogic>}
      *
-     * @param system the system
-     * @param queryLogic the query logic
+     * @param system
+     *            the system
+     * @param queryLogic
+     *            the query logic
      * @return the path
      */
     private String getSystemQueryLogicPath(String system, String queryLogic) {
         return getSystemPath(system) + "/" + queryLogic;
     }
-    
+
     /**
      * Return the path {@code /systems/<system>/<queryLogic>/<queryId>}
      *
-     * @param system the system
-     * @param queryLogic the query logic
-     * @param queryId the query ID
+     * @param system
+     *            the system
+     * @param queryLogic
+     *            the query logic
+     * @param queryId
+     *            the query ID
      * @return the path
      */
     private String getSystemQueryIdPath(String system, String queryLogic, String queryId) {
         return getSystemQueryLogicPath(system, queryLogic) + "/" + queryId;
     }
-    
+
     /**
      * Initialize the zookeeper client and cleanup timer if not already initialize. Calling this method will update the last time the client was accessed to the
      * current time.
