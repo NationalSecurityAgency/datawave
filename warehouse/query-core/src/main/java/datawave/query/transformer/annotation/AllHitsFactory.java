@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
@@ -17,6 +18,7 @@ public class AllHitsFactory {
     private static final AllHits EMPTY_ALL_HITS = new AllHits();
 
     /**
+     * Convenience method for MILLIS
      *
      * @param annotationId
      *            the annotation id to attribute the hits to
@@ -30,6 +32,25 @@ public class AllHitsFactory {
      */
     public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
                     TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments) throws AllHitsException {
+        return create(annotationId, orderedHits, sortedSegments, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     *
+     * @param annotationId
+     *            the annotation id to attribute the hits to
+     * @param orderedHits
+     *            hits ordered by the SegmentBoundary they occur in
+     * @param sortedSegments
+     *            a non-null sorted map of segments to produce hits with context from. sortedSegments must be sorted by SegmentBoundary. The values must be
+     *            sorted in ascending order as well
+     * @param timeUnit
+     *            the time unit to use for all times
+     * @return
+     * @throws AllHitsException
+     */
+    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
+                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, TimeUnit timeUnit) throws AllHitsException {
         if (orderedHits.isEmpty()) {
             return EMPTY_ALL_HITS;
         }
@@ -66,12 +87,12 @@ public class AllHitsFactory {
             if (allHit.getOneBestContext().isEmpty()) {
                 // convert to an iterator to build the best context window
                 Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> itr = contextView.entrySet().iterator();
-                applyContextAndHit(allHit, hit, itr);
+                applyContextAndHit(allHit, hit, itr, timeUnit);
             } else {
                 // just write the new TermHit
                 SegmentBoundary hitBoundary = hit.getHitBoundary();
                 SegmentValue hitValue = sortedSegments.get(hitBoundary).get(hit.getValueHitIndex());
-                applyHit(allHit, hit, hitValue);
+                applyHit(allHit, hit, hitValue, timeUnit);
             }
         }
 
@@ -81,12 +102,31 @@ public class AllHitsFactory {
         return allHits;
     }
 
-    private void applyHit(AllHit allHit, AnnotationHitsTransformer.SegmentHit segmentHit, SegmentValue hitValue) {
+    /**
+     * convert time from MILLIS to some other time unit
+     *
+     * @param time
+     *            the time to convert
+     * @param to
+     *            the target unit
+     * @return a float representation of the time in the new time unit
+     */
+    private float convertTime(long time, TimeUnit to) {
+        if (to == TimeUnit.MILLISECONDS) {
+            return time;
+        }
+        long timeInNanos = TimeUnit.MILLISECONDS.toNanos(time);
+        // convert target to millis and then divide
+        long targetInNanos = to.toNanos(1);
+        return (float) timeInNanos / (float) targetInNanos;
+    }
+
+    private void applyHit(AllHit allHit, AnnotationHitsTransformer.SegmentHit segmentHit, SegmentValue hitValue, TimeUnit timeUnit) {
         TermHit th = new TermHit();
         th.setTermLabel(hitValue.getValue());
         th.setConfidence(hitValue.getScore());
-        th.getTimeRange().setStartTime(segmentHit.getHitBoundary().getStart());
-        th.getTimeRange().setEndTime(segmentHit.getHitBoundary().getEnd());
+        th.getTimeRange().setStartTime(convertTime(segmentHit.getHitBoundary().getStart(), timeUnit));
+        th.getTimeRange().setEndTime(convertTime(segmentHit.getHitBoundary().getEnd(), timeUnit));
         allHit.getTermHits().add(th);
 
         // rollup confidence
@@ -102,9 +142,11 @@ public class AllHitsFactory {
      *            the to be updated
      * @param segmentHit
      * @param contextIterator
+     * @param timeUnit
+     *            the time unit to use for time ranges
      */
     private void applyContextAndHit(AllHit allHit, AnnotationHitsTransformer.SegmentHit segmentHit,
-                    Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> contextIterator) throws AllHitsException {
+                    Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> contextIterator, TimeUnit timeUnit) throws AllHitsException {
         while (contextIterator.hasNext()) {
             Map.Entry<SegmentBoundary,List<SegmentValue>> contextEntry = contextIterator.next();
             SegmentBoundary boundary = contextEntry.getKey();
@@ -118,8 +160,8 @@ public class AllHitsFactory {
             Term t = new Term();
             t.setLabel(firstValue.getValue());
             t.setConfidence(firstValue.getScore());
-            t.getTimeRange().setStartTime(boundary.getStart());
-            t.getTimeRange().setEndTime(boundary.getEnd());
+            t.getTimeRange().setStartTime(convertTime(boundary.getStart(), timeUnit));
+            t.getTimeRange().setEndTime(convertTime(boundary.getEnd(), timeUnit));
             allHit.getOneBestContext().add(t);
 
             // now check if this segment also contains the hit
@@ -128,7 +170,7 @@ public class AllHitsFactory {
                     throw new AllHitsException("hit index outside of available values for segment. SegmentValues:" + contextEntry.getValue().size() + " index:"
                                     + segmentHit.getValueHitIndex());
                 }
-                applyHit(allHit, segmentHit, contextEntry.getValue().get(segmentHit.getValueHitIndex()));
+                applyHit(allHit, segmentHit, contextEntry.getValue().get(segmentHit.getValueHitIndex()), timeUnit);
             }
         }
     }

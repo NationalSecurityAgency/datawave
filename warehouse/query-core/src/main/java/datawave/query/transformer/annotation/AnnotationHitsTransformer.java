@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
@@ -52,11 +53,13 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     public static final String CONTEXT_SIZE_PARAMETER = "annotation.all.hits.contextSize";
     public static final String MIN_SCORE_PARAMETER = "annotation.all.hits.minScore";
     public static final String KEYWORDS_PARAMETER = "annotation.all.hits.keywords";
+    public static final String TIMEUNIT_PARAMETER = "annotation.all.hits.timeunit";
     public static final String KEYWORD_DELIMITER = ";";
 
     private static final boolean DEFAULT_ENABLED = false;
     private static final int DEFAULT_CONTEXT_SIZE = 3;
     private static final float DEFAULT_MIN_SCORE = 0;
+    private static final TimeUnit DEFAULT_TIMEUNIT = TimeUnit.MILLISECONDS;
 
     private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
@@ -69,6 +72,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private boolean enabled = DEFAULT_ENABLED;
     private int contextSize = DEFAULT_CONTEXT_SIZE;
     private float minScore = DEFAULT_MIN_SCORE;
+    private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
 
     private Set<String> searchHitTerms;
     private ObjectMapper objectMapper;
@@ -115,6 +119,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         if (!minScoreStr.isBlank()) {
             this.minScore = Float.parseFloat(minScoreStr);
             log.info("all hits minScore: " + this.minScore);
+        }
+
+        String timeUnitStr = settings.findParameter(TIMEUNIT_PARAMETER).getParameterValue();
+        if (!timeUnitStr.isBlank()) {
+            this.timeUnit = TimeUnit.valueOf(timeUnitStr);
+            log.info("all hits timeUnit: " + this.timeUnit);
         }
 
         this.objectMapper = new ObjectMapper();
@@ -179,7 +189,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                         TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
                         List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
                         try {
-                            AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments);
+                            AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, this.timeUnit);
                             updateDocument(keyDocumentEntry, results);
                         } catch (AllHitsException e) {
                             log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);

@@ -4,6 +4,7 @@ import static datawave.query.transformer.annotation.AnnotationHitsTransformer.CO
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.ENABLED_PARAMETER;
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.KEYWORDS_PARAMETER;
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.MIN_SCORE_PARAMETER;
+import static datawave.query.transformer.annotation.AnnotationHitsTransformer.TIMEUNIT_PARAMETER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -1065,6 +1067,62 @@ public abstract class ShardQueryLogicTest {
         runTestQuery(expected);
     }
 
+    @Test
+    public void annotationHitsTimeRangeInSecondsTest() throws Exception {
+        withAnnotationHits();
+
+        givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
+
+        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.SECONDS.toString());
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
+
+        AllHitsFactory factory = new AllHitsFactory();
+        AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.SECONDS);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsTimeRangeInMicrosTest() throws Exception {
+        withAnnotationHits();
+
+        givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
+
+        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
+
+        AllHitsFactory factory = new AllHitsFactory();
+        AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.MICROSECONDS);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
     private void setupAnnotationsTables(AccumuloClient client) {
         try {
             // drop existing tables if they exist
@@ -1114,7 +1172,7 @@ public abstract class ShardQueryLogicTest {
     private AllHits getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,
                     TreeMap<SegmentBoundary,List<SegmentValue>> context) throws AllHitsException {
         AllHitsFactory factory = new AllHitsFactory();
-        return factory.create(annotationId, sortedHits, context);
+        return factory.create(annotationId, sortedHits, context, TimeUnit.MILLISECONDS);
     }
 
     private String getExpectedALlHitsRollup(AllHits... hits) throws JsonProcessingException {
