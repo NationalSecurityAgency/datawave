@@ -220,24 +220,6 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return keyDocumentEntry;
     }
 
-    private List<AllHits> getCurrentAllHitsValue(Entry<Key,Document> entry) {
-        Content attr = (Content) entry.getValue().get(this.targetField);
-        List<AllHits> rollup = null;
-        if (attr != null) {
-            try {
-                rollup = this.objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        if (rollup == null) {
-            rollup = new ArrayList<>();
-        }
-
-        return rollup;
-    }
-
     private void updateDocument(Entry<Key,Document> entry, AllHits allHits) {
         List<AllHits> rollup = getCurrentAllHitsValue(entry);
         rollup.add(allHits);
@@ -254,6 +236,29 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             // update the document
             entry.getValue().replace(targetField, new Content(json, entry.getKey(), true), false);
         }
+    }
+
+    /**
+     * Deserialize the current targetField value from json to an object
+     * @param entry the entry to extract any previously generated AllHits from
+     * @return the extracted non-null list of AllHits, or an empty List
+     */
+    private List<AllHits> getCurrentAllHitsValue(Entry<Key,Document> entry) {
+        Content attr = (Content) entry.getValue().get(this.targetField);
+        List<AllHits> rollup = null;
+        if (attr != null) {
+            try {
+                rollup = this.objectMapper.readValue(attr.getContent(), new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (rollup == null) {
+            rollup = new ArrayList<>();
+        }
+
+        return rollup;
     }
 
     /**
