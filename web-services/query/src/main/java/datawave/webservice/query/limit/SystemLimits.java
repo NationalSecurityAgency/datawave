@@ -9,22 +9,18 @@ public class SystemLimits {
 
     private final String systemPattern;
 
-    private final Integer queryLimit;
+    private final int queryLimit;
 
     private final boolean countsAgainstUserLimit;
 
     private final GroupLimitCache groupLimitOverrides;
 
-    public SystemLimits(String systemPattern, Integer queryLimit, boolean countsAgainstUserLimit, SortedSet<QueryLogicGroupLimit> groupLimitOverrides,
+    public SystemLimits(String systemPattern, int queryLimit, boolean countsAgainstUserLimit, SortedSet<QueryLogicGroupLimit> groupLimitOverrides,
                     long maxCacheSize) {
         this.systemPattern = systemPattern;
         this.queryLimit = queryLimit;
         this.countsAgainstUserLimit = countsAgainstUserLimit;
         this.groupLimitOverrides = GroupLimitCache.of(groupLimitOverrides, maxCacheSize);
-    }
-
-    public boolean overridesQueryLimit() {
-        return queryLimit != null;
     }
 
     public String getSystemPattern() {
@@ -48,7 +44,7 @@ public class SystemLimits {
     }
 
     public Map<String,Integer> getRelevantGroupLimits(String queryLogic) {
-        return groupLimitOverrides.getGroupLimits(queryLogic);
+        return groupLimitOverrides.getBestGroupLimits(queryLogic);
     }
 
     @Override

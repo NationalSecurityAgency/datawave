@@ -24,7 +24,11 @@ public class UserLimits {
         this.queryLimit = queryLimit;
         this.groupLimitOverrides = GroupLimitCache.of(groupLimitsOverrides, maxCacheSize);
     }
-
+    
+    public String getUserDn() {
+        return userDn;
+    }
+    
     /**
      * Return the maximum number of queries the user associated with this {@link UserLimits} is allowed to have running concurrently across all systems.
      *
@@ -44,15 +48,15 @@ public class UserLimits {
     }
 
     /**
-     * Return the group limit overrides
+     * Return the group limit overrides that best match the given query logic.
      *
-     * @param queryLogic
-     * @return
+     * @param queryLogic the query logic
+     * @return a map of groups to their limit
      */
-    public Map<String,Integer> getRelevantGroupLimits(String queryLogic) {
-        return groupLimitOverrides.getGroupLimits(queryLogic);
+    public Map<String,Integer> getBestGroupLimits(String queryLogic) {
+        return groupLimitOverrides.getBestGroupLimits(queryLogic);
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {

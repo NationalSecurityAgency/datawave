@@ -86,7 +86,7 @@ class UserLimitProviderTest {
         // The overridden user query limit should be present.
         assertThat(userLimits.getQueryLimit()).isEqualTo(20);
         // There should be no group limit overrides returned.
-        assertThat(userLimits.getRelevantGroupLimits("TLDQUeryLogic")).isEmpty();
+        assertThat(userLimits.getBestGroupLimits("TLDQUeryLogic")).isEmpty();
     }
 
     /**
@@ -104,7 +104,7 @@ class UserLimitProviderTest {
 
         UserLimits userLimits = provider.getCustomLimits("cn=test user, c=us");
         assertThat(userLimits.getQueryLimit()).isEqualTo(defaultLimit);
-        assertThat(userLimits.getRelevantGroupLimits("TLDQueryLogic")).isEqualTo(Map.of("TLD", 5));
+        assertThat(userLimits.getBestGroupLimits("TLDQueryLogic")).isEqualTo(Map.of("TLD", 5));
     }
 
     /**
@@ -123,7 +123,7 @@ class UserLimitProviderTest {
 
         UserLimits userLimits = provider.getCustomLimits("cn=test user, c=us");
         assertThat(userLimits.getQueryLimit()).isEqualTo(20);
-        assertThat(userLimits.getRelevantGroupLimits("TLDQueryLogic")).isEqualTo(Map.of("TLD", 5));
+        assertThat(userLimits.getBestGroupLimits("TLDQueryLogic")).isEqualTo(Map.of("TLD", 5));
     }
 
     /**
@@ -145,7 +145,7 @@ class UserLimitProviderTest {
         UserLimits userLimits = provider.getCustomLimits("cn=test user, c=us");
         assertThat(userLimits.getQueryLimit()).isEqualTo(20);
         // We should get back the groups A_TLD and B_TLD and their overridden limits. C_TLD should also be returned, but with its original limit.
-        assertThat(userLimits.getRelevantGroupLimits("TLDQueryLogic")).isEqualTo(Map.of("A_TLD", 5, "C_TLD", 25, "B_TLD", 50));
+        assertThat(userLimits.getBestGroupLimits("TLDQueryLogic")).isEqualTo(Map.of("A_TLD", 5, "C_TLD", 25, "B_TLD", 50));
     }
 
     private void givenUserConfig(String userDn, Integer queryLimit, Map<String,Integer> queryLogicLimits) {

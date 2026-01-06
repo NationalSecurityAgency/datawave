@@ -26,7 +26,7 @@ public class SystemLimitProvider {
     private static final Logger log = Logger.getLogger(SystemLimitProvider.class);
 
     private final Cache<String,Optional<SystemLimits>> systemLimitCache;
-
+    
     private final int defaultSystemQueryLimit;
 
     private final long maxCacheSize;

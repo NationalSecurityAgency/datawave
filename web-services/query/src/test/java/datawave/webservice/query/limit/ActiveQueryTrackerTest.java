@@ -2,11 +2,9 @@ package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,9 +14,9 @@ import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ActiveQueryTrackerTest {
 
@@ -37,331 +35,266 @@ class ActiveQueryTrackerTest {
             server.close();
         }
     }
-
-    @Nested
-    @DisplayName("Given a single query")
-    class SingleQuery {
-
+    
+    /**
+     * Verify the correct nodes are created when tracking a query on a system that counts against user limits.
+     */
+    @Test
+    void testQueryOnSystemThatCountsTowardsUserLimit() throws Exception {
         String queryId = UUID.randomUUID().toString();
-        String user = "cn=test a. user, ou=example developers, o=example corp, c=us";
+        String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
         String system = "SERVER-01";
         String queryLogic = "ShardQueryLogic";
-        QueryHeartbeat heartbeat;
-
-        @Nested
-        @DisplayName("After tracking")
-        class AfterTracking {
-
-            @BeforeEach
-            void setUp() throws Exception {
-                heartbeat = tracker.trackQuery(queryId, user, system, queryLogic);
-                // tracker.trackQuery(queryId, user, system, queryLogic);
-            }
-
-            @Test
-            @DisplayName("it is tracked in Zookeeper")
-            void createsZNodes() throws Exception {
-                CuratorFramework client = getClient();
-                client.start();
-
-                // Verify that the nodes were created as expected in Zookeeper.
-                assertThat(client.checkExists().forPath("/users/" + user + "/" + queryId)).isNotNull();
-                assertThat(client.checkExists().forPath("/systems/SERVER-01/" + queryId)).isNotNull();
-                assertThat(client.checkExists().forPath("/queryLogics/ShardQueryLogic/" + queryId)).isNotNull();
-                assertThat(client.checkExists().forPath("/distinctQueryLogics/" + queryLogic)).isNotNull();
-                assertThat(client.checkExists().forPath("/queries/" + queryId)).isNotNull();
-                byte[] data = client.getData().forPath("/queries/" + queryId);
-                assertThat(new String(data)).isEqualTo(user + "\0" + system + "\0" + queryLogic);
-            }
-
-            @Test
-            @DisplayName("A failure will occur if tracked again")
-            void allowsTrackingAgain() {
-                assertThatExceptionOfType(QueryAlreadyTrackedException.class).isThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic));
-            }
-
-            @Test
-            @DisplayName("The query logic is returned within the distinct query logics")
-            void canFetchQueryLogics() {
-                assertThat(tracker.getDistinctQueryLogics()).contains(queryLogic);
-            }
-
-            @Nested
-            @DisplayName("When fetching snapshot")
-            class WhenFetchingSnapshot {
-
-                @Test
-                @DisplayName("It is captured for a matching userDn")
-                void isCapturedForMatchingUser() throws Exception {
-                    Set<String> queryLogics = Set.of("otherQueryLogic");
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, "otherSystem", queryLogics);
-
-                    assertThat(snapshot.getUserDn()).isEqualTo(user);
-                    assertThat(snapshot.getSystem()).isEqualTo("otherSystem");
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
-                    // @formatter:off
-                    assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
-                                    "SERVER-01", Map.of("ShardQueryLogic", 1)));
-                    // @formatter:on
-                    assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEmpty();
-                }
-
-                @Test
-                @DisplayName("It is captured for a matching system")
-                void isCapturedForMatchingSystem() throws Exception {
-                    Set<String> queryLogics = Set.of("otherQueryLogic");
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", system, queryLogics);
-
-                    assertThat(snapshot.getUserDn()).isEqualTo("otherUser");
-                    assertThat(snapshot.getSystem()).isEqualTo(system);
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
-                    assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEmpty();
-                    assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
-                }
-
-                @Test
-                @DisplayName("It is captured for a matching query logic")
-                void isCapturedForMatchingQueryLogic() throws Exception {
-                    Set<String> queryLogics = Set.of(queryLogic);
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", "otherSystem", queryLogics);
-
-                    assertThat(snapshot.getUserDn()).isEqualTo("otherUser");
-                    assertThat(snapshot.getSystem()).isEqualTo("otherSystem");
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
-                    assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEmpty();
-                    assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEmpty();
-                }
-
-                @Test
-                @DisplayName("It is captured for a matching userDn and system")
-                void isCapturedForMatchingUserAndSystem() throws Exception {
-                    Set<String> queryLogics = Set.of("otherQueryLogic");
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
-
-                    assertThat(snapshot.getUserDn()).isEqualTo(user);
-                    assertThat(snapshot.getSystem()).isEqualTo(system);
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
-                    // @formatter:off
-                    assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
-                                    "SERVER-01", Map.of("ShardQueryLogic", 1)));
-                    // @formatter:on
-                    assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
-                }
-
-                @Test
-                @DisplayName("It is captured for a matching userDn and queryLogic")
-                void isCapturedForMatchingUserAndQueryLogic() throws Exception {
-                    Set<String> queryLogics = Set.of(queryLogic);
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, "otherSystem", queryLogics);
-
-                    assertThat(snapshot.getUserDn()).isEqualTo(user);
-                    assertThat(snapshot.getSystem()).isEqualTo("otherSystem");
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
-                    // @formatter:off
-                    assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
-                                    "SERVER-01", Map.of("ShardQueryLogic", 1)));
-                    // @formatter:on
-                    assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEmpty();
-                }
-
-                @Test
-                @DisplayName("It is captured for a matching system and queryLogic")
-                void isCapturedForMatchingSystemAndQueryLogic() throws Exception {
-                    Set<String> queryLogics = Set.of(queryLogic);
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot("otherUser", system, queryLogics);
-
-                    assertThat(snapshot.getUserDn()).isEqualTo("otherUser");
-                    assertThat(snapshot.getSystem()).isEqualTo(system);
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
-                    assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEmpty();
-                    assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
-                }
-
-                @Test
-                @DisplayName("It is captured for a matching userDn, system, and queryLogic")
-                void isCapturedForMatchingUserAndSystemAndQueryLogic() throws Exception {
-                    Set<String> queryLogics = Set.of("otherQueryLogic");
-                    // Pass in the userDN as uppercase and the system and query logic with whitespace to verify they are cleaned up.
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
-                    assertThat(snapshot.getUserDn()).isEqualTo(user);
-                    assertThat(snapshot.getSystem()).isEqualTo(system);
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(1);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SERVER-01", 1));
-                    // @formatter:off
-                    assertThat(snapshot.getTotalUserQueriesPerSystemPerQueryLogic()).isEqualTo(Map.of(
-                                    "SERVER-01", Map.of("ShardQueryLogic", 1)));
-                    // @formatter:on
-                    assertThat(snapshot.getTotalSystemQueriesPerQueryLogic()).isEqualTo(Map.of("ShardQueryLogic", 1));
-                }
-            }
-
-            @Nested
-            @DisplayName("After stopping the heartbeat")
-            class AfterStopping {
-
-                @BeforeEach
-                void setUp() throws IOException {
-                    heartbeat.stop();
-                }
-
-                @Test
-                @DisplayName("The query information is deleted in Zookeeper")
-                void deletesZNode() throws Exception {
-                    CuratorFramework client = getClient();
-                    client.start();
-
-                    // Verify the container paths were not deleted.
-                    assertThat(client.checkExists().forPath("/queries")).isNotNull();
-                    assertThat(client.checkExists().forPath("/users/" + user)).isNotNull();
-                    assertThat(client.checkExists().forPath("/systems/" + system)).isNotNull();
-                    assertThat(client.checkExists().forPath("/queryLogics/" + queryLogic)).isNotNull();
-
-                    // Verify the nodes related to the specific query were deleted.
-                    assertThat(client.checkExists().forPath("/queries/" + queryId)).isNull();
-                    assertThat(client.checkExists().forPath("/users/" + user + "/" + queryId)).isNull();
-                    assertThat(client.checkExists().forPath("/systems/" + system + "/" + queryId)).isNull();
-                    assertThat(client.checkExists().forPath("/queryLogics/" + queryLogic + "/" + queryId)).isNull();
-
-                }
-
-                @Test
-                @DisplayName("It is not captured in snapshot")
-                void isNotCapturedInSnapshot() throws Exception {
-                    Set<String> queryLogics = Set.of(queryLogic);
-                    ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
-
-                    assertThat(snapshot).isNotNull();
-                    assertThat(snapshot.getUserDn()).isEqualTo(user);
-                    assertThat(snapshot.getSystem()).isEqualTo(system);
-                    assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                    assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                    assertThat(snapshot.getUserQueriesPerSystem()).isEmpty();
-                }
-
-                @Test
-                @DisplayName("An error does not occur if it is closed multiple times")
-                void willNotThrowExceptionIfStoppedAgain() {
-                    assertThatNoException().isThrownBy(() -> heartbeat.stop());
-                }
-            }
-        }
-
-        @Nested
-        @DisplayName("When a query has never been tracked")
-        public class WhenNeverTracked {
-
-            @Test
-            @DisplayName("It is not captured in snapshot")
-            void isNotCapturedInSnapshot() throws Exception {
-                Set<String> queryLogics = Set.of(queryLogic);
-                ActiveQuerySnapshot snapshot = tracker.getSnapshot(user, system, queryLogics);
-
-                assertThat(snapshot.getUserDn()).isEqualTo(user);
-                assertThat(snapshot.getSystem()).isEqualTo(system);
-                assertThat(snapshot.getQueryLogics()).isEqualTo(queryLogics);
-                assertThat(snapshot.getTotalSystemQueries()).isEqualTo(0);
-                assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of());
-            }
-
-            @Test
-            @DisplayName("There are no distinct query logics")
-            void noDistinctQueryLogics() {
-                assertThat(tracker.getDistinctQueryLogics()).isEmpty();
-            }
-        }
+        
+        tracker.trackQuery(queryId, user, system, queryLogic, true);
+        
+        CuratorFramework client = getClient();
+        client.start();
+        
+        // Verify that the nodes were created as expected in Zookeeper.
+        assertThat(client.checkExists().forPath("/users/" + user.toLowerCase() + "/" + queryLogic + "/" + queryId)).isNotNull();
+        assertThat(client.checkExists().forPath("/systems/" + system + "/" + queryLogic + "/" + queryId)).isNotNull();
+        assertThat(client.checkExists().forPath("/distinctQueryLogics/" + queryLogic)).isNotNull();
     }
-
-    @Nested
-    @DisplayName("Given multiple queries")
-    class MultipleQueries {
-
-        private final Map<String,QueryHeartbeat> heartbeats = new HashMap<>();
-
-        @BeforeEach
-        void setUp() throws Exception {
-            // The following data assumes that we will be fetching a snapshot for user usera, on system SYSTEM-01, for query logic TLDQueryLogic.
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "EventQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "EventQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "EdgeQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-01", "EdgeQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "EdgeQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-01", "EventQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "EventQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "TLDQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "TLDQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "TLDQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "EventQueryLogic");
-            createActiveQuery("cn=usera, c=us", "SYSTEM-02", "EventQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "EdgeQueryLogic");
-            createActiveQuery("cn=userb, c=us", "SYSTEM-02", "EdgeQueryLogic");
-            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "EdgeQueryLogic");
-            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "EventQueryLogic");
-            createActiveQuery("cn=userc, c=us", "SYSTEM-03", "EdgeQueryLogic");
-        }
-
-        private void createActiveQuery(String userDn, String system, String queryLogic) throws Exception {
-            String queryId = UUID.randomUUID().toString();
-            QueryHeartbeat heartbeat = tracker.trackQuery(queryId, userDn, system, queryLogic);
-            heartbeats.put(queryId, heartbeat);
-        }
-
-        @Test
-        @DisplayName("All relevant queries are captured in snapshot")
-        void capturesEventForSingleQueryLogicInSnapshot() throws Exception {
-            ActiveQuerySnapshot snapshot = tracker.getSnapshot("cn=usera, c=us", "SYSTEM-01", Set.of("TLDQueryLogic"));
-
-            assertThat(snapshot.getUserDn()).isEqualTo("cn=usera, c=us");
-            assertThat(snapshot.getSystem()).isEqualTo("SYSTEM-01");
-            assertThat(snapshot.getQueryLogics()).containsExactly("TLDQueryLogic");
-            assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SYSTEM-01", 6, "SYSTEM-02", 6));
-            assertThat(snapshot.getTotalSystemQueries()).isEqualTo(11);
-        }
-
-        @Test
-        @DisplayName("All relevant queries are captured in snapshot")
-        void capturesEventForMultipleQueryLogicsInSnapshot() throws Exception {
-            ActiveQuerySnapshot snapshot = tracker.getSnapshot("cn=usera, c=us", "SYSTEM-01", Set.of("TLDQueryLogic", "EventQueryLogic"));
-
-            assertThat(snapshot.getUserDn()).isEqualTo("cn=usera, c=us");
-            assertThat(snapshot.getSystem()).isEqualTo("SYSTEM-01");
-            assertThat(snapshot.getQueryLogics()).containsExactlyInAnyOrder("TLDQueryLogic", "EventQueryLogic");
-            assertThat(snapshot.getUserQueriesPerSystem()).isEqualTo(Map.of("SYSTEM-01", 6, "SYSTEM-02", 6));
-            assertThat(snapshot.getTotalSystemQueries()).isEqualTo(11);
-        }
-
-        @Test
-        @DisplayName("All distinct query logics were tracked")
-        void retainedDistinctQueryLogics() {
-            assertThat(tracker.getDistinctQueryLogics()).containsExactlyInAnyOrder("TLDQueryLogic", "EdgeQueryLogic", "EventQueryLogic");
-        }
-
-        @AfterEach
-        void tearDown() {
-            heartbeats.clear();
-        }
+    
+    /**
+     * Verify the correct nodes are created when tracking a query on a system that does not count against user limits.
+     */
+    @Test
+    void testQueryOnSystemThatDoesNotCountsTowardsUserLimit() throws Exception {
+        String queryId = UUID.randomUUID().toString();
+        String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
+        String system = "SERVER-01";
+        String queryLogic = "ShardQueryLogic";
+        
+        tracker.trackQuery(queryId, user, system, queryLogic, false);
+        
+        CuratorFramework client = getClient();
+        client.start();
+        
+        // Verify that the nodes were created as expected in Zookeeper.
+        assertThat(client.checkExists().forPath("/systems/" + system + "/" + queryLogic + "/" + queryId)).isNotNull();
+        assertThat(client.checkExists().forPath("/distinctQueryLogics/" + queryLogic)).isNotNull();
+        
+        // Verify that the user node was not created.
+        assertThat(client.checkExists().forPath("/users/" + user.toLowerCase() + "/" + queryLogic + "/" + queryId)).isNull();
     }
+    
+    /**
+     * Verify that an exception is thrown if we track an already tracked query.
+     */
+    @Test
+    void testQueryCannotBeRetracked() throws Exception {
+        String queryId = UUID.randomUUID().toString();
+        String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
+        String system = "SERVER-01";
+        String queryLogic = "ShardQueryLogic";
+        
+        tracker.trackQuery(queryId, user, system, queryLogic, true);
+        
+        assertThatExceptionOfType(QueryAlreadyTrackedException.class).isThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic, true));
+    }
+    
+    /**
+     * Verify that when a heartbeat is stopped, that the ephemeral nodes are deleted.
+     */
+    @Test
+    void testStoppingHeartbeat() throws Exception {
+        String queryId = UUID.randomUUID().toString();
+        String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
+        String system = "SERVER-01";
+        String queryLogic = "ShardQueryLogic";
+        
+        QueryHeartbeat heartbeat = tracker.trackQuery(queryId, user, system, queryLogic, true);
+        
+        heartbeat.stop();
+        
+        CuratorFramework client = getClient();
+        client.start();
+        
+        // Verify the container paths were not deleted.
+        assertThat(client.checkExists().forPath("/users/" + user.toLowerCase() + "/" + queryLogic)).isNotNull();
+        assertThat(client.checkExists().forPath("/systems/" + system + "/" + queryLogic)).isNotNull();
+        
+        // Verify the distinctQueryLogics node was not affected.
+        assertThat(client.checkExists().forPath("/distinctQueryLogics/" + queryLogic)).isNotNull();
+        
+        // Verify the query ID nodes were deleted.
+        assertThat(client.checkExists().forPath("/users/" + user.toLowerCase() + "/" + queryLogic + "/" + queryId)).isNull();
+        assertThat(client.checkExists().forPath("/systems/" + system + "/" + queryLogic + "/" + queryId)).isNull();
+    }
+    
+    /**
+     * Verify the expected behavior of {@link ActiveQueryTracker#getDistinctQueryLogics()}.
+     */
+    @Test
+    void testGetDistinctQueryLogics() throws Exception {
+        // Assert that initially, there are no distinct query logics.
+        assertThat(tracker.getDistinctQueryLogics()).isEmpty();
+        
+        String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
+        String system = "SERVER-01";
+        
+        // Track several queries with different query logics, some repeated.
+        tracker.trackQuery(UUID.randomUUID().toString(), user, system, "ShardQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, system, "ShardQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, system, "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, system, "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, system, "TLDQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, system, "EdgeQueryLogic", true);
+        
+        // Assert that distinct query logics are returned.
+        List<String> distinctQueryLogics = tracker.getDistinctQueryLogics();
+        assertThat(distinctQueryLogics).containsExactlyInAnyOrder("ShardQueryLogic", "EventQueryLogic", "TLDQueryLogic", "EdgeQueryLogic");
+    }
+    
+    /**
+     * Verify the expected behavior of {@link ActiveQueryTracker#getTotalUserQueriesForQueryLogic(String, String)}.
+     */
+    @Test
+    void testGetTotalUserQueriesForQueryLogic() throws Exception {
+        String userA = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
+        String userB = "CN=Test B. User, ou=Example Developers, O=Example Corp, c=US";
+        
+        // Assert that if there are no queries tracked at all for the user, 0 is returned.
+        assertThat(tracker.getTotalUserQueriesForQueryLogic(userA, "ShardQueryLogic")).isEqualTo(0);
+        
+        // Track some queries for the users with various query logics.
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "TLDQueryLogic", false); // Should not be counted, system doesn't count towards limit.
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "TLDQueryLogic", false); // Should not be counted, system doesn't count towards limit.
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-02", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userB, "SYSTEM-02", "EventQueryLogic", true); // Should not be counted, different user.
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-02", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-02", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-03", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userB, "SYSTEM-03", "EventQueryLogic", true); // Should not be counted, different user.
+        tracker.trackQuery(UUID.randomUUID().toString(), userB, "SYSTEM-03", "ShardQueryLogic", true); // Should not be counted, different user.
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-03", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-04", "EventQueryLogic", false); // Should not be counted, system doesn't count towards limit.
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-04", "EventQueryLogic", false); // Should not be counted, system doesn't count towards limit.
+        
+        // Assert that if there are some queries tracked for the user, but none for the query logic, 0 is returned.
+        assertThat(tracker.getTotalUserQueriesForQueryLogic(userA, "ShardQueryLogic")).isEqualTo(0);
+        
+        // Assert that the count for TLDQueryLogic is 0 since all queries tracked for them were on a system that do not count against user limits.
+        assertThat(tracker.getTotalUserQueriesForQueryLogic(userA, "TLDQueryLogic")).isEqualTo(0);
+        
+        // Assert the count for EventQueryLogic is 5 since 5 queries tracked for them for the user were on systems that count against the user limits.
+        assertThat(tracker.getTotalUserQueriesForQueryLogic(userA, "EventQueryLogic")).isEqualTo(5);
+    }
+    
+    /**
+     * Verify the expected behavior of {@link ActiveQueryTracker#getTotalSystemQueriesForQueryLogic(String, String)}.
+     */
+    @Test
+    void testGetTotalSystemQueriesForQueryLogic() throws Exception {
+        String userA = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
+        String userB = "CN=Test B. User, ou=Example Developers, O=Example Corp, c=US";
+        
+        // Assert that if there are no queries tracked at all for the system, 0 is returned.
+        assertThat(tracker.getTotalSystemQueriesForQueryLogic("SYSTEM-01", "ShardQueryLogic")).isEqualTo(0);
+        
+        // Track some queries for the users with various query logics.
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "TLDQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "TLDQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "EventQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), userB, "SYSTEM-01", "EventQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "EventQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "EventQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-01", "EventQueryLogic", false);
+        
+        tracker.trackQuery(UUID.randomUUID().toString(), userB, "SYSTEM-02", "ShardQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userB, "SYSTEM-02", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-02", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-02", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), userA, "SYSTEM-02", "EventQueryLogic", true);
+        
+        // Assert the counts for query logics on SYSTEM-01.
+        assertThat(tracker.getTotalSystemQueriesForQueryLogic("SYSTEM-01", "ShardQueryLogic")).isEqualTo(0);
+        assertThat(tracker.getTotalSystemQueriesForQueryLogic("SYSTEM-01", "TLDQueryLogic")).isEqualTo(2);
+        assertThat(tracker.getTotalSystemQueriesForQueryLogic("SYSTEM-01", "EventQueryLogic")).isEqualTo(5);
+        
+        // Assert the counts for query logics on SYSTEM-02.
+        assertThat(tracker.getTotalSystemQueriesForQueryLogic("SYSTEM-02", "ShardQueryLogic")).isEqualTo(1);
+        assertThat(tracker.getTotalSystemQueriesForQueryLogic("SYSTEM-02", "TLDQueryLogic")).isEqualTo(0);
+        assertThat(tracker.getTotalSystemQueriesForQueryLogic("SYSTEM-02", "EventQueryLogic")).isEqualTo(4);
+    }
+    
+    /**
+     * Verify the expected behavior of {@link ActiveQueryTracker#totalUserQueriesMeetsLimit(String, int, Set, int)}
+     */
+    @Test
+    void testTotalUserQueriesMeetsLimit() throws Exception {
+        String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
 
+        // Assert that if no queries are tracked for the user, we do not meet the limit.
+        assertThat(tracker.totalUserQueriesMeetsLimit(user, 10, Set.of(), 0)).isFalse();
+        
+        // Track some queries for the user that should not count against the user's limit.
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-01", "TLDQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-01", "TLDQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-01", "TLDQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-01", "TLDQueryLogic", false);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-01", "TLDQueryLogic", false);
+        
+        // Assert that the above queries will not have us meet a limit of 3 total allowed queries for the user.
+        assertThat(tracker.totalUserQueriesMeetsLimit(user, 3, Set.of(), 0)).isFalse();
+        
+        // Track some queries for the user that should count against the user's limit.
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-02", "TLDQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-02", "TLDQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-02", "TLDQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-02", "TLDQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-03", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-03", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-03", "EventQueryLogic", true);
+        tracker.trackQuery(UUID.randomUUID().toString(), user, "SYSTEM-03", "EventQueryLogic", true);
+        
+        // Assert that the above queries will meet a limit of 7 total allowed queries for the user.
+        assertThat(tracker.totalUserQueriesMeetsLimit(user, 7, Set.of(), 0)).isTrue();
+        
+        // If we pass in arguments that indicate we already counted the EventQueryLogic queries, assert that a limit of 7 will be met.
+        assertThat(tracker.totalUserQueriesMeetsLimit(user, 7, Set.of("EventQueryLogic"), 4)).isTrue();
+        
+        // If the limit is 10, assert we do not meet the limit.
+        assertThat(tracker.totalUserQueriesMeetsLimit(user, 10, Set.of(), 0)).isFalse();
+        
+        // If we pass in arguments that indicate we already counted the EventQueryLogic queries, assert that a limit of 10 will not be met.
+        assertThat(tracker.totalUserQueriesMeetsLimit(user, 10, Set.of("EventQueryLogic"), 4)).isFalse();
+    }
+    
+    /**
+     * Verify the expected behavior of {@link ActiveQueryTracker#totalSystemQueriesMeetsLimit(String, int, Set, int)}. The assertion cases are identical
+     * regardless of whether the system counts towards user limits or not.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testTotalSystemQueriesMeetsLimit(boolean systemCountsAgainstUserLimits) throws Exception {
+        // Assert that if no queries are tracked for the system, we do not meet the limit.
+        assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 10, Set.of(), 0)).isFalse();
+        
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "TLDQueryLogic", systemCountsAgainstUserLimits);
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "TLDQueryLogic", systemCountsAgainstUserLimits);
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "TLDQueryLogic", systemCountsAgainstUserLimits);
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "TLDQueryLogic", systemCountsAgainstUserLimits);
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "EventQueryLogic", systemCountsAgainstUserLimits);
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "EventQueryLogic", systemCountsAgainstUserLimits);
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "EventQueryLogic", systemCountsAgainstUserLimits);
+        tracker.trackQuery(UUID.randomUUID().toString(), "cn=userA", "SYSTEM-01", "EventQueryLogic", systemCountsAgainstUserLimits);
+        
+        // Assert that the above queries will meet a limit of 7 total allowed queries for the user.
+        assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 7, Set.of(), 0)).isTrue();
+        
+        // If we pass in arguments that indicate we already counted the EventQueryLogic queries, assert that a limit of 7 will be met.
+        assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 7, Set.of("EventQueryLogic"), 4)).isTrue();
+        
+        // If the limit is 10, assert we do not meet the limit.
+        assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 10, Set.of(), 0)).isFalse();
+        
+        // If we pass in arguments that indicate we already counted the EventQueryLogic queries, assert that a limit of 10 will not be met.
+        assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 10, Set.of("EventQueryLogic"), 4)).isFalse();
+    }
+    
     private CuratorFramework getClient() {
         // @formatter:off
         return CuratorFrameworkFactory.builder()

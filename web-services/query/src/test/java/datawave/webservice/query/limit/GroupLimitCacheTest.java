@@ -45,14 +45,14 @@ class GroupLimitCacheTest {
         assertThat(cache.isEmpty()).isFalse();
 
         // Verify we got the exact match with the lowest limit for TLDQueryLogic.
-        assertThat(cache.getGroupLimits("TLDQueryLogic")).containsExactly(Map.entry("TLD_Exact_2", 5));
+        assertThat(cache.getBestGroupLimits("TLDQueryLogic")).containsExactly(Map.entry("TLD_Exact_2", 5));
 
         // Verify we got all the partial matches for EventQueryLogic, in order of lowest limit to highest.
-        assertThat(cache.getGroupLimits("EventQueryLogic")).containsExactly(Map.entry("Event_Partial_3", 5), Map.entry("Event_Partial_2", 25),
+        assertThat(cache.getBestGroupLimits("EventQueryLogic")).containsExactly(Map.entry("Event_Partial_3", 5), Map.entry("Event_Partial_2", 25),
                         Map.entry("Event_Partial_1", 50));
 
         // Verify we got the wildcard match for anything else.
-        assertThat(cache.getGroupLimits("OtherQueryLogic")).containsExactly(Map.entry("Default_Wildcard", 50));
+        assertThat(cache.getBestGroupLimits("OtherQueryLogic")).containsExactly(Map.entry("Default_Wildcard", 50));
     }
 
     @Test
@@ -64,6 +64,6 @@ class GroupLimitCacheTest {
         assertThat(cache.isEmpty()).isFalse();
 
         // Verify we got an empty map due to no match against a group.
-        assertThat(cache.getGroupLimits("EventQueryLogic")).isEmpty();
+        assertThat(cache.getBestGroupLimits("EventQueryLogic")).isEmpty();
     }
 }

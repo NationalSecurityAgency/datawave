@@ -152,7 +152,7 @@ public class QueryLogicGroupLimitProvider {
     }
 
     public Map<String,Integer> getGroupLimits(String queryLogic) {
-        return groupLimitCache.getGroupLimits(queryLogic);
+        return groupLimitCache.getBestGroupLimits(queryLogic);
     }
 
     public Map<String,Matcher> getGroupMatchers(Set<String> groups) {

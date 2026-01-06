@@ -54,7 +54,7 @@ public class GroupLimitCache {
      *            the query logic
      * @return the map
      */
-    public Map<String,Integer> getGroupLimits(String queryLogic) {
+    public Map<String,Integer> getBestGroupLimits(String queryLogic) {
         if (!isEmpty()) {
             Map<String,Integer> limits = this.cache.getIfPresent(queryLogic);
             if (limits == null) {
