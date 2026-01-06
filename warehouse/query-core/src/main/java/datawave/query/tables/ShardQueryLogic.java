@@ -778,6 +778,36 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     /**
+     *
+     * @return a configured AnnotationDataAccess object given the table names
+     */
+    private AnnotationDataAccess getAnnotationDataAccess() {
+        AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer();
+        AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+        return new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(), getAnnotationTableName(), getAnnotationSourceTableName(),
+                        annotationSerializer, annotationSourceSerializer);
+    }
+
+    /**
+     * Construct a configured AllHitsFactory class using a no-arg constructor
+     *
+     * @return
+     * @throws QueryException
+     */
+    private AllHitsFactory getAnnotationHitsFactory() throws QueryException {
+        AllHitsFactory allHitsFactory;
+        try {
+            Class<?> annotationHitsFactoryClass = Class.forName(getAnnotationHitsFactoryClass());
+            Class<? extends AllHitsFactory> subClass = annotationHitsFactoryClass.asSubclass(AllHitsFactory.class);
+            allHitsFactory = subClass.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            throw new QueryException("cannot instantiate allHitsFactory", e);
+        }
+
+        return allHitsFactory;
+    }
+
+    /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
     private void addConfigBasedTransformers() throws QueryException {
@@ -787,22 +817,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
             if (getConfig().isAnnotationHitsEnabled()) {
                 // since this may be called multiple times always rebuild
-                // TODO may need to inject options to serializers
-                AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer();
-                AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
-                AnnotationDataAccess annotationDataAccess = new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(),
-                                getAnnotationTableName(), getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
-                AllHitsFactory allHitsFactory;
-                try {
-                    Class<?> annotationHitsFactoryClass = Class.forName(getAnnotationHitsFactoryClass());
-                    Class<? extends AllHitsFactory> subClass = annotationHitsFactoryClass.asSubclass(AllHitsFactory.class);
-                    allHitsFactory = subClass.getDeclaredConstructor().newInstance();
-                } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-                    throw new QueryException("cannot instantiate allHitsFactory", e);
-                }
-                ((DocumentTransformer) this.transformerInstance)
-                                .addTransform(new AnnotationHitsTransformer(getConfig(), annotationDataAccess, allHitsFactory, getAnnotationHitsContextLength(),
-                                                getAnnotationHitsValidTypes(), getAnnotationHitsValidQueryFields(), getAnnotationHitsTargetField()));
+                ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(getConfig(), getAnnotationDataAccess(),
+                                getAnnotationHitsFactory(), getAnnotationHitsContextLength(), getAnnotationHitsValidTypes(),
+                                getAnnotationHitsValidQueryFields(), getAnnotationHitsTargetField()));
             }
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
