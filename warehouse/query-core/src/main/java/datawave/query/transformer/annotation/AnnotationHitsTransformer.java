@@ -259,7 +259,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         for (Segment segment : segments) {
             // make a copy so they can be sorted
             List<SegmentValue> segmentValues = new ArrayList<>(segment.getValuesList());
-            Collections.sort(segmentValues, new SegmentValueComparator());
+            Collections.sort(segmentValues, new SegmentValueByScoreComparator());
             orderedSegments.put(segment.getBoundary(), segmentValues);
         }
 

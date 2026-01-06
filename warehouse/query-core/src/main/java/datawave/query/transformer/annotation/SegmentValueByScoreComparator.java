@@ -7,7 +7,7 @@ import datawave.annotation.protobuf.v1.SegmentValue;
 /**
  * Sort ascending by score, then by value
  */
-public class SegmentValueComparator implements Comparator<SegmentValue> {
+public class SegmentValueByScoreComparator implements Comparator<SegmentValue> {
     @Override
     public int compare(SegmentValue o1, SegmentValue o2) {
         float scoreDiff = o1.getScore() - o2.getScore();

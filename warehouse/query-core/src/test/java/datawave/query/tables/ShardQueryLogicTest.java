@@ -84,7 +84,7 @@ import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.AllHitsFactoryErrorOnly;
 import datawave.query.transformer.annotation.AnnotationHitsTransformer;
 import datawave.query.transformer.annotation.BoundaryComparator;
-import datawave.query.transformer.annotation.SegmentValueComparator;
+import datawave.query.transformer.annotation.SegmentValueByScoreComparator;
 import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
@@ -1186,7 +1186,7 @@ public abstract class ShardQueryLogicTest {
             SegmentBoundary boundary = segment.getBoundary();
             List<SegmentValue> values = segment.getValuesList();
             List<SegmentValue> sortedValues = new ArrayList<>(values);
-            Collections.sort(sortedValues, new SegmentValueComparator());
+            Collections.sort(sortedValues, new SegmentValueByScoreComparator());
             sortedContext.put(boundary, sortedValues);
         }
 

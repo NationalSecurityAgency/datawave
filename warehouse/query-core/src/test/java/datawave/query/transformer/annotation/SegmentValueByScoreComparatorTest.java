@@ -8,8 +8,8 @@ import org.junit.Test;
 
 import datawave.annotation.protobuf.v1.SegmentValue;
 
-public class SegmentValueComparatorTest {
-    private SegmentValueComparator comparator;
+public class SegmentValueByScoreComparatorTest {
+    private SegmentValueByScoreComparator comparator;
 
     private static final SegmentValue A_1_0 = SegmentValue.newBuilder().setValue("a").setScore(1.0f).build();
     private static final SegmentValue B_1_0 = SegmentValue.newBuilder().setValue("b").setScore(1.0f).build();
@@ -18,7 +18,7 @@ public class SegmentValueComparatorTest {
 
     @Before
     public void setup() {
-        comparator = new SegmentValueComparator();
+        comparator = new SegmentValueByScoreComparator();
     }
 
     @Test
