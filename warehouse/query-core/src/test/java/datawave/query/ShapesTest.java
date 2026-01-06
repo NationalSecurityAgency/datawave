@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
@@ -13,7 +12,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeSet;
 
 import javax.inject.Inject;
 
@@ -110,6 +108,8 @@ public class ShapesTest extends AbstractQueryTest {
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
+    private Set<String> expectedDatatypeFilter = null;
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         MiniAccumuloConfig cfg = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
@@ -169,12 +169,12 @@ public class ShapesTest extends AbstractQueryTest {
         logic.setCardinalityThreshold(0);
 
         // every test also exercises hit terms
-        withParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
 
         logic.setCollapseUids(false); // index table will either have uids or not
 
-        withDate("20240201", "20240209");
+        givenDate("20240201", "20240209");
     }
 
     @After
@@ -189,6 +189,7 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setRebuildDatatypeFilter(false);
             logic.setPruneQueryByIngestTypes(false);
         }
+        expectedDatatypeFilter = null;
     }
 
     @AfterClass
@@ -196,8 +197,39 @@ public class ShapesTest extends AbstractQueryTest {
         TypeRegistry.reset();
     }
 
-    public void withExpected(Set<String> expected) {
-        this.expected.addAll(expected);
+    /**
+     * A wrapper around {@link #givenParameter(String, String)} for {@link QueryParameters#DATATYPE_FILTER_SET}.
+     *
+     * @param filter
+     *            the datatype filter
+     */
+    public void givenDatatypeFilter(String filter) {
+        givenParameter(QueryParameters.DATATYPE_FILTER_SET, filter);
+    }
+
+    /**
+     * Set the expected datatype filter.
+     *
+     * @param filter
+     *            the expected datatype filter
+     */
+    public void expectDatatypeFilter(Set<String> filter) {
+        if (expectedDatatypeFilter == null) {
+            expectedDatatypeFilter = new HashSet<>();
+        }
+        expectedDatatypeFilter.addAll(filter);
+    }
+
+    /**
+     * Assert the final datatype filter against the expectation, if an expectation was set
+     */
+    public void assertDatatypeFilter() {
+        if (expectedDatatypeFilter == null) {
+            return;
+        }
+        assertNotNull(logic);
+        assertNotNull(logic.getConfig());
+        assertEquals(expectedDatatypeFilter, logic.getConfig().getDatatypeFilter());
     }
 
     public void planAndExecuteQuery() throws Exception {
@@ -221,7 +253,7 @@ public class ShapesTest extends AbstractQueryTest {
 
             // plan, execute, assert hit terms
             super.planAndExecuteQuery();
-            assertUuids();
+            assertDatatypeFilter();
 
             switch (indexTableName) {
                 case TestIndexTableNames.SHARD_INDEX:
@@ -236,45 +268,6 @@ public class ShapesTest extends AbstractQueryTest {
         }
     }
 
-    public ShapesTest assertUuids() {
-        assertNotNull(expected);
-        assertNotNull(results);
-
-        Set<String> found = new HashSet<>();
-        for (Document result : results) {
-            Attribute<?> attr = result.get("UUID");
-            assertNotNull("result did not contain a UUID", attr);
-            String uuid = getUUID(attr);
-            found.add(uuid);
-        }
-
-        Set<String> missing = Sets.difference(expected, found);
-        if (!missing.isEmpty()) {
-            log.info("missing uuids: {}", missing);
-        }
-
-        Set<String> extra = Sets.difference(found, expected);
-        if (!extra.isEmpty()) {
-            log.info("extra uuids: {}", extra);
-        }
-
-        assertEquals(expected, new TreeSet<>(found));
-        return this;
-    }
-
-    public String getUUID(Attribute<?> attribute) {
-        boolean typed = attribute instanceof TypeAttribute;
-        assertTrue("Attribute was not a TypeAttribute, was: " + attribute.getClass(), typed);
-        TypeAttribute<?> uuid = (TypeAttribute<?>) attribute;
-        return uuid.getType().getDelegateAsString();
-    }
-
-    public void assertDatatypeFilter(Set<String> expected) {
-        assertNotNull(logic);
-        assertNotNull(logic.getConfig());
-        assertEquals(expected, logic.getConfig().getDatatypeFilter());
-    }
-
     @SafeVarargs
     public final Set<String> createSet(Set<String>... sets) {
         Set<String> s = new HashSet<>();
@@ -286,119 +279,121 @@ public class ShapesTest extends AbstractQueryTest {
 
     @Test
     public void testTriangles() throws Exception {
-        withQuery("SHAPE == 'triangle'");
-        withExpected(triangleUids);
-        withRequiredAllOf("SHAPE:triangle");
+        givenQuery("SHAPE == 'triangle'");
+        expectPlan("SHAPE == 'triangle'");
+        expectUUIDs(triangleUids);
+        expectHitTermsRequiredAllOf("SHAPE:triangle");
         planAndExecuteQuery();
     }
 
     @Test
     public void testQuadrilaterals() throws Exception {
-        withQuery("SHAPE == 'quadrilateral'");
-        withExpected(quadrilateralUids);
-        withRequiredAllOf("SHAPE:quadrilateral");
+        givenQuery("SHAPE == 'quadrilateral'");
+        expectPlan("SHAPE == 'quadrilateral'");
+        expectUUIDs(quadrilateralUids);
+        expectHitTermsRequiredAllOf("SHAPE:quadrilateral");
         planAndExecuteQuery();
     }
 
     @Test
     public void testPentagon() throws Exception {
-        withQuery("SHAPE == 'pentagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.pentagonUid));
-        withRequiredAllOf("SHAPE:pentagon");
+        givenQuery("SHAPE == 'pentagon'");
+        expectPlan("SHAPE == 'pentagon'");
+        expectUUIDs(Set.of(ShapesIngest.pentagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:pentagon");
         planAndExecuteQuery();
     }
 
     @Test
     public void testHexagon() throws Exception {
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectPlan("SHAPE == 'hexagon'");
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
         planAndExecuteQuery();
     }
 
     @Test
     public void testOctagon() throws Exception {
-        withQuery("SHAPE == 'octagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.octagonUid));
-        withRequiredAllOf("SHAPE:octagon");
+        givenQuery("SHAPE == 'octagon'");
+        expectPlan("SHAPE == 'octagon'");
+        expectUUIDs(Set.of(ShapesIngest.octagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:octagon");
         planAndExecuteQuery();
     }
 
     @Test
     public void testTrianglesAndQuadrilaterals() throws Exception {
-        withQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
-        Set<String> uids = new HashSet<>();
-        uids.addAll(triangleUids);
-        uids.addAll(quadrilateralUids);
-        withExpected(uids);
-        withRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral");
+        givenQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        expectUUIDs(createSet(triangleUids, quadrilateralUids));
+        expectHitTermsRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral");
         planAndExecuteQuery();
     }
 
     @Test
     public void testAllShapes() throws Exception {
-        withQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withExpected(allUids);
-        withRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral", "SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        givenQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectUUIDs(allUids);
+        expectHitTermsRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral", "SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         planAndExecuteQuery();
     }
 
     @Test
     public void testTrianglesAndQuadrilateralsNoFilter() throws Exception {
-        withQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
-        Set<String> uids = new HashSet<>();
-        uids.addAll(triangleUids);
-        uids.addAll(quadrilateralUids);
-        withExpected(uids);
-        withRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral");
+        givenQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        expectUUIDs(createSet(triangleUids, quadrilateralUids));
+        expectHitTermsRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral");
         planAndExecuteQuery();
     }
 
     @Test
     public void testTrianglesAndQuadrilateralsCorrectFilter() throws Exception {
-        withQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,quadrilateral");
-        Set<String> uids = new HashSet<>();
-        uids.addAll(triangleUids);
-        uids.addAll(quadrilateralUids);
-        withExpected(uids);
-        withRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral");
+        givenQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        givenDatatypeFilter("triangle,quadrilateral");
+        expectUUIDs(createSet(triangleUids, quadrilateralUids));
+        expectHitTermsRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral");
         planAndExecuteQuery();
     }
 
     @Test
     public void testTrianglesAndQuadrilateralsFilterForTriangles() throws Exception {
-        withQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(triangleUids);
-        withRequiredAllOf("SHAPE:triangle");
+        givenQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        givenDatatypeFilter("triangle");
+        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        expectUUIDs(triangleUids);
+        expectHitTermsRequiredAllOf("SHAPE:triangle");
         planAndExecuteQuery();
     }
 
     @Test
     public void testTrianglesAndQuadrilateralsFilterForQuadrilaterals() throws Exception {
-        withQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "quadrilateral");
-        withExpected(quadrilateralUids);
-        withRequiredAllOf("SHAPE:quadrilateral");
+        givenQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        givenDatatypeFilter("quadrilateral");
+        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+        expectUUIDs(quadrilateralUids);
+        expectHitTermsRequiredAllOf("SHAPE:quadrilateral");
         planAndExecuteQuery();
     }
 
     @Test
     public void testTrailingRegexExpansionIntoSingleTerm() throws Exception {
-        withQuery("TYPE =~ 'acu.*'");
-        withQueryPlan("TYPE == 'acute'");
-        withExpected(Sets.newHashSet(ShapesIngest.acuteUid));
-        withRequiredAllOf("TYPE:acute");
+        givenQuery("TYPE =~ 'acu.*'");
+        expectPlan("TYPE == 'acute'");
+        expectUUIDs(Set.of(ShapesIngest.acuteUid));
+        expectHitTermsRequiredAllOf("TYPE:acute");
         planAndExecuteQuery();
     }
 
     @Test
     public void testTrailingRegexExpansionIntoMultipleTerms() throws Exception {
-        withQuery("TYPE =~ 'rhomb.*'");
-        withQueryPlan("TYPE == 'rhombus' || TYPE == 'rhomboid'");
-        withExpected(Sets.newHashSet(ShapesIngest.rhombusUid, ShapesIngest.rhomboidUid));
-        withRequiredAnyOf("TYPE:rhombus", "TYPE:rhomboid");
+        givenQuery("TYPE =~ 'rhomb.*'");
+        expectPlan("TYPE == 'rhombus' || TYPE == 'rhomboid'");
+        expectUUIDs(Set.of(ShapesIngest.rhombusUid, ShapesIngest.rhomboidUid));
+        expectHitTermsRequiredAnyOf("TYPE:rhombus", "TYPE:rhomboid");
         planAndExecuteQuery();
     }
 
@@ -414,38 +409,38 @@ public class ShapesTest extends AbstractQueryTest {
 
     @Test
     public void testLeadingRegexExpansionIntoSingleTerm() throws Exception {
-        withQuery("SHAPE =~ '.*angle'");
-        withQueryPlan("SHAPE == 'triangle'");
-        withExpected(triangleUids);
-        withRequiredAllOf("SHAPE:triangle");
+        givenQuery("SHAPE =~ '.*angle'");
+        expectPlan("SHAPE == 'triangle'");
+        expectUUIDs(triangleUids);
+        expectHitTermsRequiredAllOf("SHAPE:triangle");
         planAndExecuteQuery();
     }
 
     @Test
     public void testLeadingRegexExpansionIntoMultipleTerms() throws Exception {
-        withQuery("SHAPE =~ '.*gon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withExpected(otherUids);
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        givenQuery("SHAPE =~ '.*gon'");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectUUIDs(otherUids);
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         planAndExecuteQuery();
     }
 
     @Test
     public void testLeadingRegexExpansionIntoMultipleDatatypes() throws Exception {
-        withQuery("SHAPE =~ '.*gon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withExpected(otherUids);
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        givenQuery("SHAPE =~ '.*gon'");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectUUIDs(otherUids);
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         planAndExecuteQuery();
     }
 
     @Test
     public void testLeadingRegexExpansionIntoMultipleDatatypesWithDatatypeFilter() throws Exception {
-        withQuery("SHAPE =~ '.*gon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'octagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "pentagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.pentagonUid, ShapesIngest.octagonUid));
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:octagon");
+        givenQuery("SHAPE =~ '.*gon'");
+        givenDatatypeFilter("pentagon,octagon");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'octagon'");
+        expectUUIDs(Set.of(ShapesIngest.pentagonUid, ShapesIngest.octagonUid));
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:octagon");
         planAndExecuteQuery();
     }
 
@@ -453,74 +448,81 @@ public class ShapesTest extends AbstractQueryTest {
 
     @Test
     public void testSimpleQueryNoFilterSpecified() throws Exception {
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Collections.emptySet());
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
     }
 
     @Test
     public void testSimpleQueryNoFilterSpecifiedWithRebuild() throws Exception {
         logic.setRebuildDatatypeFilter(true);
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(allTypes);
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
     }
 
     @Test
     public void testSimpleQueryNoFilterSpecifiedWithReduce() throws Exception {
         logic.setReduceIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Collections.emptySet());
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
     }
 
     @Test
     public void testSimpleQueryNoFilterSpecifiedWithPrune() throws Exception {
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(allTypes);
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
     }
 
     @Test
     public void testSimpleQueryNoFilterSpecifiedWithRebuildReduce() throws Exception {
         logic.setRebuildDatatypeFilter(true);
         logic.setReduceIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(allTypes);
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
     }
 
     @Test
     public void testSimpleQueryNoFilterSpecifiedWithRebuildPrune() throws Exception {
         logic.setRebuildDatatypeFilter(true);
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
+        expectDatatypeFilter(allTypes);
     }
 
     @Test
     public void testSimpleQueryNoFilterSpecifiedWithReducePrune() throws Exception {
         logic.setReduceIngestTypes(true);
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(allTypes);
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
     }
 
     @Test
@@ -528,92 +530,100 @@ public class ShapesTest extends AbstractQueryTest {
         logic.setRebuildDatatypeFilter(true);
         logic.setReduceIngestTypes(true);
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(allTypes);
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
     }
 
     // simple query with filter
 
     @Test
     public void testSimpleQueryFilterFromParameters() throws Exception {
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testSimpleQueryFilterFromParametersWithRebuild() throws Exception {
         logic.setRebuildDatatypeFilter(true);
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testSimpleQueryFilterFromParametersWithReduce() throws Exception {
         logic.setReduceIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testSimpleQueryFilterFromParametersWithPrune() throws Exception {
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testSimpleQueryFilterFromParametersWithRebuildReduce() throws Exception {
         logic.setRebuildDatatypeFilter(true);
         logic.setReduceIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testSimpleQueryFilterFromParametersWithRebuildPrune() throws Exception {
         logic.setRebuildDatatypeFilter(true);
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testSimpleQueryFilterFromParametersWithReducePrune() throws Exception {
         logic.setReduceIngestTypes(true);
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
@@ -621,112 +631,112 @@ public class ShapesTest extends AbstractQueryTest {
         logic.setRebuildDatatypeFilter(true);
         logic.setReduceIngestTypes(true);
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("SHAPE == 'hexagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "hexagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon");
+        givenQuery("SHAPE == 'hexagon'");
+        givenDatatypeFilter("hexagon");
+        expectPlan("SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     // intersection with reduction possible
 
     @Test
     public void testIntersectionNoFilter() throws Exception {
-        withQuery("SHAPE == 'hexagon' && ONLY_HEX == 'hexa'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("SHAPE:hexagon", "ONLY_HEX:hexa");
+        givenQuery("SHAPE == 'hexagon' && ONLY_HEX == 'hexa'");
+        expectPlan("SHAPE == 'hexagon' && ONLY_HEX == 'hexa'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("SHAPE:hexagon", "ONLY_HEX:hexa");
+        expectDatatypeFilter(Collections.emptySet());
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
     }
 
     @Test
     public void testFinalDatatypeFilterWhenNoneSpecified() throws Exception {
-        withQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withExpected(otherUids);
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        givenQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectUUIDs(otherUids);
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        expectDatatypeFilter(Collections.emptySet());
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
     }
 
     @Test
     public void testFinalDatatypeFilterFromParameters() throws Exception {
-        withQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "pentagon,hexagon,octagon");
-        withExpected(otherUids);
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        givenQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        givenDatatypeFilter("pentagon,hexagon,octagon");
+        expectUUIDs(otherUids);
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        expectDatatypeFilter(Set.of("pentagon", "hexagon", "octagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("pentagon", "hexagon", "octagon"));
     }
 
     @Test
     public void testBuildDatatypeFilterFromQueryFields() throws Exception {
         logic.setRebuildDatatypeFilter(true);
-        withQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withExpected(otherUids);
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
-        planAndExecuteQuery();
+        givenQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectUUIDs(otherUids);
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         // SHAPE is common across all five datatypes
-        assertDatatypeFilter(Sets.newHashSet("triangle", "quadrilateral", "pentagon", "hexagon", "octagon"));
+        expectDatatypeFilter(Set.of("triangle", "quadrilateral", "pentagon", "hexagon", "octagon"));
+        planAndExecuteQuery();
     }
 
     @Test
     public void testReduceIngestTypesWithEmptyDatatypeFilter() throws Exception {
         // this parameter will not replace an empty datatype filter
         logic.setReduceIngestTypes(true);
-        withQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withExpected(otherUids);
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        givenQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectUUIDs(otherUids);
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        expectDatatypeFilter(Collections.emptySet());
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
     }
 
     @Test
     public void testReduceIngestTypesWithDatatypeFilterFromParametersNoChange() throws Exception {
         // SHAPE is common to five datatypes, only three specified in parameter. Reducing does not change the filter.
         logic.setReduceIngestTypes(true);
-        withQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withQueryPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "pentagon,hexagon,octagon");
-        withExpected(otherUids);
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        givenQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
+        givenDatatypeFilter("pentagon,hexagon,octagon");
+        expectUUIDs(otherUids);
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        expectDatatypeFilter(Set.of("pentagon", "hexagon", "octagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("pentagon", "hexagon", "octagon"));
     }
 
     @Test
     public void testReduceIngestTypesWithDatatypeFilterFromParameters() throws Exception {
         logic.setReduceIngestTypes(true);
-        withQuery("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        givenQuery("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        givenDatatypeFilter("pentagon,hexagon,octagon");
         // octagon datatype is pruned but the query remains intact
-        withQueryPlan("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "pentagon,hexagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.pentagonUid, ShapesIngest.hexagonUid));
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
-        withRequiredAnyOf("ONLY_PENTA:penta", "ONLY_HEX:hexa");
-
+        expectPlan("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        expectUUIDs(Set.of(ShapesIngest.pentagonUid, ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        expectHitTermsRequiredAnyOf("ONLY_PENTA:penta", "ONLY_HEX:hexa");
+        expectDatatypeFilter(Set.of("pentagon", "hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("pentagon", "hexagon"));
     }
 
     @Test
     public void testPruneIngestTypes() throws Exception {
         // octagon should be pruned given the fields unique to each datatype
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        givenQuery("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        givenDatatypeFilter("pentagon,hexagon,octagon");
         // octagon datatype is NOT pruned despite pruning the term from the query
-        withQueryPlan("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "pentagon,hexagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.pentagonUid, ShapesIngest.hexagonUid));
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
-        withRequiredAnyOf("ONLY_PENTA:penta", "ONLY_HEX:hexa");
-
+        expectPlan("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        expectUUIDs(Set.of(ShapesIngest.pentagonUid, ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        expectHitTermsRequiredAnyOf("ONLY_PENTA:penta", "ONLY_HEX:hexa");
+        expectDatatypeFilter(Set.of("pentagon", "hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("pentagon", "hexagon"));
     }
 
     @Test
@@ -734,110 +744,109 @@ public class ShapesTest extends AbstractQueryTest {
         // octagon datatype should be pruned given the fields unique to each datatype
         logic.setReduceIngestTypes(true);
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        givenQuery("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        givenDatatypeFilter("pentagon,hexagon,octagon");
         // octagon datatype is pruned
-        withQueryPlan("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "pentagon,hexagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.pentagonUid, ShapesIngest.hexagonUid));
-        withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
-        withRequiredAnyOf("ONLY_PENTA:penta", "ONLY_HEX:hexa");
-
+        expectPlan("(SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon') && (ONLY_PENTA == 'penta' || ONLY_HEX == 'hexa')");
+        expectUUIDs(Set.of(ShapesIngest.pentagonUid, ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
+        expectHitTermsRequiredAnyOf("ONLY_PENTA:penta", "ONLY_HEX:hexa");
+        expectDatatypeFilter(Set.of("pentagon", "hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("pentagon", "hexagon"));
     }
 
     // test cases for when a user specifies a filter that does not match the query fields, a filter with more types
 
     @Test(expected = InvalidQueryException.class)
     public void testExclusiveFilter() throws Exception {
-        withQuery("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle");
+        expectUUIDs(Collections.emptySet());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
     @Test(expected = InvalidQueryException.class)
     public void testExclusiveFilterWithReduce() throws Exception {
         logic.setReduceIngestTypes(true);
-        withQuery("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle");
+        expectUUIDs(Collections.emptySet());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
     @Test(expected = InvalidQueryException.class)
     public void testExclusiveFilterWithRebuild() throws Exception {
         logic.setRebuildDatatypeFilter(true);
-        withQuery("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle");
+        expectUUIDs(Collections.emptySet());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
     @Test(expected = InvalidQueryException.class)
     public void testExclusiveFilterWithPrune() throws Exception {
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle");
+        expectUUIDs(Collections.emptySet());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
     @Test
     public void testFilterWithExtraTypes() throws Exception {
-        withQuery("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,quadrilateral,pentagon,hexagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("ONLY_HEX:hexa");
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle,quadrilateral,pentagon,hexagon,octagon");
+        expectPlan("ONLY_HEX == 'hexa'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("ONLY_HEX:hexa");
+        expectDatatypeFilter(allTypes);
         planAndExecuteQuery();
-        assertPlannedQuery("ONLY_HEX == 'hexa'");
-        assertDatatypeFilter(allTypes);
     }
 
     @Test
     public void testFilterWithExtraTypesWithReduce() throws Exception {
         logic.setReduceIngestTypes(true);
-        withQuery("ONLY_HEX == 'hexa'");
-        withQueryPlan("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,quadrilateral,pentagon,hexagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("ONLY_HEX:hexa");
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle,quadrilateral,pentagon,hexagon,octagon");
+        expectPlan("ONLY_HEX == 'hexa'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("ONLY_HEX:hexa");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testFilterWithExtraTypesWithRebuild() throws Exception {
         logic.setRebuildDatatypeFilter(true);
-        withQuery("ONLY_HEX == 'hexa'");
-        withQueryPlan("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,quadrilateral,pentagon,hexagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("ONLY_HEX:hexa");
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle,quadrilateral,pentagon,hexagon,octagon");
+        expectPlan("ONLY_HEX == 'hexa'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("ONLY_HEX:hexa");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testFilterWithExtraTypesWithPrune() throws Exception {
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("ONLY_HEX == 'hexa'");
-        withQueryPlan("ONLY_HEX == 'hexa'");
-        withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,quadrilateral,pentagon,hexagon,octagon");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("ONLY_HEX:hexa");
+        givenQuery("ONLY_HEX == 'hexa'");
+        givenDatatypeFilter("triangle,quadrilateral,pentagon,hexagon,octagon");
+        expectPlan("ONLY_HEX == 'hexa'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("ONLY_HEX:hexa");
+        expectDatatypeFilter(Set.of("hexagon"));
         planAndExecuteQuery();
-        assertDatatypeFilter(Sets.newHashSet("hexagon"));
     }
 
     @Test
     public void testPruneNestedTermAllPermutations() throws Exception {
         // natural prune will drop the ONLY_QUAD term
         logic.setPruneQueryByIngestTypes(true);
-        withQuery("ONLY_HEX == 'hexa' && (SHAPE == 'hexagon' || ONLY_QUAD == 'square')");
-        withQueryPlan("ONLY_HEX == 'hexa' && SHAPE == 'hexagon'");
-        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-        withRequiredAllOf("ONLY_HEX:hexa", "SHAPE:hexagon");
+        givenQuery("ONLY_HEX == 'hexa' && (SHAPE == 'hexagon' || ONLY_QUAD == 'square')");
+        expectPlan("ONLY_HEX == 'hexa' && SHAPE == 'hexagon'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("ONLY_HEX:hexa", "SHAPE:hexagon");
         planAndExecuteQuery();
     }
 
@@ -866,14 +875,14 @@ public class ShapesTest extends AbstractQueryTest {
                     logic.setRebuildDatatypeFilter(rebuildOption);
                     logic.getConfig().setDatatypeFilter(Collections.emptySet());
 
-                    withQuery(query);
+                    givenQuery(query);
                     if (pruneOption) {
-                        withQueryPlan(expectedPlan);
+                        expectPlan(expectedPlan);
                     } else {
-                        withQueryPlan(query);
+                        expectPlan(query);
                     }
-                    withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
-                    withRequiredAllOf("ONLY_HEX:hexa", "SHAPE:hexagon");
+                    expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+                    expectHitTermsRequiredAllOf("ONLY_HEX:hexa", "SHAPE:hexagon");
                     planAndExecuteQuery();
                 }
             }
@@ -884,13 +893,11 @@ public class ShapesTest extends AbstractQueryTest {
     public void testSortQueryPreIndexWithImpliedCounts() throws Exception {
         try {
             // sorting via implied counts should push TYPE to the right of SHAPE
-            withQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
-            withQueryPlan("SHAPE == 'triangle' || TYPE == 'pentagon'");
-            withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,pentagon");
-
-            Set<String> expectedUids = new HashSet<>(triangleUids);
-            withExpected(expectedUids);
-            withRequiredAnyOf("TYPE:pentagon", "SHAPE:triangle");
+            givenQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
+            givenDatatypeFilter("triangle,pentagon");
+            expectPlan("SHAPE == 'triangle' || TYPE == 'pentagon'");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAnyOf("TYPE:pentagon", "SHAPE:triangle");
 
             disableAllSortOptions();
             logic.setSortQueryPreIndexWithImpliedCounts(true);
@@ -905,13 +912,12 @@ public class ShapesTest extends AbstractQueryTest {
         try {
             // SHAPE cardinality for triangle and pentagon types is 23
             // TYPE cardinality for triangle and pentagon types is 21
-            withQuery("SHAPE == 'triangle' || TYPE == 'pentagon'");
-            withQueryPlan("TYPE == 'pentagon' || SHAPE == 'triangle'");
-            withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,pentagon");
+            givenQuery("SHAPE == 'triangle' || TYPE == 'pentagon'");
+            givenDatatypeFilter("triangle,pentagon");
+            expectPlan("TYPE == 'pentagon' || SHAPE == 'triangle'");
 
-            Set<String> expectedUids = new HashSet<>(triangleUids);
-            withExpected(expectedUids);
-            withRequiredAllOf("SHAPE:triangle");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
 
             disableAllSortOptions();
             logic.setSortQueryPreIndexWithFieldCounts(true);
@@ -934,10 +940,10 @@ public class ShapesTest extends AbstractQueryTest {
             saveIndexExpansionConfigs();
             forceIvarators();
 
-            withQuery("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
-            withQueryPlan("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
-            withExpected(triangleUids);
-            withRequiredAllOf("SHAPE:triangle");
+            givenQuery("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            expectPlan("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
 
             planAndExecuteQuery();
         } finally {
@@ -958,10 +964,10 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setSortQueryPostIndexWithTermCounts(true);
             logic.setCardinalityThreshold(25);
 
-            withQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
-            withQueryPlan("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
-            withExpected(Sets.newHashSet(ShapesIngest.acuteUid));
-            withRequiredAllOf("TYPE:acute", "SHAPE:triangle");
+            givenQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            expectPlan("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            expectUUIDs(Set.of(ShapesIngest.acuteUid));
+            expectHitTermsRequiredAllOf("TYPE:acute", "SHAPE:triangle");
 
             planAndExecuteQuery();
         } finally {
@@ -984,10 +990,10 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setSortQueryPostIndexWithTermCounts(true);
             logic.setCardinalityThreshold(25);
 
-            withQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
-            withQueryPlan("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
-            withExpected(Sets.newHashSet(ShapesIngest.acuteUid));
-            withRequiredAllOf("TYPE:acute", "SHAPE:triangle");
+            givenQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            expectPlan("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            expectUUIDs(Set.of(ShapesIngest.acuteUid));
+            expectHitTermsRequiredAllOf("TYPE:acute", "SHAPE:triangle");
 
             planAndExecuteQuery();
         } finally {
@@ -1009,8 +1015,8 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setCardinalityThreshold(25);
 
             // this does not intersect
-            withQuery("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
-            withQueryPlan("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            givenQuery("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            expectPlan("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
 
             planAndExecuteQuery();
         } finally {
@@ -1031,10 +1037,10 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setSortQueryPostIndexWithTermCounts(true);
             logic.setCardinalityThreshold(25);
 
-            withQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
-            withQueryPlan("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
-            withExpected(Sets.newHashSet(ShapesIngest.equilateralUid));
-            withRequiredAllOf("TYPE:equilateral", "SHAPE:triangle");
+            givenQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            expectPlan("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            expectUUIDs(Set.of(ShapesIngest.equilateralUid));
+            expectHitTermsRequiredAllOf("TYPE:equilateral", "SHAPE:triangle");
 
             planAndExecuteQuery();
         } finally {
@@ -1055,10 +1061,10 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setSortQueryPostIndexWithTermCounts(true);
             logic.setCardinalityThreshold(25);
 
-            withQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
-            withQueryPlan("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
-            withExpected(Sets.newHashSet(ShapesIngest.equilateralUid));
-            withRequiredAllOf("TYPE:equilateral", "SHAPE:triangle");
+            givenQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            expectPlan("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            expectUUIDs(Set.of(ShapesIngest.equilateralUid));
+            expectHitTermsRequiredAllOf("TYPE:equilateral", "SHAPE:triangle");
 
             planAndExecuteQuery();
         } finally {
@@ -1080,8 +1086,8 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setCardinalityThreshold(25);
 
             // this does not intersect
-            withQuery("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
-            withQueryPlan("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            givenQuery("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            expectPlan("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
             planAndExecuteQuery();
         } finally {
             reloadIndexExpansionConfigs();
@@ -1102,10 +1108,10 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setCardinalityThreshold(25);
 
             // right hand exceeded value marker does not have any backing data
-            withQuery("SHAPE == 'triangle' && (((_Value_ = true) && (SHAPE =~ 'tr.*?')) || ((_Value_ = true) && (SHAPE =~ 'zz.*?')))");
-            withQueryPlan("SHAPE == 'triangle' && (((_Value_ = true) && (SHAPE =~ 'tr.*?')) || ((_Value_ = true) && (SHAPE =~ 'zz.*?')))");
-            withExpected(new HashSet<>(triangleUids));
-            withRequiredAllOf("SHAPE:triangle");
+            givenQuery("SHAPE == 'triangle' && (((_Value_ = true) && (SHAPE =~ 'tr.*?')) || ((_Value_ = true) && (SHAPE =~ 'zz.*?')))");
+            expectPlan("SHAPE == 'triangle' && (((_Value_ = true) && (SHAPE =~ 'tr.*?')) || ((_Value_ = true) && (SHAPE =~ 'zz.*?')))");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
 
             planAndExecuteQuery();
         } finally {
@@ -1119,10 +1125,10 @@ public class ShapesTest extends AbstractQueryTest {
             saveIndexExpansionConfigs();
             forceIvarators();
 
-            withQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
-            withQueryPlan("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
-            withExpected(triangleUids);
-            withRequiredAllOf("SHAPE:triangle", "EDGES:3");
+            givenQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+            expectPlan("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle", "EDGES:3");
 
             planAndExecuteQuery();
         } finally {
@@ -1141,10 +1147,10 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setSortQueryPostIndexWithTermCounts(true);
             logic.setCardinalityThreshold(25);
 
-            withQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
-            withQueryPlan("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
-            withExpected(triangleUids);
-            withRequiredAllOf("SHAPE:triangle", "EDGES:3");
+            givenQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+            expectPlan("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle", "EDGES:3");
 
             planAndExecuteQuery();
         } finally {
@@ -1163,8 +1169,8 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setSortQueryPostIndexWithTermCounts(true);
             logic.setCardinalityThreshold(25);
 
-            withQuery("SHAPE == 'octagon' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
-            withQueryPlan("SHAPE == 'octagon' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+            givenQuery("SHAPE == 'octagon' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+            expectPlan("SHAPE == 'octagon' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
             planAndExecuteQuery();
         } finally {
             reloadIndexExpansionConfigs();
@@ -1198,9 +1204,10 @@ public class ShapesTest extends AbstractQueryTest {
 
     @Test
     public void testAttributeNormalizers() throws Exception {
-        withQuery("SHAPE == 'triangle'");
-        withExpected(new HashSet<>(triangleUids));
-        withRequiredAllOf("SHAPE:triangle");
+        givenQuery("SHAPE == 'triangle'");
+        expectPlan("SHAPE == 'triangle'");
+        expectUUIDs(triangleUids);
+        expectHitTermsRequiredAllOf("SHAPE:triangle");
         planAndExecuteQuery();
 
         assertAttributeNormalizer("EDGES", NumberType.class);
@@ -1219,9 +1226,10 @@ public class ShapesTest extends AbstractQueryTest {
             withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
             logic.setReduceTypeMetadata(true);
 
-            withQuery("SHAPE == 'triangle'");
-            withExpected(new HashSet<>(triangleUids));
-            withRequiredAllOf("SHAPE:triangle");
+            givenQuery("SHAPE == 'triangle'");
+            expectPlan("SHAPE == 'triangle'");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
             assertAttributeNormalizer("EDGES", NumberType.class);
@@ -1244,9 +1252,10 @@ public class ShapesTest extends AbstractQueryTest {
             withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
             logic.setReduceTypeMetadata(true);
 
-            withQuery("SHAPE == 'triangle'");
-            withExpected(new HashSet<>(triangleUids));
-            withRequiredAllOf("SHAPE:triangle");
+            givenQuery("SHAPE == 'triangle'");
+            expectPlan("SHAPE == 'triangle'");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
             assertAttributeNormalizer("EDGES", NumberType.class);
@@ -1269,9 +1278,10 @@ public class ShapesTest extends AbstractQueryTest {
             withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
             logic.setReduceTypeMetadataPerShard(true);
 
-            withQuery("SHAPE == 'triangle'");
-            withExpected(new HashSet<>(triangleUids));
-            withRequiredAllOf("SHAPE:triangle");
+            givenQuery("SHAPE == 'triangle'");
+            expectPlan("SHAPE == 'triangle'");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
             assertAttributeNormalizer("EDGES", NumberType.class);
@@ -1294,9 +1304,10 @@ public class ShapesTest extends AbstractQueryTest {
             withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
             logic.setReduceTypeMetadata(true);
 
-            withQuery("SHAPE == 'triangle'");
-            withExpected(new HashSet<>(triangleUids));
-            withRequiredAllOf("SHAPE:triangle");
+            givenQuery("SHAPE == 'triangle'");
+            expectPlan("SHAPE == 'triangle'");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
             assertAttributeNormalizer("EDGES", NumberType.class);
@@ -1321,9 +1332,9 @@ public class ShapesTest extends AbstractQueryTest {
             // disabling evaluation also disables hit term generation
             logic.setDisableEvaluation(true);
 
-            withQuery("SHAPE == 'triangle'");
-            withExpected(new HashSet<>(triangleUids));
-            withRequiredAllOf("SHAPE:triangle");
+            givenQuery("SHAPE == 'triangle'");
+            expectUUIDs(triangleUids);
+            expectHitTermsRequiredAllOf("SHAPE:triangle");
             assertThrows(AssertionError.class, this::planAndExecuteQuery);
         } finally {
             logic.setDisableEvaluation(false);
@@ -1331,11 +1342,11 @@ public class ShapesTest extends AbstractQueryTest {
     }
 
     private void withIncludeFields(Set<String> includes) {
-        parameters.put(QueryParameters.RETURN_FIELDS, Joiner.on(',').join(includes));
+        givenParameter(QueryParameters.RETURN_FIELDS, Joiner.on(',').join(includes));
     }
 
     private void withExcludeFields(Set<String> excludes) {
-        parameters.put(QueryParameters.DISALLOWLISTED_FIELDS, Joiner.on(',').join(excludes));
+        givenParameter(QueryParameters.DISALLOWLISTED_FIELDS, Joiner.on(',').join(excludes));
     }
 
     private void assertAttributeNormalizer(String field, Class<?> expectedNormalizer) {

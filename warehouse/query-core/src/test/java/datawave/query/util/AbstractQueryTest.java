@@ -1,8 +1,9 @@
 package datawave.query.util;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.text.DateFormat;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -27,11 +29,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.QueryImpl;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
@@ -43,15 +48,31 @@ import datawave.test.HitTermAssertions;
  * <p>
  * This test framework is compatible with either an {@link InMemoryInstance} or {@link MiniAccumuloCluster}. It only requires an {@link AccumuloClient}.
  * <p>
- * Features include
+ * Helper methods such as {@link #givenDate(String)} or {@link #givenQuery(String)} denote initial state while methods such as {@link #expectedResultCount} or
+ * {@link #expectHitTermsRequiredAllOf(String...)} denote expected final state.
+ * <p>
+ * Initial state methods include:
  * <ul>
- * <li>Defining lucene or jexl queries</li>
- * <li>Defining query parameters</li>
- * <li>Defining expected hit terms</li>
- * <li>Defining expected query plan</li>
- * <li>Defining expected result count</li>
- * <li>Defining expected result shards</li>
+ * <li>{@link #givenDate(String)} required</li>
+ * <li>{@link #givenDate(String, String)} required</li>
+ * <li>{@link #givenQuery(String)} required</li>
+ * <li>{@link #givenParameter(String, String)} optional</li>
+ * <li>{@link #givenParameters(Map)} optional</li>
  * </ul>
+ * <p>
+ * Final state methods include:
+ * <ul>
+ * <li>{@link #expectPlan(String)} required</li>
+ * <li>{@link #expectResultCount(int)} optional</li>
+ * <li>{@link #expectHitTermsRequiredAnyOf(String...)}</li>
+ * <li>{@link #expectHitTermsRequiredAllOf(String...)}</li>
+ * <li>{@link #expectHitTermsOptionalAnyOf(String...)}</li>
+ * <li>{@link #expectHitTermsOptionalAllOf(String...)}</li>
+ * </ul>
+ * Unit tests that extend this class should adhere to the method order presented above for the sake of consistency.
+ * <p>
+ * Additionally if a test is going to use {@link #givenParameter(String, String)} repeatedly for a one or more parameters it may be helped to wrap the method
+ * call like <code>withDatatypeFilter</code>
  */
 public abstract class AbstractQueryTest {
 
@@ -63,46 +84,56 @@ public abstract class AbstractQueryTest {
     protected final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
-    protected final HitTermAssertions hitTermAssertions = new HitTermAssertions();
-
     private AccumuloClient clientForTest;
 
-    // variables that support declarative style tests
-    private String query;
+    // initial state
     private String startDate;
     private String endDate;
+    private String query;
+    private final Map<String,String> parameters = new HashMap<>();
 
-    protected final Map<String,String> parameters = new HashMap<>();
-    protected final Set<String> expected = new HashSet<>();
+    // final state
+    private String expectedQueryPlan = null;
+    private int expectedResultCount = -1;
     protected final Set<Document> results = new HashSet<>();
-
-    // additional variables for declarative assertions
-    protected String plannedQuery = null;
-    protected int expectedResultCount = -1;
+    protected final Set<String> expectedUUIDs = new HashSet<>();
+    private final HitTermAssertions hitTermAssertions = new HitTermAssertions();
 
     public abstract ShardQueryLogic getLogic();
 
     @After
     public void after() {
-        query = null;
+        // reset initial state
         startDate = null;
         endDate = null;
+        query = null;
         parameters.clear();
-        expected.clear();
-        results.clear();
-        plannedQuery = null;
+
+        // reset expectations
+        expectedQueryPlan = null;
         expectedResultCount = -1;
+        results.clear();
+        expectedUUIDs.clear();
         hitTermAssertions.resetState();
     }
 
-    /**
-     * Set the query string
-     *
-     * @param query
-     *            the query string
-     */
-    public void withQuery(String query) {
-        this.query = query;
+    public void setClientForTest(AccumuloClient client) {
+        this.clientForTest = client;
+    }
+
+    protected String getQuery() {
+        Preconditions.checkNotNull(query, "query is null");
+        return query;
+    }
+
+    protected Date getStartDate() throws Exception {
+        assertNotNull(startDate);
+        return format.parse(startDate);
+    }
+
+    protected Date getEndDate() throws Exception {
+        assertNotNull(endDate);
+        return format.parse(endDate);
     }
 
     /**
@@ -111,8 +142,8 @@ public abstract class AbstractQueryTest {
      * @param date
      *            the date
      */
-    public void withDate(String date) {
-        withDate(date, date);
+    public void givenDate(String date) {
+        givenDate(date, date);
     }
 
     /**
@@ -123,9 +154,19 @@ public abstract class AbstractQueryTest {
      * @param endDate
      *            the end date
      */
-    public void withDate(String startDate, String endDate) {
+    public void givenDate(String startDate, String endDate) {
         this.startDate = startDate;
         this.endDate = endDate;
+    }
+
+    /**
+     * Set the query string
+     *
+     * @param query
+     *            the query string
+     */
+    public void givenQuery(String query) {
+        this.query = query;
     }
 
     /**
@@ -136,7 +177,7 @@ public abstract class AbstractQueryTest {
      * @param value
      *            the value
      */
-    public void withParameter(String key, String value) {
+    public void givenParameter(String key, String value) {
         parameters.put(key, value);
     }
 
@@ -146,8 +187,38 @@ public abstract class AbstractQueryTest {
      * @param parameters
      *            the map of parameters to set
      */
-    public void withParameters(Map<String,String> parameters) {
+    public void givenParameters(Map<String,String> parameters) {
         this.parameters.putAll(parameters);
+    }
+
+    /**
+     * Set the expected query plan
+     *
+     * @param queryPlan
+     *            the expected query plan
+     */
+    public void expectPlan(String queryPlan) {
+        this.expectedQueryPlan = queryPlan;
+    }
+
+    /**
+     * Set the expected number of results
+     *
+     * @param expectedResultCount
+     *            the expected number of results
+     */
+    public void expectResultCount(int expectedResultCount) {
+        this.expectedResultCount = expectedResultCount;
+    }
+
+    /**
+     * Set the expected UUIDs. Optional as not every test will have a 'UUID' field.
+     *
+     * @param expectedUUIDs
+     *            the expected uuids
+     */
+    public void expectUUIDs(Set<String> expectedUUIDs) {
+        this.expectedUUIDs.addAll(expectedUUIDs);
     }
 
     /**
@@ -156,7 +227,7 @@ public abstract class AbstractQueryTest {
      * @param hitTerms
      *            a collection of hit terms
      */
-    public void withRequiredAllOf(String... hitTerms) {
+    public void expectHitTermsRequiredAllOf(String... hitTerms) {
         hitTermAssertions.withRequiredAllOf(hitTerms);
     }
 
@@ -166,7 +237,7 @@ public abstract class AbstractQueryTest {
      * @param hitTerms
      *            a collection of hit terms
      */
-    public void withRequiredAnyOf(String... hitTerms) {
+    public void expectHitTermsRequiredAnyOf(String... hitTerms) {
         hitTermAssertions.withRequiredAnyOf(hitTerms);
     }
 
@@ -176,7 +247,7 @@ public abstract class AbstractQueryTest {
      * @param hitTerms
      *            a collection of hit terms
      */
-    public void withOptionalAllOf(String... hitTerms) {
+    public void expectHitTermsOptionalAllOf(String... hitTerms) {
         hitTermAssertions.withOptionalAllOf(hitTerms);
     }
 
@@ -186,25 +257,32 @@ public abstract class AbstractQueryTest {
      * @param hitTerms
      *            a collection of hit terms
      */
-    public void withOptionalAnyOf(String... hitTerms) {
+    public void expectHitTermsOptionalAnyOf(String... hitTerms) {
         hitTermAssertions.withOptionalAnyOf(hitTerms);
     }
 
-    public void withQueryPlan(String queryPlan) {
-        this.plannedQuery = queryPlan;
-    }
-
-    public void withResultCount(int expectedResultCount) {
-        this.expectedResultCount = expectedResultCount;
-    }
-
+    /**
+     * A core method that plans and executes the query
+     *
+     * @throws Exception
+     *             if something goes wrong
+     */
     public void planAndExecuteQuery() throws Exception {
         planQuery();
         executeQuery();
+        assertQueryPlan();
+        assertResultCount();
+        assertUuids();
         assertHitTerms();
     }
 
-    public void planQuery() throws Exception {
+    /**
+     * Configure the logic with start and end date, query parameters and plan the query.
+     *
+     * @throws Exception
+     *             if something goes wrong
+     */
+    private void planQuery() throws Exception {
         try {
             QueryImpl settings = new QueryImpl();
             settings.setBeginDate(getStartDate());
@@ -226,7 +304,10 @@ public abstract class AbstractQueryTest {
         }
     }
 
-    public void executeQuery() {
+    /**
+     * Iterate through the query and add all deserialized results to the set of result documents.
+     */
+    private void executeQuery() {
         results.clear();
         for (Map.Entry<Key,Value> entry : getLogic()) {
             Document d = deserializer.apply(entry).getValue();
@@ -236,34 +317,16 @@ public abstract class AbstractQueryTest {
         log.info("query retrieved {} results", results.size());
     }
 
-    public void assertResultCount() {
-        assertResultCount(expectedResultCount);
-    }
-
-    public void assertResultCount(int expected) {
-        assertNotEquals("Expected result count not set", -1, expected);
-        assertEquals(expected, results.size());
-    }
-
-    public void assertHitTerms() {
-        assertEquals(hitTermAssertions.hitTermExpected(), !results.isEmpty());
-        if (!results.isEmpty()) {
-            boolean validated = hitTermAssertions.assertHitTerms(results);
-            assertEquals(hitTermAssertions.hitTermExpected(), validated);
-        }
-    }
-
-    public void assertPlannedQuery() {
-        assertNotNull("Expected query plan not set", plannedQuery);
-        assertPlannedQuery(plannedQuery);
-    }
-
-    public void assertPlannedQuery(String query) {
+    /**
+     * Assert the final query plan against the expected query plan. This is a required assertion for every test.
+     */
+    private void assertQueryPlan() {
+        assertNotNull("The expected query plan must be set ", expectedQueryPlan);
         try {
-            ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(expectedQueryPlan);
             ASTJexlScript plannedScript = getLogic().getConfig().getQueryTree();
             if (!TreeEqualityVisitor.isEqual(expected, plannedScript)) {
-                log.info("expected: {}", query);
+                log.info("expected: {}", expectedQueryPlan);
                 log.info("planned : {}", getLogic().getConfig().getQueryString());
                 fail("Planned query did not match expectation");
             }
@@ -272,22 +335,63 @@ public abstract class AbstractQueryTest {
         }
     }
 
-    public void setClientForTest(AccumuloClient client) {
-        this.clientForTest = client;
+    /**
+     * An optional assertion for the total result count
+     */
+    private void assertResultCount() {
+        if (expectedResultCount != -1) {
+            assertEquals(expectedResultCount, results.size());
+        }
     }
 
-    protected String getQuery() {
-        Preconditions.checkNotNull(query, "query is null");
-        return query;
+    /**
+     * An optional assertion for the UUID field
+     */
+    public void assertUuids() {
+        if (expectedUUIDs.isEmpty()) {
+            return;
+        }
+
+        assertFalse("UUIDs are expected but results are empty", results.isEmpty());
+
+        Set<String> found = new HashSet<>();
+        for (Document result : results) {
+            Attribute<?> attr = result.get("UUID");
+            assertNotNull("result did not contain a UUID", attr);
+            String uuid = getUUID(attr);
+            found.add(uuid);
+        }
+
+        Set<String> missing = Sets.difference(expectedUUIDs, found);
+        if (!missing.isEmpty()) {
+            log.info("missing uuids: {}", missing);
+        }
+
+        Set<String> extra = Sets.difference(found, expectedUUIDs);
+        if (!extra.isEmpty()) {
+            log.info("extra uuids: {}", extra);
+        }
+
+        assertEquals(expectedUUIDs, new TreeSet<>(found));
     }
 
-    protected Date getStartDate() throws Exception {
-        assertNotNull(startDate);
-        return format.parse(startDate);
+    public String getUUID(Attribute<?> attribute) {
+        boolean typed = attribute instanceof TypeAttribute;
+        assertTrue("Attribute was not a TypeAttribute, was: " + attribute.getClass(), typed);
+        TypeAttribute<?> uuid = (TypeAttribute<?>) attribute;
+        return uuid.getType().getDelegateAsString();
     }
 
-    protected Date getEndDate() throws Exception {
-        assertNotNull(endDate);
-        return format.parse(endDate);
+    /**
+     * An optional assertion for hit terms
+     */
+    private void assertHitTerms() {
+        if (hitTermAssertions.hitTermExpected()) {
+            assertEquals(hitTermAssertions.hitTermExpected(), !results.isEmpty());
+            if (!results.isEmpty()) {
+                boolean validated = hitTermAssertions.assertHitTerms(results);
+                assertEquals(hitTermAssertions.hitTermExpected(), validated);
+            }
+        }
     }
 }

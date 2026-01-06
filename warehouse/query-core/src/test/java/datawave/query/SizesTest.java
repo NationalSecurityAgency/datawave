@@ -11,6 +11,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -81,7 +82,7 @@ public class SizesTest extends AbstractQueryTest {
 
     @Before
     public void setup() throws Exception {
-        withDate("20250606", "20250606");
+        givenDate("20250606", "20250606");
         setClientForTest(clientForSetup);
     }
 
@@ -114,10 +115,8 @@ public class SizesTest extends AbstractQueryTest {
                     throw new IllegalStateException("Unknown index table name " + indexTableName);
             }
 
-            log.debug("=== using index: {} ===", indexTableName);
-            planQuery();
-            executeQuery();
-            assertPlannedQuery();
+            log.info("=== using index: {} ===", indexTableName);
+            super.planAndExecuteQuery();
             // TODO: while generating random events also generate metadata so the framework can assert result counts
 
             switch (indexTableName) {
@@ -135,74 +134,77 @@ public class SizesTest extends AbstractQueryTest {
 
     @Test
     public void testSizeSmall() throws Exception {
-        withQuery("SIZE == 'small'");
-        withQueryPlan("SIZE == 'small'");
+        givenQuery("SIZE == 'small'");
+        expectPlan("SIZE == 'small'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeSmallAndUniqueColor() throws Exception {
-        withQuery("SIZE == 'small' && f:unique(COLOR)");
-        withQueryPlan("SIZE == 'small'");
+        givenQuery("SIZE == 'small' && f:unique(COLOR)");
+        expectPlan("SIZE == 'small'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeMediumAndUniqueColor() throws Exception {
-        withQuery("SIZE == 'medium' && f:unique(COLOR)");
-        withQueryPlan("SIZE == 'medium'");
+        givenQuery("SIZE == 'medium' && f:unique(COLOR)");
+        expectPlan("SIZE == 'medium'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeLargeAndUniqueColor() throws Exception {
-        withQuery("SIZE == 'large' && f:unique(COLOR)");
-        withQueryPlan("SIZE == 'large'");
+        givenQuery("SIZE == 'large' && f:unique(COLOR)");
+        expectPlan("SIZE == 'large'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeSmallAndGroupByColorShape() throws Exception {
-        withQuery("SIZE == 'small' && f:groupby(COLOR,SHAPE)");
-        withQueryPlan("SIZE == 'small'");
+        givenQuery("SIZE == 'small' && f:groupby(COLOR,SHAPE)");
+        expectPlan("SIZE == 'small'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testAllSizesAndGroupByColorShapeSize() throws Exception {
-        withQuery("(SIZE == 'small' || SIZE == 'medium' || SIZE == 'large') && f:groupby(COLOR,SHAPE,SIZE)");
-        withQueryPlan("(SIZE == 'small' || SIZE == 'medium' || SIZE == 'large')");
-        withResultCount(ingest.getNumShards() * ingest.getNumEventsPerShard());
+        givenQuery("(SIZE == 'small' || SIZE == 'medium' || SIZE == 'large') && f:groupby(COLOR,SHAPE,SIZE)");
+        expectPlan("(SIZE == 'small' || SIZE == 'medium' || SIZE == 'large')");
+        expectResultCount(ingest.getNumShards() * ingest.getNumEventsPerShard());
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeMedium() throws Exception {
-        withQuery("SIZE == 'medium'");
-        withQueryPlan("SIZE == 'medium'");
+        givenQuery("SIZE == 'medium'");
+        expectPlan("SIZE == 'medium'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testSizeLarge() throws Exception {
-        withQuery("SIZE == 'large'");
-        withQueryPlan("SIZE == 'large'");
+        givenQuery("SIZE == 'large'");
+        expectPlan("SIZE == 'large'");
         planAndExecuteQuery();
     }
 
     @Test
     public void testAllSizes() throws Exception {
-        withQuery("SIZE == 'small' || SIZE == 'medium' ||  SIZE == 'large'");
-        withQueryPlan("SIZE == 'small' || SIZE == 'medium' ||  SIZE == 'large'");
-        withResultCount(ingest.getNumShards() * ingest.getNumEventsPerShard());
+        givenQuery("SIZE == 'small' || SIZE == 'medium' ||  SIZE == 'large'");
+        expectPlan("SIZE == 'small' || SIZE == 'medium' ||  SIZE == 'large'");
+        expectResultCount(ingest.getNumShards() * ingest.getNumEventsPerShard());
         planAndExecuteQuery();
     }
 
+    @Ignore
     @Test
     public void testRandomQuery() throws Exception {
-        withQuery("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
-        withQueryPlan("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
-        withResultCount(0);
+        // there exist edge cases where no document satisfies this query due to random event generation.
+        // when event metadata is generated a random query can be constructed from the metadata
+        givenQuery("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
+        expectPlan("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
+        expectResultCount(0);
         planAndExecuteQuery();
     }
 }

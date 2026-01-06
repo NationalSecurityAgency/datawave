@@ -16,8 +16,6 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -45,8 +43,6 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
@@ -131,11 +127,11 @@ public class ColorsTest extends AbstractQueryTest {
         logic.setCardinalityThreshold(0);
 
         // every test also exercises hit terms
-        withParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
 
         // default to full date range
-        withDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
+        givenDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
     }
 
     @Override
@@ -171,16 +167,50 @@ public class ColorsTest extends AbstractQueryTest {
         return count;
     }
 
-    public ColorsTest withExpectedDays(String... days) {
+    public ColorsTest expectDays(String... days) {
         this.expectedDays.addAll(List.of(days));
         return this;
     }
 
-    public ColorsTest withExpectedShards(String day, int numShards) {
+    public ColorsTest expectShards(String day, int numShards) {
         for (int i = 0; i < numShards; i++) {
             this.expectedShards.add(day + "_" + i);
         }
         return this;
+    }
+
+    /**
+     * Extract the row from each event, recording both the day and shard.
+     */
+    public void assertExpectedShardsAndDays() {
+        if (expectedShards.isEmpty() && expectedDays.isEmpty()) {
+            return;
+        }
+
+        if (results.isEmpty()) {
+            fail("expected days or shards but had no results");
+        }
+
+        Set<String> days = new HashSet<>();
+        Set<String> shards = new HashSet<>();
+
+        for (Document result : results) {
+            Attribute<?> attr = result.get("RECORD_ID");
+            Key meta = attr.getMetadata();
+            String row = meta.getRow().toString();
+            String[] parts = row.split("_");
+            days.add(parts[0]);
+            shards.add(row);
+        }
+
+        if (!expectedDays.isEmpty()) {
+            assertEquals(expectedDays, days);
+        }
+
+        if (!expectedShards.isEmpty()) {
+            assertEquals(expectedShards, shards);
+
+        }
     }
 
     /**
@@ -230,138 +260,95 @@ public class ColorsTest extends AbstractQueryTest {
     @Override
     public void planAndExecuteQuery() throws Exception {
         super.planAndExecuteQuery();
-        assertResultCount();
         assertExpectedShardsAndDays();
-    }
-
-    /**
-     * Extract the row from each event, recording both the day and shard.
-     *
-     * @return the test suite
-     */
-    public ColorsTest assertExpectedShardsAndDays() {
-        if (expectedShards.isEmpty() && expectedDays.isEmpty()) {
-            return this;
-        }
-
-        if (results.isEmpty()) {
-            fail("expected days or shards but had no results");
-        }
-
-        Set<String> days = new HashSet<>();
-        Set<String> shards = new HashSet<>();
-
-        for (Document result : results) {
-            Attribute<?> attr = result.get("RECORD_ID");
-            Key meta = attr.getMetadata();
-            String row = meta.getRow().toString();
-            String[] parts = row.split("_");
-            days.add(parts[0]);
-            shards.add(row);
-        }
-
-        if (!expectedDays.isEmpty()) {
-            assertEquals(expectedDays, days);
-        }
-
-        if (!expectedShards.isEmpty()) {
-            assertEquals(expectedShards, shards);
-
-        }
-        return this;
-    }
-
-    public void assertPlannedQuery(String query) {
-        try {
-            ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            ASTJexlScript plannedScript = logic.getConfig().getQueryTree();
-            if (!TreeEqualityVisitor.isEqual(expected, plannedScript)) {
-                log.info("expected: {}", query);
-                log.info("planned : {}", logic.getConfig().getQueryString());
-                fail("Planned query did not match expectation");
-            }
-        } catch (ParseException e) {
-            fail("Failed to parse query: " + query);
-        }
     }
 
     @Test
     public void testColorRed() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withResultCount(getTotalEventCount());
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:red");
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testColorYellow() throws Exception {
-        withQuery("COLOR == 'yellow'");
-        withRequiredAllOf("COLOR:yellow");
-        withResultCount(getTotalEventCount());
+        givenQuery("COLOR == 'yellow'");
+        expectPlan("COLOR == 'yellow'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:yellow");
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testColorBlue() throws Exception {
-        withQuery("COLOR == 'blue'");
-        withRequiredAllOf("COLOR:blue");
-        withResultCount(getTotalEventCount());
+        givenQuery("COLOR == 'blue'");
+        expectPlan("COLOR == 'blue'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:blue");
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testAllColors() throws Exception {
-        withQuery("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
-        withOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
-        withResultCount(3 * getTotalEventCount());
+        givenQuery("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
+        expectPlan("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
+        expectResultCount(3 * getTotalEventCount());
+        expectHitTermsOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtFieldIndex() throws Exception {
-        withQuery("COLOR == 'red' && !(COLOR == 'red')");
-        withResultCount(0);
+        givenQuery("COLOR == 'red' && !(COLOR == 'red')");
+        expectPlan("COLOR == 'red' && !(COLOR == 'red')");
+        expectResultCount(0);
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtEvaluation() throws Exception {
-        withQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
-        withResultCount(0);
+        givenQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
+        expectPlan("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
+        expectResultCount(0);
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testReturnedShardsForEarlierDate() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withDate("20250301", "20250301");
-        withResultCount(ColorsIngest.getNumShards());
-        withExpectedDays("20250301");
-        withExpectedShards("20250301", ColorsIngest.getNumShards());
+        givenDate("20250301", "20250301");
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(ColorsIngest.getNumShards());
+        expectHitTermsRequiredAllOf("COLOR:red");
+        expectDays("20250301");
+        expectShards("20250301", ColorsIngest.getNumShards());
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testReturnedShardsForLaterDate() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withDate("20250331", "20250331");
-        withResultCount(ColorsIngest.getNewShards());
-        withExpectedDays("20250331");
-        withExpectedShards("20250331", ColorsIngest.getNewShards());
+        givenDate("20250331", "20250331");
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(ColorsIngest.getNewShards());
+        expectHitTermsRequiredAllOf("COLOR:red");
+        expectDays("20250331");
+        expectShards("20250331", ColorsIngest.getNewShards());
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testReturnedShardsForQueryThatCrossesBoundary() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withDate("20250326", "20250327");
-        withResultCount(ColorsIngest.getNumShards() + ColorsIngest.getNewShards());
-        withExpectedDays("20250326", "20250327");
-        withExpectedShards("20250326", ColorsIngest.getNumShards());
-        withExpectedShards("20250327", ColorsIngest.getNewShards());
+        givenDate("20250326", "20250327");
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(ColorsIngest.getNumShards() + ColorsIngest.getNewShards());
+        expectHitTermsRequiredAllOf("COLOR:red");
+        expectDays("20250326", "20250327");
+        expectShards("20250326", ColorsIngest.getNumShards());
+        expectShards("20250327", ColorsIngest.getNewShards());
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
