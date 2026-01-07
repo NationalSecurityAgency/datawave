@@ -1,6 +1,7 @@
 package datawave.query.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -74,8 +75,12 @@ public abstract class AbstractQueryTest {
     private String endDate;
 
     protected final Map<String,String> parameters = new HashMap<>();
-    private final Set<String> expected = new HashSet<>();
-    private final Set<Document> results = new HashSet<>();
+    protected final Set<String> expected = new HashSet<>();
+    protected final Set<Document> results = new HashSet<>();
+
+    // additional variables for declarative assertions
+    protected String plannedQuery = null;
+    protected int expectedResultCount = -1;
 
     public abstract ShardQueryLogic getLogic();
 
@@ -87,39 +92,102 @@ public abstract class AbstractQueryTest {
         parameters.clear();
         expected.clear();
         results.clear();
+        plannedQuery = null;
+        expectedResultCount = -1;
+        hitTermAssertions.resetState();
     }
 
+    /**
+     * Set the query string
+     *
+     * @param query
+     *            the query string
+     */
     public void withQuery(String query) {
         this.query = query;
     }
 
+    /**
+     * Set the query start and end date
+     *
+     * @param date
+     *            the date
+     */
     public void withDate(String date) {
         withDate(date, date);
     }
 
+    /**
+     * Set the query start and end date
+     *
+     * @param startDate
+     *            the start date
+     * @param endDate
+     *            the end date
+     */
     public void withDate(String startDate, String endDate) {
         this.startDate = startDate;
         this.endDate = endDate;
     }
 
     /**
-     * Required hit terms must exist in every result, for example an anchor term
+     * Add the provided key value pair to the query parameter map
+     *
+     * @param key
+     *            the key
+     * @param value
+     *            the value
+     */
+    public void withParameter(String key, String value) {
+        parameters.put(key, value);
+    }
+
+    /**
+     * Add a collection of hit terms to the set of required hit terms, evaluated as 'all of'
      *
      * @param hitTerms
-     *            one or more hit terms
+     *            a collection of hit terms
      */
     public void withRequiredAllOf(String... hitTerms) {
         hitTermAssertions.withRequiredAllOf(hitTerms);
     }
 
     /**
-     * Required hit terms must exist in every result, for example an anchor term
+     * Add a collection of hit terms to the set of required hit terms, evaluated as 'any of'
      *
      * @param hitTerms
-     *            one or more hit terms
+     *            a collection of hit terms
      */
     public void withRequiredAnyOf(String... hitTerms) {
         hitTermAssertions.withRequiredAnyOf(hitTerms);
+    }
+
+    /**
+     * Add a collection of hits to the list of optional hit terms, evaluated as 'all of'
+     *
+     * @param hitTerms
+     *            a collection of hit terms
+     */
+    public void withOptionalAllOf(String... hitTerms) {
+        hitTermAssertions.withOptionalAllOf(hitTerms);
+    }
+
+    /**
+     * Add a collection of hits to the list of optional hit terms, evaluated as 'any of'
+     *
+     * @param hitTerms
+     *            a collection of hit terms
+     */
+    public void withOptionalAnyOf(String... hitTerms) {
+        hitTermAssertions.withOptionalAnyOf(hitTerms);
+    }
+
+    public void withQueryPlan(String queryPlan) {
+        this.plannedQuery = queryPlan;
+    }
+
+    public void withResultCount(int expectedResultCount) {
+        this.expectedResultCount = expectedResultCount;
     }
 
     public void planAndExecuteQuery() throws Exception {
@@ -160,7 +228,12 @@ public abstract class AbstractQueryTest {
         log.info("query retrieved {} results", results.size());
     }
 
+    public void assertResultCount() {
+        assertResultCount(expectedResultCount);
+    }
+
     public void assertResultCount(int expected) {
+        assertNotEquals("Expected result count not set", -1, expected);
         assertEquals(expected, results.size());
     }
 
@@ -170,7 +243,11 @@ public abstract class AbstractQueryTest {
             boolean validated = hitTermAssertions.assertHitTerms(results);
             assertEquals(hitTermAssertions.hitTermExpected(), validated);
         }
-        hitTermAssertions.resetState();
+    }
+
+    public void assertPlannedQuery() {
+        assertNotNull("Expected query plan not set", plannedQuery);
+        assertPlannedQuery(plannedQuery);
     }
 
     public void assertPlannedQuery(String query) {

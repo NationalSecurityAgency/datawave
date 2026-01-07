@@ -67,12 +67,14 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.ShapesIngest;
+import datawave.query.util.TestIndexTableNames;
 import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -86,7 +88,8 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  * {@link IteratorChain} in a way that is incompatible with Accumulo's {@link SeekingFilter}. Namely, during a rebuild on a next call the ScannerHelper's call
  * to 'ChainIterator.next' will swap in a whole new seeking filter in a way that causes the call to 'range.clip' on SeekingFilter#222 to return null.
  */
-public abstract class ShapesTest {
+@RunWith(Arquillian.class)
+public class ShapesTest {
 
     private static final Logger log = LoggerFactory.getLogger(ShapesTest.class);
     protected Authorizations auths = new Authorizations("ALL");
@@ -102,6 +105,7 @@ public abstract class ShapesTest {
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
+
     protected KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     private AccumuloClient clientForTest;
@@ -130,72 +134,31 @@ public abstract class ShapesTest {
 
     private final Set<String> allTypes = Sets.newHashSet("triangle", "quadrilateral", "pentagon", "hexagon", "octagon");
 
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends ShapesTest {
+    protected static AccumuloClient client = null;
 
-        protected static AccumuloClient client = null;
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-        @BeforeClass
-        public static void setUp() throws Exception {
-            MiniAccumuloConfig cfg = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
-            cfg.setNumTservers(1);
-            mac = new MiniAccumuloCluster(cfg);
-            mac.start();
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        MiniAccumuloConfig cfg = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
+        cfg.setNumTservers(1);
+        mac = new MiniAccumuloCluster(cfg);
+        mac.start();
 
-            client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
-            ShapesIngest.writeData(client, ShapesIngest.RangeType.SHARD);
+        client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
+        ShapesIngest.writeData(client, ShapesIngest.RangeType.SHARD);
 
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
+        Authorizations auths = new Authorizations("ALL");
+        ingestUtil.write(client, auths);
 
-        @Before
-        public void beforeEach() throws IOException {
-            super.beforeEach();
-            setClientForTest(client);
-            logic.setCollapseUids(true);
-        }
-
-        @AfterClass
-        public static void tearDown() throws Exception {
-            mac.stop();
-        }
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends ShapesTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            MiniAccumuloConfig cfg = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
-            cfg.setNumTservers(1);
-
-            mac = new MiniAccumuloCluster(cfg);
-            mac.start();
-
-            client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
-            ShapesIngest.writeData(client, ShapesIngest.RangeType.DOCUMENT);
-
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void beforeEach() throws IOException {
-            super.beforeEach();
-            setClientForTest(client);
-            logic.setCollapseUids(false);
-        }
-
-        @AfterClass
-        public static void tearDown() throws Exception {
-            mac.stop();
-        }
+    @AfterClass
+    public static void tearDown() throws Exception {
+        mac.stop();
     }
 
     @Deployment
@@ -218,6 +181,8 @@ public abstract class ShapesTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         resetState();
 
+        setClientForTest(client);
+
         URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
         Preconditions.checkNotNull(hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
@@ -234,6 +199,8 @@ public abstract class ShapesTest {
         // every test also exercises hit terms
         withParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
+
+        logic.setCollapseUids(false); // index table will either have uids or not
     }
 
     @After
@@ -331,10 +298,40 @@ public abstract class ShapesTest {
     }
 
     public ShapesTest planAndExecuteQuery() throws Exception {
-        planQuery();
-        executeQuery();
-        assertUuids();
-        assertHitTerms();
+        for (String indexTableName : TestIndexTableNames.names()) {
+            log.debug("=== using index: {} ===", indexTableName);
+            logic.setIndexTableName(indexTableName);
+
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    logic.setUseTruncatedIndex(true);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
+            }
+
+            // the backing config is stateful, have to reset the datatype filter
+            logic.getConfig().setDatatypeFilter(Collections.emptySet());
+
+            planQuery();
+            executeQuery();
+            assertUuids();
+            assertHitTerms();
+
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    logic.setUseTruncatedIndex(false);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
+            }
+        }
         return this;
     }
 
