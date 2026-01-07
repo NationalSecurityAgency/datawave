@@ -55,10 +55,6 @@ public abstract class AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractQueryTest.class);
 
-    public enum RangeType {
-        DOCUMENT, SHARD
-    }
-
     protected static Authorizations auths = new Authorizations("ALL");
     protected static Set<Authorizations> authSet = Collections.singleton(auths);
 
@@ -67,7 +63,7 @@ public abstract class AbstractQueryTest {
 
     protected final HitTermAssertions hitTermAssertions = new HitTermAssertions();
 
-    protected AccumuloClient clientForTest;
+    private AccumuloClient clientForTest;
 
     // variables that support declarative style tests
     private String query;
@@ -75,12 +71,12 @@ public abstract class AbstractQueryTest {
     private String endDate;
 
     protected final Map<String,String> parameters = new HashMap<>();
-    private final Set<String> expected = new HashSet<>();
-    private final Set<Document> results = new HashSet<>();
+    protected final Set<String> expected = new HashSet<>();
+    protected final Set<Document> results = new HashSet<>();
 
     // additional variables for declarative assertions
-    private String plannedQuery = null;
-    private int expectedResultCount = -1;
+    protected String plannedQuery = null;
+    protected int expectedResultCount = -1;
 
     public abstract ShardQueryLogic getLogic();
 
@@ -94,39 +90,92 @@ public abstract class AbstractQueryTest {
         results.clear();
         plannedQuery = null;
         expectedResultCount = -1;
+        hitTermAssertions.resetState();
     }
 
+    /**
+     * Set the query string
+     *
+     * @param query
+     *            the query string
+     */
     public void withQuery(String query) {
         this.query = query;
     }
 
+    /**
+     * Set the query start and end date
+     *
+     * @param date
+     *            the date
+     */
     public void withDate(String date) {
         withDate(date, date);
     }
 
+    /**
+     * Set the query start and end date
+     *
+     * @param startDate
+     *            the start date
+     * @param endDate
+     *            the end date
+     */
     public void withDate(String startDate, String endDate) {
         this.startDate = startDate;
         this.endDate = endDate;
     }
 
     /**
-     * Required hit terms must exist in every result, for example an anchor term
+     * Add the provided key value pair to the query parameter map
+     *
+     * @param key
+     *            the key
+     * @param value
+     *            the value
+     */
+    public void withParameter(String key, String value) {
+        parameters.put(key, value);
+    }
+
+    /**
+     * Add a collection of hit terms to the set of required hit terms, evaluated as 'all of'
      *
      * @param hitTerms
-     *            one or more hit terms
+     *            a collection of hit terms
      */
     public void withRequiredAllOf(String... hitTerms) {
         hitTermAssertions.withRequiredAllOf(hitTerms);
     }
 
     /**
-     * Required hit terms must exist in every result, for example an anchor term
+     * Add a collection of hit terms to the set of required hit terms, evaluated as 'any of'
      *
      * @param hitTerms
-     *            one or more hit terms
+     *            a collection of hit terms
      */
     public void withRequiredAnyOf(String... hitTerms) {
         hitTermAssertions.withRequiredAnyOf(hitTerms);
+    }
+
+    /**
+     * Add a collection of hits to the list of optional hit terms, evaluated as 'all of'
+     *
+     * @param hitTerms
+     *            a collection of hit terms
+     */
+    public void withOptionalAllOf(String... hitTerms) {
+        hitTermAssertions.withOptionalAllOf(hitTerms);
+    }
+
+    /**
+     * Add a collection of hits to the list of optional hit terms, evaluated as 'any of'
+     *
+     * @param hitTerms
+     *            a collection of hit terms
+     */
+    public void withOptionalAnyOf(String... hitTerms) {
+        hitTermAssertions.withOptionalAnyOf(hitTerms);
     }
 
     public void withQueryPlan(String queryPlan) {
@@ -190,7 +239,6 @@ public abstract class AbstractQueryTest {
             boolean validated = hitTermAssertions.assertHitTerms(results);
             assertEquals(hitTermAssertions.hitTermExpected(), validated);
         }
-        hitTermAssertions.resetState();
     }
 
     public void assertPlannedQuery() {
