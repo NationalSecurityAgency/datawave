@@ -3,8 +3,8 @@ package datawave.query.transformer.annotation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.annotation.protobuf.v1.SegmentValue;
 
@@ -16,7 +16,7 @@ public class SegmentValueByScoreComparatorTest {
     private static final SegmentValue A_0_5 = SegmentValue.newBuilder().setValue("a").setScore(0.5f).build();
     private static final SegmentValue C_0_5 = SegmentValue.newBuilder().setValue("c").setScore(0.5f).build();
 
-    @Before
+    @BeforeEach
     public void setup() {
         comparator = new SegmentValueByScoreComparator();
     }

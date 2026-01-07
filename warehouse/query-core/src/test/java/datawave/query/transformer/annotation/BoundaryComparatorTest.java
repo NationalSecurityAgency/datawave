@@ -2,8 +2,8 @@ package datawave.query.transformer.annotation;
 
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
@@ -18,7 +18,7 @@ public class BoundaryComparatorTest {
     private static final SegmentBoundary TIME_MILLI_2_3 = SegmentBoundary.newBuilder().setBoundaryType(BoundaryType.TIME_MILLI).setStart(2).setEnd(3).build();
     private static final SegmentBoundary TIME_MILLI_2_4 = SegmentBoundary.newBuilder().setBoundaryType(BoundaryType.TIME_MILLI).setStart(2).setEnd(4).build();
 
-    @Before
+    @BeforeEach
     public void setup() {
         comparator = new BoundaryComparator();
     }
