@@ -787,7 +787,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
             throw new UnsupportedOperationException("Iterator.remove() not supported on a persisted map.");
         }
 
-        protected void close() throws Throwable {
+        public void close() throws Throwable {
             cleanup();
         }
     }
