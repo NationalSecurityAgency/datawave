@@ -47,7 +47,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
-import datawave.query.util.TestIndexTableNames;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
@@ -213,53 +212,13 @@ public class ColorsTest extends AbstractQueryTest {
         }
     }
 
-    /**
-     * Supports running the same query against multiple types of index tables
-     *
-     * @return this class
-     * @throws Exception
-     *             if something goes wrong
-     */
-    public ColorsTest planAndExecuteQueryAgainstMultipleIndices() throws Exception {
-        for (String indexTableName : TestIndexTableNames.names()) {
-            logic.setIndexTableName(indexTableName);
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(true);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
-
-            log.debug("=== using index: {} ===", indexTableName);
-            planAndExecuteQuery();
-
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(false);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
-        }
-        return this;
+    @Override
+    protected void extraConfigurations() {
+        // no-op
     }
 
-    /**
-     * Delegate to super method to plan and execute the query and assert the hit terms
-     *
-     * @throws Exception
-     *             if something goes wrong
-     */
     @Override
-    public void planAndExecuteQuery() throws Exception {
-        super.planAndExecuteQuery();
+    protected void extraAssertions() {
         assertExpectedShardsAndDays();
     }
 
@@ -269,7 +228,7 @@ public class ColorsTest extends AbstractQueryTest {
         expectPlan("COLOR == 'red'");
         expectResultCount(getTotalEventCount());
         expectHitTermsRequiredAllOf("COLOR:red");
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -278,7 +237,7 @@ public class ColorsTest extends AbstractQueryTest {
         expectPlan("COLOR == 'yellow'");
         expectResultCount(getTotalEventCount());
         expectHitTermsRequiredAllOf("COLOR:yellow");
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -287,7 +246,7 @@ public class ColorsTest extends AbstractQueryTest {
         expectPlan("COLOR == 'blue'");
         expectResultCount(getTotalEventCount());
         expectHitTermsRequiredAllOf("COLOR:blue");
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -296,7 +255,7 @@ public class ColorsTest extends AbstractQueryTest {
         expectPlan("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
         expectResultCount(3 * getTotalEventCount());
         expectHitTermsOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -304,7 +263,7 @@ public class ColorsTest extends AbstractQueryTest {
         givenQuery("COLOR == 'red' && !(COLOR == 'red')");
         expectPlan("COLOR == 'red' && !(COLOR == 'red')");
         expectResultCount(0);
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -312,7 +271,7 @@ public class ColorsTest extends AbstractQueryTest {
         givenQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
         expectPlan("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
         expectResultCount(0);
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -324,7 +283,7 @@ public class ColorsTest extends AbstractQueryTest {
         expectHitTermsRequiredAllOf("COLOR:red");
         expectDays("20250301");
         expectShards("20250301", ColorsIngest.getNumShards());
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -336,7 +295,7 @@ public class ColorsTest extends AbstractQueryTest {
         expectHitTermsRequiredAllOf("COLOR:red");
         expectDays("20250331");
         expectShards("20250331", ColorsIngest.getNewShards());
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -349,7 +308,7 @@ public class ColorsTest extends AbstractQueryTest {
         expectDays("20250326", "20250327");
         expectShards("20250326", ColorsIngest.getNumShards());
         expectShards("20250327", ColorsIngest.getNewShards());
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     // TODO: unique

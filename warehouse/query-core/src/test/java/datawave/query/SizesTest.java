@@ -26,8 +26,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.SizesIngest;
-import datawave.query.util.TestIndexTableNames;
-import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
@@ -91,45 +89,14 @@ public class SizesTest extends AbstractQueryTest {
         TypeRegistry.reset();
     }
 
-    /**
-     * Plans and executes a query against multiple versions of a shard index
-     *
-     * @throws Exception
-     *             if something goes wrong
-     */
     @Override
-    public void planAndExecuteQuery() throws Exception {
-        for (String indexTableName : TestIndexTableNames.names()) {
-            logic.setIndexTableName(indexTableName);
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                    logic.setIndexTableName(TableName.SHARD_INDEX);
-                    break;
-                case TestIndexTableNames.NO_UID_INDEX:
-                    logic.setIndexTableName(TestIndexTableNames.NO_UID_INDEX);
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(true);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
+    protected void extraConfigurations() {
+        // no-op
+    }
 
-            log.info("=== using index: {} ===", indexTableName);
-            super.planAndExecuteQuery();
-            // TODO: while generating random events also generate metadata so the framework can assert result counts
-
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(false);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
-        }
+    @Override
+    protected void extraAssertions() {
+        // no-op
     }
 
     @Test

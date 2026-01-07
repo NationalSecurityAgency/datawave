@@ -92,40 +92,14 @@ public class MultiNormalizerTest extends AbstractQueryTest {
         TypeRegistry.reset();
     }
 
-    /**
-     * Supports running the same query against multiple types of index tables
-     *
-     * @throws Exception
-     *             if something goes wrong
-     */
-    public void planAndExecuteQueryAgainstMultipleIndices() throws Exception {
-        for (String indexTableName : TestIndexTableNames.names()) {
-            logic.setIndexTableName(indexTableName);
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(true);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
+    @Override
+    protected void extraConfigurations() {
+        // no-op
+    }
 
-            log.debug("=== using index: {} ===", indexTableName);
-            planAndExecuteQuery();
-
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(false);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
-        }
+    @Override
+    protected void extraAssertions() {
+        // no-op
     }
 
     @Test
@@ -134,84 +108,84 @@ public class MultiNormalizerTest extends AbstractQueryTest {
         expectPlan("COLOR == 'red'");
         expectHitTermsRequiredAllOf("COLOR:red");
         expectResultCount(20);
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testSizeOne() throws Exception {
+        givenDate("20250707");
         givenQuery("SIZE == '1'");
         expectPlan("SIZE == '+aE1' || SIZE == '1'");
-        givenDate("20250707");
-        expectHitTermsRequiredAllOf("SIZE:1");
         expectResultCount(1);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAllOf("SIZE:1");
+        planAndExecuteQuery();
 
-        expectPlan("SIZE == '+aE1' || SIZE == '1'");
         givenDate("20250708");
-        expectHitTermsRequiredAllOf("SIZE:1");
-        expectResultCount(1);
-        planAndExecuteQueryAgainstMultipleIndices();
-
         expectPlan("SIZE == '+aE1' || SIZE == '1'");
-        givenDate("20250707", "20250708");
+        expectResultCount(1);
         expectHitTermsRequiredAllOf("SIZE:1");
+        planAndExecuteQuery();
+
+        givenDate("20250707", "20250708");
+        expectPlan("SIZE == '+aE1' || SIZE == '1'");
         expectResultCount(2);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAllOf("SIZE:1");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testColorRedSizeSix() throws Exception {
+        givenDate("20250707");
         givenQuery("COLOR == 'red' && SIZE == '6'");
         expectPlan("COLOR == 'red' && (SIZE == '+aE6' || SIZE == '6')");
-        givenDate("20250707");
-        expectHitTermsRequiredAllOf("COLOR:red", "SIZE:6");
         expectResultCount(1);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAllOf("COLOR:red", "SIZE:6");
+        planAndExecuteQuery();
 
-        expectPlan("COLOR == 'red' && (SIZE == '+aE6' || SIZE == '6')");
         givenDate("20250708");
-        expectHitTermsRequiredAllOf("COLOR:red", "SIZE:6");
-        expectResultCount(1);
-        planAndExecuteQueryAgainstMultipleIndices();
-
         expectPlan("COLOR == 'red' && (SIZE == '+aE6' || SIZE == '6')");
-        givenDate("20250707", "20250708");
+        expectResultCount(1);
         expectHitTermsRequiredAllOf("COLOR:red", "SIZE:6");
+        planAndExecuteQuery();
+
+        givenDate("20250707", "20250708");
+        expectPlan("COLOR == 'red' && (SIZE == '+aE6' || SIZE == '6')");
         expectResultCount(2);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAllOf("COLOR:red", "SIZE:6");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testRangeSizeOneToTwo_firstDay() throws Exception {
         // range with text normalizer expands into value "10", while technically correct this is wrong for numeric data
+        givenDate("20250707");
         givenQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         expectPlan("(SIZE == '1' || SIZE == '10' || SIZE == '2')");
-        givenDate("20250707");
-        expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
         expectResultCount(3);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testRangeSizeOneToTwo_lastDay() throws Exception {
         // range with numeric normalizer does not expand into "10". This is more correct.
+        givenDate("20250708");
         givenQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         expectPlan("(SIZE == '+aE1' || SIZE == '+aE2')");
-        givenDate("20250708");
-        expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:2");
         expectResultCount(2);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:2");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testRangeSizeOneToTwo_bothDays() throws Exception {
         // range with both normalizers applied will expand into all values above, including the incorrect value "10"
+        givenDate("20250707", "20250708");
         givenQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
         expectPlan("(SIZE == '+aE1' || SIZE == '+aE2' || SIZE == '1' || SIZE == '10' || SIZE == '2')");
-        givenDate("20250707", "20250708");
-        expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
         expectResultCount(5);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
+        planAndExecuteQuery();
     }
 
     @Test
@@ -221,27 +195,27 @@ public class MultiNormalizerTest extends AbstractQueryTest {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(true);
 
             // range with text normalizer will incorrectly return result [SIZE:10]
+            givenDate("20250707");
             givenQuery("((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2'))");
             expectPlan("(((_Bounded_ = true) && (SIZE >= '+aE1' && SIZE <= '+aE2')) || ((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2')))");
-            givenDate("20250707");
-            expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
             expectResultCount(3);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
+            planAndExecuteQuery();
 
             // because both ranges are pushed down to shard 20250708 and all normalized forms are applied at evaluation,
             // the text range will return the result with SIZE:10. While technically correct this was not the intent.
-            expectPlan("(((_Bounded_ = true) && (SIZE >= '+aE1' && SIZE <= '+aE2')) || ((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2')))");
             givenDate("20250708");
-            expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
+            expectPlan("(((_Bounded_ = true) && (SIZE >= '+aE1' && SIZE <= '+aE2')) || ((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2')))");
             expectResultCount(3);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
+            planAndExecuteQuery();
 
             // for reasons stated above this query returns result SIZE:10 from both shards
-            expectPlan("(((_Bounded_ = true) && (SIZE >= '+aE1' && SIZE <= '+aE2')) || ((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2')))");
             givenDate("20250707", "20250708");
-            expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
+            expectPlan("(((_Bounded_ = true) && (SIZE >= '+aE1' && SIZE <= '+aE2')) || ((_Bounded_ = true) && (SIZE >= '1' && SIZE <= '2')))");
             expectResultCount(6);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("SIZE:1", "SIZE:10", "SIZE:2");
+            planAndExecuteQuery();
         } finally {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(false);
         }
@@ -251,23 +225,23 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     public void testRangeSizeFourToTen() throws Exception {
         // range with text normalizer is not valid and thus finds zero hits
         givenQuery("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
-        expectPlan("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
         givenDate("20250707");
+        expectPlan("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
         expectResultCount(0);
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
 
         // range with numeric normalizer will find hits in the shard index and expand into discrete values
-        expectPlan("(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
         givenDate("20250708");
-        expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-        expectResultCount(7);
-        planAndExecuteQueryAgainstMultipleIndices();
-
         expectPlan("(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
-        givenDate("20250707", "20250708");
-        expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
         expectResultCount(7);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+        planAndExecuteQuery();
+
+        givenDate("20250707", "20250708");
+        expectPlan("(SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
+        expectResultCount(7);
+        expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+        planAndExecuteQuery();
     }
 
     @Test(expected = DatawaveQueryException.class)
@@ -278,26 +252,26 @@ public class MultiNormalizerTest extends AbstractQueryTest {
 
             // numeric range still matches against numeric data that has a text normalizer
             // withQuery("((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))"); // expected when validating bounded ranges
+            givenDate("20250707");
             givenQuery("(((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1')) || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
             expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
-            givenDate("20250707");
-            expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
             expectResultCount(7);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            planAndExecuteQuery();
 
             // numeric range matches against numeric data with number normalizer
-            expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             givenDate("20250708");
-            expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(7);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            planAndExecuteQuery();
 
             // numeric range matches against numeric data with either a text or number normalizer
-            expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             givenDate("20250707", "20250708");
-            expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(14);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            planAndExecuteQuery();
         } finally {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(false);
         }
@@ -306,24 +280,24 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     @Test
     public void testRangeSizeFourToTenWithAnchor() throws Exception {
         // range with text normalizer will not find any hits
+        givenDate("20250707");
         givenQuery("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
         expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))");
-        givenDate("20250707");
         expectResultCount(0);
-        planAndExecuteQueryAgainstMultipleIndices();
+        planAndExecuteQuery();
 
         // range with numeric normalizer finds expected hits
-        expectPlan("COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
         givenDate("20250708");
-        expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-        expectResultCount(7);
-        planAndExecuteQueryAgainstMultipleIndices();
-
         expectPlan("COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
-        givenDate("20250707", "20250708");
-        expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
         expectResultCount(7);
-        planAndExecuteQueryAgainstMultipleIndices();
+        expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+        planAndExecuteQuery();
+
+        givenDate("20250707", "20250708");
+        expectPlan("COLOR == 'red' && (SIZE == '+aE4' || SIZE == '+aE5' || SIZE == '+aE6' || SIZE == '+aE7' || SIZE == '+aE8' || SIZE == '+aE9' || SIZE == '+bE1' || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
+        expectResultCount(7);
+        expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+        planAndExecuteQuery();
     }
 
     @Test(expected = DatawaveQueryException.class)
@@ -335,26 +309,26 @@ public class MultiNormalizerTest extends AbstractQueryTest {
             // range with text normalizer would ordinarily not find any hits but anchor term nominates candidates. At
             // evaluation multiple normalizers are applied, thus text number can match the numeric range
             // withQuery("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10'))"); // expected when validating bounded ranges
+            givenDate("20250707");
             givenQuery("COLOR == 'red' && (((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1')) || ((_Bounded_ = true) && (SIZE >= '4' && SIZE <= '10')))");
             expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
-            givenDate("20250707");
-            expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
             expectResultCount(7);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            planAndExecuteQuery();
 
             // range with numeric normalizer finds expected hits
-            expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             givenDate("20250708");
-            expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(7);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            planAndExecuteQuery();
 
             // anchor term plus multi-normalization at evaluation time allows all valid hits to be found
-            expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             givenDate("20250707", "20250708");
-            expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(14);
-            planAndExecuteQueryAgainstMultipleIndices();
+            expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
+            planAndExecuteQuery();
         } finally {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(false);
         }

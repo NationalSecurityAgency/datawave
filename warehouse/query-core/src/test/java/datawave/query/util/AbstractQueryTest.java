@@ -38,6 +38,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
@@ -73,6 +74,9 @@ import datawave.test.HitTermAssertions;
  * <p>
  * Additionally if a test is going to use {@link #givenParameter(String, String)} repeatedly for a one or more parameters it may be helped to wrap the method
  * call like <code>withDatatypeFilter</code>
+ * <p>
+ * This utility also provides native support for iteratively running the same query against multiple versions of the shard index table, as defined by
+ * {@link TestIndexTableNames#names()}. Extending classes must use the {@link IndexIngestUtil} to populate the extra tables with data.
  */
 public abstract class AbstractQueryTest {
 
@@ -262,18 +266,56 @@ public abstract class AbstractQueryTest {
     }
 
     /**
-     * A core method that plans and executes the query
+     * A core method that will execute the query against every supported type of index table, as defined in {@link TestIndexTableNames#names()}.
      *
      * @throws Exception
      *             if something goes wrong
      */
     public void planAndExecuteQuery() throws Exception {
+        for (String indexTableName : TestIndexTableNames.names()) {
+            log.debug("=== using index: {} ===", indexTableName);
+            getLogic().setIndexTableName(indexTableName);
+
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    getLogic().setUseTruncatedIndex(true);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
+            }
+
+            planAndExecuteIndividualQuery();
+
+            switch (indexTableName) {
+                case TestIndexTableNames.SHARD_INDEX:
+                case TestIndexTableNames.NO_UID_INDEX:
+                    break;
+                case TestIndexTableNames.TRUNCATED_INDEX:
+                    getLogic().setUseTruncatedIndex(false);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
+            }
+        }
+    }
+
+    /**
+     * A core method that plans and executes the query
+     *
+     * @throws Exception
+     *             if something goes wrong
+     */
+    private void planAndExecuteIndividualQuery() throws Exception {
         planQuery();
         executeQuery();
         assertQueryPlan();
         assertResultCount();
         assertUuids();
         assertHitTerms();
+        extraAssertions();
     }
 
     /**
@@ -296,6 +338,8 @@ public abstract class AbstractQueryTest {
             getLogic().setMaxEvaluationPipelines(1);
             getLogic().setHitList(true); // always ask for HIT_TERMs
 
+            extraConfigurations();
+
             GenericQueryConfiguration config = getLogic().initialize(clientForTest, settings, authSet);
             getLogic().setupQuery(config);
         } catch (Exception e) {
@@ -303,6 +347,11 @@ public abstract class AbstractQueryTest {
             throw e;
         }
     }
+
+    /**
+     * Extending classes may wish to perform additional 'just in time' configuration
+     */
+    protected abstract void extraConfigurations();
 
     /**
      * Iterate through the query and add all deserialized results to the set of result documents.
@@ -394,4 +443,9 @@ public abstract class AbstractQueryTest {
             }
         }
     }
+
+    /**
+     * Extending classes may insert additional assertions here.
+     */
+    protected abstract void extraAssertions();
 }

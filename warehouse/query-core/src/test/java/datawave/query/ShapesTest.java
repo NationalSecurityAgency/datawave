@@ -9,7 +9,9 @@ import static org.junit.Assert.assertThrows;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -58,7 +60,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ShapesIngest;
-import datawave.query.util.TestIndexTableNames;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
@@ -109,6 +110,8 @@ public class ShapesTest extends AbstractQueryTest {
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     private Set<String> expectedDatatypeFilter = null;
+    private final Map<String, Class<?>> expectedNormalizers = new HashMap<>();
+    private final Set<String> excludedFields = new HashSet<>();
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -190,6 +193,8 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setPruneQueryByIngestTypes(false);
         }
         expectedDatatypeFilter = null;
+        expectedNormalizers.clear();
+        excludedFields.clear();
     }
 
     @AfterClass
@@ -208,6 +213,22 @@ public class ShapesTest extends AbstractQueryTest {
     }
 
     /**
+     * Wrapper around {@link #givenParameter(String, String)} when using {@link QueryParameters#RETURN_FIELDS}
+     * @param includes the set of fields to include
+     */
+    public void givenIncludeFields(Set<String> includes) {
+        givenParameter(QueryParameters.RETURN_FIELDS, Joiner.on(',').join(includes));
+    }
+
+    /**
+     * Wrapper around {@link #givenParameter(String, String)} when using {@link QueryParameters#DISALLOWLISTED_FIELDS}
+     * @param excludes the set of fields to exclude
+     */
+    public void givenExcludeFields(Set<String> excludes) {
+        givenParameter(QueryParameters.DISALLOWLISTED_FIELDS, Joiner.on(',').join(excludes));
+    }
+
+    /**
      * Set the expected datatype filter.
      *
      * @param filter
@@ -221,50 +242,69 @@ public class ShapesTest extends AbstractQueryTest {
     }
 
     /**
+     * Set the expected field-normalizer pair
+     * @param field the field
+     * @param clazz the normalizer
+     */
+    public void expectAttributeNormalizer(String field, Class<?> clazz){
+        expectedNormalizers.put(field, clazz);
+    }
+
+    public void expect(){}
+
+    /**
+     * For this test we must reset the datatype filter each time
+     */
+    @Override
+    protected void extraConfigurations() {
+        // the backing config is stateful, have to reset the datatype filter
+        getLogic().getConfig().setDatatypeFilter(Collections.emptySet());
+    }
+
+    /**
+     * Assert the final datatype filter, if configured
+     */
+    @Override
+    protected void extraAssertions() {
+        assertDatatypeFilter();
+        assertAttributeNormalizer();
+    }
+
+    /**
      * Assert the final datatype filter against the expectation, if an expectation was set
      */
     public void assertDatatypeFilter() {
         if (expectedDatatypeFilter == null) {
             return;
         }
+
         assertNotNull(logic);
         assertNotNull(logic.getConfig());
         assertEquals(expectedDatatypeFilter, logic.getConfig().getDatatypeFilter());
     }
 
-    public void planAndExecuteQuery() throws Exception {
-        for (String indexTableName : TestIndexTableNames.names()) {
-            log.debug("=== using index: {} ===", indexTableName);
-            logic.setIndexTableName(indexTableName);
+    public void assertAttributeNormalizer() {
+        if (expectedNormalizers.isEmpty()) {
+            return;
+        }
 
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(true);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
+        for (Document result : results) {
+            for (String field : expectedNormalizers.keySet()) {
+                Class<?> expectedNormalizer = expectedNormalizers.get(field);
+                Attribute<?> attrs = result.get(field);
+                if (attrs instanceof TypeAttribute<?>) {
+                    TypeAttribute<?> attr = (TypeAttribute<?>) attrs;
+                    assertSame(expectedNormalizer, attr.getType().getClass());
+                }
             }
+        }
+    }
 
-            // the backing config is stateful, have to reset the datatype filter
-            logic.getConfig().setDatatypeFilter(Collections.emptySet());
-
-            // plan, execute, assert hit terms
-            super.planAndExecuteQuery();
-            assertDatatypeFilter();
-
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(false);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
-            }
+    // TODO: pull this into class level variable
+    private void assertFieldNotFound(String field) {
+        for (Document result : results) {
+            Attribute<?> attrs = result.get(field);
+            assertNull("Expected null value for field " + field, attrs);
         }
     }
 
@@ -352,8 +392,8 @@ public class ShapesTest extends AbstractQueryTest {
     @Test
     public void testTrianglesAndQuadrilateralsCorrectFilter() throws Exception {
         givenQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
-        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
         givenDatatypeFilter("triangle,quadrilateral");
+        expectPlan("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
         expectUUIDs(createSet(triangleUids, quadrilateralUids));
         expectHitTermsRequiredAnyOf("SHAPE:triangle", "SHAPE:quadrilateral");
         planAndExecuteQuery();
@@ -665,8 +705,8 @@ public class ShapesTest extends AbstractQueryTest {
     @Test
     public void testFinalDatatypeFilterFromParameters() throws Exception {
         givenQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
         givenDatatypeFilter("pentagon,hexagon,octagon");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
         expectUUIDs(otherUids);
         expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         expectDatatypeFilter(Set.of("pentagon", "hexagon", "octagon"));
@@ -702,8 +742,8 @@ public class ShapesTest extends AbstractQueryTest {
         // SHAPE is common to five datatypes, only three specified in parameter. Reducing does not change the filter.
         logic.setReduceIngestTypes(true);
         givenQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
         givenDatatypeFilter("pentagon,hexagon,octagon");
+        expectPlan("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
         expectUUIDs(otherUids);
         expectHitTermsRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         expectDatatypeFilter(Set.of("pentagon", "hexagon", "octagon"));
@@ -915,7 +955,6 @@ public class ShapesTest extends AbstractQueryTest {
             givenQuery("SHAPE == 'triangle' || TYPE == 'pentagon'");
             givenDatatypeFilter("triangle,pentagon");
             expectPlan("TYPE == 'pentagon' || SHAPE == 'triangle'");
-
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
 
@@ -1210,12 +1249,12 @@ public class ShapesTest extends AbstractQueryTest {
         expectHitTermsRequiredAllOf("SHAPE:triangle");
         planAndExecuteQuery();
 
-        assertAttributeNormalizer("EDGES", NumberType.class);
-        assertAttributeNormalizer("ONLY_TRI", LcNoDiacriticsType.class);
-        assertAttributeNormalizer("PROPERTIES", NoOpType.class);
-        assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
-        assertAttributeNormalizer("TYPE", LcNoDiacriticsType.class);
-        assertAttributeNormalizer("UUID", NoOpType.class);
+        expectAttributeNormalizer("EDGES", NumberType.class);
+        expectAttributeNormalizer("ONLY_TRI", LcNoDiacriticsType.class);
+        expectAttributeNormalizer("PROPERTIES", NoOpType.class);
+        expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+        expectAttributeNormalizer("TYPE", LcNoDiacriticsType.class);
+        expectAttributeNormalizer("UUID", NoOpType.class);
     }
 
     // use projection to trigger reduction
@@ -1223,18 +1262,18 @@ public class ShapesTest extends AbstractQueryTest {
     public void testReduceTypeMetadataViaIncludeFields() throws Exception {
         boolean orig = logic.getReduceTypeMetadata();
         try {
-            withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
             logic.setReduceTypeMetadata(true);
 
             givenQuery("SHAPE == 'triangle'");
+            givenIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
-            assertAttributeNormalizer("EDGES", NumberType.class);
-            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
-            assertAttributeNormalizer("UUID", NoOpType.class);
+            expectAttributeNormalizer("EDGES", NumberType.class);
+            expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            expectAttributeNormalizer("UUID", NoOpType.class);
 
             assertFieldNotFound("ONLY_TRI");
             assertFieldNotFound("PROPERTIES");
@@ -1249,18 +1288,18 @@ public class ShapesTest extends AbstractQueryTest {
     public void testReduceTypeMetadataViaExcludeFields() throws Exception {
         boolean orig = logic.getReduceTypeMetadata();
         try {
-            withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
             logic.setReduceTypeMetadata(true);
 
             givenQuery("SHAPE == 'triangle'");
+            givenExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
-            assertAttributeNormalizer("EDGES", NumberType.class);
-            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
-            assertAttributeNormalizer("UUID", NoOpType.class);
+            expectAttributeNormalizer("EDGES", NumberType.class);
+            expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            expectAttributeNormalizer("UUID", NoOpType.class);
 
             assertFieldNotFound("ONLY_TRI");
             assertFieldNotFound("PROPERTIES");
@@ -1275,18 +1314,18 @@ public class ShapesTest extends AbstractQueryTest {
     public void testReduceTypeMetadataPerShardViaIncludeFields() throws Exception {
         boolean orig = logic.getReduceTypeMetadataPerShard();
         try {
-            withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
             logic.setReduceTypeMetadataPerShard(true);
 
             givenQuery("SHAPE == 'triangle'");
+            givenIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
-            assertAttributeNormalizer("EDGES", NumberType.class);
-            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
-            assertAttributeNormalizer("UUID", NoOpType.class);
+            expectAttributeNormalizer("EDGES", NumberType.class);
+            expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            expectAttributeNormalizer("UUID", NoOpType.class);
 
             assertFieldNotFound("ONLY_TRI");
             assertFieldNotFound("PROPERTIES");
@@ -1301,18 +1340,18 @@ public class ShapesTest extends AbstractQueryTest {
     public void testReduceTypeMetadataPerShardViaExcludeFields() throws Exception {
         boolean orig = logic.getReduceTypeMetadataPerShard();
         try {
-            withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
             logic.setReduceTypeMetadata(true);
 
             givenQuery("SHAPE == 'triangle'");
+            givenExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
             planAndExecuteQuery();
 
-            assertAttributeNormalizer("EDGES", NumberType.class);
-            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
-            assertAttributeNormalizer("UUID", NoOpType.class);
+            expectAttributeNormalizer("EDGES", NumberType.class);
+            expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            expectAttributeNormalizer("UUID", NoOpType.class);
 
             assertFieldNotFound("ONLY_TRI");
             assertFieldNotFound("PROPERTIES");
@@ -1338,31 +1377,6 @@ public class ShapesTest extends AbstractQueryTest {
             assertThrows(AssertionError.class, this::planAndExecuteQuery);
         } finally {
             logic.setDisableEvaluation(false);
-        }
-    }
-
-    private void withIncludeFields(Set<String> includes) {
-        givenParameter(QueryParameters.RETURN_FIELDS, Joiner.on(',').join(includes));
-    }
-
-    private void withExcludeFields(Set<String> excludes) {
-        givenParameter(QueryParameters.DISALLOWLISTED_FIELDS, Joiner.on(',').join(excludes));
-    }
-
-    private void assertAttributeNormalizer(String field, Class<?> expectedNormalizer) {
-        for (Document result : results) {
-            Attribute<?> attrs = result.get(field);
-            if (attrs instanceof TypeAttribute<?>) {
-                TypeAttribute<?> attr = (TypeAttribute<?>) attrs;
-                assertSame(expectedNormalizer, attr.getType().getClass());
-            }
-        }
-    }
-
-    private void assertFieldNotFound(String field) {
-        for (Document result : results) {
-            Attribute<?> attrs = result.get(field);
-            assertNull("Expected null value for field " + field, attrs);
         }
     }
 }
