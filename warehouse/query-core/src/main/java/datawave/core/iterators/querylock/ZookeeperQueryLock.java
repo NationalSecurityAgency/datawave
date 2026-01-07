@@ -181,6 +181,7 @@ public class ZookeeperQueryLock implements QueryLock {
         }
     }
 
+    @Override
     public void stopQuery() throws Exception {
         // decrement the zookeeper query file and delete if 0
         clientLock.lock();
