@@ -205,7 +205,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
             this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
-            // the configuration query string should now hold the planned query
+            // the configuration query string should now hold the initial planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
             this.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);

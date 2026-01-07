@@ -277,6 +277,10 @@ public class WordsAndScores {
      * @return the one-best word, or null if the word is a stopword
      */
     private String getOneBestWordToOutput() {
+        if (smallestScoreIndex == -1) {
+            log.warn("No scores for this offset but other offsets do have scores: Will ignore this offset assuming it does not belong in the excerpt.");
+            return null;
+        }
         if (scores.get(smallestScoreIndex) > MAX_SCORE) {
             return null;
         }

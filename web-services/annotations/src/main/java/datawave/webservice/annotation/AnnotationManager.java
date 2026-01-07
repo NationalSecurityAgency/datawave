@@ -4,6 +4,8 @@ import javax.ws.rs.core.Response;
 
 public interface AnnotationManager {
 
+    Response getAnnotationSource(String analyticHash);
+
     Response getAnnotationTypes(String idType, String id);
 
     Response getAnnotationsFor(String idType, String id);
