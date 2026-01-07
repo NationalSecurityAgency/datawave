@@ -439,11 +439,12 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 try {
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
 
-                    agg = clazz.newInstance();
+                    agg = clazz.getDeclaredConstructor().newInstance();
                     // init with a stubbed-out class so that an upcoming call to env.getConfig in Combiner will not throw a NPE
                     agg.init(null, clazzOptions.getKey(), new StubbedIteratorEnvironment());
 
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException e) {
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException | NoSuchMethodException
+                                | java.lang.reflect.InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
 

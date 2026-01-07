@@ -654,7 +654,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *             for issues with access
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException,
+                    java.lang.reflect.InvocationTargetException {
         // If we had an event-specific range previously, we need to reset it back
         // to the source we created during init
         NestedIterator<Key> docIter = getOrSetKeySource(documentRange, getScript());
@@ -1025,7 +1026,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
                 }
                 return Iterators.transform(matchedDocuments, new TupleToEntry<>());
-            } catch (InstantiationException | MalformedURLException | IllegalAccessException | ConfigException e) {
+            } catch (InstantiationException | MalformedURLException | IllegalAccessException | ConfigException | NoSuchMethodException
+                            | java.lang.reflect.InvocationTargetException e) {
                 throw new IllegalStateException("Could not perform delayed index only evaluation", e);
             }
         } else if (log.isTraceEnabled()) {
@@ -1388,8 +1390,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return sb.toString();
     }
 
-    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript)
-                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
+    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException, ConfigException,
+                    IllegalAccessException, InstantiationException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
         NestedIterator<Key> sourceIter = null;
         // If we're doing field index or a non-fulltable (aka a normal
         // query)
@@ -1467,13 +1469,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws ConfigException, MalformedURLException, InstantiationException, IllegalAccessException {
+                    throws ConfigException, MalformedURLException, InstantiationException, IllegalAccessException, NoSuchMethodException,
+                    java.lang.reflect.InvocationTargetException {
         return createIteratorBuildingVisitor(IteratorBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs);
     }
 
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(Class<? extends IteratorBuildingVisitor> c, final Range documentRange,
-                    boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
+                    boolean isQueryFullySatisfied, boolean sortedUIDs) throws MalformedURLException, ConfigException, IllegalAccessException,
+                    InstantiationException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
@@ -1484,7 +1487,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         indexedFields.removeAll(nonIndexedFields);
 
         // @formatter:off
-        return c.newInstance()
+        return c.getDeclaredConstructor().newInstance()
                 .setSource(this, this.myEnvironment)
                 .setTimeFilter(this.getTimeFilter())
                 .setTypeMetadata(this.getTypeMetadata())
