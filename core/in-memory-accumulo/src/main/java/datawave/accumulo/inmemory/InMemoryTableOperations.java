@@ -17,6 +17,11 @@
 package datawave.accumulo.inmemory;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static datawave.accumulo.inmemory.AccumuloTableConstants.METADATA_TABLE_ID;
+import static datawave.accumulo.inmemory.AccumuloTableConstants.METADATA_TABLE_NAME;
+import static datawave.accumulo.inmemory.AccumuloTableConstants.ROOT_TABLE_ID;
+import static datawave.accumulo.inmemory.AccumuloTableConstants.ROOT_TABLE_NAME;
+import static datawave.accumulo.inmemory.AccumuloTableConstants.qualifyTableName;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -62,14 +67,11 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.dataImpl.TabletIdImpl;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
-import org.apache.accumulo.core.metadata.MetadataTable;
-import org.apache.accumulo.core.metadata.RootTable;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.util.Validators;
-import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -125,7 +127,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
 
     @Override
     public void create(String tableName, NewTableConfiguration ntc) throws AccumuloException, AccumuloSecurityException, TableExistsException {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = qualifyTableName(tableName).getLeft();
         Validators.NEW_TABLE_NAME.validate(tableName);
         if (exists(tableName))
             throw new TableExistsException(tableName, tableName, "");
@@ -196,7 +198,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         if ((!force) && exists(newTableName))
             throw new TableExistsException(newTableName, newTableName, "");
         InMemoryTable t = acu.tables.remove(oldTableName);
-        String namespace = TableNameUtil.qualify(newTableName).getFirst();
+        String namespace = qualifyTableName(newTableName).getLeft();
         InMemoryNamespace n = acu.namespaces.get(namespace);
         if (n == null) {
             n = new InMemoryNamespace();
@@ -234,7 +236,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
 
     @Override
     public Map<String,String> getConfiguration(String tableName) throws AccumuloException, TableNotFoundException {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = qualifyTableName(tableName).getLeft();
         if (!exists(tableName)) {
             if (!namespaceExists(namespace))
                 throw new TableNotFoundException(tableName, new NamespaceNotFoundException(null, namespace, null));
@@ -404,10 +406,10 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         Map<String,String> result = new HashMap<>();
         for (Entry<String,InMemoryTable> entry : acu.tables.entrySet()) {
             String table = entry.getKey();
-            if (RootTable.NAME.equals(table))
-                result.put(table, RootTable.ID.canonical());
-            else if (MetadataTable.NAME.equals(table))
-                result.put(table, MetadataTable.ID.canonical());
+            if (ROOT_TABLE_NAME.equals(table))
+                result.put(table, ROOT_TABLE_ID.canonical());
+            else if (METADATA_TABLE_NAME.equals(table))
+                result.put(table, METADATA_TABLE_ID.canonical());
             else
                 result.put(table, entry.getValue().getTableId());
         }
