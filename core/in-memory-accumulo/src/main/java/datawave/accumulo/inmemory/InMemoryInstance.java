@@ -31,8 +31,6 @@ import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.Credentials;
 import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
-import org.apache.accumulo.core.util.ByteBufferUtil;
-import org.apache.accumulo.core.util.TextUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
@@ -122,12 +120,17 @@ public class InMemoryInstance implements Instance {
 
     @Override
     public Connector getConnector(String user, ByteBuffer pass) throws AccumuloException, AccumuloSecurityException {
-        return getConnector(user, ByteBufferUtil.toBytes(pass));
+        byte[] bytes = new byte[pass.remaining()];
+        pass.get(bytes);
+        return getConnector(user, bytes);
     }
 
     @Override
     public Connector getConnector(String user, CharSequence pass) throws AccumuloException, AccumuloSecurityException {
-        return getConnector(user, TextUtil.getBytes(new Text(pass.toString())));
+        Text text = new Text(pass.toString());
+        byte[] bytes = new byte[text.getLength()];
+        System.arraycopy(text.getBytes(), 0, bytes, 0, text.getLength());
+        return getConnector(user, bytes);
     }
 
     @Override
