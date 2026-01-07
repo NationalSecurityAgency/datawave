@@ -85,6 +85,7 @@ import datawave.query.config.IndexValueHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -784,8 +785,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private AnnotationDataAccess getAnnotationDataAccess() {
         AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer();
         AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
-        return new AnnotationDataAccess(this.getConfig().getClient(), getConfig().getAuthorizations(), getAnnotationTableName(), getAnnotationSourceTableName(),
-                        annotationSerializer, annotationSourceSerializer);
+        // @formatter:off
+        return new AnnotationDataAccess(
+                getConfig().getClient(),
+                getConfig().getAuthorizations(),
+                getAllHitsQueryConfig().getAnnotationConfig().getAnnotationTableName(),
+                getAllHitsQueryConfig().getAnnotationConfig().getAnnotationSourceTableName(),
+                annotationSerializer,
+                annotationSourceSerializer);
+        // @formatter:on
     }
 
     /**
@@ -797,7 +805,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private AllHitsFactory getAnnotationHitsFactory() throws QueryException {
         AllHitsFactory allHitsFactory;
         try {
-            Class<?> annotationHitsFactoryClass = Class.forName(getAnnotationHitsFactoryClass());
+            Class<?> annotationHitsFactoryClass = Class.forName(getAllHitsQueryConfig().getAnnotationHitsFactoryClass());
             Class<? extends AllHitsFactory> subClass = annotationHitsFactoryClass.asSubclass(AllHitsFactory.class);
             allHitsFactory = subClass.getDeclaredConstructor().newInstance();
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
@@ -815,11 +823,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
 
-            if (getConfig().isAnnotationHitsEnabled()) {
+            AllHitsQueryConfig allHitsQueryConfig = getAllHitsQueryConfig();
+            if (allHitsQueryConfig != null && allHitsQueryConfig.isAnnotationHitsEnabled()) {
                 // since this may be called multiple times always rebuild
-                ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(getConfig(), getAnnotationDataAccess(),
-                                getAnnotationHitsFactory(), getAnnotationHitsContextLength(), getAnnotationHitsValidTypes(),
-                                getAnnotationHitsValidQueryFields(), getAnnotationHitsTargetField()));
+                // @formatter:off
+                ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                        getConfig(),
+                        getAnnotationDataAccess(),
+                        getAnnotationHitsFactory(),
+                        allHitsQueryConfig.getAnnotationHitsMaxContextLength(),
+                        allHitsQueryConfig.getAnnotationHitsValidTypes(),
+                        allHitsQueryConfig.getAnnotationHitsValidQueryFields(),
+                        allHitsQueryConfig.getAnnotationHitsTargetField()));
+                // @formatter:on
             }
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
@@ -3548,67 +3564,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxLinesToPrint(maxLinesToPrint);
     }
 
-    public boolean isAnnotationHitsEnabled() {
-        return getConfig().isAnnotationHitsEnabled();
+    public AllHitsQueryConfig getAllHitsQueryConfig() {
+        return getConfig().getAllHitsQueryConfig();
     }
 
-    public void setAnnotationHitsEnabled(boolean allHitsEnabled) {
-        getConfig().setAnnotationHitsEnabled(allHitsEnabled);
-    }
-
-    public int getAnnotationHitsContextLength() {
-        return getConfig().getAnnotationHitsContextLength();
-    }
-
-    public void setAnnotationHitsContextLength(int allHitsContextLength) {
-        getConfig().setAnnotationHitsContextLength(allHitsContextLength);
-    }
-
-    public Set<String> getAnnotationHitsValidTypes() {
-        return getConfig().getAnnotationHitsValidTypes();
-    }
-
-    public void setAnnotationHitsValidTypes(Set<String> validTypes) {
-        getConfig().setAnnotationHitsValidTypes(validTypes);
-    }
-
-    public Set<String> getAnnotationHitsValidQueryFields() {
-        return getConfig().getAnnotationHitsValidQueryFields();
-    }
-
-    public void setAnnotationHitsValidQueryFields(Set<String> allHitsValidQueryFields) {
-        getConfig().setAnnotationHitsValidQueryFields(allHitsValidQueryFields);
-    }
-
-    public String getAnnotationHitsTargetField() {
-        return getConfig().getAnnotationHitsTargetField();
-    }
-
-    public void setAnnotationHitsTargetField(String allHitsTargetField) {
-        getConfig().setAnnotationHitsTargetField(allHitsTargetField);
-    }
-
-    public String getAnnotationHitsFactoryClass() {
-        return getConfig().getAnnotationHitsFactoryClass();
-    }
-
-    public void setAnnotationHitsFactoryClass(String clazz) {
-        getConfig().setAnnotationHitsFactoryClass(clazz);
-    }
-
-    public String getAnnotationTableName() {
-        return getConfig().getAnnotationTableName();
-    }
-
-    public void setAnnotationTableName(String annotationTableName) {
-        getConfig().setAnnotationTableName(annotationTableName);
-    }
-
-    public String getAnnotationSourceTableName() {
-        return getConfig().getAnnotationSourceTableName();
-    }
-
-    public void setAnnotationSourceTableName(String annotationSourceTableName) {
-        getConfig().setAnnotationSourceTableName(annotationSourceTableName);
+    public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
+        getConfig().setAllHitsQueryConfig(allHitsQueryConfig);
     }
 }

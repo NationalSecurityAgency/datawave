@@ -44,6 +44,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
@@ -51,7 +52,6 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
-import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
@@ -635,22 +635,8 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("maxLinesToPrint", -1);
         updatedValues.put("maxLinesToPrint", 150);
 
-        defaultValues.put("annotationHitsEnabled", false);
-        updatedValues.put("annotationHitsEnabled", true);
-        defaultValues.put("annotationHitsContextLength", 4);
-        updatedValues.put("annotationHitsContextLength", 3);
-        defaultValues.put("annotationHitsValidTypes", null);
-        updatedValues.put("annotationHitsValidTypes", Set.of("a", "b", "c"));
-        defaultValues.put("annotationHitsValidQueryFields", null);
-        updatedValues.put("annotationHitsValidQueryFields", Set.of("d", "e"));
-        defaultValues.put("annotationHitsTargetField", null);
-        updatedValues.put("annotationHitsTargetField", "target_field");
-        defaultValues.put("annotationHitsFactoryClass", AllHitsFactory.class.getCanonicalName());
-        updatedValues.put("annotationHitsFactoryClass", "some.new.class");
-        defaultValues.put("annotationTableName", "annotation");
-        updatedValues.put("annotationTableName", "datawave.annotation");
-        defaultValues.put("annotationSourceTableName", "annotationSource");
-        updatedValues.put("annotationSourceTableName", "datawave.annotationSource");
+        defaultValues.put("allHitsQueryConfig", null);
+        updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
     }
 
     private Query createQuery(String query) {

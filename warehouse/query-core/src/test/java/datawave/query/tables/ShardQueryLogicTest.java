@@ -76,6 +76,8 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.query.config.annotation.AllHitsQueryConfig;
+import datawave.query.config.annotation.AnnotationConfig;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
@@ -953,7 +955,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void annotationsHitsFactoryErrorTest() throws Exception {
         withAnnotationHits();
-        logic.setAnnotationHitsFactoryClass(AllHitsFactoryErrorOnly.class.getCanonicalName());
+        logic.getAllHitsQueryConfig().setAnnotationHitsFactoryClass(AllHitsFactoryErrorOnly.class.getCanonicalName());
 
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
 
@@ -1126,26 +1128,26 @@ public abstract class ShardQueryLogicTest {
     private void setupAnnotationsTables(AccumuloClient client) {
         try {
             // drop existing tables if they exist
-            client.tableOperations().delete("annotations");
+            client.tableOperations().delete("annotation");
         } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
             // no-op
         }
 
         try {
-            client.tableOperations().delete("annotationsSource");
+            client.tableOperations().delete("annotationSource");
         } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
             // no-op
         }
 
         try {
             // create annotations tables
-            client.tableOperations().create("annotations");
-            client.tableOperations().create("annotationsSource");
+            client.tableOperations().create("annotation");
+            client.tableOperations().create("annotationSource");
 
-            BatchWriter writer = client.createBatchWriter("annotations");
+            BatchWriter writer = client.createBatchWriter("annotation");
             AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
             AccumuloAnnotationSourceSerializer sourceSerializer = new AccumuloAnnotationSourceSerializer();
-            AnnotationDataAccess dataAccess = new AnnotationDataAccess(client, authSet, "annotations", "annotationsSource", serializer, sourceSerializer);
+            AnnotationDataAccess dataAccess = new AnnotationDataAccess(client, authSet, "annotation", "annotationSource", serializer, sourceSerializer);
             for (Annotation annotation : annotations) {
                 // if we really want to validate the annotation id matches pull it here
                 dataAccess.addAnnotation(annotation);
@@ -1159,13 +1161,15 @@ public abstract class ShardQueryLogicTest {
     }
 
     private void withAnnotationHits() {
-        logic.setAnnotationHitsEnabled(true);
-        logic.setAnnotationHitsContextLength(3);
-        logic.setAnnotationHitsValidQueryFields(Set.of("FOO", "BAR", "UUID"));
-        logic.setAnnotationHitsTargetField("ALL_HITS_RESULTS");
-        logic.setAnnotationHitsValidTypes(Set.of("ANNO1"));
-        logic.setAnnotationTableName("annotations");
-        logic.setAnnotationSourceTableName("annotationsSource");
+        logic.setAllHitsQueryConfig(new AllHitsQueryConfig());
+        logic.getAllHitsQueryConfig().setAnnotationHitsEnabled(true);
+        logic.getAllHitsQueryConfig().setAnnotationHitsMaxContextLength(3);
+        logic.getAllHitsQueryConfig().setAnnotationHitsValidQueryFields(Set.of("FOO", "BAR", "UUID"));
+        logic.getAllHitsQueryConfig().setAnnotationHitsTargetField("ALL_HITS_RESULTS");
+        logic.getAllHitsQueryConfig().setAnnotationHitsValidTypes(Set.of("ANNO1"));
+        logic.getAllHitsQueryConfig().setAnnotationConfig(new AnnotationConfig());
+        logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationTableName("annotation");
+        logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationSourceTableName("annotationSource");
         givenQueryParameter(ENABLED_PARAMETER, "true");
     }
 

@@ -57,7 +57,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     public static final String KEYWORD_DELIMITER = ";";
 
     private static final boolean DEFAULT_ENABLED = false;
-    private static final int DEFAULT_CONTEXT_SIZE = 3;
+    private static final int DEFAULT_CONTEXT_SIZE = 10;
     private static final float DEFAULT_MIN_SCORE = 0;
     private static final TimeUnit DEFAULT_TIMEUNIT = TimeUnit.MILLISECONDS;
     private static final SegmentValueByScoreComparator SEGMENT_VALUE_BY_SCORE_COMPARATOR = new SegmentValueByScoreComparator();
