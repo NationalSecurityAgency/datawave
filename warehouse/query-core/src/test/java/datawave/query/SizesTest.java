@@ -82,8 +82,7 @@ public class SizesTest extends AbstractQueryTest {
     @Before
     public void setup() throws Exception {
         withDate("20250606", "20250606");
-        clientForTest = clientForSetup;
-        setClientForTest(clientForTest);
+        setClientForTest(clientForSetup);
     }
 
     @AfterClass
