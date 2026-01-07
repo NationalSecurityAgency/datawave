@@ -1,29 +1,20 @@
 package datawave.query;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
 
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -34,7 +25,6 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -45,28 +35,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
 import datawave.query.util.TestIndexTableNames;
-import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
@@ -76,11 +61,9 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  * Hit Term assertions are supported. Most queries should assert total documents returned and shards seen in the results.
  */
 @RunWith(Arquillian.class)
-public class ColorsTest {
+public class ColorsTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(ColorsTest.class);
-    protected Authorizations auths = new Authorizations("ALL");
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -89,31 +72,11 @@ public class ColorsTest {
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
 
-    protected KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-
     // this two client setup is a little odd, but it allows us to create tables once
     protected static AccumuloClient client = null;
-    private AccumuloClient clientForTest;
 
-    public void setClientForTest(AccumuloClient client) {
-        this.clientForTest = client;
-    }
-
-    // used for declarative style tests
-    private String query;
-    private String startDate;
-    private String endDate;
-
-    private Map<String,String> parameters = new HashMap<>();
-    private Set<String> expected = new HashSet<>();
-    private Set<Document> results = new HashSet<>();
-
-    private int expectedCount = 0;
     private final Set<String> expectedDays = new HashSet<>();
     private final Set<String> expectedShards = new HashSet<>();
-
-    private final HitTermAssertions assertHitTerms = new HitTermAssertions();
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
@@ -170,32 +133,28 @@ public class ColorsTest {
         // every test also exercises hit terms
         withParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
+
+        // default to full date range
+        withDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
+    }
+
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
     @After
     public void after() {
+        super.after();
         resetState();
     }
 
     private void resetState() {
-        query = null;
         if (logic != null) {
             logic.setReduceIngestTypes(false);
             logic.setRebuildDatatypeFilter(false);
             logic.setPruneQueryByIngestTypes(false);
         }
-        parameters.clear();
-        expected.clear();
-        results.clear();
-
-        expectedCount = 0;
-
-        assertHitTerms.resetState();
-
-        // default to full date range
-        startDate = ColorsIngest.getStartDay();
-        endDate = ColorsIngest.getEndDay();
-
         expectedDays.clear();
         expectedShards.clear();
     }
@@ -203,42 +162,6 @@ public class ColorsTest {
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
-    }
-
-    public ColorsTest withQuery(String query) {
-        this.query = query;
-        return this;
-    }
-
-    public ColorsTest withDateRange(String start, String end) {
-        this.startDate = start;
-        this.endDate = end;
-        return this;
-    }
-
-    public ColorsTest withParameter(String key, String value) {
-        parameters.put(key, value);
-        return this;
-    }
-
-    public ColorsTest withParameters(Map<String,String> parameters) {
-        this.parameters = parameters;
-        return this;
-    }
-
-    public ColorsTest withExpected(Set<String> expected) {
-        this.expected = expected;
-        return this;
-    }
-
-    public ColorsTest withExpectedCount(int expectedCount) {
-        this.expectedCount = expectedCount;
-        return this;
-    }
-
-    public ColorsTest withFullExpectedCount() {
-        this.expectedCount = getTotalEventCount();
-        return this;
     }
 
     public int getTotalEventCount() {
@@ -257,47 +180,6 @@ public class ColorsTest {
         for (int i = 0; i < numShards; i++) {
             this.expectedShards.add(day + "_" + i);
         }
-        return this;
-    }
-
-    /**
-     * Required hit terms must exist in every result, for example an anchor term
-     *
-     * @param hitTerms
-     *            one or more hit terms
-     * @return the test instance
-     */
-    public ColorsTest withRequiredAllOf(String... hitTerms) {
-        assertHitTerms.withRequiredAllOf(hitTerms);
-        return this;
-    }
-
-    /**
-     * Required hit terms must exist in every result, for example an anchor term
-     *
-     * @param hitTerms
-     *            one or more hit terms
-     * @return the test instance
-     */
-    public ColorsTest withRequiredAnyOf(String... hitTerms) {
-        assertHitTerms.withRequiredAnyOf(hitTerms);
-        return this;
-    }
-
-    /**
-     * At least one optional hit term must exist in every result, for example terms in a union
-     *
-     * @param hitTerms
-     *            one or more hit terms
-     * @return the test instance
-     */
-    public ColorsTest withOptionalAllOf(String... hitTerms) {
-        assertHitTerms.withOptionalAllOf(hitTerms);
-        return this;
-    }
-
-    public ColorsTest withOptionalAnyOf(String... hitTerms) {
-        assertHitTerms.withOptionalAnyOf(hitTerms);
         return this;
     }
 
@@ -339,91 +221,17 @@ public class ColorsTest {
         return this;
     }
 
-    public ColorsTest planAndExecuteQuery() throws Exception {
-        planQuery();
-        executeQuery();
-        assertExpectedCount();
+    /**
+     * Delegate to super method to plan and execute the query and assert the hit terms
+     *
+     * @throws Exception
+     *             if something goes wrong
+     */
+    @Override
+    public void planAndExecuteQuery() throws Exception {
+        super.planAndExecuteQuery();
+        assertResultCount();
         assertExpectedShardsAndDays();
-        assertHitTerms();
-        return this;
-    }
-
-    public void planQuery() throws Exception {
-        try {
-            QueryImpl settings = new QueryImpl();
-            settings.setBeginDate(getStartDate());
-            settings.setEndDate(getEndDate());
-            settings.setPagesize(Integer.MAX_VALUE);
-            settings.setQueryAuthorizations(auths.serialize());
-            settings.setQuery(query);
-            settings.setParameters(parameters);
-            settings.setId(UUID.randomUUID());
-
-            logic.setMaxEvaluationPipelines(1);
-
-            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, authSet);
-            logic.setupQuery(config);
-        } catch (Exception e) {
-            log.info("exception while planning query", e);
-            throw e;
-        }
-    }
-
-    protected Date getStartDate() throws Exception {
-        Assert.assertNotNull(startDate);
-        return format.parse(startDate);
-    }
-
-    protected Date getEndDate() throws Exception {
-        Assert.assertNotNull(endDate);
-        return format.parse(endDate);
-    }
-
-    public ColorsTest executeQuery() {
-        results = new HashSet<>();
-        for (Map.Entry<Key,Value> entry : logic) {
-            Document d = deserializer.apply(entry).getValue();
-            results.add(d);
-        }
-        logic.close();
-        return this;
-    }
-
-    public ColorsTest assertUuids() {
-        assertNotNull(expected);
-        assertNotNull(results);
-
-        Set<String> found = new HashSet<>();
-        for (Document result : results) {
-            Attribute<?> attr = result.get("UUID");
-            assertNotNull("result did not contain a UUID", attr);
-            String uuid = getUUID(attr);
-            found.add(uuid);
-        }
-
-        Set<String> missing = Sets.difference(expected, found);
-        if (!missing.isEmpty()) {
-            log.info("missing uuids: {}", missing);
-        }
-
-        Set<String> extra = Sets.difference(found, expected);
-        if (!extra.isEmpty()) {
-            log.info("extra uuids: {}", extra);
-        }
-
-        assertEquals(expected, found);
-        return this;
-    }
-
-    public String getUUID(Attribute<?> attribute) {
-        boolean typed = attribute instanceof TypeAttribute;
-        assertTrue("Attribute was not a TypeAttribute, was: " + attribute.getClass(), typed);
-        TypeAttribute<?> uuid = (TypeAttribute<?>) attribute;
-        return uuid.getType().getDelegateAsString();
-    }
-
-    public void assertExpectedCount() {
-        assertEquals(expectedCount, results.size());
     }
 
     /**
@@ -463,16 +271,6 @@ public class ColorsTest {
         return this;
     }
 
-    public ColorsTest assertHitTerms() {
-        // first, assert that if hit terms were expected that we got results. It is an error condition to expect hits and not get any results
-        assertEquals(assertHitTerms.hitTermExpected(), !results.isEmpty());
-        if (!results.isEmpty()) {
-            boolean validated = assertHitTerms.assertHitTerms(results);
-            assertEquals(assertHitTerms.hitTermExpected(), validated);
-        }
-        return this;
-    }
-
     public void assertPlannedQuery(String query) {
         try {
             ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(query);
@@ -487,20 +285,11 @@ public class ColorsTest {
         }
     }
 
-    @SafeVarargs
-    public final Set<String> createSet(Set<String>... sets) {
-        Set<String> s = new HashSet<>();
-        for (Set<String> set : sets) {
-            s.addAll(set);
-        }
-        return s;
-    }
-
     @Test
     public void testColorRed() throws Exception {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
-        withFullExpectedCount();
+        withResultCount(getTotalEventCount());
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
@@ -508,7 +297,7 @@ public class ColorsTest {
     public void testColorYellow() throws Exception {
         withQuery("COLOR == 'yellow'");
         withRequiredAllOf("COLOR:yellow");
-        withFullExpectedCount();
+        withResultCount(getTotalEventCount());
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
@@ -516,7 +305,7 @@ public class ColorsTest {
     public void testColorBlue() throws Exception {
         withQuery("COLOR == 'blue'");
         withRequiredAllOf("COLOR:blue");
-        withFullExpectedCount();
+        withResultCount(getTotalEventCount());
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
@@ -524,19 +313,21 @@ public class ColorsTest {
     public void testAllColors() throws Exception {
         withQuery("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
         withOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
-        withExpectedCount(3 * getTotalEventCount());
+        withResultCount(3 * getTotalEventCount());
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtFieldIndex() throws Exception {
         withQuery("COLOR == 'red' && !(COLOR == 'red')");
+        withResultCount(0);
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtEvaluation() throws Exception {
         withQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
+        withResultCount(0);
         planAndExecuteQueryAgainstMultipleIndices();
     }
 
@@ -544,8 +335,8 @@ public class ColorsTest {
     public void testReturnedShardsForEarlierDate() throws Exception {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
-        withDateRange("20250301", "20250301");
-        withExpectedCount(ColorsIngest.getNumShards());
+        withDate("20250301", "20250301");
+        withResultCount(ColorsIngest.getNumShards());
         withExpectedDays("20250301");
         withExpectedShards("20250301", ColorsIngest.getNumShards());
         planAndExecuteQueryAgainstMultipleIndices();
@@ -555,8 +346,8 @@ public class ColorsTest {
     public void testReturnedShardsForLaterDate() throws Exception {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
-        withDateRange("20250331", "20250331");
-        withExpectedCount(ColorsIngest.getNewShards());
+        withDate("20250331", "20250331");
+        withResultCount(ColorsIngest.getNewShards());
         withExpectedDays("20250331");
         withExpectedShards("20250331", ColorsIngest.getNewShards());
         planAndExecuteQueryAgainstMultipleIndices();
@@ -566,8 +357,8 @@ public class ColorsTest {
     public void testReturnedShardsForQueryThatCrossesBoundary() throws Exception {
         withQuery("COLOR == 'red'");
         withRequiredAllOf("COLOR:red");
-        withDateRange("20250326", "20250327");
-        withExpectedCount(ColorsIngest.getNumShards() + ColorsIngest.getNewShards());
+        withDate("20250326", "20250327");
+        withResultCount(ColorsIngest.getNumShards() + ColorsIngest.getNewShards());
         withExpectedDays("20250326", "20250327");
         withExpectedShards("20250326", ColorsIngest.getNumShards());
         withExpectedShards("20250327", ColorsIngest.getNewShards());
