@@ -44,7 +44,7 @@ import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.transformer.annotation.model.AllHitsError;
 
 /**
- * This iterator will lookup and search annotations for hits as well as provide context
+ * This Transform will lookup and search annotations for hits as well as provide context
  */
 public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocumentTransform {
     private static final Logger log = Logger.getLogger(AnnotationHitsTransformer.class);
