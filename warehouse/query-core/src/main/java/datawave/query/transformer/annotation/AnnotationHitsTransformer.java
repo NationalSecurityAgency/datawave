@@ -61,6 +61,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private static final float DEFAULT_MIN_SCORE = 0;
     private static final TimeUnit DEFAULT_TIMEUNIT = TimeUnit.MILLISECONDS;
     private static final SegmentValueByScoreComparator SEGMENT_VALUE_BY_SCORE_COMPARATOR = new SegmentValueByScoreComparator();
+    private static final BoundaryComparator BOUNDARY_COMPARATOR = new BoundaryComparator();
 
     private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
@@ -283,7 +284,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
      * @return
      */
     private TreeMap<SegmentBoundary,List<SegmentValue>> sort(List<Segment> segments) {
-        TreeMap<SegmentBoundary,List<SegmentValue>> orderedSegments = new TreeMap<>(new BoundaryComparator());
+        TreeMap<SegmentBoundary,List<SegmentValue>> orderedSegments = new TreeMap<>(BOUNDARY_COMPARATOR);
         for (Segment segment : segments) {
             // make a copy so they can be sorted
             List<SegmentValue> segmentValues = new ArrayList<>(segment.getValuesList());
@@ -295,7 +296,13 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     }
 
     /**
-     * Make a single pass through the sortedSegments finding matches and creating context for each hit
+     * Make a single pass through the sortedSegments finding matches and creating context for each hit. A queue will hold the last contextSize SegmentBoundary
+     * along with the current SegmentBoundary. When a searchHitTerm is matched a SegmentHit will be created using the first SegmentBoundary in the queue, and
+     * the current SegmentBoundary along with the index of the hit in the SegmentValue list. This hit is then added to the partialHits map using the current
+     * SegmentBoundary index plus the contextSize. This sets a future point to complete the SegmentHit context window after the hit. Each iteration checks for
+     * any partial SegmentHits which may be completing on this SegmentBoundary (start, hit, and end) by looking for anything in the partialHits map which
+     * matches the current index. After moving through all SegmentBoundary anything remaining in the partialHits map will not have a full contextSize after the
+     * hit since there weren't enough remaining Segments, but should instead have their end SegmentBoundary set to the last SegmentBoundary seen.
      *
      * @param sortedSegments
      *            the sorted set of all SegmentBoundary to consider for the search. All SegmentValue will appear in ascending order
@@ -313,8 +320,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         ArrayDeque<SegmentBoundary> window = new ArrayDeque<>(maxWindow);
 
         final Iterator<SegmentBoundary> itr = sortedSegments.navigableKeySet().iterator();
+        // a list of SegmentHits which have their end context set
         List<SegmentHit> finishedHits = new ArrayList<>();
+        // a map from the segmentIndex associated SegmentHits will have their end context set
         Map<Integer,List<SegmentHit>> partialHits = new HashMap<>();
+        // track which segment index is currently being processed
         int segmentIndex = 0;
         // track the last segment boundary for end conditions
         SegmentBoundary last = null;
@@ -333,7 +343,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 String normalizedTerm = normalize(segmentValue.getValue());
                 if (segmentValue.getScore() >= minScore && searchHitTerms.contains(normalizedTerm)) {
                     // partial hits index is the location in the window where the hit is complete
-                    List<SegmentHit> hits = partialHits.computeIfAbsent(segmentIndex + contextSize, x -> new ArrayList<>());
+                    List<SegmentHit> hits = partialHits.computeIfAbsent(segmentIndex + contextSize, ArrayList::new);
                     hits.add(new SegmentHit(window.getFirst(), boundary, i));
                 }
             }
@@ -395,6 +405,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return toNormalize.toLowerCase().trim();
     }
 
+    /**
+     * Used to track a keyword hit and its beginning and ending context SegmentBoundary
+     */
     public static class SegmentHit {
         private final SegmentBoundary contextStart;
         private final SegmentBoundary hitBoundary;
@@ -402,6 +415,16 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
 
         private SegmentBoundary contextEnd;
 
+        /**
+         * Create a new partial SegmentHit
+         *
+         * @param contextStart
+         *            the SegmentBoundary which marks the beginning of this hits context
+         * @param hitBoundary
+         *            the SegmentBoundary containing the hit
+         * @param valueHitIndex
+         *            the index into the SegmentValue which the hit is from
+         */
         public SegmentHit(SegmentBoundary contextStart, SegmentBoundary hitBoundary, int valueHitIndex) {
             this.contextStart = contextStart;
             this.hitBoundary = hitBoundary;
@@ -420,6 +443,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             return valueHitIndex;
         }
 
+        /**
+         * This should be called with the SegmentBoundary which marks the end of the hits context
+         *
+         * @param contextEnd
+         */
         public void setContextEnd(SegmentBoundary contextEnd) {
             this.contextEnd = contextEnd;
         }
