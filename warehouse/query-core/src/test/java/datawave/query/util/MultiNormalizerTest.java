@@ -1,24 +1,23 @@
 package datawave.query.util;
 
-import javax.inject.Inject;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.MultiNormalizerIngest;
 import datawave.query.QueryParameters;
@@ -26,19 +25,25 @@ import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * Test that simulates normalizer changes over time where some events have one normalizer applied but later a different normalizer is configured
  */
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class MultiNormalizerTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(MultiNormalizerTest.class);
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
     @Override
@@ -50,23 +55,8 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     private static AccumuloClient clientForSetup;
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        //  @formatter:off
-        return ShrinkWrap.create(JavaArchive.class)
-                .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                        "datawave.webservice.query.result.event")
-                .deleteClass(DefaultEdgeEventQueryLogic.class)
-                .deleteClass(RemoteEdgeDictionary.class)
-                .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                .addAsManifestResource(new StringAsset(
-                                "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                        "beans.xml");
-        //  @formatter:on
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeAll() throws Exception {
         clientForSetup = new InMemoryAccumuloClient("", instance);
 
         MultiNormalizerIngest ingest = new MultiNormalizerIngest(clientForSetup);
@@ -75,20 +65,16 @@ public class MultiNormalizerTest extends AbstractQueryTest {
         ingestUtil.write(clientForSetup, auths);
     }
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         setClientForTest(clientForSetup);
         givenParameter(QueryParameters.HIT_LIST, "true");
-    }
-
-    @Before
-    public void setup() throws Exception {
         // default to full date range
         givenDate("20250707", "20250708");
     }
 
-    @AfterClass
-    public static void teardown() {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 
@@ -244,7 +230,7 @@ public class MultiNormalizerTest extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
-    @Test(expected = DatawaveQueryException.class)
+    @Test
     public void testRangeSizeFourToTen_rangeExpansionDisabled() throws Exception {
         try {
             // simulate a bounded range expansion failure
@@ -257,21 +243,21 @@ public class MultiNormalizerTest extends AbstractQueryTest {
             expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(7);
             expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-            planAndExecuteQuery();
+            assertThrows(DatawaveQueryException.class, this::planAndExecuteQuery);
 
             // numeric range matches against numeric data with number normalizer
             givenDate("20250708");
             expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(7);
             expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-            planAndExecuteQuery();
+            assertThrows(DatawaveQueryException.class, this::planAndExecuteQuery);
 
             // numeric range matches against numeric data with either a text or number normalizer
             givenDate("20250707", "20250708");
             expectPlan("((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(14);
             expectHitTermsRequiredAnyOf("SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-            planAndExecuteQuery();
+            assertThrows(DatawaveQueryException.class, this::planAndExecuteQuery);
         } finally {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(false);
         }
@@ -300,7 +286,7 @@ public class MultiNormalizerTest extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
-    @Test(expected = DatawaveQueryException.class)
+    @Test
     public void testRangeSizeFourToTenWithAnchor_rangeExpansionDisabled() throws Exception {
         try {
             // simulate a bounded range expansion failure
@@ -314,21 +300,21 @@ public class MultiNormalizerTest extends AbstractQueryTest {
             expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(7);
             expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-            planAndExecuteQuery();
+            assertThrows(DatawaveQueryException.class, this::planAndExecuteQuery);
 
             // range with numeric normalizer finds expected hits
             givenDate("20250708");
             expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(7);
             expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-            planAndExecuteQuery();
+            assertThrows(DatawaveQueryException.class, this::planAndExecuteQuery);
 
             // anchor term plus multi-normalization at evaluation time allows all valid hits to be found
             givenDate("20250707", "20250708");
             expectPlan("COLOR == 'red' && ((_Bounded_ = true) && (SIZE >= '+aE4' && SIZE <= '+bE1'))");
             expectResultCount(14);
             expectHitTermsRequiredAnyOf("COLOR:red", "SIZE:4", "SIZE:5", "SIZE:6", "SIZE:7", "SIZE:8", "SIZE:9", "SIZE:10");
-            planAndExecuteQuery();
+            assertThrows(DatawaveQueryException.class, this::planAndExecuteQuery);
         } finally {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(false);
         }

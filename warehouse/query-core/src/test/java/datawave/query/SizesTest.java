@@ -1,37 +1,40 @@
 package datawave.query;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.SizesIngest;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * This suite of tests exercises many random events over a small number of shards
  */
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class SizesTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(SizesTest.class);
@@ -44,8 +47,8 @@ public class SizesTest extends AbstractQueryTest {
     // utility for writing different index table structures
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
     @Override
@@ -53,23 +56,8 @@ public class SizesTest extends AbstractQueryTest {
         return logic;
     }
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        //  @formatter:off
-        return ShrinkWrap.create(JavaArchive.class)
-                .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                        "datawave.webservice.query.result.event")
-                .deleteClass(DefaultEdgeEventQueryLogic.class)
-                .deleteClass(RemoteEdgeDictionary.class)
-                .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                .addAsManifestResource(new StringAsset(
-                                "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                        "beans.xml");
-        //  @formatter:on
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeAll() throws Exception {
         clientForSetup = new InMemoryAccumuloClient("", instance);
 
         ingest = new SizesIngest(clientForSetup);
@@ -78,14 +66,14 @@ public class SizesTest extends AbstractQueryTest {
         ingestUtil.write(clientForSetup, auths);
     }
 
-    @Before
-    public void setup() throws Exception {
+    @BeforeEach
+    public void beforeEach() throws Exception {
         givenDate("20250606", "20250606");
         setClientForTest(clientForSetup);
     }
 
-    @AfterClass
-    public static void teardown() {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 
@@ -164,7 +152,7 @@ public class SizesTest extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testRandomQuery() throws Exception {
         // there exist edge cases where no document satisfies this query due to random event generation.

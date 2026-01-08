@@ -1,10 +1,10 @@
 package datawave.query.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -24,7 +24,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,8 +105,8 @@ public abstract class AbstractQueryTest {
 
     public abstract ShardQueryLogic getLogic();
 
-    @After
-    public void after() {
+    @AfterEach
+    public void afterEach() {
         // reset initial state
         startDate = null;
         endDate = null;
@@ -273,7 +273,7 @@ public abstract class AbstractQueryTest {
      */
     public void planAndExecuteQuery() throws Exception {
         for (String indexTableName : TestIndexTableNames.names()) {
-            log.debug("=== using index: {} ===", indexTableName);
+            log.info("=== using index: {} ===", indexTableName);
             getLogic().setIndexTableName(indexTableName);
 
             switch (indexTableName) {
@@ -370,7 +370,7 @@ public abstract class AbstractQueryTest {
      * Assert the final query plan against the expected query plan. This is a required assertion for every test.
      */
     private void assertQueryPlan() {
-        assertNotNull("The expected query plan must be set ", expectedQueryPlan);
+        assertNotNull(expectedQueryPlan, "The expected query plan must be set ");
         try {
             ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(expectedQueryPlan);
             ASTJexlScript plannedScript = getLogic().getConfig().getQueryTree();
@@ -401,12 +401,12 @@ public abstract class AbstractQueryTest {
             return;
         }
 
-        assertFalse("UUIDs are expected but results are empty", results.isEmpty());
+        assertFalse(results.isEmpty(), "UUIDs are expected but results are empty");
 
         Set<String> found = new HashSet<>();
         for (Document result : results) {
             Attribute<?> attr = result.get("UUID");
-            assertNotNull("result did not contain a UUID", attr);
+            assertNotNull(attr, "result did not contain a UUID");
             String uuid = getUUID(attr);
             found.add(uuid);
         }
@@ -426,7 +426,7 @@ public abstract class AbstractQueryTest {
 
     public String getUUID(Attribute<?> attribute) {
         boolean typed = attribute instanceof TypeAttribute;
-        assertTrue("Attribute was not a TypeAttribute, was: " + attribute.getClass(), typed);
+        assertTrue(typed, "Attribute was not a TypeAttribute, was: " + attribute.getClass());
         TypeAttribute<?> uuid = (TypeAttribute<?>) attribute;
         return uuid.getType().getDelegateAsString();
     }

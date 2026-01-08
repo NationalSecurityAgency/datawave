@@ -1,42 +1,39 @@
 package datawave.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.base.Preconditions;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
@@ -44,27 +41,33 @@ import datawave.query.attributes.Document;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
 import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * A set of tests that exercises multi-shard, multi-day queries
  * <p>
  * Hit Term assertions are supported. Most queries should assert total documents returned and shards seen in the results.
  */
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class ColorsTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(ColorsTest.class);
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static Path folder;
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
     // this two client setup is a little odd, but it allows us to create tables once
@@ -75,23 +78,13 @@ public class ColorsTest extends AbstractQueryTest {
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        //  @formatter:off
-        return ShrinkWrap.create(JavaArchive.class)
-                .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                        "datawave.webservice.query.result.event")
-                .deleteClass(DefaultEdgeEventQueryLogic.class)
-                .deleteClass(RemoteEdgeDictionary.class)
-                .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                .addAsManifestResource(new StringAsset(
-                                "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                        "beans.xml");
-        //  @formatter:on
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @BeforeAll
+    public static void beforeAll() throws Exception {
         InMemoryInstance i = new InMemoryInstance(ColorsTest.class.getName());
         client = new InMemoryAccumuloClient("", i);
 
@@ -106,8 +99,8 @@ public class ColorsTest extends AbstractQueryTest {
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @Before
-    public void setup() throws IOException {
+    @BeforeEach
+    public void beforeEach() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         resetState();
         setClientForTest(client);
@@ -116,7 +109,7 @@ public class ColorsTest extends AbstractQueryTest {
         Preconditions.checkNotNull(hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toFile().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         logic.setMaxFieldIndexRangeSplit(1); // keep things simple
@@ -133,14 +126,9 @@ public class ColorsTest extends AbstractQueryTest {
         givenDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
     }
 
-    @Override
-    public ShardQueryLogic getLogic() {
-        return logic;
-    }
-
-    @After
-    public void after() {
-        super.after();
+    @AfterEach
+    public void afterEach() {
+        super.afterEach();
         resetState();
     }
 
@@ -154,8 +142,8 @@ public class ColorsTest extends AbstractQueryTest {
         expectedShards.clear();
     }
 
-    @AfterClass
-    public static void teardown() {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 

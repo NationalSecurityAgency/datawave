@@ -1,21 +1,21 @@
 package datawave.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -24,27 +24,25 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.collections.iterators.IteratorChain;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
@@ -57,11 +55,9 @@ import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ShapesIngest;
 import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * A set of tests that emphasize the influence of datatypes on query planning and execution
@@ -72,20 +68,29 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  * {@link IteratorChain} in a way that is incompatible with Accumulo's {@link SeekingFilter}. Namely, during a rebuild on a next call the ScannerHelper's call
  * to 'ChainIterator.next' will swap in a whole new seeking filter in a way that causes the call to 'range.clip' on SeekingFilter#222 to return null.
  */
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class ShapesTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(ShapesTest.class);
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static Path folder;
 
     // temporary stores for when forcing ivarators via absurdly low index expansion thresholds
     private int maxUnfieldedExpansionThreshold;
     private int maxValueExpansionThreshold;
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
     @Override
@@ -110,12 +115,12 @@ public class ShapesTest extends AbstractQueryTest {
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     private Set<String> expectedDatatypeFilter = null;
-    private final Map<String, Class<?>> expectedNormalizers = new HashMap<>();
+    private final Map<String,Class<?>> expectedNormalizers = new HashMap<>();
     private final Set<String> excludedFields = new HashSet<>();
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        MiniAccumuloConfig cfg = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        MiniAccumuloConfig cfg = new MiniAccumuloConfig(folder.toFile(), PASSWORD);
         cfg.setNumTservers(1);
         mac = new MiniAccumuloCluster(cfg);
         mac.start();
@@ -131,30 +136,10 @@ public class ShapesTest extends AbstractQueryTest {
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
-        mac.stop();
-    }
-
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        //  @formatter:off
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-        //  @formatter:on
-    }
-
-    @Before
+    @BeforeEach
     public void beforeEach() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        resetState();
+        // resetState();
 
         setClientForTest(client);
 
@@ -162,7 +147,7 @@ public class ShapesTest extends AbstractQueryTest {
         Preconditions.checkNotNull(hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toUri().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         logic.setMaxFieldIndexRangeSplit(1); // keep things simple
@@ -180,10 +165,15 @@ public class ShapesTest extends AbstractQueryTest {
         givenDate("20240201", "20240209");
     }
 
-    @After
-    public void after() {
-        super.after();
+    @AfterEach
+    public void afterEach() {
+        super.afterEach();
         resetState();
+    }
+
+    @AfterAll
+    public static void afterAll() throws Exception {
+        mac.stop();
     }
 
     private void resetState() {
@@ -197,7 +187,7 @@ public class ShapesTest extends AbstractQueryTest {
         excludedFields.clear();
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
     }
@@ -214,7 +204,9 @@ public class ShapesTest extends AbstractQueryTest {
 
     /**
      * Wrapper around {@link #givenParameter(String, String)} when using {@link QueryParameters#RETURN_FIELDS}
-     * @param includes the set of fields to include
+     *
+     * @param includes
+     *            the set of fields to include
      */
     public void givenIncludeFields(Set<String> includes) {
         givenParameter(QueryParameters.RETURN_FIELDS, Joiner.on(',').join(includes));
@@ -222,7 +214,9 @@ public class ShapesTest extends AbstractQueryTest {
 
     /**
      * Wrapper around {@link #givenParameter(String, String)} when using {@link QueryParameters#DISALLOWLISTED_FIELDS}
-     * @param excludes the set of fields to exclude
+     *
+     * @param excludes
+     *            the set of fields to exclude
      */
     public void givenExcludeFields(Set<String> excludes) {
         givenParameter(QueryParameters.DISALLOWLISTED_FIELDS, Joiner.on(',').join(excludes));
@@ -243,14 +237,19 @@ public class ShapesTest extends AbstractQueryTest {
 
     /**
      * Set the expected field-normalizer pair
-     * @param field the field
-     * @param clazz the normalizer
+     *
+     * @param field
+     *            the field
+     * @param clazz
+     *            the normalizer
      */
-    public void expectAttributeNormalizer(String field, Class<?> clazz){
+    public void expectAttributeNormalizer(String field, Class<?> clazz) {
         expectedNormalizers.put(field, clazz);
     }
 
-    public void expect(){}
+    public void expectNoFields(String... fields) {
+        excludedFields.addAll(List.of(fields));
+    }
 
     /**
      * For this test we must reset the datatype filter each time
@@ -268,6 +267,7 @@ public class ShapesTest extends AbstractQueryTest {
     protected void extraAssertions() {
         assertDatatypeFilter();
         assertAttributeNormalizer();
+        assertFieldNotFound();
     }
 
     /**
@@ -300,11 +300,16 @@ public class ShapesTest extends AbstractQueryTest {
         }
     }
 
-    // TODO: pull this into class level variable
-    private void assertFieldNotFound(String field) {
+    private void assertFieldNotFound() {
+        if (excludedFields.isEmpty()) {
+            return;
+        }
+
         for (Document result : results) {
-            Attribute<?> attrs = result.get(field);
-            assertNull("Expected null value for field " + field, attrs);
+            for (String field : excludedFields) {
+                Attribute<?> attrs = result.get(field);
+                assertNull(attrs, "Expected null value for field " + field);
+            }
         }
     }
 
@@ -797,39 +802,43 @@ public class ShapesTest extends AbstractQueryTest {
 
     // test cases for when a user specifies a filter that does not match the query fields, a filter with more types
 
-    @Test(expected = InvalidQueryException.class)
-    public void testExclusiveFilter() throws Exception {
+    @Test
+    public void testExclusiveFilter() {
         givenQuery("ONLY_HEX == 'hexa'");
         givenDatatypeFilter("triangle");
         expectUUIDs(Collections.emptySet());
-        planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
+        // datatype filter will not find ONLY_HEX and throw exception
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
     }
 
-    @Test(expected = InvalidQueryException.class)
-    public void testExclusiveFilterWithReduce() throws Exception {
+    @Test
+    public void testExclusiveFilterWithReduce() {
         logic.setReduceIngestTypes(true);
         givenQuery("ONLY_HEX == 'hexa'");
         givenDatatypeFilter("triangle");
         expectUUIDs(Collections.emptySet());
-        planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
+        // datatype filter will not find ONLY_HEX and throw exception
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
     }
 
-    @Test(expected = InvalidQueryException.class)
-    public void testExclusiveFilterWithRebuild() throws Exception {
+    @Test
+    public void testExclusiveFilterWithRebuild() {
         logic.setRebuildDatatypeFilter(true);
         givenQuery("ONLY_HEX == 'hexa'");
         givenDatatypeFilter("triangle");
         expectUUIDs(Collections.emptySet());
-        planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
+        // datatype filter will not find ONLY_HEX and throw exception
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
     }
 
-    @Test(expected = InvalidQueryException.class)
-    public void testExclusiveFilterWithPrune() throws Exception {
+    @Test
+    public void testExclusiveFilterWithPrune() {
         logic.setPruneQueryByIngestTypes(true);
         givenQuery("ONLY_HEX == 'hexa'");
         givenDatatypeFilter("triangle");
         expectUUIDs(Collections.emptySet());
-        planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
+        // datatype filter will not find ONLY_HEX and throw exception
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
     }
 
     @Test
@@ -1247,7 +1256,6 @@ public class ShapesTest extends AbstractQueryTest {
         expectPlan("SHAPE == 'triangle'");
         expectUUIDs(triangleUids);
         expectHitTermsRequiredAllOf("SHAPE:triangle");
-        planAndExecuteQuery();
 
         expectAttributeNormalizer("EDGES", NumberType.class);
         expectAttributeNormalizer("ONLY_TRI", LcNoDiacriticsType.class);
@@ -1255,6 +1263,7 @@ public class ShapesTest extends AbstractQueryTest {
         expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
         expectAttributeNormalizer("TYPE", LcNoDiacriticsType.class);
         expectAttributeNormalizer("UUID", NoOpType.class);
+        planAndExecuteQuery();
     }
 
     // use projection to trigger reduction
@@ -1269,15 +1278,12 @@ public class ShapesTest extends AbstractQueryTest {
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
-            planAndExecuteQuery();
 
             expectAttributeNormalizer("EDGES", NumberType.class);
             expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
             expectAttributeNormalizer("UUID", NoOpType.class);
-
-            assertFieldNotFound("ONLY_TRI");
-            assertFieldNotFound("PROPERTIES");
-            assertFieldNotFound("TYPE");
+            expectNoFields("ONLY_TRI", "PROPERTIES", "TYPE");
+            planAndExecuteQuery();
         } finally {
             logic.setReduceTypeMetadata(orig);
         }
@@ -1295,15 +1301,12 @@ public class ShapesTest extends AbstractQueryTest {
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
-            planAndExecuteQuery();
 
             expectAttributeNormalizer("EDGES", NumberType.class);
             expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
             expectAttributeNormalizer("UUID", NoOpType.class);
-
-            assertFieldNotFound("ONLY_TRI");
-            assertFieldNotFound("PROPERTIES");
-            assertFieldNotFound("TYPE");
+            expectNoFields("ONLY_TRI", "PROPERTIES", "TYPE");
+            planAndExecuteQuery();
         } finally {
             logic.setReduceTypeMetadata(orig);
         }
@@ -1321,15 +1324,12 @@ public class ShapesTest extends AbstractQueryTest {
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
-            planAndExecuteQuery();
 
             expectAttributeNormalizer("EDGES", NumberType.class);
             expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
             expectAttributeNormalizer("UUID", NoOpType.class);
-
-            assertFieldNotFound("ONLY_TRI");
-            assertFieldNotFound("PROPERTIES");
-            assertFieldNotFound("TYPE");
+            expectNoFields("ONLY_TRI", "PROPERTIES", "TYPE");
+            planAndExecuteQuery();
         } finally {
             logic.setReduceTypeMetadataPerShard(orig);
         }
@@ -1347,15 +1347,12 @@ public class ShapesTest extends AbstractQueryTest {
             expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
-            planAndExecuteQuery();
 
             expectAttributeNormalizer("EDGES", NumberType.class);
             expectAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
             expectAttributeNormalizer("UUID", NoOpType.class);
-
-            assertFieldNotFound("ONLY_TRI");
-            assertFieldNotFound("PROPERTIES");
-            assertFieldNotFound("TYPE");
+            expectNoFields("ONLY_TRI", "PROPERTIES", "TYPE");
+            planAndExecuteQuery();
         } finally {
             logic.setReduceTypeMetadata(orig);
         }
@@ -1372,6 +1369,7 @@ public class ShapesTest extends AbstractQueryTest {
             logic.setDisableEvaluation(true);
 
             givenQuery("SHAPE == 'triangle'");
+            expectPlan("SHAPE == 'triangle'");
             expectUUIDs(triangleUids);
             expectHitTermsRequiredAllOf("SHAPE:triangle");
             assertThrows(AssertionError.class, this::planAndExecuteQuery);
