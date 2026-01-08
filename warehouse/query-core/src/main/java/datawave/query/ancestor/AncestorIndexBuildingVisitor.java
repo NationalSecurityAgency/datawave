@@ -259,7 +259,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         String uid = getUid(key);
 
         // if the uid is not empty
-        if (!uid.isEmpty()) {
+        if (uid != null && !uid.isEmpty()) {
             uid = TLD.parseRootPointerFromId(uid);
         }
 
