@@ -35,7 +35,13 @@ public class SystemLimitProvider {
 
     SystemLimitProvider(int defaultSystemQueryLimit, long maxCacheSize, Collection<SystemLimitConfiguration> configs,
                     QueryLogicGroupLimitProvider groupLimitProvider) {
-        this.defaultSystemQueryLimit = defaultSystemQueryLimit;
+        // If the default system query limit is less than zero, set it to the no-limit value.
+        if (defaultSystemQueryLimit < 0) {
+            this.defaultSystemQueryLimit = QueryLimitConstants.NO_LIMIT;
+        } else {
+            this.defaultSystemQueryLimit = defaultSystemQueryLimit;
+        }
+
         this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
@@ -94,11 +100,6 @@ public class SystemLimitProvider {
                 } else {
                     matcherPatterns.put(matcherPattern, systemPattern);
                 }
-            }
-
-            // Verify that we do not have a negative query limit.
-            if (config.getQueryLimit() != null && config.getQueryLimit() < 0) {
-                throw new IllegalArgumentException("Negative query limit specified for system pattern '" + systemPattern + "'");
             }
 
             // Safeguard against allowing a configuration to potentially set whether queries on a system counts against user limits to false for all
@@ -160,9 +161,12 @@ public class SystemLimitProvider {
                 continue;
             }
 
-            // If the custom query limit is null or less than zero, use the default system limit.
-            if (customQueryLimit == null || customQueryLimit < 0) {
+            // If the custom query limit is null, use the default system query limit.
+            if (customQueryLimit == null) {
                 customQueryLimit = defaultSystemQueryLimit;
+            } else if (customQueryLimit < 0) {
+                // Otherwise, if the custom query limit is less than 0, set it to the no-limit value.
+                customQueryLimit = QueryLimitConstants.NO_LIMIT;
             }
 
             // If the custom counts against user limits is null, default to true.

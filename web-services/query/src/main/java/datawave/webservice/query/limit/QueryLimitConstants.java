@@ -8,4 +8,6 @@ public class QueryLimitConstants {
 
     // Matches against regex patterns that consist of '*' or any combination that results in a wildcard pattern.
     public static final Pattern wildcardOnlyPattern = Pattern.compile("^\\*$|^(\\.\\*)+$");
+
+    public static final int NO_LIMIT = -1;
 }

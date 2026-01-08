@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -73,17 +74,6 @@ class SystemLimitProviderTest {
     }
 
     /**
-     * Verify that configurations with negative query limits are forbidden.
-     */
-    @Test
-    void testNegativeQueryLimit() {
-        givenSystemConfig("SYSTEM_01*", -1, true, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Negative query limit specified for system pattern 'SYSTEM_01*'");
-    }
-
-    /**
      * Verify that configurations with an implied wildcard system pattern {@code *} that are configured to not apply to user limits are forbidden.
      */
     @Test
@@ -116,6 +106,15 @@ class SystemLimitProviderTest {
     }
 
     /**
+     * Verify that a default system query limit less than -1 is set to the value of {@link QueryLimitConstants#NO_LIMIT}.
+     */
+    @Test
+    void testDefaultSystemLessThanNegativeOne() {
+        SystemLimitProvider provider = new SystemLimitProvider(-3, maxCacheSize, Set.of(), new QueryLogicGroupLimitProvider(maxCacheSize, Set.of()));
+        assertThat(provider.getDefaultSystemQueryLimit()).isEqualTo(QueryLimitConstants.NO_LIMIT);
+    }
+
+    /**
      * Verify that when a system does not have any custom limits, a custom limit cannot be fetched, and it counts against the user query limit.
      */
     @Test
@@ -135,17 +134,28 @@ class SystemLimitProviderTest {
     void testSystemWithCustomLimits() {
         givenGroupConfig("TLD", "TLDQueryLogic", 50);
         givenSystemConfig("SYSTEM_01", 100, false, Map.of("TL.*", 20));
+        givenSystemConfig("SYSTEM_02", -3, true, Map.of());
 
         initProvider();
 
         Optional<SystemLimits> optional = provider.getCustomLimits("SYSTEM_01");
         assertThat(optional).isNotEmpty();
 
+        // Assert configuration for SYSTEM_01.
         SystemLimits systemLimits = optional.get();
         assertThat(systemLimits.getSystemPattern()).isEqualTo("SYSTEM_01");
         assertThat(systemLimits.getQueryLimit()).isEqualTo(100);
         assertThat(systemLimits.countsAgainstUserLimit()).isFalse();
         assertThat(systemLimits.getBestGroupLimits("TLDQueryLogic")).containsExactly(Map.entry("TLD", 20));
+
+        // Assert configuration for SYSTEM_02.
+        optional = provider.getCustomLimits("SYSTEM_02");
+        assertThat(optional).isNotEmpty();
+        systemLimits = optional.get();
+        assertThat(systemLimits.getSystemPattern()).isEqualTo("SYSTEM_02");
+        assertThat(systemLimits.getQueryLimit()).isEqualTo(QueryLimitConstants.NO_LIMIT);
+        assertThat(systemLimits.countsAgainstUserLimit()).isTrue();
+        assertThat(systemLimits.getBestGroupLimits("TLDQueryLogic")).isEmpty();
     }
 
     /**

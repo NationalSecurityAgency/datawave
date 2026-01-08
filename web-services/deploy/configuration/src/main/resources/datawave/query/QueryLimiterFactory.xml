@@ -62,7 +62,9 @@
     Sample configuration for systems.
 
         - systemPattern: A regex pattern matching the canonical hostnames of systems (typically k8 pod names).
-        - queryLimit: The maximum number of active queries allowed to be concurrently running on the system.
+        - queryLimit: The maximum number of active queries allowed to be concurrently running on the system. A value less than zero will indicate that there is
+            no limit for the system. When there is no limit for the system, the total queries for the system will not be aggregated when checking query limits,
+            resulting in a faster check.
         - countsAgainstUserLimit: Whether queries on the system count towards a user's active query limit. The default
             is true. If false, any queries on this system will not count towards a user's limit, but will still count
             towards the overall system limit and any overridden query logic group limits established in this
@@ -91,7 +93,9 @@
 
     <!-- Sample configuration for the query limit configuration.
 
-        - defaultSystemQueryLimit: The default number of active concurrent queries that may be running on a system.
+        - defaultSystemQueryLimit: The default number of active concurrent queries that may be running on a system. A value less than zero will indicate that by
+            default, there is no max limit for queries on systems. When there is no limit for the system, the total queries for the system will not be
+            aggregated when checking query limits, resulting in a faster check.
         - defaultUserQueryLimit: The default maximum number of concurrent active queries a user may have across all
             systems that count towards the user's query limit.
         - internalCacheMaxSize: The default maximum size to enforce for internal caching purposes. This value should
