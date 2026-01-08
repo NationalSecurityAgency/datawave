@@ -48,6 +48,8 @@ import datawave.test.HitTermAssertions;
  * <li>Defining lucene or jexl queries</li>
  * <li>Defining query parameters</li>
  * <li>Defining expected hit terms</li>
+ * <li>Defining expected query plan</li>
+ * <li>Defining expected result count</li>
  * <li>Defining expected result shards</li>
  * </ul>
  */
@@ -127,7 +129,7 @@ public abstract class AbstractQueryTest {
     }
 
     /**
-     * Add the provided key value pair to the query parameter map
+     * Add the provided key-value pair to the query parameter map
      *
      * @param key
      *            the key
@@ -136,6 +138,16 @@ public abstract class AbstractQueryTest {
      */
     public void withParameter(String key, String value) {
         parameters.put(key, value);
+    }
+
+    /**
+     * Add the provided key-value pairs to the query parameter map
+     *
+     * @param parameters
+     *            the map of parameters to set
+     */
+    public void withParameters(Map<String,String> parameters) {
+        this.parameters.putAll(parameters);
     }
 
     /**
