@@ -590,8 +590,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.setPlan(fieldValue);
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);
-                    } else if (fieldName.equals("QUERY_ID")) {
-                        m.setQueryId(fieldValue);
                     } else if (fieldName.equals("BEGIN_DATE")) {
                         try {
                             Date d = sdf_date_time1.parse(fieldValue);
@@ -692,8 +690,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.addVersion(BaseQueryMetric.DATAWAVE, fieldValue);
                     } else if (fieldName.startsWith("VERSION.")) {
                         m.addVersion(fieldName.substring(8), fieldValue);
-                    } else if (fieldName.equals("YIELD_COUNT")) {
-                        m.setYieldCount(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("LOGIN_TIME")) {
                         m.setLoginTime(Long.parseLong(fieldValue));
                     } else {
