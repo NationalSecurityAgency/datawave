@@ -3,6 +3,7 @@ package datawave.query.tld;
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -193,7 +194,7 @@ public class TLDQueryIterator extends QueryIterator {
                     final Class<?> fClass = Class.forName(fClassName);
                     if (Predicate.class.isAssignableFrom(fClass)) {
                         // Create and configure the predicate
-                        final Predicate p = (Predicate) fClass.newInstance();
+                        final Predicate p = (Predicate) fClass.getDeclaredConstructor().newInstance();
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
                         }
@@ -214,7 +215,7 @@ public class TLDQueryIterator extends QueryIterator {
                         return fieldIndexKeyDataTypeFilter;
                     }
                 }
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
             }
         }
