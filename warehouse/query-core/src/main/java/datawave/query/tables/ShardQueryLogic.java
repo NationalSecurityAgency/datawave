@@ -461,6 +461,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             throw new IllegalArgumentException("Query cannot be null");
         } else {
             config.setQueryString(jexlQueryString);
+            config.setOriginalJexlQuery(jexlQueryString);
         }
 
         final Date beginDate = settings.getBeginDate();
@@ -805,7 +806,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private AllHitsFactory getAnnotationHitsFactory() throws QueryException {
         AllHitsFactory allHitsFactory;
         try {
-            Class<?> annotationHitsFactoryClass = Class.forName(getAllHitsQueryConfig().getAnnotationHitsFactoryClass());
+            Class<?> annotationHitsFactoryClass = Class.forName(getAllHitsQueryConfig().getAllHitsFactoryClass());
             Class<? extends AllHitsFactory> subClass = annotationHitsFactoryClass.asSubclass(AllHitsFactory.class);
             allHitsFactory = subClass.getDeclaredConstructor().newInstance();
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
@@ -824,17 +825,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
 
             AllHitsQueryConfig allHitsQueryConfig = getAllHitsQueryConfig();
-            if (allHitsQueryConfig != null && allHitsQueryConfig.isAnnotationHitsEnabled()) {
+            if (allHitsQueryConfig != null && allHitsQueryConfig.isEnabled()) {
                 // since this may be called multiple times always rebuild
                 // @formatter:off
                 ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
-                        getConfig(),
+                        getConfig().getOriginalJexlQuery(),
+                        allHitsQueryConfig.getQueryTermExtractor(),
                         getAnnotationDataAccess(),
                         getAnnotationHitsFactory(),
-                        allHitsQueryConfig.getAnnotationHitsMaxContextLength(),
-                        allHitsQueryConfig.getAnnotationHitsValidTypes(),
-                        allHitsQueryConfig.getAnnotationHitsValidQueryFields(),
-                        allHitsQueryConfig.getAnnotationHitsTargetField()));
+                        allHitsQueryConfig.getMaxContextLength(),
+                        allHitsQueryConfig.getValidAnnotationTypes(),
+                        allHitsQueryConfig.getTargetField()));
                 // @formatter:on
             }
 

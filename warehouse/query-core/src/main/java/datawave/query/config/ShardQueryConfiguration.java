@@ -559,6 +559,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int maxLinesToPrint = -1;
 
+    private String originalJexlQuery;
+
     private AllHitsQueryConfig allHitsQueryConfig;
 
     /**
@@ -816,6 +818,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setOriginalJexlQuery(other.getOriginalJexlQuery());
         this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
     }
 
@@ -3436,5 +3439,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
         this.allHitsQueryConfig = allHitsQueryConfig;
+    }
+
+    public String getOriginalJexlQuery() {
+        return originalJexlQuery;
+    }
+
+    public void setOriginalJexlQuery(String originalJexlQuery) {
+        this.originalJexlQuery = originalJexlQuery;
     }
 }

@@ -4,7 +4,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,12 +13,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl3.parser.ASTEQNode;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 
@@ -37,8 +35,7 @@ import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
+import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.transformer.annotation.model.AllHitsError;
@@ -63,30 +60,30 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private static final SegmentValueByScoreComparator SEGMENT_VALUE_BY_SCORE_COMPARATOR = new SegmentValueByScoreComparator();
     private static final BoundaryComparator BOUNDARY_COMPARATOR = new BoundaryComparator();
 
-    private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
     private final AllHitsFactory allHitsFactory;
     private final int maxContextBoundary;
     private final Set<String> validTypes;
-    private final Set<String> validQueryFields;
     private final String targetField;
+    private final TermExtractor queryTermExtractor;
+    private final String jexlQueryString;
 
     private boolean enabled = DEFAULT_ENABLED;
     private int contextSize = DEFAULT_CONTEXT_SIZE;
     private float minScore = DEFAULT_MIN_SCORE;
     private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
 
-    private Set<String> searchHitTerms;
+    private Set<Pattern> searchHitTerms;
     private ObjectMapper objectMapper;
 
-    public AnnotationHitsTransformer(ShardQueryConfiguration shardQueryConfig, AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory,
-                    int maxContextBoundary, Set<String> validTypes, Set<String> validQueryFields, String targetField) {
-        this.shardQueryConfig = shardQueryConfig;
+    public AnnotationHitsTransformer(@Nullable String jexlQueryString, TermExtractor queryTermExtractor, AnnotationDataAccess annotationDataAccess,
+                    AllHitsFactory allHitsFactory, int maxContextBoundary, Set<String> validTypes, String targetField) {
+        this.jexlQueryString = jexlQueryString;
+        this.queryTermExtractor = queryTermExtractor;
         this.annotationDataAccess = annotationDataAccess;
         this.allHitsFactory = allHitsFactory;
         this.maxContextBoundary = maxContextBoundary;
         this.validTypes = validTypes;
-        this.validQueryFields = validQueryFields;
         this.targetField = targetField;
     }
 
@@ -146,7 +143,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 keywords = keywordStr.split(KEYWORD_DELIMITER);
             }
             searchHitTerms = new HashSet<>();
-            searchHitTerms.addAll(Arrays.asList(keywords));
+            for (String keyword : keywords) {
+                searchHitTerms.add(queryTermExtractor.normalizeAndBuildPattern(keyword));
+            }
         }
 
     }
@@ -169,8 +168,8 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         // extract terms to lookup hits on if they haven't been extracted yet
         if (searchHitTerms == null) {
             try {
-                searchHitTerms = extractSearchHitTerms(shardQueryConfig, settings);
-            } catch (ParseException e) {
+                searchHitTerms = queryTermExtractor.extract(jexlQueryString, settings);
+            } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
                 log.debug("no valid search terms detected for query, skipping all hits");
             }
         }
@@ -340,8 +339,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             List<SegmentValue> values = sortedSegments.get(boundary);
             for (int i = 0; i < values.size(); i++) {
                 SegmentValue segmentValue = values.get(i);
-                String normalizedTerm = normalize(segmentValue.getValue());
-                if (segmentValue.getScore() >= minScore && searchHitTerms.contains(normalizedTerm)) {
+                if (segmentValue.getScore() >= minScore && matchesSearchTerm(segmentValue.getValue())) {
                     // partial hits index is the location in the window where the hit is complete
                     List<SegmentHit> hits = partialHits.computeIfAbsent(segmentIndex + contextSize, ArrayList::new);
                     hits.add(new SegmentHit(window.getFirst(), boundary, i));
@@ -378,31 +376,14 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return finishedHits;
     }
 
-    private Set<String> extractSearchHitTerms(ShardQueryConfiguration shardQueryConfig, Query settings) throws ParseException {
-        Set<String> searchTerms = new HashSet<>();
-
-        if (shardQueryConfig != null && shardQueryConfig.getQueryTree() != null) {
-            ASTJexlScript script = shardQueryConfig.getQueryTree();
-            List<ASTEQNode> eqNodes = JexlASTHelper.getEQNodes(script);
-            if (!eqNodes.isEmpty()) {
-                for (ASTEQNode eqNode : eqNodes) {
-                    String identifier = JexlASTHelper.getIdentifier(eqNode);
-                    if (identifier != null && validQueryFields.contains(identifier)) {
-                        Object literal = JexlASTHelper.getLiteralValue(eqNode);
-                        if (literal != null) {
-                            // simple normalization for exact string matches only
-                            searchTerms.add(normalize(literal.toString()));
-                        }
-                    }
-                }
+    private boolean matchesSearchTerm(String term) {
+        for (Pattern searchPattern : searchHitTerms) {
+            if (queryTermExtractor.matches(searchPattern, term)) {
+                return true;
             }
         }
 
-        return searchTerms;
-    }
-
-    private String normalize(String toNormalize) {
-        return toNormalize.toLowerCase().trim();
+        return false;
     }
 
     /**

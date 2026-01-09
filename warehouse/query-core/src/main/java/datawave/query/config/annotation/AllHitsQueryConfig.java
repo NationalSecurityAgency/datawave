@@ -3,35 +3,38 @@ package datawave.query.config.annotation;
 import java.util.Set;
 
 import datawave.query.transformer.annotation.AllHitsFactory;
+import datawave.query.transformer.annotation.TermExtractor;
 
 public class AllHitsQueryConfig {
 
     /**
      * Enable the all hits transformer
      */
-    private boolean annotationHitsEnabled = false;
+    private boolean enabled = false;
 
     /**
      * Max number of terms to buffer when fetching all hits before and after the target term
      */
-    private int annotationHitsMaxContextLength = 25;
+    private int maxContextLength = 25;
 
     /**
      * annotation types to be used with all hits
      */
-    private Set<String> annotationHitsValidTypes;
+    private Set<String> validAnnotationTypes;
 
     /**
      * fields from the query that should be searched for all hits
      */
-    private Set<String> annotationHitsValidQueryFields;
+    private Set<String> validQueryFields;
 
     /**
      * field to write all hits data to
      */
-    private String annotationHitsTargetField = "ALL_HITS";
+    private String targetField = "ALL_HITS";
 
-    private String annotationHitsFactoryClass = AllHitsFactory.class.getCanonicalName();
+    private String allHitsFactoryClass = AllHitsFactory.class.getCanonicalName();
+
+    private TermExtractor queryTermExtractor;
 
     private AnnotationConfig annotationConfig;
 
@@ -40,61 +43,53 @@ public class AllHitsQueryConfig {
     }
 
     public AllHitsQueryConfig(AllHitsQueryConfig other) {
-        setAnnotationHitsEnabled(other.isAnnotationHitsEnabled());
-        setAnnotationHitsMaxContextLength(other.getAnnotationHitsMaxContextLength());
-        setAnnotationHitsValidQueryFields(other.getAnnotationHitsValidQueryFields());
-        setAnnotationHitsValidTypes(other.getAnnotationHitsValidTypes());
-        setAnnotationHitsFactoryClass(other.getAnnotationHitsFactoryClass());
-        setAnnotationHitsTargetField(other.getAnnotationHitsTargetField());
+        setEnabled(other.isEnabled());
+        setMaxContextLength(other.getMaxContextLength());
+        setValidAnnotationTypes(other.getValidAnnotationTypes());
+        setAllHitsFactoryClass(other.getAllHitsFactoryClass());
+        setTargetField(other.getTargetField());
+        setQueryTermExtractor(other.getQueryTermExtractor());
         setAnnotationConfig(other.getAnnotationConfig());
     }
 
-    public boolean isAnnotationHitsEnabled() {
-        return annotationHitsEnabled;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setAnnotationHitsEnabled(boolean annotationHitsEnabled) {
-        this.annotationHitsEnabled = annotationHitsEnabled;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
-    public int getAnnotationHitsMaxContextLength() {
-        return annotationHitsMaxContextLength;
+    public int getMaxContextLength() {
+        return maxContextLength;
     }
 
-    public void setAnnotationHitsMaxContextLength(int annotationHitsMaxContextLength) {
-        this.annotationHitsMaxContextLength = annotationHitsMaxContextLength;
+    public void setMaxContextLength(int maxContextLength) {
+        this.maxContextLength = maxContextLength;
     }
 
-    public Set<String> getAnnotationHitsValidTypes() {
-        return annotationHitsValidTypes;
+    public Set<String> getValidAnnotationTypes() {
+        return validAnnotationTypes;
     }
 
-    public void setAnnotationHitsValidTypes(Set<String> annotationHitsValidTypes) {
-        this.annotationHitsValidTypes = annotationHitsValidTypes;
+    public void setValidAnnotationTypes(Set<String> validAnnotationTypes) {
+        this.validAnnotationTypes = validAnnotationTypes;
     }
 
-    public Set<String> getAnnotationHitsValidQueryFields() {
-        return annotationHitsValidQueryFields;
+    public String getTargetField() {
+        return targetField;
     }
 
-    public void setAnnotationHitsValidQueryFields(Set<String> annotationHitsValidQueryFields) {
-        this.annotationHitsValidQueryFields = annotationHitsValidQueryFields;
+    public void setTargetField(String targetField) {
+        this.targetField = targetField;
     }
 
-    public String getAnnotationHitsTargetField() {
-        return annotationHitsTargetField;
+    public String getAllHitsFactoryClass() {
+        return allHitsFactoryClass;
     }
 
-    public void setAnnotationHitsTargetField(String annotationHitsTargetField) {
-        this.annotationHitsTargetField = annotationHitsTargetField;
-    }
-
-    public String getAnnotationHitsFactoryClass() {
-        return annotationHitsFactoryClass;
-    }
-
-    public void setAnnotationHitsFactoryClass(String annotationHitsFactoryClass) {
-        this.annotationHitsFactoryClass = annotationHitsFactoryClass;
+    public void setAllHitsFactoryClass(String allHitsFactoryClass) {
+        this.allHitsFactoryClass = allHitsFactoryClass;
     }
 
     public AnnotationConfig getAnnotationConfig() {
@@ -103,5 +98,13 @@ public class AllHitsQueryConfig {
 
     public void setAnnotationConfig(AnnotationConfig annotationConfig) {
         this.annotationConfig = annotationConfig;
+    }
+
+    public TermExtractor getQueryTermExtractor() {
+        return queryTermExtractor;
+    }
+
+    public void setQueryTermExtractor(TermExtractor queryTermExtractor) {
+        this.queryTermExtractor = queryTermExtractor;
     }
 }

@@ -79,6 +79,8 @@ import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.config.annotation.AnnotationConfig;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.TimedVisitorManager;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.annotation.AllHitsException;
@@ -87,6 +89,7 @@ import datawave.query.transformer.annotation.AllHitsFactoryErrorOnly;
 import datawave.query.transformer.annotation.AnnotationHitsTransformer;
 import datawave.query.transformer.annotation.BoundaryComparator;
 import datawave.query.transformer.annotation.SegmentValueByScoreComparator;
+import datawave.query.transformer.annotation.TermExtractor;
 import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
@@ -955,7 +958,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void annotationsHitsFactoryErrorTest() throws Exception {
         withAnnotationHits();
-        logic.getAllHitsQueryConfig().setAnnotationHitsFactoryClass(AllHitsFactoryErrorOnly.class.getCanonicalName());
+        logic.getAllHitsQueryConfig().setAllHitsFactoryClass(AllHitsFactoryErrorOnly.class.getCanonicalName());
 
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
 
@@ -1045,12 +1048,11 @@ public abstract class ShardQueryLogicTest {
         withAnnotationHits();
 
         // create a new segment which would match the original wildcard if it weren't expanded in planning
-        Segment wildcard = Segment.newBuilder().addValues(SegmentValue.newBuilder().setValue("cap").setScore(0.3f).build())
+        Segment wildcard = Segment.newBuilder().addValues(SegmentValue.newBuilder().setValue("cap").setScore(0.4f).build())
                         .addValues(SegmentValue.newBuilder().setValue("ca").setScore(1.0f).build())
                         .setBoundary(SegmentBoundary.newBuilder().setBoundaryType(BoundaryType.TIME_MILLI).setStart(30).setEnd(40).build()).build();
         givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1, wildcard));
 
-        // cap.* is expanded to capone in query planning, so capone is the only thing searched
         givenQuery("UUID =~ 'CAP.*'");
         givenStartDate("20091231");
         givenEndDate("20150101");
@@ -1058,8 +1060,11 @@ public abstract class ShardQueryLogicTest {
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(wildcard.getBoundary());
 
+        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), wildcard.getBoundary(), 0);
+        hit2.setContextEnd(wildcard.getBoundary());
+
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, wildcard);
-        AllHits hits1 = getExpectedAnnotationHits("5F8B7BC3", List.of(hit1), context);
+        AllHits hits1 = getExpectedAnnotationHits("5F8B7BC3", List.of(hit1, hit2), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
@@ -1125,6 +1130,41 @@ public abstract class ShardQueryLogicTest {
         runTestQuery(expected);
     }
 
+    @Test
+    public void luceneUnfieldedTest() throws Exception {
+        withAnnotationHits();
+        logic.getAllHitsQueryConfig().setQueryTermExtractor(new TermExtractor(Set.of("_ANYFIELD_")));
+        disableQueryTreeValidation();
+
+        givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
+
+        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
+        givenQueryParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
+        givenQuery("CAPONE");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
+
+        AllHitsFactory factory = new AllHitsFactory();
+        AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.MICROSECONDS);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    private void disableQueryTreeValidation() {
+        TimedVisitorManager visitorManager = ((DefaultQueryPlanner) logic.getQueryPlanner()).getVisitorManager();
+        visitorManager.setValidateAst(false);
+    }
+
     private void setupAnnotationsTables(AccumuloClient client) {
         try {
             // drop existing tables if they exist
@@ -1162,11 +1202,11 @@ public abstract class ShardQueryLogicTest {
 
     private void withAnnotationHits() {
         logic.setAllHitsQueryConfig(new AllHitsQueryConfig());
-        logic.getAllHitsQueryConfig().setAnnotationHitsEnabled(true);
-        logic.getAllHitsQueryConfig().setAnnotationHitsMaxContextLength(3);
-        logic.getAllHitsQueryConfig().setAnnotationHitsValidQueryFields(Set.of("FOO", "BAR", "UUID"));
-        logic.getAllHitsQueryConfig().setAnnotationHitsTargetField("ALL_HITS_RESULTS");
-        logic.getAllHitsQueryConfig().setAnnotationHitsValidTypes(Set.of("ANNO1"));
+        logic.getAllHitsQueryConfig().setEnabled(true);
+        logic.getAllHitsQueryConfig().setMaxContextLength(3);
+        logic.getAllHitsQueryConfig().setTargetField("ALL_HITS_RESULTS");
+        logic.getAllHitsQueryConfig().setValidAnnotationTypes(Set.of("ANNO1"));
+        logic.getAllHitsQueryConfig().setQueryTermExtractor(new TermExtractor(Set.of("FOO", "BAR", "UUID")));
         logic.getAllHitsQueryConfig().setAnnotationConfig(new AnnotationConfig());
         logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationTableName("annotation");
         logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationSourceTableName("annotationSource");

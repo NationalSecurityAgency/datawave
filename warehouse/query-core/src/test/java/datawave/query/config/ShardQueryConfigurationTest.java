@@ -637,6 +637,9 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("allHitsQueryConfig", null);
         updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
+
+        defaultValues.put("originalJexlQuery", null);
+        updatedValues.put("originalJexlQuery", "FIELD == 'VALUE'");
     }
 
     private Query createQuery(String query) {
