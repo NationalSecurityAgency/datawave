@@ -1,7 +1,5 @@
 package datawave.query;
 
-import static datawave.query.util.AbstractQueryTest.RangeType;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -57,10 +55,10 @@ public class MultiNormalizerIngest {
         normalizerMap.put("COLOR" + NEW_ROW, new LcNoDiacriticsNormalizer());
     }
 
-    public void write(RangeType type) throws Exception {
+    public void write() throws Exception {
         createTables();
         loadMetadata();
-        writeEvents(type);
+        writeEvents();
     }
 
     private void createTables() throws Exception {
@@ -123,10 +121,10 @@ public class MultiNormalizerIngest {
         return normalizer;
     }
 
-    private void writeEvents(RangeType type) throws Exception {
+    private void writeEvents() throws Exception {
         createEvents();
-        writeEventsForShard(OLD_ROW, type);
-        writeEventsForShard(NEW_ROW, type);
+        writeEventsForShard(OLD_ROW);
+        writeEventsForShard(NEW_ROW);
     }
 
     private void createEvents() {
@@ -142,13 +140,13 @@ public class MultiNormalizerIngest {
         }
     }
 
-    private void writeEventsForShard(String shard, RangeType type) throws Exception {
-        writeShardIndex(shard, type);
+    private void writeEventsForShard(String shard) throws Exception {
+        writeShardIndex(shard);
         writeFieldIndex(shard);
         writeEvent(shard);
     }
 
-    private void writeShardIndex(String shard, RangeType type) throws Exception {
+    private void writeShardIndex(String shard) throws Exception {
         long ts = DateHelper.parse(shard).getTime();
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD_INDEX)) {
             for (Multimap<String,String> event : events) {
@@ -158,7 +156,7 @@ public class MultiNormalizerIngest {
                     Collection<String> fields = inverted.get(value);
                     for (String field : fields) {
                         String uid = uidForEvent(shard, event.get("COUNTER").iterator().next());
-                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(type, uid));
+                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(uid));
                         bw.addMutation(m);
                     }
                 }
@@ -236,16 +234,11 @@ public class MultiNormalizerIngest {
         return inverted;
     }
 
-    private static Value getValue(RangeType type, String uid) {
+    private static Value getValue(String uid) {
         Uid.List.Builder builder = Uid.List.newBuilder();
-        if (type.equals(RangeType.DOCUMENT)) {
-            builder.setIGNORE(false);
-            builder.setCOUNT(1L);
-            builder.addUID(uid);
-        } else {
-            builder.setIGNORE(true);
-            builder.setCOUNT(17L); // arbitrary prime number below the 20 max uid limit
-        }
+        builder.setIGNORE(false);
+        builder.setCOUNT(1L);
+        builder.addUID(uid);
         return new Value(builder.build().toByteArray());
     }
 }
