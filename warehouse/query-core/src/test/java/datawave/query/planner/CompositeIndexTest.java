@@ -476,6 +476,11 @@ public class CompositeIndexTest {
             Assert.assertEquals(2196, queries.size());
         }
 
+        // Caused by: java.lang.IllegalArgumentException:
+        // Start key must be less than end key in range
+        // (20000101_2 fi%00;GEO:1f0%ef;%bf;%bd;JFE%ef;%bf;%bd;%ef;%bf;%bd;]%04;t%ef;%bf;%bd;a%ef;%bf;%bd;%17;3%00; [] 9223372036854775807 false,
+        // 20000101_2 fi%00;GEO:1f0%e5;3+*%1b;%e5;X%a7;%88;Aa%b6;%cd;%04;%9f;4d%fa;%98;8%b8;%1a;"%dc; [] 9223372036854775807 false)
+
         List<DefaultEvent> events = getQueryResults(query, true);
         Assert.assertEquals(9, events.size());
 

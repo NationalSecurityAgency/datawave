@@ -275,7 +275,6 @@ public class NoUidIndexTest extends IndexConversionUtils implements IndexConvers
                 additions.put(name, "19,datawave.iterators.TotalAggregatingIterator");
                 additions.put(opt, "datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator");
             }
-
             MacTestUtil.addPropertiesAndWait(tops, tableName, additions);
         } catch (Exception e) {
             fail("Failed to configure shard index", e);
