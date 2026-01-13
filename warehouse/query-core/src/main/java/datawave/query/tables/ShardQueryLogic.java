@@ -521,6 +521,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setQueriesIter(this.queries.iterator());
         }
 
+        // set the config's query string.
         config.setQueryString(getQueryPlanner().getPlannedScript());
 
         stopwatch.stop();

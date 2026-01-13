@@ -1,7 +1,7 @@
 package datawave.query.transformer;
 
 import java.io.ByteArrayInputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -102,7 +102,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
                 visibilitiesToMerge.add(fv.getVisibility());
                 try {
                     Map<String,String> fieldMarkings = this.markingFunctions.translateFromColumnVisibility(fv.getVisibility());
-                    String value = new String(fv.getValue(), Charset.forName("UTF-8"));
+                    String value = new String(fv.getValue(), StandardCharsets.UTF_8);
                     // if this is a content field name, then replace the value with the uid
                     if (getContentFieldNames().contains(fieldName)) {
                         value = baseUid;

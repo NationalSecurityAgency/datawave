@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -217,7 +217,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
         if (XMLUtil.isValidXML(string)) {
             this.marshalledValue = DatatypeConverter.printString(string);
         } else {
-            this.marshalledValue = DatatypeConverter.printBase64Binary(string.getBytes(Charset.forName("UTF-8")));
+            this.marshalledValue = DatatypeConverter.printBase64Binary(string.getBytes(StandardCharsets.UTF_8));
             base64Encoded = Boolean.TRUE;
         }
         this.type = XSD_STRING;
@@ -306,7 +306,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
     private void afterUnmarshal(Unmarshaller unmarshaller, Object parent) {
         if (XSD_STRING.equals(type)) {
             if (isBase64Encoded()) {
-                value = new String(DatatypeConverter.parseBase64Binary(marshalledValue), Charset.forName("UTF-8"));
+                value = new String(DatatypeConverter.parseBase64Binary(marshalledValue), StandardCharsets.UTF_8);
             } else {
                 value = DatatypeConverter.parseString(marshalledValue);
             }
