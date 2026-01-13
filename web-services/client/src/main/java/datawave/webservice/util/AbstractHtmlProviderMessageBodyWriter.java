@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -17,7 +18,7 @@ import javax.ws.rs.ext.Provider;
 @Produces(MediaType.TEXT_HTML)
 public abstract class AbstractHtmlProviderMessageBodyWriter<T> implements MessageBodyWriter<T> {
 
-    public static final Charset utf8 = Charset.forName("UTF-8");
+    public static final Charset utf8 = StandardCharsets.UTF_8;
 
     /*
      * (non-Javadoc)
