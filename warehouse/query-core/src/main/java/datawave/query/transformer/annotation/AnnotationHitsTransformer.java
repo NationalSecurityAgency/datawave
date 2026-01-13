@@ -10,9 +10,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
@@ -30,6 +32,7 @@ import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
+import datawave.data.normalizer.Normalizer;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
@@ -66,6 +69,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private final Set<String> validTypes;
     private final String targetField;
     private final TermExtractor queryTermExtractor;
+    private final Normalizer<String> termNormalizer;
     private final String jexlQueryString;
 
     private boolean enabled = DEFAULT_ENABLED;
@@ -76,10 +80,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private Set<Pattern> searchHitTerms;
     private ObjectMapper objectMapper;
 
-    public AnnotationHitsTransformer(@Nullable String jexlQueryString, TermExtractor queryTermExtractor, AnnotationDataAccess annotationDataAccess,
-                    AllHitsFactory allHitsFactory, int maxContextBoundary, Set<String> validTypes, String targetField) {
+    public AnnotationHitsTransformer(@Nullable String jexlQueryString, TermExtractor queryTermExtractor, Normalizer<String> termNormalizer,
+                    AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary, Set<String> validTypes,
+                    String targetField) {
         this.jexlQueryString = jexlQueryString;
         this.queryTermExtractor = queryTermExtractor;
+        this.termNormalizer = termNormalizer;
         this.annotationDataAccess = annotationDataAccess;
         this.allHitsFactory = allHitsFactory;
         this.maxContextBoundary = maxContextBoundary;
@@ -101,6 +107,10 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             return;
         }
 
+        if (queryTermExtractor == null || termNormalizer == null) {
+            throw new IllegalStateException("queryTermExtractor and termNormalizer must be set");
+        }
+
         String contextBoundaryStr = settings.findParameter(CONTEXT_SIZE_PARAMETER).getParameterValue();
         if (!contextBoundaryStr.isBlank()) {
             contextSize = Integer.parseInt(contextBoundaryStr);
@@ -118,6 +128,14 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         if (!minScoreStr.isBlank()) {
             minScore = Float.parseFloat(minScoreStr);
             log.info("all hits minScore: " + minScore);
+
+            if (minScore < 0) {
+                log.warn("minScore set below 0, adjusting to 0");
+                minScore = 0;
+            } else if (minScore > 1) {
+                log.warn("minScore set above 1, adjusting to 1");
+                minScore = 1;
+            }
         }
 
         String timeUnitStr = settings.findParameter(TIMEUNIT_PARAMETER).getParameterValue();
@@ -144,10 +162,19 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             }
             searchHitTerms = new HashSet<>();
             for (String keyword : keywords) {
-                searchHitTerms.add(queryTermExtractor.normalizeAndBuildPattern(keyword));
+                searchHitTerms.add(compileNormalized(termNormalizer.normalize(keyword)));
             }
         }
+    }
 
+    /**
+     * All patterns should be compiled case-insensitive and unicode-case even if previously normalized
+     *
+     * @param normalized
+     * @return
+     */
+    private Pattern compileNormalized(String normalized) {
+        return Pattern.compile(normalized, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     }
 
     /**
@@ -168,9 +195,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         // extract terms to lookup hits on if they haven't been extracted yet
         if (searchHitTerms == null) {
             try {
-                searchHitTerms = queryTermExtractor.extract(jexlQueryString, settings);
+                searchHitTerms = new HashSet<>();
+                for (String normalized : queryTermExtractor.extract(jexlQueryString, termNormalizer)) {
+                    searchHitTerms.add(compileNormalized(normalized));
+                }
             } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
-                log.debug("no valid search terms detected for query, skipping all hits");
+                log.debug("no valid search terms detected for query, skipping all hits", e);
             }
         }
 
@@ -209,7 +239,10 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
                 List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
                 try {
-                    AllHits results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
+                    AllHits results = null;
+                    if (!orderedHits.isEmpty()) {
+                        results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
+                    }
                     updateDocument(keyDocumentEntry, results);
                 } catch (AllHitsException e) {
                     log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
@@ -224,9 +257,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return keyDocumentEntry;
     }
 
-    private void updateDocument(Entry<Key,Document> entry, AllHits allHits) {
+    private void updateDocument(Entry<Key,Document> entry, @Nullable AllHits allHits) {
         List<AllHits> rollup = getCurrentAllHitsValue(entry);
-        rollup.add(allHits);
+        if (allHits != null) {
+            rollup.add(allHits);
+        }
 
         // convert pojo to json
         String json = null;
@@ -378,7 +413,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
 
     private boolean matchesSearchTerm(String term) {
         for (Pattern searchPattern : searchHitTerms) {
-            if (queryTermExtractor.matches(searchPattern, term)) {
+            String normalized = termNormalizer.normalize(term);
+            Matcher matcher = searchPattern.matcher(normalized);
+            if (matcher.matches()) {
                 return true;
             }
         }
@@ -435,6 +472,27 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
 
         public SegmentBoundary getContextEnd() {
             return contextEnd;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof SegmentHit)) {
+                return false;
+            }
+
+            SegmentHit otherHit = (SegmentHit) other;
+            // @formatter:off
+            return Objects.equals(contextStart.getBoundaryType(), otherHit.contextStart.getBoundaryType()) &&
+                    Objects.equals(contextStart.getStart(), otherHit.contextStart.getStart()) &&
+                    Objects.equals(contextStart.getEnd(), otherHit.contextStart.getEnd()) &&
+                    Objects.equals(contextEnd.getBoundaryType(), otherHit.contextEnd.getBoundaryType()) &&
+                    Objects.equals(contextEnd.getStart(), otherHit.contextEnd.getStart()) &&
+                    Objects.equals(contextEnd.getEnd(), otherHit.contextEnd.getEnd()) &&
+                    Objects.equals(hitBoundary.getBoundaryType(), otherHit.hitBoundary.getBoundaryType()) &&
+                    Objects.equals(hitBoundary.getStart(), otherHit.hitBoundary.getStart()) &&
+                    Objects.equals(hitBoundary.getEnd(), otherHit.hitBoundary.getEnd()) &&
+                    Objects.equals(valueHitIndex, otherHit.valueHitIndex);
+            // @formatter:on
         }
     }
 }

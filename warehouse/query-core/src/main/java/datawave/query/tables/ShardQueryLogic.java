@@ -831,6 +831,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
                         getConfig().getOriginalJexlQuery(),
                         allHitsQueryConfig.getQueryTermExtractor(),
+                        allHitsQueryConfig.getTermNormalizer(),
                         getAnnotationDataAccess(),
                         getAnnotationHitsFactory(),
                         allHitsQueryConfig.getMaxContextLength(),

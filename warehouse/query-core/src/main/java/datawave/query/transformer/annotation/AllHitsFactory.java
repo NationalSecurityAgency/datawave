@@ -52,7 +52,7 @@ public class AllHitsFactory {
     public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
                     TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, TimeUnit timeUnit) throws AllHitsException {
         if (orderedHits.isEmpty()) {
-            return EMPTY_ALL_HITS;
+            return null;
         }
 
         // contains all hits across all boundaries
@@ -81,7 +81,7 @@ public class AllHitsFactory {
             SortedMap<SegmentBoundary,List<SegmentValue>> contextView = sortedSegments.subMap(hit.getContextStart(), true, hit.getContextEnd(), true);
             if (contextView.isEmpty()) {
                 // no context means the hit missed the available data
-                return EMPTY_ALL_HITS;
+                return null;
             }
 
             if (allHit.getOneBestContext().isEmpty()) {

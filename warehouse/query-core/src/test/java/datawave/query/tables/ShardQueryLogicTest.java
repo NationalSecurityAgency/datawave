@@ -69,6 +69,7 @@ import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
+import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.Query;
@@ -575,6 +576,42 @@ public abstract class ShardQueryLogicTest {
         withAnnotationHits();
         // disable the transformer via query param
         givenQueryParameter(ENABLED_PARAMETER, "");
+
+        givenAnnotation(buildAnnotation(S1));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void annotationHitsNullTermExtractorTest() throws Exception {
+        withAnnotationHits();
+        logic.getAllHitsQueryConfig().setQueryTermExtractor(null);
+
+        givenAnnotation(buildAnnotation(S1));
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void annotationHitsNullNormalizerTest() throws Exception {
+        withAnnotationHits();
+        logic.getAllHitsQueryConfig().setTermNormalizer(null);
 
         givenAnnotation(buildAnnotation(S1));
 
@@ -1160,6 +1197,36 @@ public abstract class ShardQueryLogicTest {
         runTestQuery(expected);
     }
 
+    @Test
+    public void luceneFieldedTest() throws Exception {
+        withAnnotationHits();
+        logic.getAllHitsQueryConfig().setQueryTermExtractor(new TermExtractor(Set.of("_ANYFIELD_", "UUID")));
+        disableQueryTreeValidation();
+
+        givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
+
+        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
+        givenQueryParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
+        givenQuery("UUID:CAPONE");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
+
+        AllHitsFactory factory = new AllHitsFactory();
+        AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.MICROSECONDS);
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
+
+        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        runTestQuery(expected);
+    }
+
     private void disableQueryTreeValidation() {
         TimedVisitorManager visitorManager = ((DefaultQueryPlanner) logic.getQueryPlanner()).getVisitorManager();
         visitorManager.setValidateAst(false);
@@ -1207,6 +1274,7 @@ public abstract class ShardQueryLogicTest {
         logic.getAllHitsQueryConfig().setTargetField("ALL_HITS_RESULTS");
         logic.getAllHitsQueryConfig().setValidAnnotationTypes(Set.of("ANNO1"));
         logic.getAllHitsQueryConfig().setQueryTermExtractor(new TermExtractor(Set.of("FOO", "BAR", "UUID")));
+        logic.getAllHitsQueryConfig().setTermNormalizer(new LcNoDiacriticsNormalizer());
         logic.getAllHitsQueryConfig().setAnnotationConfig(new AnnotationConfig());
         logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationTableName("annotation");
         logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationSourceTableName("annotationSource");

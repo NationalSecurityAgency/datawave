@@ -1,6 +1,7 @@
 package datawave.query.transformer.annotation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class AllHitsFactoryTest {
     @Test
     public void noHitsTest() throws JsonProcessingException, AllHitsException {
         AllHits result = factory.create("123", List.of(), new TreeMap<>(new BoundaryComparator()));
-        assertEquals(objectMapper.writeValueAsString(new AllHits()), objectMapper.writeValueAsString(result));
+        assertNull(result);
     }
 
     @Test
@@ -42,7 +43,7 @@ public class AllHitsFactoryTest {
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(boundary, boundary, 0);
         hit.setContextEnd(boundary);
         AllHits result = factory.create("123", List.of(hit), new TreeMap<>(new BoundaryComparator()));
-        assertEquals(objectMapper.writeValueAsString(new AllHits()), objectMapper.writeValueAsString(result));
+        assertNull(result);
     }
 
     @Test

@@ -1,11 +1,8 @@
 package datawave.query.transformer.annotation;
 
-import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -14,7 +11,7 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 
-import datawave.microservice.query.Query;
+import datawave.data.normalizer.Normalizer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.PushdownNegationVisitor;
 import datawave.query.parser.JavaRegexAnalyzer;
@@ -57,13 +54,13 @@ public class TermExtractor {
      *
      * @param jexlQueryString
      *            the jexl parsed query before query planning
-     * @param settings
-     *            the Query settings
+     * @param normalizer
+     *            The term normalizer to use on extracted terms and patterns
      * @return
      * @throws ParseException
      */
-    public Set<Pattern> extract(String jexlQueryString, Query settings) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
-        Set<Pattern> terms = new HashSet<>();
+    public Set<String> extract(String jexlQueryString, Normalizer<String> normalizer) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        Set<String> terms = new HashSet<>();
 
         // parse the original query into jexl
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(jexlQueryString);
@@ -78,7 +75,7 @@ public class TermExtractor {
                     Object literal = JexlASTHelper.getLiteralValue(eqNode);
                     if (literal != null) {
                         // simple normalization for exact string matches only
-                        terms.add(normalizeAndBuildPattern(literal.toString()));
+                        terms.add(normalizer.normalize(literal.toString()));
                     }
                 }
             }
@@ -91,46 +88,12 @@ public class TermExtractor {
                 if (acceptNode(erNode)) {
                     Object literal = JexlASTHelper.getLiteralValue(erNode);
                     if (literal != null) {
-                        terms.add(normalizeAndBuildPattern(literal.toString()));
+                        terms.add(normalizer.normalizeRegex(literal.toString()));
                     }
                 }
             }
         }
 
         return terms;
-    }
-
-    /**
-     * Search a normalized pattern with a normalized search term.
-     *
-     * @param normalizedPattern
-     * @param term
-     * @return
-     */
-    public boolean matches(Pattern normalizedPattern, String term) {
-        String normalized = normalize(term);
-        Matcher matcher = normalizedPattern.matcher(normalized);
-        return matcher.matches();
-    }
-
-    /**
-     * Normalize a term by trimming it and applying Form.NFKC. This will normalize character width
-     *
-     * @param term
-     * @return
-     */
-    public String normalize(String term) {
-        return Normalizer.normalize(term.trim(), Normalizer.Form.NFKC);
-    }
-
-    /**
-     * All patterns will be generated as case-insensitive and unicode-case. The pattern will be normalized prior to compilation. This covers most langauges and
-     * normalization issues which could occur
-     *
-     * @param pattern
-     * @return
-     */
-    public Pattern normalizeAndBuildPattern(String pattern) {
-        return Pattern.compile(normalize(pattern), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     }
 }

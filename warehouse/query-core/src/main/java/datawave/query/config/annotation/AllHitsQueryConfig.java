@@ -2,6 +2,7 @@ package datawave.query.config.annotation;
 
 import java.util.Set;
 
+import datawave.data.normalizer.Normalizer;
 import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.TermExtractor;
 
@@ -36,6 +37,8 @@ public class AllHitsQueryConfig {
 
     private TermExtractor queryTermExtractor;
 
+    private Normalizer<String> termNormalizer;
+
     private AnnotationConfig annotationConfig;
 
     public AllHitsQueryConfig() {
@@ -49,6 +52,7 @@ public class AllHitsQueryConfig {
         setAllHitsFactoryClass(other.getAllHitsFactoryClass());
         setTargetField(other.getTargetField());
         setQueryTermExtractor(other.getQueryTermExtractor());
+        setTermNormalizer(other.getTermNormalizer());
         setAnnotationConfig(other.getAnnotationConfig());
     }
 
@@ -106,5 +110,13 @@ public class AllHitsQueryConfig {
 
     public void setQueryTermExtractor(TermExtractor queryTermExtractor) {
         this.queryTermExtractor = queryTermExtractor;
+    }
+
+    public Normalizer<String> getTermNormalizer() {
+        return termNormalizer;
+    }
+
+    public void setTermNormalizer(Normalizer<String> termNormalizer) {
+        this.termNormalizer = termNormalizer;
     }
 }
