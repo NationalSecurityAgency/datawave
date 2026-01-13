@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,14 +37,11 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.UidIntersector;
-import datawave.query.jexl.visitors.PushdownUnindexedFieldsVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.model.IndexFieldHole;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import datawave.query.util.QueryStopwatch;
-import datawave.util.time.TraceStopwatch;
 
 /**
  * Executes a query over a time range while handling the case where a field may be both indexed and not indexed in the time range. A period of time in which a
@@ -62,8 +58,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 
-    // we want a unique set of plans, but maintain insertion order (facilitates easier testing)
-    private final Set<String> plans = new LinkedHashSet<>();
     private DefaultQueryPlanner queryPlanner;
     private String initialPlan;
     private String plannedScript;
@@ -127,14 +121,15 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      */
     @Override
     public String getPlannedScript() {
-        return this.plannedScript;
+        return plannedScript;
     }
 
     /**
-     * Return the initial planned script prior to pushing down index holes. Used for testing purposes.
+     * Return the initial plan
      *
-     * @return initialPlan
+     * @return the initial plan
      */
+    @Override
     public String getInitialPlan() {
         return initialPlan;
     }
@@ -296,158 +291,66 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
 
-        // Reset the planned script.
+        // Reset the initial and planned script.
+        this.initialPlan = null;
         this.plannedScript = null;
-        this.plans.clear();
 
         if (log.isDebugEnabled()) {
             log.debug("Federated query: " + query);
         }
 
-        ShardQueryConfiguration planningConfig = (ShardQueryConfiguration) genericConfig;
+        ShardQueryConfiguration shardQueryConfig = (ShardQueryConfiguration) genericConfig;
         if (log.isDebugEnabled()) {
-            log.debug("Query's original date range " + dateFormat.format(planningConfig.getBeginDate()) + "-" + dateFormat.format(planningConfig.getEndDate()));
+            log.debug("Query's original date range " + dateFormat.format(shardQueryConfig.getBeginDate()) + "-"
+                            + dateFormat.format(shardQueryConfig.getEndDate()));
         }
 
         // Let's do the planning with the delegate planner first to ensure we have a final date range
         // and appropriately expanded unfielded terms etc.
-        boolean generatePlanOnly = planningConfig.isGeneratePlanOnly();
-        planningConfig.setGeneratePlanOnly(true);
-        boolean expandValues = planningConfig.isExpandValues();
+        boolean generatePlanOnly = shardQueryConfig.isGeneratePlanOnly();
+        shardQueryConfig.setGeneratePlanOnly(true);
+        boolean expandValues = shardQueryConfig.isExpandValues();
         // we do NOT want to expand any values yet as they may not be dependable
         // note we are expanding unfielded values (different flag)
-        planningConfig.setExpandValues(false);
-        boolean deferPushdownPullup = planningConfig.isDeferPushdownPullup();
-        planningConfig.setDeferPushdownPullup(true);
+        shardQueryConfig.setExpandValues(false);
+        boolean deferPushdownPullup = shardQueryConfig.isDeferPushdownPullup();
+        shardQueryConfig.setDeferPushdownPullup(true);
 
+        // now let's do the initial planning
         DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
-        initialPlanner.process(planningConfig, query, settings, scannerFactory);
-        this.initialPlan = initialPlanner.plannedScript;
+        initialPlanner.process(shardQueryConfig, query, settings, scannerFactory);
 
-        planningConfig.setGeneratePlanOnly(generatePlanOnly);
-        planningConfig.setExpandValues(expandValues);
-        planningConfig.setDeferPushdownPullup(deferPushdownPullup);
+        // Our initial plan and planned script will both be the initial planned script
+        this.initialPlan = this.plannedScript = initialPlanner.getPlannedScript();
+
+        // and reset the expansion flags to what we had previously
+        shardQueryConfig.setGeneratePlanOnly(generatePlanOnly);
+        shardQueryConfig.setExpandValues(expandValues);
+        shardQueryConfig.setDeferPushdownPullup(deferPushdownPullup);
 
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
-        SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(planningConfig);
+        SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(shardQueryConfig);
 
-        DatePartitionedQueryIterable results = new DatePartitionedQueryIterable();
-        List<Exception> exceptions = new ArrayList<>();
+        // create a clone of the config for the sub plan callables as the planningConfig may be updated dynamically
+        ShardQueryConfiguration planningConfig = new ShardQueryConfiguration(shardQueryConfig);
 
-        // TODO: Lets attempt to process these pieces concurrently
+        // Create a callable for each sub plan
+        List<SubPlanCallable> futures = new ArrayList<>();
         for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
-            String subBeginDate = dateFormat.format(dateRange.getKey().getLeft());
-            String subEndDate = dateFormat.format(dateRange.getKey().getRight());
-
-            // Get the configuration with an updated query (pushed down unindexed fields)
-            ShardQueryConfiguration configCopy = getUpdatedConfig(planningConfig, dateRange.getKey(), dateRange.getValue());
-
-            try {
-                // Create a copy of the original default query planner, and process the query with the new date range.
-                DefaultQueryPlanner subPlan = this.queryPlanner.clone();
-
-                // Get the range stream for the new date range and query
-                results.addIterable(subPlan.reprocess(configCopy, configCopy.getQuery(), scannerFactory));
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Query string for config of sub-plan against date range (" + subBeginDate + "-" + subEndDate + ") with unindexed fields "
-                                    + dateRange.getValue() + ": " + configCopy.getQueryString());
-                }
-            } catch (DatawaveQueryException e) {
-                log.warn("Exception occurred when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")", e);
-                exceptions.add(e);
-            } finally {
-                // append the new timers for logging at the end
-                planningConfig.appendTimers(configCopy.getTimers());
-
-                // Add to the set of plans
-                plans.add(configCopy.getQueryString());
-
-                // Update the planned script.
-                updatePlannedScript();
-                planningConfig.setQueryString(plannedScript);
-            }
+            SubPlanCallable subPlan = new SubPlanCallable(this.queryPlanner, planningConfig, dateRange, scannerFactory);
+            futures.add(subPlan);
         }
 
-        // if every plan failed, then pass an exception up
-        if (exceptions.size() == dateRanges.size()) {
-            if (exceptions.size() == 1 && exceptions.get(0) instanceof RuntimeException) {
-                throw (RuntimeException) (exceptions.get(0));
-            } else if (exceptions.size() == 1 && exceptions.get(0) instanceof DatawaveQueryException) {
-                throw (DatawaveQueryException) (exceptions.get(0));
-            } else {
-                DatawaveFatalQueryException e = new DatawaveFatalQueryException("Query failed creation");
-                for (Exception reason : exceptions) {
-                    e.addSuppressed(reason);
-                }
-                throw e;
-            }
-        }
+        // create a listener for plan updates and update the configuration
+        PlanListener listener = plan -> {
+            plannedScript = plan;
+            genericConfig.setQueryString(plan);
+        };
 
-        // reset the iterator to be our federated iterator
-        return results;
-    }
+        // Return an iterable out of the callables
+        DatePartitionedQueryIterable iterable = new DatePartitionedQueryIterable(futures, shardQueryConfig, listener);
 
-    /**
-     * Update the planned script to represent a concatenation of the planned scripts from all sub-plans of the most recently executed call to
-     * {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
-     */
-    private void updatePlannedScript() {
-        if (plans.isEmpty()) {
-            this.plannedScript = "";
-        } else if (this.plans.size() == 1) {
-            this.plannedScript = this.plans.iterator().next();
-        } else {
-            StringBuilder sb = new StringBuilder();
-            int i = 0;
-            for (String plan : plans) {
-                if (sb.length() > 0) {
-                    sb.append(" || ");
-                }
-                sb.append("((plan = ").append(++i).append(") && (").append(plan).append("))");
-            }
-            this.plannedScript = sb.toString();
-        }
-    }
-
-    /**
-     * Get a configuration object configured with an updated query date range, and a plan with pushed down unindexed fields.
-     *
-     * @param originalConfig
-     * @param dateRange
-     * @param unindexedFields
-     * @return The new configuration
-     * @throws DatawaveQueryException
-     */
-    private ShardQueryConfiguration getUpdatedConfig(ShardQueryConfiguration originalConfig, Pair<Date,Date> dateRange, Set<String> unindexedFields)
-                    throws DatawaveQueryException {
-        // Format the beginDate and endDate of the current sub-query to execute.
-        String subBeginDate = dateFormat.format(dateRange.getLeft());
-        String subEndDate = dateFormat.format(dateRange.getRight());
-
-        // Start a new stopwatch.
-        final QueryStopwatch timers = originalConfig.getTimers();
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan against date range (" + subBeginDate + "-"
-                        + subEndDate + ") with unindexed fields " + unindexedFields);
-
-        try {
-            // Set the new date range in a copy of the config.
-            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
-            configCopy.setBeginDate(dateRange.getLeft());
-            configCopy.setEndDate(dateRange.getRight());
-
-            // we want to make sure the same query id for tracking purposes and execution
-            configCopy.getQuery().setId(originalConfig.getQuery().getId());
-
-            if (!unindexedFields.isEmpty()) {
-                configCopy.setQueryTree(visitorManager.timedVisit(timers, "Push down indexed field holes",
-                                () -> (PushdownUnindexedFieldsVisitor.pushdownPredicates(configCopy.getQueryTree(), unindexedFields))));
-            }
-
-            return configCopy;
-        } finally {
-            stopwatch.stop();
-        }
+        return iterable;
     }
 
     /**
