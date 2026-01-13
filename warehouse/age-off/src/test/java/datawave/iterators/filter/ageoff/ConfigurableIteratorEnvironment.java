@@ -15,8 +15,9 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
-import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.apache.commons.lang.NotImplementedException;
+
+import datawave.test.AccumuloConfigurationWrapper;
 
 public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
@@ -114,7 +115,7 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
             @Override
             public Configuration getConfiguration(TableId tableId) {
-                return new ConfigurationImpl(conf);
+                return new AccumuloConfigurationWrapper(conf);
             }
 
             @Override

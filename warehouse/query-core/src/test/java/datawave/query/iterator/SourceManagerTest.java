@@ -36,7 +36,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
-import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.junit.Before;
@@ -44,6 +43,8 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
+import datawave.test.AccumuloConfigurationWrapper;
 
 public class SourceManagerTest {
     private static final SimpleDateFormat shardFormatter = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -435,12 +436,12 @@ public class SourceManagerTest {
         public class MockPluginEnvironment implements PluginEnvironment {
             @Override
             public Configuration getConfiguration() {
-                return new ConfigurationImpl(conf);
+                return new AccumuloConfigurationWrapper(conf);
             }
 
             @Override
             public Configuration getConfiguration(TableId tableId) {
-                return new ConfigurationImpl(conf);
+                return new AccumuloConfigurationWrapper(conf);
             }
 
             @Override

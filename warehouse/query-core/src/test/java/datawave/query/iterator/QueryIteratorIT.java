@@ -44,7 +44,6 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
@@ -72,6 +71,7 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
+import datawave.test.AccumuloConfigurationWrapper;
 
 /**
  * Integration tests for the QueryIterator
@@ -174,7 +174,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         pluginEnv = createMock(PluginEnvironment.class);
         EasyMock.expect(iterEnv.getConfig()).andReturn(DefaultConfiguration.getInstance()).anyTimes();
         EasyMock.expect(iterEnv.getPluginEnv()).andReturn(pluginEnv).anyTimes();
-        EasyMock.expect(pluginEnv.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
+        EasyMock.expect(pluginEnv.getConfiguration()).andReturn(new AccumuloConfigurationWrapper(DefaultConfiguration.getInstance())).anyTimes();
         filter = createMock(EventDataQueryFilter.class);
     }
 
