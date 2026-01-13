@@ -49,6 +49,10 @@ public abstract class QueryPlanner implements PushDownPlanner {
 
     public abstract String getPlannedScript();
 
+    public String getInitialPlan() {
+        return getPlannedScript();
+    }
+
     public abstract QueryPlanner clone();
 
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
