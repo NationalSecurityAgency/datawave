@@ -1,6 +1,7 @@
 package datawave.query.statsd;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     private final Multimap<String,Long> timings;
     private final String prefix;
 
-    private static final Charset STATS_D_ENCODING = Charset.forName("UTF-8");
+    private static final Charset STATS_D_ENCODING = StandardCharsets.UTF_8;
 
     private static final StatsDClientErrorHandler NO_OP_HANDLER = e -> { /* No-op */};
 
