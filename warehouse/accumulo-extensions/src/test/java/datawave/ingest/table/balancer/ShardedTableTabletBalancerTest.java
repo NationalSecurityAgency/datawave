@@ -37,8 +37,9 @@ import org.apache.accumulo.core.metadata.schema.Ample;
 import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
 import org.apache.accumulo.core.spi.balancer.data.TabletMigration;
 import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
-import org.apache.accumulo.core.util.MapCounter;
 import org.apache.hadoop.io.Text;
+
+import datawave.util.MapCounter;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
