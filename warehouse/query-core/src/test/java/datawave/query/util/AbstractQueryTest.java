@@ -273,32 +273,52 @@ public abstract class AbstractQueryTest {
      */
     public void planAndExecuteQuery() throws Exception {
         for (String indexTableName : TestIndexTableNames.names()) {
-            log.info("=== using index: {} ===", indexTableName);
-            getLogic().setIndexTableName(indexTableName);
-
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    getLogic().setUseTruncatedIndex(true);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
+            try {
+                log.info("=== using index: {} ===", indexTableName);
+                setupIndexTable(indexTableName);
+                planAndExecuteIndividualQuery();
+            } finally {
+                teardownIndexTable(indexTableName);
             }
+        }
+    }
 
-            planAndExecuteIndividualQuery();
+    /**
+     * Configure the logic based on the index table name
+     *
+     * @param indexTableName
+     *            the global index table name
+     */
+    private void setupIndexTable(String indexTableName) {
+        getLogic().setIndexTableName(indexTableName);
+        switch (indexTableName) {
+            case TestIndexTableNames.SHARD_INDEX:
+            case TestIndexTableNames.NO_UID_INDEX:
+                break;
+            case TestIndexTableNames.TRUNCATED_INDEX:
+                getLogic().setUseTruncatedIndex(true);
+                break;
+            default:
+                throw new IllegalStateException("Unknown index table name: " + indexTableName);
+        }
+    }
 
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    getLogic().setUseTruncatedIndex(false);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name: " + indexTableName);
-            }
+    /**
+     * Cleanup the logic based on the index table name
+     *
+     * @param indexTableName
+     *            the global index table name
+     */
+    private void teardownIndexTable(String indexTableName) {
+        switch (indexTableName) {
+            case TestIndexTableNames.SHARD_INDEX:
+            case TestIndexTableNames.NO_UID_INDEX:
+                break;
+            case TestIndexTableNames.TRUNCATED_INDEX:
+                getLogic().setUseTruncatedIndex(false);
+                break;
+            default:
+                throw new IllegalStateException("Unknown index table name: " + indexTableName);
         }
     }
 
