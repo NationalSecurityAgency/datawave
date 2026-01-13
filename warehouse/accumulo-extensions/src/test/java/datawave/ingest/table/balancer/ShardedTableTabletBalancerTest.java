@@ -38,8 +38,6 @@ import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
 import org.apache.accumulo.core.spi.balancer.data.TabletMigration;
 import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
 import org.apache.hadoop.io.Text;
-
-import datawave.util.MapCounter;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,6 +52,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 
 import datawave.common.test.integration.IntegrationTest;
+import datawave.util.MapCounter;
 
 public class ShardedTableTabletBalancerTest {
     private static final TableId TNAME = TableId.of("s");
