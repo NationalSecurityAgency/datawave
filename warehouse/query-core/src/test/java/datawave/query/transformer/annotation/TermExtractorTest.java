@@ -3,6 +3,7 @@ package datawave.query.transformer.annotation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -126,10 +127,7 @@ public class TermExtractorTest {
         } else {
             splits = new String[0];
         }
-        Set<String> expectedSet = new HashSet<>();
-        for (String term : splits) {
-            expectedSet.add(term);
-        }
+        Set<String> expectedSet = new HashSet<>(Arrays.asList(splits));
         assertEquals(expectedSet, extracted);
     }
 }

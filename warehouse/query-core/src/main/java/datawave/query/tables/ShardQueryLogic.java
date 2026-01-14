@@ -784,8 +784,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      * @return a configured AnnotationDataAccess object given the table names
      */
     private AnnotationDataAccess getAnnotationDataAccess() {
-        AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer();
-        AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer();
+        AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer(
+                        getAllHitsQueryConfig().getAnnotationConfig().getVisibilityTransformer(),
+                        getAllHitsQueryConfig().getAnnotationConfig().getTimestampTransformer());
+        AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(
+                        getAllHitsQueryConfig().getAnnotationConfig().getVisibilityTransformer(),
+                        getAllHitsQueryConfig().getAnnotationConfig().getTimestampTransformer());
         // @formatter:off
         return new AnnotationDataAccess(
                 getConfig().getClient(),

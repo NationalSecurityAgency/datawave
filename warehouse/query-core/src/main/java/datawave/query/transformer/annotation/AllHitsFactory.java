@@ -14,9 +14,12 @@ import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.transformer.annotation.model.Term;
 import datawave.query.transformer.annotation.model.TermHit;
 
+/**
+ * Factory for transforming an order set of SegmentHit into structured AllHits. Aggregate individual hits, associating them with surrounding context. Groups
+ * hits occurring within the same SegmentBoundary to generate a single one-best and rolled up confidence score. Time will be converted to reflect the given
+ * TimeUnit
+ */
 public class AllHitsFactory {
-    private static final AllHits EMPTY_ALL_HITS = new AllHits();
-
     /**
      * Convenience method for MILLIS
      *

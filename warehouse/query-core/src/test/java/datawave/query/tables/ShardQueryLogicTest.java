@@ -58,6 +58,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 
 import datawave.annotation.data.AnnotationSerializer;
+import datawave.annotation.data.transform.DefaultTimestampTransformer;
+import datawave.annotation.data.transform.DefaultVisibilityTransformer;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
@@ -1278,6 +1280,8 @@ public abstract class ShardQueryLogicTest {
         logic.getAllHitsQueryConfig().setAnnotationConfig(new AnnotationConfig());
         logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationTableName("annotation");
         logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationSourceTableName("annotationSource");
+        logic.getAllHitsQueryConfig().getAnnotationConfig().setTimestampTransformer(new DefaultTimestampTransformer());
+        logic.getAllHitsQueryConfig().getAnnotationConfig().setVisibilityTransformer(new DefaultVisibilityTransformer());
         givenQueryParameter(ENABLED_PARAMETER, "true");
     }
 

@@ -838,6 +838,7 @@ public class AnnotationHitsTransformerTest {
                 for (AnnotationHitsTransformer.SegmentHit expectedHit : expectedHits) {
                     if (expectedHit.equals(hit)) {
                         found = true;
+                        break;
                     }
                 }
                 assertTrue(found);
@@ -871,6 +872,7 @@ public class AnnotationHitsTransformerTest {
         settings.addParameter(key, value);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private Annotation buildAnnotation(String annotationType, String shard, String dataType, String documentId, String sourceHash, Segment... segments) {
         // @formatter:off
         return Annotation.newBuilder()
