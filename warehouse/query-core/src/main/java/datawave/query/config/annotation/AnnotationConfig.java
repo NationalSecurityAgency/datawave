@@ -1,6 +1,8 @@
 package datawave.query.config.annotation;
 
-public class AnnotationConfig {
+import java.io.Serializable;
+
+public class AnnotationConfig implements Serializable {
     private String annotationTableName = "annotation";
     private String annotationSourceTableName = "annotationSource";
 

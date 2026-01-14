@@ -1,12 +1,13 @@
 package datawave.query.config.annotation;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.TermExtractor;
 
-public class AllHitsQueryConfig {
+public class AllHitsQueryConfig implements Serializable {
 
     /**
      * Enable the all hits transformer

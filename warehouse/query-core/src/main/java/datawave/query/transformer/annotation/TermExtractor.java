@@ -1,5 +1,6 @@
 package datawave.query.transformer.annotation;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,7 +17,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.PushdownNegationVisitor;
 import datawave.query.parser.JavaRegexAnalyzer;
 
-public class TermExtractor {
+public class TermExtractor implements Serializable {
     private Set<String> fields;
 
     public TermExtractor(Set<String> fields) {

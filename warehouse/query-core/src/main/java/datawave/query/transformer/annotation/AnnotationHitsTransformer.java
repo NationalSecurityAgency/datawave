@@ -494,5 +494,21 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                     Objects.equals(valueHitIndex, otherHit.valueHitIndex);
             // @formatter:on
         }
+
+        @Override
+        public int hashCode() {
+            // @formatter:off
+            return Objects.hash(contextStart.getBoundaryTypeValue(),
+                    contextStart.getStart(),
+                    contextStart.getEnd(),
+                    hitBoundary.getBoundaryTypeValue(),
+                    hitBoundary.getStart(),
+                    hitBoundary.getEnd(),
+                    contextEnd.getBoundaryTypeValue(),
+                    contextEnd.getStart(),
+                    contextEnd.getEnd(),
+                    valueHitIndex);
+            // @formatter:on
+        }
     }
 }
