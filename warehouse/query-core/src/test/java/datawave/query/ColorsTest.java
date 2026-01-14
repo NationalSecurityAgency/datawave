@@ -1,75 +1,73 @@
 package datawave.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.base.Preconditions;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
-import datawave.query.util.TestIndexTableNames;
 import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * A set of tests that exercises multi-shard, multi-day queries
  * <p>
  * Hit Term assertions are supported. Most queries should assert total documents returned and shards seen in the results.
  */
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class ColorsTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(ColorsTest.class);
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static Path folder;
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
     // this two client setup is a little odd, but it allows us to create tables once
@@ -80,23 +78,13 @@ public class ColorsTest extends AbstractQueryTest {
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        //  @formatter:off
-        return ShrinkWrap.create(JavaArchive.class)
-                .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                        "datawave.webservice.query.result.event")
-                .deleteClass(DefaultEdgeEventQueryLogic.class)
-                .deleteClass(RemoteEdgeDictionary.class)
-                .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                .addAsManifestResource(new StringAsset(
-                                "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                        "beans.xml");
-        //  @formatter:on
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @BeforeAll
+    public static void beforeAll() throws Exception {
         InMemoryInstance i = new InMemoryInstance(ColorsTest.class.getName());
         client = new InMemoryAccumuloClient("", i);
 
@@ -111,8 +99,8 @@ public class ColorsTest extends AbstractQueryTest {
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @Before
-    public void setup() throws IOException {
+    @BeforeEach
+    public void beforeEach() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         resetState();
         setClientForTest(client);
@@ -121,7 +109,7 @@ public class ColorsTest extends AbstractQueryTest {
         Preconditions.checkNotNull(hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toFile().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         logic.setMaxFieldIndexRangeSplit(1); // keep things simple
@@ -131,21 +119,16 @@ public class ColorsTest extends AbstractQueryTest {
         logic.setCardinalityThreshold(0);
 
         // every test also exercises hit terms
-        withParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
 
         // default to full date range
-        withDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
+        givenDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
     }
 
-    @Override
-    public ShardQueryLogic getLogic() {
-        return logic;
-    }
-
-    @After
-    public void after() {
-        super.after();
+    @AfterEach
+    public void afterEach() {
+        super.afterEach();
         resetState();
     }
 
@@ -159,8 +142,8 @@ public class ColorsTest extends AbstractQueryTest {
         expectedShards.clear();
     }
 
-    @AfterClass
-    public static void teardown() {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 
@@ -171,12 +154,12 @@ public class ColorsTest extends AbstractQueryTest {
         return count;
     }
 
-    public ColorsTest withExpectedDays(String... days) {
+    public ColorsTest expectDays(String... days) {
         this.expectedDays.addAll(List.of(days));
         return this;
     }
 
-    public ColorsTest withExpectedShards(String day, int numShards) {
+    public ColorsTest expectShards(String day, int numShards) {
         for (int i = 0; i < numShards; i++) {
             this.expectedShards.add(day + "_" + i);
         }
@@ -184,64 +167,11 @@ public class ColorsTest extends AbstractQueryTest {
     }
 
     /**
-     * Supports running the same query against multiple types of index tables
-     *
-     * @return this class
-     * @throws Exception
-     *             if something goes wrong
-     */
-    public ColorsTest planAndExecuteQueryAgainstMultipleIndices() throws Exception {
-        for (String indexTableName : TestIndexTableNames.names()) {
-            logic.setIndexTableName(indexTableName);
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(true);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
-
-            log.debug("=== using index: {} ===", indexTableName);
-            planAndExecuteQuery();
-
-            switch (indexTableName) {
-                case TestIndexTableNames.SHARD_INDEX:
-                case TestIndexTableNames.NO_UID_INDEX:
-                    break;
-                case TestIndexTableNames.TRUNCATED_INDEX:
-                    logic.setUseTruncatedIndex(false);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown index table name " + indexTableName);
-            }
-        }
-        return this;
-    }
-
-    /**
-     * Delegate to super method to plan and execute the query and assert the hit terms
-     *
-     * @throws Exception
-     *             if something goes wrong
-     */
-    @Override
-    public void planAndExecuteQuery() throws Exception {
-        super.planAndExecuteQuery();
-        assertResultCount();
-        assertExpectedShardsAndDays();
-    }
-
-    /**
      * Extract the row from each event, recording both the day and shard.
-     *
-     * @return the test suite
      */
-    public ColorsTest assertExpectedShardsAndDays() {
+    public void assertExpectedShardsAndDays() {
         if (expectedShards.isEmpty() && expectedDays.isEmpty()) {
-            return this;
+            return;
         }
 
         if (results.isEmpty()) {
@@ -268,101 +198,105 @@ public class ColorsTest extends AbstractQueryTest {
             assertEquals(expectedShards, shards);
 
         }
-        return this;
     }
 
-    public void assertPlannedQuery(String query) {
-        try {
-            ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            ASTJexlScript plannedScript = logic.getConfig().getQueryTree();
-            if (!TreeEqualityVisitor.isEqual(expected, plannedScript)) {
-                log.info("expected: {}", query);
-                log.info("planned : {}", logic.getConfig().getQueryString());
-                fail("Planned query did not match expectation");
-            }
-        } catch (ParseException e) {
-            fail("Failed to parse query: " + query);
-        }
+    @Override
+    protected void extraConfigurations() {
+        // no-op
+    }
+
+    @Override
+    protected void extraAssertions() {
+        assertExpectedShardsAndDays();
     }
 
     @Test
     public void testColorRed() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withResultCount(getTotalEventCount());
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:red");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testColorYellow() throws Exception {
-        withQuery("COLOR == 'yellow'");
-        withRequiredAllOf("COLOR:yellow");
-        withResultCount(getTotalEventCount());
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenQuery("COLOR == 'yellow'");
+        expectPlan("COLOR == 'yellow'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:yellow");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testColorBlue() throws Exception {
-        withQuery("COLOR == 'blue'");
-        withRequiredAllOf("COLOR:blue");
-        withResultCount(getTotalEventCount());
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenQuery("COLOR == 'blue'");
+        expectPlan("COLOR == 'blue'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:blue");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testAllColors() throws Exception {
-        withQuery("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
-        withOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
-        withResultCount(3 * getTotalEventCount());
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenQuery("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
+        expectPlan("COLOR == 'red' || COLOR == 'yellow' || COLOR == 'blue'");
+        expectResultCount(3 * getTotalEventCount());
+        expectHitTermsOptionalAnyOf("COLOR:red", "COLOR:yellow", "COLOR:blue");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtFieldIndex() throws Exception {
-        withQuery("COLOR == 'red' && !(COLOR == 'red')");
-        withResultCount(0);
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenQuery("COLOR == 'red' && !(COLOR == 'red')");
+        expectPlan("COLOR == 'red' && !(COLOR == 'red')");
+        expectResultCount(0);
+        planAndExecuteQuery();
     }
 
     @Test
     public void testSearchAllShardsDefeatedAtEvaluation() throws Exception {
-        withQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
-        withResultCount(0);
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenQuery("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
+        expectPlan("COLOR == 'red' && filter:includeRegex(COLOR, 'yellow')");
+        expectResultCount(0);
+        planAndExecuteQuery();
     }
 
     @Test
     public void testReturnedShardsForEarlierDate() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withDate("20250301", "20250301");
-        withResultCount(ColorsIngest.getNumShards());
-        withExpectedDays("20250301");
-        withExpectedShards("20250301", ColorsIngest.getNumShards());
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenDate("20250301", "20250301");
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(ColorsIngest.getNumShards());
+        expectHitTermsRequiredAllOf("COLOR:red");
+        expectDays("20250301");
+        expectShards("20250301", ColorsIngest.getNumShards());
+        planAndExecuteQuery();
     }
 
     @Test
     public void testReturnedShardsForLaterDate() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withDate("20250331", "20250331");
-        withResultCount(ColorsIngest.getNewShards());
-        withExpectedDays("20250331");
-        withExpectedShards("20250331", ColorsIngest.getNewShards());
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenDate("20250331", "20250331");
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(ColorsIngest.getNewShards());
+        expectHitTermsRequiredAllOf("COLOR:red");
+        expectDays("20250331");
+        expectShards("20250331", ColorsIngest.getNewShards());
+        planAndExecuteQuery();
     }
 
     @Test
     public void testReturnedShardsForQueryThatCrossesBoundary() throws Exception {
-        withQuery("COLOR == 'red'");
-        withRequiredAllOf("COLOR:red");
-        withDate("20250326", "20250327");
-        withResultCount(ColorsIngest.getNumShards() + ColorsIngest.getNewShards());
-        withExpectedDays("20250326", "20250327");
-        withExpectedShards("20250326", ColorsIngest.getNumShards());
-        withExpectedShards("20250327", ColorsIngest.getNewShards());
-        planAndExecuteQueryAgainstMultipleIndices();
+        givenDate("20250326", "20250327");
+        givenQuery("COLOR == 'red'");
+        expectPlan("COLOR == 'red'");
+        expectResultCount(ColorsIngest.getNumShards() + ColorsIngest.getNewShards());
+        expectHitTermsRequiredAllOf("COLOR:red");
+        expectDays("20250326", "20250327");
+        expectShards("20250326", ColorsIngest.getNumShards());
+        expectShards("20250327", ColorsIngest.getNewShards());
+        planAndExecuteQuery();
     }
 
     // TODO: unique
