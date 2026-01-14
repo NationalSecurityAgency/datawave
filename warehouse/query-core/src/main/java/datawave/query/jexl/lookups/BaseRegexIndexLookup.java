@@ -41,7 +41,11 @@ public abstract class BaseRegexIndexLookup extends AsyncIndexLookup {
     }
 
     protected String getTableName() {
-        return reverse ? config.getReverseIndexTableName() : config.getIndexTableName();
+        if (reverse) {
+            // there is only one supported reverse index
+            return config.getReverseIndexTableName();
+        }
+        return super.getTableName();
     }
 
     protected String getHintKey(String tableName) {
