@@ -147,7 +147,7 @@ public class UnfieldedRegexExpansionIteratorTest {
         withData("ac", "FIELD_B", "20250804_0", "datatype-a");
         withPattern("a.*");
         withDates("20250804", "20250804");
-        withExpected("aa FIELD_B", "ac FIELD_B");
+        withExpected("aa FIELD_B", "ab FIELD_B", "ac FIELD_B");
         drive();
     }
 
