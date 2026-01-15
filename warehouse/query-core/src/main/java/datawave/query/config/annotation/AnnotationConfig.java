@@ -1,6 +1,7 @@
 package datawave.query.config.annotation;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import datawave.annotation.data.transform.TimestampTransformer;
 import datawave.annotation.data.transform.VisibilityTransformer;
@@ -20,6 +21,27 @@ public class AnnotationConfig implements Serializable {
         setAnnotationSourceTableName(other.getAnnotationSourceTableName());
         setVisibilityTransformer(other.getVisibilityTransformer());
         setTimestampTransformer(other.getTimestampTransformer());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof AnnotationConfig)) {
+            return false;
+        }
+
+        // @formatter:off
+        return Objects.equals(getAnnotationTableName(), ((AnnotationConfig) other).getAnnotationTableName()) &&
+                Objects.equals(getAnnotationSourceTableName(), ((AnnotationConfig) other).getAnnotationSourceTableName()) &&
+                Objects.equals(getVisibilityTransformer(), ((AnnotationConfig) other).getVisibilityTransformer()) &&
+                Objects.equals(getTimestampTransformer(), ((AnnotationConfig) other).getTimestampTransformer());
+        // @formatter:on
+    }
+
+    @Override
+    public int hashCode() {
+        // formatter:off
+        return Objects.hash(getAnnotationTableName(), getAnnotationSourceTableName(), getVisibilityTransformer(), getTimestampTransformer());
+        // formatter:on
     }
 
     public String getAnnotationTableName() {

@@ -3154,7 +3154,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+                Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
 
         // @formatter:on
     }
@@ -3365,7 +3367,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes()
+                getNoExpansionIfCurrentDateTypes(),
+                getOriginalJexlQuery(),
+                getAllHitsQueryConfig()
         );
         // @formatter:on
     }

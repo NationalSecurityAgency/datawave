@@ -1,6 +1,7 @@
 package datawave.query.config.annotation;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Set;
 
 import datawave.data.normalizer.Normalizer;
@@ -23,11 +24,6 @@ public class AllHitsQueryConfig implements Serializable {
      * annotation types to be used with all hits
      */
     private Set<String> validAnnotationTypes;
-
-    /**
-     * fields from the query that should be searched for all hits
-     */
-    private Set<String> validQueryFields;
 
     /**
      * field to write all hits data to
@@ -55,6 +51,42 @@ public class AllHitsQueryConfig implements Serializable {
         setQueryTermExtractor(other.getQueryTermExtractor());
         setTermNormalizer(other.getTermNormalizer());
         setAnnotationConfig(other.getAnnotationConfig());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof AllHitsQueryConfig)) {
+            return false;
+        }
+
+        AllHitsQueryConfig that = (AllHitsQueryConfig) other;
+
+        // @formatter:off
+        return Objects.equals(isEnabled(), that.isEnabled()) &&
+                Objects.equals(getMaxContextLength(), that.getMaxContextLength()) &&
+                Objects.equals(getValidAnnotationTypes(), that.getValidAnnotationTypes()) &&
+                Objects.equals(getAllHitsFactoryClass(), that.getAllHitsFactoryClass()) &&
+                Objects.equals(getTargetField(), that.getTargetField()) &&
+                Objects.equals(getQueryTermExtractor(), that.getQueryTermExtractor()) &&
+                Objects.equals(getTermNormalizer(), that.getTermNormalizer()) &&
+                Objects.equals(getAnnotationConfig(), that.getAnnotationConfig());
+        // @formatter:on
+    }
+
+    @Override
+    public int hashCode() {
+        // @formatter:off
+        return Objects.hash(
+                isEnabled(),
+                getMaxContextLength(),
+                getValidAnnotationTypes(),
+                getAllHitsFactoryClass(),
+                getTargetField(),
+                getQueryTermExtractor(),
+                getTermNormalizer(),
+                getAnnotationConfig()
+        );
+        // @formatter:on
     }
 
     public boolean isEnabled() {

@@ -3,6 +3,7 @@ package datawave.query.transformer.annotation;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -22,6 +23,20 @@ public class TermExtractor implements Serializable {
 
     public TermExtractor(Set<String> fields) {
         this.fields = fields;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof TermExtractor)) {
+            return false;
+        }
+
+        return Objects.equals(fields, ((TermExtractor) other).fields);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fields);
     }
 
     /**
