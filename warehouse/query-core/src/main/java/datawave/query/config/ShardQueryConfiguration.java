@@ -51,6 +51,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -558,6 +559,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int maxLinesToPrint = -1;
 
+    private String originalJexlQuery;
+
+    private AllHitsQueryConfig allHitsQueryConfig;
+
     /**
      * Default constructor
      */
@@ -813,6 +818,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setOriginalJexlQuery(other.getOriginalJexlQuery());
+        this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
     }
 
     /**
@@ -3147,7 +3154,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+                Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
 
         // @formatter:on
     }
@@ -3358,7 +3367,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes()
+                getNoExpansionIfCurrentDateTypes(),
+                getOriginalJexlQuery(),
+                getAllHitsQueryConfig()
         );
         // @formatter:on
     }
@@ -3424,5 +3435,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         this.maxLinesToPrint = maxLinesToPrint;
+    }
+
+    public AllHitsQueryConfig getAllHitsQueryConfig() {
+        return allHitsQueryConfig;
+    }
+
+    public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
+        this.allHitsQueryConfig = allHitsQueryConfig;
+    }
+
+    public String getOriginalJexlQuery() {
+        return originalJexlQuery;
+    }
+
+    public void setOriginalJexlQuery(String originalJexlQuery) {
+        this.originalJexlQuery = originalJexlQuery;
     }
 }

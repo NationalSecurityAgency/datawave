@@ -44,6 +44,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
@@ -633,6 +634,12 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("maxLinesToPrint", -1);
         updatedValues.put("maxLinesToPrint", 150);
+
+        defaultValues.put("allHitsQueryConfig", null);
+        updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
+
+        defaultValues.put("originalJexlQuery", null);
+        updatedValues.put("originalJexlQuery", "FIELD == 'VALUE'");
     }
 
     private Query createQuery(String query) {
