@@ -255,7 +255,7 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
                     throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException,
-                    java.lang.reflect.InvocationTargetException {
+                    InvocationTargetException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
                         .setIteratorBuilder(TLDIndexIteratorBuilder.class);
     }

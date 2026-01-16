@@ -1,6 +1,7 @@
 package datawave.query.iterator;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -223,8 +224,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
 
     }
 
-    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException, ConfigException,
-                    IllegalAccessException, InstantiationException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
+    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
+                    throws IOException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         boolean isQueryFullySatisfiedInitialState = true;
         String hitListOptionString = documentOptions.get("hit.list");
 
@@ -281,8 +282,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         this.fieldIndexResults.seek(range, columnFamilies, inclusive);
     }
 
-    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
-                    ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
+    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
 
         // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
@@ -310,7 +311,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             throw new IOException("Unable to create document iterator", e);
         } catch (NoSuchMethodException e) {
             throw new IOException("Unable to create document iterator", e);
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 

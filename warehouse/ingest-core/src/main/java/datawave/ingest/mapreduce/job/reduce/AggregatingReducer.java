@@ -444,7 +444,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     agg.init(null, clazzOptions.getKey(), new StubbedIteratorEnvironment());
 
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException | NoSuchMethodException
-                                | java.lang.reflect.InvocationTargetException e) {
+                                | InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
 
