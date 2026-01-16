@@ -8,13 +8,13 @@ import java.util.List;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.accumulo.hadoopImpl.mapreduce.AccumuloRecordWriter;
-import org.apache.accumulo.hadoopImpl.mapreduce.lib.OutputConfigurator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
+import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -96,7 +96,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
@@ -130,7 +130,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
@@ -170,7 +170,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
@@ -212,7 +212,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -256,7 +256,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -313,7 +313,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -370,7 +370,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -427,7 +427,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -486,7 +486,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -545,7 +545,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            setSimulationMode(AccumuloOutputFormat.class, conf, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -583,5 +583,19 @@ public class CBMutationOutputFormatterTest {
             CBMutationOutputFormatterTest.logger.info("testRecordWriterWriteWithUpdatesWithColFamilyTypedWithoutUID completed.");
         }
 
+    }
+
+    private enum Features {
+        SIMULATION_MODE;
+    }
+
+    private static String enumToConfKey(Class<?> implementingClass) {
+        String var10000 = implementingClass.getSimpleName();
+        return var10000 + "." + ((Enum<?>) Features.SIMULATION_MODE).getDeclaringClass().getSimpleName() + "."
+                        + StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase());
+    }
+
+    public static void setSimulationMode(Class<?> implementingClass, Configuration conf, boolean enableFeature) {
+        conf.setBoolean(enumToConfKey(implementingClass), enableFeature);
     }
 }
