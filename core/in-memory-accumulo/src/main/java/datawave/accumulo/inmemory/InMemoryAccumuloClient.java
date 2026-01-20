@@ -30,7 +30,6 @@ import org.apache.accumulo.core.client.ConditionalWriterConfig;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-
 import org.apache.accumulo.core.client.admin.InstanceOperations;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.ReplicationOperations;
@@ -69,7 +68,7 @@ public class InMemoryAccumuloClient implements AccumuloClient {
     }
 
     public ConditionalWriter createConditionalWriter(String tableName) throws TableNotFoundException {
-        return this.createConditionalWriter(tableName, (ConditionalWriterConfig)null);
+        return this.createConditionalWriter(tableName, (ConditionalWriterConfig) null);
     }
 
     private void ensureOpen() {

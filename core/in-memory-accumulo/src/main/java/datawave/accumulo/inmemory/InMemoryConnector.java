@@ -41,7 +41,7 @@ public class InMemoryConnector {
     String username;
     private final InMemoryAccumulo acu;
 
-     InMemoryConnector(String username, InMemoryInstance instance) throws AccumuloSecurityException {
+    InMemoryConnector(String username, InMemoryInstance instance) throws AccumuloSecurityException {
 
         this.username = username;
         this.acu = instance.acu;
