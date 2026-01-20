@@ -241,6 +241,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> implements
         }
     }
 
+    @Override
     public void close() {
         returnConnector();
     }

@@ -705,7 +705,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     /**
      * This is the iterator for a persisted FileSortedSet
      */
-    protected class FileIterator implements Iterator<E> {
+    protected class FileIterator implements Iterator<E>, AutoCloseable {
         private SortedSetInputStream<E> stream;
         private E next;
 
@@ -762,6 +762,10 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             throw new UnsupportedOperationException("Iterator.remove() not supported.");
         }
 
+        @Override
+        public void close() {
+            cleanup();
+        }
     }
 
     /**
