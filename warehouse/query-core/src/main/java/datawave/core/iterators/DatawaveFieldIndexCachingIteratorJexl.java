@@ -1285,7 +1285,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Clear out the current row-based hdfs backed set
      *
      */
-   protected void clearRowBasedHdfsBackedSet() {
+    protected void clearRowBasedHdfsBackedSet() {
         this.keys = null;
         this.currentRow = null;
         this.set = null;
