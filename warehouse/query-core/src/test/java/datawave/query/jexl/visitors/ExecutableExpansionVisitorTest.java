@@ -58,7 +58,6 @@ import datawave.data.type.Type;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.CompositeFunctionsTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -87,7 +86,7 @@ public abstract class ExecutableExpansionVisitorTest {
         @BeforeClass
         public static void setUp() throws Exception {
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ExecutableExpansionVisitorTest.ShardRangeExecutableExpansion.class.toString(), log);
             client = qtth.client;
             Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
 
@@ -119,7 +118,7 @@ public abstract class ExecutableExpansionVisitorTest {
         @BeforeClass
         public static void setUp() throws Exception {
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ExecutableExpansionVisitorTest.DocumentRange.class.toString(), log);
             client = qtth.client;
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
