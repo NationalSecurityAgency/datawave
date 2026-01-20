@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
-import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -145,7 +144,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             String responseBody = objectMapper.writeValueAsString(createResponse);
             exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-            IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+            IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
             exchange.close();
         };
 
@@ -166,7 +165,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             String responseBody = objectMapper.writeValueAsString(response);
             exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
             exchange.sendResponseHeaders(responseCode, responseBody.length());
-            IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+            IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
             exchange.close();
         };
 
@@ -177,7 +176,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             String responseBody = objectMapper.writeValueAsString(closeResponse);
             exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-            IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+            IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
             exchange.close();
         };
 
