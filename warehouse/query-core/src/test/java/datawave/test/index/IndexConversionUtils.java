@@ -22,7 +22,6 @@ import org.apache.accumulo.core.client.admin.CloneConfiguration;
 import org.apache.accumulo.core.client.admin.CompactionConfig;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.CloneConfigurationImpl;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -211,7 +210,7 @@ public abstract class IndexConversionUtils {
     protected void cloneAndCompactMac(TableOperations tops, String tableName) {
         try {
             //  @formatter:off
-            CloneConfiguration cloneConfiguration = new CloneConfigurationImpl()
+            CloneConfiguration cloneConfiguration = CloneConfiguration.builder()
                     .setFlush(true)
                     .setKeepOffline(false)
                     .build();
