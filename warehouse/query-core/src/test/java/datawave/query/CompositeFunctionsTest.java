@@ -233,7 +233,8 @@ public class CompositeFunctionsTest extends AbstractQueryTest {
     }
 
     /**
-     * The {@link datawave.query.jexl.visitors.RegexFunctionVisitor} enforces the rule that a regex filter function cannot contain an index-only field. The excludeRegex function is rewritten as a negated regex, which is not executable.
+     * The {@link datawave.query.jexl.visitors.RegexFunctionVisitor} enforces the rule that a regex filter function cannot contain an index-only field. The
+     * excludeRegex function is rewritten as a negated regex, which is not executable.
      */
     @Test
     public void testWithIndexOnlyFieldsAndModelExpansionFailureState() {
@@ -241,8 +242,8 @@ public class CompositeFunctionsTest extends AbstractQueryTest {
         // see above, but this will fail with the correct exception,because index-only fields
         // are mixed with expressions that cannot be run against the index
         givenQuery("UUID =~ '^[CS].*' AND filter:excludeRegex(LOC,'new.*')");
-        //  rewritten query is not executable:
-        //  (UUID == 'soprano' || UUID == 'corleone' || UUID == 'capone') && LOCATION !~ 'new.*' && POSIZIONE !~ 'new.*'
+        // rewritten query is not executable:
+        // (UUID == 'soprano' || UUID == 'corleone' || UUID == 'capone') && LOCATION !~ 'new.*' && POSIZIONE !~ 'new.*'
         expectUUIDs(Set.of("CAPONE"));
         assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
     }
