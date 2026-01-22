@@ -25,11 +25,11 @@ import java.util.regex.Pattern;
 public final class AccumuloValidators {
 
     private AccumuloValidators() {
-        // utility class
+        throw new UnsupportedOperationException();
     }
 
     // Pattern for valid namespace/table name characters
-    private static final Pattern VALID_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]+$");
+    private static final Pattern VALID_NAME_PATTERN = Pattern.compile("\\w+");
 
     /**
      * Validator for new table names. Checks that the name is non-null, non-empty, and contains only valid characters.
