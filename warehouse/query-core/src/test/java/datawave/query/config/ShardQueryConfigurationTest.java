@@ -45,6 +45,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
@@ -655,6 +656,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useTruncatedIndex", true);
         defaultValues.put("truncatedIndexTableName", TableName.TRUNCATED_SHARD_INDEX);
         updatedValues.put("truncatedIndexTableName", "datawave." + TableName.TRUNCATED_SHARD_INDEX);
+
+        defaultValues.put("allHitsQueryConfig", null);
+        updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
+        defaultValues.put("originalJexlQuery", null);
+        updatedValues.put("originalJexlQuery", "FIELD == 'VALUE'");
     }
 
     private Query createQuery(String query) {
