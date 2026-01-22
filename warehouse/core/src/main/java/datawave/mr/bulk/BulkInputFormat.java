@@ -6,9 +6,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,8 +91,6 @@ import datawave.util.TextUtil;
 public class BulkInputFormat extends InputFormat<Key,Value> {
 
     protected static final Logger log = LoggerFactory.getLogger(BulkInputFormat.class);
-
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -1314,8 +1309,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         // append visibility expression
                         sb.append(new ColumnVisibility(currentK.getColumnVisibility(buffer)));
 
-                        // append timestamp
-                        sb.append(" ").append(formatter.format(Instant.ofEpochMilli(entry.getKey().getTimestamp())));
+                        // append timestamp (epoch millis, matching original DateFormatSupplier behavior)
+                        sb.append(" ").append(entry.getKey().getTimestamp());
 
                         // append value
                         if (currentV != null && currentV.getSize() > 0) {
