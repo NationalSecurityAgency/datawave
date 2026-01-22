@@ -1309,7 +1309,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         // append visibility expression
                         sb.append(new ColumnVisibility(currentK.getColumnVisibility(buffer)));
 
-                        // append timestamp (epoch millis, matching original DateFormatSupplier behavior)
                         sb.append(" ").append(entry.getKey().getTimestamp());
 
                         // append value
