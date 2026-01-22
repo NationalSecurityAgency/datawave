@@ -15,7 +15,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public final class AccumuloTableConstants {
 
     private AccumuloTableConstants() {
-        // utility class
+        throw new UnsupportedOperationException("Utility class");
     }
 
     // Metadata table constants
