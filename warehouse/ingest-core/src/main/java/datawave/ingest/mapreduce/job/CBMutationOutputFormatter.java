@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Properties;
 
 import org.apache.accumulo.core.client.Accumulo;
@@ -26,14 +27,31 @@ public class CBMutationOutputFormatter extends AccumuloOutputFormat {
         return new CBRecordWriter(super.getRecordWriter(attempt), attempt);
     }
 
+    // Key used by AccumuloOutputFormat to store client properties in Hadoop Configuration
+    private static final String CLIENT_PROPS_KEY = "AccumuloOutputFormat.ClientOpts.ClientProps";
+
     public static Properties getClientProperties(Configuration conf) {
+        Properties clientProps = new Properties();
+
+        // Load pre-configured client properties (e.g., batch writer settings)
+        String propString = conf.get(CLIENT_PROPS_KEY, "");
+        if (!propString.isEmpty()) {
+            try {
+                clientProps.load(new StringReader(propString));
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to load client properties from configuration", e);
+            }
+        }
+
         //@formatter:off
-        // Build client properties directly from DataWave configuration
-        return Accumulo.newClientProperties()
+        // Overlay DataWave connection properties
+        clientProps.putAll(Accumulo.newClientProperties()
                 .to(AccumuloHelper.getInstanceName(conf), AccumuloHelper.getZooKeepers(conf))
                 .as(AccumuloHelper.getUsername(conf), new PasswordToken(new String(AccumuloHelper.getPassword(conf))))
-                .build();
+                .build());
         //@formatter:on
+
+        return clientProps;
     }
 
     public static OutputFormatBuilder.OutputOptions<Job> configure(Configuration conf) {
