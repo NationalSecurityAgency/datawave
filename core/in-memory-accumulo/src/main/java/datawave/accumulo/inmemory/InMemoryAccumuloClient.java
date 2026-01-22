@@ -63,7 +63,7 @@ public class InMemoryAccumuloClient implements AccumuloClient {
 
     @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
-        // TODO add implementation
+        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
         throw new UnsupportedOperationException();
     }
 
@@ -169,7 +169,7 @@ public class InMemoryAccumuloClient implements AccumuloClient {
 
     @Override
     public ReplicationOperations replicationOperations() {
-        // TODO add implementation
+        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
         throw new UnsupportedOperationException();
     }
 
