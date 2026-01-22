@@ -159,8 +159,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     public static final String SHARD_INDEX_ENABLED = "shard.index.enabled";
     public static final String BITSET_INDEX_ENABLED = "bitset.index.enabled";
-    public static final String DAY_INDEX_ENABLED = "year.index.enabled";
-    public static final String YEAR_INDEX_ENABLED = "day.index.enabled";
+    public static final String DAY_INDEX_ENABLED = "day.index.enabled";
+    public static final String YEAR_INDEX_ENABLED = "year.index.enabled";
 
     /**
      * name of ACCUMULO table to store DATAWAVE metadata
