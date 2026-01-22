@@ -142,13 +142,13 @@ public class InMemoryConnector extends Connector {
 
     @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
-        // TODO add implementation
+        // Intentionally unsupported - required for Connector interface but not used by DataWave
         throw new UnsupportedOperationException();
     }
 
     @Override
     public ReplicationOperations replicationOperations() {
-        // TODO add implementation
+        // Intentionally unsupported - required for Connector interface but not used by DataWave
         throw new UnsupportedOperationException();
     }
 
