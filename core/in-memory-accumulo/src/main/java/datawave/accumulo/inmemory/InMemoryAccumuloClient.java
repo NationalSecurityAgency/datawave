@@ -158,13 +158,13 @@ public class InMemoryAccumuloClient extends ClientContext implements AccumuloCli
 
     @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
-        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
+        // TODO add implementation
         throw new UnsupportedOperationException();
     }
 
     @Override
     public ReplicationOperations replicationOperations() {
-        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
+        // TODO add implementation
         throw new UnsupportedOperationException();
     }
 
