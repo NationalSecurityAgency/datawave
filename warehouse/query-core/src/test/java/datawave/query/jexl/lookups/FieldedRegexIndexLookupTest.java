@@ -1,9 +1,11 @@
 package datawave.query.jexl.lookups;
 
 import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
+import static datawave.query.AnyFieldQueryTest.DelayedClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.Collections;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Range;
@@ -72,7 +74,7 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
     }
 
     @Test
-    public void testExpansionTimeoutFailure() {
+    public void testExpansionTimeoutForcedFailure() {
         write("bar", "FIELD_A");
         write("baz", "FIELD_A", EXCEPTEDVALUE);
         withQuery("FIELD_A =~ 'ba.*'");
@@ -80,6 +82,29 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
         assertResultFields(Set.of("FIELD_A"));
         assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Set.of("bar")));
         assertTimeoutExceeded();
+    }
+
+    @Test
+    public void testExpansionTimeoutNaturalFailure() {
+        try {
+            DelayedClient delayedClient = new DelayedClient(client, 1);
+            config.setClient(delayedClient);
+            config.setMaxIndexScanTimeMillis(10);
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            assertResultFields(Set.of("FIELD_A"));
+            // a partial expansion will occur
+            assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Collections.emptySet()));
+            assertTimeoutExceeded();
+        } finally {
+            config.setClient(client);
+        }
     }
 
     @Test

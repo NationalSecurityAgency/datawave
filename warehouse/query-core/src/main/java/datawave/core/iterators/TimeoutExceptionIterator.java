@@ -24,8 +24,6 @@ public class TimeoutExceptionIterator extends WrappingIterator {
      */
     protected Key lastKey = null;
 
-    protected Value lastValue = null;
-
     /**
      * boolean to identify that we've exceeded the time
      */
@@ -44,10 +42,9 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     }
 
     /**
-     * Set the return key
+     * Update internal state to denote a timeout was exceeded
      */
-    protected void setReturnKey() {
-        lastValue = EXCEPTEDVALUE;
+    protected void markTimeoutExceeded() {
         exceededTime = true;
     }
 
@@ -62,28 +59,15 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     @Override
     public Value getTopValue() {
         if (exceededTime) {
-            if (null != lastValue) {
-                Value returnValue = lastValue;
-                lastValue = null;
-                return returnValue;
-            } else {
-                return null;
-            }
+            return EXCEPTEDVALUE;
         }
-        lastValue = super.getTopValue();
-        return lastValue;
+        return super.getTopValue();
     }
 
     @Override
     public Key getTopKey() {
         if (exceededTime) {
-            if (null != lastKey) {
-                Key returnKey = lastKey;
-                lastKey = null;
-                return returnKey;
-            } else {
-                return null;
-            }
+            return lastKey;
         }
 
         lastKey = super.getTopKey();
@@ -99,10 +83,10 @@ public class TimeoutExceptionIterator extends WrappingIterator {
         try {
             super.next();
         } catch (IteratorTimeoutException e) {
-            setReturnKey();
+            markTimeoutExceeded();
         } catch (RuntimeException e) {
             if (e.getCause() instanceof IteratorTimeoutException) {
-                setReturnKey();
+                markTimeoutExceeded();
             } else {
                 throw e;
             }
@@ -112,16 +96,7 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
 
-        if (!range.isInfiniteStartKey()) {
-            if (range.isStartKeyInclusive()) {
-                lastKey = range.getStartKey();
-            } else {
-                lastKey = range.getStartKey().followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
-            }
-        } else {
-            lastKey = new Key();
-        }
-        lastValue = new Value();
+        lastKey = new Key();
 
         if (exceededTime) {
             return;
@@ -130,10 +105,10 @@ public class TimeoutExceptionIterator extends WrappingIterator {
         try {
             super.seek(range, columnFamilies, inclusive);
         } catch (IteratorTimeoutException e) {
-            setReturnKey();
+            markTimeoutExceeded();
         } catch (RuntimeException e) {
             if (e.getCause() instanceof IteratorTimeoutException) {
-                setReturnKey();
+                markTimeoutExceeded();
             } else {
                 throw e;
             }
