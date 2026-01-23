@@ -14,7 +14,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -272,8 +271,8 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     }
 
     /**
-     * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
-     * interrupted because the client is no longer listening.
+     * Handle an exception returned from seek or next. This will silently ignore RuntimeException as that happens when the underlying iterator was interrupted
+     * because the client is no longer listening.
      *
      * @param e
      *            the exception to handle
@@ -283,29 +282,29 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private void handleException(Exception e) throws IOException {
         Throwable reason = e;
 
-        // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
+        // We need to pass IOException, RuntimeException, and TabletClosedExceptions up to the Tablet as they are
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
-        IterationInterruptedException iie = null;
+        RuntimeException re = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
-        if (reason instanceof IterationInterruptedException) {
-            iie = (IterationInterruptedException) reason;
+        if (reason instanceof RuntimeException) {
+            re = (RuntimeException) reason;
         }
         if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
         }
 
         int depth = 1;
-        while (iie == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
+        while (re == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
             reason = reason.getCause();
             if (reason instanceof IOException) {
                 ioe = (IOException) reason;
             }
-            if (reason instanceof IterationInterruptedException) {
-                iie = (IterationInterruptedException) reason;
+            if (reason instanceof RuntimeException) {
+                re = (RuntimeException) reason;
             }
             if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;
@@ -315,9 +314,9 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
         // NOTE: Only logging debug (for the most part) here because the Tablet/LookupTask will log the exception
         // as a WARN if we actually have a problem here
-        if (iie != null) {
+        if (re != null) {
             log.debug("Query interrupted ", e);
-            throw iie;
+            throw re;
         } else if (tce != null) {
             log.debug("Query tablet closed ", e);
             throw tce;

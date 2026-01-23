@@ -19,7 +19,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -693,8 +692,8 @@ public abstract class AbstractVersionFilter<A> {
                     isValid = validate(range);
                 }
             }
-        } catch (final IterationInterruptedException e) {
-            // Re-throw iteration interrupted as-is since this is an expected event from
+        } catch (final RuntimeException e) {
+            // Re-throw RuntimeException as-is since this is an expected event from
             // a client going away. Re-throwing as-is will let the
             // tserver catch and ignore it as intended.
             throw e;

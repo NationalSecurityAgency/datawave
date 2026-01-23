@@ -16,7 +16,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +94,7 @@ public class DocumentRangeScan implements RunnableWithContext {
                         executeDocumentScan();
                     }
                     executing = false;
-                } catch (IterationInterruptedException e) {
+                } catch (RuntimeException e) {
                     log.warn("time sliced, resubmitting scan for {}", getContext());
                 }
             }
