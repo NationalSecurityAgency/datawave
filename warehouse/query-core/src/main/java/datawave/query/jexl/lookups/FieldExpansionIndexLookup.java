@@ -58,7 +58,7 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
 
             try {
-                scanner = scannerFactory.newSingleScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
+                scanner = scannerFactory.newSingleScanner(getTableName(), config.getAuthorizations(), config.getQuery());
 
                 Range range = getScanRange();
                 scanner.setRange(range);
