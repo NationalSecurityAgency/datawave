@@ -5,7 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +49,7 @@ public class CreateUidsIteratorTest {
 
     @Test
     public void testLastNull() {
-        ArrayByteSequence bs = new ArrayByteSequence("shard_1\u0000datatype".getBytes(Charset.forName("UTF-8")));
+        ArrayByteSequence bs = new ArrayByteSequence("shard_1\u0000datatype".getBytes(StandardCharsets.UTF_8));
         assertEquals("shard_1".length(), CreateUidsIterator.lastNull(bs));
     }
 

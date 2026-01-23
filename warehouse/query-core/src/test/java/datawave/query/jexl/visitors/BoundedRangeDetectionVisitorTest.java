@@ -3,6 +3,10 @@ package datawave.query.jexl.visitors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
@@ -21,17 +25,20 @@ import datawave.query.util.MockMetadataHelper;
 public class BoundedRangeDetectionVisitorTest {
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
+    private Set<String> nonEventFields;
 
     @Before
     public void init() throws Exception {
-        this.config = ShardQueryConfiguration.create();
         Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
         queryFieldsDatatypes.put("FOO", new StringType());
 
-        config.setQueryFieldsDatatypes(queryFieldsDatatypes);
+        this.config = ShardQueryConfiguration.create();
+        this.config.setQueryFieldsDatatypes(queryFieldsDatatypes);
 
         this.helper = new MockMetadataHelper();
         this.helper.setNonEventFields(queryFieldsDatatypes.keySet());
+
+        this.nonEventFields = new HashSet<>(queryFieldsDatatypes.keySet());
     }
 
     @Test
@@ -55,9 +62,28 @@ public class BoundedRangeDetectionVisitorTest {
     }
 
     private void test(String query, boolean expected) {
+        testWithHelper(query, expected);
+        testWithoutHelper(query, expected);
+    }
+
+    // current path
+    private void testWithHelper(String query, boolean expected) {
         try {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            assertEquals(expected, BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script));
+            Set<String> nonEventFields = helper.getNonEventFields(config.getDatatypeFilter());
+            assertEquals(expected, BoundedRangeDetectionVisitor.mustExpandBoundedRange(script, nonEventFields));
+        } catch (ParseException e) {
+            fail("Failed to parse query: " + query);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // future path
+    private void testWithoutHelper(String query, boolean expected) {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+            assertEquals(expected, BoundedRangeDetectionVisitor.mustExpandBoundedRange(script, nonEventFields));
         } catch (ParseException e) {
             fail("Failed to parse query: " + query);
         }
