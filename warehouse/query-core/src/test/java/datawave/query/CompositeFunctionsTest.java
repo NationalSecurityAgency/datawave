@@ -1,453 +1,337 @@
 package datawave.query;
 
-import java.io.File;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others
  *
  */
-public abstract class CompositeFunctionsTest {
-
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends CompositeFunctionsTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            // this will get property substituted into the TypeMetadataBridgeContext.xml file
-            // for the injection test (when this unit test is first created)
-            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestShardRange");
-            System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
-            client = qtth.client;
-
-            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX);
-            PrintUtility.printTable(client, auths, TableName.SHARD_YEAR_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            eventQueryLogic.setCollapseUids(true);
-            tldEventQueryLogic.setCollapseUids(true);
-        }
-
-        @AfterClass
-        public static void teardown() {
-            TypeRegistry.reset();
-        }
-
-        @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, eventQueryLogic);
-        }
-
-        @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, ShardQueryLogic logic)
-                        throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, logic);
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends CompositeFunctionsTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            // this will get property substituted into the TypeMetadataBridgeContext.xml file
-            // for the injection test (when this unit test is first created)
-            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestDocumentRange");
-            System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
-            client = qtth.client;
-
-            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            eventQueryLogic.setCollapseUids(false);
-            tldEventQueryLogic.setCollapseUids(false);
-        }
-
-        @AfterClass
-        public static void teardown() {
-            TypeRegistry.reset();
-        }
-
-        @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, eventQueryLogic);
-        }
-
-        @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, ShardQueryLogic logic)
-                        throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, logic);
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class CompositeFunctionsTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(CompositeFunctionsTest.class);
 
-    protected Authorizations auths = new Authorizations("ALL");
+    @TempDir
+    public static Path folder;
 
-    private final Set<Authorizations> authSet = Collections.singleton(auths);
+    protected static AccumuloClient client = null;
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic eventQueryLogic;
 
-    @Inject
-    @SpringBean(name = "TLDEventQuery")
+    @Autowired
+    @Qualifier("TLDEventQuery")
     protected ShardQueryLogic tldEventQueryLogic;
 
-    private KryoDocumentDeserializer deserializer;
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        // this will get property substituted into the TypeMetadataBridgeContext.xml file
+        // for the injection test (when this unit test is first created)
+        System.setProperty("type.metadata.dir", folder.toFile().getAbsolutePath());
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+        QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.class.toString(), log);
+        client = qtth.client;
 
-    @Deployment
-    public static JavaArchive createDeployment() {
-
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+        WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
+        // PrintUtility.printTable(client, auths, TableName.SHARD);
+        // PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        // PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX);
+        // PrintUtility.printTable(client, auths, TableName.SHARD_YEAR_INDEX);
+        // PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        // PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    public void beforeEach() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
         eventQueryLogic.setFullTableScanEnabled(true);
         eventQueryLogic.setMaxDepthThreshold(7);
         tldEventQueryLogic.setFullTableScanEnabled(true);
         tldEventQueryLogic.setMaxDepthThreshold(7);
-        deserializer = new KryoDocumentDeserializer();
+
+        setClientForTest(client);
+        givenDate("20091231", "20150101");
     }
 
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
+    @AfterAll
+    public static void afterAll() {
+        TypeRegistry.reset();
+    }
 
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    ShardQueryLogic logic) throws Exception;
+    @Override
+    public ShardQueryLogic getLogic() {
+        return eventQueryLogic;
+    }
 
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client,
-                    ShardQueryLogic logic) throws Exception {
-        log.debug("runTestQuery");
-        log.trace("Creating QueryImpl");
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(querystr);
-        settings.setParameters(extraParms);
-        settings.setId(UUID.randomUUID());
+    @Override
+    protected void extraConfigurations() {
+        // no-op
+    }
 
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-        logic.setMaxEvaluationPipelines(1);
+    @Override
+    protected void extraAssertions() {
+        // no-op
+    }
 
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
-        logic.setupQuery(config);
-
-        HashSet<String> expectedSet = new HashSet<>(expected);
-        HashSet<String> resultSet;
-        resultSet = new HashSet<>();
-        Set<Document> docs = new HashSet<>();
-        for (Entry<Key,Value> entry : logic) {
-            Document d = deserializer.apply(entry).getValue();
-
-            log.debug(entry.getKey() + " => " + d);
-
-            Attribute<?> attr = d.get("UUID");
-            if (attr == null) {
-                attr = d.get("UUID.0");
-            }
-
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
-                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
-
-            TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
-
-            String UUID = UUIDAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + UUID, expected.contains(UUID));
-
-            resultSet.add(UUID);
-            docs.add(d);
-        }
-
-        if (expected.size() > resultSet.size()) {
-            expectedSet.addAll(expected);
-            expectedSet.removeAll(resultSet);
-
-            for (String s : expectedSet) {
-                log.warn("Missing: " + s);
-            }
-        }
-
-        if (!expected.containsAll(resultSet)) {
-            log.error("Expected results " + expected + " differ form actual results " + resultSet);
-        }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+    public void givenGroupingContext() {
+        givenParameter("include.grouping.context", "true");
     }
 
     @Test
-    public void testMatchesAtLeastCountOf() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY')",
-                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY')"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {
-                Collections.singletonList("CORLEONE"),
-                Collections.emptyList()
-        };
-        // @formatter:on
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-        }
+    public void testMatchesAtLeastCountOf_NAM() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY')");
+        expectPlan("(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && filter:matchesAtLeastCountOf(3, (NOME || NAME), 'MICHAEL', 'VINCENT', 'FREDO', 'TONY')");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
     }
 
     @Test
-    public void testMatchesAtLeastCountOfWithOptionsFunction() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-
-        if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOf");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY') "+
-                        "AND f:options('include.grouping.context','true','hit.list','true')",
-
-                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') "+
-                        "OR f:options('include.grouping.context','true','hit.list','true')"
-        };
-
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {
-                Collections.singletonList("CORLEONE"),
-                Collections.emptyList()
-        };
-        // @formatter:on
-
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-        }
+    public void testMatchesAtLeastCountOf_NAME() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY')");
+        expectPlan("(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && filter:matchesAtLeastCountOf(3, NAME, 'MICHAEL', 'VINCENT', 'FRED', 'TONY')");
+        expectUUIDs(Collections.emptySet());
+        planAndExecuteQuery();
     }
 
     @Test
-    public void testDateDelta() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
+    public void testMatchesAtLeastCountOfWithOptionsFunction_NAM() throws Exception {
+        givenQuery("UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY') AND f:options('include.grouping.context','true','hit.list','true')");
+        expectPlan("(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && filter:matchesAtLeastCountOf(3, (NOME || NAME), 'MICHAEL', 'VINCENT', 'FREDO', 'TONY')");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
 
-        if (log.isDebugEnabled()) {
-            log.debug("testDateDelta");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID =~ '^[CS].*' AND filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000L", // 80+ years
-                "UUID =~ '^[CS].*' AND filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 1892160000000L", // 60+ years
-                "UUID =~ '^[CS].*' AND filter:timeFunction(DEATH_DATE,BIRTH_DATE,'-','>',2522880000000L)", // 80+ years
-                "(UUID:C* OR UUID:S*) AND #TIME_FUNCTION(DEATH_DATE,BIRTH_DATE,'-','>','2522880000000L')"
-        };
-        // timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal)
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
-                Collections.singletonList("CAPONE"), Collections.singletonList("CAPONE"),};
-        for (int i = 0; i < queryStrings.length; i++) {
-            if (i == 3) {
-                eventQueryLogic.setParser(new LuceneToJexlQueryParser());
-            }
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-        }
+    @Test
+    public void testMatchesAtLeastCountOfWithOptionsFunction_NAME() throws Exception {
+        givenQuery("UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') OR f:options('include.grouping.context','true','hit.list','true')");
+        expectPlan("(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && filter:matchesAtLeastCountOf(3, NAME, 'MICHAEL', 'VINCENT', 'FRED', 'TONY')");
+        expectUUIDs(Collections.emptySet());
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testDateDeltaArithmeticEightyYearsOneResult() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000L"); // 80+ years
+        expectPlan("filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000 && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectUUIDs(Set.of("CAPONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testDateDeltaArithmeticSixtyYearsTwoResults() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 1892160000000L"); // 60+ years
+        expectPlan("filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 1892160000000 && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectUUIDs(Set.of("CAPONE", "CORLEONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testDateDeltaTimeFunction() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:timeFunction(DEATH_DATE,BIRTH_DATE,'-','>',2522880000000L)"); // 80+ years
+        expectPlan("(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && filter:timeFunction(DEATH_DATE, BIRTH_DATE, '-', '>', 2522880000000)");
+        expectUUIDs(Set.of("CAPONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testDateDeltaLucene() throws Exception {
+        givenGroupingContext();
+        givenParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
+        givenQuery("(UUID:C* OR UUID:S*) AND #TIME_FUNCTION(DEATH_DATE,BIRTH_DATE,'-','>','2522880000000L')"); // 80+ years
+        expectPlan("filter:timeFunction(DEATH_DATE, BIRTH_DATE, '-', '>', 2522880000000) && (((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
+        expectUUIDs(Set.of("CAPONE"));
+        planAndExecuteQuery();
     }
 
     @Test
     public void testAgainstUnsupportedCompositeStructures() {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("makeSureTheyCannotDoAnythingCrazy");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID == 'CORLEONE' AND  filter:getAllMatches(NAME,'SANTINO').add('NAME:GROUCHO') == true",
-                "UUID == 'CORLEONE' AND  filter:getAllMatches(NAME,'SANTINO').clear() == false"
-        };
-
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.emptyList()};
-        for (int i = 0; i < queryStrings.length; i++) {
-            try {
-                runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-            } catch (Throwable t) {
-                log.error(t);
-                Assert.assertTrue(t instanceof DatawaveFatalQueryException);
-            }
-        }
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND filter:getAllMatches(NAME,'SANTINO').add('NAME:GROUCHO') == true");
+        assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
     }
 
     @Test
-    public void testWithIndexOnlyFieldsAndModelExpansion() {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testWithIndexOnlyFieldsAndModelExpansion");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID =~ '^[CS].*' AND filter:includeRegex(LOCATION,'chicago')", // LOCATION is index-only
-                "UUID =~ '^[CS].*' AND filter:includeRegex(LOC,'newyork')", // LOC model-maps to LOCATION and POSIZIONE, both are index-only
-                "UUID =~ '^[CS].*' AND filter:includeRegex(LOC,'new.*')", // see above
-                "UUID =~ '^[CS].*' AND filter:excludeRegex(LOC,'new.*')", // see above, but this will fail with the correct exception,because index-only fields
-                                                                          // are mixed with expressions that cannot be run against the index
-                "UUID =~ '^[CS].*' AND filter:excludeRegex(NAM,'A.*')", // this will expand to excludeRegex(NAME||NOME, 'A.*') which will become
-                                                                        // !includeRegex(NAME||NOME, 'A.*')
-        };
-
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.singletonList("CORLEONE"),
-                Arrays.asList("CORLEONE", "SOPRANO"), Collections.singletonList("CAPONE"), Collections.singletonList("CORLEONE"),};
-        for (int i = 0; i < queryStrings.length; i++) {
-            try {
-                runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-            } catch (Throwable t) {
-                log.error(t);
-                Assert.assertTrue(t instanceof DatawaveFatalQueryException);
-            }
-        }
-
+    public void testAgainstUnsupportedCompositeStructures2() {
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND  filter:getAllMatches(NAME,'SANTINO').clear() == false");
+        assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
     }
 
     @Test
-    public void testArithmetic() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
+    public void testWithIndexOnlyFieldsAndModelExpansion() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:includeRegex(LOCATION,'chicago')"); // LOCATION is index-only
+        expectPlan("LOCATION == 'chicago' && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectUUIDs(Set.of("CAPONE"));
+        planAndExecuteQuery();
+    }
 
-        if (log.isDebugEnabled()) {
-            log.debug("testArithmetic");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID =~ 'CORLEONE' AND 1 + 1 + 1 == 3",
-                "UUID =~ 'CORLEONE' AND 1 * 2 * 3 == 6",
-                "UUID =~ 'CORLEONE' AND 12 / 2 / 3 == 2",
-                "UUID == 'CORLEONE' AND 1 + 1 + 1 == 4",
-                "UUID == 'CORLEONE' AND 1 * 2 * 3 == 7",
-                "UUID == 'CORLEONE' AND 12 / 2 / 3 == 3",
-                "UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'hubert').isEmpty() == true",
-                "UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'hubert').size() == 0"
-        };
+    @Test
+    public void testWithIndexOnlyFieldsAndModelExpansionNewYork() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:includeRegex(LOC,'newyork')"); // LOC model-maps to LOCATION and POSIZIONE, both are index-only
+        expectPlan("(POSIZIONE == 'newyork' || LOCATION =~ 'newyork') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
 
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE"),
-                Collections.singletonList("CORLEONE"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
-                Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE"),};
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-        }
+    @Test
+    public void testWithIndexOnlyFieldsAndModelExpansionNewYorkAndNewJersey() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:includeRegex(LOC,'new.*')"); // LOC model-maps to LOCATION and POSIZIONE, both are index-only
+        expectPlan("(LOCATION == 'newjersey' || POSIZIONE == 'newyork') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectUUIDs(Set.of("CORLEONE", "SOPRANO"));
+        planAndExecuteQuery();
+    }
+
+    /**
+     * The {@link datawave.query.jexl.visitors.RegexFunctionVisitor} enforces the rule that a regex filter function cannot contain an index-only field. The
+     * excludeRegex function is rewritten as a negated regex, which is not executable.
+     */
+    @Test
+    public void testWithIndexOnlyFieldsAndModelExpansionFailureState() {
+        givenGroupingContext();
+        // see above, but this will fail with the correct exception,because index-only fields
+        // are mixed with expressions that cannot be run against the index
+        givenQuery("UUID =~ '^[CS].*' AND filter:excludeRegex(LOC,'new.*')");
+        // rewritten query is not executable:
+        // (UUID == 'soprano' || UUID == 'corleone' || UUID == 'capone') && LOCATION !~ 'new.*' && POSIZIONE !~ 'new.*'
+        expectUUIDs(Set.of("CAPONE"));
+        assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
+    }
+
+    @Test
+    public void testWithIndexOnlyFieldsAndModelExpansion5() throws Exception {
+        givenGroupingContext();
+        // this will expand to excludeRegex(NAME||NOME, 'A.*') which will become !includeRegex(NAME||NOME, 'A.*')
+        givenQuery("UUID =~ '^[CS].*' AND filter:excludeRegex(NAM,'A.*')");
+        expectPlan("(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && filter:excludeRegex((NOME || NAME), 'A.*')");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticAddition() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND 1 + 1 + 1 == 3");
+        expectPlan("1 + 1 + 1 == 3 && UUID == 'corleone'");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticMultiplication() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ 'CORLEONE' AND 1 * 2 * 3 == 6");
+        expectPlan("1 * 2 * 3 == 6 && UUID == 'corleone'");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticDivision() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ 'CORLEONE' AND 12 / 2 / 3 == 2");
+        expectPlan("12 / 2 / 3 == 2 && UUID == 'corleone'");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticAdditionMiss() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND 1 + 1 + 1 == 4");
+        expectPlan("1 + 1 + 1 == 4 && UUID == 'corleone'");
+        expectUUIDs(Collections.emptySet());
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticMultiplicationMiss() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND 1 * 2 * 3 == 7");
+        expectPlan("1 * 2 * 3 == 7 && UUID == 'corleone'");
+        expectUUIDs(Collections.emptySet());
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticDivisionMiss() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND 12 / 2 / 3 == 3");
+        expectPlan("12 / 2 / 3 == 3 && UUID == 'corleone'");
+        expectUUIDs(Collections.emptySet());
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticSetIsEmpty() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'hubert').isEmpty() == true");
+        expectPlan("UUID == 'corleone' && filter:getAllMatches((NOME || NAME), 'hubert').isEmpty() == true");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testArithmeticSetSize() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'hubert').size() == 0");
+        expectPlan("UUID == 'corleone' && filter:getAllMatches((NOME || NAME), 'hubert').size() == 0");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
     }
 
     @Test
     public void testNulls() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testNulls");
-        }
         // @formatter:off
         String[] queryStrings = {
                 "UUID =~ '^[CS].*' AND filter:isNull(NULL1)", // no model expansion, NULL1 is not in the event(s)
@@ -463,8 +347,6 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:isNull(UUID||NULL1)",
                 "UUID =~ '^[CS].*' AND filter:isNull(UUID) && filter:isNull(NULL1)"
         };
-
-        //  @formatter:off
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
@@ -485,18 +367,18 @@ public abstract class CompositeFunctionsTest {
         for (int i = 0; i < queryStrings.length; i++) {
             // filter must be reset between each run when pruning ingest types
             eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            beforeEach();
+            givenGroupingContext();
+            givenQuery(queryStrings[i]);
+            disableQueryPlanAssertion();
+            expectUUIDs(new HashSet<>(expectedLists[i]));
+            planAndExecuteQuery();
+            afterEach();
         }
     }
 
     @Test
     public void testNotNulls() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testNotNulls");
-        }
         // @formatter:off
         String[] queryStrings = {
                 "filter:isNotNull(UUID)",
@@ -516,8 +398,6 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID||NULL1)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(ONE_NULL)"
         };
-
-        //  @formatter:off
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
@@ -540,39 +420,36 @@ public abstract class CompositeFunctionsTest {
         for (int i = 0; i < queryStrings.length; i++) {
             // filter must be reset between each run when pruning ingest types
             eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            beforeEach();
+            givenGroupingContext();
+            givenQuery(queryStrings[i]);
+            disableQueryPlanAssertion();
+            expectUUIDs(new HashSet<>(expectedLists[i]));
+            planAndExecuteQuery();
+            afterEach();
         }
     }
 
     @Test
     public void composeFunctionsInsteadOfMatchesAtLeastCountOf() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:includeRegex(NAM,'MICHAEL').size() + filter:includeRegex(NAM,'VINCENT').size() + filter:includeRegex(NAM,'FREDO').size() + filter:includeRegex(NAM,'TONY').size() >= 3");
+        expectPlan("filter:includeRegex((NOME || NAME), 'MICHAEL').size() + filter:includeRegex((NOME || NAME), 'VINCENT').size() + filter:includeRegex((NOME || NAME), 'FREDO').size() + filter:includeRegex((NOME || NAME), 'TONY').size() >= 3 && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
+    }
 
-        if (log.isDebugEnabled()) {
-            log.debug("composeFunctionsInsteadOfMatchesAtLeastCountOf");
-        }
-        String[] queryStrings = {
-                "UUID =~ '^[CS].*' AND filter:includeRegex(NAM,'MICHAEL').size() + filter:includeRegex(NAM,'VINCENT').size() + filter:includeRegex(NAM,'FREDO').size() + filter:includeRegex(NAM,'TONY').size() >= 3",
-                "UUID =~ '^[CS].*' AND filter:includeRegex(NAM,'MICHAEL').size() + filter:includeRegex(NAM,'VINCENT').size() + filter:includeRegex(NAM,'FRED').size() + filter:includeRegex(NAM,'TONY').size() >= 3"};
-
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"), Collections.emptyList()};
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-        }
+    @Test
+    public void composeFunctionsInsteadOfMatchesAtLeastCountOf2() throws Exception {
+        givenGroupingContext();
+        givenQuery("UUID =~ '^[CS].*' AND filter:includeRegex(NAM,'MICHAEL').size() + filter:includeRegex(NAM,'VINCENT').size() + filter:includeRegex(NAM,'FRED').size() + filter:includeRegex(NAM,'TONY').size() >= 3");
+        expectPlan("filter:includeRegex((NOME || NAME), 'MICHAEL').size() + filter:includeRegex((NOME || NAME), 'VINCENT').size() + filter:includeRegex((NOME || NAME), 'FRED').size() + filter:includeRegex((NOME || NAME), 'TONY').size() >= 3 && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectUUIDs(Collections.emptySet());
+        planAndExecuteQuery();
     }
 
     @Test
     public void testCompositeFunctions() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testCompositeFunctions");
-        }
         // @formatter:off
         String[] queryStrings = {
                 "UUID == 'SOPRANO' AND  1 + 1 == 2",
@@ -586,45 +463,44 @@ public abstract class CompositeFunctionsTest {
                 "UUID == 'SOPRANO' AND  filter:getAllMatches(NAM,'ANTHONY').contains('NAME.0:ANTHONY') == true",
                 "UUID =~ '^[CS].*' AND  filter:getAllMatches(NAM,'.*O').contains('NOME.0:SANTINO') == true"
         };
-
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
                 Collections.singletonList("SOPRANO"), // family name starts with C or S
                 Collections.singletonList("SOPRANO"), // family name starts with C or S
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
-                Collections.singletonList("CORLEONE"), Arrays.asList("CORLEONE", "CAPONE"), Collections.singletonList("SOPRANO"),
-                Collections.singletonList("SOPRANO"), Collections.singletonList("CORLEONE")};
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("CORLEONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("SOPRANO"),
+                Collections.singletonList("SOPRANO"),
+                Collections.singletonList("CORLEONE")
+        };
+        //  @formatter:on
+
         for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            beforeEach();
+            givenGroupingContext();
+            givenQuery(queryStrings[i]);
+            disableQueryPlanAssertion();
+            expectUUIDs(new HashSet<>(expectedLists[i]));
+            planAndExecuteQuery();
+            afterEach();
         }
     }
 
     @Test
     public void testMatchesAtLeastCountOfWithLucene() throws Exception {
         eventQueryLogic.setParser(new LuceneToJexlQueryParser());
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testMatchesAtLeastCountOfWithLucene");
-        }
-        String[] queryStrings = {"(UUID:C* OR UUID:S*) AND #MATCHES_AT_LEAST_COUNT_OF('3',NAM,'MICHAEL','VINCENT','FREDO','TONY')",};
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"),};
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-        }
+        givenGroupingContext();
+        givenQuery("(UUID:C* OR UUID:S*) AND #MATCHES_AT_LEAST_COUNT_OF('3',NAM,'MICHAEL','VINCENT','FREDO','TONY')");
+        expectPlan("filter:matchesAtLeastCountOf(3, (NOME || NAME), 'MICHAEL', 'VINCENT', 'FREDO', 'TONY') && (((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
     }
 
     @Test
     public void testWithLucene() throws Exception {
-        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testWithLucene");
-        }
         // @formatter:off
         String[] queryStrings = {
                 "UUID:C*", // family name starts with 'C'
@@ -636,112 +512,82 @@ public abstract class CompositeFunctionsTest {
                 "UUID:CORLEONE AND #JEXL(\"filter:getAllMatches(NAM,'SANTINO').size() == 1\")"
         };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE", "CORLEONE"), // family name starts with 'C'
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("CAPONE", "CORLEONE"), // family name starts with 'C'
                 Collections.singletonList("SOPRANO"), // family name is SOPRANO
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), // family name starts with C or S
                 Collections.singletonList("CORLEONE"), // family has child CONSTANZIA
                 Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
-                Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE")};
+                Collections.singletonList("CORLEONE"),
+                Collections.singletonList("CORLEONE")
+        };
+        //  @formatter:on
+
         for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            eventQueryLogic.setParser(new LuceneToJexlQueryParser());
+            // filter must be reset between each run when pruning ingest types
+            eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
+            beforeEach();
+            givenGroupingContext();
+            givenQuery(queryStrings[i]);
+            disableQueryPlanAssertion();
+            expectUUIDs(new HashSet<>(expectedLists[i]));
+            planAndExecuteQuery();
+            afterEach();
         }
     }
 
     @Test
     public void testTLDWithLuceneAndIdentifierToLiteralLTJexl() throws Exception {
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testWithLucene");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID:ANDOLINI AND #JEXL(ETA < 15)" // family name is ANDOLINI
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE")};
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
-        }
+        givenGroupingContext();
+        givenQuery("UUID:ANDOLINI AND #JEXL(ETA < 15)"); // family name is ANDOLINI
+        expectPlan("UUID == 'andolini' && ETA < '+bE1.5'");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery(tldEventQueryLogic);
     }
 
     @Test
     public void testTLDWithLuceneAndIdentifierToLiteralEQJexl() throws Exception {
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testWithLucene");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID:ANDOLINI AND #JEXL(ETA == 12)"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE")};
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
-        }
+        givenGroupingContext();
+        givenQuery("UUID:ANDOLINI AND #JEXL(ETA == 12)");
+        expectPlan("ETA == '+bE1.2' && UUID == 'andolini'");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery(tldEventQueryLogic);
     }
-
 
     @Test
-    public void testWithHoles(){
-        //uncomment for full planning logs
-        //log.setLevel(Level.DEBUG);
-        //Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
-        //Logger.getLogger(RangeStream.class).setLevel(Level.DEBUG);
-
+    public void testWithHoles() throws Exception {
+        // uncomment for full planning logs
+        // log.setLevel(Level.DEBUG);
+        // Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        // Logger.getLogger(RangeStream.class).setLevel(Level.DEBUG);
         eventQueryLogic.setQueryPlanner(new DatePartitionedQueryPlanner());
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
+        givenGroupingContext();
+        givenQuery("UUID == 'CORLEONE' AND  HOLE == 'FOO'");
+        disableQueryPlanAssertion();
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery();
 
-        String[] queryStrings = {
-                "UUID == 'CORLEONE' AND  HOLE == 'FOO'"
-        };
-
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[]{Collections.singletonList("CORLEONE")};
-        for (int i = 0; i < queryStrings.length; i++) {
-            try {
-                runTestQuery(expectedLists[i], queryStrings[i], format.parse("20130101"), format.parse("20210103"), extraParameters);
-            } catch (Throwable t) {
-                log.error(t);
-                Assert.assertTrue(t instanceof DatawaveFatalQueryException);
-            }
-        }
+        String finalQueryPlan = getLogic().getConfig().getQueryString();
+        assertTrue(finalQueryPlan.contains("(plan = 1) && (UUID == 'corleone' && (HOLE == 'FOO' || HOLE == 'foo')))"));
+        assertTrue(finalQueryPlan
+                        .contains("((plan = 2) && (UUID == 'corleone' && (((_Eval_ = true) && (HOLE == 'FOO')) || ((_Eval_ = true) && (HOLE == 'foo'))))"));
     }
+
     @Test
     public void testTLDWithLuceneAndIdentifierToIdentifierJexl() throws Exception {
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testWithLucene");
-        }
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID:ANDOLINI AND #JEXL(ETA < MAGIC)"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE")};
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
-        }
+        givenGroupingContext();
+        givenQuery("UUID:ANDOLINI AND #JEXL(ETA < MAGIC)");
+        expectPlan("UUID == 'andolini' && ((_Eval_ = true) && (ETA < MAGIC))");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery(tldEventQueryLogic);
     }
 
     @Test
     public void testWithLuceneAndOptionsFunction() throws Exception {
-        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
-        Map<String,String> extraParameters = new HashMap<>();
-
-        if (log.isDebugEnabled()) {
-            log.debug("testWithLucene");
-        }
         // @formatter:off
         String[] queryStrings = {
                 "UUID:C* AND #OPTIONS('include.grouping.context', 'true')", // family name starts with 'C'
@@ -764,22 +610,22 @@ public abstract class CompositeFunctionsTest {
         };
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            beforeEach();
+            getLogic().setParser(new LuceneToJexlQueryParser());
+            givenQuery(queryStrings[i]);
+            disableQueryPlanAssertion();
+            expectUUIDs(new HashSet<>(expectedLists[i]));
+            planAndExecuteQuery();
+            afterEach();
         }
     }
 
-    // filter functions cannot be run against index-only fields
-    // in some cases the filter function is rewritten into an appropriate term
-    // this tests the cases when a filter function cannot be rewritten
+    /**
+     * Filter functions cannot be run against index-only fields. Support was added that will generate the index piece, which is fine, but ultimately defeats the
+     * purpose of pushing a particular term into a filter function.
+     */
     @Test
-    public void testFilterFunctionsInvalidatedByIndexOnlyFields() throws ParseException {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-
-        if (log.isDebugEnabled()) {
-            log.debug("testCompositeFunctions");
-        }
+    public void testFilterFunctionsInvalidatedByIndexOnlyFields() {
         // @formatter:off
         String[] queries = {
                 //  isNull
@@ -787,85 +633,58 @@ public abstract class CompositeFunctionsTest {
                 "UUID == 'SOPRANO' && filter:isNull(POSIZIONE)",
                 "UUID == 'SOPRANO' && filter:isNull(NAM||LOCATION)",
                 "UUID == 'SOPRANO' && filter:isNull((NAME||POSIZIONE))",
-
                 //  isNotNull
                 "UUID == 'SOPRANO' && filter:isNotNull(LOCATION)",  //  index-only field
                 "UUID == 'SOPRANO' && filter:isNotNull(POSIZIONE)", //  alternate index-only field
                 "UUID == 'SOPRANO' && filter:isNotNull(LOCATION||POSIZIONE)",   //  both index-only fields
                 "UUID == 'SOPRANO' && filter:isNotNull(NAM||LOCATION)", //  one index-only field still fails validation
                 "UUID == 'SOPRANO' && filter:isNotNull((NAME||POSIZIONE))",
-
                 //  matchesAtLeastCountOf
                 "UUID == 'SOPRANO' && filter:matchesAtLeastCountOf(2, LOCATION, 'chicago', 'newyork')",
-
                 //  compare
                 "UUID == 'SOPRANO' && filter:compare(LOCATION, '==', ANY, POSIZIONE)",
                 "UUID == 'SOPRANO' && filter:compare(LOCATION, '==', ANY, NAME)",
                 "UUID == 'SOPRANO' && filter:compare(NAME, '==', ANY, POSIZIONE)"
-
                 //  includeRegex and excludeRegex handled by RegexFunctionVisitor
-
                 //  includeText can handle index-only fields and should be a query function (see pr #1534)
         };
         //  @formatter:on
 
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-
         for (String query : queries) {
             try {
-                runTestQuery(Collections.emptyList(), query, startDate, endDate, extraParameters);
-                Assert.fail("query should not have run without throwing an exception: " + query);
+                beforeEach();
+                givenGroupingContext();
+                givenQuery(query);
+                planAndExecuteQuery();
+                fail("query should not have run without throwing an exception: " + query);
             } catch (DatawaveFatalQueryException e) {
                 String correctErrMsg = "datawave.webservice.query.exception.BadRequestQueryException: Invalid arguments to function. Filter function cannot evaluate against index-only field";
-                Assert.assertTrue("Expected query to fail: " + query, e.getMessage().startsWith(correctErrMsg));
+                assertTrue(e.getMessage().startsWith(correctErrMsg), "Expected query to fail: " + query);
             } catch (Exception e) {
-                Assert.fail("Expected filter function with index-only fields to fail validation: " + query);
+                fail("Expected filter function with index-only fields to fail validation: " + query);
+            } finally {
+                afterEach();
             }
-
         }
     }
 
     @Test
     public void testMultiFieldInclude() throws Exception {
         eventQueryLogic.setParser(new LuceneToJexlQueryParser());
-        Map<String,String> extraParameters = new HashMap<>();
-        // @formatter:off
-        String[] queryStrings = {
-                "UUID:SOPRANO AND #INCLUDE(LOCATION || POSIZIONE || NAME, 'newjersey')"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("SOPRANO")};
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-        }
-
+        givenQuery("UUID:SOPRANO AND #INCLUDE(LOCATION || POSIZIONE || NAME, 'newjersey')");
+        expectPlan("(UUID == 'soprano' && ((_Delayed_ = true) && (NAME =~ 'newjersey'))) || (LOCATION == 'newjersey' && UUID == 'soprano') || (UUID == 'soprano' && POSIZIONE =~ 'newjersey')");
+        expectUUIDs(Set.of("SOPRANO"));
+        planAndExecuteQuery();
     }
 
     @Test
     public void testDelayedExceededValueThresholdRegexTFField() throws Exception {
-        Map<String,String> extraParameters = new HashMap();
-
         tldEventQueryLogic.setMaxDepthThreshold(9);
         tldEventQueryLogic.setMaxValueExpansionThreshold(1);
 
-        if (log.isDebugEnabled()) {
-            log.debug("testDelayedExceededValueThresholdRegexTFField");
-        }
-
-        // @formatter:off
-        String[] queryStrings =  {
-                "UUID == 'CORLEONE' && ((_Delayed_ = true) && ((((_Value_ = true) && (QUOTE =~ 'h.*?')))))"
-        };
-
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {
-                Arrays.asList("CORLEONE")
-        };
-        // @formatter:on
-
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
-        }
+        givenQuery("UUID == 'CORLEONE' && ((_Delayed_ = true) && ((((_Value_ = true) && (QUOTE =~ 'h.*?')))))");
+        expectPlan("UUID == 'corleone' && ((_Delayed_ = true) && ((((_Value_ = true) && (QUOTE =~ 'h.*?')))))");
+        expectUUIDs(Set.of("CORLEONE"));
+        planAndExecuteQuery(tldEventQueryLogic);
     }
 }
