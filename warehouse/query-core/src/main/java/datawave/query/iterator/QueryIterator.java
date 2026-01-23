@@ -648,8 +648,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *             for issues with access
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException,
-                    java.lang.reflect.InvocationTargetException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         // If we had an event-specific range previously, we need to reset it back
         // to the source we created during init
         NestedIterator<Key> docIter = getOrSetKeySource(documentRange, getScript());
@@ -1021,7 +1020,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
                 return Iterators.transform(matchedDocuments, new TupleToEntry<>());
             } catch (InstantiationException | MalformedURLException | IllegalAccessException | ConfigException | NoSuchMethodException
-                            | java.lang.reflect.InvocationTargetException e) {
+                            | InvocationTargetException e) {
                 throw new IllegalStateException("Could not perform delayed index only evaluation", e);
             }
         } else if (log.isTraceEnabled()) {
@@ -1384,8 +1383,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return sb.toString();
     }
 
-    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException, ConfigException,
-                    IllegalAccessException, InstantiationException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
+    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript)
+                    throws IOException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         NestedIterator<Key> sourceIter = null;
         // If we're doing field index or a non-fulltable (aka a normal
         // query)
@@ -1464,13 +1463,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
                     throws ConfigException, MalformedURLException, InstantiationException, IllegalAccessException, NoSuchMethodException,
-                    java.lang.reflect.InvocationTargetException {
+                    InvocationTargetException {
         return createIteratorBuildingVisitor(IteratorBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs);
     }
 
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(Class<? extends IteratorBuildingVisitor> c, final Range documentRange,
                     boolean isQueryFullySatisfied, boolean sortedUIDs) throws MalformedURLException, ConfigException, IllegalAccessException,
-                    InstantiationException, NoSuchMethodException, java.lang.reflect.InvocationTargetException {
+                    InstantiationException, NoSuchMethodException, InvocationTargetException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
