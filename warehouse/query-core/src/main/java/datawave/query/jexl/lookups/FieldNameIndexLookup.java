@@ -86,11 +86,11 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                         Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
                         if (config.getLimitAnyFieldLookups()) {
                             log.trace("Creating configureTermMatchOnly");
-                            bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
+                            bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, getTableName(), ranges,
                                             Collections.singleton(term), Collections.emptySet(), false, true);
                         } else {
                             log.trace("Creating configureLimitedDiscovery");
-                            bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                            bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, getTableName(), ranges,
                                             Collections.singleton(term), Collections.emptySet(), false, true);
                         }
 

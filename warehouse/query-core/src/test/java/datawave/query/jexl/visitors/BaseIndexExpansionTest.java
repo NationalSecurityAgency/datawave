@@ -227,6 +227,20 @@ public abstract class BaseIndexExpansionTest {
     }
 
     /**
+     * Write a field, value and date to the shard reverse index with default datatype and {@link Value}
+     *
+     * @param value
+     *            the field value
+     * @param field
+     *            the field name
+     * @param date
+     *            the date
+     */
+    public void writeReverse(String value, String field, String date) {
+        writeReverse(value, field, date, DEFAULT_DATATYPE, EMPTY_VALUE);
+    }
+
+    /**
      * Write a field name, field value, and {@link Value} to the shard reverse index
      *
      * @param value

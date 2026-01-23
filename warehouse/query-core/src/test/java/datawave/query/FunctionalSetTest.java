@@ -75,6 +75,7 @@ public abstract class FunctionalSetTest {
         public void setup() {
             super.setup();
             logic.setCollapseUids(true);
+            logic.setRebuildDatatypeFilter(true);
         }
 
         @Override
@@ -103,6 +104,7 @@ public abstract class FunctionalSetTest {
         public void setup() {
             super.setup();
             logic.setCollapseUids(false);
+            logic.setRebuildDatatypeFilter(true);
         }
 
         @Override
