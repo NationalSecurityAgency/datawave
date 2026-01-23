@@ -3,7 +3,6 @@ package datawave.webservice.query.util;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -75,7 +74,7 @@ public class OptionallyEncodedString {
             try {
                 incoming = value.getBytes("UTF-8");
                 byte[] decodedBytes = Base64.decodeBase64(incoming);
-                decoded = new String(decodedBytes, Charset.forName("UTF-8"));
+                decoded = new String(decodedBytes, UTF_8);
             } catch (UnsupportedEncodingException e) {
                 // Should never happen with UTF-8!!! (but if it does we will be
                 // returning a null)

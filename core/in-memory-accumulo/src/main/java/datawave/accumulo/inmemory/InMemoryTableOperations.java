@@ -33,7 +33,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-import org.apache.accumulo.core.classloader.ClassLoaderUtil;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -532,8 +531,8 @@ public class InMemoryTableOperations extends TableOperationsHelper {
     public boolean testClassLoad(String tableName, String className, String asTypeName)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         try {
-            ClassLoaderUtil.loadClass(className, Class.forName(asTypeName));
-        } catch (ClassNotFoundException e) {
+            Class.forName(className).asSubclass(Class.forName(asTypeName));
+        } catch (ClassNotFoundException | ClassCastException e) {
             log.warn("Could not load class '" + className + "' with type name '" + asTypeName + "' in testClassLoad().", e);
             return false;
         }
