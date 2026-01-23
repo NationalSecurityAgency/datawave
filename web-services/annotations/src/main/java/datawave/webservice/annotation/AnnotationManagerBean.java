@@ -180,12 +180,12 @@ public class AnnotationManagerBean implements AnnotationManager {
     public AnnotationDataAccess initializeAnnotationService() throws QueryException {
         if (annotationDataAccess == null) {
             final AccumuloClient client = initializeAccumuloClient();
-            final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getVisibilityTransformer(),
-                            config.getTimestampTransformer());
-            final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(config.getVisibilityTransformer(),
-                            config.getTimestampTransformer());
-            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationTableName(), config.getAnnotationSourceTableName(),
-                            annotationSerializer, annotationSourceSerializer);
+            final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getAnnotationConfig().getVisibilityTransformer(),
+                            config.getAnnotationConfig().getTimestampTransformer());
+            final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(
+                            config.getAnnotationConfig().getVisibilityTransformer(), config.getAnnotationConfig().getTimestampTransformer());
+            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationConfig().getAnnotationTableName(),
+                            config.getAnnotationConfig().getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
         }
         return annotationDataAccess;
     }

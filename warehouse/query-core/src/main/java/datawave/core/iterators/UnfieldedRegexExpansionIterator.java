@@ -152,8 +152,7 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         }
 
         String candidate = parser.getValue() + parser.getField();
-        boolean firstSeen = foundPairs.add(candidate);
-        if (!firstSeen) {
+        if (foundPairs.contains(candidate)) {
             // advance to next field
             foundPairs.clear();
             log.debug("Found duplicate field, advance to next field");
@@ -168,8 +167,8 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (date.compareTo(endDate) > 0) {
             // advance to next row
-            log.debug("date {} sorts after end date {}, advance to next row", date, endDate);
-            return new FilterResult(false, AdvanceResult.NEXT_ROW);
+            log.debug("date {} sorts after end date {}, advance to next column family", date, endDate);
+            return new FilterResult(false, AdvanceResult.NEXT_CF);
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
@@ -178,6 +177,7 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         }
 
         log.debug("key accepted, advancing to next column family");
+        foundPairs.add(candidate);
         return new FilterResult(true, AdvanceResult.NEXT_CF);
     }
 
