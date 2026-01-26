@@ -271,7 +271,7 @@ public class UnfieldedIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         String query = "_ANYFIELD_ =~ 'ba.*'";
         String expected = "_NOFIELD_ =~ 'ba.*'";
         config.setMaxIndexScanTimeMillis(0L);
-        driveExpansion(query, expected);
+        assertThrows(DatawaveFatalQueryException.class, () -> driveExpansion(query, expected));
     }
 
     @Test
