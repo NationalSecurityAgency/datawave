@@ -1,7 +1,6 @@
 package datawave.query.jexl.lookups;
 
 import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
-import static datawave.query.AnyFieldQueryTest.DelayedClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -9,6 +8,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.iterators.IteratorTimeoutException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredRangeDescription;
 import datawave.query.tables.ScannerFactory;
@@ -85,11 +86,11 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
     }
 
     @Test
-    public void testExpansionTimeoutNaturalFailure() {
+    public void testExpansionTimeoutOnInitialSeek() {
+        long origIndexScanTime = config.getMaxIndexScanTimeMillis();
         try {
-            DelayedClient delayedClient = new DelayedClient(client, 1);
-            config.setClient(delayedClient);
-            config.setMaxIndexScanTimeMillis(10);
+            addDelayIterator(10);
+            config.setMaxIndexScanTimeMillis(5);
 
             // ensure the test always hits the timeout
             for (int i = 0; i < 15; i++) {
@@ -98,12 +99,95 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
 
             withQuery("FIELD_A =~ 'ba.*'");
             executeLookup();
+            // a partial expansion will occur
+            assertTimeoutExceeded();
+            assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Collections.emptySet()));
             assertResultFields(Set.of("FIELD_A"));
+        } finally {
+            removeDelayIterator();
+            config.setMaxIndexScanTimeMillis(origIndexScanTime);
+        }
+    }
+
+    @Test
+    public void testExpansionTimeoutOnNext() {
+        long origIndexScanTime = config.getMaxIndexScanTimeMillis();
+        try {
+            addDelayIterator(1);
+            config.setMaxIndexScanTimeMillis(5);
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
             // a partial expansion will occur
             assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Collections.emptySet()));
             assertTimeoutExceeded();
+            assertResultFields(Set.of("FIELD_A"));
         } finally {
-            config.setClient(client);
+            removeDelayIterator();
+            config.setMaxIndexScanTimeMillis(origIndexScanTime);
+        }
+    }
+
+    @Test
+    public void testInitialSeekIteratorTimeoutException() {
+        try {
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "Timeout for test", "seek");
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            // a partial expansion will occur
+            assertTimeoutExceeded();
+            assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Collections.emptySet()));
+            assertResultFields(Set.of("FIELD_A"));
+        } finally {
+            removeIOExceptionIterator();
+        }
+    }
+
+    @Test
+    public void testInitialSeekIteratorInterruptedException() {
+        try {
+            addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IterationInterrupted for test", "seek");
+
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            assertResultFields(Collections.emptySet());
+            assertExceptionSeen();
+        } finally {
+            removeRuntimeExceptionIterator();
+        }
+    }
+
+    @Test
+    public void testInitialSeekNullPointerException() {
+        try {
+            addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "seek");
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            assertResultFields(Collections.emptySet());
+            assertExceptionSeen();
+        } finally {
+            removeRuntimeExceptionIterator();
         }
     }
 

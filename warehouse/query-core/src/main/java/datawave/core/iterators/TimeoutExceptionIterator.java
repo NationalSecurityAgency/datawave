@@ -42,6 +42,10 @@ public class TimeoutExceptionIterator extends WrappingIterator {
         return kv.getValue().equals(EXCEPTEDVALUE);
     }
 
+    public static boolean exceededTimedValue(Value value) {
+        return value.equals(EXCEPTEDVALUE);
+    }
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
@@ -85,7 +89,7 @@ public class TimeoutExceptionIterator extends WrappingIterator {
 
     @Override
     public void next() throws IOException {
-        move(() -> super.next());
+        move(super::next);
     }
 
     @Override
@@ -131,5 +135,4 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     private interface IOAction {
         void call() throws IOException;
     }
-
 }

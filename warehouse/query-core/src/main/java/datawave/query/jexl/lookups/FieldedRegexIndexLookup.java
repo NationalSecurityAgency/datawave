@@ -94,7 +94,10 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
                     indexLookupMap.get(field).setThresholdExceeded();
                 } catch (Exception e) {
                     exceptionSeen.set(true);
-                    log.error(e.getMessage(), e);
+                    indexLookupMap.setExceptionSeen(true);
+                    indexLookupMap.setTimeoutExceeded(true); // stub this out
+                    indexLookupMap.get(field).setThresholdExceeded();
+                    log.error("Unexpected exception seen", e);
                 } finally {
                     latch.countDown();
                 }
