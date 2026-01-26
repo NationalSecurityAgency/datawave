@@ -7,7 +7,7 @@ on:
     - 'integration'
     - 'release/version*'
   pull_request:
-    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+    paths-ignore: ['**/*.md', 'CODEOWNERS', 'LICENSE', 'microservices/**']
   merge_group:
   workflow_dispatch:
 
