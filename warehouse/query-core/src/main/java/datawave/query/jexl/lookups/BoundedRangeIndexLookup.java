@@ -22,7 +22,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.springframework.util.StringUtils;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
@@ -44,6 +43,8 @@ import datawave.webservice.query.exception.QueryException;
 
 /**
  * An asynchronous index lookup which looks up concrete values for the specified bounded range.
+ * <p>
+ * A fielded bounded range is already executable so this lookup is allowed to hit timeout or value thresholds.
  */
 public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexLookup.class);
@@ -129,7 +130,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 // the 'newScanner' method in the ScannerFactory has no knowledge about the 'expansion' hint, so determine hint here
                 String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
 
-                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(), hintKey);
+                bs = scannerFactory.newScanner(getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(), hintKey);
 
                 bs.setRanges(Collections.singleton(range));
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
@@ -139,7 +140,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 setting.addOption(BoundedRangeExpansionIterator.START_DATE, startDay);
                 setting.addOption(BoundedRangeExpansionIterator.END_DATE, endDay);
                 if (!config.getDatatypeFilter().isEmpty()) {
-                    setting.addOption(BoundedRangeExpansionIterator.DATATYPES_OPT, Joiner.on(',').join(config.getDatatypeFilter()));
+                    setting.addOption(BoundedRangeExpansionIterator.DATATYPES_OPT, config.getDatatypeFilterAsString());
                 }
                 bs.addScanIterator(setting);
 

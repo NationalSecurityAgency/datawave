@@ -28,7 +28,6 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import datawave.util.StringUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -646,7 +645,7 @@ public class Intersection extends BaseIndexStream {
         builder.append(context).append(": Intersection (").append(contextDebug).append(')');
         for (String childrenContext : childrenContextDebug) {
             String prefix = "\n - ";
-            String[] lines = StringUtils.split(childrenContext, '\n');
+            String[] lines = childrenContext.split("\n");
             for (String line : lines) {
                 builder.append(prefix).append(line);
                 prefix = "\n   ";

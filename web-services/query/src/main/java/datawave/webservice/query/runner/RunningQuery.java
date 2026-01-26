@@ -19,6 +19,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
@@ -199,7 +200,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
             this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
-            // the configuration query string should now hold the planned query
+            // the configuration query string should now hold the initial planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
             this.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
@@ -533,6 +534,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // Update the metric
             long now = System.currentTimeMillis();
             this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
+            // check the query plan for updates
+            if (logic instanceof BaseQueryLogic) {
+                BaseQueryLogic baseLogic = (BaseQueryLogic) logic;
+                if (baseLogic.getConfig() != null && !StringUtils.isEmpty(baseLogic.getConfig().getQueryString())) {
+                    this.getMetric().setPlan(baseLogic.getConfig().getQueryString());
+                }
+            }
             this.lastPageNumber++;
             if (!resultList.isEmpty()) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);

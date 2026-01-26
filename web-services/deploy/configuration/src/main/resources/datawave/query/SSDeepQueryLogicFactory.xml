@@ -13,6 +13,7 @@
         <property name="auditType" value="NONE" />
         <property name="indexBuckets" value="32" />
         <property name="queryThreads" value="100" />
+        <property name="numRangesPerScanner" value="50000" />
         <property name="maxRepeatedCharacters" value="3" />
         <property name="bucketEncodingBase" value="32" />
         <property name="bucketEncodingLength" value="2" />
@@ -34,13 +35,15 @@
         <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
     </bean>
 
-    <bean id="SSDeepSimilarityDiscoveryQuery" parent="baseQueryLogic" class="datawave.query.tables.ssdeep.SSDeepChainedDiscoveryQueryLogic">
+    <bean id="SSDeepSimilarityDiscoveryQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ssdeep.SSDeepChainedDiscoveryQueryLogic">
         <property name="tableName" value="ssdeepIndex" />
         <property name="logic1" ref="SSDeepSimilarityQuery"/>
         <property name="logic2" ref="SSDeepDiscoveryQuery"/>
         <property name="auditType" value="NONE"/>
         <property name="chainStrategy">
-            <bean class="datawave.query.tables.ssdeep.FullSSDeepDiscoveryChainStrategy"/>
+            <bean class="datawave.query.tables.ssdeep.FullSSDeepDiscoveryChainStrategy">
+                <property name="batchSize" value="100" />
+            </bean>
         </property>
     </bean>
 </beans>

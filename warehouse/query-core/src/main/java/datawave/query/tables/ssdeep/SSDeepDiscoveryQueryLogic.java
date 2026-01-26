@@ -229,6 +229,12 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
+    public void close() {
+        super.close();
+        discoveryDelegate.close();
+    }
+
+    @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return discoveryDelegate.getConnectionPriority();
     }

@@ -8,7 +8,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.util.StringUtils;
 import datawave.util.flag.FlagMaker;
 import datawave.util.flag.processor.DateFlagDistributor;
 import datawave.util.flag.processor.DateFolderFlagDistributor;
@@ -336,7 +335,7 @@ public class FlagMakerConfig {
             }
             List<String> fixedFolders = new ArrayList<>();
             for (int i = 0; i < folders.size(); i++) {
-                for (String folder : StringUtils.split(folders.get(i), ',')) {
+                for (String folder : folders.get(i).split(",")) {
                     folder = folder.trim();
                     // let someone specify an absolute path.
                     if (!folder.startsWith("/")) {

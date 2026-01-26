@@ -39,8 +39,8 @@ public class StringUtilsTest {
 
     @Test
     public void testReservedChars() {
-        String[] expectedA = StringUtils.split(getExpression('A', ','), ',');
-        String[] expectedB = StringUtils.split(getExpression('B', ','), ',');
+        String[] expectedA = getExpression('A', ',').split(",");
+        String[] expectedB = getExpression('B', ',').split(",");
 
         for (int i = 0; i < 256; i++) {
             char c = (char) i;

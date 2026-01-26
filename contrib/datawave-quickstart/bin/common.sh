@@ -93,6 +93,8 @@ function verifyChecksum() {
       else
           error "------------------------------------------------------------------------"
           error "$(printRed "CHECKSUM MISMATCH") - Could not verify integrity of: ${tarballName}"
+          error "Calculated: ${calculatedChecksum}"
+          error "Expected: $3"
           error "------------------------------------------------------------------------"
           fatal "Checksum verification failed!"
           return 1
@@ -124,7 +126,6 @@ function downloadTarball() {
    fi
 }
 
-# Needed for users who run locally instead of containers
 function downloadMavenTarball() {
    local pomFile="${DW_DATAWAVE_SOURCE_DIR:-$( cd "${DW_CLOUD_HOME}/../.." && pwd )}/pom.xml"
    local rootProject=":$1"

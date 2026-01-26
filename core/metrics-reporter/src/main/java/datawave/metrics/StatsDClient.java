@@ -1,6 +1,7 @@
 package datawave.metrics;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -13,7 +14,7 @@ import com.timgroup.statsd.StatsDClientException;
  */
 class StatsDClient {
 
-    private static final Charset STATS_D_ENCODING = Charset.forName("UTF-8");
+    private static final Charset STATS_D_ENCODING = StandardCharsets.UTF_8;
 
     private static final StatsDClientErrorHandler NO_OP_HANDLER = e -> { /* No-op */};
 

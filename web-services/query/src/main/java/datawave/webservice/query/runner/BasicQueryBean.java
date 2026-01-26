@@ -35,14 +35,12 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 
 import com.codahale.metrics.annotation.Timed;
 
 import datawave.annotation.GenerateQuerySessionId;
 import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
@@ -71,7 +69,6 @@ import datawave.webservice.result.QueryWizardStep3Response;
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class BasicQueryBean {
 
     private static final String PRIVILEGED_USER = "PrivilegedUser";
@@ -342,7 +339,7 @@ public class BasicQueryBean {
         GenericResponse<String> createResponse;
         QueryWizardStep3Response queryWizardStep3Response = new QueryWizardStep3Response();
         try {
-            createResponse = queryExecutor.createQuery(logicName, queryParameters, httpHeaders);
+            createResponse = queryExecutor.createQuery(logicName, null, queryParameters, httpHeaders);
         } catch (Exception e) {
             queryWizardStep3Response.setErrorMessage(e.getMessage());
             return queryWizardStep3Response;
