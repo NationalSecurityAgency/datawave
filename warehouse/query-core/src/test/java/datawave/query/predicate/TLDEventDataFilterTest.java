@@ -26,6 +26,8 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Sets;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.Constants;
@@ -673,4 +675,44 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertFalse(filter.keep(k4));
         assertNull(filter.getSeekRange(k4, null, false));
     }
+
+    @Test
+    public void testGetSeekRangeForChildWithChildReturnField() throws ParseException {
+        String query = "FOO == 'bar' && FOO2 == 'value3'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+
+        expect(mockTypeMetadata.getTypeMetadata("FOO2", "datatype")).andReturn(Collections.emptyList()).anyTimes();
+        replayAll();
+
+        Set<String> childFields = Sets.newHashSet("FOO2");
+
+        Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, new AttributeFactory(mockTypeMetadata));
+        filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, childFields, 1, 1);
+
+        Key k1 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok", "FOO\0bar");
+        Key k2 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok.1", "FOO2\0value1");
+        Key k3 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok.2", "FOO2\0value2");
+        Key k4 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok.3", "FOO2\0value3");
+
+        // TLD field is applied, kept, no seek range generated
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k1, null)));
+        assertTrue(filter.keep(k1));
+        assertNull(filter.getSeekRange(k1, null, false));
+
+        // child field IS applied, IS kept, no seek range generated
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k2, null)));
+        assertTrue(filter.keep(k2));
+        assertNull(filter.getSeekRange(k2, null, false));
+
+        // child field IS applied, IS kept, no seek range generated
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k3, null)));
+        assertTrue(filter.keep(k3));
+        assertNull(filter.getSeekRange(k3, null, false));
+
+        // child field IS applied, IS kept, no seek range generated
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k4, null)));
+        assertTrue(filter.keep(k4));
+        assertNull(filter.getSeekRange(k4, null, false));
+    }
+
 }
