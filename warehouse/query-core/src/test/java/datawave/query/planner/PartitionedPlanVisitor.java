@@ -1,9 +1,5 @@
 package datawave.query.planner;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -15,12 +11,12 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 public class PartitionedPlanVisitor extends BaseVisitor {
 
-    public static Collection<String> getPlans(String queryString) throws ParseException {
+    public static Plans getPlans(String queryString) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        HashSet<String> plans = new HashSet<>();
+        Plans plans = new Plans();
         new PartitionedPlanVisitor().visit(script, plans);
-        if (plans.isEmpty()) {
-            plans.add(queryString);
+        if (plans.getPlans().isEmpty()) {
+            plans.addPlan(queryString);
         }
         return plans;
     }
@@ -29,7 +25,8 @@ public class PartitionedPlanVisitor extends BaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance type = QueryPropertyMarker.findInstance(node);
         if (type.isType(QueryPropertyMarker.MarkerType.PLAN)) {
-            ((Set) data).add(JexlStringBuildingVisitor.buildQuery(type.getSource()));
+            Plans plans = (Plans) data;
+            plans.addPlan(JexlStringBuildingVisitor.buildQuery(type.getSource()));
             return data;
         } else {
             return super.visit(node, data);

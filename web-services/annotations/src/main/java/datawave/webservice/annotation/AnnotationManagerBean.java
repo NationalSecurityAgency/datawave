@@ -160,6 +160,14 @@ public class AnnotationManagerBean implements AnnotationManager {
         return client;
     }
 
+    public void returnAccumuloClient() {
+        try {
+            connectionFactory.returnClient(client);
+        } catch (Exception e) {
+            log.warn("Error when returning client", e);
+        }
+    }
+
     public LookupUUIDService initializeLookupUUIDService() throws QueryException {
         if (lookupUUIDService == null) {
             final AccumuloClient client = initializeAccumuloClient();
@@ -172,12 +180,12 @@ public class AnnotationManagerBean implements AnnotationManager {
     public AnnotationDataAccess initializeAnnotationService() throws QueryException {
         if (annotationDataAccess == null) {
             final AccumuloClient client = initializeAccumuloClient();
-            final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getVisibilityTransformer(),
-                            config.getTimestampTransformer());
-            final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(config.getVisibilityTransformer(),
-                            config.getTimestampTransformer());
-            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationTableName(), config.getAnnotationSourceTableName(),
-                            annotationSerializer, annotationSourceSerializer);
+            final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getAnnotationConfig().getVisibilityTransformer(),
+                            config.getAnnotationConfig().getTimestampTransformer());
+            final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(
+                            config.getAnnotationConfig().getVisibilityTransformer(), config.getAnnotationConfig().getTimestampTransformer());
+            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationConfig().getAnnotationTableName(),
+                            config.getAnnotationConfig().getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
         }
         return annotationDataAccess;
     }
@@ -198,6 +206,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation source: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
 
     }
@@ -229,6 +239,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 
@@ -261,6 +273,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 
@@ -294,6 +308,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 
@@ -325,6 +341,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 
@@ -387,6 +405,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error adding annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 
@@ -449,6 +469,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error updating annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 
@@ -497,6 +519,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching segment: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 
@@ -534,6 +558,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error adding segment: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            returnAccumuloClient();
         }
     }
 

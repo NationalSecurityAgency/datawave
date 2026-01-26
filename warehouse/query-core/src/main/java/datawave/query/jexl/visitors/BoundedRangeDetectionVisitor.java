@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -22,23 +23,40 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 
+/**
+ * Visitor determines if any bounded ranges exist for non-event fields
+ */
 public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
 
     ShardQueryConfiguration config;
     MetadataHelper helper;
 
+    private Set<String> nonEventFields;
+
+    @Deprecated(since = "7.35.0", forRemoval = true)
     public BoundedRangeDetectionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
         this.config = config;
         this.helper = metadataHelper;
     }
 
-    @SuppressWarnings("unchecked")
+    public BoundedRangeDetectionVisitor(Set<String> nonEventFields) {
+        this.nonEventFields = nonEventFields;
+    }
+
+    @Deprecated(since = "7.35.0", forRemoval = true)
     public static boolean mustExpandBoundedRange(ShardQueryConfiguration config, MetadataHelper metadataHelper, JexlNode script) {
-        BoundedRangeDetectionVisitor visitor = new BoundedRangeDetectionVisitor(config, metadataHelper);
+        try {
+            Set<String> nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
+            return mustExpandBoundedRange(script, nonEventFields);
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException("Metadata table not found", e);
+        }
+    }
 
+    public static boolean mustExpandBoundedRange(JexlNode node, Set<String> nonEventFields) {
+        BoundedRangeDetectionVisitor visitor = new BoundedRangeDetectionVisitor(nonEventFields);
         AtomicBoolean hasBounded = new AtomicBoolean(false);
-        script.jjtAccept(visitor, hasBounded);
-
+        node.jjtAccept(visitor, hasBounded);
         return hasBounded.get();
     }
 
@@ -46,15 +64,10 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
         if (QueryPropertyMarker.findInstance(node).isType(BOUNDED_RANGE)) {
             LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
-            try {
-                if (null != data && helper.getNonEventFields(config.getDatatypeFilter()).contains(range.getFieldName())) {
-                    AtomicBoolean hasBounded = (AtomicBoolean) data;
-                    hasBounded.set(true);
-                }
-            } catch (TableNotFoundException e) {
-                throw new DatawaveFatalQueryException("Cannot access metadata", e);
+            if (data != null && nonEventFields.contains(range.getFieldName())) {
+                AtomicBoolean hasBounded = (AtomicBoolean) data;
+                hasBounded.set(true);
             }
-
             return false;
         } else {
             return super.visit(node, data);
@@ -63,25 +76,19 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTERNode node, Object data) {
-        try {
-            if (null != data && helper.getNonEventFields(config.getDatatypeFilter()).contains(JexlASTHelper.getIdentifier(node))) {
-                AtomicBoolean hasBounded = (AtomicBoolean) data;
-                hasBounded.set(true);
-            }
-        } catch (TableNotFoundException e) {
-            throw new DatawaveFatalQueryException("Cannot access metadata", e);
+        if (data != null && nonEventFields.contains(JexlASTHelper.getIdentifier(node))) {
+            AtomicBoolean hasBounded = (AtomicBoolean) data;
+            hasBounded.set(true);
         }
-
         return false;
     }
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        if (null != data) {
+        if (data != null) {
             AtomicBoolean hasBounded = (AtomicBoolean) data;
             hasBounded.set(true);
         }
-
         return false;
     }
 
