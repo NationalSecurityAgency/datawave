@@ -33,10 +33,12 @@ import datawave.util.TableName;
 public class EdgeHandlerTestUtil {
 
     public static final Text edgeTableName = new Text(TableName.EDGE);
+    public static final Text metaDataTableName = new Text(TableName.METADATA);
     public static final String NB = "\u0000";
 
     public static ListMultimap<String,String[]> edgeKeyResults = ArrayListMultimap.create();
     public static ListMultimap<String,String> edgeValueResults = ArrayListMultimap.create();
+    public static ListMultimap<Key,Value> metaData = ArrayListMultimap.create();
 
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
 
@@ -70,6 +72,9 @@ public class EdgeHandlerTestUtil {
                     if (entry.getKey().getTableName().equals(edgeTableName)) {
                         edgeKeys.add(entry.getKey().getKey());
                         edgeValueResults.put(entry.getKey().getKey().getRow().toString().replaceAll(NB, "%00;"), EdgeValue.decode(entry.getValue()).toString());
+                    }
+                    if (entry.getKey().getTableName().equals(metaDataTableName)) {
+                        metaData.put(entry.getKey().getKey(), entry.getValue());
                     }
                     if (!entry.getKey().getTableName().equals(edgeTableName) || entry.getKey().getKey().isDeleted() == edgeDeleteMode) {
                         if (countMap.containsKey(entry.getKey().getTableName())) {
