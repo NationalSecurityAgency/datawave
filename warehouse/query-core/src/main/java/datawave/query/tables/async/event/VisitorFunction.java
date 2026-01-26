@@ -514,20 +514,17 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             // sum query fields, projection fields, and composite fields
             fieldsToRetain.addAll(ReduceFields.getQueryFields(script));
 
-            if (options.containsKey(QueryOptions.PROJECTION_FIELDS)) {
-                String option = options.get(QueryOptions.PROJECTION_FIELDS);
-                if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
-                    fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
-                }
+            String option = options.get(QueryOptions.PROJECTION_FIELDS);
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+                fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
             }
 
             if (options.containsKey(QueryOptions.COMPOSITE_FIELDS)) {
-                String option = options.get(QueryOptions.COMPOSITE_FIELDS);
+                option = options.get(QueryOptions.COMPOSITE_FIELDS);
                 if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
                     fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
                 }
             }
-
         } else if (options.containsKey(QueryOptions.DISALLOWLISTED_FIELDS)) {
             // sum all fields and remove exclude fields
             fieldsToRetain.addAll(typeMetadata.keySet());
@@ -538,6 +535,14 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             }
         } else {
             log.trace("Could not reduce type metadata per shard");
+        }
+
+        // ensure children fields are included
+        if (options.containsKey(QueryOptions.PROJECTION_CHILD_FIELDS)) {
+            String option = options.get(QueryOptions.PROJECTION_CHILD_FIELDS);
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+                fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
+            }
         }
 
         // we could get really clever and check to see if the query is satisfiable from the field index only,

@@ -55,6 +55,11 @@ public class ShardQueryUtils {
             }
         }
 
+        Set<String> projectChildFields = config.getProjectChildFields();
+        if (projectChildFields != null && !projectChildFields.isEmpty()) {
+            config.setProjectChildFields(toUpperCase(projectChildFields));
+        }
+
         UniqueFields uniqueFields = config.getUniqueFields();
         if (uniqueFields != null && !uniqueFields.isEmpty()) {
             Sets.newHashSet(uniqueFields.getFields()).stream().forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
@@ -107,13 +112,21 @@ public class ShardQueryUtils {
 
         // Update the projection fields.
         Collection<String> projectFields = config.getProjectFields(), disallowlistedFields = config.getDisallowlistedFields(),
-                        limitFields = config.getLimitFields();
+                        limitFields = config.getLimitFields(), projectChildFields = config.getProjectChildFields();
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
             if (log != null && log.isTraceEnabled()) {
                 log.trace("Updated projection set using query model to: " + projectFields);
             }
             config.setProjectFields(Sets.newHashSet(projectFields));
+        }
+
+        if (projectChildFields != null && !projectChildFields.isEmpty()) {
+            projectChildFields = queryModel.remapParameter(projectChildFields, inverseReverseModel);
+            if (log != null && log.isTraceEnabled()) {
+                log.trace("Updated child projection set using query model to: " + projectChildFields);
+            }
+            config.setProjectChildFields(Sets.newHashSet(projectChildFields));
         }
 
         // Update the group-by fields.

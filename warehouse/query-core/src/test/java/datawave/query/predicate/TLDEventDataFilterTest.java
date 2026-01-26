@@ -75,7 +75,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "column", "FIELD" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
         String field = filter.getCurrentField(key);
 
         assertEquals("FIELD", field);
@@ -93,7 +93,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "column", "FIELD.part_1.part_2.part_3" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
         String field = filter.getCurrentField(key);
 
         assertEquals("FIELD", field);
@@ -111,7 +111,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "fi" + Constants.NULL + "FIELD", "value" + Constants.NULL + "datatype" + Constants.NULL + "123.345.456");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
         String field = filter.getCurrentField(key);
 
         assertEquals("FIELD", field);
@@ -129,7 +129,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "fi" + Constants.NULL + "FIELD.name", "value" + Constants.NULL + "datatype" + Constants.NULL + "123.345.456");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
         String field = filter.getCurrentField(key);
 
         assertEquals("FIELD", field);
@@ -147,7 +147,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "tf", "datatype" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL + "FIELD");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
         String field = filter.getCurrentField(key);
 
         assertEquals("FIELD", field);
@@ -164,7 +164,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "tf", "datatype" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL + "FIELD.name");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
         String field = filter.getCurrentField(key);
 
         assertEquals("FIELD", field);
@@ -184,7 +184,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, 1, -1, fieldLimits, "LIMIT_FIELD",
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, 1, -1, fieldLimits, "LIMIT_FIELD",
                         Collections.emptySet());
 
         assertTrue(filter.keep(key));
@@ -208,7 +208,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "datatype" + Constants.NULL + "123.345.456", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, disallowlist, 1, -1, fieldLimits, "LIMIT_FIELD",
+        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, disallowlist, null, 1, -1, fieldLimits, "LIMIT_FIELD",
                         Collections.emptySet());
 
         assertTrue(filter.keep(key));
@@ -245,7 +245,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key key1 = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "FIELD2" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, 1, -1, fieldLimits, "LIMIT_FIELD",
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, 1, -1, fieldLimits, "LIMIT_FIELD",
                         Collections.emptySet());
 
         assertTrue(filter.keep(key1));
@@ -302,7 +302,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         Key key1 = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, 3, -1, fieldLimits, "LIMIT_FIELD",
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, 3, -1, fieldLimits, "LIMIT_FIELD",
                         Collections.emptySet());
 
         assertTrue(filter.keep(key1));
@@ -340,7 +340,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
 
         TLDEventDataFilter.ParseInfo info = filter.getParseInfo(key);
         assertNotNull(info);
@@ -417,7 +417,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key key2 = new Key("row", "datatype" + Constants.NULL + "123.234.345.1", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Key key3 = new Key("row", "datatype" + Constants.NULL + "123.234.34567", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, null, -1, -1);
 
         filter.startNewDocument(key1);
         // set the lastParseInfo to this key
@@ -443,7 +443,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, null, -1, 1);
 
         Key key1 = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FOO" + Constants.NULL_BYTE_STRING + "baz");
         Key key2 = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
@@ -465,7 +465,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, null, -1, 1);
 
         // process parent first to set up proper root calculations
         Key parent = new Key("row", "datatype" + Constants.NULL + "123.234.345", "BAR" + Constants.NULL_BYTE_STRING + "baz");
@@ -494,7 +494,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(newScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("FOO"));
         assertTrue(filter.queryFields.contains("BAR"));
@@ -514,7 +514,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("FOO"));
     }
@@ -533,7 +533,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(newScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("BAR"));
     }
@@ -552,7 +552,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(newScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("BAR"));
         assertTrue(filter.queryFields.contains("FOO"));
@@ -580,7 +580,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // child key that would normally not be kept
         Key key = new Key("row", "datatype" + Constants.NULL + "123.345.456.1", "FIELD2" + Constants.NULL_BYTE_STRING + "bar");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, disallowlist, 1, -1, fieldLimits, "LIMIT_FIELD",
+        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, disallowlist, null, 1, -1, fieldLimits, "LIMIT_FIELD",
                         nonEventFields);
 
         // set the parse info correctly
@@ -601,7 +601,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, null, -1, -1);
 
         Key key1 = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FOO" + Constants.NULL_BYTE_STRING + "baz");
         Key key2 = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
@@ -630,7 +630,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, null, -1, -1);
 
         // asserts that 'termOffsetMap' is not considered a query field
         // asserts that malformed field 'Foo2' is not considered a query field
@@ -646,7 +646,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, 1, 1);
+        filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, null, 1, 1);
 
         Key k1 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok", "FOO\0bar");
         Key k2 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok.1", "FOO2\0value1");

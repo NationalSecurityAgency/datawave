@@ -1017,6 +1017,24 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
+        // Get the list of child return fields
+        String projectChildFields = settings.findParameter(QueryParameters.RETURN_CHILD_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(projectChildFields)) {
+            List<String> projectChildFieldsList = Arrays.asList(StringUtils.split(projectChildFields, Constants.PARAM_VALUE_SEP));
+
+            // Only set the projection fields if we were actually given some
+            if (!projectChildFieldsList.isEmpty()) {
+                config.setProjectChildFields(new HashSet<>(projectChildFieldsList));
+
+                if (log.isDebugEnabled()) {
+                    final int maxLen = 100;
+                    // Trim down the projection if it's stupid long
+                    projectChildFields = maxLen < projectChildFields.length() ? projectChildFields.substring(0, maxLen) + "[TRUNCATED]" : projectChildFields;
+                    log.debug("Projection child fields: " + projectChildFields);
+                }
+            }
+        }
+
         // if the TRANSFORM_CONTENT_TO_UID is false, then unset the list of content field names preventing the DocumentTransformer from
         // transforming them.
         String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();

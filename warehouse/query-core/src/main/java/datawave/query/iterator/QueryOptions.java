@@ -130,6 +130,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String FULL_TABLE_SCAN_ONLY = "full.table.scan.only";
 
     public static final String PROJECTION_FIELDS = "projection.fields";
+    public static final String PROJECTION_CHILD_FIELDS = "projection.child.fields";
     public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
     public static final String INDEXED_FIELDS = "indexed.fields";
@@ -320,6 +321,7 @@ public class QueryOptions implements OptionDescriber {
     protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
+    protected Set<String> childFields = new HashSet<>();
 
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
@@ -496,6 +498,7 @@ public class QueryOptions implements OptionDescriber {
         this.allowListedFields = other.allowListedFields;
         this.useDisallowListedFields = other.useDisallowListedFields;
         this.disallowListedFields = other.disallowListedFields;
+        this.childFields = other.childFields;
 
         this.fiAggregator = other.fiAggregator;
 
@@ -1557,6 +1560,13 @@ public class QueryOptions implements OptionDescriber {
             if (fieldList != null && !fieldList.trim().equals("")) {
                 this.disallowListedFields = new HashSet<>();
                 Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+            }
+        }
+
+        if (options.containsKey(PROJECTION_CHILD_FIELDS)) {
+            String option = options.get(PROJECTION_CHILD_FIELDS);
+            if (option != null) {
+                this.childFields = new HashSet<>(Splitter.on(',').splitToList(option));
             }
         }
 

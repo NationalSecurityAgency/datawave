@@ -2756,6 +2756,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.DISALLOWLISTED_FIELDS, config.getDisallowlistedFieldsAsString(), false);
         }
 
+        // include the child projected fields
+        if (null != config.getProjectChildFields() && !config.getProjectChildFields().isEmpty()) {
+            if (log.isDebugEnabled()) {
+                final int maxLen = 100;
+                String projectChildFields = config.getProjectChildFieldsAsString();
+                if (projectChildFields.length() > maxLen) {
+                    projectChildFields = projectChildFields.substring(0, maxLen) + "[TRUNCATED]";
+                }
+                log.debug("Setting scan option: " + QueryOptions.PROJECTION_CHILD_FIELDS + " to " + projectChildFields);
+            }
+
+            addOption(cfg, QueryOptions.PROJECTION_CHILD_FIELDS, config.getProjectChildFieldsAsString(), false);
+        }
+
         // We don't need to do any expansion of the start or end date/time
         // because the webservice is handling
         // the HHmmss components and handing us proper Date objects.

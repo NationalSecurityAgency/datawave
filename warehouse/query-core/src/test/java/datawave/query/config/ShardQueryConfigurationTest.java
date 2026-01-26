@@ -560,6 +560,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
         alreadySet.add("projectFieldsAsString");
 
+        defaultValues.put("projectChildFields", Sets.newHashSet());
+        updatedValues.put("projectChildFields", Sets.newHashSet("FIELD_P", "FIELD_Q"));
+        defaultValues.put("projectChildFieldsAsString", "");
+        updatedValues.put("projectChildFieldsAsString", "FIELD_P,FIELD_Q");
+        alreadySet.add("projectChildFieldsAsString");
+
         defaultValues.put("renameFields", Sets.newHashSet());
         updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
 

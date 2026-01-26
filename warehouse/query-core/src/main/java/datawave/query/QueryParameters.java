@@ -51,6 +51,11 @@ public class QueryParameters {
     public static final String RETURN_FIELDS = "return.fields";
 
     /**
+     * The list of fields to return from children (e.g. with TLDQuery results).
+     */
+    public static final String RETURN_CHILD_FIELDS = "return.child.fields";
+
+    /**
      * The list of fields to rename (post all model mappings)
      */
     public static final String RENAME_FIELDS = "rename.fields";
