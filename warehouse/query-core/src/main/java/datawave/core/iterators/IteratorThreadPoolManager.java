@@ -16,7 +16,6 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.util.threads.ThreadPools;
 import org.apache.log4j.Logger;
 import org.checkerframework.checker.index.qual.NonNegative;
 
@@ -63,7 +62,7 @@ public class IteratorThreadPoolManager {
         ivaratorRunnableTimeoutMinutes = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
         log.info("Using " + ivaratorRunnableTimeoutMinutes + " minutes for " + IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP);
         // This thread will check for changes to ivaratorRunnableTimeoutMinutes
-        ThreadPools.getServerThreadPools().createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
             try {
                 long value = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
                 if (ivaratorRunnableTimeoutMinutes != value) {
@@ -116,7 +115,7 @@ public class IteratorThreadPoolManager {
 
         // If Ivarator has been running for a time greater than either its scanTimeout or the ivaratorRunnableTimeoutMinutes,
         // then stop the Ivarator and remove the future from the cache
-        ThreadPools.getServerThreadPools().createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
             Map<String,Integer> queryToTaskMap = new TreeMap<>();
             long now = System.currentTimeMillis();
             ivaratorFutures.asMap().forEach((String taskName, IvaratorFuture future) -> {
