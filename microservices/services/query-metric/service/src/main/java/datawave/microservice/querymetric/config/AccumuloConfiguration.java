@@ -1,60 +1,40 @@
 package datawave.microservice.querymetric.config;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 
-import datawave.core.common.connection.AccumuloClientPool;
-import datawave.core.common.connection.AccumuloClientPoolFactory;
-import datawave.microservice.config.accumulo.AccumuloProperties;
-import datawave.microservice.config.cluster.ClusterProperties;
-import datawave.microservice.querymetric.factory.WrappedAccumuloClientPoolFactory;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.cache.AccumuloTableCacheProperties;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
+import datawave.core.common.result.ConnectionPoolsProperties;
 
 @Configuration
-@EnableConfigurationProperties({AccumuloConfiguration.WarehouseClusterProperties.class})
 public class AccumuloConfiguration {
 
-    @ConfigurationProperties(prefix = "warehouse-cluster")
-    public static class WarehouseClusterProperties extends ClusterProperties {
-
+    @Bean
+    @ConfigurationProperties("datawave.table.cache")
+    public AccumuloTableCacheProperties accumuloTableCacheProperties() {
+        return new AccumuloTableCacheProperties();
     }
 
     @Bean
-    @Lazy
-    @Qualifier("warehouse")
+    @ConfigurationProperties("datawave.connection.factory")
+    public ConnectionPoolsProperties connectionPoolsProperties() {
+        return new ConnectionPoolsProperties();
+    }
+
+    @Bean
     @ConditionalOnMissingBean
-    public AccumuloProperties warehouseAccumuloProperties(WarehouseClusterProperties warehouseProperties) {
-        return warehouseProperties.getAccumulo();
-    }
-
-    @Bean
-    @Lazy
-    @Qualifier("warehouse")
-    @ConditionalOnMissingBean
-    public AccumuloClientPool accumuloClientPool(@Qualifier("warehouse") AccumuloClientPoolFactory accumuloClientPoolFactory,
-                    QueryMetricHandlerProperties queryMetricHandlerProperties) {
-        AccumuloClientPool pool = new AccumuloClientPool(new WrappedAccumuloClientPoolFactory(accumuloClientPoolFactory));
-        pool.setMaxTotal(queryMetricHandlerProperties.getAccumuloClientPoolSize());
-        return pool;
-    }
-
-    @Bean
-    @Lazy
-    @Qualifier("warehouse-wrapped")
-    public AccumuloClientPool accumuloClientPoolWrapped(@Qualifier("warehouse") AccumuloClientPoolFactory accumuloClientPoolFactory) throws Exception {
-        return new AccumuloClientPool(new WrappedAccumuloClientPoolFactory(accumuloClientPoolFactory));
-    }
-
-    @Bean
-    @Lazy
-    @Qualifier("warehouse")
-    @ConditionalOnMissingBean
-    public AccumuloClientPoolFactory warehouseInstance(@Qualifier("warehouse") AccumuloProperties accumuloProperties) {
-        return new AccumuloClientPoolFactory(accumuloProperties.getUsername(), accumuloProperties.getPassword(), accumuloProperties.getZookeepers(),
-                        accumuloProperties.getInstanceName());
+    public AccumuloConnectionFactory accumuloConnectionFactory(ConnectionPoolsProperties connectionPoolsProperties,
+                    @Autowired(required = false) AccumuloTableCache tableCache) {
+        AccumuloConnectionFactory connectionFactory = AccumuloConnectionFactoryImpl.getInstance(tableCache, connectionPoolsProperties);
+        if (tableCache != null) {
+            tableCache.setConnectionFactory(connectionFactory);
+        }
+        return connectionFactory;
     }
 }

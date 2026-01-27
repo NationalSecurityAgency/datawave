@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.io.Text;
@@ -30,6 +31,16 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
     private static final long serialVersionUID = -1212607537051869786L;
 
     private static final Logger log = LoggerFactory.getLogger(GeoNormalizer.class);
+
+    private static final ThreadLocal<NumberFormat> zrefFormatter = ThreadLocal.withInitial(new NumberFormatInstanceSupplier());
+    private static final ThreadLocal<NumberFormat> zrefStringFormatter = ThreadLocal.withInitial(new NumberFormatInstanceSupplier());
+
+    private static class NumberFormatInstanceSupplier implements Supplier<NumberFormat> {
+        @Override
+        public NumberFormat get() {
+            return NumberFormat.getInstance();
+        }
+    }
 
     /*
      * The z-order value that this normalize produces has no regard for precision. The prefix is always six digits and the suffix is always 16 digits
@@ -341,7 +352,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             double latShift = p.latitude + 90.0;
             double lonShift = p.longitude + 180.0;
 
-            NumberFormat formatter = NumberFormat.getInstance();
+            NumberFormat formatter = zrefFormatter.get();
             formatter.setMaximumIntegerDigits(3);
             formatter.setMinimumIntegerDigits(3);
             formatter.setMaximumFractionDigits(5);
@@ -373,7 +384,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             double latShift = p.latitude + 90.0;
             double lonShift = p.longitude + 180.0;
 
-            NumberFormat formatter = NumberFormat.getInstance();
+            NumberFormat formatter = zrefStringFormatter.get();
             formatter.setMaximumIntegerDigits(3);
             formatter.setMinimumIntegerDigits(3);
             formatter.setMaximumFractionDigits(5);

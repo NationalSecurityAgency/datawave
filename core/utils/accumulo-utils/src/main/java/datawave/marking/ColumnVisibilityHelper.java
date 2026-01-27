@@ -1,6 +1,7 @@
 package datawave.marking;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +19,7 @@ import datawave.marking.MarkingFunctions.Exception;
 
 public class ColumnVisibilityHelper {
 
-    protected static final Charset charset = Charset.forName("UTF-8");
+    protected static final Charset charset = StandardCharsets.UTF_8;
     private static Logger log = Logger.getLogger(ColumnVisibilityHelper.class);
 
     public static ColumnVisibility simplifyColumnVisibilityForAuthorizations(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)

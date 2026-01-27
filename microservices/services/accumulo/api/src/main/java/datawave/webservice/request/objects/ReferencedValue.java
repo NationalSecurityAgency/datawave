@@ -1,7 +1,6 @@
 package datawave.webservice.request.objects;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
@@ -43,7 +42,7 @@ public class ReferencedValue {
 
             incoming = value.getBytes(StandardCharsets.UTF_8);
             byte[] decodedBytes = Base64.decodeBase64(incoming);
-            decoded = new String(decodedBytes, Charset.forName("UTF-8"));
+            decoded = new String(decodedBytes, StandardCharsets.UTF_8);
 
             return decoded;
         } else {
