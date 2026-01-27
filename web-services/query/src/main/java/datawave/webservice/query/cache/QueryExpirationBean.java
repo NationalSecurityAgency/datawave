@@ -1,5 +1,8 @@
 package datawave.webservice.query.cache;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
@@ -13,13 +16,13 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.microservice.query.Query;
-import datawave.microservice.querymetric.BaseQueryMetric;
 import org.apache.log4j.Logger;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.query.Query;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -27,9 +30,6 @@ import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -51,28 +51,28 @@ public class QueryExpirationBean {
     private QueryLimiter queryLimiter;
 
     private boolean clearAll = false;
-    
+
     @Inject
     public void setQueryCache(QueryCache cache) {
         this.queryCache = cache;
     }
-    
+
     @Inject
     @SpringBean(refreshable = true)
     public void setQueryExpirationProperties(QueryExpirationProperties properties) {
         this.config = properties;
     }
-    
+
     @Inject
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
         this.connectionFactory = connectionFactory;
     }
-    
+
     @Inject
     public void setCreatedQueryLogicCacheBean(CreatedQueryLogicCacheBean cacheBean) {
         this.queryLogicCacheBean = cacheBean;
     }
-    
+
     @Inject
     public void setQueryMetricsBean(QueryMetricsBean metrics) {
         this.metricsBean = metrics;
@@ -82,7 +82,7 @@ public class QueryExpirationBean {
     public void setQueryLimiter(QueryLimiter queryLimiter) {
         this.queryLimiter = queryLimiter;
     }
-    
+
     @PostConstruct
     public void init() {
         if (log.isDebugEnabled()) {
@@ -140,19 +140,17 @@ public class QueryExpirationBean {
                     // If we are shutting down this bean, mark the query as shut down.
                     if (clearAll) {
                         queryMetric.setLifecycle(QueryMetric.Lifecycle.SHUTDOWN);
-                        settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(),
-                                        new QueryException(DatawaveErrorCode.SERVER_SHUTDOWN));
+                        settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.SERVER_SHUTDOWN));
                     } else {
                         // If the query has been idle for too long or is taking too long to complete its next call, mark the query as timed out.
                         if (!queryMetric.isLifecycleFinal() && !query.isFinished()) {
-                            if(idleTooLong) {
+                            if (idleTooLong) {
                                 queryMetric.setLifecycle(BaseQueryMetric.Lifecycle.TIMEOUT);
-                            } else if(nextTooLong) {
+                            } else if (nextTooLong) {
                                 queryMetric.setLifecycle(BaseQueryMetric.Lifecycle.TIMEOUT);
                             }
                         }
-                        settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(),
-                                        new QueryException(DatawaveErrorCode.QUERY_TIMEOUT));
+                        settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.QUERY_TIMEOUT));
                     }
                 } finally {
                     // If need be, update the metrics for the query.
@@ -164,12 +162,12 @@ public class QueryExpirationBean {
                         }
                     }
                 }
-                
+
                 // Cancel the query if it is considered active.
                 if (query.hasActiveCall()) {
                     query.cancel();
                 }
-                
+
                 // Close the accumulo connection.
                 try {
                     query.closeConnection(connectionFactory);
@@ -187,7 +185,7 @@ public class QueryExpirationBean {
 
                 // Remove the query from the query cache.
                 queryCache.remove(queryId);
-                
+
                 count++;
                 if (log.isDebugEnabled()) {
                     log.debug("Entry evicted, connection returned.");
@@ -235,7 +233,7 @@ public class QueryExpirationBean {
 
         query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
         long difference = currentTime - query.getTimeOfCurrentCall();
-        
+
         if (difference > config.getCallTimeoutMillis()) {
             log.warn("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
                             + "s.  We are evicting this query from the cache.");
@@ -248,7 +246,7 @@ public class QueryExpirationBean {
             return false;
         }
     }
-    
+
     /**
      * Ensure that the query heartbeat cache within the {@link QueryLimiter} does not consider to be active any queries that are either non-existent or no
      * longer running according to the {@link QueryCache}. This will help safeguard against any synchronization issues.
@@ -257,21 +255,21 @@ public class QueryExpirationBean {
         // Fetch the set of queries considered active by the query limiter.
         Set<String> queryIds = queryLimiter.getActiveQueries();
         Set<String> outdatedQueries = new HashSet<>();
-        
+
         // Identify any queryIds that do not reference an actively running query.
-        for(String queryId : queryIds) {
+        for (String queryId : queryIds) {
             RunningQuery query = queryCache.get(queryId);
-            if(query != null) {
-                if(query.isFinished() || query.isCanceled()) {
+            if (query != null) {
+                if (query.isFinished() || query.isCanceled()) {
                     outdatedQueries.add(queryId);
                 }
             } else {
                 outdatedQueries.add(queryId);
             }
         }
-        
+
         // Invalidate the outdated query IDs in the query limiter.
-        if(!outdatedQueries.isEmpty()) {
+        if (!outdatedQueries.isEmpty()) {
             queryLimiter.stopCountingQueriesTowardsLimits(outdatedQueries);
         }
     }
