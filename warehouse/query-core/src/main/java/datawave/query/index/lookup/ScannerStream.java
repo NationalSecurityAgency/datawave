@@ -7,7 +7,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.collect.PeekingIterator;
 
-import datawave.query.tables.RangeStreamScanner;
+import datawave.query.tables.ScannerSession;
 import datawave.query.util.Tuple2;
 
 /**
@@ -17,12 +17,12 @@ import datawave.query.util.Tuple2;
  */
 public class ScannerStream extends BaseIndexStream {
 
-    private ScannerStream(RangeStreamScanner scanSession, EntryParser entryParser, StreamContext ctx, JexlNode currNode, IndexStream debugDelegate) {
+    private ScannerStream(ScannerSession scanSession, EntryParser entryParser, StreamContext ctx, JexlNode currNode, IndexStream debugDelegate) {
         super(scanSession, entryParser, currNode, ctx, debugDelegate);
     }
 
     private ScannerStream(BaseIndexStream itr, StreamContext ctx, JexlNode currNode) {
-        this(itr.rangeStreamScanner, itr.entryParser, ctx, currNode, null);
+        this(itr.scannerSession, itr.entryParser, ctx, currNode, null);
     }
 
     private ScannerStream(Iterator<Tuple2<String,IndexInfo>> iterator, StreamContext context, JexlNode node, IndexStream debugDelegate) {
@@ -74,24 +74,24 @@ public class ScannerStream extends BaseIndexStream {
         return new ScannerStream(itr, StreamContext.INITIALIZED, currNode);
     }
 
-    public static ScannerStream initialized(RangeStreamScanner scannerStream, EntryParser entryParser, JexlNode currNode) {
+    public static ScannerStream initialized(ScannerSession scannerStream, EntryParser entryParser, JexlNode currNode) {
         return new ScannerStream(scannerStream, entryParser, StreamContext.INITIALIZED, currNode, null);
     }
 
     /**
      * Seek this ScannerStream to the specified shard.
-     *
+     * <p>
      * If no underlying RangeStreamScanner exists then the seek operation is delegated to {@link #seekByNext(String)}.
      *
      * @param seekShard
      *            the shard to seek to.
-     * @return the next element great than or equal to the seek shard, or null if all elements were exhausted.
+     * @return the next element greater than or equal to the seek shard, or null if all elements were exhausted.
      */
     @Override
     public String seek(String seekShard) {
-        if (rangeStreamScanner != null) {
+        if (scannerSession != null) {
 
-            String seekedShard = rangeStreamScanner.seek(seekShard);
+            String seekedShard = scannerSession.seek(seekShard);
             if (seekedShard == null) {
                 // If the underlying RangeStreamScanner returns null we are done.
                 this.peekedElement = null;

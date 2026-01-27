@@ -48,11 +48,6 @@ jboss.log.hdfs.dir, hdfs directory where the JBoss logs should be placed
 jboss.log.dir, log directory name on the local server
 lookup.uuid.beginDate,
 lookup.uuid.uuidTypes,
-mapReduce.hdfs.base.dir, Base directory name to use in HDFS for the MapReduce service results
-mapReduce.hdfs.uri, HDFS uri
-mapReduce.http.port,
-mapReduce.inputFormat.restrict, restrict input formats to the named input formats in the config file (true/false)
-mapReduce.job.tracker, MapReduce job tracker (host:port)
 mysql.dbname, dbname of the MySQL database for the CachedResults-ds.xml file
 mysql.host, hostname of the MySQL database for the CachedResults-ds.xml file
 mysql.pool.min.size, minimum number of connections to keep in the connection pool
@@ -80,6 +75,8 @@ table.name.errors.metadata,
 table.name.errors.shard,
 table.name.errors.shardIndex,
 table.name.errors.shardReverseIndex,
+table.name.annotation,
+table.name.annotation.source,
 webapp.transport.guarantee, CONFIDENTIAL for SSL or empty for non-SSL
 trusted.header.login, true or false (true = expect subject and issuer DNs of the user to appear in request headers, false = normal SSL connection)
 zookeeper.hosts, list of ZOOKEEPER hosts for the Accumulo instance
