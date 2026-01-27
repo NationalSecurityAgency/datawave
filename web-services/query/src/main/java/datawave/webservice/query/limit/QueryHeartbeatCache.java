@@ -2,6 +2,7 @@ package datawave.webservice.query.limit;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,19 +28,35 @@ public class QueryHeartbeatCache {
     private long cleanupInterval = 10;
     private TimeUnit cleanupUnit = TimeUnit.MINUTES;
     private ScheduledExecutorService scheduler;
-
+    
+    /**
+     * Return the interval for which {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} will be called.
+     * @return the interval
+     */
     public long getCleanupInterval() {
         return cleanupInterval;
     }
-
+    
+    /**
+     * Set the interval for which {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} should be called.
+     * @param cleanupInterval the interval
+     */
     public void setCleanupInterval(long cleanupInterval) {
         this.cleanupInterval = cleanupInterval;
     }
-
+    
+    /**
+     * Return the time unit of the cleanup interval.
+     * @return the time unit
+     */
     public TimeUnit getCleanupUnit() {
         return cleanupUnit;
     }
-
+    
+    /**
+     * Set the time unit of the cleanup interval.
+     * @param cleanupUnit the cleanup interval time unit
+     */
     public void setCleanupUnit(TimeUnit cleanupUnit) {
         this.cleanupUnit = cleanupUnit;
     }
@@ -82,21 +99,62 @@ public class QueryHeartbeatCache {
     public QueryHeartbeat get(String queryId) {
         return this.cache.getIfPresent(queryId);
     }
-
+    
+    /**
+     * Return the set of query ID keys in the cache.
+     * @return the query IDs
+     */
+    public Set<String> getQueryIds() {
+        return cache.asMap().keySet();
+    }
+    
+    /**
+     * If any {@link QueryHeartbeat} values are stored in the cache for the given query IDs, remove them from the cache and stop them via
+     * {@link QueryHeartbeat#stopWithoutNotifyingListener()}.
+     *
+     * @param queryIds
+     *            the query IDs
+     */
+    public void stopAndRemoveHeartbeats(Set<String> queryIds) {
+        if(log.isTraceEnabled()) {
+            log.trace("Stopping heartbeats for queries " + queryIds);
+        }
+        
+        if(queryIds != null && !queryIds.isEmpty()) {
+            ConcurrentMap<String,QueryHeartbeat> map = this.cache.asMap();
+            for (String queryId : queryIds) {
+                QueryHeartbeat heartbeat = map.remove(queryId);
+                stopHeartbeat(heartbeat);
+            }
+        }
+    }
+    
     /**
      * If a {@link QueryHeartbeat} is stored in the cache for the given query ID, remove it from the cache and stop the heartbeat via
-     * {@link QueryHeartbeat#stop()}.
+     * {@link QueryHeartbeat#stopWithoutNotifyingListener()}.
      *
      * @param queryId
      *            the query ID
      */
     public void stopAndRemoveHeartbeat(String queryId) {
+        if(log.isTraceEnabled()) {
+            log.trace("Removing heartbeat for query " + queryId);
+        }
+        
         QueryHeartbeat heartbeat = this.cache.asMap().remove(queryId);
-        if (heartbeat != null) {
+        stopHeartbeat(heartbeat);
+    }
+    
+    /**
+     * Attempt to stop the given heartbeat via {@link QueryHeartbeat#stopWithoutNotifyingListener()}.
+     * @param heartbeat the heartbeat to stop
+     */
+    private void stopHeartbeat(QueryHeartbeat heartbeat) {
+        if(heartbeat != null) {
             try {
                 heartbeat.stopWithoutNotifyingListener();
             } catch (Exception e) {
-                log.error("Error stopping heartbeat for query " + queryId, e);
+                log.error("Error stopping heartbeat for query " + heartbeat.getQueryId(), e);
             }
         }
     }
@@ -137,7 +195,7 @@ public class QueryHeartbeatCache {
             log.error("Error clearing heartbeat cache", e);
         }
     }
-
+    
     /**
      * A simple listener that can be used to listen for when to evict a {@link QueryHeartbeat} from the cache.
      */

@@ -209,7 +209,28 @@ public class QueryLimiter {
         // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
         heartbeatCache.put(heartbeat);
     }
-
+    
+    /**
+     * Fetch the set of query IDs for queries considered to be actively running by the this {@link QueryLimiter}.
+     * @return the set of IDs for active queries
+     */
+    public Set<String> getActiveQueries() {
+        return heartbeatCache.getQueryIds();
+    }
+    
+    /**
+     * Clear the information for each of the given queries from Zookeeper, and stop counting them towards any configured query limits.
+     *
+     * @param queryIds
+     *            the query IDs
+     */
+    public void stopCountingQueriesTowardsLimits(Set<String> queryIds) {
+        if(log.isDebugEnabled()) {
+            log.debug("Stopping counting queries towards limits: " + queryIds);
+        }
+        heartbeatCache.stopAndRemoveHeartbeats(queryIds);
+    }
+    
     /**
      * Clear the information for the given query from Zookeeper, and stop counting it towards any configured query limits.
      *
@@ -222,7 +243,7 @@ public class QueryLimiter {
         }
         heartbeatCache.stopAndRemoveHeartbeat(queryId);
     }
-
+    
     /**
      * Return the {@link ActiveQueryTracker} instance, initializing it if needed.
      *
