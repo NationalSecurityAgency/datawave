@@ -1146,7 +1146,13 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void tf_contentFunction_validPhrase_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a");
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     // terms 'a' and 'c' do not appear adjacent
@@ -1162,14 +1168,26 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void tf_contentFunction_validPhrase_docRange_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a");
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_contentFunction_delayed_docRange_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 == 'a' && ((_Delayed_ = true) && (TF_FIELD1 == 'a' && TF_FIELD1 == 'b' && content:phrase(TF_FIELD1,termOffsetMap,'a','b')))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a");
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     // terms 'a' and 'c' do not appear adjacent
@@ -1187,7 +1205,13 @@ public class QueryIteratorIT extends EasyMockSupport {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && (((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b')) || "
                         + "((TF_FIELD0 =='j' && TF_FIELD0 =='k') && content:phrase(TF_FIELD0,termOffsetMap,'j','k')))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a");
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     // A && (phrase:'a,b' || phrase:'j,k')
@@ -1197,7 +1221,13 @@ public class QueryIteratorIT extends EasyMockSupport {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && (((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b')) || "
                         + "((TF_FIELD0 =='j' && TF_FIELD0 =='k') && content:phrase(TF_FIELD0,termOffsetMap,'j','k')))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a");
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -1658,8 +1688,9 @@ public class QueryIteratorIT extends EasyMockSupport {
                     if (docAttr instanceof Attributes) {
                         // Special handling of Content attributes, typically when TermFrequencies are looked up.
                         // TFs append Content attributes which results in Attributes coming back instead of a single Attribute
-                        Set<?> datas = (Set<?>) docAttr.getData();
-                        Set<String> dataStrings = datas.stream().map(Object::toString).collect(Collectors.toSet());
+                        Set<Attribute<? extends Comparable<?>>> datas = ((Attributes) docAttr).getAttributes();
+                        Set<String> dataStrings = datas.stream().map(Attribute::getData).map(Object::toString).collect(Collectors.toSet());
+                        assertEquals("size of " + dataStrings + " != " + expected + " values for " + field, 1, dataStrings.size());
                         boolean stringsMatch = dataStrings.contains(expected.get(0));
                         assertTrue(field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0), stringsMatch);
                     } else {
