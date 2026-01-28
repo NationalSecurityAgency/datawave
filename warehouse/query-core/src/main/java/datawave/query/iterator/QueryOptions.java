@@ -892,6 +892,10 @@ public class QueryOptions implements OptionDescriber {
             fields.addAll(allowListedFields);
         }
 
+        if (!childFields.isEmpty()) {
+            fields.addAll(childFields);
+        }
+
         if (groupFields != null) {
             fields.addAll(groupFields.getGroupByFields());
         }

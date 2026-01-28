@@ -1313,10 +1313,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
         }
-        // make sure we include any fields being matched in the limit fields mechanism
+        // make sure we do not include any fields being matched in the limit fields mechanism
         if (!this.matchingFieldSets.isEmpty()) {
             composites.removeAll(getMatchingFieldList());
         }
+
+        if (!this.childFields.isEmpty()) {
+            composites.removeAll(this.childFields);
+        }
+
+        if (!this.allowListedFields.isEmpty()) {
+            composites.removeAll(this.allowListedFields);
+        }
+
         return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
                         Projection.ProjectionType.EXCLUDES);
     }
