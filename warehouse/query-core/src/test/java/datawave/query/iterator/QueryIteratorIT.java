@@ -57,6 +57,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -902,7 +903,12 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -910,7 +916,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'b.*'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a b c");
+        values.add("a");
+        values.add("c");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -918,7 +931,15 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'z.*'))";
-        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a b c");
+        values.add("a");
+        values.add("b");
+        values.add("c");
+        event.getValue().put("TF_FIELD1", values);
+        index_test(seekRange, query, false, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -942,9 +963,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
         // note: correcting the marker caused this query to hit
         // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=b} satisfies the query
-        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
+        event_test(seekRange, query, false, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -998,7 +1024,12 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -1006,7 +1037,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ '.*b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("a b c");
+        values.add("a");
+        values.add("c");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -1044,9 +1082,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("b");
+        event.getValue().put("TF_FIELD1", values);
         // note: correcting the marker caused this query to hit
         // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=b} satisfies the query
-        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
+        event_test(seekRange, query, false, event, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -1435,6 +1478,11 @@ public class QueryIteratorIT extends EasyMockSupport {
      */
     protected void index_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
                     List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
+        index_test(seekRange, query, miss, null, otherData, otherHits);
+    }
+
+    protected void index_test(Range seekRange, String query, boolean miss, Map.Entry<Key,Map<String,List<String>>> hitOverride,
+                    List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
         // configure source
         List<Map.Entry<Key,Value>> listSource = configureTestData(11);
         listSource.addAll(otherData);
@@ -1458,7 +1506,11 @@ public class QueryIteratorIT extends EasyMockSupport {
         if (miss) {
             hits.add(new AbstractMap.SimpleEntry<>(null, null));
         } else {
-            hits.add(getBaseExpectedEvent("123.345.456"));
+            if (hitOverride != null) {
+                hits.add(hitOverride);
+            } else {
+                hits.add(getBaseExpectedEvent("123.345.456"));
+            }
         }
         hits.addAll(otherHits);
         eval(results, hits);
@@ -1698,17 +1750,19 @@ public class QueryIteratorIT extends EasyMockSupport {
                         assertTrue(field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0), stringsMatch);
                     }
                 } else {
-                    assertNotNull("null expected field: " + field, d.getDictionary().get(field));
-                    // the data should be a set, verify it matches expected
-                    Object dictData = d.getDictionary().get(field).getData();
-                    assertNotNull(dictData);
-                    assertTrue("Expected " + expected.size() + " values for '" + field + "' found 1, '" + dictData + "'\nexpected: " + expected,
-                                    dictData instanceof Set);
-                    Set<?> dictSet = (Set<?>) dictData;
-                    assertEquals("Expected " + expected.size() + " values for '" + field + "' found " + dictSet.size() + "\nfound: " + dictSet + "\nexpected: "
-                                    + expected, dictSet.size(), expected.size());
-                    for (Attribute<?> attribute : (Iterable<Attribute<?>>) dictSet) {
-                        String foundString = attribute.getData().toString();
+                    Attribute docAttr = d.getDictionary().get(field);
+                    assertNotNull("null expected field: " + field, docAttr);
+                    // get the values
+                    Set<String> dataStrings = null;
+                    if (docAttr instanceof Attributes) {
+                        Set<Attribute<? extends Comparable<?>>> datas = ((Attributes) docAttr).getAttributes();
+                        dataStrings = datas.stream().map(Attribute::getData).map(Object::toString).collect(Collectors.toSet());
+                    } else {
+                        dataStrings = Sets.newHashSet(docAttr.getData().toString());
+                    }
+                    assertEquals("Expected " + expected.size() + " values for '" + field + "' found " + dataStrings.size() + "\nfound: " + dataStrings
+                                    + "\nexpected: " + expected, expected.size(), dataStrings.size());
+                    for (String foundString : dataStrings) {
                         assertTrue("could not find " + foundString + " in results! Still had " + expected, expected.remove(foundString));
                     }
                     // verify that the expected set is now empty

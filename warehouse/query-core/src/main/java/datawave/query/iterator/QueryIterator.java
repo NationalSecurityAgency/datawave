@@ -110,7 +110,9 @@ import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
+import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.Projection;
+import datawave.query.predicate.TLDFieldIndexQueryFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
@@ -1686,9 +1688,23 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     @Override
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getFiEvaluationFilter(), getEventNextSeek());
+            fiAggregator = new IdentityAggregator(getNonEventFields(), getFiEvaluationFilter(), getEventNextSeek());
         }
         return fiAggregator;
+    }
+
+    /**
+     * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
+     *
+     * @return an {@link EventDataQueryFilter}
+     */
+    @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null && getScript() != null) {
+            fiEvaluationFilter = new TLDFieldIndexQueryFilter(getNonEventFields());
+            return fiEvaluationFilter;
+        }
+        return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
     }
 
     protected ExcerptTransform getExcerptTransform() {

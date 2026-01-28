@@ -274,16 +274,6 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         groupingNotation_test(seekRange, query, true, configureTLDTestData(11), Collections.emptyList());
     }
 
-    @Test
-    public void tf_contentFunction_validPhrase_docRange_test2() throws IOException {
-        super.tf_contentFunction_validPhrase_docRange_test2();
-    }
-
-    @Test
-    public void tf_contentFunction_validPhrase_docRange_test() throws IOException {
-        super.tf_contentFunction_validPhrase_docRange_test();
-    }
-
     @Override
     protected Range getDocumentRange(String row, String dataType, String uid) {
         // not a document range
