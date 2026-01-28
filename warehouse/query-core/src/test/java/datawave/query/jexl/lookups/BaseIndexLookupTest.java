@@ -155,7 +155,7 @@ public abstract class BaseIndexLookupTest {
      * Extending classes must implement this method with all setup logic. Once the {@link AsyncIndexLookup} is configured, the method should call
      * {@link #executeLookup(AsyncIndexLookup)}.
      */
-    protected abstract void executeLookup();
+    protected abstract void executeLookup() throws Exception;
 
     protected void executeLookup(AsyncIndexLookup lookup) {
         lookup.submit();

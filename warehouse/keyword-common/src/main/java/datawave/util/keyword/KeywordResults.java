@@ -34,13 +34,13 @@ public class KeywordResults implements Writable {
     String visibility;
 
     /** the keywords and scores produced by the extraction algorithm */
-    final LinkedHashMap<String,Double> keywords;
+    final Map<String,Double> keywords;
 
     public KeywordResults() {
         this("", "", "", "", new LinkedHashMap<>());
     }
 
-    public KeywordResults(String source, String view, String language, String visibility, LinkedHashMap<String,Double> results) {
+    public KeywordResults(String source, String view, String language, String visibility, Map<String,Double> results) {
         this.source = source;
         this.view = view;
         this.language = language;
@@ -84,7 +84,7 @@ public class KeywordResults implements Writable {
         return keywords.size();
     }
 
-    public LinkedHashMap<String,Double> getKeywords() {
+    public Map<String,Double> getKeywords() {
         return keywords;
     }
 
@@ -98,6 +98,10 @@ public class KeywordResults implements Writable {
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
+        String clazz = dataInput.readUTF();
+        if (!clazz.equals(KeywordResults.class.getCanonicalName())) {
+            throw new IllegalArgumentException("Incompatible dataInput");
+        }
         int sz = dataInput.readInt();
         this.source = dataInput.readUTF();
         this.view = dataInput.readUTF();
@@ -110,6 +114,8 @@ public class KeywordResults implements Writable {
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
+        // write the class name first so reading the first field can easily test for compatibility
+        dataOutput.writeUTF(KeywordResults.class.getCanonicalName());
         dataOutput.writeInt(keywords.size());
         dataOutput.writeUTF(source == null ? "" : source);
         dataOutput.writeUTF(view == null ? "" : view);
@@ -118,6 +124,19 @@ public class KeywordResults implements Writable {
         for (Map.Entry<String,Double> e : keywords.entrySet()) {
             dataOutput.writeUTF(e.getKey());
             dataOutput.writeDouble(e.getValue());
+        }
+    }
+
+    /**
+     * Read the first string off the byte stream, it should be the class name if compatible
+     *
+     * @param bytes
+     * @return true if this byte stream can be deserialized, false otherwise
+     * @throws IOException
+     */
+    public static boolean canDeserialize(byte[] bytes) throws IOException {
+        try (ByteArrayInputStream in = new ByteArrayInputStream(bytes); DataInputStream dataInput = new DataInputStream(in)) {
+            return dataInput.readUTF().equals(KeywordResults.class.getCanonicalName());
         }
     }
 

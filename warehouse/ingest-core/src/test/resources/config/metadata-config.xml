@@ -18,7 +18,7 @@
 
 <property>
   <name>metadata.table.name</name>
-  <value>${table.name.metadata}</value>
+  <value>DatawaveMetadata</value>
 </property>
 
 <property>

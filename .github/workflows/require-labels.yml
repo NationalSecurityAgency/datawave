@@ -12,7 +12,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const requiredLabels = ["Integration Tested", "no-downstream-affects"];
+            const requiredLabels = ["Integration Tested", "no-downstream-affects", "cherry-pick"];
             const labels = context.payload.pull_request.labels.map(label => label.name);
 
             const hasRequired = requiredLabels.some(l => labels.includes(l));
