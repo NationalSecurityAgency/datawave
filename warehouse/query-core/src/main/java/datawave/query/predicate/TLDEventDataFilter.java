@@ -73,9 +73,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     private final Set<String> nonEventFields;
 
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> allFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
                     Set<String> excludedFields, Set<String> childFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, allFields, expressionFilters, includedFields, excludedFields, childFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(),
+        this(script, queryFields, expressionFilters, includedFields, excludedFields, childFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(),
                         null, Collections.emptySet());
     }
 
@@ -89,7 +89,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *
      * @param script
      *            the query
-     * @param allFields
+     * @param queryFields
      *            the fields to consider
      * @param filters
      *            a map of expression filters
@@ -108,7 +108,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @param nonEventFields
      *            a set of non-event fields
      */
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> allFields, Map<String,ExpressionFilter> filters, Set<String> includedFields,
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> filters, Set<String> includedFields,
                     Set<String> excludedFields, Set<String> childFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap,
                     String limitFieldsField, Set<String> nonEventFields) {
         super(filters);
@@ -122,7 +122,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // set the anyFieldLimit once if specified otherwise set to -1
         anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
 
-        setQueryFields(allFields, script);
+        setQueryFields(queryFields, script);
         updateLists(includedFields, excludedFields);
         setSortedLists(includedFields, excludedFields, childFields);
         updateConvienceLists();
