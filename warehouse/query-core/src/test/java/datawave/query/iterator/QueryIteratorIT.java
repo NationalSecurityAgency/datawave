@@ -903,12 +903,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
-        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
-        // add the additional tf entries expected
-        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
-        values.add("b");
-        event.getValue().put("TF_FIELD1", values);
-        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -916,14 +911,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'b.*'))";
-        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
-        // add the additional tf entries expected
-        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
-        values.add("a b c");
-        values.add("a");
-        values.add("c");
-        event.getValue().put("TF_FIELD1", values);
-        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -931,15 +919,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'z.*'))";
-        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
-        // add the additional tf entries expected
-        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
-        values.add("a b c");
-        values.add("a");
-        values.add("b");
-        values.add("c");
-        event.getValue().put("TF_FIELD1", values);
-        index_test(seekRange, query, false, event, Collections.emptyList(), Collections.emptyList());
+        index_test(seekRange, query, false, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -963,14 +943,9 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
-        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
-        // add the additional tf entries expected
-        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
-        values.add("b");
-        event.getValue().put("TF_FIELD1", values);
         // note: correcting the marker caused this query to hit
         // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=b} satisfies the query
-        event_test(seekRange, query, false, event, Collections.emptyList(), Collections.emptyList());
+        event_test(seekRange, query, false, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -1024,12 +999,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
-        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
-        // add the additional tf entries expected
-        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
-        values.add("b");
-        event.getValue().put("TF_FIELD1", values);
-        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -1037,14 +1007,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ '.*b'))";
-        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
-        // add the additional tf entries expected
-        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
-        values.add("a b c");
-        values.add("a");
-        values.add("c");
-        event.getValue().put("TF_FIELD1", values);
-        tf_test(seekRange, query, event, Collections.emptyList(), Collections.emptyList());
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -1082,14 +1045,9 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
-        Map.Entry<Key,Map<String,List<String>>> event = getBaseExpectedEvent("123.345.456");
-        // add the additional tf entries expected
-        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
-        values.add("b");
-        event.getValue().put("TF_FIELD1", values);
         // note: correcting the marker caused this query to hit
         // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=b} satisfies the query
-        event_test(seekRange, query, false, event, Collections.emptyList(), Collections.emptyList());
+        event_test(seekRange, query, false, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
