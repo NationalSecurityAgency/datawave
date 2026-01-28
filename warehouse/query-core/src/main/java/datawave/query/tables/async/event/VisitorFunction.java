@@ -26,6 +26,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -440,7 +441,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     // represent a prod-like environment.
                     continue;
                 default:
-                    if (org.apache.commons.lang3.StringUtils.isBlank(entry.getValue())) {
+                    if (StringUtils.isBlank(entry.getValue())) {
                         optionsToRemove.add(entry.getKey());
                     }
             }
@@ -515,13 +516,13 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             fieldsToRetain.addAll(ReduceFields.getQueryFields(script));
 
             String option = options.get(QueryOptions.PROJECTION_FIELDS);
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+            if (StringUtils.isNotBlank(option)) {
                 fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
             }
 
             if (options.containsKey(QueryOptions.COMPOSITE_FIELDS)) {
                 option = options.get(QueryOptions.COMPOSITE_FIELDS);
-                if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+                if (StringUtils.isNotBlank(option)) {
                     fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
                 }
             }
@@ -530,7 +531,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             fieldsToRetain.addAll(typeMetadata.keySet());
 
             String option = options.get(QueryOptions.DISALLOWLISTED_FIELDS);
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+            if (StringUtils.isNotBlank(option)) {
                 Splitter.on(',').splitToList(option).forEach(fieldsToRetain::remove);
             }
         } else {
@@ -538,11 +539,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
 
         // ensure children fields are included
-        if (options.containsKey(QueryOptions.PROJECTION_CHILD_FIELDS)) {
-            String option = options.get(QueryOptions.PROJECTION_CHILD_FIELDS);
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
-                fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
-            }
+        String option = options.get(QueryOptions.PROJECTION_CHILD_FIELDS);
+        if (StringUtils.isNotBlank(option)) {
+            fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
         }
 
         // we could get really clever and check to see if the query is satisfiable from the field index only,

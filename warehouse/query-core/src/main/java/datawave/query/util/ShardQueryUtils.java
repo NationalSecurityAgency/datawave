@@ -115,7 +115,7 @@ public class ShardQueryUtils {
                         limitFields = config.getLimitFields(), projectChildFields = config.getProjectChildFields();
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
-            if (log != null && log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Updated projection set using query model to: " + projectFields);
             }
             config.setProjectFields(Sets.newHashSet(projectFields));
@@ -123,7 +123,7 @@ public class ShardQueryUtils {
 
         if (projectChildFields != null && !projectChildFields.isEmpty()) {
             projectChildFields = queryModel.remapParameter(projectChildFields, inverseReverseModel);
-            if (log != null && log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Updated child projection set using query model to: " + projectChildFields);
             }
             config.setProjectChildFields(Sets.newHashSet(projectChildFields));

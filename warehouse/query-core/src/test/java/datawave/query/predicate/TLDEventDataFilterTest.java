@@ -10,7 +10,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -215,12 +214,12 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertTrue(filter.keep(key));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key, null)));
+        assertTrue(filter.apply(Map.entry(key, null)));
         assertNull(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false));
         // does not increment counts so will still return true
         assertTrue(filter.keep(key));
         // increment counts = 2 so rejects based on field filter
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key, null)));
+        assertFalse(filter.apply(Map.entry(key, null)));
         Range seekRange = filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false);
         assertNotNull(seekRange);
         assertEquals(seekRange.getStartKey().getRow(), key.getRow());
@@ -252,13 +251,13 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertTrue(filter.keep(key1));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertTrue(filter.apply(Map.entry(key1, null)));
         assertNull(filter.transform(key1));
         assertNull(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false));
         // does not increment counts so will still return true
         assertTrue(filter.keep(key1));
         // increments counts = 2
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertFalse(filter.apply(Map.entry(key1, null)));
         Range seekRange = filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false);
         assertNotNull(seekRange);
         assertEquals(seekRange.getStartKey().getRow(), key1.getRow());
@@ -277,13 +276,13 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // unlimited field
         assertTrue(filter.keep(key2));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key2, null)));
+        assertTrue(filter.apply(Map.entry(key2, null)));
         assertNull(filter.transform(key2));
         assertNull(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false));
 
         assertTrue(filter.keep(key2));
         // increments counts = 2
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key2, null)));
+        assertTrue(filter.apply(Map.entry(key2, null)));
         assertNull(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false));
         // still passes
         assertTrue(filter.keep(key2));
@@ -309,19 +308,19 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertTrue(filter.keep(key1));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertTrue(filter.apply(Map.entry(key1, null)));
         assertNull(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false));
         // does not increment counts so will still return true
         assertTrue(filter.keep(key1));
         // increment counts = 2 rejected by field count
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertFalse(filter.apply(Map.entry(key1, null)));
         assertNull(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false));
 
         // now fails
         assertFalse(filter.keep(key1));
 
         // see another key on apply to trigger the seek range
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertFalse(filter.apply(Map.entry(key1, null)));
         Range seekRange = filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false);
         assertNotNull(seekRange);
         assertEquals(seekRange.getStartKey().getRow(), key1.getRow());
@@ -449,8 +448,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         Key key1 = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FOO" + Constants.NULL_BYTE_STRING + "baz");
         Key key2 = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
-        boolean tldResult = filter.apply(new AbstractMap.SimpleEntry<>(key1, null));
-        boolean result = filter.apply(new AbstractMap.SimpleEntry<>(key2, null));
+        boolean tldResult = filter.apply(Map.entry(key1, null));
+        boolean result = filter.apply(Map.entry(key2, null));
 
         verifyAll();
 
@@ -472,10 +471,10 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // process parent first to set up proper root calculations
         Key parent = new Key("row", "datatype" + Constants.NULL + "123.234.345", "BAR" + Constants.NULL_BYTE_STRING + "baz");
         filter.keep(parent);
-        filter.apply(new AbstractMap.SimpleEntry<>(parent, null));
+        filter.apply(Map.entry(parent, null));
 
         Key child = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
-        boolean result = filter.apply(new AbstractMap.SimpleEntry<>(child, null));
+        boolean result = filter.apply(Map.entry(child, null));
 
         verifyAll();
 
@@ -610,10 +609,10 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key key3 = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOOT" + Constants.NULL_BYTE_STRING + "bar");
         Key key4 = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "bar");
 
-        boolean result1 = filter.apply(new AbstractMap.SimpleEntry<>(key1, null));
-        boolean result2 = filter.apply(new AbstractMap.SimpleEntry<>(key2, null));
-        boolean result3 = filter.apply(new AbstractMap.SimpleEntry<>(key3, null));
-        boolean result4 = filter.apply(new AbstractMap.SimpleEntry<>(key4, null));
+        boolean result1 = filter.apply(Map.entry(key1, null));
+        boolean result2 = filter.apply(Map.entry(key2, null));
+        boolean result3 = filter.apply(Map.entry(key3, null));
+        boolean result4 = filter.apply(Map.entry(key4, null));
 
         verifyAll();
 
@@ -656,22 +655,22 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key k4 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok.3", "FOO2\0value3");
 
         // TLD field is applied, kept, no seek range generated
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k1, null)));
+        assertTrue(filter.apply(Map.entry(k1, null)));
         assertTrue(filter.keep(k1));
         assertNull(filter.getSeekRange(k1, null, false));
 
         // child field is not applied, is not kept, no seek range generated
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(k2, null)));
+        assertFalse(filter.apply(Map.entry(k2, null)));
         assertFalse(filter.keep(k2));
         assertNull(filter.getSeekRange(k2, null, false));
 
         // child field is not applied, is not kept, no seek range generated
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(k3, null)));
+        assertFalse(filter.apply(Map.entry(k3, null)));
         assertFalse(filter.keep(k3));
         assertNull(filter.getSeekRange(k3, null, false));
 
         // child field IS applied, IS kept, no seek range generated
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k4, null)));
+        assertTrue(filter.apply(Map.entry(k4, null)));
         assertFalse(filter.keep(k4));
         assertNull(filter.getSeekRange(k4, null, false));
     }
@@ -695,22 +694,22 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key k4 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok.3", "FOO2\0value3");
 
         // TLD field is applied, kept, no seek range generated
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k1, null)));
+        assertTrue(filter.apply(Map.entry(k1, null)));
         assertTrue(filter.keep(k1));
         assertNull(filter.getSeekRange(k1, null, false));
 
         // child field IS applied, IS kept, no seek range generated
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k2, null)));
+        assertTrue(filter.apply(Map.entry(k2, null)));
         assertTrue(filter.keep(k2));
         assertNull(filter.getSeekRange(k2, null, false));
 
         // child field IS applied, IS kept, no seek range generated
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k3, null)));
+        assertTrue(filter.apply(Map.entry(k3, null)));
         assertTrue(filter.keep(k3));
         assertNull(filter.getSeekRange(k3, null, false));
 
         // child field IS applied, IS kept, no seek range generated
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(k4, null)));
+        assertTrue(filter.apply(Map.entry(k4, null)));
         assertTrue(filter.keep(k4));
         assertNull(filter.getSeekRange(k4, null, false));
     }
