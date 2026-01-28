@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import datawave.query.parser.JavaRegexAnalyzer;
 
 /**
- * This class defines the behavior for a matcher that can
+ * This class defines the behavior for a matcher that will determine if it matches against a string or any string elements of a collection.
  */
 public interface Matcher {
 
