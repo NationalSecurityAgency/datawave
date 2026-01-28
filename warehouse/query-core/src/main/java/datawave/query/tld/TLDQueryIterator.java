@@ -133,7 +133,7 @@ public class TLDQueryIterator extends QueryIterator {
                 // document specific case.
                 fiEvaluationFilter = getEventEvaluationFilter();
             } else {
-                fiEvaluationFilter = new TLDFieldIndexQueryFilter(getNonEventFields());
+                fiEvaluationFilter = new TLDFieldIndexQueryFilter(getIndexOnlyFields());
             }
 
             return fiEvaluationFilter.clone();

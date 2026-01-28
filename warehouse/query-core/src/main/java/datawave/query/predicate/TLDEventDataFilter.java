@@ -75,8 +75,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
                     Set<String> excludedFields, Set<String> childFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, queryFields, expressionFilters, includedFields, excludedFields, childFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(),
-                        null, Collections.emptySet());
+        this(script, queryFields, expressionFilters, includedFields, excludedFields, childFields, maxFieldsBeforeSeek, maxKeysBeforeSeek,
+                        Collections.emptyMap(), null, Collections.emptySet());
     }
 
     /**
@@ -575,6 +575,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         fields = Sets.intersection(fields, identifiers);
 
         queryFields = sortedImmutableList(fields);
+        if (queryFields == null) {
+            queryFields = Collections.emptyList();
+        }
     }
 
     /**

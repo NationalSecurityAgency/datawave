@@ -107,6 +107,22 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
 
+    @Test
+    public void tf_index_exceededValue_trailingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'z.*'))";
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseTLDExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("q r s");
+        values.add("q");
+        values.add("r");
+        values.add("s");
+        event.getValue().put("TF_FIELD1", values);
+        index_test(seekRange, query, false, event, configureTLDTestData(11), Collections.emptyList());
+    }
+
     /**
      * Document specific range given expected from RangePartitioner and EVENT_FIELD1 index lookup. ExceededValueThreshold TF FIELD triggers TF index lookup for
      * evaluation.
@@ -144,6 +160,22 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
 
         tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.emptyList());
+    }
+
+    @Test
+    public void tf_negation_exceededValue_leadingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ '.*b'))";
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseTLDExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("q r s");
+        values.add("q");
+        values.add("r");
+        values.add("s");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, configureTLDTestData(11), Collections.emptyList());
     }
 
     /**
@@ -210,6 +242,46 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
 
         tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.emptyList());
+    }
+
+    @Test
+    public void tf_negation_exceededValue_trailingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'b.*'))";
+        Map.Entry<Key,Map<String,List<String>>> event = getBaseTLDExpectedEvent("123.345.456");
+        // add the additional tf entries expected
+        List<String> values = new ArrayList<>(event.getValue().get("TF_FIELD1"));
+        values.add("q r s");
+        values.add("q");
+        values.add("r");
+        values.add("s");
+        event.getValue().put("TF_FIELD1", values);
+        tf_test(seekRange, query, event, configureTLDTestData(11), Collections.emptyList());
+    }
+
+    @Test
+    public void tf_exceededValue_leadingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
+        tf_test(seekRange, query, getBaseTLDExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.emptyList());
+    }
+
+    @Test
+    public void tf_event_exceededValue_leadingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
+        event_test(seekRange, query, false, getBaseTLDExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.emptyList());
+    }
+
+    @Test
+    public void tf_event_exceededValue_trailingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
+        event_test(seekRange, query, false, getBaseTLDExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.emptyList());
     }
 
     @Test
