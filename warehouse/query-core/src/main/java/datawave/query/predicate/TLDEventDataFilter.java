@@ -574,9 +574,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         Set<String> identifiers = extractIdentifiersFromScript(script);
         fields = Sets.intersection(fields, identifiers);
 
-        queryFields = new ArrayList<>(fields);
-        Collections.sort(queryFields);
-        queryFields = Collections.unmodifiableList(queryFields);
+        queryFields = sortedImmutableList(fields);
     }
 
     /**
