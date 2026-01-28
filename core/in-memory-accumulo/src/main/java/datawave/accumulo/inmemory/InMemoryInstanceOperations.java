@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import org.apache.accumulo.core.classloader.ClassLoaderUtil;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.admin.ActiveCompaction;
@@ -97,8 +96,8 @@ class InMemoryInstanceOperations implements InstanceOperations {
     @Override
     public boolean testClassLoad(String className, String asTypeName) throws AccumuloException, AccumuloSecurityException {
         try {
-            ClassLoaderUtil.loadClass(className, Class.forName(asTypeName));
-        } catch (ClassNotFoundException e) {
+            Class.forName(className).asSubclass(Class.forName(asTypeName));
+        } catch (ClassNotFoundException | ClassCastException e) {
             log.warn("Could not find class named '" + className + "' in testClassLoad.", e);
             return false;
         }

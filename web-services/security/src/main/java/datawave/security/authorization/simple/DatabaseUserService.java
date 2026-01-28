@@ -15,13 +15,11 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -87,7 +85,6 @@ import datawave.security.authorization.SubjectIssuerDNPair;
  * </tr>
  * </table>
  */
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DatabaseUserService implements DatawaveUserService {
     private final Logger log = LoggerFactory.getLogger(getClass());
 

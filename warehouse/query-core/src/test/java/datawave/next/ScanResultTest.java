@@ -228,6 +228,70 @@ public class ScanResultTest {
         assertTrue(right.isTimeout());
     }
 
+    @Test
+    public void testIsIntersectionPossibleOneToOne() {
+        // non-matching singletons
+        ScanResult left = create("uid-a");
+        ScanResult right = create("uid-b");
+        assertIntersectionPossible(left, right, false);
+
+        // matching singletons
+        left = create("uid-c");
+        right = create("uid-c");
+        assertIntersectionPossible(left, right, true);
+    }
+
+    @Test
+    public void testIsIntersectionPossibleManyToOne() {
+        // singleton sorts before results
+        ScanResult left = create("uid-a");
+        ScanResult right = create("uid-b", "uid-c", "uid-d");
+        assertIntersectionPossible(left, right, false);
+
+        // singleton is at boundary
+        left = create("uid-b");
+        right = create("uid-b", "uid-c", "uid-d");
+        assertIntersectionPossible(left, right, true);
+
+        // singleton is within boundary
+        left = create("uid-c");
+        right = create("uid-b", "uid-c", "uid-d");
+        assertIntersectionPossible(left, right, true);
+
+        // singleton sorts after results
+        left = create("uid-e");
+        right = create("uid-b", "uid-c", "uid-d");
+        assertIntersectionPossible(left, right, false);
+    }
+
+    @Test
+    public void testIsIntersectionPossibleManyToMany() {
+        // non-matching sets
+        ScanResult left = create("uid-a", "uid-b");
+        ScanResult right = create("uid-c", "uid-d");
+        assertIntersectionPossible(left, right, false);
+
+        // sets match at boundary
+        left = create("uid-a", "uid-b");
+        right = create("uid-b", "uid-c");
+        assertIntersectionPossible(left, right, true);
+
+        // sets upper and lower bounds match perfectly
+        left = create("uid-a", "uid-b");
+        right = create("uid-a", "uid-b");
+        assertIntersectionPossible(left, right, true);
+
+        // one set is fully contained within the other
+        left = create("uid-a", "uid-b", "uid-c", "uid-c");
+        right = create("uid-b", "uid-c");
+        assertIntersectionPossible(left, right, true);
+    }
+
+    private void assertIntersectionPossible(ScanResult left, ScanResult right, boolean expected) {
+        assertEquals(expected, left.isIntersectionPossible(right));
+        assertEquals(expected, right.isIntersectionPossible(left));
+    }
+
     private void testStandardIntersection(ScanResult left, ScanResult right, int expected) {
         left.intersect(right);
         assertEquals(expected, left.getResults().size());
@@ -263,6 +327,21 @@ public class ScanResultTest {
         right.setAllowPartialIntersections(true);
         right.setSource(SOURCE.EQ);
         right.setTimeout(true);
+    }
+
+    /**
+     * Create a ScanResult given the following uids
+     *
+     * @param uids
+     *            the uids
+     * @return a ScanResult
+     */
+    private ScanResult create(String... uids) {
+        ScanResult result = new ScanResult();
+        for (String uid : uids) {
+            result.addKey(new Key(ROW, "datatype\0" + uid));
+        }
+        return result;
     }
 
     /**
