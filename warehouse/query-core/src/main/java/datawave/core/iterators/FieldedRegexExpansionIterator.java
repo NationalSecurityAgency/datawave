@@ -132,7 +132,6 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
         if (log.isDebugEnabled()) {
             log.debug("tk: {}", k.toStringNoTime());
         }
-        log.info("tk: {}", k);
 
         if (TimeoutExceptionIterator.exceededTimedValue(Pair.of(k, v))) {
             return new FilterResult(true, AdvanceResult.NEXT);

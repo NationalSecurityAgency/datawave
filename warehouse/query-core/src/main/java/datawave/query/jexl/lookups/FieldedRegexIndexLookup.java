@@ -89,7 +89,7 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
                     }
 
                 } catch (ExceededThresholdException e) {
-                    log.info("ExceededThresholdException", e);
+                    log.warn("ExceededThresholdException", e);
                     exceededValueThreshold.set(true);
                     indexLookupMap.get(field).setThresholdExceeded();
                 } catch (Exception e) {

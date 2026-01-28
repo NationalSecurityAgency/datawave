@@ -63,10 +63,8 @@ public class TimeoutIterator extends WrappingIterator {
     @Override
     public void next() throws IOException {
         if (isUnfairExecution()) {
-            log.info("next: unfair");
             throw new IteratorTimeoutException("Exception next()");
         }
-        log.info("next: fair");
         super.next();
     }
 
@@ -82,10 +80,8 @@ public class TimeoutIterator extends WrappingIterator {
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (isUnfairExecution()) {
-            log.info("seek: unfair");
             throw new IteratorTimeoutException("Exception seek()");
         }
-        log.info("seek: fair");
         super.seek(range, columnFamilies, inclusive);
     }
 }
