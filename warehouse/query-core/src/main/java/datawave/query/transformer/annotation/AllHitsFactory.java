@@ -154,11 +154,6 @@ public class AllHitsFactory {
         th.setOneBest(best);
 
         Set<TermHit> hits = term.getHits();
-        if (hits == null) {
-            hits = new TreeSet<>(TERM_HIT_COMPARATOR);
-            term.setHits(hits);
-        }
-
         hits.add(th);
 
         // rollup confidence
@@ -194,6 +189,7 @@ public class AllHitsFactory {
             t.setConfidence(firstValue.getScore());
             t.getTimeRange().setStartTime(convertTime(boundary.getStart(), timeUnit));
             t.getTimeRange().setEndTime(convertTime(boundary.getEnd(), timeUnit));
+            t.setHits(new TreeSet<>(TERM_HIT_COMPARATOR));
             allHit.getContext().add(t);
 
             // now check if this segment also contains the hit
