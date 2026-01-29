@@ -14,6 +14,7 @@ import static org.powermock.reflect.Whitebox.setInternalState;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -620,8 +621,9 @@ public class QueryExecutorBeanTest {
 
     @Test
     public void testBeginDateAfterEndDate() throws Exception {
-        final Date beginDate = new Date(2018, 1, 2);
-        final Date endDate = new Date(2018, 1, 1);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        final Date beginDate = sdf.parse("2024-01-02");
+        final Date endDate = sdf.parse("2024-01-01");
 
         final MultivaluedMap<String,String> queryParameters = createNewQueryParameterMap();
         queryParameters.remove(QueryParameters.QUERY_BEGIN);

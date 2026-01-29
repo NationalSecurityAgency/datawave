@@ -1017,7 +1017,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     matched += future.getIvaratorRunnable().getMatched();
                     scanned += future.getIvaratorRunnable().getScanned();
                     firstIvaratorRunnableCreated = Math.min(firstIvaratorRunnableCreated, future.getIvaratorRunnable().getCreatedTime());
-                    IteratorThreadPoolManager.suspendIvarator(future, true, true, this.initEnv);
+                    IteratorThreadPoolManager.suspendIvarator(future, true, this.initEnv);
                 }
             } else {
                 // We can't use the source anymore since it is issued by Accumulo Tablet. We suspend any
@@ -1027,7 +1027,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     // RUNNING : save a restartKey and suspend the IvaratorRunnable
                     // CREATED: remove the Future from the executor's workQueue to prevent it from starting.
                     // The IvaratorFutures are left in IteratorThreadPoolManager so they can be retrieved in the next call
-                    IteratorThreadPoolManager.suspendIvarator(future, true, false, this.initEnv);
+                    IteratorThreadPoolManager.suspendIvarator(future, false, this.initEnv);
                     // At this point, the IvaratorRunnable should be CREATED, SUSPENDED, or COMPLETED. If it is none of these,
                     // then we need to remove its reference from the IteratorThreadPoolManager and run a new one next time
                     Status status = future.getIvaratorRunnable().getStatus();
@@ -1313,11 +1313,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             for (IvaratorRunnable ivaratorRunnable : runnables) {
                 String taskName = ivaratorRunnable.getTaskName();
                 Status status = ivaratorRunnable.getStatus();
-                if (!status.equals(CREATED) && !status.equals(SUSPENDED) && !status.equals(COMPLETED)) {
-                    log.info(String.format("%s: Resuming Ivarator %s failed - taskName:%s has status:%s", controlDir, ivaratorInfo, taskName, status));
-                    canResume = false;
-                    break;
-                }
                 // All IvaratorRunnables from the previous execution must reference the same Ivarator or something is wrong
                 if (previousIvarator == null) {
                     previousIvarator = ivaratorRunnable.getIvarator();
@@ -1342,9 +1337,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 // all IvaratorRunnables must reference the new Ivarator
                 ivaratorRunnable.setIvarator(this);
                 Status status = ivaratorRunnable.getStatus();
+                String taskName = ivaratorRunnable.getTaskName();
                 if (status.equals(CREATED) || status.equals(SUSPENDED)) {
                     try {
-                        String taskName = ivaratorRunnable.getTaskName();
                         // remove the previous IvaratorFuture from IteratorThreadPoolManager
                         IteratorThreadPoolManager.removeIvarator(taskName, this.initEnv);
                         ivaratorRunnable.prepareForResume(this);
@@ -1358,6 +1353,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     }
                 } else if (status.equals(COMPLETED)) {
                     completed++;
+                } else {
+                    // It's possible that there was a problem suspending a previous IvaratorRunnable, so we should
+                    // ensure that suspendRequested is set and remove the previous IvaratorFuture from IteratorThreadPoolManager.
+                    // A new IvaratorRunnable and IvaratorFuture will be created
+                    IvaratorFuture future = IteratorThreadPoolManager.getIvaratorFuture(taskName, this.initEnv);
+                    // No need to wait 60 seconds for the loop to exit; Very likely that it already has exited
+                    IteratorThreadPoolManager.suspendIvarator(future, true, this.initEnv, 500, TimeUnit.MILLISECONDS);
                 }
             }
             int recreated = this.boundingFiRanges.size() - resumed - completed;

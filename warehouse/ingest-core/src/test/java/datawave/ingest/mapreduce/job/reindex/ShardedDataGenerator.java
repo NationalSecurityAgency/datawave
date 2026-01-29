@@ -112,7 +112,7 @@ public class ShardedDataGenerator {
     public static RawRecordContainer generateEvent(Configuration config, String dataType, Date date, byte[] rawData, ColumnVisibility visibility) {
         RawRecordContainer event = new RawRecordContainerImpl();
         event.setRawData(rawData);
-        event.setDate(date.getTime());
+        event.setTimestamp(date.getTime());
         event.generateId(null);
         Type t = TypeRegistry.getInstance(config).get(dataType);
         event.setDataType(t);

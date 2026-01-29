@@ -107,7 +107,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 
-public class RangeStream extends BaseVisitor implements CloseableIterable<QueryPlan> {
+public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
     private static final int MAX_MEDIAN = 20;
 
@@ -152,8 +152,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
     protected NumShardFinder numShardFinder;
 
-    private int maxLinesToPrint = -1;
-    private int linesPrinted = 0;
+    protected int maxLinesToPrint = -1;
+    protected int linesPrinted = 0;
 
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
@@ -178,6 +178,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
     }
 
+    @Override
     public CloseableIterable<QueryPlan> streamPlans(JexlNode script) {
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(script);
 
@@ -717,7 +718,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return ScannerStream.noData(node);
     }
 
-    private boolean isUnOrNotFielded(JexlNode node) {
+    protected boolean isUnOrNotFielded(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
             if (identifier.getName().equals(Constants.ANY_FIELD) || identifier.getName().equals(Constants.NO_FIELD)) {
