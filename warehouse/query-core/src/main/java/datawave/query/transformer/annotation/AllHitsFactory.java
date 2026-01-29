@@ -1,5 +1,8 @@
 package datawave.query.transformer.annotation;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
+import datawave.query.transformer.annotation.AnnotationHitsTransformer.SegmentHit;
 import datawave.query.transformer.annotation.model.AllHit;
 import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.transformer.annotation.model.Term;
@@ -33,8 +37,8 @@ public class AllHitsFactory {
      * @return
      * @throws AllHitsException
      */
-    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
-                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments) throws AllHitsException {
+    public AllHits create(String annotationId, List<SegmentHit> orderedHits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments)
+                    throws AllHitsException {
         return create(annotationId, orderedHits, sortedSegments, TimeUnit.MILLISECONDS);
     }
 
@@ -52,8 +56,8 @@ public class AllHitsFactory {
      * @return
      * @throws AllHitsException
      */
-    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
-                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, TimeUnit timeUnit) throws AllHitsException {
+    public AllHits create(String annotationId, List<SegmentHit> orderedHits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, TimeUnit timeUnit)
+                    throws AllHitsException {
         if (orderedHits.isEmpty()) {
             return null;
         }
@@ -62,47 +66,62 @@ public class AllHitsFactory {
         AllHits allHits = new AllHits();
         allHits.setAnnotationId(annotationId);
 
-        // contains all hits across a single boundary
-        AllHit allHit = new AllHit();
+        // merge segment hits into overlapping contexts to be processed together
+        List<MergedHit> mergedHits = mergeOverlapping(orderedHits);
 
         // extract hits and convert to pojo
-        for (AnnotationHitsTransformer.SegmentHit hit : orderedHits) {
-            if (allHit.getHitBoundary() != null && !allHit.getHitBoundary().equals(hit.getHitBoundary())) {
-                // create a new allHit
-                addAllHit(allHits, allHit);
-                allHit = new AllHit();
-            }
-
-            // track the current boundary this hit will cover, this is not output, but keeps things organized
-            allHit.setHitBoundary(hit.getHitBoundary());
-
-            if (hit.getContextEnd() == null) {
-                throw new AllHitsException("hit end context not set");
-            }
+        for (MergedHit hit : mergedHits) {
+            // contains all hits sharing a context
+            AllHit allHit = new AllHit();
 
             // both the start and end are inclusive
-            SortedMap<SegmentBoundary,List<SegmentValue>> contextView = sortedSegments.subMap(hit.getContextStart(), true, hit.getContextEnd(), true);
+            SortedMap<SegmentBoundary,List<SegmentValue>> contextView = sortedSegments.subMap(hit.getStart(), true, hit.getEnd(), true);
             if (contextView.isEmpty()) {
                 // no context means the hit missed the available data
                 return null;
             }
 
-            if (allHit.getOneBestContext().isEmpty()) {
-                // convert to an iterator to build the best context window
-                Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> itr = contextView.entrySet().iterator();
-                applyContextAndHit(allHit, hit, itr, timeUnit);
-            } else {
-                // just write the new TermHit
-                SegmentBoundary hitBoundary = hit.getHitBoundary();
-                SegmentValue hitValue = sortedSegments.get(hitBoundary).get(hit.getValueHitIndex());
-                applyHit(allHit, hit, hitValue, timeUnit);
-            }
+            // convert to an iterator to build the best context window
+            Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> itr = contextView.entrySet().iterator();
+            applyContextAndHit(allHit, hit, itr, timeUnit);
+
+            addAllHit(allHits, allHit);
         }
 
-        // add last allHit to allHits
-        addAllHit(allHits, allHit);
-
         return allHits;
+    }
+
+    /**
+     * Convert SegmentHits into MergedHits. If a SegmentHit appears within the context of the previous SegmentHit it will be merged into that hit. The MergedHit
+     * will have its context extended to include all SegmentHits that have been merged. This will repeat until a SegmentHit occurs outside the context of the
+     * MergedHit. At most one MergedHit will be created for each SegmentHit.
+     *
+     * @param orderedHits
+     *            non-null ordered list of SegmentHit
+     * @return
+     * @throws AllHitsException
+     */
+    private List<MergedHit> mergeOverlapping(List<SegmentHit> orderedHits) throws AllHitsException {
+        List<MergedHit> merged = new ArrayList<>();
+
+        for (SegmentHit hit : orderedHits) {
+            MergedHit merge = null;
+            for (MergedHit mergedHit : merged) {
+                if (mergedHit.contains(hit.getHitBoundary())) {
+                    merge = mergedHit;
+                    break;
+                }
+            }
+
+            if (merge == null) {
+                merge = new MergedHit();
+                merged.add(merge);
+            }
+
+            merge.add(hit);
+        }
+
+        return merged;
     }
 
     /**
@@ -124,12 +143,12 @@ public class AllHitsFactory {
         return (float) timeInNanos / (float) targetInNanos;
     }
 
-    private void applyHit(AllHit allHit, AnnotationHitsTransformer.SegmentHit segmentHit, SegmentValue hitValue, TimeUnit timeUnit) {
+    private void applyHit(AllHit allHit, SegmentBoundary segmentBoundary, SegmentValue hitValue, TimeUnit timeUnit) {
         TermHit th = new TermHit();
         th.setTermLabel(hitValue.getValue());
         th.setConfidence(hitValue.getScore());
-        th.getTimeRange().setStartTime(convertTime(segmentHit.getHitBoundary().getStart(), timeUnit));
-        th.getTimeRange().setEndTime(convertTime(segmentHit.getHitBoundary().getEnd(), timeUnit));
+        th.getTimeRange().setStartTime(convertTime(segmentBoundary.getStart(), timeUnit));
+        th.getTimeRange().setEndTime(convertTime(segmentBoundary.getEnd(), timeUnit));
         allHit.getTermHits().add(th);
 
         // rollup confidence
@@ -143,13 +162,13 @@ public class AllHitsFactory {
      *
      * @param allHit
      *            the to be updated
-     * @param segmentHit
+     * @param mergedHit
      * @param contextIterator
      * @param timeUnit
      *            the time unit to use for time ranges
      */
-    private void applyContextAndHit(AllHit allHit, AnnotationHitsTransformer.SegmentHit segmentHit,
-                    Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> contextIterator, TimeUnit timeUnit) throws AllHitsException {
+    private void applyContextAndHit(AllHit allHit, MergedHit mergedHit, Iterator<Map.Entry<SegmentBoundary,List<SegmentValue>>> contextIterator,
+                    TimeUnit timeUnit) throws AllHitsException {
         while (contextIterator.hasNext()) {
             Map.Entry<SegmentBoundary,List<SegmentValue>> contextEntry = contextIterator.next();
             SegmentBoundary boundary = contextEntry.getKey();
@@ -168,12 +187,16 @@ public class AllHitsFactory {
             allHit.getOneBestContext().add(t);
 
             // now check if this segment also contains the hit
-            if (segmentHit.getHitBoundary() == boundary) {
-                if (contextEntry.getValue().size() <= segmentHit.getValueHitIndex()) {
-                    throw new AllHitsException("hit index outside of available values for segment. SegmentValues:" + contextEntry.getValue().size() + " index:"
-                                    + segmentHit.getValueHitIndex());
+            List<Integer> hitIndexes = mergedHit.getHitIndexes(boundary);
+            if (hitIndexes != null && !hitIndexes.isEmpty()) {
+                for (Integer hitIndex : hitIndexes) {
+                    if (contextEntry.getValue().size() <= hitIndex) {
+                        throw new AllHitsException("hit index outside of available values for segment. SegmentValues:" + contextEntry.getValue().size()
+                                        + " index:" + hitIndex);
+                    }
+                    SegmentValue value = contextEntry.getValue().get(hitIndex);
+                    applyHit(allHit, boundary, value, timeUnit);
                 }
-                applyHit(allHit, segmentHit, contextEntry.getValue().get(segmentHit.getValueHitIndex()), timeUnit);
             }
         }
     }
@@ -182,6 +205,58 @@ public class AllHitsFactory {
         allHits.getKeywordResultList().add(allHit);
         if (allHits.getMaxTermHitConfidence() < allHit.getConfidence()) {
             allHits.setMaxTermHitConfidence(allHit.getConfidence());
+        }
+    }
+
+    private static class MergedHit {
+        private final Comparator<SegmentBoundary> comparator;
+
+        private SegmentBoundary start;
+        private SegmentBoundary end;
+        private Map<SegmentBoundary,List<Integer>> hits = new HashMap<>();
+
+        private MergedHit() {
+            this(new BoundaryComparator());
+        }
+
+        private MergedHit(Comparator<SegmentBoundary> comparator) {
+            this.comparator = comparator;
+        }
+
+        public void add(SegmentHit hit) throws AllHitsException {
+            List<Integer> segmentHits = hits.computeIfAbsent(hit.getHitBoundary(), x -> new ArrayList<>());
+            segmentHits.add(hit.getValueHitIndex());
+
+            if (start == null || comparator.compare(start, hit.getContextStart()) > 0) {
+                start = hit.getContextStart();
+            }
+
+            if (hit.getContextEnd() == null) {
+                throw new AllHitsException("hit end context not set");
+            }
+
+            if (end == null || comparator.compare(end, hit.getContextEnd()) < 0) {
+                end = hit.getContextEnd();
+            }
+        }
+
+        public boolean contains(SegmentBoundary b) {
+            if (b == null || start == null || end == null) {
+                return false;
+            }
+            return comparator.compare(start, b) <= 0 && comparator.compare(b, end) <= 0;
+        }
+
+        public List<Integer> getHitIndexes(SegmentBoundary segment) {
+            return hits.get(segment);
+        }
+
+        public SegmentBoundary getStart() {
+            return start;
+        }
+
+        public SegmentBoundary getEnd() {
+            return end;
         }
     }
 }

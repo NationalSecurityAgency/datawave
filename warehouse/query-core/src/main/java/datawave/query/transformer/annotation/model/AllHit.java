@@ -36,12 +36,4 @@ public class AllHit {
     public void setConfidence(float confidence) {
         this.confidence = confidence;
     }
-
-    public SegmentBoundary getHitBoundary() {
-        return hitBoundary;
-    }
-
-    public void setHitBoundary(SegmentBoundary hitBoundary) {
-        this.hitBoundary = hitBoundary;
-    }
 }
