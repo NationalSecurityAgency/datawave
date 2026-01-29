@@ -369,6 +369,7 @@ public class AllHitsFactoryTest {
         Term term = new Term();
         term.setLabel(label);
         term.setConfidence(confidence);
+        term.setHits(new TreeSet<>(TERM_HIT_COMPARATOR));
         term.getTimeRange().setStartTime(start);
         term.getTimeRange().setEndTime(end);
         return term;
