@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -729,11 +728,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     public void addVisitor(Function<ScannerChunk,ScannerChunk> visitorFunction) {
         visitorFunctions.add(visitorFunction);
 
-    }
-
-    @Deprecated(forRemoval = true)
-    public void setTabletLocator(TabletLocator tl) {
-        // no-op
     }
 
     public void setBackoffEnabled(boolean backoffEnabled) {

@@ -16,7 +16,6 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.util.threads.ThreadPools;
 import org.apache.log4j.Logger;
 import org.checkerframework.checker.index.qual.NonNegative;
 
@@ -63,7 +62,7 @@ public class IteratorThreadPoolManager {
         ivaratorRunnableTimeoutMinutes = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
         log.info("Using " + ivaratorRunnableTimeoutMinutes + " minutes for " + IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP);
         // This thread will check for changes to ivaratorRunnableTimeoutMinutes
-        ThreadPools.getServerThreadPools().createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
             try {
                 long value = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
                 if (ivaratorRunnableTimeoutMinutes != value) {
@@ -109,14 +108,14 @@ public class IteratorThreadPoolManager {
                 // If the IvaratorRunnable is still running, then send an IvaratorException into suspend()
                 // just in case the IvaratorFuture is being used. This should not happen, but if it does,
                 // any call to IvaratorFuture.get() will throw the Exception
-                f.getIvaratorRunnable().suspend(new IvaratorException("IvaratorFuture evicted from the cache"));
+                f.getIvaratorRunnable().suspend(60, TimeUnit.SECONDS, new IvaratorException("IvaratorFuture evicted from the cache"));
             }
             log.info("IvaratorFuture for queryId:" + f.getIvaratorRunnable().getQueryId() + " evicted from the cache");
         }).build();
 
         // If Ivarator has been running for a time greater than either its scanTimeout or the ivaratorRunnableTimeoutMinutes,
         // then stop the Ivarator and remove the future from the cache
-        ThreadPools.getServerThreadPools().createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
             Map<String,Integer> queryToTaskMap = new TreeMap<>();
             long now = System.currentTimeMillis();
             ivaratorFutures.asMap().forEach((String taskName, IvaratorFuture future) -> {
@@ -137,7 +136,7 @@ public class IteratorThreadPoolManager {
                         String queryId = ivaratorRunnable.getQueryId();
                         Integer numTasks = queryToTaskMap.get(queryId);
                         if (numTasks == null) {
-                            numTasks = new Integer(0);
+                            numTasks = 0;
                         }
                         queryToTaskMap.put(queryId, numTasks + 1);
                     }
@@ -249,19 +248,26 @@ public class IteratorThreadPoolManager {
         instance(env).ivaratorFutures.invalidate(taskName);
     }
 
-    public static void suspendIvarator(IvaratorFuture future, boolean assumeExecuting, boolean removeFuture, IteratorEnvironment env) {
+    public static void suspendIvarator(IvaratorFuture future, boolean removeFuture, IteratorEnvironment env) {
+        suspendIvarator(future, removeFuture, env, 60, TimeUnit.SECONDS);
+    }
+
+    public static void suspendIvarator(IvaratorFuture future, boolean removeFuture, IteratorEnvironment env, long duration, TimeUnit timeUnit) {
         if (future != null) {
             IvaratorRunnable ivaratorRunnable = future.getIvaratorRunnable();
             // ensure that the task does not get executed if it has not started
             boolean removedBeforeExecution = instance(env).threadPools.get(IVARATOR_THREAD_NAME).remove((Runnable) future.getFuture());
+            long currentDuration = timeUnit.toMillis(duration);
             if (!removedBeforeExecution) {
-                if (assumeExecuting && ivaratorRunnable.getStatus().equals(CREATED)) {
-                    // if the task was not in the workQueue, then wait for it to start
-                    // the duration is used to prevent the Thread from waiting indefinitely
-                    ivaratorRunnable.waitUntilStarted(60, TimeUnit.SECONDS);
+                if (ivaratorRunnable.getStatus().equals(CREATED)) {
+                    // If the task was not in the workQueue, then wait for it to start.
+                    // The duration is used to prevent the Thread from waiting indefinitely
+                    long start = System.currentTimeMillis();
+                    ivaratorRunnable.waitUntilStarted(currentDuration, TimeUnit.MILLISECONDS);
+                    currentDuration = Math.max(currentDuration - (System.currentTimeMillis() - start), 500);
                 }
                 // this will cause the IvaratorRunnable to stop in a controlled manner
-                ivaratorRunnable.suspend(null);
+                ivaratorRunnable.suspend(currentDuration, TimeUnit.MILLISECONDS, null);
             }
             if (removeFuture) {
                 removeIvarator(ivaratorRunnable.getTaskName(), env);
@@ -272,7 +278,7 @@ public class IteratorThreadPoolManager {
     public static void timeoutIvarator(IvaratorFuture future, IteratorEnvironment env, Exception e) {
         if (future != null) {
             // this will cause the IvaratorRunnable to stop (if it is running) in a controlled manner
-            future.getIvaratorRunnable().suspend(e);
+            future.getIvaratorRunnable().suspend(60, TimeUnit.SECONDS, e);
             removeIvarator(future.getIvaratorRunnable().getTaskName(), env);
         }
     }

@@ -8,20 +8,20 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.tables.RangeStreamScanner;
+import datawave.query.tables.ScannerSession;
 import datawave.query.util.Tuple2;
 
 /**
  * Provides a core set of variables for the ScannerStream, Union, and Intersection.
- *
+ * <p>
  * A reference to the underlying {@link datawave.query.tables.RangeStreamScanner} is required for seeking.
- *
+ * <p>
  * Note that the BaseIndexStream does not implement the {@link IndexStream#seek(String)} method. Inheriting classes are responsible for determining the correct
  * implementation.
  */
 public abstract class BaseIndexStream implements IndexStream {
 
-    protected RangeStreamScanner rangeStreamScanner;
+    protected ScannerSession scannerSession;
 
     protected EntryParser entryParser;
 
@@ -39,8 +39,8 @@ public abstract class BaseIndexStream implements IndexStream {
     /**
      * This constructor is used by BaseIndexStreams that have a backing range stream scanner. I.e., this will actually scan the global index
      *
-     * @param rangeStreamScanner
-     *            a range stream scanner
+     * @param scannerSession
+     *            a scanner session, likely a RangeStreamScanner
      * @param entryParser
      *            an entry parser
      * @param node
@@ -50,18 +50,18 @@ public abstract class BaseIndexStream implements IndexStream {
      * @param debugDelegate
      *            a delegate used for debugging (not in use)
      */
-    public BaseIndexStream(RangeStreamScanner rangeStreamScanner, EntryParser entryParser, JexlNode node, StreamContext context, IndexStream debugDelegate) {
-        this.rangeStreamScanner = Preconditions.checkNotNull(rangeStreamScanner);
+    public BaseIndexStream(ScannerSession scannerSession, EntryParser entryParser, JexlNode node, StreamContext context, IndexStream debugDelegate) {
+        this.scannerSession = Preconditions.checkNotNull(scannerSession);
         this.entryParser = Preconditions.checkNotNull(entryParser);
         this.node = node;
-        this.backingIter = Iterators.transform(this.rangeStreamScanner, this.entryParser);
+        this.backingIter = Iterators.transform(this.scannerSession, this.entryParser);
         this.context = context;
         this.debugDelegate = debugDelegate;
     }
 
     /**
      * This constructor is for terms that do not have a range stream scanner.
-     *
+     * <p>
      * This is used by the SHARDS_AND_DAYS hint and terms that do not hit anything in the global index (delayed terms)
      *
      * @param iterator
@@ -74,7 +74,7 @@ public abstract class BaseIndexStream implements IndexStream {
      *            delegate used for debugging (not in use)
      */
     public BaseIndexStream(Iterator<Tuple2<String,IndexInfo>> iterator, JexlNode node, StreamContext context, IndexStream debugDelegate) {
-        this.rangeStreamScanner = null;
+        this.scannerSession = null;
         this.entryParser = null;
         this.node = node;
         this.backingIter = Preconditions.checkNotNull(iterator);
@@ -91,10 +91,10 @@ public abstract class BaseIndexStream implements IndexStream {
      * Reset the backing iterator after a seek. State must stay in sync with changes to the RangeStreamScanner.
      */
     public void resetBackingIterator() {
-        if (rangeStreamScanner != null && entryParser != null) {
+        if (scannerSession != null && entryParser != null) {
             this.peekedElement = null;
             this.hasPeeked = false;
-            this.backingIter = Iterators.transform(this.rangeStreamScanner, this.entryParser);
+            this.backingIter = Iterators.transform(this.scannerSession, this.entryParser);
         }
     }
 

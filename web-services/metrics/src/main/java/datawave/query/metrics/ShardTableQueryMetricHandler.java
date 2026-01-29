@@ -38,7 +38,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
@@ -57,7 +56,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
@@ -105,7 +103,6 @@ import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
 @ApplicationScoped
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 @SuppressWarnings("unused")
 public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
@@ -280,7 +277,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         RawRecordContainerImpl event = new RawRecordContainerImpl();
         event.setConf(this.conf);
         event.setDataType(type);
-        event.setDate(storedQueryMetric.getCreateDate().getTime());
+        event.setTimestamp(storedQueryMetric.getCreateDate().getTime());
         // get security markings from metric, otherwise default to PUBLIC
         Map<String,String> markings = updatedQueryMetric.getMarkings();
         if (markings == null || markings.isEmpty()) {

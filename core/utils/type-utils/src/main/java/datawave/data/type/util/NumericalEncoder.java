@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -41,17 +42,37 @@ import java.util.stream.IntStream;
  */
 public class NumericalEncoder {
 
+    private static final String PLAIN_FORMAT = "0.#########################################################";
+    private static final String SCIENTIFIC_FORMAT = "0.#########################################################E0";
+
     private static Map<String,String> positiveNumsEncodeToIntExponentsMap;
     private static Map<String,String> positiveNumsIntToEncodeExponentsMap;
     private static Map<String,String> negativeNumEncodeToIntExponentsMap;
     private static Map<String,String> negativeNumIntToEncodeExponentsMap;
-    private static final NumberFormat plainFormatter = new DecimalFormat("0.#########################################################");
-    private static final NumberFormat scientificFormatter = new DecimalFormat("0.#########################################################E0");
+    private static final ThreadLocal<NumberFormat> plainFormatter = ThreadLocal.withInitial(new DecimalFormatSupplier(PLAIN_FORMAT));
+    private static final ThreadLocal<NumberFormat> scientificFormatter = ThreadLocal.withInitial(new DecimalFormatSupplier(SCIENTIFIC_FORMAT));
     private static final String zero = "+AE0";
     private static final List<String> uppercaseLetters = createLetterList('A', 'Z');
     private static final List<String> lowercaseLetters = createLetterList('a', 'z');
     private static final String encodedRegex = "(\\!|\\+)[a-zA-Z][E|e][0-9].?[0-9]*";
     private static final Pattern encodedPattern = Pattern.compile(encodedRegex);
+
+    /**
+     * A {@link Supplier} for a {@link NumberFormat}. This prevents multiple threads from blocking on synchronized blocks within {@link DecimalFormat}.
+     */
+    private static class DecimalFormatSupplier implements Supplier<NumberFormat> {
+
+        private final String format;
+
+        public DecimalFormatSupplier(String format) {
+            this.format = format;
+        }
+
+        @Override
+        public NumberFormat get() {
+            return new DecimalFormat(format);
+        }
+    }
 
     static {
         initNegativeExponents();
@@ -85,21 +106,21 @@ public class NumericalEncoder {
                 return zero;
             } else if (decimal.compareTo(BigDecimal.ZERO) > 0) {
                 // Positive
-                String decString = scientificFormatter.format(decimal);
+                String decString = scientificFormatter.get().format(decimal);
                 String[] decParts = decString.split("E");
                 mantissa = decParts[0];
                 String exp = decParts[1];
                 encodedExponent = positiveNumsIntToEncodeExponentsMap.get(exp);
             } else {
                 // Negative
-                String decString = scientificFormatter.format(decimal);
+                String decString = scientificFormatter.get().format(decimal);
                 String[] decParts = decString.split("E");
                 mantissa = decParts[0];
                 String exp = decParts[1];
                 encodedExponent = negativeNumIntToEncodeExponentsMap.get(exp);
                 BigDecimal bigDecMantissa = new BigDecimal(mantissa);
                 bigDecMantissa = BigDecimal.TEN.add(bigDecMantissa);
-                mantissa = plainFormatter.format(bigDecMantissa);
+                mantissa = plainFormatter.get().format(bigDecMantissa);
 
             }
 

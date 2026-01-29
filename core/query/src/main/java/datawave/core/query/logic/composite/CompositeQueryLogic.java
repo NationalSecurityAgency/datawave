@@ -301,7 +301,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                             break;
                         }
                     }
-
                 } catch (Exception e) {
                     exceptions.put(logicName, e);
                     log.error("Failed to initialize {}", logic.getClass().getName(), e);
