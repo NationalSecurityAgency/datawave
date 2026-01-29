@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -19,10 +20,14 @@ import datawave.query.jexl.visitors.PushdownNegationVisitor;
 import datawave.query.parser.JavaRegexAnalyzer;
 
 public class TermExtractor implements Serializable {
-    private Set<String> fields;
+    final private Set<String> fields;
 
     public TermExtractor(Set<String> fields) {
-        this.fields = fields;
+        if (fields == null) {
+            this.fields = null;
+        } else {
+            this.fields = fields.stream().map(String::toUpperCase).collect(Collectors.toSet());
+        }
     }
 
     @Override
@@ -61,7 +66,7 @@ public class TermExtractor implements Serializable {
             return false;
         }
 
-        return fields == null || fields.contains(identifier);
+        return fields == null || fields.contains(identifier.toUpperCase());
     }
 
     /**
