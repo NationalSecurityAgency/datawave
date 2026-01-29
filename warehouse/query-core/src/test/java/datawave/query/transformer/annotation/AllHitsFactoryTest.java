@@ -1,11 +1,14 @@
 package datawave.query.transformer.annotation;
 
+import static datawave.query.transformer.annotation.AllHitsFactory.TERM_HIT_COMPARATOR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -107,8 +110,7 @@ public class AllHitsFactoryTest {
         expected.setMaxTermHitConfidence(.3f);
         AllHit hit1 = new AllHit();
         hit1.setConfidence(.3f);
-        hit1.getOneBestContext().add(getTerm("hit", .3f, 3f, 4f));
-        hit1.getTermHits().add(getTermHit("hit", .3f, 3f, 4f));
+        hit1.getContext().add(addTermHit(getTerm("hit", .3f, 3f, 4f), getTermHit("hit", .3f, true)));
         expected.getKeywordResultList().add(hit1);
 
         assertEquals(objectMapper.writeValueAsString(expected), objectMapper.writeValueAsString(result));
@@ -130,10 +132,11 @@ public class AllHitsFactoryTest {
         expected.setMaxTermHitConfidence(.6f);
         AllHit hit1 = new AllHit();
         hit1.setConfidence(.6f);
-        hit1.getOneBestContext().add(getTerm("hit2", .6f, 3f, 4f));
-        hit1.getTermHits().add(getTermHit("hit1", .3f, 3f, 4f));
-        hit1.getTermHits().add(getTermHit("hit2", .6f, 3f, 4f));
-        hit1.getTermHits().add(getTermHit("hit3", .4f, 3f, 4f));
+        Term t = getTerm("hit2", .6f, 3f, 4f);
+        addTermHit(t, getTermHit("hit1", .3f, false));
+        addTermHit(t, getTermHit("hit2", .6f, true));
+        addTermHit(t, getTermHit("hit3", .4f, false));
+        hit1.getContext().add(t);
         expected.getKeywordResultList().add(hit1);
 
         assertEquals(objectMapper.writeValueAsString(expected), objectMapper.writeValueAsString(result));
@@ -156,12 +159,10 @@ public class AllHitsFactoryTest {
         expected.setMaxTermHitConfidence(.6f);
         AllHit hit1 = new AllHit();
         hit1.setConfidence(.3f);
-        hit1.getOneBestContext().add(getTerm("term1", .6f, 3f, 4f));
-        hit1.getTermHits().add(getTermHit("hit1", .3f, 3f, 4f));
+        hit1.getContext().add(addTermHit(getTerm("term1", .6f, 3f, 4f), getTermHit("hit1", .3f, false)));
         AllHit hit2 = new AllHit();
         hit2.setConfidence(.6f);
-        hit2.getOneBestContext().add(getTerm("hit2", .6f, 4f, 5f));
-        hit2.getTermHits().add(getTermHit("hit2", .6f, 4f, 5f));
+        hit2.getContext().add(addTermHit(getTerm("hit2", .6f, 4f, 5f), getTermHit("hit2", .6f, true)));
         expected.getKeywordResultList().add(hit1);
         expected.getKeywordResultList().add(hit2);
 
@@ -185,12 +186,10 @@ public class AllHitsFactoryTest {
         expected.setMaxTermHitConfidence(.6f);
         AllHit hit1 = new AllHit();
         hit1.setConfidence(.3f);
-        hit1.getOneBestContext().add(getTerm("term1", .6f, 4f, 5f));
-        hit1.getTermHits().add(getTermHit("hit1", .3f, 4f, 5f));
+        hit1.getContext().add(addTermHit(getTerm("term1", .6f, 4f, 5f), getTermHit("hit1", .3f, false)));
         AllHit hit2 = new AllHit();
         hit2.setConfidence(.6f);
-        hit2.getOneBestContext().add(getTerm("hit2", .6f, 3f, 4f));
-        hit2.getTermHits().add(getTermHit("hit2", .6f, 3f, 4f));
+        hit2.getContext().add(addTermHit(getTerm("hit2", .6f, 3f, 4f), getTermHit("hit2", .6f, true)));
         expected.getKeywordResultList().add(hit2);
         expected.getKeywordResultList().add(hit1);
 
@@ -210,13 +209,12 @@ public class AllHitsFactoryTest {
         expected.setMaxTermHitConfidence(.3f);
         AllHit hit1 = new AllHit();
         hit1.setConfidence(.3f);
-        hit1.getOneBestContext().add(getTerm("a2", .5f, 1f, 2f));
-        hit1.getOneBestContext().add(getTerm("b2", .6f, 2f, 3f));
-        hit1.getOneBestContext().add(getTerm("max", .7f, 3f, 4f));
-        hit1.getOneBestContext().add(getTerm("c2", .8f, 4f, 5f));
-        hit1.getOneBestContext().add(getTerm("d1", .2f, 5f, 6f));
+        hit1.getContext().add(getTerm("a2", .5f, 1f, 2f));
+        hit1.getContext().add(getTerm("b2", .6f, 2f, 3f));
+        hit1.getContext().add(addTermHit(getTerm("max", .7f, 3f, 4f), getTermHit("hit", .3f, false)));
+        hit1.getContext().add(getTerm("c2", .8f, 4f, 5f));
+        hit1.getContext().add(getTerm("d1", .2f, 5f, 6f));
 
-        hit1.getTermHits().add(getTermHit("hit", .3f, 3f, 4f));
         expected.getKeywordResultList().add(hit1);
 
         assertEquals(objectMapper.writeValueAsString(expected), objectMapper.writeValueAsString(result));
@@ -238,14 +236,12 @@ public class AllHitsFactoryTest {
         expected.setMaxTermHitConfidence(.8f);
         AllHit allHit1 = new AllHit();
         allHit1.setConfidence(.8f);
-        allHit1.getOneBestContext().add(getTerm("a2", .5f, 1f, 2f));
-        allHit1.getOneBestContext().add(getTerm("b2", .6f, 2f, 3f));
-        allHit1.getOneBestContext().add(getTerm("max", .7f, 3f, 4f));
-        allHit1.getOneBestContext().add(getTerm("c2", .8f, 4f, 5f));
-        allHit1.getOneBestContext().add(getTerm("d1", .2f, 5f, 6f));
+        allHit1.getContext().add(getTerm("a2", .5f, 1f, 2f));
+        allHit1.getContext().add(getTerm("b2", .6f, 2f, 3f));
+        allHit1.getContext().add(addTermHit(getTerm("max", .7f, 3f, 4f), getTermHit("hit", .3f, false)));
+        allHit1.getContext().add(addTermHit(getTerm("c2", .8f, 4f, 5f), getTermHit("c2", .8f, true)));
+        allHit1.getContext().add(getTerm("d1", .2f, 5f, 6f));
 
-        allHit1.getTermHits().add(getTermHit("hit", .3f, 3f, 4f));
-        allHit1.getTermHits().add(getTermHit("c2", .8f, 4f, 5f));
         expected.getKeywordResultList().add(allHit1);
 
         assertEquals(objectMapper.writeValueAsString(expected), objectMapper.writeValueAsString(result));
@@ -267,14 +263,12 @@ public class AllHitsFactoryTest {
         expected.setMaxTermHitConfidence(.8f);
         AllHit allHit1 = new AllHit();
         allHit1.setConfidence(.8f);
-        allHit1.getOneBestContext().add(getTerm("a2", .5f, 1f, 2f));
-        allHit1.getOneBestContext().add(getTerm("b2", .6f, 2f, 3f));
-        allHit1.getOneBestContext().add(getTerm("max", .7f, 3f, 4f));
-        allHit1.getOneBestContext().add(getTerm("c2", .8f, 4f, 5f));
-        allHit1.getOneBestContext().add(getTerm("d1", .2f, 5f, 6f));
+        allHit1.getContext().add(getTerm("a2", .5f, 1f, 2f));
+        allHit1.getContext().add(getTerm("b2", .6f, 2f, 3f));
+        allHit1.getContext().add(addTermHit(getTerm("max", .7f, 3f, 4f), getTermHit("hit", .3f, false)));
+        allHit1.getContext().add(addTermHit(getTerm("c2", .8f, 4f, 5f), getTermHit("c2", .8f, true)));
+        allHit1.getContext().add(getTerm("d1", .2f, 5f, 6f));
 
-        allHit1.getTermHits().add(getTermHit("hit", .3f, 3f, 4f));
-        allHit1.getTermHits().add(getTermHit("c2", .8f, 4f, 5f));
         expected.getKeywordResultList().add(allHit1);
 
         assertEquals(objectMapper.writeValueAsString(expected), objectMapper.writeValueAsString(result));
@@ -297,21 +291,18 @@ public class AllHitsFactoryTest {
 
         AllHit allHit1 = new AllHit();
         allHit1.setConfidence(.3f);
-        allHit1.getOneBestContext().add(getTerm("a2", .5f, 1f, 2f));
-        allHit1.getOneBestContext().add(getTerm("b2", .6f, 2f, 3f));
-        allHit1.getOneBestContext().add(getTerm("max", .7f, 3f, 4f));
-        allHit1.getOneBestContext().add(getTerm("c2", .8f, 4f, 5f));
-
-        allHit1.getTermHits().add(getTermHit("hit", .3f, 3f, 4f));
+        allHit1.getContext().add(getTerm("a2", .5f, 1f, 2f));
+        allHit1.getContext().add(getTerm("b2", .6f, 2f, 3f));
+        allHit1.getContext().add(addTermHit(getTerm("max", .7f, 3f, 4f), getTermHit("hit", .3f, false)));
+        allHit1.getContext().add(getTerm("c2", .8f, 4f, 5f));
 
         expected.getKeywordResultList().add(allHit1);
 
         AllHit allHit2 = new AllHit();
         allHit2.setConfidence(.2f);
-        allHit2.getOneBestContext().add(getTerm("c2", .8f, 4f, 5f));
-        allHit2.getOneBestContext().add(getTerm("d1", .2f, 5f, 6f));
+        allHit2.getContext().add(getTerm("c2", .8f, 4f, 5f));
+        allHit2.getContext().add(addTermHit(getTerm("d1", .2f, 5f, 6f), getTermHit("d1", .2f, true)));
 
-        allHit2.getTermHits().add(getTermHit("d1", .2f, 5f, 6f));
         expected.getKeywordResultList().add(allHit2);
 
         assertEquals(objectMapper.writeValueAsString(expected), objectMapper.writeValueAsString(result));
@@ -338,22 +329,18 @@ public class AllHitsFactoryTest {
 
         AllHit allHit1 = new AllHit();
         allHit1.setConfidence(.3f);
-        allHit1.getOneBestContext().add(getTerm("a2", .5f, 1f, 2f));
-        allHit1.getOneBestContext().add(getTerm("b2", .6f, 2f, 3f));
-        allHit1.getOneBestContext().add(getTerm("max", .7f, 3f, 4f));
-        allHit1.getOneBestContext().add(getTerm("c2", .8f, 4f, 5f));
-
-        allHit1.getTermHits().add(getTermHit("a1", .1f, 1f, 2f));
-        allHit1.getTermHits().add(getTermHit("hit", .3f, 3f, 4f));
+        allHit1.getContext().add(addTermHit(getTerm("a2", .5f, 1f, 2f), getTermHit("a1", .1f, false)));
+        allHit1.getContext().add(getTerm("b2", .6f, 2f, 3f));
+        allHit1.getContext().add(addTermHit(getTerm("max", .7f, 3f, 4f), getTermHit("hit", .3f, false)));
+        allHit1.getContext().add(getTerm("c2", .8f, 4f, 5f));
 
         expected.getKeywordResultList().add(allHit1);
 
         AllHit allHit2 = new AllHit();
         allHit2.setConfidence(.2f);
-        allHit2.getOneBestContext().add(getTerm("c2", .8f, 4f, 5f));
-        allHit2.getOneBestContext().add(getTerm("d1", .2f, 5f, 6f));
+        allHit2.getContext().add(getTerm("c2", .8f, 4f, 5f));
+        allHit2.getContext().add(addTermHit(getTerm("d1", .2f, 5f, 6f), getTermHit("d1", .2f, true)));
 
-        allHit2.getTermHits().add(getTermHit("d1", .2f, 5f, 6f));
         expected.getKeywordResultList().add(allHit2);
 
         assertEquals(objectMapper.writeValueAsString(expected), objectMapper.writeValueAsString(result));
@@ -387,12 +374,23 @@ public class AllHitsFactoryTest {
         return term;
     }
 
-    private TermHit getTermHit(String label, float confidence, float start, float end) {
+    private Term addTermHit(Term term, TermHit termHit) {
+        Set<TermHit> hits = term.getHits();
+        if (hits == null) {
+            hits = new TreeSet<>(TERM_HIT_COMPARATOR);
+            term.setHits(hits);
+        }
+
+        hits.add(termHit);
+
+        return term;
+    }
+
+    private TermHit getTermHit(String label, float confidence, boolean oneBest) {
         TermHit termHit = new TermHit();
         termHit.setConfidence(confidence);
-        termHit.setTermLabel(label);
-        termHit.getTimeRange().setStartTime(start);
-        termHit.getTimeRange().setEndTime(end);
+        termHit.setLabel(label);
+        termHit.setOneBest(oneBest);
 
         return termHit;
     }

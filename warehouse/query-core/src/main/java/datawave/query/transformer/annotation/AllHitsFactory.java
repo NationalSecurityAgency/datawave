@@ -6,8 +6,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import datawave.annotation.protobuf.v1.SegmentBoundary;
@@ -24,6 +26,8 @@ import datawave.query.transformer.annotation.model.TermHit;
  * TimeUnit
  */
 public class AllHitsFactory {
+    public static final TermHitComparator TERM_HIT_COMPARATOR = new TermHitComparator();
+
     /**
      * Convenience method for MILLIS
      *
@@ -143,13 +147,19 @@ public class AllHitsFactory {
         return (float) timeInNanos / (float) targetInNanos;
     }
 
-    private void applyHit(AllHit allHit, SegmentBoundary segmentBoundary, SegmentValue hitValue, TimeUnit timeUnit) {
+    private void applyHit(AllHit allHit, Term term, SegmentValue hitValue, boolean best) {
         TermHit th = new TermHit();
-        th.setTermLabel(hitValue.getValue());
+        th.setLabel(hitValue.getValue());
         th.setConfidence(hitValue.getScore());
-        th.getTimeRange().setStartTime(convertTime(segmentBoundary.getStart(), timeUnit));
-        th.getTimeRange().setEndTime(convertTime(segmentBoundary.getEnd(), timeUnit));
-        allHit.getTermHits().add(th);
+        th.setOneBest(best);
+
+        Set<TermHit> hits = term.getHits();
+        if (hits == null) {
+            hits = new TreeSet<>(TERM_HIT_COMPARATOR);
+            term.setHits(hits);
+        }
+
+        hits.add(th);
 
         // rollup confidence
         if (allHit.getConfidence() < th.getConfidence()) {
@@ -184,7 +194,7 @@ public class AllHitsFactory {
             t.setConfidence(firstValue.getScore());
             t.getTimeRange().setStartTime(convertTime(boundary.getStart(), timeUnit));
             t.getTimeRange().setEndTime(convertTime(boundary.getEnd(), timeUnit));
-            allHit.getOneBestContext().add(t);
+            allHit.getContext().add(t);
 
             // now check if this segment also contains the hit
             List<Integer> hitIndexes = mergedHit.getHitIndexes(boundary);
@@ -195,7 +205,8 @@ public class AllHitsFactory {
                                         + " index:" + hitIndex);
                     }
                     SegmentValue value = contextEntry.getValue().get(hitIndex);
-                    applyHit(allHit, boundary, value, timeUnit);
+                    boolean best = contextEntry.getValue().size() - 1 == hitIndex;
+                    applyHit(allHit, t, value, best);
                 }
             }
         }
