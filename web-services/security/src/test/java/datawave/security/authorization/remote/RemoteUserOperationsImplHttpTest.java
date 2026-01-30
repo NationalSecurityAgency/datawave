@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -189,7 +189,7 @@ public class RemoteUserOperationsImplHttpTest {
                 String responseBody = objectMapper.writeValueAsString(listEffectiveAuthResponse);
                 exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-                IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+                IOUtils.write(responseBody, exchange.getResponseBody(), StandardCharsets.UTF_8);
                 exchange.close();
             }
         };
@@ -203,7 +203,7 @@ public class RemoteUserOperationsImplHttpTest {
                 String responseBody = objectMapper.writeValueAsString(flushResponse);
                 exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-                IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+                IOUtils.write(responseBody, exchange.getResponseBody(), StandardCharsets.UTF_8);
                 exchange.close();
             }
         };

@@ -131,7 +131,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
                     String row = key.getRow().toString().toUpperCase();
 
                     if (reverse)
-                        row = new StringBuffer(row).reverse().toString();
+                        row = new StringBuilder(row).reverse().toString();
 
                     Set<String> typedNormalizers = entryCache.get(row);
 

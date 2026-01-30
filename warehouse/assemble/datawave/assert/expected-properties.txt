@@ -57,6 +57,8 @@ table.name.queryMetrics.shardReverseIndex, Name of the query metrics reverse ind
 table.name.queryMetrics.shard, Name of the query metrics shard table
 table.name.queryMetrics.dateIndex, Name of the query metrics date index table
 table.name.shardReverseIndex, Name of the DATAWAVE global reverse index, usually 'shardReverseIndex'.
+table.name.annotation, Name for the DATAWAVE annotation table, usually 'annotation'.
+table.name.annotation.source, Name for the DATAWAVE annotation source table, usually 'annotationSource'.
 table.dateIndex.numShardsPerDay, Number of shards to create per day for the dateIndex table
 USERNAME, Accumulo user name, currently the same across warehouse and ingest clusters.
 WAREHOUSE_ACCUMULO_HOME, Local installation of Accumulo for the warehouse cluster.

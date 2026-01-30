@@ -26,16 +26,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         this.delegate = delegate;
     }
 
-    @Override
-    public boolean isIndexedField(String fieldName) {
-        return true;
-    }
-
-    @Override
-    public boolean isReverseIndexedField(String fieldName) {
-        return true;
-    }
-
     /*
      * (non-Javadoc)
      *

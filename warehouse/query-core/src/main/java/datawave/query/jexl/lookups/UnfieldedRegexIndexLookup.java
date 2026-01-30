@@ -53,7 +53,7 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
             indexLookupMap = new IndexLookupMap(keyThreshold, valueThreshold);
 
             execService.submit(() -> {
-                String tableName = reverse ? config.getReverseIndexTableName() : config.getIndexTableName();
+                String tableName = reverse ? config.getReverseIndexTableName() : getTableName();
                 try (var scanner = config.getClient().createScanner(tableName, config.getAuthorizations().iterator().next())) {
                     String hintKey = getHintKey(tableName);
                     scanner.setExecutionHints(Map.of(tableName, hintKey));
