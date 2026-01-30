@@ -1005,7 +1005,7 @@ public abstract class ShardQueryLogicTest {
         givenEndDate("20150101");
 
         expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"annotationId\":\"71D4C8BE\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"errorMessage\":\"test failure\"}]");
+                        "[{\"annotationId\":\"71D4C8BE\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"error\":\"test failure\"}]");
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
