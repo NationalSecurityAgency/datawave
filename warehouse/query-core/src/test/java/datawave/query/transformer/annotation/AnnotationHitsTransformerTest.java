@@ -39,6 +39,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.transformer.annotation.model.AllHits;
 
@@ -102,6 +103,7 @@ public class AnnotationHitsTransformerTest {
     private Set<String> validTypes;
     private String targetField;
     private Map<String,String> enrichmentFieldMap;
+    private ShardQueryConfiguration shardQueryConfiguration;
 
     private Query settings;
     private MarkingFunctions markingFunctions;
@@ -114,6 +116,8 @@ public class AnnotationHitsTransformerTest {
         markingFunctions = new MarkingFunctions.Default();
         annotations = new ArrayList<>();
         enrichmentFieldMap = new HashMap<>();
+        shardQueryConfiguration = new ShardQueryConfiguration();
+        shardQueryConfiguration.setQuery(settings);
     }
 
     @Test
@@ -907,8 +911,8 @@ public class AnnotationHitsTransformerTest {
     }
 
     private void test(Entry<Key,Document> entry, Entry<Key,Document> expected) {
-        transformer = new AnnotationHitsTransformer(query, termExtractor, normalizer, annotationDao, allHitsFactory, maxContextBoundary, validTypes,
-                        targetField, enrichmentFieldMap);
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
         transformer.initialize(settings, markingFunctions);
         Entry<Key,Document> transformed = transformer.apply(entry);
 

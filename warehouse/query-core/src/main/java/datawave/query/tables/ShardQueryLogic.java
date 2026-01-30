@@ -836,6 +836,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // since this may be called multiple times always rebuild
                 // @formatter:off
                 ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                        getConfig(),
                         getConfig().getOriginalJexlQuery(),
                         allHitsQueryConfig.getQueryTermExtractor(),
                         allHitsQueryConfig.getTermNormalizer(),
