@@ -850,6 +850,43 @@ public class GroupingTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testGroupingByGenderAndMultipleAveragesUsingJexlFunction() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*' && f:groupby('$GENDER') && f:average('AGE', VALUE) && f:max('AGE') && f:average('VALUE')");
+
+        expectGroup(Group.of("MALE").withCount(10).withAggregate(Aggregate.of("AGE").withMax("40").withAverage("26.8"))
+                        .withAggregate(Aggregate.of("VALUE").withAverage("20.45454545")));
+        expectGroup(Group.of("FEMALE").withCount(2).withAggregate(Aggregate.of("AGE").withMax("18").withAverage("18"))
+                        .withAggregate(Aggregate.of("VALUE").withAverage("6.428571429")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupingByGenderAndMultipleAveragesUsingLuceneFunction() throws Exception {
+        givenNonModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('$GENDER') and #AVERAGE('AGE', 'VALUE') and #MAX('AGE') and #AVERAGE('VALUE')");
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("MALE").withCount(10).withAggregate(Aggregate.of("AGE").withMax("40").withAverage("26.8"))
+                        .withAggregate(Aggregate.of("VALUE").withAverage("20.45454545")));
+        expectGroup(Group.of("FEMALE").withCount(2).withAggregate(Aggregate.of("AGE").withMax("18").withAverage("18"))
+                        .withAggregate(Aggregate.of("VALUE").withAverage("6.428571429")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
     public void testGroupingByGenderAndAllAgeMetricsUsingJexlFunction() throws Exception {
         givenNonModelData();
 
