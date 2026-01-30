@@ -46,6 +46,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.RemoveGroupingContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.parser.JavaRegexAnalyzer;
@@ -73,6 +74,10 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private static final SegmentValueByScoreComparator SEGMENT_VALUE_BY_SCORE_COMPARATOR = new SegmentValueByScoreComparator();
     private static final BoundaryComparator BOUNDARY_COMPARATOR = new BoundaryComparator();
 
+    /**
+     * In order to include certain fields for joining grouping notation fields with the annotation changes have to be made to the shardQueryConfig
+     */
+    private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
     private final AllHitsFactory allHitsFactory;
     private final int maxContextBoundary;
@@ -96,9 +101,10 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private Set<Pattern> searchHitTerms;
     private ObjectMapper objectMapper;
 
-    public AnnotationHitsTransformer(@Nullable String jexlQueryString, TermExtractor queryTermExtractor, Normalizer<String> termNormalizer,
-                    AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary, Set<String> validTypes,
-                    String targetField, Map<String,String> enrichmentFieldMap) {
+    public AnnotationHitsTransformer(ShardQueryConfiguration shardQueryConfig, @Nullable String jexlQueryString, TermExtractor queryTermExtractor,
+                    Normalizer<String> termNormalizer, AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary,
+                    Set<String> validTypes, String targetField, Map<String,String> enrichmentFieldMap) {
+        this.shardQueryConfig = shardQueryConfig;
         this.jexlQueryString = jexlQueryString;
         this.queryTermExtractor = queryTermExtractor;
         this.termNormalizer = termNormalizer;
@@ -186,9 +192,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         // test for changes that need to be made to the query to support field enrichment from the event
         if (enrichmentFieldMap != null && !enrichmentFieldMap.isEmpty()) {
             String groupingParameter = settings.findParameter(INCLUDE_GROUPING_CONTEXT).getParameterValue();
-            if (groupingParameter != null && !groupingParameter.isBlank()) {
+            if ((!Boolean.parseBoolean(groupingParameter))) {
                 // grouping notation not set, apply it
-                settings.addParameter(INCLUDE_GROUPING_CONTEXT, "true");
+                shardQueryConfig.setIncludeGroupingContext(true);
                 // capture this, so it can be undone after the transform is complete
                 forcedGroupingNotation = true;
             }
@@ -200,9 +206,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 List<String> missingReturnFields = getMissingReturnFields(returnFieldsParameter);
 
                 if (!missingReturnFields.isEmpty()) {
-                    // append the missing return fields to the return fields parameter
-                    String joinedNewFields = StringUtils.join(missingReturnFields, ",");
-                    settings.addParameter(RETURN_FIELDS, returnFieldsParameter + "," + joinedNewFields);
+                    shardQueryConfig.getProjectFields().addAll(missingReturnFields);
                     // capture this to undo what was forced into the query to satisfy the response after processing
                     forcedReturnFields = missingReturnFields;
                 }
@@ -381,7 +385,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 continue;
             }
 
-            String[] groups = baseFieldName.split("\\.");
+            String[] groups = docField.split("\\.");
             // all annotation fields will be in grouping notation of the form FIELD.annotationHash.segmentHash.valueHash
             if (groups.length != 4) {
                 // doesn't match the required notation of the annotation enriched fields
