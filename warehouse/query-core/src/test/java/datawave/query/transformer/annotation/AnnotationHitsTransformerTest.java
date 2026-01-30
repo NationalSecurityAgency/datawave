@@ -13,6 +13,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -100,6 +101,7 @@ public class AnnotationHitsTransformerTest {
     private int maxContextBoundary;
     private Set<String> validTypes;
     private String targetField;
+    private Map<String,String> enrichmentFieldMap;
 
     private Query settings;
     private MarkingFunctions markingFunctions;
@@ -111,6 +113,7 @@ public class AnnotationHitsTransformerTest {
         settings = new QueryImpl();
         markingFunctions = new MarkingFunctions.Default();
         annotations = new ArrayList<>();
+        enrichmentFieldMap = new HashMap<>();
     }
 
     @Test
@@ -429,8 +432,8 @@ public class AnnotationHitsTransformerTest {
         Set<String> queryTerms = Set.of("aaaaaaa", "bbbbbbb", "v3");
 
         // ANNO3 not a valid type
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotation(buildAnnotation("id1", "ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotation(buildAnnotation("id2", "ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         query = "abc";
@@ -444,7 +447,8 @@ public class AnnotationHitsTransformerTest {
         when(allHitsFactory.create(any(), any(), any(), any())).thenThrow(new AllHitsException("testing"));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"errorMessage\":\"testing\"}]",
+        expected.put("TARGET_FIELD", new Content(
+                        "[{\"annotationId\":\"id1\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"error\":\"testing\"},{\"annotationId\":\"id2\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"error\":\"testing\"}]",
                         new Key("20260112_0", "test\u0000123.345.456"), true));
 
         test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
@@ -874,6 +878,12 @@ public class AnnotationHitsTransformerTest {
 
     @SuppressWarnings("SameParameterValue")
     private Annotation buildAnnotation(String annotationType, String shard, String dataType, String documentId, String sourceHash, Segment... segments) {
+        return buildAnnotation("id", annotationType, shard, dataType, documentId, sourceHash, segments);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private Annotation buildAnnotation(String id, String annotationType, String shard, String dataType, String documentId, String sourceHash,
+                    Segment... segments) {
         // @formatter:off
         return Annotation.newBuilder()
                 .setShard(shard)
@@ -883,6 +893,7 @@ public class AnnotationHitsTransformerTest {
                 .setAnalyticSourceHash(sourceHash)
                 .putAllMetadata(Map.of("visibility", "ALL", "created_date", "2026-01-12T00:00:00Z"))
                 .addAllSegments(List.of(segments))
+                .setAnnotationId(id)
                 .build();
         // @formatter:on
     }
@@ -897,7 +908,7 @@ public class AnnotationHitsTransformerTest {
 
     private void test(Entry<Key,Document> entry, Entry<Key,Document> expected) {
         transformer = new AnnotationHitsTransformer(query, termExtractor, normalizer, annotationDao, allHitsFactory, maxContextBoundary, validTypes,
-                        targetField);
+                        targetField, enrichmentFieldMap);
         transformer.initialize(settings, markingFunctions);
         Entry<Key,Document> transformed = transformer.apply(entry);
 
