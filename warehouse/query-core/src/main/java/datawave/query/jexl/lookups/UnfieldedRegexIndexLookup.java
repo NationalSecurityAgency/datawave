@@ -19,7 +19,6 @@ import com.google.common.base.Joiner;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.UnfieldedRegexExpansionIterator;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
 
@@ -79,6 +78,7 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
                         if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                             indexLookupMap.setTimeoutExceeded(true);
+                            indexLookupMap.clear(); // reset state so that ANYFIELD is marked NOFIELD
                             break;
                         }
 
@@ -117,9 +117,6 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
     @Override
     public IndexLookupMap lookup() {
         await();
-        if (indexLookupMap.isTimeoutExceeded()) {
-            throw new DatawaveFatalQueryException("Unfielded regex expansion timed out");
-        }
         return indexLookupMap;
     }
 }
