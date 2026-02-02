@@ -19,6 +19,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.SeekingFilter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,6 +131,10 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
     public FilterResult filter(Key k, Value v) {
         if (log.isDebugEnabled()) {
             log.debug("tk: {}", k.toStringNoTime());
+        }
+
+        if (TimeoutExceptionIterator.exceededTimedValue(Pair.of(k, v))) {
+            return new FilterResult(true, AdvanceResult.NEXT);
         }
 
         // parse key and reset hint
