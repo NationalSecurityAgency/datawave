@@ -1,4 +1,3 @@
-README change
 # Audit Service
 
 [![Apache License][li]][ll] ![Build Status](https://github.com/NationalSecurityAgency/datawave-audit-service/workflows/Tests/badge.svg)
