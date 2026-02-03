@@ -1,0 +1,165 @@
+name: Required Status Checks
+
+# This workflow ensures that required status checks always run and report,
+# even when the actual test workflows are skipped due to paths-ignore filters.
+# This prevents branch protection from blocking PRs with documentation-only changes.
+
+on:
+  pull_request:
+  merge_group:
+
+jobs:
+  # These jobs mirror the names of jobs in other workflows that are required for branch protection
+  # They will only run when the actual workflows are skipped
+  
+  build-and-test-main:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check if main tests workflow will run
+      id: check_main_tests
+      run: |
+        # Get list of changed files
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+        else
+          FILES=$(git diff --name-only HEAD^..HEAD)
+        fi
+        
+        # Check if any files match the paths-ignore patterns from datawave-tests.yml
+        # paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
+        if echo "$FILES" | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$|^microservices/'; then
+          echo "will_run=true" >> $GITHUB_OUTPUT
+          echo "Main tests workflow will run (code changes detected)"
+        else
+          echo "will_run=false" >> $GITHUB_OUTPUT
+          echo "Main tests workflow will be skipped (documentation-only changes)"
+        fi
+    
+    - name: Report success for skipped workflow
+      if: steps.check_main_tests.outputs.will_run == 'false'
+      run: echo "✓ Skipping tests - only documentation files changed"
+    
+    - name: Exit if actual workflow will run
+      if: steps.check_main_tests.outputs.will_run == 'true'
+      run: |
+        echo "Actual workflow will run, skipping this placeholder job"
+        exit 0
+
+  build-and-test-microservices:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check if microservice tests workflow will run
+      id: check_micro_tests
+      run: |
+        # Get list of changed files
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+        else
+          FILES=$(git diff --name-only HEAD^..HEAD)
+        fi
+        
+        # Check if any files are in microservices/ and not in ignore patterns
+        # paths: ['microservices/**','!**/*.md', '!.github/**', '!CODEOWNERS', '!LICENSE']
+        if echo "$FILES" | grep -E '^microservices/' | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$'; then
+          echo "will_run=true" >> $GITHUB_OUTPUT
+          echo "Microservice tests workflow will run"
+        else
+          echo "will_run=false" >> $GITHUB_OUTPUT
+          echo "Microservice tests workflow will be skipped"
+        fi
+    
+    - name: Report success for skipped workflow
+      if: steps.check_micro_tests.outputs.will_run == 'false'
+      run: echo "✓ Skipping microservice tests - no relevant changes"
+    
+    - name: Exit if actual workflow will run
+      if: steps.check_micro_tests.outputs.will_run == 'true'
+      run: |
+        echo "Actual workflow will run, skipping this placeholder job"
+        exit 0
+
+  check-code-formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check if formatting workflow will run
+      id: check_formatting
+      run: |
+        # Get list of changed files
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+        else
+          FILES=$(git diff --name-only HEAD^..HEAD)
+        fi
+        
+        # Check if any files match the paths-ignore patterns from check-formatting.yml
+        # paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
+        if echo "$FILES" | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$'; then
+          echo "will_run=true" >> $GITHUB_OUTPUT
+          echo "Formatting check workflow will run"
+        else
+          echo "will_run=false" >> $GITHUB_OUTPUT
+          echo "Formatting check workflow will be skipped (documentation-only changes)"
+        fi
+    
+    - name: Report success for skipped workflow
+      if: steps.check_formatting.outputs.will_run == 'false'
+      run: echo "✓ Skipping formatting check - only documentation files changed"
+    
+    - name: Exit if actual workflow will run
+      if: steps.check_formatting.outputs.will_run == 'true'
+      run: |
+        echo "Actual workflow will run, skipping this placeholder job"
+        exit 0
+
+  compose-check-jobs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check if compose workflow will run
+      id: check_compose
+      run: |
+        # Get list of changed files
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+        else
+          FILES=$(git diff --name-only HEAD^..HEAD)
+        fi
+        
+        # Check if any files match the paths-ignore patterns from compose-coordinator.yml
+        # paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
+        if echo "$FILES" | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$'; then
+          echo "will_run=true" >> $GITHUB_OUTPUT
+          echo "Compose workflow will run"
+        else
+          echo "will_run=false" >> $GITHUB_OUTPUT
+          echo "Compose workflow will be skipped (documentation-only changes)"
+        fi
+    
+    - name: Report success for skipped workflow
+      if: steps.check_compose.outputs.will_run == 'false'
+      run: echo "✓ Skipping compose checks - only documentation files changed"
+    
+    - name: Exit if actual workflow will run
+      if: steps.check_compose.outputs.will_run == 'true'
+      run: |
+        echo "Actual workflow will run, skipping this placeholder job"
+        exit 0
