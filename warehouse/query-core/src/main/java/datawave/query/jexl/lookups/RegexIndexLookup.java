@@ -122,7 +122,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
             IteratorSetting fairnessIterator = null;
             if (config.getMaxIndexScanTimeMillis() > 0) {
                 // The fairness iterator solves the problem whereby we have runaway iterators as a result of an evaluation that never finds anything
-                fairnessIterator = new IteratorSetting(1, TimeoutIterator.class);
+                fairnessIterator = new IteratorSetting(5, TimeoutIterator.class);
 
                 long maxTime = (long) (config.getMaxIndexScanTimeMillis() * 1.25);
                 fairnessIterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
@@ -163,8 +163,8 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                 for (String key : forwardMap.keySet()) {
                     Collection<Range> ranges = forwardMap.get(key);
                     try {
-                        bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                        Collections.emptySet(), Collections.singleton(key), false, true);
+                        bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, getTableName(), ranges, Collections.emptySet(),
+                                        Collections.singleton(key), false, true);
 
                         bs.setResourceClass(BatchResource.class);
                     } catch (Exception e) {

@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -293,37 +294,14 @@ public class DateIndexHelper implements ApplicationContextAware {
         long startTime = System.currentTimeMillis();
 
         // create date type description with default start and end values
-        DateTypeDescription desc = new DateTypeDescription();
+
+        DateTypeDescription desc;
         Range range = createRange(begin, end);
 
-        try (Scanner scanner = ScannerHelper.createScanner(client, dateIndexTableName, auths)) {
-            // scan from begin to end
-            scanner.setRange(range);
-
-            // restrict to our date type
-            scanner.fetchColumnFamily(new Text(dateType));
-
-            if (useIterator) {
-                IteratorSetting setting = new IteratorSetting(50, "DateTypeDescriptionIterator", DateTypeDescriptionIterator.class);
-                if (!datatypeFilter.isEmpty()) {
-                    setting.addOption(DateTypeDescriptionIterator.DATATYPE_FILTER, joiner.join(datatypeFilter));
-                }
-                scanner.addScanIterator(setting);
-
-                for (Entry<Key,Value> entry : scanner) {
-                    // should only have one entry
-                    desc = DateTypeDescription.deserializeFromString(new String(entry.getValue().get()));
-                }
-            } else {
-                for (Entry<Key,Value> entry : scanner) {
-                    Key k = entry.getKey();
-                    String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
-                    if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
-                        desc.addField(parts[2]);
-                        desc.ensureStartAndEndDateIsSet(parts[0]);
-                    }
-                }
-            }
+        if (useIterator) {
+            desc = getTypeDescriptionWithIterator(range, dateType, datatypeFilter);
+        } else {
+            desc = getTypeDescription(range, dateType, datatypeFilter);
         }
 
         // set default values if none were found
@@ -336,6 +314,50 @@ public class DateIndexHelper implements ApplicationContextAware {
         }
 
         return desc;
+    }
+
+    protected DateTypeDescription getTypeDescriptionWithIterator(Range range, String dateType, Set<String> datatypeFilter) throws TableNotFoundException {
+        try (Scanner scanner = ScannerHelper.createScanner(client, dateIndexTableName, auths)) {
+            // scan from begin to end
+            scanner.setRange(range);
+
+            // restrict to our date type
+            scanner.fetchColumnFamily(new Text(dateType));
+
+            IteratorSetting setting = new IteratorSetting(50, "DateTypeDescriptionIterator", DateTypeDescriptionIterator.class);
+            if (!datatypeFilter.isEmpty()) {
+                setting.addOption(DateTypeDescriptionIterator.DATATYPE_FILTER, joiner.join(datatypeFilter));
+            }
+            scanner.addScanIterator(setting);
+
+            DateTypeDescription desc = new DateTypeDescription();
+            for (Entry<Key,Value> entry : scanner) {
+                // should only have one entry
+                desc = DateTypeDescription.deserializeFromString(new String(entry.getValue().get()));
+            }
+            return desc;
+        }
+    }
+
+    protected DateTypeDescription getTypeDescription(Range range, String dateType, Set<String> datatypeFilter) throws TableNotFoundException {
+        try (BatchScanner scanner = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads)) {
+            // scan from begin to end
+            scanner.setRanges(Set.of(range));
+
+            // restrict to our date type
+            scanner.fetchColumnFamily(new Text(dateType));
+
+            DateTypeDescription desc = new DateTypeDescription();
+            for (Entry<Key,Value> entry : scanner) {
+                Key k = entry.getKey();
+                String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
+                if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
+                    desc.addField(parts[2]);
+                    desc.ensureStartAndEndDateIsSet(parts[0]);
+                }
+            }
+            return desc;
+        }
     }
 
     /**
@@ -436,8 +458,8 @@ public class DateIndexHelper implements ApplicationContextAware {
     protected TreeMap<String,BitSet> scanForShardsAndDays(Range range, String field, Set<String> datatypeFilter, String minShard, String maxShard)
                     throws TableNotFoundException {
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
-        try (Scanner scanner = ScannerHelper.createScanner(client, dateIndexTableName, auths)) {
-            scanner.setRange(range);
+        try (BatchScanner scanner = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads)) {
+            scanner.setRanges(Set.of(range));
 
             for (Entry<Key,Value> entry : scanner) {
                 Key k = entry.getKey();

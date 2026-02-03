@@ -16,6 +16,7 @@ import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.fs.RandomVolumeChooser;
 import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,9 +63,7 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
             TableId tableId = env.getTable().get();
             ServiceEnvironment.Configuration tableConfig = env.getServiceEnv().getConfiguration(tableId);
             // Get variables
-            log.trace("Determining tier names using property {} for Table id: {}", Property.TABLE_ARBITRARY_PROP_PREFIX + TIER_NAMES_SUFFIX, tableId);
-            String configuredTiers = tableConfig.getTableCustom(TIER_NAMES_SUFFIX);
-            TreeMap<Long,Set<String>> daysToVolumes = getTiers(tableId, tableConfig, options, configuredTiers);
+            TreeMap<Long,Set<String>> daysToVolumes = getTiers(tableId, tableConfig, options);
 
             Text endRow = env.getEndRow();
 
@@ -90,15 +89,13 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
         }
     }
 
-    private TreeMap<Long,Set<String>> getTiers(TableId tableId, ServiceEnvironment.Configuration tableConfig, Set<String> options, String configuredTiers) {
+    static TreeMap<Long,Set<String>> getTiers(TableId tableId, ServiceEnvironment.Configuration tableConfig, Set<String> options) {
         TreeMap<Long,Set<String>> daysToVolumes = new TreeMap<>();
         daysToVolumes.put(Long.MAX_VALUE, options);
-        for (String tier : configuredTiers.split(",")) {
-            log.debug("Determining volumes for tier {} using property {} for Table id: {}", tier,
-                            Property.TABLE_ARBITRARY_PROP_PREFIX + PROPERTY_PREFIX + tier + VOLUME_SUFFIX, tableId);
-            Set<String> volumesForCurrentTier = Arrays.stream(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + VOLUME_SUFFIX).split(","))
+        for (String tier : listTiers(tableId, tableConfig)) {
+            Set<String> volumesForCurrentTier = Arrays.stream(StringUtils.split(getTierProperty(tableId, tableConfig, tier, VOLUME_SUFFIX), ','))
                             .collect(Collectors.toSet());
-            long daysBackForCurrentTier = Long.parseLong(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + DAYS_BACK_SUFFIX));
+            long daysBackForCurrentTier = getTierDaysBack(tableId, tableConfig, tier);
             if (daysBackForCurrentTier >= 0) {
                 if (volumesForCurrentTier.size() < 1) {
                     throw new IllegalStateException("Volumes list empty for tier " + tier + ". Ensure property " + Property.TABLE_ARBITRARY_PROP_PREFIX
@@ -111,4 +108,23 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
         return daysToVolumes;
     }
 
+    public static Set<String> listTiers(TableId tableId, ServiceEnvironment.Configuration tableConfig) {
+        String configuredTiers = tableConfig.getTableCustom(TIER_NAMES_SUFFIX);
+        log.trace("Tier names using property {} for Table id: {} are {}", Property.TABLE_ARBITRARY_PROP_PREFIX + TIER_NAMES_SUFFIX, tableId, configuredTiers);
+        if (configuredTiers == null) {
+            log.warn("Table property {} is not set, must configure tiers.", Property.TABLE_ARBITRARY_PROP_PREFIX + TIER_NAMES_SUFFIX);
+            return Set.of();
+        }
+        return Set.of(StringUtils.split(configuredTiers, ','));
+    }
+
+    public static String getTierProperty(TableId tableId, ServiceEnvironment.Configuration tableConfig, String tier, String suffix) {
+        String value = tableConfig.getTableCustom(PROPERTY_PREFIX + tier + suffix);
+        log.trace("Property {} for Table id: {} is {}", Property.TABLE_ARBITRARY_PROP_PREFIX + TIER_NAMES_SUFFIX, tableId, value);
+        return value;
+    }
+
+    public static long getTierDaysBack(TableId tableId, ServiceEnvironment.Configuration tableConfig, String tier) {
+        return Long.parseLong(getTierProperty(tableId, tableConfig, tier, DAYS_BACK_SUFFIX));
+    }
 }

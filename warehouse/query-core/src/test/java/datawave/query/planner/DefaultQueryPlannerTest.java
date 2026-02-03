@@ -11,17 +11,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import datawave.data.type.DateType;
+import datawave.data.type.LcNoDiacriticsListType;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.TemporalGranularity;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockDateIndexHelper;
+import datawave.query.util.TypeMetadata;
 import datawave.test.JexlNodeAssert;
 import datawave.util.time.DateHelper;
 
@@ -204,6 +211,78 @@ class DefaultQueryPlannerTest {
 
         private ASTJexlScript addDateFilters() throws TableNotFoundException, DatawaveQueryException {
             return planner.addDateFilters(queryTree, null, null, dateIndexHelper, config, settings);
+        }
+
+        /**
+         * Verify that no exception is thrown when validating a {@link UniqueFields} instance with temporal granularities for datetime fields.
+         */
+        @Test
+        void testValidateUniqueFieldsGivenValidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            UniqueFields uniqueFields = new UniqueFields();
+            uniqueFields.put("NAME", TemporalGranularity.ALL);
+            uniqueFields.put("ROLE", TemporalGranularity.ALL);
+            uniqueFields.put("HIRE_DATE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+
+            planner.validateUniqueFields(uniqueFields);
+        }
+
+        /**
+         * Verify that an exception is thrown when validating a {@link UniqueFields} instance with temporal granularities for non-datetime fields.
+         */
+        @Test
+        void testValidateUniqueFieldsGivenInvalidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            UniqueFields uniqueFields = new UniqueFields();
+            uniqueFields.put("NAME", TemporalGranularity.ALL);
+            uniqueFields.put("ROLE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+            uniqueFields.put("HIRE_DATE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+
+            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateUniqueFields(uniqueFields),
+                            "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: ROLE");
+        }
+
+        /**
+         * Verify that no exception is thrown when validating a {@link GroupFields} instance with temporal granularities for datetime fields.
+         */
+        @Test
+        void testValidateGroupFieldsGivenValidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            GroupFields groupFields = GroupFields.from("NAME,ROLE,HIRE_DATE[DAY]");
+
+            planner.validateGroupFields(groupFields);
+        }
+
+        /**
+         * Verify that an exception is thrown when validating a {@link GroupFields} instance with temporal granularities for non-datetime fields.
+         */
+        @Test
+        void testValidateGroupFieldsGivenInvalidFields() {
+            TypeMetadata metadata = new TypeMetadata();
+            metadata.put("NAME", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("ROLE", "hr", LcNoDiacriticsListType.class.getName());
+            metadata.put("HIRE_DATE", "hr", DateType.class.getName());
+            planner.setTypeMetadata(metadata);
+
+            GroupFields groupFields = GroupFields.from("NAME,ROLE[DAY],HIRE_DATE[DAY]");
+
+            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateGroupFields(groupFields),
+                            "The following group-by fields are not date fields and cannot be used with temporal truncation: ROLE");
         }
     }
 }

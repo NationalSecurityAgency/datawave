@@ -3,10 +3,19 @@ package datawave.data.type.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class NumericalEncoderTest {
 
@@ -82,6 +91,44 @@ public class NumericalEncoderTest {
             assertEquals(i, NumericalEncoder.decode(NumericalEncoder.encode(Long.valueOf(i).toString())).longValue());
             i += increment;
         }
+    }
 
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
+    public void testThreadLocalFormatsPreventBlockedThreads() throws ExecutionException, InterruptedException {
+        int threads = 100;
+        int numIterations = 1_000;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        List<Future<Integer>> tasks = new ArrayList<>();
+        for (int i = 0; i < threads; i++) {
+            Future<Integer> f = executor.submit(() -> {
+                int count = 0;
+                try {
+                    for (int j = 0; j < numIterations; j++) {
+                        String result = NumericalEncoder.encode("1234567890");
+                        assertEquals("+jE1.23456789", result);
+                        count++;
+                    }
+                    return count;
+                } catch (Exception e) {
+                    fail(e.getMessage(), e);
+                }
+                return count;
+            });
+            tasks.add(f);
+        }
+
+        boolean working = true;
+        while (working) {
+            for (Future<Integer> f : tasks) {
+                if (!f.isDone()) {
+                    break;
+                } else if (f.isDone() || f.isCancelled()) {
+                    assertEquals(numIterations, f.get());
+                }
+                working = false;
+            }
+        }
     }
 }

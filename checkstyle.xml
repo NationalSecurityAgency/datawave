@@ -11,6 +11,14 @@
         <property name="file" value="${basedir}/import-control-accumulo.xml"/>
         <property name="severity" value="warning"/>
     </module>
+    <!-- Check that forbidden classes are not imported anywhere. -->
+    <module name="IllegalImport">
+        <property name="regexp" value="true"/>
+        <property name="illegalClasses"
+                  value="^org\.apache\.accumulo\.core\.util\.Pair"/>
+        <property name="severity" value="error"/>
+    </module>
+    <!-- Do not allow any unused imports. -->
     <module name="UnusedImports">
         <property name="severity" value="error"/>
     </module>

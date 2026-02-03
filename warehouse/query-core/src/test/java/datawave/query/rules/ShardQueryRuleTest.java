@@ -101,6 +101,7 @@ public abstract class ShardQueryRuleTest {
         configuration.setTypeMetadata(typeMetadata);
         configuration.setQuerySettings(querySettings);
         configuration.setQueryConfiguration(queryConfiguration);
+        configuration.setQueryString(query);
         return configuration;
     }
 

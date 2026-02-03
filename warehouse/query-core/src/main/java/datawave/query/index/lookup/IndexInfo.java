@@ -24,6 +24,10 @@ import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedSet;
@@ -45,7 +49,7 @@ import datawave.query.util.count.CountMap;
  * <p>
  * The IndexInfo object supports union and intersection operations with other IndexInfo objects.
  */
-public class IndexInfo implements Writable, UidIntersector {
+public class IndexInfo implements Writable, KryoSerializable, UidIntersector {
 
     private static final Logger log = Logger.getLogger(IndexInfo.class);
 
@@ -95,6 +99,21 @@ public class IndexInfo implements Writable, UidIntersector {
     }
 
     @Override
+    public void write(Kryo kryo, Output output) {
+        boolean infinite = isInfinite();
+        output.writeBoolean(infinite);
+        if (!infinite) {
+            output.writeLong(count, true);
+        }
+        output.writeInt(uids.size(), true);
+        for (IndexMatch uid : uids) {
+            uid.write(kryo, output);
+        }
+        fieldCounts.write(kryo, output);
+        termCounts.write(kryo, output);
+    }
+
+    @Override
     public void write(DataOutput out) throws IOException {
         new VLongWritable(count).write(out);
         new VIntWritable(uids.size()).write(out);
@@ -125,6 +144,29 @@ public class IndexInfo implements Writable, UidIntersector {
 
     public JexlNode getNode() {
         return myNode;
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
+        final boolean infinite = input.readBoolean();
+        this.count = infinite ? -1 : input.readLong(true);
+        final int nUids = input.readInt(true);
+
+        IndexMatch[] uidsLocal = new IndexMatch[nUids];
+
+        for (int i = 0; i < nUids; i++) {
+            IndexMatch index = new IndexMatch();
+            index.read(kryo, input);
+            uidsLocal[i] = index;
+        }
+
+        this.uids = ImmutableSortedSet.copyOf(uidsLocal);
+
+        this.fieldCounts = new CountMap();
+        this.termCounts = new CountMap();
+
+        this.fieldCounts.read(kryo, input);
+        this.termCounts.read(kryo, input);
     }
 
     @Override

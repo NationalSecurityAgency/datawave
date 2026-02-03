@@ -1,7 +1,6 @@
 package datawave.next.stats;
 
 import java.io.Serializable;
-import java.text.DecimalFormat;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
@@ -20,8 +19,6 @@ public class DocumentCandidateStats implements Serializable {
     private final DescriptiveStatistics elapsedStats = new DescriptiveStatistics(window);
 
     private final DescriptiveStatistics candidates = new DescriptiveStatistics(window);
-
-    private static final DecimalFormat format = new DecimalFormat("#.#");
 
     public void merge(DocIdQueryIteratorStats stats) {
         submitStats.addValue(stats.getInitTime());
@@ -52,7 +49,6 @@ public class DocumentCandidateStats implements Serializable {
     }
 
     private String format(double ns) {
-        ns /= 1_000_000;
-        return format.format(ns);
+        return StatUtil.formatNanos((long) ns);
     }
 }

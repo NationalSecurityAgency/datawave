@@ -108,11 +108,19 @@ public class TextUtil {
         }
     }
 
+    /**
+     * Returns the bytes of the {@link Text}. This is guaranteed to return a byte array that is the full length of the text, and avoids that particular pitfall
+     * of {@link Text#getBytes()}. This method is more efficient than {@link Text#copyBytes()} in the case where the byte array returned by
+     * {@link Text#getBytes()} is already the length of the full data.
+     *
+     * @param text
+     *            the text to return the bytes of
+     * @return the bytes
+     */
     public static byte[] getBytes(Text text) {
         byte[] bytes = text.getBytes();
         if (bytes.length != text.getLength()) {
-            bytes = new byte[text.getLength()];
-            System.arraycopy(text.getBytes(), 0, bytes, 0, bytes.length);
+            bytes = text.copyBytes();
         }
         return bytes;
     }

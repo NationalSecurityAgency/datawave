@@ -13,6 +13,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.junit.After;
 import org.junit.Before;
@@ -139,5 +140,27 @@ public class DatawaveFieldIndexIteratorJexlTest {
         assertTrue(r.isEndKeyInclusive());
         assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
         assertEquals(new Key(row, fiName, new Text("y" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
+    }
+
+    @Test
+    public void taskName_test() {
+        DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withScanId("scan1").withQueryId("QID_1")
+                        .withTermNumber(12345).withIvaratorCacheDirs(cacheDirs).build();
+
+        String shard = "20250101_01";
+        String dt = "dt";
+        String uid = "2fe9872hg.1908h21f.10398hff1";
+        Key start = new Key(shard, dt + '\u0000' + uid + '\u0000');
+        Key end = new Key(shard, dt + '\u0000' + uid + new String(Character.toChars(Character.MAX_CODE_POINT)));
+        Range range = new Range(start, false, end, false);
+        String taskName = iteratorJexl.getTaskName(range);
+
+        assertTrue(taskName.contains(iteratorJexl.toStringNoQueryId()));
+        assertTrue(taskName.contains("scan1"));
+        assertTrue(taskName.contains("QID_1"));
+        assertTrue(taskName.contains(new Path(cacheDirs.get(0).getPathURI().toString()).toString()));
+        assertTrue(taskName.contains("12345"));
+        assertTrue(taskName.contains(range.toString()));
     }
 }

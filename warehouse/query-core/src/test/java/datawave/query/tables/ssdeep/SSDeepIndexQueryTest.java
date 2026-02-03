@@ -144,6 +144,7 @@ public class SSDeepIndexQueryTest {
         logic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         logic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
         logic.setIndexBuckets(BUCKET_COUNT);
+        logic.setNumRangesPerScanner(10);
 
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -383,7 +382,8 @@ public class EvaluationPhaseFilterFunctions {
                 }
             }
         }
-        return Collections.EMPTY_LIST.stream();
+
+        return Stream.empty();
     }
 
     /**
@@ -1335,6 +1335,7 @@ public class EvaluationPhaseFilterFunctions {
                     "yyyy-MM-dd HH:mm:ssz",
                     "yyyy-MM-dd HH:mm:ss",
                     "yyyyMMdd HHmmss",
+                    "yyyy:MM:dd HH:mm:ss",
                     "yyyy-MM-dd'T'HH'|'mm",
                     "yyyy-MM-dd'T'HH':'mm':'ss'.'SSS'Z'",
                     "yyyy-MM-dd'T'HH':'mm':'ss'Z'",

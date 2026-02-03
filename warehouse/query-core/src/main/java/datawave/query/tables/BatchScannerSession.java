@@ -20,8 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.clientImpl.ScannerOptions;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -166,7 +164,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     }
 
     public BatchScannerSession(ScannerSession other) {
-        this(other.tableName, other.auths, other.sessionDelegator, other.maxResults, other.settings, other.options, other.ranges);
+        this(other.tableName, other.auths, other.sessionDelegator, other.maxResults, other.settings, other.ranges);
 
     }
 
@@ -183,13 +181,10 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
      *            the max results
      * @param settings
      *            the query settings
-     * @param options
-     *            the scanner options
      * @param ranges
      *            list of ranges
      */
-    public BatchScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, ScannerOptions options,
-                    Collection<Range> ranges) {
+    public BatchScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, Collection<Range> ranges) {
 
         super(tableName, auths, delegator, maxResults, settings);
         Preconditions.checkNotNull(delegator);
@@ -733,11 +728,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     public void addVisitor(Function<ScannerChunk,ScannerChunk> visitorFunction) {
         visitorFunctions.add(visitorFunction);
 
-    }
-
-    @Deprecated(forRemoval = true)
-    public void setTabletLocator(TabletLocator tl) {
-        // no-op
     }
 
     public void setBackoffEnabled(boolean backoffEnabled) {

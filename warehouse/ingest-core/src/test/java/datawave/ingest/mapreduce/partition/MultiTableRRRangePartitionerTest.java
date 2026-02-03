@@ -46,7 +46,7 @@ public class MultiTableRRRangePartitionerTest {
 
     @Before
     public void before() throws IOException {
-        mockJob = new Job();
+        mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.set("job.output.table.names", TableName.SHARD);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);

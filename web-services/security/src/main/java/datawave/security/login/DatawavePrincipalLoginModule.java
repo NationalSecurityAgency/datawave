@@ -29,7 +29,6 @@ import javax.security.auth.login.CredentialException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.logging.Logger;
 import org.jboss.security.JSSESecurityDomain;
 import org.jboss.security.SimpleGroup;
@@ -44,7 +43,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.AuthorizationException;
@@ -52,9 +50,9 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
+import datawave.util.StringUtils;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
 
     private Principal identity;
@@ -133,7 +131,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         option = (String) options.get("requiredRoles");
         if (option != null) {
             requiredRoles.clear();
-            requiredRoles.addAll(Arrays.asList(option.split(":")));
+            requiredRoles.addAll(Arrays.asList(StringUtils.split(option, ':', false)));
         } else {
             requiredRoles.add("AuthorizedUser");
             requiredRoles.add("AuthorizedServer");
@@ -149,7 +147,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         option = (String) options.get("directRoles");
         if (option != null) {
             directRoles.clear();
-            directRoles.addAll(Arrays.asList(option.split(":")));
+            directRoles.addAll(Arrays.asList(StringUtils.split(option, ':', false)));
         } else {
             directRoles.add("AuthorizedServer");
             directRoles.add("AuthorizedQueryServer");

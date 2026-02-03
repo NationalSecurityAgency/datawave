@@ -1,9 +1,3 @@
-# This .dockerignore gets symlinked temporarily from the datawave repo's
-# root directory by docker-build.sh, since that directory is used as
-# the build context for the image.
-
-# Therefore, any exclusions/exceptions added here should take that into account
-
 # Ignore any ide and repo dirs/files
 
 **/.m2/**
@@ -16,12 +10,7 @@
 **/.settings/**
 **/logs/**
 
-# Ignore temporary .dockerignore symlink in the root directory...
-.dockerignore
-# ...but don't ignore the actual .dockerignore file
-!**/datawave-quickstart/docker/.dockerignore
-
-# Below, we mostly just ignore enviromnent-specific stuff that may have
+# Below, we mostly just ignore environment-specific stuff that may have
 # already been initialized under **/datawave-quickstart
 
 # Ignore any service install symlinks
@@ -52,7 +41,7 @@
 **/datawave-quickstart/build-properties/**
 
 # Make sure that we don't exclude the datawave tarballs, if they exist.
-# The docker-build.sh script *should* ensure that these are built prior
+# Maven *should* ensure that these are built prior
 # to the 'docker build ...' and that they are configured for the
 # docker container's standard root directory, ie, /opt/datawave
 

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.4</version>
+        <version>5.0.7</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-query</artifactId>
@@ -237,9 +237,14 @@
                 </executions>
             </plugin>
             <plugin>
-                <!-- This was added to ensure that nested test classes are run. -->
+                <!-- This empty exclude overrides the default exclusion pattern for inner classes -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude />
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

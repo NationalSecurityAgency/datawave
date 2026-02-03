@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 
 import datawave.query.Constants;
 import datawave.query.function.Equality;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.tld.TLD;
@@ -141,11 +142,18 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
 
         for (String uid : members) {
             // only generate index keys beyond the current uid in the tree
-            Key rangeCheckKey = new Key(rangeLimiter.getStartKey().getRow().toString(), dataType + Constants.NULL_BYTE_STRING + uid);
-            if (!rangeLimiter.beforeStartKey(rangeCheckKey) && !rangeLimiter.afterEndKey(rangeCheckKey)) {
+            // If we are re-creating the iterators with a YIELD_AT_BEGIN in the startKey, then we
+            // need to use a rangeLimiter with that marker removed and that is startKey inclusive
+            Range rangeLimiterNoYield = rangeLimiter;
+            if (WaitWindowObserver.hasBeginMarker(rangeLimiter.getStartKey())) {
+                Key startKey = WaitWindowObserver.removeMarkers(rangeLimiter.getStartKey());
+                rangeLimiterNoYield = new Range(startKey, true, rangeLimiter.getEndKey(), rangeLimiter.isEndKeyInclusive());
+            }
+            Key rangeCheckKey = new Key(rangeLimiterNoYield.getStartKey().getRow().toString(), dataType + Constants.NULL_BYTE_STRING + uid);
+            if (!rangeLimiterNoYield.beforeStartKey(rangeCheckKey) && !rangeLimiterNoYield.afterEndKey(rangeCheckKey)) {
                 Long timestamp = timestampMap.get(uid);
                 if (timestamp == null) {
-                    timestamp = rangeLimiter.getStartKey().getTimestamp();
+                    timestamp = rangeLimiterNoYield.getStartKey().getTimestamp();
                 }
                 keys.add(Maps.immutableEntry(getKey(node, rangeLimiter.getStartKey().getRow(), dataType, uid, timestamp), Constants.NULL_VALUE));
             }
@@ -284,7 +292,9 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
 
         // if the start key is not inclusive, and we have a datatype\0UID, then move the start past the children thereof
-        if (!r.isStartKeyInclusive() && !startCf.isEmpty()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!r.isStartKeyInclusive() && !startCf.isEmpty() && !WaitWindowObserver.hasBeginMarker(r.getStartKey())) {
             // we need to bump append 0xff to that byte array because we want to skip the children
             String row = start.getRow().toString().intern();
 
