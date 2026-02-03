@@ -7,6 +7,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -206,7 +207,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 List<String> missingReturnFields = getMissingReturnFields(returnFieldsParameter);
 
                 if (!missingReturnFields.isEmpty()) {
-                    shardQueryConfig.getProjectFields().addAll(missingReturnFields);
+                    Set<String> updatedProjectFields = new HashSet<>(shardQueryConfig.getProjectFields());
+                    updatedProjectFields.addAll(missingReturnFields);
+                    shardQueryConfig.setProjectFields(updatedProjectFields);
                     // capture this to undo what was forced into the query to satisfy the response after processing
                     forcedReturnFields = missingReturnFields;
                 }
@@ -374,7 +377,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         }
 
         // this hash will match the beginning of grouping notation generated for related fields in the event
-        String annotationSourceHash = annotationDataAccess.getAnnotationSource(annotation.getAnalyticSourceHash()).get().getAnalyticHash();
+        String annotationSourceHash = optionalAnnotationSource.get().getAnalyticHash();
 
         // since the document will be in grouping notation, there will not be an exact match on a field, iterate over the Document fields to find those that are
         // candidates
@@ -398,20 +401,37 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 continue;
             }
 
+            // get any pre-existing value in the map
+            String[] existingSplits = null;
+            String existing = allHits.getDynamicProperties().get(enrichmentFieldMap.get(baseFieldName));
+            if (existing != null && !existing.isBlank()) {
+                existingSplits = existing.split(";");
+            }
+
             // extract the value for enrichment
             Attribute<?> attr = document.get(docField);
+            List<String> values = new ArrayList<>();
+            if (existingSplits != null) {
+                values.addAll(Arrays.asList(existingSplits));
+            }
+            boolean updated = false;
             if (attr instanceof Attributes) {
                 // multi-valued
                 Attributes attrs = (Attributes) attr;
                 Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
-                List<String> values = new ArrayList<>();
+
                 for (Attribute<? extends Comparable<?>> value : attrSet) {
                     values.add(String.valueOf(value.getData()));
                 }
-                allHits.addDynamicProperties(enrichmentFieldMap.get(baseFieldName), StringUtils.join(values, ";"));
+                updated = true;
             } else if (attr != null) {
                 // single value
-                allHits.addDynamicProperties(enrichmentFieldMap.get(baseFieldName), String.valueOf(attr.getData()));
+                values.add(String.valueOf(attr.getData()));
+                updated = true;
+            }
+
+            if (updated) {
+                allHits.addDynamicProperties(enrichmentFieldMap.get(baseFieldName), StringUtils.join(values, ";"));
             }
         }
     }
