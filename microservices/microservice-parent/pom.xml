@@ -7,7 +7,7 @@
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
-        Wildfly web service. TEST Over time, more and more code will be moved out of the web service and
+        Wildfly web service. Over time, more and more code will be moved out of the web service and
         into microservices.</description>
     <url>https://github.com/NationalSecurityAgency/datawave-microservices-root</url>
     <licenses>
