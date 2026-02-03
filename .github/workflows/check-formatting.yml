@@ -1,15 +1,7 @@
 name: Check Code Formatting
 
 on:
-  push:
-    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
-    branches:
-    - 'integration'
-    - 'release/version*'
-  pull_request:
-    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE']
-  merge_group:
-  workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
