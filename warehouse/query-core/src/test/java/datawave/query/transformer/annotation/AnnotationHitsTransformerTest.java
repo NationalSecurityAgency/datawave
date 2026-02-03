@@ -1,6 +1,9 @@
 package datawave.query.transformer.annotation;
 
+import static datawave.query.QueryParameters.INCLUDE_GROUPING_CONTEXT;
+import static datawave.query.QueryParameters.RETURN_FIELDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -29,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
@@ -37,6 +42,7 @@ import datawave.data.normalizer.Normalizer;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.query.QueryParameters;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
@@ -109,12 +115,15 @@ public class AnnotationHitsTransformerTest {
     private MarkingFunctions markingFunctions;
 
     private List<Annotation> annotations;
+    private AnnotationSource annotationSource;
+    private Optional<AnnotationSource> optionalSource;
 
     @BeforeEach
     public void setup() {
         settings = new QueryImpl();
         markingFunctions = new MarkingFunctions.Default();
         annotations = new ArrayList<>();
+        optionalSource = Optional.empty();
         enrichmentFieldMap = new HashMap<>();
         shardQueryConfiguration = new ShardQueryConfiguration();
         shardQueryConfiguration.setQuery(settings);
@@ -836,6 +845,412 @@ public class AnnotationHitsTransformerTest {
         test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
     }
 
+    @Test
+    public void enrichmentFieldMapShardQueryConfigurationDefaultGroupingNotationTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+
+        transformer.initialize(settings, markingFunctions);
+        assertTrue(shardQueryConfiguration.getIncludeGroupingContext());
+    }
+
+    @Test
+    public void enrichmentFieldMapShardQueryConfigurationGroupingNotationFalseTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(INCLUDE_GROUPING_CONTEXT, "false");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+
+        transformer.initialize(settings, markingFunctions);
+        assertTrue(shardQueryConfiguration.getIncludeGroupingContext());
+    }
+
+    @Test
+    public void enrichmentFieldMapShardQueryConfigurationGroupingNotationTrueTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(INCLUDE_GROUPING_CONTEXT, "true");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+
+        transformer.initialize(settings, markingFunctions);
+        // not forcibly changed, because should be managed externally to AnntoationHitsTransformer
+        assertFalse(shardQueryConfiguration.getIncludeGroupingContext());
+    }
+
+    @Test
+    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsMissingTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+
+        transformer.initialize(settings, markingFunctions);
+        assertEquals(0, shardQueryConfiguration.getProjectFields().size());
+    }
+
+    @Test
+    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsMissTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(QueryParameters.RETURN_FIELDS, "field1");
+        shardQueryConfiguration.setProjectFields(Set.of("field1"));
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+
+        transformer.initialize(settings, markingFunctions);
+        assertEquals(2, shardQueryConfiguration.getProjectFields().size());
+        assertTrue(shardQueryConfiguration.getProjectFields().contains("EVENT_FIELD"));
+    }
+
+    @Test
+    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsHitTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(QueryParameters.RETURN_FIELDS, "EVENT_FIELD");
+        shardQueryConfiguration.setProjectFields(Set.of("EVENT_FIELD"));
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+
+        transformer.initialize(settings, markingFunctions);
+        assertEquals(1, shardQueryConfiguration.getProjectFields().size());
+        assertTrue(shardQueryConfiguration.getProjectFields().contains("EVENT_FIELD"));
+    }
+
+    @Test
+    public void enrichmentFieldMap_sourceHashNotFoundTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
+                        new Key("20260112_0", "test\u0000123.345.456"), true));
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_fieldNotFoundTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
+                        new Key("20260112_0", "test\u0000123.345.456"), true));
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_fieldWrongHashFormatTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
+                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("EVENT_FIELD.123.345.456", new Content("data", new Key(), true));
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.123.345.456", new Content("data", new Key(), true), true);
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_fieldMatchTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD",
+                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
+                                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true));
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_multiFieldMatchTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD",
+                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data;data2\"}]",
+                                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true));
+        expected.put("EVENT_FIELD.abc.444.456", new Content("data2", new Key(), true));
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+        source.put("EVENT_FIELD.abc.444.456", new Content("data2", new Key(), true), true);
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_fieldMatchNotInReturnFieldsTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(RETURN_FIELDS, "UUID");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD",
+                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
+                                        new Key("20260112_0", "test\u0000123.345.456"), true));
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_fieldMatchAlreadyInReturnFieldsTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(RETURN_FIELDS, "A,EVENT_FIELD,B");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD",
+                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
+                                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true));
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_fieldMatchAlreadyInReturnFieldsWithGroupingTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(INCLUDE_GROUPING_CONTEXT, "true");
+        withParameter(RETURN_FIELDS, "A,EVENT_FIELD,B");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD",
+                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
+                                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
+    @Test
+    public void enrichmentFieldMap_fieldMatchGroupingNotationOnTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(INCLUDE_GROUPING_CONTEXT, "true");
+
+        enrichmentFieldMap.put("EVENT_FIELD", "field");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1");
+
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD",
+                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
+                                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+
+        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    }
+
     private void withHits(String id, List<AnnotationHitsTransformer.SegmentHit> expectedHits) throws AllHitsException {
         when(allHitsFactory.create(any(), any(), any(), any())).thenAnswer(invocation -> {
             List<AnnotationHitsTransformer.SegmentHit> hits = invocation.getArgument(1);
@@ -908,6 +1323,11 @@ public class AnnotationHitsTransformerTest {
 
     private void givenAnnotation(Annotation annotation) {
         annotations.add(annotation);
+    }
+
+    private void givenAnnotationSource(AnnotationSource annotationSource) {
+        this.annotationSource = annotationSource;
+        this.optionalSource = Optional.of(annotationSource);
     }
 
     private void test(Entry<Key,Document> entry, Entry<Key,Document> expected) {
