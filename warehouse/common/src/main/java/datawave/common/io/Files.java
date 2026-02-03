@@ -5,7 +5,7 @@ import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
 
-/** Generally useful File utilities. TEST CHANGE */
+/** Generally useful File utilities. */
 public class Files {
     private static final String NULL_PARAMS = Files.class.getName() + " does not accept null parameters.";
     private static final String DIR_NO_EXIST = "Directory, '%s' does not exist; and cannot be created";
