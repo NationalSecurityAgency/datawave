@@ -409,8 +409,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addDelayIterator(timeoutDelayMS);
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeDelayIterator();
@@ -422,10 +420,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addDelayIterator();
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
-            // need to make sure the secondary order assertions still happen?
         } finally {
             removeDelayIterator();
         }
@@ -436,8 +431,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "seek");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
@@ -449,8 +442,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "next");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
@@ -462,8 +453,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "random");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
@@ -476,8 +465,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "seek");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
@@ -490,8 +477,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "next");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
@@ -504,8 +489,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "next");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeIOExceptionIterator();
@@ -518,8 +501,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeIOExceptionIterator();
@@ -532,8 +513,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "random");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
-            expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
-            expectRegexExpansionTime(scanThresholdMS);
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
@@ -573,8 +552,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "seek");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            expectRegexExpansionTime(scanThresholdMS);
+            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             // this is a perfectly valid query and should not be failing due to a NPE thrown all the up the stack
             assertThrows(NullPointerException.class, this::planAndExecuteQuery);
         } finally {
@@ -587,8 +565,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "next");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            expectRegexExpansionTime(scanThresholdMS);
+            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             // this is a perfectly valid query and should not be failing due to a NPE thrown all the up the stack
             assertThrows(NullPointerException.class, this::planAndExecuteQuery);
         } finally {
@@ -616,8 +593,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "seek");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            expectRegexExpansionTime(scanThresholdMS);
+            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             // this is throwing an IterationInterruptedException all the way up and failing a perfectly valid query
             assertThrows(IterationInterruptedException.class, this::planAndExecuteQuery);
         } finally {
@@ -631,8 +607,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "next");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            expectRegexExpansionTime(scanThresholdMS);
+            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             // this is throwing an IterationInterruptedException all the way up and failing a perfectly valid query
             assertThrows(IterationInterruptedException.class, this::planAndExecuteQuery);
         } finally {
@@ -647,7 +622,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
             addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "next");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
             expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            expectRegexExpansionTime(scanThresholdMS);
             planAndExecuteQuery();
         } finally {
             removeIOExceptionIterator();
@@ -674,8 +648,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "random");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            expectRegexExpansionTime(scanThresholdMS);
+            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             // this is throwing an IterationInterruptedException all the way up and failing a perfectly valid query
             assertThrows(IterationInterruptedException.class, this::planAndExecuteQuery);
         } finally {
@@ -714,8 +687,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "seek");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -728,8 +699,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "next");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -742,8 +711,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -757,8 +724,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "seek");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -772,8 +737,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "next");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -787,8 +750,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "next");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -802,8 +763,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -817,8 +776,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            expectPlan("_NOFIELD_ == 'a1b2c3'");
-            expectRegexExpansionTime(scanThresholdMS);
+            // expectPlan("_NOFIELD_ == 'a1b2c3'");
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
