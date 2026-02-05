@@ -31,6 +31,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationSource;
@@ -90,6 +93,8 @@ public class AnnotationHitsTransformerTest {
             .build();
     // @formatter:on
 
+    public static final Key HIT_KEY = new Key("20260112_0", "test\u0000123.345.456");
+
     private AnnotationHitsTransformer transformer;
 
     @Mock
@@ -118,6 +123,9 @@ public class AnnotationHitsTransformerTest {
     private AnnotationSource annotationSource;
     private Optional<AnnotationSource> optionalSource;
 
+    private ObjectMapper objectMapper = new ObjectMapper();
+    private AllHits allHitsResult;
+
     @BeforeEach
     public void setup() {
         settings = new QueryImpl();
@@ -127,6 +135,9 @@ public class AnnotationHitsTransformerTest {
         enrichmentFieldMap = new HashMap<>();
         shardQueryConfiguration = new ShardQueryConfiguration();
         shardQueryConfiguration.setQuery(settings);
+
+        allHitsResult = new AllHits();
+        allHitsResult.setAnnotationId("my-annotation");
     }
 
     @Test
@@ -250,8 +261,7 @@ public class AnnotationHitsTransformerTest {
         when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()),
-                        Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, new Document()));
     }
 
     @Test
@@ -271,15 +281,13 @@ public class AnnotationHitsTransformerTest {
         when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()),
-                        Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, new Document()));
     }
 
     @Test
-    public void termMissTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void termMissTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("v1", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -292,16 +300,15 @@ public class AnnotationHitsTransformerTest {
         withNormalizers();
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[]", new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void singleHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void singleHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -318,17 +325,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void regexHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void regexHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("a.*", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -345,17 +350,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void multiHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void multiHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("aaaaaaa", "bbbbbbb", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -374,17 +377,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1, hit2));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void multiHitRegexTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void multiHitRegexTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("aaa.*aa", "bbb.*bb", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -403,17 +404,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1, hit2));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void multiAnnotationHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void multiAnnotationHitTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("aaaaaaa", "bbbbbbb", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
@@ -432,19 +431,21 @@ public class AnnotationHitsTransformerTest {
         hit2.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1, hit2));
 
-        Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content(
-                        "[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]},{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        AllHits allHits1 = new AllHits();
+        allHits1.setAnnotationId("my-annotation");
+        AllHits allHits2 = new AllHits();
+        allHits2.setAnnotationId("my-annotation");
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHits1, allHits2), HIT_KEY, true));
+
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void allHitsFactoryErrorTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void allHitsFactoryErrorTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("aaaaaaa", "bbbbbbb", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("id1", "ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
         givenAnnotation(buildAnnotation("id2", "ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
@@ -459,19 +460,23 @@ public class AnnotationHitsTransformerTest {
 
         when(allHitsFactory.create(any(), any(), any(), any())).thenThrow(new AllHitsException("testing"));
 
-        Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content(
-                        "[{\"annotationId\":\"id1\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"error\":\"testing\"},{\"annotationId\":\"id2\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"error\":\"testing\"}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        AllHits hit1 = new AllHits();
+        hit1.setAnnotationId("id1");
+        hit1.addDynamicProperties("error", "testing");
+        AllHits hit2 = new AllHits();
+        hit2.setAnnotationId("id2");
+        hit2.addDynamicProperties("error", "testing");
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content(allHitsToString(hit1, hit2), HIT_KEY, true));
+
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void hitUnderMinScoreTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void hitUnderMinScoreTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, JsonProcessingException {
         Set<String> queryTerms = Set.of("bbbbbbb", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -486,16 +491,15 @@ public class AnnotationHitsTransformerTest {
         withNormalizers();
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[]", new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void minScoreOverMaxTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void minScoreOverMaxTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -515,17 +519,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void minScoreUnderZeroTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void minScoreUnderZeroTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("bbbbbbb", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -545,17 +547,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void contextOneStartTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void contextOneStartTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("bbbbbbb", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -574,17 +574,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void contextOneEndTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void contextOneEndTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("nnnnnnn", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -602,17 +600,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void contextOneCenterTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void contextOneCenterTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("ggggggg", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -631,17 +627,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void contextTruncatedTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void contextTruncatedTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("lllllll", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -660,17 +654,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void contextBiggerThanTotalTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void contextBiggerThanTotalTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("nnnnnnn", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -689,14 +681,13 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void underMaxBoundaryTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void underMaxBoundaryTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("lllllll", "v2", "v3");
 
         // ANNO3 not a valid type
@@ -719,17 +710,15 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void negativeContextBoundaryTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void negativeContextBoundaryTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Set<String> queryTerms = Set.of("lllllll", "v2", "v3");
 
-        // ANNO3 not a valid type
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -749,15 +738,13 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void plaintextKeywordParameterTest() throws AllHitsException {
-        // ANNO3 not a valid type
+    public void plaintextKeywordParameterTest() throws AllHitsException, JsonProcessingException {
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -779,15 +766,13 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1, hit2));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void jsonKeywordParameterTest() throws AllHitsException {
-        // ANNO3 not a valid type
+    public void jsonKeywordParameterTest() throws AllHitsException, JsonProcessingException {
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -809,15 +794,13 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1, hit2));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void urlEncodedJsonKeywordParameterTest() throws AllHitsException {
-        // ANNO3 not a valid type
+    public void urlEncodedJsonKeywordParameterTest() throws AllHitsException, JsonProcessingException {
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
 
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
@@ -839,15 +822,13 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit1, hit2));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        test(Map.entry(HIT_KEY, new Document()), Map.entry(HIT_KEY, expected));
     }
 
     @Test
-    public void enrichmentFieldMapShardQueryConfigurationDefaultGroupingNotationTest()
-                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void enrichmentFieldMapShardQueryConfigurationDefaultGroupingNotationTest() {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
 
         enrichmentFieldMap.put("EVENT_FIELD", "field");
@@ -860,8 +841,7 @@ public class AnnotationHitsTransformerTest {
     }
 
     @Test
-    public void enrichmentFieldMapShardQueryConfigurationGroupingNotationFalseTest()
-                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void enrichmentFieldMapShardQueryConfigurationGroupingNotationFalseTest() {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         withParameter(INCLUDE_GROUPING_CONTEXT, "false");
 
@@ -875,8 +855,7 @@ public class AnnotationHitsTransformerTest {
     }
 
     @Test
-    public void enrichmentFieldMapShardQueryConfigurationGroupingNotationTrueTest()
-                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void enrichmentFieldMapShardQueryConfigurationGroupingNotationTrueTest() {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         withParameter(INCLUDE_GROUPING_CONTEXT, "true");
 
@@ -886,13 +865,12 @@ public class AnnotationHitsTransformerTest {
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
 
         transformer.initialize(settings, markingFunctions);
-        // not forcibly changed, because should be managed externally to AnntoationHitsTransformer
+        // not forcibly changed, because should be managed externally to AnnotationHitsTransformer
         assertFalse(shardQueryConfiguration.getIncludeGroupingContext());
     }
 
     @Test
-    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsMissingTest()
-                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsMissingTest() {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
 
         enrichmentFieldMap.put("EVENT_FIELD", "field");
@@ -905,8 +883,7 @@ public class AnnotationHitsTransformerTest {
     }
 
     @Test
-    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsMissTest()
-                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsMissTest() {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         withParameter(QueryParameters.RETURN_FIELDS, "field1");
         shardQueryConfiguration.setProjectFields(Set.of("field1"));
@@ -922,8 +899,7 @@ public class AnnotationHitsTransformerTest {
     }
 
     @Test
-    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsHitTest()
-                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+    public void enrichmentFieldMapShardQueryConfigurationReturnFieldsHitTest() {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         withParameter(QueryParameters.RETURN_FIELDS, "EVENT_FIELD");
         shardQueryConfiguration.setProjectFields(Set.of("EVENT_FIELD"));
@@ -939,292 +915,166 @@ public class AnnotationHitsTransformerTest {
     }
 
     @Test
-    public void enrichmentFieldMap_sourceHashNotFoundTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
-
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
-        withNormalizers();
-
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
-
+    public void enrichmentFieldMap_sourceHashNotFoundTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(new Document(), expected);
     }
 
     @Test
-    public void enrichmentFieldMap_fieldNotFoundTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+    public void enrichmentFieldMap_fieldNotFoundTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
 
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
-        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
-        withNormalizers();
-
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
-
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), new Document()), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(new Document(), expected);
     }
 
     @Test
-    public void enrichmentFieldMap_fieldWrongHashFormatTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+    public void enrichmentFieldMap_fieldWrongHashFormatTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
-
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
-        withNormalizers();
-
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD", new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[]}]",
-                        new Key("20260112_0", "test\u0000123.345.456"), true));
-        expected.put("EVENT_FIELD.123.345.456", new Content("data", new Key(), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+        expected.put("EVENT_FIELD.123.345.456", new Content("data", HIT_KEY, true));
 
         Document source = new Document();
-        source.put("EVENT_FIELD.123.345.456", new Content("data", new Key(), true), true);
+        source.put("EVENT_FIELD.123.345.456", new Content("data", HIT_KEY, true), true);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(source, expected);
     }
 
     @Test
-    public void enrichmentFieldMap_fieldMatchTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+    public void enrichmentFieldMap_fieldMatchTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
-
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
-        withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
+        allHitsResult.addDynamicProperties("field", "data");
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD",
-                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
-                                        new Key("20260112_0", "test\u0000123.345.456"), true));
-        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true));
 
         Document source = new Document();
-        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(source, expected);
     }
 
     @Test
-    public void enrichmentFieldMap_multiFieldMatchTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+    public void enrichmentFieldMap_multiFieldMatchTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
-
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
-        withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
+        allHitsResult.addDynamicProperties("field", "data;data2");
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD",
-                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data;data2\"}]",
-                                        new Key("20260112_0", "test\u0000123.345.456"), true));
-        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true));
-        expected.put("EVENT_FIELD.abc.444.456", new Content("data2", new Key(), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true));
+        expected.put("EVENT_FIELD.abc.444.456", new Content("data2", HIT_KEY, true));
 
         Document source = new Document();
-        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
-        source.put("EVENT_FIELD.abc.444.456", new Content("data2", new Key(), true), true);
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
+        source.put("EVENT_FIELD.abc.444.456", new Content("data2", HIT_KEY, true), true);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(source, expected);
     }
 
     @Test
-    public void enrichmentFieldMap_fieldMatchNotInReturnFieldsTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+    public void enrichmentFieldMap_fieldMatchNotInReturnFieldsTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         withParameter(RETURN_FIELDS, "UUID");
 
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
         givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
-
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
-        withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
+        allHitsResult.addDynamicProperties("field", "data");
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD",
-                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
-                                        new Key("20260112_0", "test\u0000123.345.456"), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
 
         Document source = new Document();
-        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(source, expected);
     }
 
     @Test
-    public void enrichmentFieldMap_fieldMatchAlreadyInReturnFieldsTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+    public void enrichmentFieldMap_fieldMatchAlreadyInReturnFieldsTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         withParameter(RETURN_FIELDS, "A,EVENT_FIELD,B");
 
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
         givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
-
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
-        withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
+        allHitsResult.addDynamicProperties("field", "data");
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD",
-                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
-                                        new Key("20260112_0", "test\u0000123.345.456"), true));
-        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true));
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true));
 
         Document source = new Document();
-        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(source, expected);
     }
 
     @Test
     public void enrichmentFieldMap_fieldMatchAlreadyInReturnFieldsWithGroupingTest()
-                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         withParameter(INCLUDE_GROUPING_CONTEXT, "true");
         withParameter(RETURN_FIELDS, "A,EVENT_FIELD,B");
 
-        enrichmentFieldMap.put("EVENT_FIELD", "field");
-
-        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
-
-        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
         givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
-
-        query = "abc";
-        targetField = "TARGET_FIELD";
-        validTypes = Set.of("ANNO1");
-
-        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
-        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
-        withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
-        hit.setContextEnd(S1.getBoundary());
-        withHits("my-annotation", List.of(hit));
+        allHitsResult.addDynamicProperties("field", "data");
 
         Document expected = new Document();
-        expected.put("TARGET_FIELD",
-                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
-                                        new Key("20260112_0", "test\u0000123.345.456"), true));
-        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
 
         Document source = new Document();
-        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
 
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+        enrichmentFieldMapTest(source, expected);
     }
 
     @Test
-    public void enrichmentFieldMap_fieldMatchGroupingNotationOnTest() throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
-        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+    public void enrichmentFieldMap_fieldMatchGroupingNotationOnTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
         withParameter(INCLUDE_GROUPING_CONTEXT, "true");
 
+        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
+        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
+
+        allHitsResult.addDynamicProperties("field", "data");
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+        expected.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
+
+        Document source = new Document();
+        source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
+
+        enrichmentFieldMapTest(source, expected);
+    }
+
+    private void enrichmentFieldMapTest(Document input, Document output) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         enrichmentFieldMap.put("EVENT_FIELD", "field");
 
         Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
 
         givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
-        givenAnnotationSource(AnnotationSource.newBuilder().setAnalyticHash("abc").setAnalyticSourceHash("hash").build());
 
         query = "abc";
         targetField = "TARGET_FIELD";
@@ -1232,23 +1082,17 @@ public class AnnotationHitsTransformerTest {
 
         when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
-        when(annotationDao.getAnnotationSource("hash")).thenReturn(optionalSource);
         withNormalizers();
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit));
 
-        Document expected = new Document();
-        expected.put("TARGET_FIELD",
-                        new Content("[{\"annotationId\":\"my-annotation\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"field\":\"data\"}]",
-                                        new Key("20260112_0", "test\u0000123.345.456"), true));
-        expected.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
+        test(Map.entry(HIT_KEY, input), Map.entry(HIT_KEY, output));
+    }
 
-        Document source = new Document();
-        source.put("EVENT_FIELD.abc.345.456", new Content("data", new Key(), true), true);
-
-        test(Map.entry(new Key("20260112_0", "test\u0000123.345.456"), source), Map.entry(new Key("20260112_0", "test\u0000123.345.456"), expected));
+    private String allHitsToString(AllHits... allHits) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(allHits);
     }
 
     private void withHits(String id, List<AnnotationHitsTransformer.SegmentHit> expectedHits) throws AllHitsException {
