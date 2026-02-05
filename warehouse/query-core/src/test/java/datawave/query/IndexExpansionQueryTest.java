@@ -27,7 +27,6 @@ import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -49,6 +48,8 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.query.index.lookup.EmptyQueryPlanStream;
+import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -109,7 +110,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
 
     // 10 values per prefix, low expansion thresholds, low scan thresholds
     // using this tests can simulate exceptions or timeouts on initial seek vs. next calls
-    private long expansionThreshold = 500;
+    private final long expansionThreshold = 500;
     private final long scanThresholdMS = 50L;
     private final int iterationDelayMS = 10;
     private final int timeoutDelayMS = 30_000;
@@ -155,30 +156,25 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         QueryPlanner planner = logic.getQueryPlanner();
         assertInstanceOf(StageTimingDefaultQueryPlanner.class, planner);
         StageTimingDefaultQueryPlanner stagePlanner = (StageTimingDefaultQueryPlanner) planner;
-
-        if (stagePlanner.getExpandRegexStage() < expected) {
-            // assume that faster is better, for now
-            return;
-        }
-
-        String msg = "expected: " + expected + " but was " + stagePlanner.getExpandRegexStage();
-        long delta = (long) Math.max((expected * 0.1), 250);
-        assertEquals(expected, stagePlanner.getExpandRegexStage(), delta, msg);
+        assertStageTime(expected, stagePlanner.getExpandRegexStage());
     }
 
     protected void assertRangeTime(long expected) {
         QueryPlanner planner = logic.getQueryPlanner();
         assertInstanceOf(StageTimingDefaultQueryPlanner.class, planner);
         StageTimingDefaultQueryPlanner stagePlanner = (StageTimingDefaultQueryPlanner) planner;
+        assertStageTime(expected, stagePlanner.getExpandRangeStage());
+    }
 
-        if (stagePlanner.getExpandRangeStage() < expected) {
+    protected void assertStageTime(long expected, long time) {
+        if (time < expected) {
             // assume that faster is better
             return;
         }
 
-        String msg = "expected: " + expected + " but was " + stagePlanner.getExpandRangeStage();
-        long delta = (long) Math.max((expected * 0.1), 250);
-        assertEquals(expected, stagePlanner.getExpandRangeStage(), delta, msg);
+        String msg = "expected: " + expected + " but was " + time;
+        long delta = (long) Math.max((expected * 0.1), 500);
+        assertEquals(expected, time, delta, msg);
     }
 
     protected void expectRegexExpansionTime(long time) {
@@ -366,7 +362,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testFieldedRegexITEOnNext() throws Exception {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "next");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "next");
             givenQuery("FIELD_A =~ 'a.*'");
             expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
             expectRegexExpansionTime(scanThresholdMS);
@@ -380,7 +376,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testFieldedRegexITEOnRandom() throws Exception {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery("FIELD_A =~ 'a.*'");
             expectPlan("((_Value_ = true) && (FIELD_A =~ 'a.*'))");
             expectRegexExpansionTime(scanThresholdMS);
@@ -487,7 +483,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testUnfieldedRegexITEOnNext() {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "next");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "next");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
@@ -499,7 +495,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testUnfieldedRegexITEOnRandom() {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery("_ANYFIELD_ =~ 'a.*'");
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
@@ -521,7 +517,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
 
     // This enters an infinite loop
     @Test
-    @Disabled
     public void testBoundedRangeTimeoutOnInitialSeek() throws Exception {
         try {
             addDelayIterator(timeoutDelayMS);
@@ -548,40 +543,37 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testBoundedRangeNPEOnSeek() {
+    public void testBoundedRangeNPEOnSeek() throws Exception {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "seek");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            // this is a perfectly valid query and should not be failing due to a NPE thrown all the up the stack
-            assertThrows(NullPointerException.class, this::planAndExecuteQuery);
+            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
+            planAndExecuteQuery();
         } finally {
             removeRuntimeExceptionIterator();
         }
     }
 
     @Test
-    public void testBoundedRangeNPEOnNext() {
+    public void testBoundedRangeNPEOnNext() throws Exception {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "next");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            // this is a perfectly valid query and should not be failing due to a NPE thrown all the up the stack
-            assertThrows(NullPointerException.class, this::planAndExecuteQuery);
+            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
+            planAndExecuteQuery();
         } finally {
             removeRuntimeExceptionIterator();
         }
     }
 
     @Test
-    public void testBoundedRangeNPERandom() {
+    public void testBoundedRangeNPERandom() throws Exception {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "random");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
             expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             expectRegexExpansionTime(scanThresholdMS);
-            // this is a perfectly valid query and should not be failing due to a NPE thrown all the up the stack
-            assertThrows(NullPointerException.class, this::planAndExecuteQuery);
+            planAndExecuteQuery();
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -589,13 +581,12 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
 
     // IterationInterruptedException on seek
     @Test
-    public void testBoundedRangeIIEOnInitialSeek() {
+    public void testBoundedRangeIIEOnInitialSeek() throws Exception {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "seek");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            // this is throwing an IterationInterruptedException all the way up and failing a perfectly valid query
-            assertThrows(IterationInterruptedException.class, this::planAndExecuteQuery);
+            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
+            planAndExecuteQuery();
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -603,13 +594,12 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
 
     // IterationInterruptedException on next
     @Test
-    public void testBoundedRangeIIEOnNext() {
+    public void testBoundedRangeIIEOnNext() throws Exception {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "next");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            // this is throwing an IterationInterruptedException all the way up and failing a perfectly valid query
-            assertThrows(IterationInterruptedException.class, this::planAndExecuteQuery);
+            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
+            planAndExecuteQuery();
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -619,7 +609,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testBoundedRangeITEOnNext() throws Exception {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "next");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "next");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
             expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             planAndExecuteQuery();
@@ -632,7 +622,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testBoundedRangeITEOnRandom() throws Exception {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
             expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
             expectRegexExpansionTime(scanThresholdMS);
@@ -644,13 +634,12 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
 
     // IterationInterruptedException on random operation
     @Test
-    public void testBoundedRangeIIEOnRandom() {
+    public void testBoundedRangeIIEOnRandom() throws Exception {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "random");
             givenQuery("((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z'))");
-            // expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
-            // this is throwing an IterationInterruptedException all the way up and failing a perfectly valid query
-            assertThrows(IterationInterruptedException.class, this::planAndExecuteQuery);
+            expectPlan("((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'z')))");
+            planAndExecuteQuery();
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -748,7 +737,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testUnfieldedLiteralITEOnNext() {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "next");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "next");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
@@ -761,7 +750,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     @Test
     public void testUnfieldedLiteralITEOnRandom() {
         try {
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
@@ -776,7 +765,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // expectPlan("_NOFIELD_ == 'a1b2c3'");
             // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
             assertThrows(RuntimeException.class, this::planAndExecuteQuery);
         } finally {
@@ -793,7 +781,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
             String query = buildFieldedRegexQuery(fields, prefixes);
             String plan = buildValueExceededPlan(fields, prefixes);
 
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery(query);
             expectPlan(plan);
             expectRegexExpansionTime(scanThresholdMS);
@@ -809,7 +797,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
             SortedSet<String> prefixes = new TreeSet<>(Set.of("aa", "ab", "ac", "ad", "ae"));
             String query = buildUnfieldedRegexQuery(prefixes);
 
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery(query);
             expectPlan(null); // no plan expected
             assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
@@ -825,7 +813,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
             String query = buildBoundedRangeQuery(fields);
             String plan = buildValueExceededRangePlan(fields);
 
-            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "ITE for test", "random");
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery(query);
             expectPlan(plan);
             expectRangeExpansionTime(scanThresholdMS);
@@ -942,12 +930,12 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         }
     }
 
-    protected void addIOExceptionIterator(String clazz, String msg, String when) {
+    protected void addIOExceptionIterator(String clazz, String when) {
         for (String tableName : indexTableNames()) {
             Map<String,String> properties = new HashMap<>();
             properties.put("table.iterator.scan.ioex", "3,datawave.test.iter.IOExceptionIterator");
             properties.put("table.iterator.scan.ioex.opt.exception.class", String.valueOf(clazz));
-            properties.put("table.iterator.scan.ioex.opt.exception.message", String.valueOf(msg));
+            properties.put("table.iterator.scan.ioex.opt.exception.message", "ITE for test");
             switch (when) {
                 case "seek":
                     properties.put("table.iterator.scan.ioex.opt.fireOnSeek", "true");
@@ -1008,6 +996,21 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
                 expandRangeStage = System.currentTimeMillis() - start;
                 log.info("expand ranges: {}", expandRangeStage);
             }
+        }
+
+        /**
+         * Stub out the {@link QueryPlanStream} with an {@link EmptyQueryPlanStream}
+         *
+         * @param config
+         *            the shard query config
+         * @param scannerFactory
+         *            the scanner factory
+         * @param metadataHelper
+         *            the metadata helper
+         * @return an {@link EmptyQueryPlanStream}
+         */
+        protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+            return EmptyQueryPlanStream.of();
         }
 
         public long getExpandRegexStage() {

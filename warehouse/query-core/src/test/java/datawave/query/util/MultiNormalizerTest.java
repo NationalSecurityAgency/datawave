@@ -2,6 +2,10 @@ package datawave.query.util;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URL;
+import java.nio.file.Path;
+import java.util.Collections;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterAll;
@@ -9,6 +13,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +22,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.google.common.base.Preconditions;
+
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.TypeRegistry;
@@ -24,6 +31,7 @@ import datawave.query.MultiNormalizerIngest;
 import datawave.query.QueryParameters;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 
@@ -44,6 +52,9 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     private static final Logger log = LoggerFactory.getLogger(MultiNormalizerTest.class);
 
     private static final Authorizations auths = new Authorizations("ALL");
+
+    @TempDir
+    public static Path folder;
 
     @Autowired
     @Qualifier("EventQuery")
@@ -77,6 +88,14 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     public void beforeEach() {
         setClientForTest(clientForSetup);
         givenParameter(QueryParameters.HIT_LIST, "true");
+
+        URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        Preconditions.checkNotNull(hadoopConfig);
+        logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
+
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toUri().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
+
         // default to full date range
         givenDate("20250707", "20250708");
     }
@@ -239,7 +258,7 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testRangeSizeFourToTen_rangeExpansionDisabled() throws Exception {
+    public void testRangeSizeFourToTen_rangeExpansionDisabled() {
         try {
             // simulate a bounded range expansion failure
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(true);
@@ -295,7 +314,7 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testRangeSizeFourToTenWithAnchor_rangeExpansionDisabled() throws Exception {
+    public void testRangeSizeFourToTenWithAnchor_rangeExpansionDisabled() {
         try {
             // simulate a bounded range expansion failure
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(true);
