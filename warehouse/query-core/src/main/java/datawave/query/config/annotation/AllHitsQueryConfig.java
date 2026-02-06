@@ -39,7 +39,7 @@ public class AllHitsQueryConfig implements Serializable {
     private Normalizer<String> termNormalizer;
 
     /**
-     * a map from fields in the event to fields that should be enriched for any matching annotation
+     * A mapping between fields in the event associating an annotation to a field to be returned in an AllHits dynamic field.
      */
     private Map<String,String> annotationEnrichmentFieldMap = new HashMap<>();
 

@@ -76,7 +76,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private static final BoundaryComparator BOUNDARY_COMPARATOR = new BoundaryComparator();
 
     /**
-     * In order to include certain fields for joining grouping notation fields with the annotation changes have to be made to the shardQueryConfig
+     * Depending on how the query is configured to run by the user, adjustments may need to be made to forcibly enable grouping notation and return fields so
+     * that this transformer will have all the data necessary to fully enrichment responses. These changes will be made transparently to the user, and removed
+     * before the final Document is returned from the transformer. This is only necessary if enrichmentFieldMap is populated.
      */
     private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
@@ -88,7 +90,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private final Normalizer<String> termNormalizer;
     private final String jexlQueryString;
     /**
-     * a map from an event field to the field that should be added to an AllHits joined by the analyticSourceHash
+     * Used for merging data about an annotation that may have been stored in the event with hits against that annotation. The key represents the field that
+     * should be searched in the Document. The value is the name of the field to store in the AllHits dynamicFields when found. For each AllHits object that is
+     * generated, check the Document for the presence of these fields and add them to the AllHits response.
      */
     private final Map<String,String> enrichmentFieldMap;
 
