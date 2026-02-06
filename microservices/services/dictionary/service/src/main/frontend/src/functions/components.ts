@@ -29,7 +29,6 @@ export const columns: QTableProps['columns'] = [
     field: 'fieldName',
     align: 'left',
     sortable: false,
-    style: 'max-width: 275px; min-width: 275px',
   },
   {
     label: 'Internal FieldName',
@@ -37,7 +36,6 @@ export const columns: QTableProps['columns'] = [
     field: 'internalFieldName',
     align: 'left',
     sortable: false,
-    style: 'max-width: 275px; min-width: 275px',
   },
   {
     label: 'Data Type',
@@ -45,7 +43,6 @@ export const columns: QTableProps['columns'] = [
     field: 'dataType',
     align: 'left',
     sortable: false,
-    style: 'max-width: 100px; min-width: 100px',
   },
   {
     label: 'Index Only',
@@ -53,7 +50,6 @@ export const columns: QTableProps['columns'] = [
     field: 'indexOnly',
     align: 'left',
     sortable: false,
-    style: 'max-width: 100px; min-width: 100px',
   },
   {
     label: 'Forward Index',
@@ -61,7 +57,6 @@ export const columns: QTableProps['columns'] = [
     field: 'forwardIndexed',
     align: 'left',
     sortable: false,
-    style: 'max-width: 100px; min-width: 100px',
   },
   {
     label: 'Reverse Index',
@@ -69,7 +64,6 @@ export const columns: QTableProps['columns'] = [
     field: 'reverseIndexed',
     align: 'left',
     sortable: false,
-    style: 'max-width: 100px; min-width: 100px',
   },
   {
     label: 'Normalized',
@@ -77,7 +71,6 @@ export const columns: QTableProps['columns'] = [
     field: 'normalized',
     align: 'left',
     sortable: false,
-    style: 'max-width: 100px; min-width: 100px',
   },
   {
     label: 'Types',
@@ -85,7 +78,6 @@ export const columns: QTableProps['columns'] = [
     field: 'Types',
     align: 'left',
     sortable: false,
-    style: 'max-width: 100px; min-width: 100px',
   },
   {
     label: 'Tokenized',
@@ -93,7 +85,6 @@ export const columns: QTableProps['columns'] = [
     field: 'tokenized',
     align: 'left',
     sortable: false,
-    style: 'max-width: 100px; min-width: 100px',
   },
   {
     label: 'Description',
@@ -101,7 +92,6 @@ export const columns: QTableProps['columns'] = [
     field: 'Descriptions',
     align: 'center',
     sortable: false,
-    style: 'max-width: 200px; min-width: 200px',
   },
   {
     label: 'Last Updated',
@@ -109,6 +99,18 @@ export const columns: QTableProps['columns'] = [
     field: 'lastUpdated',
     align: 'left',
     sortable: false,
-    style: 'max-width: 125px; min-width: 125px',
   },
 ];
+const columnWidths = reactive<Record<string, number>>({
+  fieldName: 275,
+  internalFieldName: 275,
+  dataType: 100,
+  indexOnly: 100,
+  forwardIndexed: 100,
+  reverseIndexed: 100,
+  normalized: 100,
+  types: 100,
+  tokenized: 100,
+  descriptions: 200,
+  lastUpdated: 125,
+})
