@@ -637,6 +637,18 @@
         <property name="logicDescription" value="Query that returns data from the term frequency query table" />
     </bean>
 
+    <util:list id="tagCloudExtractors" value-type="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+        <bean class="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+            <property name="category" value="cat1" />
+            <property name="fields">
+                <util:list value-type="java.lang.String">
+                    <value>F1</value>
+                    <value>F2</value>
+                </util:list>
+            </property>
+        </bean>
+    </util:list>
+
     <bean id="KeywordUUIDQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.keyword.KeywordChainedUUIDQueryLogic">
         <property name="logic1">
             <bean scope="prototype" parent="BaseEventQuery">
@@ -655,6 +667,7 @@
         <property name="chainStrategy">
             <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy"/>
         </property>
+        <property name="extractors" ref="tagCloudExtractors" />
     </bean>
 
     <!-- Query Logic that returns returnd document keywords -->
