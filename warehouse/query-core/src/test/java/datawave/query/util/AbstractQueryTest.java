@@ -103,6 +103,9 @@ public abstract class AbstractQueryTest {
     protected final Set<String> expectedUUIDs = new HashSet<>();
     private final HitTermAssertions hitTermAssertions = new HitTermAssertions();
 
+    // the test framework is opinionated about asserting the final query plan
+    private boolean queryPlanAssertionEnabled = true;
+
     public abstract ShardQueryLogic getLogic();
 
     @AfterEach
@@ -119,6 +122,17 @@ public abstract class AbstractQueryTest {
         results.clear();
         expectedUUIDs.clear();
         hitTermAssertions.resetState();
+
+        queryPlanAssertionEnabled = true;
+    }
+
+    /**
+     * Just because you <b>can</b> disable this doesn't mean you <b>should</b>.
+     * <p>
+     * Encoding the final query plan in a unit test conveys information that would otherwise be invisible.
+     */
+    protected void disableQueryPlanAssertion() {
+        queryPlanAssertionEnabled = false;
     }
 
     public void setClientForTest(AccumuloClient client) {
@@ -272,13 +286,25 @@ public abstract class AbstractQueryTest {
      *             if something goes wrong
      */
     public void planAndExecuteQuery() throws Exception {
+        planAndExecuteQuery(getLogic());
+    }
+
+    /**
+     * A core method that will execute the query against every supported type of index table, as defined in {@link TestIndexTableNames#names()}.
+     *
+     * @param logic
+     *            the query logic
+     * @throws Exception
+     *             if something goes wrong
+     */
+    public void planAndExecuteQuery(ShardQueryLogic logic) throws Exception {
         for (String indexTableName : TestIndexTableNames.names()) {
             try {
                 log.info("=== using index: {} ===", indexTableName);
-                setupIndexTable(indexTableName);
-                planAndExecuteIndividualQuery();
+                setupIndexTable(indexTableName, logic);
+                planAndExecuteIndividualQuery(logic);
             } finally {
-                teardownIndexTable(indexTableName);
+                teardownIndexTable(indexTableName, logic);
             }
         }
     }
@@ -288,15 +314,17 @@ public abstract class AbstractQueryTest {
      *
      * @param indexTableName
      *            the global index table name
+     * @param logic
+     *            the query logic
      */
-    private void setupIndexTable(String indexTableName) {
-        getLogic().setIndexTableName(indexTableName);
+    private void setupIndexTable(String indexTableName, ShardQueryLogic logic) {
+        logic.setIndexTableName(indexTableName);
         switch (indexTableName) {
             case TestIndexTableNames.SHARD_INDEX:
             case TestIndexTableNames.NO_UID_INDEX:
                 break;
             case TestIndexTableNames.TRUNCATED_INDEX:
-                getLogic().setUseTruncatedIndex(true);
+                logic.setUseTruncatedIndex(true);
                 break;
             default:
                 throw new IllegalStateException("Unknown index table name: " + indexTableName);
@@ -308,8 +336,10 @@ public abstract class AbstractQueryTest {
      *
      * @param indexTableName
      *            the global index table name
+     * @param logic
+     *            the query logic
      */
-    private void teardownIndexTable(String indexTableName) {
+    private void teardownIndexTable(String indexTableName, ShardQueryLogic logic) {
         switch (indexTableName) {
             case TestIndexTableNames.SHARD_INDEX:
             case TestIndexTableNames.NO_UID_INDEX:
@@ -325,13 +355,15 @@ public abstract class AbstractQueryTest {
     /**
      * A core method that plans and executes the query
      *
+     * @param logic
+     *            the query logic
      * @throws Exception
      *             if something goes wrong
      */
-    private void planAndExecuteIndividualQuery() throws Exception {
-        planQuery();
-        executeQuery();
-        assertQueryPlan();
+    private void planAndExecuteIndividualQuery(ShardQueryLogic logic) throws Exception {
+        planQuery(logic);
+        executeQuery(logic);
+        assertQueryPlan(logic);
         assertResultCount();
         assertUuids();
         assertHitTerms();
@@ -341,10 +373,12 @@ public abstract class AbstractQueryTest {
     /**
      * Configure the logic with start and end date, query parameters and plan the query.
      *
+     * @param logic
+     *            the query logic
      * @throws Exception
      *             if something goes wrong
      */
-    private void planQuery() throws Exception {
+    private void planQuery(ShardQueryLogic logic) throws Exception {
         try {
             QueryImpl settings = new QueryImpl();
             settings.setBeginDate(getStartDate());
@@ -355,13 +389,13 @@ public abstract class AbstractQueryTest {
             settings.setParameters(parameters);
             settings.setId(UUID.randomUUID());
 
-            getLogic().setMaxEvaluationPipelines(1);
-            getLogic().setHitList(true); // always ask for HIT_TERMs
+            logic.setMaxEvaluationPipelines(1);
+            logic.setHitList(true); // always ask for HIT_TERMs
 
             extraConfigurations();
 
-            GenericQueryConfiguration config = getLogic().initialize(clientForTest, settings, authSet);
-            getLogic().setupQuery(config);
+            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, authSet);
+            logic.setupQuery(config);
         } catch (Exception e) {
             log.info("exception while planning query", e);
             throw e;
@@ -375,29 +409,44 @@ public abstract class AbstractQueryTest {
 
     /**
      * Iterate through the query and add all deserialized results to the set of result documents.
+     *
+     * @param logic
+     *            the query logic
      */
-    private void executeQuery() {
+    private void executeQuery(ShardQueryLogic logic) {
         results.clear();
-        for (Map.Entry<Key,Value> entry : getLogic()) {
+        for (Map.Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             results.add(d);
         }
-        getLogic().close();
+        logic.close();
         log.info("query retrieved {} results", results.size());
     }
 
     /**
-     * Assert the final query plan against the expected query plan. This is a required assertion for every test.
+     * Assert the final query plan against the expected query plan. This assertion is <b>highly recommended</b> for every test.
+     * <p>
+     * Even though this assertion can be skipped via {@link #disableQueryPlanAssertion()}, if the user sets an expected query plan then the disable flag will be
+     * ignored.
+     *
+     * @param logic
+     *            the query logic
      */
-    private void assertQueryPlan() {
+    private void assertQueryPlan(ShardQueryLogic logic) {
+        if (expectedQueryPlan == null && !queryPlanAssertionEnabled) {
+            // only skip if the plan is null and plan assertions are disabled.
+            // if plan assertions are disabled but an expected plan was set we must check the plan
+            return;
+        }
+
         assertNotNull(expectedQueryPlan, "The expected query plan must be set ");
         try {
             ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(expectedQueryPlan);
-            ASTJexlScript plannedScript = getLogic().getConfig().getQueryTree();
+            ASTJexlScript plannedScript = logic.getConfig().getQueryTree();
             if (!TreeEqualityVisitor.isEqual(expected, plannedScript)) {
                 log.info("expected: {}", expectedQueryPlan);
-                log.info("planned : {}", getLogic().getConfig().getQueryString());
-                fail("Planned query did not match expectation");
+                log.info("planned : {}", logic.getConfig().getQueryString());
+                fail("Planned query did not match expectation: " + TreeEqualityVisitor.checkEquality(expected, plannedScript).getReason());
             }
         } catch (ParseException e) {
             fail("Failed to parse query: " + query);
@@ -426,6 +475,10 @@ public abstract class AbstractQueryTest {
         Set<String> found = new HashSet<>();
         for (Document result : results) {
             Attribute<?> attr = result.get("UUID");
+            if (attr == null) {
+                // this should be a little more dynamic
+                attr = result.get("UUID.0");
+            }
             assertNotNull(attr, "result did not contain a UUID");
             String uuid = getUUID(attr);
             found.add(uuid);
