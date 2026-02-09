@@ -282,7 +282,11 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             throw new DatawaveFatalQueryException(e);
         }
 
-        return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
+        if (config.isUseNewIndexLookups()) {
+            return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
+        } else {
+            return buildIndexLookup(node, false, false, () -> createLookup(node));
+        }
     }
 
     @Override
