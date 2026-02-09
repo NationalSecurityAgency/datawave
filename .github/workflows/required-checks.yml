@@ -1,0 +1,182 @@
+name: Required Status Checks
+
+# This workflow coordinates all required checks and ensures they always run and report.
+# It either calls the actual test workflows when code changes, or reports success when
+# only documentation files change. This provides a consistent set of job names in the
+# GitHub UI and prevents branch protection from blocking doc-only PRs.
+
+on:
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run_main: ${{ steps.filter.outputs.should_run_main }}
+      should_run_microservices: ${{ steps.filter.outputs.should_run_microservices }}
+      should_run_formatting: ${{ steps.filter.outputs.should_run_formatting }}
+      should_run_compose: ${{ steps.filter.outputs.should_run_compose }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Detect which workflows should run
+      id: filter
+      run: |
+        # Get list of changed files
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+        else
+          FILES=$(git diff --name-only HEAD^..HEAD)
+        fi
+        
+        echo "Changed files:"
+        echo "$FILES"
+        echo ""
+        
+        # Check for main repo changes (paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**'])
+        if echo "$FILES" | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$|^microservices/'; then
+          echo "should_run_main=true" >> $GITHUB_OUTPUT
+          echo "✓ Main tests should run"
+        else
+          echo "should_run_main=false" >> $GITHUB_OUTPUT
+          echo "✗ Main tests will be skipped"
+        fi
+        
+        # Check for microservices changes (paths: ['microservices/**','!**/*.md', '!.github/**', '!CODEOWNERS', '!LICENSE'])
+        if echo "$FILES" | grep -E '^microservices/' | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$'; then
+          echo "should_run_microservices=true" >> $GITHUB_OUTPUT
+          echo "✓ Microservice tests should run"
+        else
+          echo "should_run_microservices=false" >> $GITHUB_OUTPUT
+          echo "✗ Microservice tests will be skipped"
+        fi
+        
+        # Check for formatting changes (paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE'])
+        if echo "$FILES" | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$'; then
+          echo "should_run_formatting=true" >> $GITHUB_OUTPUT
+          echo "✓ Formatting check should run"
+        else
+          echo "should_run_formatting=false" >> $GITHUB_OUTPUT
+          echo "✗ Formatting check will be skipped"
+        fi
+        
+        # Check for compose changes (paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE'])
+        if echo "$FILES" | grep -qvE '\.(md)$|^\.github/|^CODEOWNERS$|^LICENSE$'; then
+          echo "should_run_compose=true" >> $GITHUB_OUTPUT
+          echo "✓ Compose checks should run"
+        else
+          echo "should_run_compose=false" >> $GITHUB_OUTPUT
+          echo "✗ Compose checks will be skipped"
+        fi
+
+  call-main-tests:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_run_main == 'true'
+    uses: ./.github/workflows/datawave-tests.yml
+    secrets: inherit
+  
+  call-microservice-tests:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_run_microservices == 'true'
+    uses: ./.github/workflows/microservice-tests.yml
+    secrets: inherit
+  
+  call-formatting-check:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_run_formatting == 'true'
+    uses: ./.github/workflows/check-formatting.yml
+    secrets: inherit
+  
+  call-compose-tests:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_run_compose == 'true'
+    uses: ./.github/workflows/compose-coordinator.yml
+    secrets: inherit
+  
+  build-and-test-main:
+    runs-on: ubuntu-latest
+    needs: [check-changes, call-main-tests]
+    if: always()
+    steps:
+    - name: Report skipped
+      if: needs.check-changes.outputs.should_run_main == 'false'
+      run: echo "✓ Skipped - only documentation files changed"
+    
+    - name: Report result
+      if: needs.check-changes.outputs.should_run_main == 'true'
+      run: |
+        if [[ "${{ needs.call-main-tests.result }}" == "success" ]]; then
+          echo "✓ Main tests passed"
+          exit 0
+        else
+          echo "✗ Main tests failed or were cancelled"
+          exit 1
+        fi
+
+  build-and-test-microservices:
+    runs-on: ubuntu-latest
+    needs: [check-changes, call-microservice-tests]
+    if: always()
+    steps:
+    - name: Report skipped
+      if: needs.check-changes.outputs.should_run_microservices == 'false'
+      run: echo "✓ Skipped - no microservice code changes"
+    
+    - name: Report result
+      if: needs.check-changes.outputs.should_run_microservices == 'true'
+      run: |
+        if [[ "${{ needs.call-microservice-tests.result }}" == "success" ]]; then
+          echo "✓ Microservice tests passed"
+          exit 0
+        else
+          echo "✗ Microservice tests failed or were cancelled"
+          exit 1
+        fi
+
+  check-code-formatting:
+    runs-on: ubuntu-latest
+    needs: [check-changes, call-formatting-check]
+    if: always()
+    steps:
+    - name: Report skipped
+      if: needs.check-changes.outputs.should_run_formatting == 'false'
+      run: echo "✓ Skipped - only documentation files changed"
+    
+    - name: Report result
+      if: needs.check-changes.outputs.should_run_formatting == 'true'
+      run: |
+        if [[ "${{ needs.call-formatting-check.result }}" == "success" ]]; then
+          echo "✓ Formatting check passed"
+          exit 0
+        else
+          echo "✗ Formatting check failed or was cancelled"
+          exit 1
+        fi
+
+  compose-check-jobs:
+    runs-on: ubuntu-latest
+    needs: [check-changes, call-compose-tests]
+    if: always()
+    steps:
+    - name: Report skipped
+      if: needs.check-changes.outputs.should_run_compose == 'false'
+      run: echo "✓ Skipped - only documentation files changed"
+    
+    - name: Report result
+      if: needs.check-changes.outputs.should_run_compose == 'true'
+      run: |
+        if [[ "${{ needs.call-compose-tests.result }}" == "success" ]]; then
+          echo "✓ Compose checks passed"
+          exit 0
+        else
+          echo "✗ Compose checks failed or were cancelled"
+          exit 1
+        fi
