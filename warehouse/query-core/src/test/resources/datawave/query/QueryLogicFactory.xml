@@ -639,11 +639,29 @@
 
     <util:list id="tagCloudExtractors" value-type="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
         <bean class="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
-            <property name="category" value="cat1" />
+            <property name="category" value="gendered-age" />
+            <property name="subType" value="gender" />
             <property name="fields">
                 <util:list value-type="java.lang.String">
-                    <value>F1</value>
-                    <value>F2</value>
+                    <value>GENDER</value>
+                </util:list>
+            </property>
+        </bean>
+        <bean class="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+            <property name="category" value="name" />
+            <property name="fields">
+                <util:list value-type="java.lang.String">
+                    <value>NAME</value>
+                    <value>NOME</value>
+                </util:list>
+            </property>
+        </bean>
+        <bean class="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+            <property name="category" value="gendered-age" />
+            <property name="subType" value="age" />
+            <property name="fields">
+                <util:list value-type="java.lang.String">
+                    <value>AGE</value>
                 </util:list>
             </property>
         </bean>
@@ -665,7 +683,9 @@
         <property name="logic2" ref="KeywordQuery"/>
         <property name="auditType" value="NONE"/>
         <property name="chainStrategy">
-            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy"/>
+            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy">
+                <property name="extractors" ref="tagCloudExtractors" />
+            </bean>
         </property>
         <property name="extractors" ref="tagCloudExtractors" />
     </bean>

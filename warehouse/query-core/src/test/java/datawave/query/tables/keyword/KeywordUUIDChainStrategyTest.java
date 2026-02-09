@@ -23,7 +23,6 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.collections.iterators.ArrayListIterator;
 import org.easymock.Capture;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -365,7 +364,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         settings.addParameter(CATEGORY_PARAMETER, "external");
 
         List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"));
-
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
         FieldedTagCloudInputExtractor fieldedExtractor = new FieldedTagCloudInputExtractor();

@@ -1,15 +1,16 @@
 package datawave.query.tables.keyword.extractor;
 
-import datawave.util.keyword.TagCloudPartition;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import datawave.util.keyword.TagCloudPartition;
 
 public class FieldedTagCloudInputExtractorTest {
 
