@@ -40,8 +40,9 @@
         ref="table"
         :loading="loading"
         :rows="rows"
-        :columns="columns"
+        :columns="baseColumns"
         :filter="filter"
+        table-style="table-layout: fixed"
         v-model:pagination="paginationFront"
         row-key="internalFieldName"
         dense
@@ -94,6 +95,7 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
+              class="resizable-header"
             >
               <div class="tooltip-wrapper row items-center no-wrap">
                 <span class="q-mr-xs">
@@ -171,6 +173,11 @@
                   </q-btn>
                 </template>
               </div>
+              <div
+              v-if="col !== props.cols[props.cols.length - 1]"
+              class="resize-handle"
+              @mousedown="startResize(col.name, $event)"
+              />
             </q-th>
           </q-tr>
         </template>
@@ -264,7 +271,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
-import { Banner, Menu, columns, System } from '../functions/components';
+import { Banner, Menu, columns, System, startResize, baseColumns } from '../functions/components';
 import * as Formatters from '../functions/formatters';
 import * as Wrapper from '../functions/csvWrapper';
 import * as Feature from '../functions/features';

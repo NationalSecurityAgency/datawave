@@ -111,3 +111,20 @@
 .datawave-dictionary-sticky-sass tbody {
   scroll-margin-top: 48px;
 }
+
+.resizable-header {
+  position: relative;
+  user-select: none;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+}
+.resizable-header:hover .resize-handle{
+  background: rgba(0,188,212,.2);
+}
