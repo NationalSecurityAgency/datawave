@@ -80,11 +80,6 @@
             <artifactId>hadoop-shaded-guava</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-reflect</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
