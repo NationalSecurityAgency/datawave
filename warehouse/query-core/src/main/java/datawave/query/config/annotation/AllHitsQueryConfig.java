@@ -1,6 +1,8 @@
 package datawave.query.config.annotation;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -36,6 +38,11 @@ public class AllHitsQueryConfig implements Serializable {
 
     private Normalizer<String> termNormalizer;
 
+    /**
+     * A mapping between fields in the event associating an annotation to a field to be returned in an AllHits dynamic field.
+     */
+    private Map<String,String> annotationEnrichmentFieldMap = new HashMap<>();
+
     private AnnotationConfig annotationConfig;
 
     public AllHitsQueryConfig() {
@@ -50,6 +57,7 @@ public class AllHitsQueryConfig implements Serializable {
         setTargetField(other.getTargetField());
         setQueryTermExtractor(other.getQueryTermExtractor());
         setTermNormalizer(other.getTermNormalizer());
+        setAnnotationEnrichmentFieldMap(other.getAnnotationEnrichmentFieldMap());
         setAnnotationConfig(other.getAnnotationConfig());
     }
 
@@ -69,6 +77,7 @@ public class AllHitsQueryConfig implements Serializable {
                 Objects.equals(getTargetField(), that.getTargetField()) &&
                 Objects.equals(getQueryTermExtractor(), that.getQueryTermExtractor()) &&
                 Objects.equals(getTermNormalizer(), that.getTermNormalizer()) &&
+                Objects.equals(getAnnotationEnrichmentFieldMap(), that.getAnnotationEnrichmentFieldMap()) &&
                 Objects.equals(getAnnotationConfig(), that.getAnnotationConfig());
         // @formatter:on
     }
@@ -84,6 +93,7 @@ public class AllHitsQueryConfig implements Serializable {
                 getTargetField(),
                 getQueryTermExtractor(),
                 getTermNormalizer(),
+                getAnnotationEnrichmentFieldMap(),
                 getAnnotationConfig()
         );
         // @formatter:on
@@ -151,5 +161,13 @@ public class AllHitsQueryConfig implements Serializable {
 
     public void setTermNormalizer(Normalizer<String> termNormalizer) {
         this.termNormalizer = termNormalizer;
+    }
+
+    public Map<String,String> getAnnotationEnrichmentFieldMap() {
+        return annotationEnrichmentFieldMap;
+    }
+
+    public void setAnnotationEnrichmentFieldMap(Map<String,String> annotationEnrichmentFieldMap) {
+        this.annotationEnrichmentFieldMap = annotationEnrichmentFieldMap;
     }
 }
