@@ -572,7 +572,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         try {
-            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings));
+            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, settings.getQuery(), settings));
         } catch (StackOverflowError e) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + e);
