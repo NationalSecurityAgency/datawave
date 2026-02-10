@@ -58,6 +58,7 @@ DW_DATAWAVE_INGEST_TEST_DATA_SKIP=${DW_DATAWAVE_INGEST_TEST_DATA_SKIP:-false}
 DW_DATAWAVE_INGEST_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"}
 DW_DATAWAVE_INGEST_TEST_FILE_CSV=${DW_DATAWAVE_INGEST_TEST_FILE_CSV:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"}
 DW_DATAWAVE_INGEST_TEST_FILE_JSON=${DW_DATAWAVE_INGEST_TEST_FILE_JSON:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-json/src/test/resources/input/tvmaze-api.json"}
+DW_DATAWAVE_INGEST_TEST_FILE_ANNOTATION=${DW_DATAWAVE_INGEST_TEST_FILE_ANNOTATION:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-annotation/src/test/resources/input/doubleAnnotation.json"}
 DW_DATAWAVE_INGEST_MEDIUM_FILE_WIKI=${DW_DATAWAVE_INGEST_MEDIUM_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20250519-pages-articles-medium.xml.gz"}
 DW_DATAWAVE_INGEST_DE_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_DE_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/dewiki-20250520-pages-articles-brief.xml"}
 DW_DATAWAVE_INGEST_ES_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_ES_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/eswiki-20250520-pages-articles-brief.xml"}
@@ -227,6 +228,27 @@ function datawaveIngestCsv() {
    launchIngestJob "${csvRawFile}"
 }
 
+function datawaveIngestAnnotation() {
+
+   # Uses example ingest config: annotation-ingest-config.xml
+
+   # Again we use live-ingest.sh, but this time to ingest some annotation data
+
+   local annotationRawFile="${1}"
+   local extraOpts="${2}"
+
+   [ -z "${annotationRawFile}" ] && error "Missing raw file argument" && return 1
+   [ ! -f "${annotationRawFile}" ] && error "File not found: ${annotationRawFile}" && return 1
+
+   local annotationHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${annotationRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal -f ${annotationRawFile} ${annotationHdfsFile}"
+
+   local inputFormat="datawave.ingest.annotation.mapreduce.input.SimpleAnnotationInputFormat"
+   local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${annotationHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=annotation ${extraOpts}"
+
+   launchIngestJob "${annotationRawFile}"
+}
+
 function datawaveIngestJson() {
 
    # Uses example ingest config: myjson-ingest-config.xml
@@ -359,6 +381,7 @@ function datawaveIngestTarballName() {
 function datawaveIngestExamples() {
    # basic examples of each format
    datawaveIngestWikipedia ${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}
+   datawaveIngestAnnotation ${DW_DATAWAVE_INGEST_TEST_FILE_ANNOTATION}
    datawaveIngestJson ${DW_DATAWAVE_INGEST_TEST_FILE_JSON}
    datawaveIngestCsv ${DW_DATAWAVE_INGEST_TEST_FILE_CSV}
 

@@ -15,21 +15,25 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 
 /**
- * Purpose: Timeout catching exception Iterator that will work in conjunction with an iterator that returns the timeout exception
+ * Purpose: Timeout catching exception Iterator that will work in conjunction with an iterator that returns the timeout exception Once a timeout is detected,
+ * the last key will be returned again with a value set to EXCEPTEDVALUE.
  */
 public class TimeoutExceptionIterator extends WrappingIterator {
 
     /**
-     * Last key that we've received from the iterators below us
+     * Various states of this iterator
      */
-    protected Key lastKey = null;
+    private enum STATE {
+        NORMAL, // life as usual
+        TIMEOUT, // we have detected a timeout
+        COMPLETE // nothing left to do
+    }
 
-    protected Value lastValue = null;
+    // The current state of the iterator
+    STATE state = STATE.NORMAL;
 
-    /**
-     * boolean to identify that we've exceeded the time
-     */
-    boolean exceededTime = false;
+    // The next key to return
+    Key nextKey;
 
     // Exceeded timeout value exception marker
     public static final Value EXCEPTEDVALUE = new Value(new byte[] {0x0d, 0x0e, 0x0a, 0x0d, 0x0b, 0x0e, 0x0e, 0x0f});
@@ -38,105 +42,97 @@ public class TimeoutExceptionIterator extends WrappingIterator {
         return kv.getValue().equals(EXCEPTEDVALUE);
     }
 
+    public static boolean exceededTimedValue(Value value) {
+        return value.equals(EXCEPTEDVALUE);
+    }
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
     }
 
-    /**
-     * Set the return key
-     */
-    protected void setReturnKey() {
-        lastValue = EXCEPTEDVALUE;
-        exceededTime = true;
-    }
-
     @Override
     public boolean hasTop() {
-        if (exceededTime) {
-            return null != lastKey;
+        switch (state) {
+            case NORMAL:
+                return super.hasTop();
+            case TIMEOUT:
+                // we have one more key to return
+                return true;
+            default:
+                return false;
         }
-        return super.hasTop();
     }
 
     @Override
     public Value getTopValue() {
-        if (exceededTime) {
-            if (null != lastValue) {
-                Value returnValue = lastValue;
-                lastValue = null;
-                return returnValue;
-            } else {
+        switch (state) {
+            case NORMAL:
+                return super.getTopValue();
+            case TIMEOUT:
+                return EXCEPTEDVALUE;
+            default:
                 return null;
-            }
         }
-        lastValue = super.getTopValue();
-        return lastValue;
     }
 
     @Override
     public Key getTopKey() {
-        if (exceededTime) {
-            if (null != lastKey) {
-                Key returnKey = lastKey;
-                lastKey = null;
-                return returnKey;
-            } else {
+        switch (state) {
+            case NORMAL:
+            case TIMEOUT:
+                return nextKey;
+            default:
                 return null;
-            }
         }
-
-        lastKey = super.getTopKey();
-        return lastKey;
     }
 
     @Override
     public void next() throws IOException {
-        if (exceededTime) {
-            return;
-        }
-
-        try {
-            super.next();
-        } catch (IteratorTimeoutException e) {
-            setReturnKey();
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof IteratorTimeoutException) {
-                setReturnKey();
-            } else {
-                throw e;
-            }
-        }
+        move(super::next);
     }
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-
-        if (!range.isInfiniteStartKey()) {
-            if (range.isStartKeyInclusive()) {
-                lastKey = range.getStartKey();
-            } else {
-                lastKey = range.getStartKey().followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
-            }
+        // setup a next key in case we timeout immediately
+        if (range.getStartKey() == null) {
+            nextKey = new Key();
+        } else if (range.isStartKeyInclusive()) {
+            nextKey = range.getStartKey();
         } else {
-            lastKey = new Key();
-        }
-        lastValue = new Value();
-
-        if (exceededTime) {
-            return;
+            nextKey = range.getStartKey().followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
         }
 
-        try {
-            super.seek(range, columnFamilies, inclusive);
-        } catch (IteratorTimeoutException e) {
-            setReturnKey();
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof IteratorTimeoutException) {
-                setReturnKey();
-            } else {
-                throw e;
-            }
+        move(() -> super.seek(range, columnFamilies, inclusive));
+    }
+
+    private void move(IOAction a) throws IOException {
+        switch (state) {
+            case NORMAL:
+                try {
+                    a.call();
+                    if (super.hasTop()) {
+                        nextKey = super.getTopKey();
+                    } else {
+                        state = STATE.COMPLETE;
+                    }
+                } catch (IteratorTimeoutException e) {
+                    state = STATE.TIMEOUT;
+                } catch (RuntimeException e) {
+                    if (e.getCause() instanceof IteratorTimeoutException) {
+                        state = STATE.TIMEOUT;
+                    } else {
+                        state = STATE.COMPLETE;
+                        throw e;
+                    }
+                }
+                break;
+            case TIMEOUT:
+                state = STATE.COMPLETE;
         }
+    }
+
+    private interface IOAction {
+        void call() throws IOException;
     }
 }

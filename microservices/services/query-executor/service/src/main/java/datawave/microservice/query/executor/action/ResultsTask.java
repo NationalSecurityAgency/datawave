@@ -1,7 +1,8 @@
 package datawave.microservice.query.executor.action;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.CheckpointableQueryLogic;
@@ -14,7 +15,7 @@ import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
 
 public class ResultsTask extends ExecutorTask {
-    private static final Logger log = Logger.getLogger(ResultsTask.class);
+    private static final Logger log = LoggerFactory.getLogger(ResultsTask.class);
 
     public ResultsTask(QueryExecutor source, QueryTask task) {
         super(source, task);

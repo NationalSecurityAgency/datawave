@@ -19,6 +19,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.SeekingFilter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,18 +119,9 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (!range.isStartKeyInclusive()) {
-            // need to skip to next row
-            Key skip = new Key(range.getStartKey().getRow().toString() + '\u0000');
-            if (skip.compareTo(range.getEndKey()) > 0) {
-                // handles case of bounded range against single value
-                // filter key: +cE1 NUM:20150808_0%00;generic [NA]
-                // skip key would be +cE1<null> but then the start key is greater than the end key. so we cheat accumulo.
-                Range skipRange = new Range(range.getEndKey(), true, range.getEndKey(), range.isEndKeyInclusive());
-                super.seek(skipRange, columnFamilies, inclusive);
-            } else {
-                Range skipRange = new Range(skip, true, range.getEndKey(), range.isEndKeyInclusive());
-                super.seek(skipRange, columnFamilies, inclusive);
-            }
+            // need to make the start key inclusive because filters operate slightly differently
+            Range seekRange = new Range(range.getStartKey(), true, range.getEndKey(), range.isEndKeyInclusive());
+            super.seek(seekRange, columnFamilies, inclusive);
         } else {
             super.seek(range, columnFamilies, inclusive);
         }
@@ -139,6 +131,10 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
     public FilterResult filter(Key k, Value v) {
         if (log.isDebugEnabled()) {
             log.debug("tk: {}", k.toStringNoTime());
+        }
+
+        if (TimeoutExceptionIterator.exceededTimedValue(Pair.of(k, v))) {
+            return new FilterResult(true, AdvanceResult.NEXT);
         }
 
         // parse key and reset hint

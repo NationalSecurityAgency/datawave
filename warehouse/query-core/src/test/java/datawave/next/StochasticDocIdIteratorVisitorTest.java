@@ -15,6 +15,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -30,18 +31,22 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
     private static final Logger log = LoggerFactory.getLogger(StochasticDocIdIteratorVisitorTest.class);
 
-    private static final Set<String> fields = Set.of("FIELD_A", "FIELD_B");
-    private static final Set<String> datatypes = Set.of("datatype-a");
+    private final Set<String> fields = Set.of("FIELD_A", "FIELD_B");
+    private final Set<String> datatypes = Set.of("datatype-a");
 
-    private static final List<String> executableTerms = new ArrayList<>();
-    private static final List<String> nonExecutableTerms = new ArrayList<>();
-    private static final List<String> allTerms = new ArrayList<>();
+    private final List<String> executableTerms = new ArrayList<>();
+    private final List<String> nonExecutableTerms = new ArrayList<>();
+    private final List<String> allTerms = new ArrayList<>();
 
-    static {
+    @BeforeEach
+    public void beforeEach() {
+        executableTerms.clear();
         executableTerms.add("FIELD_A == 'value-1'");
         executableTerms.add("FIELD_A == 'value-2'");
         executableTerms.add("FIELD_B == 'value-3'");
         executableTerms.add("FIELD_B == 'value-4'");
+
+        nonExecutableTerms.clear();
         nonExecutableTerms.add("FIELD_X == 'x'");
         nonExecutableTerms.add("FIELD_Y == 'y'");
         nonExecutableTerms.add("FIELD_Z == 'z'");
@@ -49,6 +54,8 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         nonExecutableTerms.add("filter:isNotNull(FIELD_X, 'x')");
         nonExecutableTerms.add("FIELD_X !~ 'ba.*'");
         nonExecutableTerms.add("FIELD_X != 'x'");
+
+        allTerms.clear();
         allTerms.addAll(executableTerms);
         allTerms.addAll(nonExecutableTerms);
     }
@@ -345,6 +352,10 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         Set<Key> results = DocIdIteratorVisitor.getDocIds(script, range, source, datatypes, null, fields);
         SortedSet<Integer> resultUids = resultsToUids(results);
 
+        boolean equivalent = expected.equals(resultUids);
+        if (!equivalent) {
+            logState();
+        }
         assertEquals(expected, resultUids);
     }
 

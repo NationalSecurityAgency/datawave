@@ -54,22 +54,33 @@
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
         <version.hadoop>3.3.4</version.hadoop>
-        <version.jackson>2.13.2</version.jackson>
+        <version.jackson>2.13.5</version.jackson>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
-        <version.log4j.bom>2.19.0</version.log4j.bom>
+        <version.log4j>2.25.3</version.log4j>
         <version.lombok>1.18.36</version.lombok>
+        <version.slf4j>2.0.17</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
+            <?SORTPOM IGNORE?>
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
-                <version>${version.log4j.bom}</version>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>${version.slf4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <?SORTPOM RESUME?>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-client</artifactId>
@@ -196,6 +207,16 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

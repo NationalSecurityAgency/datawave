@@ -94,15 +94,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.model.defaultTableName:add(value=${table.name.metadata})
 /system-property=dw.basemaps:add(value="${basemaps}")
 
-# Keystore and Truststore settings for export into MapReduce jobs run via the MapReduce API
-/system-property=dw.mapreduce.securitydomain.useJobCache:add(value=${mapreduce.securitydomain.useJobCache})
-/system-property=dw.mapreduce.securitydomain.keyStoreURL:add(value=file://${KEYSTORE})
-/system-property=dw.mapreduce.securitydomain.keyStoreType:add(value="${KEYSTORE_TYPE}")
-/system-property=dw.mapreduce.securitydomain.keyStorePassword:add(value="${KEYSTORE_PASSWORD}")
-/system-property=dw.mapreduce.securitydomain.trustStoreURL:add(value=file://${TRUSTSTORE})
-/system-property=dw.mapreduce.securitydomain.trustStoreType:add(value="${TRUSTSTORE_TYPE}")
-/system-property=dw.mapreduce.securitydomain.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
-
 # proxied entities to be pruned from credentials
 /system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")
 
@@ -241,7 +232,6 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:add(level=DEBUG,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Query.log"})
 /subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"CachedResults.log"})
 /subsystem=logging/periodic-rotating-file-handler=SECURITY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Security.log"})
-/subsystem=logging/periodic-rotating-file-handler=MAPREDUCE_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"MapReduce.log"})
 /subsystem=logging/periodic-rotating-file-handler=MODIFICATION_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"ModificationService.log"})
 /subsystem=logging/periodic-rotating-file-handler=DISTRIBUTED_QUERY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"DistributedQueryService.log"})
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
@@ -266,11 +256,6 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=datawave.webservice.mr:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
-/subsystem=logging/logger=org.apache.hadoop.mapred:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
-/subsystem=logging/logger=org.apache.hadoop.mapreduce:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
-/subsystem=logging/logger=org.apache.hadoop.yarn.client:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
-/subsystem=logging/logger=org.apache.accumulo.core.client.mapreduce:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
 /subsystem=logging/logger=datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
 /subsystem=logging/logger=datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.core:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
