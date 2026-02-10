@@ -51,6 +51,22 @@ public class TimeoutExceptionIterator extends WrappingIterator {
         super.init(source, options, env);
     }
 
+    /**
+     * The state and next key should be persisted through a teardown/rebuild
+     *
+     * @param env
+     *            the {@link IteratorEnvironment}
+     * @return a copy of the {@link TimeoutExceptionIterator}
+     */
+    @Override
+    public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
+        TimeoutExceptionIterator copy = new TimeoutExceptionIterator();
+        copy.setSource(getSource().deepCopy(env));
+        copy.state = state;
+        copy.nextKey = nextKey;
+        return copy;
+    }
+
     @Override
     public boolean hasTop() {
         switch (state) {
