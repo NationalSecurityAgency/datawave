@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.iterators.user.SeekingFilter;
 import org.apache.accumulo.core.security.Authorizations;
@@ -57,6 +58,8 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ShapesIngest;
+import datawave.query.util.TestIndexTableNames;
+import datawave.test.MacTestUtil;
 import datawave.util.TableName;
 
 /**
@@ -111,6 +114,7 @@ public class ShapesTest extends AbstractQueryTest {
     private final Set<String> allTypes = Sets.newHashSet("triangle", "quadrilateral", "pentagon", "hexagon", "octagon");
 
     protected static AccumuloClient client = null;
+    protected static TableOperations tops = null;
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
@@ -130,6 +134,8 @@ public class ShapesTest extends AbstractQueryTest {
 
         Authorizations auths = new Authorizations("ALL");
         ingestUtil.write(client, auths);
+
+        tops = client.tableOperations();
 
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
@@ -1375,6 +1381,62 @@ public class ShapesTest extends AbstractQueryTest {
             assertThrows(AssertionError.class, this::planAndExecuteQuery);
         } finally {
             logic.setDisableEvaluation(false);
+        }
+    }
+
+    @Test
+    public void testIndexExpansionTimeoutOnInitialSeek() throws Exception {
+        long origTimeout = logic.getMaxIndexScanTimeMillis();
+        try {
+            logic.setMaxIndexScanTimeMillis(5);
+            addDelayIterator(250);
+
+            givenQuery("SHAPE =~ 'tri.*'");
+            expectPlan("((_Value_ = true) && (SHAPE =~ 'tri.*'))");
+            planAndExecuteQuery();
+        } finally {
+            logic.setMaxIndexScanTimeMillis(origTimeout);
+            removeDelayIterator();
+        }
+    }
+
+    @Test
+    public void testIndexExpansionTimeoutOnNext() throws Exception {
+        long origTimeout = logic.getMaxIndexScanTimeMillis();
+        try {
+            logic.setMaxIndexScanTimeMillis(300);
+            addDelayIterator(250);
+
+            givenQuery("SHAPE =~ '.*gon'");
+            expectPlan("((_Value_ = true) && (SHAPE =~ '.*gon'))");
+            planAndExecuteQuery();
+        } finally {
+            logic.setMaxIndexScanTimeMillis(origTimeout);
+            removeDelayIterator();
+        }
+    }
+
+    protected void addDelayIterator(int delay) {
+        Set<String> names = new HashSet<>(TestIndexTableNames.names());
+        names.add(TableName.SHARD_RINDEX);
+
+        for (String indexTableName : names) {
+            Map<String,String> properties = new HashMap<>();
+            properties.put("table.iterator.scan.delay", "1,datawave.test.iter.DelayIterator");
+            properties.put("table.iterator.scan.delay.opt.delay", String.valueOf(delay));
+            MacTestUtil.addPropertiesAndWait(tops, indexTableName, properties);
+        }
+    }
+
+    protected void removeDelayIterator() {
+        Set<String> names = new HashSet<>(TestIndexTableNames.names());
+        names.add(TableName.SHARD_RINDEX);
+
+        for (String indexTableName : names) {
+            Set<String> properties = new HashSet<>();
+            properties.add("table.iterator.scan.delay");
+            properties.add("table.iterator.scan.delay.opt.delay");
+            MacTestUtil.removePropertiesAndWait(tops, indexTableName, properties);
         }
     }
 }
