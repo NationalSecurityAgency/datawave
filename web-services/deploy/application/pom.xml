@@ -12,6 +12,7 @@
     <properties>
         <!-- jkube kubernetes-maven-plugin only has access to project properties so we redefine them to properly render the Dockerfile-->
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
+        <version.slf4j-jboss-logmanager>2.0.2.Final</version.slf4j-jboss-logmanager>
     </properties>
     <dependencies>
         <dependency>
@@ -224,6 +225,10 @@
             <artifactId>hadoop-yarn-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-epsg-wkt</artifactId>
             <version>${version.geotools}</version>
@@ -244,6 +249,15 @@
                     <artifactId>jai_core</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.slf4j</groupId>
+            <artifactId>slf4j-jboss-logmanager</artifactId>
+            <version>${version.slf4j-jboss-logmanager}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -711,6 +725,38 @@
                                         <artifactItem>
                                             <groupId>xerces</groupId>
                                             <artifactId>xercesImpl</artifactId>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-slf4j-api-dependencies</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/system/layers/base/org/slf4j/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.slf4j</groupId>
+                                            <artifactId>slf4j-api</artifactId>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-slf4j-impl-dependencies</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/system/layers/base/org/slf4j/impl/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.jboss.slf4j</groupId>
+                                            <artifactId>slf4j-jboss-logmanager</artifactId>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

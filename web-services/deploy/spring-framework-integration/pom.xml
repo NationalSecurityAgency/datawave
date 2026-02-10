@@ -97,6 +97,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
             <scope>test</scope>
@@ -150,6 +155,11 @@
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

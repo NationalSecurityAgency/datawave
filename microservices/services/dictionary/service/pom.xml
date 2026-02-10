@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.7</version>
+        <version>5.0.8-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
@@ -25,34 +25,63 @@
         <npm.version>9.2.0</npm.version>
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
         <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
+        <version.commons-collections>3.2.2</version.commons-collections>
+        <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.curator>5.2.0</version.curator>
-        <version.datawave.dictionary-api>4.0.5</version.datawave.dictionary-api>
-        <version.datawave.starter>4.0.5</version.datawave.starter>
-        <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
+        <version.datawave>7.33.1</version.datawave>
+        <version.datawave.authorization-api>4.0.2-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.dictionary-api>4.0.6-SNAPSHOT</version.datawave.dictionary-api>
+        <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-metadata>3.0.3-SNAPSHOT</version.datawave.starter-metadata>
+        <version.guava>31.1-jre</version.guava>
+        <version.hadoop>3.3.4</version.hadoop>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
+        <version.jackson>2.13.5</version.jackson>
+        <version.jaxb-impl>2.3.3</version.jaxb-impl>
+        <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
+        <version.log4j>2.25.3</version.log4j>
+        <version.protobuf-java>3.16.3</version.protobuf-java>
+        <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
+        <version.slf4j>2.0.17</version.slf4j>
+        <version.swagger>2.2.42</version.swagger>
         <version.webjars.datatables>1.11.4</version.webjars.datatables>
         <version.webjars.jquery>3.6.0</version.webjars.jquery>
         <version.webjars.locator>0.50</version.webjars.locator>
-        <version.zookeeper>3.8.0</version.zookeeper>
+        <version.zookeeper>3.9.2</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.datawave.starter}</version>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.jackson}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-xml</artifactId>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
                 <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${version.guava}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${version.protobuf-java}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
-                <version>2.3.3</version>
+                <version>${version.jaxb-impl}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${version.commons-collections}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -69,6 +98,31 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>accumulo-utils</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>common-utils</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>metadata-utils</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>authorization-api</artifactId>
+                <version>${version.datawave.authorization-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>dictionary-api</artifactId>
                 <version>${version.datawave.dictionary-api}</version>
@@ -82,39 +136,21 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-metadata</artifactId>
                 <version>${version.datawave.starter-metadata}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.avro</groupId>
-                        <artifactId>avro</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${version.swagger}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-core</artifactId>
                 <version>${version.accumulo}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>servlet-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-reload4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>ch.qos.logback</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-tcnative</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.commons-lang3}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -132,25 +168,18 @@
                 <version>${version.curator}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-api</artifactId>
+                <version>${version.hadoop}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>ch.qos.logback</groupId>
                         <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-tcnative</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -178,16 +207,52 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-xml</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
         </dependency>
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>accumulo-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>metadata-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -202,8 +267,64 @@
             <artifactId>spring-boot-starter-datawave-metadata</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
@@ -222,6 +343,37 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
     <repositories>
         <repository>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.7</version>
+        <version>4.0.8-SNAPSHOT</version>
         <relativePath>../microservice-parent</relativePath>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
@@ -19,12 +19,23 @@
     </scm>
     <properties>
         <resource.delimiter>@</resource.delimiter>
+        <version.slf4j>2.0.17</version.slf4j>
         <!-- delimiter that doesn't clash with Spring ${} placeholders -->
         <version.spring.boot>2.7.1</version.spring.boot>
         <version.spring.cloud>2021.0.3</version.spring.cloud>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
+            <?SORTPOM IGNORE?>
+            <!-- override the slf4j declarations in spring-boot-dependencies with our own version -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>${version.slf4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -39,6 +50,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <?SORTPOM RESUME?>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>

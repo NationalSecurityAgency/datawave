@@ -64,7 +64,7 @@
         <version.commons-collections4>4.3</version.commons-collections4>
         <version.commons-configuration>1.10</version.commons-configuration>
         <version.commons-configuration2>2.10.1</version.commons-configuration2>
-        <version.commons-io>2.6</version.commons-io>
+        <version.commons-io>2.18.0</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
@@ -100,7 +100,7 @@
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.10.0.pr1</version.jackson>
+        <version.jackson>2.13.5</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
         <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -122,7 +122,7 @@
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j2>2.19.0</version.log4j2>
+        <version.log4j>2.25.3</version.log4j>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
@@ -137,7 +137,7 @@
         <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
         <version.protostuff>1.6.2</version.protostuff>
         <version.saxon-he>12.4</version.saxon-he>
-        <version.slf4j>2.0.12</version.slf4j>
+        <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
@@ -156,10 +156,12 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
+            <?SORTPOM IGNORE?>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
-                <version>${version.log4j2}</version>
+                <version>${version.log4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -177,6 +179,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <?SORTPOM RESUME?>
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
