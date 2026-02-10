@@ -562,10 +562,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         settingFuture = null;
         logSettingFuture = null;
 
-        IteratorSetting cfg = null;
         IteratorSetting logCfg = null;
 
-        if (preloadOptions) {
+        if (cfg == null && preloadOptions) {
             cfg = getQueryIterator(metadataHelper, config, "", false, true);
             if (config.isTserverLoggingActive()) {
                 logCfg = getQueryLogIterator(config, settings);
